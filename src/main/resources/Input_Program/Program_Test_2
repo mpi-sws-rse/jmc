@@ -1,0 +1,5 @@
+$TREAD 1
+a = 1
+$TREAD 2
+if( a == 0)
+a = 1

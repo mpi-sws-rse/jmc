@@ -1,0 +1,3 @@
+package programStructure
+
+interface ReadsFrom

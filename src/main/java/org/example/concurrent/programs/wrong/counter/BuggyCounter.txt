@@ -1,0 +1,148 @@
+// class version 61.0 (61)
+// access flags 0x21
+public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends java/lang/Thread {
+
+  // compiled from: BuggyCounter.java
+  // access flags 0x19
+  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
+
+  // access flags 0x0
+  Lorg/example/concurrent/programs/wrong/counter/Counter; counter
+
+  // access flags 0x1
+  public <init>(Lorg/example/concurrent/programs/wrong/counter/Counter;)V
+   L0
+    LINENUMBER 5 L0
+    ALOAD 0
+    INVOKESPECIAL java/lang/Thread.<init> ()V
+   L1
+    LINENUMBER 6 L1
+    ALOAD 0
+    ALOAD 1
+    PUTFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter : Lorg/example/concurrent/programs/wrong/counter/Counter;
+   L2
+    LINENUMBER 7 L2
+    RETURN
+    MAXSTACK = 2
+    MAXLOCALS = 2
+
+  // access flags 0x1
+  public run()V
+   L0
+    LINENUMBER 10 L0
+    ALOAD 0
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
+    LDC "counter"
+    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
+    INVOKESTATIC org/example/runtime/Scheduler.oldReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter : Lorg/example/concurrent/programs/wrong/counter/Counter;
+    ALOAD 0
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
+    LDC "counter"
+    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
+    INVOKESTATIC org/example/runtime/Scheduler.oldReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter : Lorg/example/concurrent/programs/wrong/counter/Counter;
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.example.concurrent.programs.wrong.counter.Counter"
+    LDC "count"
+    LDC "I"
+    INVOKESTATIC org/example/runtime/Scheduler.oldReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    ICONST_1
+    IADD
+    DUP2
+    INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.example.concurrent.programs.wrong.counter.Counter"
+    LDC "count"
+    LDC "I"
+    INVOKESTATIC org/example/runtime/Scheduler.newWriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    PUTFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+   L1
+    LINENUMBER 11 L1
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    ALOAD 0
+    INVOKEVIRTUAL org/example/concurrent/programs/wrong/counter/BuggyCounter.getName ()Ljava/lang/String;
+    ALOAD 0
+    INVOKEVIRTUAL org/example/concurrent/programs/wrong/counter/BuggyCounter.getId ()J
+    ALOAD 0
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
+    LDC "counter"
+    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
+    INVOKESTATIC org/example/runtime/Scheduler.oldReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter : Lorg/example/concurrent/programs/wrong/counter/Counter;
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.example.concurrent.programs.wrong.counter.Counter"
+    LDC "count"
+    LDC "I"
+    INVOKESTATIC org/example/runtime/Scheduler.oldReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;JI)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "[\u0001:\u0001 message] : The counter value is \u0001"
+    ]
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L2
+    LINENUMBER 12 L2
+    RETURN
+    MAXSTACK = 10
+    MAXLOCALS = 1
+
+  // access flags 0x9
+  public static main([Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/Scheduler.init ()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/Scheduler.addThread (Ljava/lang/Thread;)V
+   L0
+    LINENUMBER 14 L0
+    NEW org/example/concurrent/programs/wrong/counter/Counter
+    DUP
+    INVOKESPECIAL org/example/concurrent/programs/wrong/counter/Counter.<init> ()V
+    ASTORE 1
+   L1
+    LINENUMBER 15 L1
+    NEW org/example/concurrent/programs/wrong/counter/BuggyCounter
+    DUP
+    ALOAD 1
+    INVOKESPECIAL org/example/concurrent/programs/wrong/counter/BuggyCounter.<init> (Lorg/example/concurrent/programs/wrong/counter/Counter;)V
+    ASTORE 2
+    ALOAD 2
+    INVOKESTATIC org/example/runtime/Scheduler.addThread (Ljava/lang/Thread;)V
+   L2
+    LINENUMBER 16 L2
+    NEW org/example/concurrent/programs/wrong/counter/BuggyCounter
+    DUP
+    ALOAD 1
+    INVOKESPECIAL org/example/concurrent/programs/wrong/counter/BuggyCounter.<init> (Lorg/example/concurrent/programs/wrong/counter/Counter;)V
+    ASTORE 3
+    ALOAD 3
+    INVOKESTATIC org/example/runtime/Scheduler.addThread (Ljava/lang/Thread;)V
+   L3
+    LINENUMBER 17 L3
+    ALOAD 2
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    ALOAD 2
+    INVOKESTATIC org/example/runtime/Scheduler.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L4
+    LINENUMBER 18 L4
+    ALOAD 3
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    ALOAD 3
+    INVOKESTATIC org/example/runtime/Scheduler.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L5
+    LINENUMBER 19 L5
+    INVOKESTATIC org/example/runtime/Scheduler.runMC ()V
+    RETURN
+    MAXSTACK = 4
+    MAXLOCALS = 4
+}
