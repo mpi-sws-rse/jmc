@@ -4,7 +4,7 @@ data class WriteEvent(
     override val tid: Int,
     override val type: EventType = EventType.WRITE,
     override var serial: Int = 0,
-    var value : Any = "nothing",
+    var value : Any = Any(),
     var loc : Location? = null
 ) : ThreadEvent(), ReadsFrom {
     override fun deepCopy(): Event {

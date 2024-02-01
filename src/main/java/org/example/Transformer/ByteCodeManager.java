@@ -10,11 +10,13 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ByteCodeManager {
     public String path;
@@ -22,6 +24,12 @@ public class ByteCodeManager {
     public ByteCodeManager(String path, String mainClassName) {
         this.mainClassName = mainClassName;
         this.path = path;
+    }
+
+    public void generateKotlinByteCode() throws InterruptedException, IOException {
+        ProcessBuilder pb = new ProcessBuilder("bash", "-c", "source /etc/environment && kotlinc /home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/kotlin/counter/Counter.kt -include-runtime -d .");
+        Process process = pb.start();
+        process.waitFor();
     }
 
     public void generateByteCode() {

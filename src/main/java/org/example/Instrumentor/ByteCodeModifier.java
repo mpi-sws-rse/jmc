@@ -71,6 +71,15 @@ public class ByteCodeModifier {
                             mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/Scheduler", "addThread", "(Ljava/lang/Thread;)V", false);
                             super.visitCode();
                         }
+
+                        @Override
+                        public void visitInsn(int opcode) {
+                            if (opcode == Opcodes.RETURN) {
+                                // Call the runMC method
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/Scheduler", "runMC", "()V", false);
+                            }
+                            super.visitInsn(opcode);
+                        }
                     };
                 }
                 return methodVisitor;
@@ -204,7 +213,7 @@ public class ByteCodeModifier {
     }
 
     private void continueFindAllThreads(String newClassName){
-        System.out.println("[Debugging Message-main Class] : We newClassName = "+newClassName);
+        System.out.println("[Debugging Message-main Class] : Our newClassName = "+newClassName);
         byte [] byteCode = allByteCode.get(newClassName);
         byte[] modifiedByteCode;
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);

@@ -11,6 +11,11 @@ repositories {
 
 dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.ow2.asm:asm:9.6")
+    implementation("org.ow2.asm:asm-util:9.6")
+    implementation("org.ow2.asm:asm-commons:9.6")
+    implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.6.0") // replace with your Kotlin version
 }
 
 tasks.test {

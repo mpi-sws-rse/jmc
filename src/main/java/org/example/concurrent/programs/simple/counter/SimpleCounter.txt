@@ -137,6 +137,7 @@ public class org/example/concurrent/programs/simple/counter/SimpleCounter extend
     INVOKESTATIC org/example/runtime/Scheduler.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L4
     LINENUMBER 22 L4
+    INVOKESTATIC org/example/runtime/Scheduler.runMC ()V
     RETURN
     MAXSTACK = 4
     MAXLOCALS = 3

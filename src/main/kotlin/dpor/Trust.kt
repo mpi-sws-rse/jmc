@@ -27,8 +27,10 @@ class Trust {
 
     private fun makeAllEvents(){
         for (i in this.allThreads!!.keys)
-           for (e in this.allThreads?.get(i)?.instructions!!)
-                this.allEvents.add(e)
+           for (e in this.allThreads?.get(i)?.instructions!!) {
+               this.allEvents.add(e)
+               println("[MC Message] : the event : $e")
+           }
     }
     fun setThreads(trds: MutableMap<Int, Threads>?){
         this.allThreads = trds

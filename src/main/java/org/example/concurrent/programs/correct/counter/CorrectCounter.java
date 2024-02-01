@@ -1,6 +1,5 @@
 package org.example.concurrent.programs.correct.counter;
 
-import org.example.concurrent.programs.correct.counter.Counter;
 public class CorrectCounter extends Thread{
     Counter counter;
     public CorrectCounter(Counter counter) {

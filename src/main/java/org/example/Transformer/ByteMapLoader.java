@@ -11,7 +11,7 @@ public class ByteMapLoader extends ClassLoader{
 
     public ByteMapLoader(Map<String, byte[]> classes) throws IOException {
         this.classes = classes;
-        Path classFilePath = Paths.get("/home/mkhoshechin/IdeaProjects/JARTA4FUN/src/main/java/org/example/runtime/Scheduler.class");
+        Path classFilePath = Paths.get("/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/Scheduler.class");
         byte[] bytecode = Files.readAllBytes(classFilePath);
         classes.put("org.example.runtime.Scheduler", bytecode);
     }
