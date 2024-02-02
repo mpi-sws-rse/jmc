@@ -70,7 +70,7 @@ data class ExecutionGraph(var root : RootNode? = null,
         // To make sure that a new porf is constructed
         this.porf = mutableSetOf()
 
-        for (i in 1..<this.graphEvents.size){
+        for (i in 1..< this.graphEvents.size){
             this.porf.add(Pair(this.graphEvents[0],this.graphEvents[i]))
         }
 
@@ -119,7 +119,7 @@ data class ExecutionGraph(var root : RootNode? = null,
         this.deleted = mutableListOf()
 
         val index = this.eventsOrder.indexOf(pivotEvent)
-        for (i in index+1..<this.eventsOrder.size)
+        for (i in index+1 until this.eventsOrder.size)
             if (!this.porf.contains(Pair(this.eventsOrder[i] , writeEvent)))
                 deleted.add(this.eventsOrder[i])
     }
@@ -150,7 +150,7 @@ data class ExecutionGraph(var root : RootNode? = null,
         this.previous = mutableListOf()
 
         val index = this.eventsOrder.indexOf(firstEvent)
-        for (i in 0..<this.graphEvents.size){
+        for (i in 0 until this.graphEvents.size){
             if(this.porf.contains(Pair(this.graphEvents[i],secondEvent))){
                 this.previous.add(this.graphEvents[i])
             }else if (this.eventsOrder.indexOf(this.graphEvents[i]) <= index){
@@ -164,17 +164,17 @@ data class ExecutionGraph(var root : RootNode? = null,
     fun restrictingGraph() : ExecutionGraph{
         val newGraph = ExecutionGraph()
 
-        for (i in 0..<this.graphEvents.size){
+        for (i in 0 until this.graphEvents.size){
             if (!this.deleted.contains(this.graphEvents[i]))
                 newGraph.graphEvents.add(this.graphEvents[i].deepCopy())
         }
 
-        for (i in 0..<this.eventsOrder.size){
+        for (i in 0 until this.eventsOrder.size){
             if (!this.deleted.contains(this.eventsOrder[i]))
                 newGraph.eventsOrder.add(this.eventsOrder[i].deepCopy())
         }
 
-        for (i in 0..<this.COs.size){
+        for (i in 0 until this.COs.size){
             if(!this.deleted.contains(this.COs[i].secondWrite)){
                 if(this.COs[i].firstWrite is Initialization){
                     newGraph.COs.add(this.COs[i].deepCopy())
@@ -187,7 +187,7 @@ data class ExecutionGraph(var root : RootNode? = null,
             }
         }
 
-        for (i in 0..<this.deleted.size){
+        for (i in 0 until this.deleted.size){
             val threadEvent = this.deleted[i] as ThreadEvent
             if (this.root?.children?.keys?.contains(threadEvent.tid) == true){
                 if(root?.children!![threadEvent.tid]?.value!!.equals(this.deleted[i])){
@@ -411,7 +411,7 @@ data class ExecutionGraph(var root : RootNode? = null,
 
         // This part prints the CO edges
         if(this.COs.isNotEmpty()){
-            for (i in 0..<this.COs.size){
+            for (i in 0 until this.COs.size){
                 if (this.COs[i].firstWrite is WriteEvent){
                     val firstTid = (this.COs[i].firstWrite as WriteEvent).tid
                     val firstSerial = (this.COs[i].firstWrite as WriteEvent).serial
@@ -449,16 +449,16 @@ data class ExecutionGraph(var root : RootNode? = null,
             deleted = mutableListOf(),
             previous = mutableListOf()
         )
-        for (i in 0..<this.graphEvents.size){
+        for (i in 0 until this.graphEvents.size){
             newExecutionGraph.graphEvents.add(this.graphEvents[i].deepCopy())
         }
 
-        for (i in 0..<this.eventsOrder.size){
+        for (i in 0 until this.eventsOrder.size){
             newExecutionGraph.eventsOrder.add(
                 newExecutionGraph.graphEvents.find { it.equals(this.eventsOrder[i]) }!!
             )
         }
-        for (i in 0..<this.COs.size){
+        for (i in 0 until this.COs.size){
             if (this.COs[i].firstWrite is WriteEvent){
                 newExecutionGraph.COs.add(
                     CO(newExecutionGraph.graphEvents.find { it.equals(this.COs[i].firstWrite) } as WriteEvent,
@@ -478,12 +478,12 @@ data class ExecutionGraph(var root : RootNode? = null,
                     newExecutionGraph.graphEvents.find { it.equals(this.porf.elementAt(i).second) }!!)
             )
         }
-        for (i in 0..<this.deleted.size){
+        for (i in 0 until this.deleted.size){
             newExecutionGraph.deleted.add(
                 newExecutionGraph.graphEvents.find { it.equals(this.deleted[i]) }!!
             )
         }
-        for (i in 0..<this.previous.size){
+        for (i in 0 until this.previous.size){
             newExecutionGraph.previous.add(
                 newExecutionGraph.graphEvents.find { it.equals(this.previous[i]) }!!
             )
@@ -526,22 +526,22 @@ data class ExecutionGraph(var root : RootNode? = null,
             deleted = mutableListOf(),
             previous = mutableListOf()
         )
-        for (i in 0..<this.graphEvents.size){
+        for (i in 0 until this.graphEvents.size){
             newExecutionGraph.graphEvents.add(this.graphEvents[i].deepCopy())
         }
-        for (i in 0..<this.eventsOrder.size){
+        for (i in 0 until this.eventsOrder.size){
             newExecutionGraph.eventsOrder.add(this.eventsOrder[i].deepCopy())
         }
-        for (i in 0..<this.COs.size){
+        for (i in 0 until this.COs.size){
             newExecutionGraph.COs.add(this.COs[i].deepCopy())
         }
         for (i in this.porf.indices){
             newExecutionGraph.porf.add(Pair(this.porf.elementAt(i).first.deepCopy(),this.porf.elementAt(i).second.deepCopy()))
         }
-        for (i in 0..<this.deleted.size){
+        for (i in 0 until this.deleted.size){
             newExecutionGraph.deleted.add(this.deleted[i].deepCopy())
         }
-        for (i in 0..<this.previous.size){
+        for (i in 0 until this.previous.size){
             newExecutionGraph.previous.add(this.previous[i].deepCopy())
         }
 

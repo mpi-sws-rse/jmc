@@ -98,7 +98,7 @@ class Trust {
                 }
                 nextEvent.type == EventType.READ -> {
                     val nextReadEvent = (nextEvent as ReadEvent)
-                    for(i in 0..<G.graphEvents.size){
+                    for(i in 0 ..< G.graphEvents.size){
                         if (G.graphEvents[i].type == EventType.WRITE){
                             val G1 = G.deepCopy()
                             val newNextEvent = nextReadEvent.deepCopy()
@@ -125,7 +125,7 @@ class Trust {
                     visitCOs(G3.deepCopy(),nextEvent.deepCopy() as WriteEvent,newAllEvents)
                     G3.addEvent(nextEvent.deepCopy())
                     G3.computePorf()
-                    for(i in 0..<G3.graphEvents.size){
+                    for(i in 0 ..< G3.graphEvents.size){
                         if(G3.graphEvents[i].type == EventType.READ){
                             val findReadEvent = G3.graphEvents[i] as ReadEvent
                             val nextWriteEvent = nextEvent as WriteEvent
@@ -140,7 +140,7 @@ class Trust {
                                  */
                                 var allIsMaximal = true
                                 G3.deleted.add(findReadEvent)
-                                for (j in 0..<G3.deleted.size){
+                                for (j in 0 ..< G3.deleted.size){
                                     if (!isMaximallyAdded(G3.deepCopy(),G3.deleted[j].deepCopy(),nextEvent.deepCopy())){
                                         allIsMaximal =false
                                         break
@@ -171,7 +171,7 @@ class Trust {
         graph.computePrevious(firstEvent,secondEvent)
         if (firstEvent is ReadsFrom){
             var isReadVisited = false
-            for (i in 0..<graph.previous.size){
+            for (i in 0 ..< graph.previous.size){
                 if (graph.previous[i].type == EventType.READ){
                     val read = graph.previous[i] as ReadEvent
                     if (read.rf!!.equals(firstEvent)){
@@ -194,7 +194,7 @@ class Trust {
         if (graph.previous.contains(eventPrime)){
             if (eventPrime.type == EventType.WRITE){
                 var isCoVisited = false
-                for (i in 0..<graph.previous.size){
+                for (i in 0 ..< graph.previous.size){
                     if (graph.previous[i].type == EventType.WRITE){
                         if (graph.COs.contains(CO(eventPrime as WriteEvent,graph.previous[i] as WriteEvent))){
                             isCoVisited = true
@@ -220,13 +220,13 @@ class Trust {
      */
 
     private fun visitCOs(G : ExecutionGraph, writeEvent: WriteEvent, allEvents: MutableList<Event>){
-        for(i in 0..<G.graphEvents.size) {
+        for(i in 0 ..< G.graphEvents.size) {
             if (G.graphEvents[i].type == EventType.WRITE) {
                 val findWriteEvent = G.graphEvents[i] as WriteEvent
                 if (findWriteEvent.loc!!.equals(writeEvent.loc)){
                     val newWriteEvent = writeEvent.deepCopy() as WriteEvent
                     val newG = G.deepCopy()
-                    for (j in 0..<G.COs.size){
+                    for (j in 0 ..< G.COs.size){
                         if (G.COs[j].secondWrite.equals(findWriteEvent)){
                             val newCo = CO(firstWrite = G.COs[j].firstWrite , secondWrite = newWriteEvent)
                             newG.COs.add(newCo)
@@ -235,7 +235,7 @@ class Trust {
 
                     newG.COs.add(CO(firstWrite = findWriteEvent, secondWrite = newWriteEvent))
 
-                    for (j in 0..<G.COs.size){
+                    for (j in 0 ..< G.COs.size){
                         if (G.COs[j].firstWrite.equals(findWriteEvent)){
                             val newCo = CO(firstWrite = newWriteEvent, secondWrite = G.COs[j].secondWrite)
                             newG.COs.add(newCo)
@@ -252,7 +252,7 @@ class Trust {
 
                 newG.COs.add(CO(firstWrite = findInitEvent, secondWrite = newWriteEvent))
 
-                for (j in 0..<G.COs.size){
+                for (j in 0 ..< G.COs.size){
                     if (G.COs[j].firstWrite.equals(findInitEvent)){
                         val newCo = CO(firstWrite = newWriteEvent, secondWrite = G.COs[j].secondWrite)
                         newG.COs.add(newCo)
@@ -272,7 +272,7 @@ class Trust {
 
     private fun deepCopyAllEvents(allEvents: MutableList<Event>) : MutableList<Event>{
         val newAllEvents : MutableList<Event> = mutableListOf()
-        for (i in 0..<allEvents.size){
+        for (i in 0 ..< allEvents.size){
             newAllEvents.add(allEvents[i].deepCopy())
         }
         return newAllEvents
