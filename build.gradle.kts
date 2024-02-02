@@ -15,7 +15,7 @@ dependencies {
     implementation("org.ow2.asm:asm:9.6")
     implementation("org.ow2.asm:asm-util:9.6")
     implementation("org.ow2.asm:asm-commons:9.6")
-    implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.9.22")
+    implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.9.22") // 1.9.22
 }
 
 tasks.test {
