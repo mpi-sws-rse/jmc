@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.9.21"
+    kotlin("jvm") version "1.9.22"
 }
 
 group = "org.example"
@@ -15,7 +15,7 @@ dependencies {
     implementation("org.ow2.asm:asm:9.6")
     implementation("org.ow2.asm:asm-util:9.6")
     implementation("org.ow2.asm:asm-commons:9.6")
-    implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.6.0") // replace with your Kotlin version
+    implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.9.22") // replace with your Kotlin version
 }
 
 tasks.test {

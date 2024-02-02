@@ -5,88 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/META-INF/main.kotlin_module" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/org/example/concurrent/programs/kotlin/counter/Counter.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/org/example/concurrent/programs/kotlin/counter/CounterKt$main$thread1$1.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/org/example/concurrent/programs/kotlin/counter/CounterKt$main$thread2$1.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/org/example/concurrent/programs/kotlin/counter/CounterKt.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/TestKotlinCounter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/concurrent/programs/kotlin/counter/Counter.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_5.dot" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_5.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_6.dot" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_6.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_7.dot" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_7.png" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/kotlinc.xml" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/META-INF/main.kotlin_module" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/org/example/concurrent/programs/kotlin/counter/Counter.class" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/org/example/concurrent/programs/kotlin/counter/CounterKt$main$thread1$1.class" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/org/example/concurrent/programs/kotlin/counter/CounterKt$main$thread2$1.class" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/org/example/concurrent/programs/kotlin/counter/CounterKt.class" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/TestKotlinCounter.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/kotlin/counter/Counter.kt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_5.dot" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_5.png" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_6.dot" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_6.png" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_7.dot" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_7.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/Instrumentor/ByteCodeModifier.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/Instrumentor/ByteCodeModifier.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/TestSimpleCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/TestSimpleCounter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/Transformer/ByteCodeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/Transformer/ByteCodeManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/Transformer/ByteMapLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/Transformer/ByteMapLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/concurrent/programs/correct/counter/CorrectCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/concurrent/programs/correct/counter/CorrectCounter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/concurrent/programs/simple/counter/SimpleCounter.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/concurrent/programs/simple/counter/SimpleCounter.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/concurrent/programs/simple/counter/SimpleCounter.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/concurrent/programs/simple/counter/SimpleCounter.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/Scheduler.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/Scheduler.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/Scheduler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/Scheduler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/consistencyChecking/SequentialConsistency.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/consistencyChecking/SequentialConsistency.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/ReadEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/ReadEvent.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/WriteEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/WriteEvent.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Input_Program/Program_Test_4" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Input_Program/Program_Test_4" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_1.dot" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_1.dot" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_1.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_1.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_2.dot" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_2.dot" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_2.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_2.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_3.dot" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_3.dot" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_3.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_3.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_4.dot" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_4.dot" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_4.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_4.png" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/gradle.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/misc.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/misc.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/vcs.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/build.gradle.kts" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/build.gradle.kts" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/Instrumentor/ByteCodeModifier.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/Instrumentor/ByteCodeModifier.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/TestSimpleCounter.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/TestSimpleCounter.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/Transformer/ByteCodeManager.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/Transformer/ByteCodeManager.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/Transformer/ByteMapLoader.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/Transformer/ByteMapLoader.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/correct/counter/CorrectCounter.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/correct/counter/CorrectCounter.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/simple/counter/SimpleCounter.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/simple/counter/SimpleCounter.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/simple/counter/SimpleCounter.txt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/simple/counter/SimpleCounter.txt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/Scheduler.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/Scheduler.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/Scheduler.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/Scheduler.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ReadEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ReadEvent.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/WriteEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/WriteEvent.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Input_Program/Program_Test_4" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Input_Program/Program_Test_4" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_1.dot" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_1.dot" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_1.png" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_1.png" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_2.dot" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_2.dot" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_2.png" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_2.png" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_3.dot" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_3.dot" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_3.png" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_3.png" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_4.dot" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_4.dot" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_4.png" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_4.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -101,14 +30,13 @@
   <component name="ExternalProjectsManager">
     <system id="GRADLE">
       <state>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
         <projects_view>
+          <option name="groupModules" value="false" />
           <tree_state>
-            <expand>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="JMC4FUN" type="f1a62948:ProjectNode" />
-              </path>
-            </expand>
+            <expand />
             <select />
           </tree_state>
         </projects_view>
@@ -124,7 +52,7 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="/local/home/mkhoshechin/IdeaProjects/JMC4FUN" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="ROOT_SYNC" value="SYNC" />
   </component>
   <component name="ProjectColorInfo">{
@@ -138,32 +66,39 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Build JMC4FUN.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:KTest.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:Main.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestBuggyCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestKotlinCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestSimpleCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Kotlin.CounterKt.executor&quot;: &quot;Run&quot;,
-    &quot;Kotlin.MainKt.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/local/home/mkhoshechin/IdeaProjects/lincheck-Plus-Plus&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "Application.Main.executor": "Run",
+    "Gradle.Build JMC4FUN.executor": "Run",
+    "Gradle.JMC4FUN [build].executor": "Run",
+    "Gradle.JMC4FUN [clean].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:KTest.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:Main.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestBuggyCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestKotlinCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestSimpleCounter.main()].executor": "Run",
+    "Kotlin.CounterKt.executor": "Run",
+    "Kotlin.MainKt.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/local/home/mkhoshechin/IdeaProjects/lincheck-Plus-Plus",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "project.kotlinCompiler",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java" />
@@ -174,13 +109,57 @@
       <recent name="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/kotlin/counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.Main">
+  <component name="RunManager" selected="Gradle.JMC4FUN [build]">
     <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="org.example.JMC4FUN.main" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
+    </configuration>
+    <configuration name="JMC4FUN [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="build" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="JMC4FUN [clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="clean" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
     </configuration>
     <configuration name="CounterKt" type="JetRunConfigurationType" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.example.concurrent.programs.kotlin.counter.CounterKt" />
@@ -191,10 +170,20 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.JMC4FUN [build]" />
+        <item itemvalue="Gradle.JMC4FUN [clean]" />
         <item itemvalue="Application.Main" />
         <item itemvalue="Kotlin.CounterKt" />
       </list>
     </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="jdk-17.0.10-temurin-17.0.10-3183f394aec4-539a993e" />
+        <option value="jdk-21.0.2-openjdk-21.0.2-4caba194b151-322ed176" />
+      </set>
+    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -221,11 +210,6 @@
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
-          <line>33</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.io.IOException" package="java.io" />
           <option name="timeStamp" value="2" />

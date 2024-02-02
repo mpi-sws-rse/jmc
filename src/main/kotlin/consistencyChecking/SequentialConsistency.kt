@@ -60,7 +60,7 @@ class SequentialConsistency {
             val sc = mutableListOf<Pair<Event,Event>>()
 
             // Adding pairs of initialization event to each graph event
-            for (i in 1..<graph.graphEvents.size){
+            for (i in 1..<graph.graphEvents.size) {
                 graph.porf.add(Pair(graph.graphEvents[0],graph.graphEvents[i]))
             }
 
@@ -75,7 +75,7 @@ class SequentialConsistency {
 
                         //Adding fr = rf^{-1} ; co
                         // rf^{-1} = Pair(read,read.rf)
-                        for (j in 0..<graph.COs.size){
+                        for (j in 0..(graph.COs.size-1)){
                             if (read.rf!!.equals(graph.COs[j].firstWrite as Event)){
                                 sc.add(Pair(read,graph.COs[j].secondWrite as Event))
                             }
@@ -97,7 +97,7 @@ class SequentialConsistency {
 
                             //Adding fr = rf^{-1} ; co
                             // rf^{-1} = Pair(read,read.rf)
-                            for (j in 0..<graph.COs.size){
+                            for (j in 0..(graph.COs.size-1)){
                                 if (read.rf!!.equals(graph.COs[j].firstWrite as Event)){
                                     sc.add(Pair(read,graph.COs[j].secondWrite as Event))
                                 }
@@ -108,7 +108,7 @@ class SequentialConsistency {
             }
 
             //This part adds the co edges
-            for (i in 0..<graph.COs.size){
+            for (i in 0..(graph.COs.size-1)){
                 sc.add(Pair(graph.COs[i].firstWrite as Event,graph.COs[i].secondWrite as Event))
             }
 
