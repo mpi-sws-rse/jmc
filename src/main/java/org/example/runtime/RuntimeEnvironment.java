@@ -217,6 +217,14 @@ public class RuntimeEnvironment {
         System.out.println("[Runtime Environment Message] : "+thread.getName() +" requested to MONITOREXIT over the "+lock.toString());
     }
 
+    public static void acquiredLock(Object lock, Thread thread){
+        System.out.println("[Runtime Environment Message] : "+thread.getName() +" acquired the "+lock.toString()+ " lock");
+    }
+
+    public static void releasedLock(Object lock, Thread thread){
+        System.out.println("[Runtime Environment Message] : "+thread.getName() +" released the "+lock.toString()+ " lock");
+    }
+
     //public static void ReadOperation(Object value, Thread thread, String owner, String name, String descriptor){
     //    System.out.println("[Runtime Environment Message] : "+thread.getName()+":"+ thread.getId() +" requested to read the value of "+owner+"."+name+"("+descriptor+")");
     //    System.out.println("[Runtime Environment Message] : "+thread.getName()+":"+ thread.getId() +" read the value of "+owner+"."+name+"("+descriptor+") = "+value);

@@ -504,6 +504,18 @@ public class ByteCodeModifier {
         return false;
     }
 
+    /*
+     * The following method is used to find all the points in the user program where monitors are entered and exited
+     * If a monitor enter point is found, the following instruction is added before it to the corresponding method
+     * 1. RuntimeEnvironment.enterMonitor(Object,Thread);
+     * Also, the following instruction is added after it to the corresponding method
+     * 2. RuntimeEnvironment.acquiredLock(Object,Thread);
+     * If a monitor exit point is found, the following instruction is added before it to the corresponding method
+     * 3. RuntimeEnvironment.exitMonitor(Object,Thread);
+     * Also, the following instruction is added after it to the corresponding method
+     * 4. RuntimeEnvironment.releasedLock(Object,Thread);
+     * The method checks all methods of all classes in the @allByteCode map and adds the instructions to the corresponding methods
+     */
     public void modifyMonitorInstructions() {
         for (Map.Entry<String, byte[]> entry : allByteCode.entrySet()) {
             byte[] byteCode = entry.getValue();
@@ -516,38 +528,64 @@ public class ByteCodeModifier {
                 public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
                     MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
                     return new MethodVisitor(Opcodes.ASM9, mv) {
+                        private boolean isASTORE = false;
                         private boolean isALOAD = false;
+                        private boolean foundMonitorEnter = false;
+                        private boolean foundMonitorExit = false;
                         private int var;
 
+                        private int oldvar;
                         @Override
                         public void visitVarInsn(int opcode, int var) {
-                            if (opcode == Opcodes.ALOAD) {
+                            if (opcode == Opcodes.ASTORE) {
+                                isASTORE = true;
+                                this.var = var;
+                            } else if (opcode == Opcodes.ALOAD) {
                                 isALOAD = true;
                                 this.var = var;
-                            } else {
-                                isALOAD = false;
                             }
                             super.visitVarInsn(opcode, var);
                         }
 
                         @Override
                         public void visitInsn(int opcode) {
-                            if (isALOAD) {
-                                if (opcode == Opcodes.MONITORENTER) {
-                                    mv.visitVarInsn(Opcodes.ALOAD, var);
-                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
-                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "enterMonitor", "(Ljava/lang/Object;Ljava/lang/Thread;)V", false);
-                                } else if (opcode == Opcodes.MONITOREXIT) {
-                                    mv.visitVarInsn(Opcodes.ALOAD, var);
-                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
-                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "exitMonitor", "(Ljava/lang/Object;Ljava/lang/Thread;)V", false);
-                                }
+                            if (opcode == Opcodes.MONITORENTER && isASTORE) {
+                                mv.visitVarInsn(Opcodes.ALOAD, var);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "enterMonitor", "(Ljava/lang/Object;Ljava/lang/Thread;)V", false);
+                                super.visitInsn(opcode);
+                                isASTORE = false;
+                                foundMonitorEnter = true;
+                            } else if (opcode == Opcodes.MONITOREXIT && isALOAD) {
+                                mv.visitVarInsn(Opcodes.ALOAD, var);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "exitMonitor", "(Ljava/lang/Object;Ljava/lang/Thread;)V", false);
+                                super.visitInsn(opcode);
                                 isALOAD = false;
+                                foundMonitorExit = true;
+                                oldvar = var;
+                            } else {
+                                super.visitInsn(opcode);
                             }
-                            super.visitInsn(opcode);
                         }
 
+                        @Override
+                        public void visitLineNumber(int line, Label start) {
+                            super.visitLineNumber(line, start);
+                            if (foundMonitorEnter) {
+                                foundMonitorEnter = false;
+                                mv.visitVarInsn(Opcodes.ALOAD, var);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "acquiredLock", "(Ljava/lang/Object;Ljava/lang/Thread;)V", false);
+                            } else if (foundMonitorExit) {
+                                foundMonitorExit = false;
+                                mv.visitVarInsn(Opcodes.ALOAD, oldvar);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "releasedLock", "(Ljava/lang/Object;Ljava/lang/Thread;)V", false);
+                            }
+                        }
                     };
+                    //
                 }
             };
             cr.accept(cv, 0);
