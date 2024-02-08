@@ -1,16 +1,16 @@
 // class version 61.0 (61)
 // access flags 0x21
-public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends java/lang/Thread {
+public class org/example/concurrent/programs/correct/counter/CorrectCounter extends java/lang/Thread {
 
-  // compiled from: BuggyCounter.java
+  // compiled from: CorrectCounter.java
   // access flags 0x19
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
 
   // access flags 0x0
-  Lorg/example/concurrent/programs/wrong/counter/Counter; counter
+  Lorg/example/concurrent/programs/correct/counter/Counter; counter
 
   // access flags 0x1
-  public <init>(Lorg/example/concurrent/programs/wrong/counter/Counter;)V
+  public <init>(Lorg/example/concurrent/programs/correct/counter/Counter;)V
    L0
     LINENUMBER 5 L0
     ALOAD 0
@@ -21,11 +21,11 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     ALOAD 1
     DUP2
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
+    LDC "org.example.concurrent.programs.correct.counter.CorrectCounter"
     LDC "counter"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
+    LDC "Lorg/example/concurrent/programs/correct/counter/Counter;"
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    PUTFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter : Lorg/example/concurrent/programs/wrong/counter/Counter;
+    PUTFIELD org/example/concurrent/programs/correct/counter/CorrectCounter.counter : Lorg/example/concurrent/programs/correct/counter/Counter;
    L2
     LINENUMBER 7 L2
     RETURN
@@ -41,56 +41,56 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     ALOAD 0
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
+    LDC "org.example.concurrent.programs.correct.counter.CorrectCounter"
     LDC "counter"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
+    LDC "Lorg/example/concurrent/programs/correct/counter/Counter;"
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter : Lorg/example/concurrent/programs/wrong/counter/Counter;
+    GETFIELD org/example/concurrent/programs/correct/counter/CorrectCounter.counter : Lorg/example/concurrent/programs/correct/counter/Counter;
     ALOAD 0
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
+    LDC "org.example.concurrent.programs.correct.counter.CorrectCounter"
     LDC "counter"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
+    LDC "Lorg/example/concurrent/programs/correct/counter/Counter;"
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter : Lorg/example/concurrent/programs/wrong/counter/Counter;
+    GETFIELD org/example/concurrent/programs/correct/counter/CorrectCounter.counter : Lorg/example/concurrent/programs/correct/counter/Counter;
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.Counter"
+    LDC "org.example.concurrent.programs.correct.counter.Counter"
     LDC "count"
     LDC "I"
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    GETFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    GETFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
     ICONST_1
     IADD
     DUP2
     INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.Counter"
+    LDC "org.example.concurrent.programs.correct.counter.Counter"
     LDC "count"
     LDC "I"
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    PUTFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    PUTFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
    L1
     LINENUMBER 11 L1
     GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
     ALOAD 0
-    INVOKEVIRTUAL org/example/concurrent/programs/wrong/counter/BuggyCounter.getName ()Ljava/lang/String;
+    INVOKEVIRTUAL org/example/concurrent/programs/correct/counter/CorrectCounter.getName ()Ljava/lang/String;
     ALOAD 0
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
+    LDC "org.example.concurrent.programs.correct.counter.CorrectCounter"
     LDC "counter"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
+    LDC "Lorg/example/concurrent/programs/correct/counter/Counter;"
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter : Lorg/example/concurrent/programs/wrong/counter/Counter;
+    GETFIELD org/example/concurrent/programs/correct/counter/CorrectCounter.counter : Lorg/example/concurrent/programs/correct/counter/Counter;
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.Counter"
+    LDC "org.example.concurrent.programs.correct.counter.Counter"
     LDC "count"
     LDC "I"
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    GETFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    GETFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
     INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;I)Ljava/lang/String; [
       // handle kind 0x6 : INVOKESTATIC
       java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
@@ -115,8 +115,6 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     INVOKESPECIAL org/example/runtime/SchedulerThread.<init> ()V
     ASTORE 4
     ALOAD 4
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
-    ALOAD 4
     LDC "SchedulerThread"
     INVOKEVIRTUAL org/example/runtime/SchedulerThread.setName (Ljava/lang/String;)V
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
@@ -124,25 +122,25 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.initSchedulerThread (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L0
     LINENUMBER 14 L0
-    NEW org/example/concurrent/programs/wrong/counter/Counter
+    NEW org/example/concurrent/programs/correct/counter/Counter
     DUP
-    INVOKESPECIAL org/example/concurrent/programs/wrong/counter/Counter.<init> ()V
+    INVOKESPECIAL org/example/concurrent/programs/correct/counter/Counter.<init> ()V
     ASTORE 1
    L1
     LINENUMBER 15 L1
-    NEW org/example/concurrent/programs/wrong/counter/BuggyCounter
+    NEW org/example/concurrent/programs/correct/counter/CorrectCounter
     DUP
     ALOAD 1
-    INVOKESPECIAL org/example/concurrent/programs/wrong/counter/BuggyCounter.<init> (Lorg/example/concurrent/programs/wrong/counter/Counter;)V
+    INVOKESPECIAL org/example/concurrent/programs/correct/counter/CorrectCounter.<init> (Lorg/example/concurrent/programs/correct/counter/Counter;)V
     ASTORE 2
     ALOAD 2
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
    L2
     LINENUMBER 16 L2
-    NEW org/example/concurrent/programs/wrong/counter/BuggyCounter
+    NEW org/example/concurrent/programs/correct/counter/CorrectCounter
     DUP
     ALOAD 1
-    INVOKESPECIAL org/example/concurrent/programs/wrong/counter/BuggyCounter.<init> (Lorg/example/concurrent/programs/wrong/counter/Counter;)V
+    INVOKESPECIAL org/example/concurrent/programs/correct/counter/CorrectCounter.<init> (Lorg/example/concurrent/programs/correct/counter/Counter;)V
     ASTORE 3
     ALOAD 3
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V

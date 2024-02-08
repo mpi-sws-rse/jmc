@@ -1,0 +1,50 @@
+// class version 61.0 (61)
+// access flags 0x21
+public class org/example/concurrent/programs/complex/counter/ComplexCounter {
+
+  // compiled from: ComplexCounter.java
+
+  // access flags 0x1
+  public <init>()V
+   L0
+    LINENUMBER 3 L0
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 1
+
+  // access flags 0x9
+  public static main([Ljava/lang/String;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.init (Ljava/lang/Thread;)V
+    NEW org/example/runtime/SchedulerThread
+    DUP
+    INVOKESPECIAL org/example/runtime/SchedulerThread.<init> ()V
+    ASTORE 2
+    ALOAD 2
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
+    ALOAD 2
+    LDC "SchedulerThread"
+    INVOKEVIRTUAL org/example/runtime/SchedulerThread.setName (Ljava/lang/String;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    ALOAD 2
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.initSchedulerThread (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L0
+    LINENUMBER 6 L0
+    NEW org/example/concurrent/programs/complex/counter/Dummy
+    DUP
+    INVOKESPECIAL org/example/concurrent/programs/complex/counter/Dummy.<init> ()V
+    ASTORE 1
+   L1
+    LINENUMBER 7 L1
+    ALOAD 1
+    INVOKEVIRTUAL org/example/concurrent/programs/complex/counter/Dummy.exe ()V
+   L2
+    LINENUMBER 8 L2
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+    MAXSTACK = 2
+    MAXLOCALS = 3
+}

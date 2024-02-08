@@ -26,12 +26,6 @@ public class ByteCodeManager {
         this.path = path;
     }
 
-    public void generateKotlinByteCode() throws InterruptedException, IOException {
-        ProcessBuilder pb = new ProcessBuilder("bash", "-c", "source /etc/environment && kotlinc /home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/kotlin/counter/Counter.kt -include-runtime -d .");
-        Process process = pb.start();
-        process.waitFor();
-    }
-
     public void generateByteCode() {
         // Get the system Java compiler
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();

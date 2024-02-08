@@ -1,6 +1,6 @@
 // class version 61.0 (61)
 // access flags 0x21
-public class org/example/concurrent/programs/wrong/counter/Counter {
+public class org/example/concurrent/programs/correct/counter/Counter {
 
   // compiled from: Counter.java
 
@@ -20,11 +20,11 @@ public class org/example/concurrent/programs/wrong/counter/Counter {
     DUP2
     INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.Counter"
+    LDC "org.example.concurrent.programs.correct.counter.Counter"
     LDC "count"
     LDC "I"
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    PUTFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    PUTFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
     RETURN
     MAXSTACK = 8
     MAXLOCALS = 1

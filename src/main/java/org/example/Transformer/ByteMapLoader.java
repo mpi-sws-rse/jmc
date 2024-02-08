@@ -11,9 +11,12 @@ public class ByteMapLoader extends ClassLoader{
 
     public ByteMapLoader(Map<String, byte[]> classes) throws IOException {
         this.classes = classes;
-        Path classFilePath = Paths.get("/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/Scheduler.class");
+        Path classFilePath = Paths.get("src/main/java/org/example/runtime/RuntimeEnvironment.class");
         byte[] bytecode = Files.readAllBytes(classFilePath);
-        classes.put("org.example.runtime.Scheduler", bytecode);
+        classes.put("org.example.runtime.RuntimeEnvironment", bytecode);
+        classFilePath = Paths.get("src/main/java/org/example/runtime/SchedulerThread.class");
+        bytecode = Files.readAllBytes(classFilePath);
+        classes.put("org.example.runtime.SchedulerThread", bytecode);
     }
 
     @Override

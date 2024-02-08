@@ -1,9 +1,7 @@
 package org.example;
 
-import org.example.Instrumentor.ByteCodeModifier;
+import org.example.instrumentor.ByteCodeModifier;
 import org.example.Transformer.ByteCodeManager;
-import org.example.runtime.Scheduler;
-import parser.Tokenizer;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -19,12 +17,13 @@ public class TestSimpleCounter {
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
         ByteCodeModifier byteCodeModifier = new ByteCodeModifier(allBytecode, packagePath+MainClass);
-        byteCodeModifier.addScheduler();
-        byteCodeModifier.findAllThreads();
-        byteCodeModifier.findAllStartThread();
-        //byteCodeModifier.preRun();
-        //byteCodeModifier.findAllThreadsRun();
-        byteCodeModifier.findAllThreadsRun2();
+
+        byteCodeModifier.modifyThreadCreation();
+        byteCodeModifier.modifyThreadStart();
+        byteCodeModifier.modifyThreadRun();
+        byteCodeModifier.modifyReadWriteOperation();
+        byteCodeModifier.modifyMonitorInstructions();
+        byteCodeModifier.addRuntimeEnvironment();
         byteCodeManager.generateClassFile(byteCodeModifier.allByteCode, MainPath);
         byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode, MainPath);
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, packagePath);

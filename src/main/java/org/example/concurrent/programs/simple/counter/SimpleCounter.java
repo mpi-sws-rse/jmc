@@ -7,17 +7,18 @@ public class SimpleCounter extends Thread{
     }
 
     public void run() {
-        synchronized (this){
             this.count = this.count + 1;
-            System.out.println("["+this.getName()+":"+this.getId()+" message] : "+"The counter value is "+this.count);
-        }
-
+            System.out.println("["+this.getName()+" message] : "+"The counter value is "+this.count);
     }
 
     public static void main(String[] args) {
+        Object lock = new Object();
         SimpleCounter thread1 = new SimpleCounter(0);
         SimpleCounter thread2 = new SimpleCounter(0);
         thread1.start();
         thread2.start();
+        synchronized (lock){
+            System.out.println("["+Thread.currentThread().getName()+" message] : "+"Entered the synchronized block");
+        }
     }
 }

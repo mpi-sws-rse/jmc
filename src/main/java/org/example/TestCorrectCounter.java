@@ -1,6 +1,6 @@
 package org.example;
 
-import org.example.Instrumentor.ByteCodeModifier;
+import org.example.instrumentor.ByteCodeModifier;
 import org.example.Transformer.ByteCodeManager;
 
 import java.io.IOException;
@@ -17,11 +17,13 @@ public class TestCorrectCounter {
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
         ByteCodeModifier byteCodeModifier = new ByteCodeModifier(allBytecode, packagePath+MainClass);
-        byteCodeModifier.addScheduler();
-        byteCodeModifier.findAllThreads();
-        byteCodeModifier.findAllStartThread();
-        //byteCodeModifier.preRun();
-        byteCodeModifier.findAllThreadsRun2();
+
+        byteCodeModifier.modifyThreadCreation();
+        byteCodeModifier.modifyThreadStart();
+        byteCodeModifier.modifyThreadRun();
+        byteCodeModifier.modifyReadWriteOperation();
+        byteCodeModifier.modifyMonitorInstructions();
+        byteCodeModifier.addRuntimeEnvironment();
         byteCodeManager.generateClassFile(byteCodeModifier.allByteCode, MainPath);
         byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode, MainPath);
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, packagePath);

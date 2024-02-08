@@ -8,7 +8,7 @@ public class BuggyCounter extends Thread{
     @Override
     public void run() {
         counter.count = counter.count + 1;
-        System.out.println("["+this.getName()+":"+this.getId()+" message] : "+"The counter value is "+counter.count);
+        System.out.println("["+this.getName()+" message] : "+"The counter value is "+counter.count);
     }
     public static void main(String[] args) {
         Counter counter = new Counter();
