@@ -13,11 +13,10 @@ public class TestSimpleCounter {
         String MainClass = "SimpleCounter";
         String MainPath = "src/main/java/org/example/concurrent/programs/simple/counter/";
         String packagePath = "org.example.concurrent.programs.simple.counter.";
-        ByteCodeManager byteCodeManager = new ByteCodeManager(MainPath, MainClass);
+        ByteCodeManager byteCodeManager = new ByteCodeManager(MainPath , MainClass);
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
         ByteCodeModifier byteCodeModifier = new ByteCodeModifier(allBytecode, packagePath+MainClass);
-
         byteCodeModifier.modifyThreadCreation();
         byteCodeModifier.modifyThreadStart();
         byteCodeModifier.modifyThreadRun();

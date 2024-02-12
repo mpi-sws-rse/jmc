@@ -115,8 +115,6 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     INVOKESPECIAL org/example/runtime/SchedulerThread.<init> ()V
     ASTORE 4
     ALOAD 4
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
-    ALOAD 4
     LDC "SchedulerThread"
     INVOKEVIRTUAL org/example/runtime/SchedulerThread.setName (Ljava/lang/String;)V
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
