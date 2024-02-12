@@ -7,8 +7,10 @@ public class CounterThread extends Thread{
     }
     @Override
     public void run() {
-        counter.count = counter.count + 1;
-        System.out.println("[" + this.getName() + " message] : " + "The counter value is " + counter.count);
+        synchronized (counter) {
+            counter.count = counter.count + 1;
+            System.out.println("[" + this.getName() + " message] : " + "The counter value is " + counter.count);
+        }
     }
 
     public void exe(){

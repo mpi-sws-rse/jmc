@@ -23,8 +23,6 @@ public class org/example/concurrent/programs/complex/counter/ComplexCounter {
     INVOKESPECIAL org/example/runtime/SchedulerThread.<init> ()V
     ASTORE 2
     ALOAD 2
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
-    ALOAD 2
     LDC "SchedulerThread"
     INVOKEVIRTUAL org/example/runtime/SchedulerThread.setName (Ljava/lang/String;)V
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;

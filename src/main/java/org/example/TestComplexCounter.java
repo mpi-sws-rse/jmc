@@ -17,12 +17,12 @@ public class TestComplexCounter {
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
         ByteCodeModifier byteCodeModifier = new ByteCodeModifier(allBytecode, packagePath+MainClass);
-        byteCodeModifier.addRuntimeEnvironment();
         byteCodeModifier.modifyThreadCreation();
         byteCodeModifier.modifyThreadStart();
         byteCodeModifier.modifyThreadRun();
         byteCodeModifier.modifyReadWriteOperation();
         byteCodeModifier.modifyMonitorInstructions();
+        byteCodeModifier.addRuntimeEnvironment();
         byteCodeManager.generateClassFile(byteCodeModifier.allByteCode, MainPath);
         byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode, MainPath);
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, packagePath);

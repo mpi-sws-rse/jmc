@@ -23,11 +23,15 @@ The `SchedulerThread` class is a part of the JMC runtime environment and extends
 Currently, the only implemented algorithm is Random Scheduling, which may overlook certain corner cases. However, we aim to implement a DPOR-based approach to cover all possible execution equivalence classes.
 
 
-The `run()` method represents the implementation of Random Scheduling within the `SchedulerThread` class. When the `SchedulerThread` is initiated, there are at least one and at most two threads concurrently running. Throughout the entire execution of the user program, the `SchedulerThread` remains active. Upon initiation, it enters an idle loop, awaiting a "wait request" from a user program thread via the `RuntimeEnvironment` class. A thread makes this request when it encounters its next instruction to start another thread, completes its execution, or reads or writes a variable.
+The `pickNextRandomThread()` method represents the implementation of Random Scheduling within the `SchedulerThread` class. When the `SchedulerThread` is initiated, there are at least one and at most two threads concurrently running. Throughout the entire execution of the user program, the `SchedulerThread` remains active. Upon initiation in `run()` method, it enters an idle loop, awaiting a "wait request" from a user program thread via the `RuntimeEnvironment` class. A thread makes this request when it encounters its next instruction to start another thread, completes its execution, enter a monitor object, or reads or writes a variable.
 
-Upon receiving such requests, the `SchedulerThread` exits the idle loop and undergoes a synchronization phase to ensure that the requesting thread is in a wait state before entering the scheduling phase. During the scheduling phase, it examines the reason for the wait request. If the request is due to a thread wanting to finish, or a read or write operation, it selects a random thread from the `readyThreadList` to notify before returning to the idle loop.
+Upon receiving such requests, the `SchedulerThread` exits the idle loop and undergoes a synchronization phase to ensure that the requesting thread is in a wait state before entering the scheduling phase. During the scheduling phase, it examines the reason for the wait request. If the request is due to a thread wanting to finish, or a read or write operation, it calls the `pickNextRandomThread()` method.
 
-However, if the request is due to a new thread wanting to start, the `SchedulerThread` handles it differently. When the `SchedulerThread` wants to run a thread, it notifies it. A thread that is ready to start but has not waited cannot be notified at all. To address this scenario, when the `SchedulerThread` identifies that a wait request is due to the start of a thread, it always selects that thread to run by calling its start method, before returning to its idle loop. The newly started thread, modified beforehand by the `instrumentor` package, begins with a wait request as its first instruction. Upon executing this instruction, the `SchedulerThread` re-enters its scheduling phase to select a random thread for the next run.
+However, if the request is due to a new thread wanting to start, or a thread wanting to enter a monitor object,  the `SchedulerThread` handles it differently. In the former case, when the `SchedulerThread` wants to run a thread, it notifies it. A thread that is ready to start but has not waited cannot be notified at all. To address this scenario, when the `SchedulerThread` identifies that a wait request is due to the start of a thread, it always selects that thread to run by calling its start method, before returning to its idle loop. The newly started thread, modified beforehand by the `instrumentor` package, begins with a wait request as its first instruction. Upon executing this instruction, the `SchedulerThread` re-enters its scheduling phase to select a random thread for the next run.
+
+In the latter case, when a thread wants to enter a monitor object, the `SchedulerThread` adds the thread and the monitor object to the `monitorRequest` map. Then it calls the `pickNextRandomThread()` method.
+
+The `pickNextRandomThread()` method checks the number of thread in the `readyThreadList` of the `RuntimeEnvironment` class. If there is only one thread, it selects that thread to run. If there is no thread, it starts to terminate. However, if there are more than one thread, things get a bit more complicated. The `SchedulerThread` selects a random thread from the `readyThreadList` and checks if the selected thread is requested for a monitor by checking the `monitorRequest` map. If the selected thread is requested for a monitor, the `SchedulerThread` checks if the monitor object is free. If the monitor object is free, the `SchedulerThread` selects the selected thread to run. If the monitor object is not free, the `SchedulerThread` selects another random thread from the `readyThreadList`. If the selected thread is not requested for a monitor, the `SchedulerThread` selects the selected thread to run.
 
 Once all user program threads have finished, the `SchedulerThread` itself will also finish. The detailed explanation of the Random Scheduling of the `SchedulerThread` is as follows.
 
@@ -45,6 +49,7 @@ The `RuntimeEnvironment` class contains several static variables and methods tha
 - `locks`: Stores a lock object for each specific thread. The key is the id of the thread and the value is the lock object.
 - `createdThreadList`: Stores the threads that are created.
 - `readyThreadList`: Stores the threads that are ready to run.
+- `monitorList` : Stores the monitor objects and the threads that are waiting to enter the monitor.
 
 ### Methods
 
@@ -57,6 +62,11 @@ The `RuntimeEnvironment` class contains several static variables and methods tha
 - `finishThreadRequest(Thread thread)`: Used by the `thread` to request to finish.
 - `ReadOperation(Object obj, Thread thread, String owner, String name, String descriptor)`: Used by the `thread` when its next instruction is a read operation(`GETFIELD`).
 - `WriteOperation(Object obj, Object newVal, Thread thread, String owner, String name, String descriptor)`: Used by the `thread` when its next instruction is a write operation(`PUTFIELD`).
+- `enterMonitor(Object lock, Thread thread)`: This method is used by the `thread` when its next instruction is a monitor enter(MONITORENTER). It is called by the `thread` to request to enter the monitor of the `lock`.
+- `exitMonitor(Object lock, Thread thread)`: This method is used by the `thread` when its next instruction is a monitor exit(MONITOREXIT). It is called by the `thread` to request to exit the monitor of the `lock`.
+- `acquiredLock(Object lock, Thread thread)`: This method is used by the `thread` when it acquired the `lock`. It is called by the `thread` to inform the Runtime Environment that it acquired the `lock`.
+- `releasedLock(Object lock, Thread thread)`: This method is used by the `thread` when it released the `lock`. It is called by the `thread` to inform the Runtime Environment that it released the `lock`.
+
 
 ## Future Work
 

@@ -7,8 +7,10 @@ public class CorrectCounter extends Thread{
     }
     @Override
     public void run() {
-        counter.count = counter.count + 1;
-        System.out.println("[" + this.getName() + " message] : " + "The counter value is " + counter.count);
+        synchronized (counter){
+            counter.count = counter.count + 1;
+            System.out.println("[" + this.getName() + " message] : " + "The counter value is " + counter.count);
+        }
     }
     public static void main(String[] args) {
         Counter counter = new Counter();

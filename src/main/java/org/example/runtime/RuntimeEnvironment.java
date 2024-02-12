@@ -16,6 +16,10 @@ public class RuntimeEnvironment {
     public static Object threadWaitReqLock = new Object();
     // @threadStartReq is used to store the thread that requested to start
     public static Thread threadStartReq = null;
+    // @threadEnterMonitorReq is used to store the thread that requested to enter the monitor
+    public static Thread threadEnterMonitorReq = null;
+    // @objectEnterMonitorReq is used to store the object that a thread requested to enter the monitor
+    public static Object objectEnterMonitorReq = null;
     // @locks is used to store the locks for the threads. The key is the id of the thread and the value is the lock object.
     // @locks.get(@thread.getId()) is used to synchronize @thread and the SchedulerThread which are running concurrently.
     public static Map<Long, Object> locks = new HashMap<>();
@@ -23,6 +27,8 @@ public class RuntimeEnvironment {
     public static List<Thread> createdThreadList = new ArrayList<>();
     // @readyThreadList is used to store the threads that are ready to run
     public static List<Thread> readyThreadList = new ArrayList<>();
+    // @monitorList is used to store the monitor objects which are acquired by the threads
+    public static Map<Object, Thread> monitorList = new HashMap<>();
 
     // The constructor is private to prevent the instantiation of the class
     private RuntimeEnvironment(){}
@@ -209,20 +215,48 @@ public class RuntimeEnvironment {
         }
     }
 
+    /*
+     * The @enterMonitor method is used by the @thread when its next instruction is a monitor enter(MONITORENTER).
+     * It is called by the @thread to request to enter the monitor of the @lock.
+     * After this request, the @thread will request to wait to hand over the control to the SchedulerThread for deciding which thread to run.
+     * As the SchedulerThread needs to know that the @thread requested to enter the monitor, the @threadEnterMonitorReq and @objectEnterMonitorReq are assigned to the @thread and @lock respectively.
+     */
     public static void enterMonitor(Object lock, Thread thread){
         System.out.println("[Runtime Environment Message] : "+thread.getName() +" requested to MONITORENTER over the "+lock.toString());
+        threadEnterMonitorReq = thread;
+        objectEnterMonitorReq = lock;
+        waitRequest(thread);
     }
 
+    /*
+     * The @exitMonitor method is used by the @thread when its next instruction is a monitor exit(MONITOREXIT).
+     * TODO() :  It is called by the @thread to request to exit the monitor of the @lock.
+     * TODO() : After this request, the @thread will request to wait to hand over the control to the SchedulerThread for deciding which thread to run.
+     */
     public static void exitMonitor(Object lock, Thread thread){
         System.out.println("[Runtime Environment Message] : "+thread.getName() +" requested to MONITOREXIT over the "+lock.toString());
     }
 
+    /*
+     * The @acquiredLock method is used by the @thread when it acquired the @lock.
+     * It is called by the @thread to inform the Runtime Environment that it acquired the @lock.
+     * After this request, the @lock and @thread are added to the @monitorList.
+     */
     public static void acquiredLock(Object lock, Thread thread){
         System.out.println("[Runtime Environment Message] : "+thread.getName() +" acquired the "+lock.toString()+ " lock");
+        monitorList.put(lock, thread);
+        System.out.println("[Runtime Environment Message] : ("+lock.toString() +", "+thread.getName()+") added to the monitorList of the Runtime Environment");
     }
 
+    /*
+     * The @releasedLock method is used by the @thread when it released the @lock.
+     * It is called by the @thread to inform the Runtime Environment that it released the @lock.
+     * After this request, the @lock and @thread are removed from the @monitorList.
+     */
     public static void releasedLock(Object lock, Thread thread){
         System.out.println("[Runtime Environment Message] : "+thread.getName() +" released the "+lock.toString()+ " lock");
+        monitorList.remove(lock, thread);
+        System.out.println("[Runtime Environment Message] : ("+lock.toString() +", "+thread.getName()+") removed from the monitorList of the Runtime Environment");
     }
 
     //public static void ReadOperation(Object value, Thread thread, String owner, String name, String descriptor){

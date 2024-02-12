@@ -34,10 +34,31 @@ public class org/example/concurrent/programs/complex/counter/CounterThread exten
 
   // access flags 0x1
   public run()V
+    TRYCATCHBLOCK L0 L1 L2 null
+    TRYCATCHBLOCK L2 L3 L2 null
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L4
+    LINENUMBER 10 L4
+    ALOAD 0
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.example.concurrent.programs.complex.counter.CounterThread"
+    LDC "counter"
+    LDC "Lorg/example/concurrent/programs/complex/counter/Counter;"
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/example/concurrent/programs/complex/counter/CounterThread.counter : Lorg/example/concurrent/programs/complex/counter/Counter;
+    DUP
+    ASTORE 1
+    ALOAD 1
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.enterMonitor (Ljava/lang/Object;Ljava/lang/Thread;)V
+    MONITORENTER
    L0
-    LINENUMBER 10 L0
+    LINENUMBER 11 L0
+    ALOAD 1
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.acquiredLock (Ljava/lang/Object;Ljava/lang/Thread;)V
     ALOAD 0
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
@@ -71,8 +92,8 @@ public class org/example/concurrent/programs/complex/counter/CounterThread exten
     LDC "I"
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/complex/counter/Counter.count : I
-   L1
-    LINENUMBER 11 L1
+   L5
+    LINENUMBER 12 L5
     GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
     ALOAD 0
     INVOKEVIRTUAL org/example/concurrent/programs/complex/counter/CounterThread.getName ()Ljava/lang/String;
@@ -98,24 +119,50 @@ public class org/example/concurrent/programs/complex/counter/CounterThread exten
       "[\u0001 message] : The counter value is \u0001"
     ]
     INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L6
+    LINENUMBER 13 L6
+    ALOAD 1
+    ALOAD 1
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.exitMonitor (Ljava/lang/Object;Ljava/lang/Thread;)V
+    MONITOREXIT
+   L1
+    GOTO L7
    L2
-    LINENUMBER 12 L2
+   FRAME FULL [org/example/concurrent/programs/complex/counter/CounterThread org/example/concurrent/programs/complex/counter/Counter] [java/lang/Throwable]
+    ASTORE 2
+    ALOAD 1
+    ALOAD 1
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.exitMonitor (Ljava/lang/Object;Ljava/lang/Thread;)V
+    MONITOREXIT
+   L3
+    ALOAD 2
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    ATHROW
+   L7
+    LINENUMBER 14 L7
+   FRAME SAME
+    ALOAD 1
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.releasedLock (Ljava/lang/Object;Ljava/lang/Thread;)V
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
     RETURN
     MAXSTACK = 8
-    MAXLOCALS = 1
+    MAXLOCALS = 3
 
   // access flags 0x1
   public exe()V
    L0
-    LINENUMBER 15 L0
+    LINENUMBER 17 L0
     ALOAD 0
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     ALOAD 0
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L1
-    LINENUMBER 16 L1
+    LINENUMBER 18 L1
     RETURN
     MAXSTACK = 3
     MAXLOCALS = 1
