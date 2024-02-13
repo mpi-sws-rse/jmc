@@ -15,7 +15,7 @@ public class BuggyCounter extends Thread{
             System.out.println("[" + this.getName() + " message] : " + "The counter1 value is " + counter1.count);
             synchronized (this.counter2){
                 this.counter2.count++;
-                System.out.println("[" + this.getName() + " message] : " + "The counter1 value is " + counter1.count);
+                System.out.println("[" + this.getName() + " message] : " + "The counter2 value is " + counter1.count);
             }
         }
     }
