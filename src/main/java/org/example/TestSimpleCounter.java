@@ -22,6 +22,7 @@ public class TestSimpleCounter {
         byteCodeModifier.modifyThreadRun();
         byteCodeModifier.modifyReadWriteOperation();
         byteCodeModifier.modifyMonitorInstructions();
+        byteCodeModifier.modifyThreadJoin();
         byteCodeModifier.addRuntimeEnvironment();
         byteCodeManager.generateClassFile(byteCodeModifier.allByteCode, MainPath);
         byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode, MainPath);

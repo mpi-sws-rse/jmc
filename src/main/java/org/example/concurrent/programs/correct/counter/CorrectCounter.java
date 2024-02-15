@@ -12,11 +12,17 @@ public class CorrectCounter extends Thread{
             System.out.println("[" + this.getName() + " message] : " + "The counter value is " + counter.count);
         }
     }
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         Counter counter = new Counter();
         CorrectCounter thread1 = new CorrectCounter(counter);
         CorrectCounter thread2 = new CorrectCounter(counter);
         thread1.start();
         thread2.start();
+        // new
+        thread1.join();
+        // new
+        thread2.join();
+        // new : The assert should pass if synchronized, fail if not
+        assert(counter.count == 2) : "["+Thread.currentThread().getName()+" message] : The assert did not pass, the counter value is " + counter.count;
     }
 }

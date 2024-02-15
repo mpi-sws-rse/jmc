@@ -9,6 +9,9 @@ public class SchedulerThread extends Thread{
     // If the monitor is available, the SchedulerThread selects the thread to run and removes the thread from @monitorRequest. Otherwise, the SchedulerThread selects another thread to run.
     private Map<Thread, Object> monitorRequest = new HashMap<>();
 
+    // The @joinRequest is used to store the threads that are waiting to join another thread.
+    private Map<Thread, Thread> joinRequest = new HashMap<>();
+
     // The @isFinished variable is used to indicate whether the @SchedulerThread is finished or not.
     private boolean isFinished = false;
 
@@ -78,6 +81,11 @@ public class SchedulerThread extends Thread{
                     System.out.println("[Scheduler Thread Message] : There is no deadlock between the threads in using the monitors");
                     pickNextRandomThread();
                 }
+            } else if (RuntimeEnvironment.threadJoinReq != null){
+                joinRequest.put(RuntimeEnvironment.threadJoinReq, RuntimeEnvironment.threadJoinRes);
+                RuntimeEnvironment.threadJoinReq = null;
+                RuntimeEnvironment.threadJoinRes = null;
+                pickNextRandomThread();
             } else{
                 pickNextRandomThread();
             }
@@ -121,6 +129,21 @@ public class SchedulerThread extends Thread{
                     synchronized (RuntimeEnvironment.locks.get(randomElement.getId())){
                         RuntimeEnvironment.locks.get(randomElement.getId()).notify();
                     }
+                }
+            } else if (joinRequest.containsKey(randomElement)){
+                Thread joinRes = joinRequest.get(randomElement);
+                if (!RuntimeEnvironment.createdThreadList.contains(joinRes) && !RuntimeEnvironment.readyThreadList.contains(joinRes)){
+                    joinRequest.remove(randomElement, joinRes);
+                    System.out.println("[Scheduler Thread Message] : As "+joinRes.getName()+" is not in the createdThreadList or the readyThreadList, the request of "+randomElement.getName()+" to join "+joinRes.getName()+" is removed from the joinRequest");
+                    System.out.println("[Scheduler Thread Message] : "+randomElement.getName()+ " is selected to run");
+                    synchronized (RuntimeEnvironment.locks.get(randomElement.getId())){
+                        RuntimeEnvironment.locks.get(randomElement.getId()).notify();
+                    }
+                } else {
+                    System.out.println("[Scheduler Thread Message] : "+randomElement.getName()+ " is requested to join "+joinRes.getName());
+                    System.out.println("[Scheduler Thread Message] : However, "+joinRes.getName()+" is not finished yet");
+                    System.out.println("[Scheduler Thread Message] : The scheduler thread is going to select another thread to run");
+                    pickNextRandomThread();
                 }
             } else {
                 System.out.println("[Scheduler Thread Message] : "+randomElement.getName()+ " is selected to run");

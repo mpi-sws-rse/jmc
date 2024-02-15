@@ -20,6 +20,10 @@ public class RuntimeEnvironment {
     public static Thread threadEnterMonitorReq = null;
     // @objectEnterMonitorReq is used to store the object that a thread requested to enter the monitor
     public static Object objectEnterMonitorReq = null;
+    // @threadJoinReq is used to store the thread that requested to join to other thread
+    public static Thread threadJoinReq = null;
+    // @threadJoinRes is used to store the thread that another thread requested to join over it
+    public static Thread threadJoinRes = null;
     // @locks is used to store the locks for the threads. The key is the id of the thread and the value is the lock object.
     // @locks.get(@thread.getId()) is used to synchronize @thread and the SchedulerThread which are running concurrently.
     public static Map<Long, Object> locks = new HashMap<>();
@@ -97,6 +101,18 @@ public class RuntimeEnvironment {
     }
 
     /*
+     * The @threadJoin method is used by the @threadReq when its next instruction is a join() over the @threadRes.
+     * After this request, the @threadReq will request to wait to hand over the control to the SchedulerThread for deciding which thread to run.
+     * As the SchedulerThread needs to know that the @threadReq requested to join over the @threadRes, the @threadJoinReq and @threadJoinRes are assigned to the @threadReq and @threadRes respectively.
+     */
+    public static void threadJoin(Thread threadReq, Thread threadRes){
+        System.out.println("[Runtime Environment Message] : "+threadReq.getName() +" requested to join over the "+threadRes.getName());
+        threadJoinReq = threadReq;
+        threadJoinRes = threadRes;
+        waitRequest(threadReq);
+    }
+
+    /*
      * The @getPermission method is used to give the permission to the @thread to run.
      * It is called by the SchedulerThread to give the permission from the @thread to run.
      * For now, the @thread is the main thread of the program.
@@ -159,7 +175,7 @@ public class RuntimeEnvironment {
      */
     public static void finishThreadRequest(Thread thread){
         synchronized (locks.get(thread.getId())){
-            System.out.println("[Runtime Environment Message] : "+thread.getName()+":"+ thread.getId() +" has requested to FINISH");
+            System.out.println("[Runtime Environment Message] : "+thread.getName()+" has requested to FINISH");
 
             /*
              * There could be a race condition on @threadWaitReq in the following assignment statement. While the @thread is

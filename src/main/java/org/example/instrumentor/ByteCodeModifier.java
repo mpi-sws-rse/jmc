@@ -43,6 +43,11 @@ public class ByteCodeModifier {
     private List<String> threadRunCandidate = new ArrayList<>();
 
     /*
+     * Following list is used iterative analysis to find all the classes that contains methods which join threads
+     */
+    private List<String> threadJoinCandidate = new ArrayList<>();
+
+    /*
      * Following constructor is used to initialize the @allByteCode and @mainClassName variables
      * @allByteCode : contains the bytecode of the compiled classes
      * @mainClassName : contains the name of the main class of the user program
@@ -66,7 +71,7 @@ public class ByteCodeModifier {
         byte[] byteCode = allByteCode.get(mainClassName);
         byte[] modifiedByteCode;
         //getRuntimeEnvironmentVarIndex(byteCode);
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         nextVarIndex = getNextVarIndex(byteCode, "main", "([Ljava/lang/String;)V");
         /*
          * Following section defines an adapterVisitor which inserts proper instructions
@@ -121,7 +126,7 @@ public class ByteCodeModifier {
      * @nextVarIndex : contains the index of the next local variable
      */
     private int getNextVarIndex(byte[] byteCode, String methodName, String methodDescriptor) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -157,7 +162,7 @@ public class ByteCodeModifier {
             byte [] byteCode = allByteCode.get(newClassName);
             byte[] modifiedByteCode;
 
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
             ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
                 @Override
@@ -240,6 +245,68 @@ public class ByteCodeModifier {
         }
     }
 
+    public void modifyThreadJoin(){
+        threadJoinCandidate.add(mainClassName);
+        while (!threadJoinCandidate.isEmpty()) {
+            String newClassName = threadJoinCandidate.remove(threadJoinCandidate.size() - 1);
+            byte[] byteCode = allByteCode.get(newClassName);
+            byte[] modifiedByteCode;
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+                @Override
+                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                    MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+                    methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+                        private boolean isALOAD = false;
+                        private int varThread = -1;
+
+                        @Override
+                        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                            if (opcode == Opcodes.INVOKEVIRTUAL && name.equals("join") && isALOAD && isCastableToThread(owner)) {
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+                                mv.visitVarInsn(Opcodes.ALOAD, varThread);
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "threadJoin", "(Ljava/lang/Thread;Ljava/lang/Thread;)V", false);
+                                resetFlags();
+                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                            } else {
+                                String ownerClassName = owner.replace("/", ".");
+                                if (!ownerClassName.equals(newClassName) && !threadJoinCandidate.contains(ownerClassName) && allByteCode.containsKey(ownerClassName)) {
+                                    threadJoinCandidate.add(ownerClassName);
+                                }
+                                resetFlags();
+                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                            }
+                        }
+
+                        @Override
+                        public void visitVarInsn(int opcode, int var) {
+                            if (opcode == Opcodes.ALOAD) {
+                                resetFlags();
+                                isALOAD = true;
+                                varThread = var;
+                                super.visitVarInsn(opcode, var);
+                            } else {
+                                resetFlags();
+                                super.visitVarInsn(opcode, var);
+                            }
+
+                        }
+
+                        private void resetFlags() {
+                            isALOAD = false;
+                            varThread = -1;
+                        }
+                    };
+                    return methodVisitor;
+                }
+            };
+            ClassReader cr = new ClassReader(byteCode);
+            cr.accept(classVisitor, 0);
+            modifiedByteCode = cw.toByteArray();
+            allByteCode.put(newClassName,modifiedByteCode);
+        }
+    }
+
     /*
      * The following method is used to find all the points in the user program where threads are started
      * If such a point is found, the following instruction is added before the start of the thread to the corresponding method
@@ -255,7 +322,7 @@ public class ByteCodeModifier {
             String newClassName = threadStartCandidate.remove(threadStartCandidate.size() - 1);
             byte[] byteCode = allByteCode.get(newClassName);
             byte[] modifiedByteCode;
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
             ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
                 @Override
                 public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -331,7 +398,7 @@ public class ByteCodeModifier {
         for (String newClass : allByteCode.keySet()) {
             byte[] byteCode = allByteCode.get(newClass);
             byte[] modifiedByteCode;
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
             ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
                 @Override
                 public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -425,7 +492,7 @@ public class ByteCodeModifier {
             String newClass = threadRunCandidate.remove(threadRunCandidate.size()-1);
             byte [] byteCode = allByteCode.get(newClass);
             byte[] modifiedByteCode;
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
             ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
 
                 private boolean noRunFound = true;
@@ -600,7 +667,7 @@ public class ByteCodeModifier {
 //    public byte[] addRuntimeEnvironment(byte[] byteCode) {
 //        byte[] modifiedByteCode;
 //        //getRuntimeEnvironmentVarIndex(byteCode);
-//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 //
 //        /*
 //         * Following section defines an adapterVisitor which inserts proper instructions
@@ -655,7 +722,7 @@ public class ByteCodeModifier {
      */
 //        public byte [] modifyThreadCreation(byte [] byteCode){
 //            byte[] modifiedByteCode;
-//            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 //
 //            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
 //                @Override
@@ -737,7 +804,7 @@ public class ByteCodeModifier {
      */
 //        public byte[] modifyThreadStart(byte [] byteCode){
 //            byte[] modifiedByteCode;
-//            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 //            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
 //                @Override
 //                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -797,7 +864,7 @@ public class ByteCodeModifier {
      */
 //        public byte [] findAllRuns(byte [] byteCode){
 //            byte[] modifiedByteCode;
-//            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 //            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
 //                private String className;
 //                private boolean isThreadSubclass;
@@ -843,7 +910,7 @@ public class ByteCodeModifier {
     //    public void modifyThreadCreation(){
 //        byte [] byteCode = allByteCode.get(mainClassName);
 //        byte[] modifiedByteCode;
-//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 //
 //        ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
 //            @Override
@@ -936,7 +1003,7 @@ public class ByteCodeModifier {
 //        System.out.println("[Debugging Message-main Class] : We newClassName = "+newClassName);
 //        byte [] byteCode = allByteCode.get(newClassName);
 //        byte[] modifiedByteCode;
-//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 //
 //        ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
 //            @Override
@@ -1024,7 +1091,7 @@ public class ByteCodeModifier {
     //    public void modifyThreadStart(){
 //        byte [] byteCode = allByteCode.get(mainClassName);
 //        byte[] modifiedByteCode;
-//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 //        ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
 //            @Override
 //            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -1095,7 +1162,7 @@ public class ByteCodeModifier {
 //    private void continuefindAllStartThread(String newClassName){
 //        byte [] byteCode = allByteCode.get(newClassName);
 //        byte[] modifiedByteCode;
-//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 //        ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
 //            @Override
 //            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -1164,7 +1231,7 @@ public class ByteCodeModifier {
 //            String newClass = threadRunCandidate.remove(threadRunCandidate.size()-1);
 //            byte [] byteCode = allByteCode.get(newClass);
 //            byte[] modifiedByteCode;
-//            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+//            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 //            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
 //
 //                private boolean noRunFound = true;

@@ -1,18 +1,18 @@
 package org.example;
 
-import org.example.instrumentor.ByteCodeModifier;
 import org.example.Transformer.ByteCodeManager;
+import org.example.instrumentor.ByteCodeModifier;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
-public class TestComplexCounter {
-
+public class TestInconsistentCounter {
     public static void main(String[] args) throws IOException, InvocationTargetException, NoSuchMethodException, IllegalAccessException, ClassNotFoundException {
-        String MainClass = "ComplexCounter";
-        String MainPath = "src/main/java/org/example/concurrent/programs/complex/counter/";
-        String packagePath = "org.example.concurrent.programs.complex.counter.";
+
+        String MainClass = "InconsistentCounter";
+        String MainPath = "src/main/java/org/example/concurrent/programs/inconsistent/counter/";
+        String packagePath = "org.example.concurrent.programs.inconsistent.counter.";
         ByteCodeManager byteCodeManager = new ByteCodeManager(MainPath , MainClass);
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
