@@ -75,34 +75,7 @@ public class org/example/concurrent/programs/inconsistent/counter/InconsistentCo
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/inconsistent/counter/Counter.count : I
    L1
-    LINENUMBER 14 L1
-    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
-    ALOAD 0
-    INVOKEVIRTUAL org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.getName ()Ljava/lang/String;
-    ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.inconsistent.counter.InconsistentCounter"
-    LDC "counter"
-    LDC "Lorg/example/concurrent/programs/inconsistent/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    GETFIELD org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.counter : Lorg/example/concurrent/programs/inconsistent/counter/Counter;
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.inconsistent.counter.Counter"
-    LDC "count"
-    LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    GETFIELD org/example/concurrent/programs/inconsistent/counter/Counter.count : I
-    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;I)Ljava/lang/String; [
-      // handle kind 0x6 : INVOKESTATIC
-      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
-      // arguments:
-      "[\u0001 message] : The counter value is \u0001"
-    ]
-    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
-   L2
-    LINENUMBER 15 L2
+    LINENUMBER 15 L1
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
     RETURN
@@ -175,8 +148,28 @@ public class org/example/concurrent/programs/inconsistent/counter/InconsistentCo
     INVOKEVIRTUAL org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.join ()V
    L7
     LINENUMBER 25 L7
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKEVIRTUAL java/lang/Thread.getName ()Ljava/lang/String;
+    ALOAD 1
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.example.concurrent.programs.inconsistent.counter.Counter"
+    LDC "count"
+    LDC "I"
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/example/concurrent/programs/inconsistent/counter/Counter.count : I
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;I)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "[\u0001 message] : The value of Counter is: \u0001"
+    ]
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L8
+    LINENUMBER 26 L8
     GETSTATIC org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.$assertionsDisabled : Z
-    IFNE L8
+    IFNE L9
     ALOAD 1
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
@@ -186,7 +179,7 @@ public class org/example/concurrent/programs/inconsistent/counter/InconsistentCo
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/inconsistent/counter/Counter.count : I
     ICONST_2
-    IF_ICMPEQ L8
+    IF_ICMPEQ L9
     NEW java/lang/AssertionError
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
@@ -207,8 +200,8 @@ public class org/example/concurrent/programs/inconsistent/counter/InconsistentCo
     ]
     INVOKESPECIAL java/lang/AssertionError.<init> (Ljava/lang/Object;)V
     ATHROW
-   L8
-    LINENUMBER 26 L8
+   L9
+    LINENUMBER 27 L9
    FRAME FULL [[Ljava/lang/String; org/example/concurrent/programs/inconsistent/counter/Counter org/example/concurrent/programs/inconsistent/counter/InconsistentCounter org/example/concurrent/programs/inconsistent/counter/InconsistentCounter org/example/runtime/SchedulerThread] [org/example/concurrent/programs/inconsistent/counter/InconsistentCounter org/example/concurrent/programs/inconsistent/counter/InconsistentCounter]
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V

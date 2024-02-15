@@ -11,7 +11,7 @@ public class InconsistentCounter extends Thread{
     @Override
     public void run() {
         counter.count = counter.count + 1;
-        System.out.println("[" + this.getName() + " message] : " + "The counter value is " + counter.count);
+        //System.out.println("[" + this.getName() + " message] : " + "The counter value is " + counter.count);
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -22,6 +22,7 @@ public class InconsistentCounter extends Thread{
         thread2.start();
         thread1.join();
         thread2.join();
+        System.out.println("[" + Thread.currentThread().getName() + " message] : The value of Counter is: " + counter.count);
         assert(counter.count == 2) : "["+Thread.currentThread().getName()+" message] : ***The assert did not pass, the counter value is " + counter.count+"***";
     }
 }
