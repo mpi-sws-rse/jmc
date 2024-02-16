@@ -13,35 +13,29 @@ public class ByteCodeModifier {
      * It is used whenever a new local variable is needed inside a method
      */
     private int nextVarIndex;
-
     /*
      * Following map is used to store the bytecode of the compiled classes
      * The key of the map is the name of the class and the value is the bytecode of the class
      * These classes are the user program classes that are to be modified
      */
     public Map<String,byte[]> allByteCode;
-
     /*
      * Following variable is used to store the name of the main class of the user program
      * The main class is the class that contains the main method
      */
     private String mainClassName;
-
     /*
      * Following list is used in iterative analysis to find all the classes that contains methods which create threads
      */
     private List<String> threadClassCandidate = new ArrayList<>();
-
     /*
      * Following list is used in iterative analysis to find all the classes that contains methods which start threads
      */
     private List<String> threadStartCandidate = new ArrayList<>();
-
     /*
      * Following list is used iterative analysis to find all the classes that override the run method
      */
     private List<String> threadRunCandidate = new ArrayList<>();
-
     /*
      * Following list is used iterative analysis to find all the classes that contains methods which join threads
      */
@@ -245,6 +239,12 @@ public class ByteCodeModifier {
         }
     }
 
+    /*
+     * The following method is used to find all the points in the user program where threads call the join method
+     * If such a point is found, the following instruction is added before the join of the thread to the corresponding method
+     * 1. RuntimeEnvironment.threadJoin(Thread.currentThread(),thread);
+     * The method first starts by all methods of the main class and then iteratively analyzes all the classes that have a method which is called by one of the methods of the main class
+     */
     public void modifyThreadJoin(){
         threadJoinCandidate.add(mainClassName);
         while (!threadJoinCandidate.isEmpty()) {
@@ -315,7 +315,6 @@ public class ByteCodeModifier {
      * Moreover, the method also adds the class of the thread that is started to the @threadRunCandidate list
      * It will be used by the @threadRunCandidate method to find all the classes that override the run method
      */
-
     public void modifyThreadStart(){
         threadStartCandidate.add(mainClassName);
         while (!threadStartCandidate.isEmpty()) {
@@ -477,7 +476,6 @@ public class ByteCodeModifier {
         }
     }
 
-
     /*
      * The following method is used to find all the overridden run methods in the user program
      * If such a method is found, the following instruction is added to the beginning of the method
@@ -555,6 +553,9 @@ public class ByteCodeModifier {
         }
     }
 
+    /*
+     * The following method is used to check if @className is castable to Thread
+     */
     private boolean isCastableToThread(String className) {
         Class<?> clazz;
         try {

@@ -1,0 +1,9 @@
+digraph {
+11 [label="1:1.W(a)"]
+root -> 11;
+21 [label="2:1.W(a)"]
+root -> 21;
+root -> 11[color=blue, label="co"];
+root -> 21[color=blue, label="co"];
+11 -> 21[color=blue, label="co"];
+}

@@ -28,7 +28,7 @@ fun main() {
      It captures all the write and read events from each tread.
      */
 
-    tknzr.readFile("src/main/resources/Input_Program/Program_Test_4")
+    tknzr.readFile("src/main/resources/Input_Program/Program_Test_5")
 
     /*
      For testing different programs use these :

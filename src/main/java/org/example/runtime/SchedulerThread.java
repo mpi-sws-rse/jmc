@@ -15,8 +15,6 @@ public class SchedulerThread extends Thread{
     // The @isFinished variable is used to indicate whether the @SchedulerThread is finished or not.
     private boolean isFinished = false;
 
-    private int numofContextSwitches = 0 ;
-
     @Override
     public void run() {
         /*
@@ -92,7 +90,6 @@ public class SchedulerThread extends Thread{
                 pickNextRandomThread();
             }
         }
-        System.out.println("[Scheduler Thread Message] : The number of context switches is "+numofContextSwitches);
         System.out.println("**********************************************************************************************");
         System.out.println("[*** The SchedulerThread requested to FINISH***]");
         System.out.println("**********************************************************************************************");
@@ -111,7 +108,6 @@ public class SchedulerThread extends Thread{
      * Otherwise, the @SchedulerThread selects another thread to run.
      */
     private void pickNextRandomThread(){
-        numofContextSwitches++;
         if (RuntimeEnvironment.readyThreadList.size() > 1){
             Random random = new Random();
             int randomIndex = random.nextInt(RuntimeEnvironment.readyThreadList.size()); // Generate a random index
