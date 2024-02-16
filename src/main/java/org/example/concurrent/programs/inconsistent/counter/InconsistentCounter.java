@@ -22,7 +22,14 @@ public class InconsistentCounter extends Thread{
         thread2.start();
         thread1.join();
         thread2.join();
-        System.out.println("[" + Thread.currentThread().getName() + " message] : The value of Counter is: " + counter.count);
-        assert(counter.count == 2) : "["+Thread.currentThread().getName()+" message] : ***The assert did not pass, the counter value is " + counter.count+"***";
+
+        try {
+            assert(counter.count == 2) : " ***The assert did not pass, the counter value is " + counter.count+"***";
+        } catch (AssertionError e) {
+            System.out.println(e.getMessage());
+        }
+
+        System.out.println("["+Thread.currentThread().getName()+" message] : If you see this message, the assert passed. The counter value is " + counter.count);
+
     }
 }

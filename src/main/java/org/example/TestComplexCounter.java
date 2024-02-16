@@ -23,6 +23,7 @@ public class TestComplexCounter {
         byteCodeModifier.modifyReadWriteOperation();
         byteCodeModifier.modifyMonitorInstructions();
         byteCodeModifier.modifyThreadJoin();
+        byteCodeModifier.modifyAssert();
         byteCodeModifier.addRuntimeEnvironment();
         byteCodeManager.generateClassFile(byteCodeModifier.allByteCode, MainPath);
         byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode, MainPath);

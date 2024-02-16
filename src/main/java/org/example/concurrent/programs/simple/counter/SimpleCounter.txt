@@ -162,19 +162,17 @@ public class org/example/concurrent/programs/simple/counter/SimpleCounter extend
     LINENUMBER 19 L2
     ALOAD 1
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    ALOAD 1
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L3
     LINENUMBER 20 L3
     ALOAD 2
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    ALOAD 2
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L4
     LINENUMBER 21 L4
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
     RETURN
-    MAXSTACK = 4
+    MAXSTACK = 3
     MAXLOCALS = 4
 }

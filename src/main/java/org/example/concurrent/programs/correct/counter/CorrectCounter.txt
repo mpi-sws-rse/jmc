@@ -158,26 +158,27 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
 
   // access flags 0x9
   public static main([Ljava/lang/String;)V throws java/lang/InterruptedException 
+    TRYCATCHBLOCK L0 L1 L2 java/lang/AssertionError
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.init (Ljava/lang/Thread;)V
     NEW org/example/runtime/SchedulerThread
     DUP
     INVOKESPECIAL org/example/runtime/SchedulerThread.<init> ()V
-    ASTORE 4
-    ALOAD 4
+    ASTORE 5
+    ALOAD 5
     LDC "SchedulerThread"
     INVOKEVIRTUAL org/example/runtime/SchedulerThread.setName (Ljava/lang/String;)V
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    ALOAD 4
+    ALOAD 5
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.initSchedulerThread (Ljava/lang/Thread;Ljava/lang/Thread;)V
-   L0
-    LINENUMBER 16 L0
+   L3
+    LINENUMBER 16 L3
     NEW org/example/concurrent/programs/correct/counter/Counter
     DUP
     INVOKESPECIAL org/example/concurrent/programs/correct/counter/Counter.<init> ()V
     ASTORE 1
-   L1
-    LINENUMBER 17 L1
+   L4
+    LINENUMBER 17 L4
     NEW org/example/concurrent/programs/correct/counter/CorrectCounter
     DUP
     ALOAD 1
@@ -185,8 +186,8 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     ASTORE 2
     ALOAD 2
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
-   L2
-    LINENUMBER 18 L2
+   L5
+    LINENUMBER 18 L5
     NEW org/example/concurrent/programs/correct/counter/CorrectCounter
     DUP
     ALOAD 1
@@ -194,34 +195,34 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     ASTORE 3
     ALOAD 3
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
-   L3
-    LINENUMBER 19 L3
-    ALOAD 2
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    ALOAD 2
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
-   L4
-    LINENUMBER 20 L4
-    ALOAD 3
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    ALOAD 3
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
-   L5
-    LINENUMBER 22 L5
-    ALOAD 2
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    ALOAD 2
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L6
-    LINENUMBER 24 L6
+    LINENUMBER 19 L6
+    ALOAD 2
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L7
+    LINENUMBER 20 L7
+    ALOAD 3
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L8
+    LINENUMBER 21 L8
+    ALOAD 2
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    ALOAD 2
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
+    INVOKEVIRTUAL org/example/concurrent/programs/correct/counter/CorrectCounter.join ()V
+   L9
+    LINENUMBER 22 L9
     ALOAD 3
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     ALOAD 3
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
-   L7
-    LINENUMBER 26 L7
+    INVOKEVIRTUAL org/example/concurrent/programs/correct/counter/CorrectCounter.join ()V
+   L0
+    LINENUMBER 25 L0
     GETSTATIC org/example/concurrent/programs/correct/counter/CorrectCounter.$assertionsDisabled : Z
-    IFNE L8
+    IFNE L1
     ALOAD 1
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
@@ -231,9 +232,45 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
     ICONST_2
-    IF_ICMPEQ L8
+    IF_ICMPEQ L1
     NEW java/lang/AssertionError
     DUP
+    ALOAD 1
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.example.concurrent.programs.correct.counter.Counter"
+    LDC "count"
+    LDC "I"
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
+    INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      " ***The assert did not pass, the counter value is \u0001***"
+    ]
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.assertOperation (Ljava/lang/String;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+   L1
+    LINENUMBER 28 L1
+   FRAME FULL [[Ljava/lang/String; org/example/concurrent/programs/correct/counter/Counter org/example/concurrent/programs/correct/counter/CorrectCounter org/example/concurrent/programs/correct/counter/CorrectCounter T org/example/runtime/SchedulerThread] []
+    GOTO L10
+   L2
+    LINENUMBER 26 L2
+   FRAME SAME1 java/lang/AssertionError
+    ASTORE 4
+   L11
+    LINENUMBER 27 L11
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    ALOAD 4
+    INVOKEVIRTUAL java/lang/AssertionError.getMessage ()Ljava/lang/String;
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L10
+    LINENUMBER 30 L10
+   FRAME SAME
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKEVIRTUAL java/lang/Thread.getName ()Ljava/lang/String;
     ALOAD 1
@@ -248,18 +285,16 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
       // handle kind 0x6 : INVOKESTATIC
       java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
       // arguments:
-      "[\u0001 message] : The assert did not pass, the counter value is \u0001"
+      "[\u0001 message] : If you see this message, the assert passed. The counter value is \u0001"
     ]
-    INVOKESPECIAL java/lang/AssertionError.<init> (Ljava/lang/Object;)V
-    ATHROW
-   L8
-    LINENUMBER 27 L8
-   FRAME FULL [[Ljava/lang/String; org/example/concurrent/programs/correct/counter/Counter org/example/concurrent/programs/correct/counter/CorrectCounter org/example/concurrent/programs/correct/counter/CorrectCounter org/example/runtime/SchedulerThread] [org/example/concurrent/programs/correct/counter/CorrectCounter org/example/concurrent/programs/correct/counter/CorrectCounter org/example/concurrent/programs/correct/counter/CorrectCounter org/example/concurrent/programs/correct/counter/CorrectCounter]
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L12
+    LINENUMBER 32 L12
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
     RETURN
-    MAXSTACK = 13
-    MAXLOCALS = 5
+    MAXSTACK = 8
+    MAXLOCALS = 6
 
   // access flags 0x8
   static <clinit>()V

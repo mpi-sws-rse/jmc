@@ -34,6 +34,8 @@ public class RuntimeEnvironment {
     // @monitorList is used to store the monitor objects which are acquired by the threads
     public static Map<Object, Thread> monitorList = new HashMap<>();
 
+    public static boolean assertFlag = false;
+
     // The constructor is private to prevent the instantiation of the class
     private RuntimeEnvironment(){}
 
@@ -88,7 +90,7 @@ public class RuntimeEnvironment {
      * As this method is called by a single-threaded environment(This is guaranteed by the SchedulerThread),
      * there is no need to synchronize the access to the @readyThreadList.
      */
-    public static void threadStart(Thread currentThread, Thread thread){
+    public static void threadStart(Thread thread, Thread currentThread){
         if (createdThreadList.contains(thread) && !readyThreadList.contains(thread)) {
             System.out.println("[Runtime Environment Message] : "+thread.getName() +" requested to run the start() inside the "+currentThread.getName());
             readyThreadList.add(thread);
@@ -273,6 +275,12 @@ public class RuntimeEnvironment {
         System.out.println("[Runtime Environment Message] : "+thread.getName() +" released the "+lock.toString()+ " lock");
         monitorList.remove(lock, thread);
         System.out.println("[Runtime Environment Message] : ("+lock.toString() +", "+thread.getName()+") removed from the monitorList of the Runtime Environment");
+    }
+
+    public static void assertOperation(String message){
+        System.out.println("[Runtime Environment Message] : " + message);
+        assertFlag = true;
+        waitRequest(Thread.currentThread());
     }
 
     //public static void ReadOperation(Object value, Thread thread, String owner, String name, String descriptor){

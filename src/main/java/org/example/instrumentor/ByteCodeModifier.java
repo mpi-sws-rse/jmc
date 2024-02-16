@@ -338,14 +338,17 @@ public class ByteCodeModifier {
                                 //mv.visitVarInsn(Opcodes.ALOAD, varThread);
                                 //mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "org/example/runtime/RuntimeEnvironment", "threadStart", "(Ljava/lang/Thread;Ljava/lang/Thread;)V", false);
                                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
-                                mv.visitVarInsn(Opcodes.ALOAD, varThread);
+                                //mv.visitVarInsn(Opcodes.ALOAD, varThread);
                                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "threadStart", "(Ljava/lang/Thread;Ljava/lang/Thread;)V", false);
+                                // here
                                 resetFlags();
                                 //String[] parts = owner.split("/");
-                                String ownerClassName = owner.replace("/", ".");
-                                if (!threadRunCandidate.contains(ownerClassName) && allByteCode.containsKey(ownerClassName)) {
-                                    threadRunCandidate.add(ownerClassName);
-                                }
+                                //String ownerClassName = owner.replace("/", ".");
+                                //System.out.println(" xxx Owner: " + ownerClassName);
+                                //if (!threadRunCandidate.contains(ownerClassName) && allByteCode.containsKey(ownerClassName)) {
+                                //    System.out.println("Adding to threadRunCandidate: " + ownerClassName);
+                                //    threadRunCandidate.add(ownerClassName);
+                                //}
                             } else {
                                 //String[] parts = owner.split("/");
                                 String ownerClassName = owner.replace("/", ".");
@@ -485,71 +488,96 @@ public class ByteCodeModifier {
      * The method first starts by the @threadRunCandidate list. For each class in the list, it finds the run method and adds the instructions to the beginning and the end of the method
      * If the run method is not found, the method adds the super class of the class to the @threadRunCandidate list
      */
+
     public void modifyThreadRun(){
-        while (!threadRunCandidate.isEmpty()){
-            String newClass = threadRunCandidate.remove(threadRunCandidate.size()-1);
-            byte [] byteCode = allByteCode.get(newClass);
+        for (String className : allByteCode.keySet()) {
+            if (isCastableToThread(className)){
+                byte[] byteCode = allByteCode.get(className);
+                byte[] modifiedByteCode;
+                ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+                ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+                    @Override
+                    public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                        MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+
+                        // If this class is a subclass of Thread and this method is the run method
+                        if (name.equals("run") && descriptor.equals("()V")) {
+
+                            // Return a new MethodVisitor that analyzes the bytecode
+                            methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+
+                                @Override
+                                public void visitCode() {
+                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "waitRequest", "(Ljava/lang/Thread;)V", false);
+                                    super.visitCode();
+                                }
+
+                                @Override
+                                public void visitInsn(int opcode) {
+                                    if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) || opcode == Opcodes.ATHROW) {
+                                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+                                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "finishThreadRequest", "(Ljava/lang/Thread;)V", false);
+                                    }
+                                    super.visitInsn(opcode);
+                                }
+                            };
+                        }
+                        return methodVisitor;
+                    }
+                };
+                ClassReader cr = new ClassReader(byteCode);
+                cr.accept(classVisitor, 0);
+                modifiedByteCode = cw.toByteArray();
+                allByteCode.put(className,modifiedByteCode);
+            }
+        }
+    }
+
+    public void modifyAssert(){
+        for (String className : allByteCode.keySet()) {
+            byte[] byteCode = allByteCode.get(className);
             byte[] modifiedByteCode;
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
             ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
-
-                private boolean noRunFound = true;
-                private String className;
-                private String superName;
-
-                @Override
-                public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-                    className = name;
-                    this.superName = superName;
-                    super.visit(version, access, name, signature, superName, interfaces);
-                }
                 @Override
                 public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
                     MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+                    methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
 
-                    // If this class is a subclass of Thread and this method is the run method
-                    if (name.equals("run") && descriptor.equals("()V")) {
-                        noRunFound = false;
-
-                        // Return a new MethodVisitor that analyzes the bytecode
-                        methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
-
-                            @Override
-                            public void visitCode() {
-                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
-                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "waitRequest", "(Ljava/lang/Thread;)V", false);
-                                super.visitCode();
+                        boolean replaced = false;
+                        @Override
+                        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                            if (opcode == Opcodes.INVOKESPECIAL && owner.equals("java/lang/AssertionError") && name.equals("<init>")) {
+                                // Replace the assert statement
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "assertOperation", "(Ljava/lang/String;)V", false);
+                                replaced = true;
+                            } else {
+                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
                             }
+                        }
 
-                            @Override
-                            public void visitInsn(int opcode) {
-                                if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) || opcode == Opcodes.ATHROW) {
-                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
-                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "finishThreadRequest", "(Ljava/lang/Thread;)V", false);
-                                }
+                        @Override
+                        public void visitInsn(int opcode) {
+                            if (opcode == Opcodes.ATHROW && replaced) {
+                                //mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+                                //mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "finishThreadRequest", "(Ljava/lang/Thread;)V", false);
+                                replaced = false;
+                                mv.visitInsn(Opcodes.RETURN);
+                            } else {
                                 super.visitInsn(opcode);
                             }
-                        };
-                    }
-                    return methodVisitor;
-                }
-
-                @Override
-                public void visitEnd() {
-                    if (noRunFound) {
-                        if (superName != null && !superName.equals("java/lang/Object") && allByteCode.containsKey(superName.replace("/", "."))) {
-                            threadRunCandidate.add(superName.replace("/", "."));
                         }
-                        super.visitEnd();
-                    }else {
-                        super.visitEnd();
-                    }
+
+                    };
+
+                    return methodVisitor;
                 }
             };
             ClassReader cr = new ClassReader(byteCode);
             cr.accept(classVisitor, 0);
             modifiedByteCode = cw.toByteArray();
-            allByteCode.put(newClass,modifiedByteCode);
+            allByteCode.put(className,modifiedByteCode);
         }
     }
 
@@ -1335,5 +1363,75 @@ public class ByteCodeModifier {
 //            allByteCode.put(newClass,modifiedByteCode);
 //        }
 //    }
-}
 
+        /*
+        * TODO(): The following method is deprecated and must be removed
+        */
+//    public void modifyThreadRun1(){
+//        while (!threadRunCandidate.isEmpty()){
+//            String newClass = threadRunCandidate.remove(threadRunCandidate.size()-1);
+//            byte [] byteCode = allByteCode.get(newClass);
+//            byte[] modifiedByteCode;
+//            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+//            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+//
+//                private boolean noRunFound = true;
+//                private String className;
+//                private String superName;
+//
+//                @Override
+//                public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+//                    className = name;
+//                    this.superName = superName;
+//                    super.visit(version, access, name, signature, superName, interfaces);
+//                }
+//                @Override
+//                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+//                    MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+//
+//                    // If this class is a subclass of Thread and this method is the run method
+//                    if (name.equals("run") && descriptor.equals("()V")) {
+//                        noRunFound = false;
+//
+//                        // Return a new MethodVisitor that analyzes the bytecode
+//                        methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+//
+//                            @Override
+//                            public void visitCode() {
+//                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+//                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "waitRequest", "(Ljava/lang/Thread;)V", false);
+//                                super.visitCode();
+//                            }
+//
+//                            @Override
+//                            public void visitInsn(int opcode) {
+//                                if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) || opcode == Opcodes.ATHROW) {
+//                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Thread", "currentThread", "()Ljava/lang/Thread;", false);
+//                                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "finishThreadRequest", "(Ljava/lang/Thread;)V", false);
+//                                }
+//                                super.visitInsn(opcode);
+//                            }
+//                        };
+//                    }
+//                    return methodVisitor;
+//                }
+//
+//                @Override
+//                public void visitEnd() {
+//                    if (noRunFound) {
+//                        if (superName != null && !superName.equals("java/lang/Object") && allByteCode.containsKey(superName.replace("/", "."))) {
+//                            threadRunCandidate.add(superName.replace("/", "."));
+//                        }
+//                        super.visitEnd();
+//                    }else {
+//                        super.visitEnd();
+//                    }
+//                }
+//            };
+//            ClassReader cr = new ClassReader(byteCode);
+//            cr.accept(classVisitor, 0);
+//            modifiedByteCode = cw.toByteArray();
+//            allByteCode.put(newClass,modifiedByteCode);
+//        }
+//    }
+}

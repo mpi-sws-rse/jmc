@@ -312,13 +312,11 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     LINENUMBER 27 L4
     ALOAD 3
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    ALOAD 3
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L5
     LINENUMBER 28 L5
     ALOAD 4
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    ALOAD 4
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L6
     LINENUMBER 29 L6

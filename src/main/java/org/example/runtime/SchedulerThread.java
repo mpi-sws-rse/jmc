@@ -43,6 +43,11 @@ public class SchedulerThread extends Thread{
                 }
             }
 
+            if (RuntimeEnvironment.assertFlag){
+                isFinished = true;
+                continue;
+            }
+
             System.out.println("[Scheduler Thread Message] : All threads are in waiting state");
 
             /*
@@ -94,6 +99,7 @@ public class SchedulerThread extends Thread{
         System.out.println("[*** The SchedulerThread requested to FINISH***]");
         System.out.println("**********************************************************************************************");
         System.exit(0);
+
     }
 
     /*
@@ -267,4 +273,3 @@ public class SchedulerThread extends Thread{
 //        System.out.println("[Scheduler Thread Message] : There is no deadlock");
 //    }
 }
-

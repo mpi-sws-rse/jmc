@@ -159,11 +159,10 @@ public class org/example/concurrent/programs/complex/counter/CounterThread exten
     LINENUMBER 17 L0
     ALOAD 0
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    ALOAD 0
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L1
     LINENUMBER 18 L1
     RETURN
-    MAXSTACK = 3
+    MAXSTACK = 2
     MAXLOCALS = 1
 }
