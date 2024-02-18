@@ -24,6 +24,9 @@ public class RuntimeEnvironment {
     public static Thread threadJoinReq = null;
     // @threadJoinRes is used to store the thread that another thread requested to join over it
     public static Thread threadJoinRes = null;
+    // @assertFlag is used to inform the SchedulerThread that an assert statement is executed, and it failed.
+    // Thus, the SchedulerThread will terminate the program execution.
+    public static boolean assertFlag = false;
     // @locks is used to store the locks for the threads. The key is the id of the thread and the value is the lock object.
     // @locks.get(@thread.getId()) is used to synchronize @thread and the SchedulerThread which are running concurrently.
     public static Map<Long, Object> locks = new HashMap<>();
@@ -34,7 +37,6 @@ public class RuntimeEnvironment {
     // @monitorList is used to store the monitor objects which are acquired by the threads
     public static Map<Object, Thread> monitorList = new HashMap<>();
 
-    public static boolean assertFlag = false;
 
     // The constructor is private to prevent the instantiation of the class
     private RuntimeEnvironment(){}
@@ -277,6 +279,11 @@ public class RuntimeEnvironment {
         System.out.println("[Runtime Environment Message] : ("+lock.toString() +", "+thread.getName()+") removed from the monitorList of the Runtime Environment");
     }
 
+    /*
+     * The @assertOperation method is used by a thread when it executed the assert statement and it failed.
+     * It is called by a thread to inform the Runtime Environment that an assert statement is executed and it failed.
+     * After this request, the @assertFlag is set to true and the @thread will request to wait to hand over the control to the SchedulerThread.
+     */
     public static void assertOperation(String message){
         System.out.println("[Runtime Environment Message] : " + message);
         assertFlag = true;

@@ -43,6 +43,10 @@ public class SchedulerThread extends Thread{
                 }
             }
 
+            /*
+             * The following if statement is used to check whether the wait request is due to an assert violation or not.
+             * If it is due to an assert fail, the @SchedulerThread terminates the program execution.
+             */
             if (RuntimeEnvironment.assertFlag){
                 isFinished = true;
                 continue;

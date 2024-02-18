@@ -534,6 +534,14 @@ public class ByteCodeModifier {
         }
     }
 
+    /*
+     * The following method is used to find all the points in the user program where represent throwing an exception due to an assert statement failure.
+     * If such a point is found, the following instruction is added instead of the call to the AssertionError constructor.
+     * 1. RuntimeEnvironment.assertOperation(String);
+     * Moreover, the following instruction is replaced with the throw instruction
+     * 2. RETURN
+     * The method first starts by all methods of the main class and then iteratively analyzes all the classes that have a method which is called by one of the methods of the main class
+     */
     public void modifyAssert(){
         for (String className : allByteCode.keySet()) {
             byte[] byteCode = allByteCode.get(className);

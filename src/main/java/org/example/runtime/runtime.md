@@ -25,13 +25,15 @@ Currently, the only implemented algorithm is Random Scheduling, which may overlo
 #### RANDOMIZED SCHEDULING
 
 The `pickNextRandomThread()` method represents the implementation of Random Scheduling within the `SchedulerThread` class. When the `SchedulerThread` is initiated, there are at least one and at most two threads concurrently running. Throughout the entire execution of the user program, the `SchedulerThread` remains active. Upon initiation in `run()` method, it enters an idle loop, awaiting a "wait request" from a user program thread via the `RuntimeEnvironment` class. A thread makes this request when it encounters its next instruction to :
+
 * Start another thread, 
 * Completes its execution, 
 * Enter a monitor object, 
 * Wait to join over another thread,
-* Reads or writes a variable.
+* Reads or writes a variable, 
+* An assert statement has been executed and it failed.
 
-Upon receiving such requests, the `SchedulerThread` exits the idle loop and undergoes a synchronization phase to ensure that the requesting thread is in a wait state before entering the scheduling phase. During the scheduling phase, it examines the reason for the wait request. If the request is due to a thread wanting to finish, or a read or write operation, it calls the `pickNextRandomThread()` method.
+Upon receiving such requests, the `SchedulerThread` exits the idle loop and undergoes a synchronization phase to ensure that the requesting thread is in a wait state before entering the scheduling phase. Next, the `SchedulerThread` checks the `assertFlag` to see if an assert statement has been executed and failed. If so, the `SchedulerThread` terminates the user program execution. If the flag is not set, the `SchedulerThread` enters the scheduling phase. During the scheduling phase, it examines the reason for the wait request. If the request is due to a thread wanting to finish, or a read or write operation, it calls the `pickNextRandomThread()` method.
 
 However, if the request is due to other reasons,  the `SchedulerThread` handles it differently. If the reason is due to a thread start request the `SchedulerThread` always calls the start() method of that thread. As a recall, when the `SchedulerThread` wants to run a thread, it notifies it by calling the notify() method over it's lock object. A thread that is ready to start but has not waited on a lock object cannot be notified at all. To address this scenario, when the `SchedulerThread` identifies that a wait request is due to the start of a thread, it always selects that thread to run by calling its start method, before returning to its idle loop. The newly started thread, modified beforehand by the `instrumentor` package, begins with a wait request as its first instruction. Upon executing this instruction, the `SchedulerThread` re-enters its scheduling phase to select a random thread for the next run.
 
@@ -72,6 +74,7 @@ The `RuntimeEnvironment` class contains several static variables and methods tha
 - `monitorList` : Stores the monitor objects and the threads that are waiting to enter the monitor.
 - `threadJoinReq` : Stores the thread that requested to join over another thread.
 - `threadJoinRes` : Stores the thread that another thread requested to join over it.
+- `assertFlag` : Used to inform the `SchedulerThread` that an assert statement is executed, and it failed.
 
 ### Methods
 
@@ -89,7 +92,7 @@ The `RuntimeEnvironment` class contains several static variables and methods tha
 - `exitMonitor(Object lock, Thread thread)`: This method is used by the `thread` when its next instruction is a monitor exit(MONITOREXIT). It is called by the `thread` to request to exit the monitor of the `lock`.
 - `acquiredLock(Object lock, Thread thread)`: This method is used by the `thread` when it acquired the `lock`. It is called by the `thread` to inform the Runtime Environment that it acquired the `lock`.
 - `releasedLock(Object lock, Thread thread)`: This method is used by the `thread` when it released the `lock`. It is called by the `thread` to inform the Runtime Environment that it released the `lock`.
-
+- `assertOperation(String message)`: This method is used by a thread to inform the Runtime Environment that an assert statement is executed and it failed. After this request, the `assertFlag` is set to true and the thread will request to wait to hand over the control to the `SchedulerThread`.
 
 ## Future Work
 
