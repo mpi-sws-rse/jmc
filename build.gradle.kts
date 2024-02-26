@@ -16,6 +16,9 @@ dependencies {
     implementation("org.ow2.asm:asm-util:9.6")
     implementation("org.ow2.asm:asm-commons:9.6")
     implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.9.22") // 1.9.22
+    implementation("commons-cli:commons-cli:1.6.0")
+    implementation("org.apache.logging.log4j:log4j-api:2.22.1")
+    implementation("org.apache.logging.log4j:log4j-core:2.22.1")
 }
 
 tasks.test {
