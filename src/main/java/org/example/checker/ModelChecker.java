@@ -9,6 +9,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.instrumenter.ByteCodeModifier;
 import org.example.transformer.ByteCodeManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ModelChecker {
     public static final Logger logger = LogManager.getLogger(ModelChecker.class);
@@ -31,7 +33,7 @@ public class ModelChecker {
 
     void run(TestTarget target) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String path = target.getTestPath();
-        String classPath = target.getTestPath() + target.getTestClass();
+        String classPath = target.getTestPackage() + target.getTestClass();
         ByteCodeManager byteCodeManager = new ByteCodeManager(path , target.getTestClass());
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
@@ -54,7 +56,7 @@ public class ModelChecker {
     }
 
     public boolean check(TestTarget t) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException {
-        logger.info("Starting checker");
+        logger.trace("Starting checker");
         this.target = t;
         this.run(t); // fix exceptions
         return true;
