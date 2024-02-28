@@ -1,4 +1,4 @@
-package org.example.Transformer;
+package org.example.transformer;
 
 import java.io.IOException;
 import java.nio.file.Files;

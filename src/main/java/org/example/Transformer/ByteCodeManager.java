@@ -1,4 +1,4 @@
-package org.example.Transformer;
+package org.example.transformer;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
