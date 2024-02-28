@@ -1,7 +1,7 @@
 package org.example;
 
+import org.example.Instrumentor.ByteCodeModifier;
 import org.example.Transformer.ByteCodeManager;
-import org.example.instrumentor.ByteCodeModifier;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

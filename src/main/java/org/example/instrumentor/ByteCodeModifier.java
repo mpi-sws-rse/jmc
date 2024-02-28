@@ -1,4 +1,4 @@
-package org.example.instrumentor;
+package org.example.Instrumentor;
 
 import org.objectweb.asm.*;
 

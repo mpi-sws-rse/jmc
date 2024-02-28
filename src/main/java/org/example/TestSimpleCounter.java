@@ -1,6 +1,6 @@
 package org.example;
 
-import org.example.instrumentor.ByteCodeModifier;
+import org.example.Instrumentor.ByteCodeModifier;
 import org.example.Transformer.ByteCodeManager;
 
 import java.io.IOException;
