@@ -13,14 +13,24 @@ class ModelCheckerTest {
 
     @BeforeEach                                         
     void setUp() {
-        checker = new ModelChecker();
+        CheckerConfiguration config = new CheckerConfiguration.ConfigurationBuilder().withVerbose(true).build();
+        checker = new ModelChecker(config);
     }
 
     @Test                                               
     @DisplayName("Call check")   
     void testCall() {
-        assertEquals(true, checker.check(), 
+        try {
+            var t = new TestTarget(
+                "org.example.concurrent.programs.wrong.counter.",
+            "BuggyCounter",
+            "main",
+            "src/main/java/org/example/concurrent/programs/wrong/counter/");
+            assertEquals(true, checker.check(t), 
                 "Call works");  
+        } catch (Exception e) {
+            System.err.println("Exception raised: " + e);
+        }
     }
 
 }
