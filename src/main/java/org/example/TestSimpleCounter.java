@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.checker.CheckerConfiguration;
 import org.example.instrumenter.ByteCodeModifier;
 import org.example.transformer.ByteCodeManager;
 
@@ -9,14 +10,15 @@ import java.util.Map;
 
 public class TestSimpleCounter {
     public static void main(String[] args) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        CheckerConfiguration config = new CheckerConfiguration.ConfigurationBuilder().build();
 
         String MainClass = "SimpleCounter";
         String MainPath = "src/main/java/org/example/concurrent/programs/simple/counter/";
         String packagePath = "org.example.concurrent.programs.simple.counter.";
-        ByteCodeManager byteCodeManager = new ByteCodeManager(MainPath , MainClass);
+        ByteCodeManager byteCodeManager = new ByteCodeManager(config, MainPath , MainClass);
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
-        ByteCodeModifier byteCodeModifier = new ByteCodeModifier(allBytecode, packagePath+MainClass);
+        ByteCodeModifier byteCodeModifier = new ByteCodeModifier(config, allBytecode, packagePath+MainClass);
         byteCodeModifier.modifyThreadCreation();
         byteCodeModifier.modifyThreadStart();
         byteCodeModifier.modifyThreadRun();

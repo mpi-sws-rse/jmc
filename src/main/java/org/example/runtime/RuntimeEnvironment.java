@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class RuntimeEnvironment {
+
+    private static Random rng = new Random();
 
     // @threadCount is used to generate the name of the threads as "Thread-"+@threadCount++
     private static int threadCount = 1;
@@ -41,6 +44,9 @@ public class RuntimeEnvironment {
     // The constructor is private to prevent the instantiation of the class
     private RuntimeEnvironment(){}
 
+    public static void setRandomSeed(long seed) {
+        rng.setSeed(seed);
+    }
     /*
      * The @init method is used to initialize the Runtime Environment. It is called by the main method of the program.
      * By using the @init method, the main thread is added to the @createdThreadList and the @readyThreadList.

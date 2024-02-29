@@ -1,5 +1,6 @@
 package org.example.transformer;
 
+import org.example.checker.CheckerConfiguration;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.util.Textifier;
@@ -19,9 +20,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ByteCodeManager {
+    public CheckerConfiguration config;
     public String path;
     public String mainClassName;
-    public ByteCodeManager(String path, String mainClassName) {
+    public ByteCodeManager(CheckerConfiguration config, String path, String mainClassName) {
+        this.config = config;
         this.mainClassName = mainClassName;
         this.path = path;
     }

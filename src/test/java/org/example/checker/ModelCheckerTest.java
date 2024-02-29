@@ -20,33 +20,34 @@ class ModelCheckerTest {
 
     ModelChecker checker;
 
-    /* 
-    @BeforeEach
-    public void setUpStreams() {
-        System.setOut(new PrintStream(outContent, true));
-    }
-    @AfterEach
-    public void cleanUpStreams() {
-        System.setOut(null);
-    }
-    */
+    /*
+     * @BeforeEach
+     * public void setUpStreams() {
+     * System.setOut(new PrintStream(outContent, true));
+     * }
+     * 
+     * @AfterEach
+     * public void cleanUpStreams() {
+     * System.setOut(null);
+     * }
+     */
 
-    @BeforeEach                                        
+    @BeforeEach
     void setUp() {
         CheckerConfiguration config = new CheckerConfiguration.ConfigurationBuilder().withVerbose(true).build();
         checker = new ModelChecker(config);
     }
 
-    @Test                                               
-    @DisplayName("Call check")   
-    void testCall() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException {
-        System.out.println("HERE");
-            var t = new TestTarget("org.example.concurrent.programs.wrong.counter.", 
+    @Test
+    @DisplayName("Call check")
+    void testCall() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException, IOException {
+        var t = new TestTarget("org.example.concurrent.programs.wrong.counter.",
                 "BuggyCounter",
                 "main",
                 "src/main/java/org/example/concurrent/programs/wrong/counter/");
-            assertEquals(true, checker.check(t), 
-                "Call works");  
+        assertEquals(true, checker.check(t),
+                "Call works");
     }
 
 }

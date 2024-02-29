@@ -1,4 +1,5 @@
 package org.example.checker;
+import java.util.Random;
 
 public final class CheckerConfiguration {
     public long maxEventsPerExecution;
@@ -13,6 +14,7 @@ public final class CheckerConfiguration {
         progressReport = builder.progressReport;
         verbose = builder.verbose;
         seed = builder.seed;
+        System.out.println("Random seed: " + seed);
     }
 
     public static class ConfigurationBuilder {
@@ -20,9 +22,9 @@ public final class CheckerConfiguration {
         public long maxIterations = 1000;
         public long progressReport = 0;
         public boolean verbose = false;
-        public long seed = 0;
+        public long seed = new Random().nextLong(); // can be overwritten to a user-specified seed for reproducibility
 
-        ConfigurationBuilder() {
+        public ConfigurationBuilder() {
 
         }
 

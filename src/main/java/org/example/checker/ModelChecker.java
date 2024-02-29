@@ -17,27 +17,27 @@ public class ModelChecker {
 
     CheckerConfiguration configuration;
     TestTarget target;
-    Random rng;
 
     public ModelChecker(CheckerConfiguration c, TestTarget t) {
         this.configuration = c;
         this.target = t;
-        rng = new Random(configuration.seed);
     }
 
     public ModelChecker(CheckerConfiguration c) {
         this.configuration = c;
         this.target = null;
-        rng = new Random(configuration.seed);
     }
 
-    void run(TestTarget target) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    void run(TestTarget target) throws IOException, ClassNotFoundException, NoSuchMethodException,
+            InvocationTargetException, IllegalAccessException {
         String path = target.getTestPath();
         String classPath = target.getTestPackage() + target.getTestClass();
-        ByteCodeManager byteCodeManager = new ByteCodeManager(path , target.getTestClass());
+        logger.trace("Generating bytecode for " + path + " " + classPath);
+
+        ByteCodeManager byteCodeManager = new ByteCodeManager(this.configuration, path, target.getTestClass());
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
-        ByteCodeModifier byteCodeModifier = new ByteCodeModifier(allBytecode, classPath);
+        ByteCodeModifier byteCodeModifier = new ByteCodeModifier(this.configuration, allBytecode, classPath);
         byteCodeModifier.modifyThreadCreation();
         byteCodeModifier.modifyThreadStart();
         byteCodeModifier.modifyThreadRun();
@@ -55,7 +55,8 @@ public class ModelChecker {
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage());
     }
 
-    public boolean check(TestTarget t) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException {
+    public boolean check(TestTarget t) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException, IOException {
         logger.trace("Starting checker");
         this.target = t;
         this.run(t); // fix exceptions
