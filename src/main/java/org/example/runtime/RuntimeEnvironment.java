@@ -193,10 +193,15 @@ public class RuntimeEnvironment {
              * To avoid from this situation, we used the @threadWaitReqLock object to synchronize the access to @threadWaitReq.
              * Since the @SchedulerThread will wait on the @threadWaitReqLock, the createdThreadList and readyThreadList will be race-free.
              */
-            synchronized (threadWaitReqLock){
-                createdThreadList.remove(thread);
-                readyThreadList.remove(thread);
-                threadWaitReq = thread;
+            createdThreadList.remove(thread);
+            readyThreadList.remove(thread);
+            if (thread.getId() == 1){
+                waitRequest(thread);
+                System.exit(0);
+            }else {
+                synchronized (threadWaitReqLock) {
+                    threadWaitReq = thread;
+                }
             }
         }
     }

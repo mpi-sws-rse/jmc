@@ -141,10 +141,12 @@ public class SchedulerThread extends Thread {
         System.out.println(
                 "**********************************************************************************************");
         System.out.println("[*** The SchedulerThread requested to FINISH***]");
-        System.out.println(
-                "**********************************************************************************************");
-        System.exit(0);
+        System.out.println("**********************************************************************************************");
+        //System.exit(0);
 
+        synchronized (RuntimeEnvironment.locks.get((long) 1)){
+            RuntimeEnvironment.locks.get((long) 1).notify();
+        }
     }
 
     /*
