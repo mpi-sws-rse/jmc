@@ -1,7 +1,8 @@
 package org.example.checker;
+import java.io.Serializable;
 import java.util.Random;
 
-public final class CheckerConfiguration {
+public final class CheckerConfiguration implements Serializable {
     public long maxEventsPerExecution;
     public long maxIterations;
     public long progressReport;

@@ -1,6 +1,7 @@
 package org.example.checker;
 
-import java.util.Random;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -8,9 +9,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.instrumenter.ByteCodeModifier;
-import org.example.transformer.ByteCodeManager;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.example.Transformer.ByteCodeManager;
 
 public class ModelChecker {
     public static final Logger logger = LogManager.getLogger(ModelChecker.class);
@@ -45,6 +44,7 @@ public class ModelChecker {
         byteCodeModifier.modifyMonitorInstructions();
         byteCodeModifier.modifyThreadJoin();
         byteCodeModifier.modifyAssert();
+        saveConfig(this.configuration, "src/main/resources/config/config.obj");
         byteCodeModifier.addRuntimeEnvironment();
         byteCodeManager.generateClassFile(byteCodeModifier.allByteCode, path);
 
@@ -61,5 +61,17 @@ public class ModelChecker {
         this.target = t;
         this.run(t); // fix exceptions
         return true;
+    }
+
+    public void saveConfig(CheckerConfiguration c, String fileName) {
+        try {
+            FileOutputStream fileOut = new FileOutputStream(fileName);
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(c);
+            out.close();
+            fileOut.close();
+        } catch (IOException i) {
+            i.printStackTrace();
+        }
     }
 }
