@@ -15,6 +15,7 @@ import java.util.Random;
 
 public class RuntimeEnvironment {
 
+    public static CheckerConfiguration config;
     private static Random rng = new Random();
 
     // @threadCount is used to generate the name of the threads as "Thread-"+@threadCount++
@@ -46,7 +47,6 @@ public class RuntimeEnvironment {
     // @monitorList is used to store the monitor objects which are acquired by the threads
     public static Map<Object, Thread> monitorList = new HashMap<>();
 
-    public static CheckerConfiguration config;
 
     // The constructor is private to prevent the instantiation of the class
     private RuntimeEnvironment(){}
@@ -82,13 +82,17 @@ public class RuntimeEnvironment {
             FileInputStream fileIn = new FileInputStream("src/main/resources/config/config.obj");
             ObjectInputStream in = new ObjectInputStream(fileIn);
             config = (CheckerConfiguration) in.readObject();
+            assert(config!=null);
+            System.out.println("[Runtime Environment Message] : The verbose mode is "+config.verbose +" , the random seed is "+config.seed+" , the maximum events per execution is "+config.maxEventsPerExecution +" , and the maximum iteration is : "+config.maxIterations);
             in.close();
             fileIn.close();
         } catch (IOException i) {
             i.printStackTrace();
+            assert(false);
         } catch (ClassNotFoundException c) {
             System.out.println("Class not found");
             c.printStackTrace();
+            assert(false);
         }
     }
 
