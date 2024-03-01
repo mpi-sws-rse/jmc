@@ -30,6 +30,9 @@ public class ModelChecker {
 
     void run(TestTarget target) throws IOException, ClassNotFoundException, NoSuchMethodException,
             InvocationTargetException, IllegalAccessException {
+        
+        saveConfig(this.configuration, "src/main/resources/config/config.obj");
+
         String path = target.getTestPath();
         String classPath = target.getTestPackage() + target.getTestClass();
         logger.trace("Generating bytecode for " + path + " " + classPath);
@@ -45,7 +48,6 @@ public class ModelChecker {
         byteCodeModifier.modifyMonitorInstructions();
         byteCodeModifier.modifyThreadJoin();
         byteCodeModifier.modifyAssert();
-        saveConfig(this.configuration, "src/main/resources/config/config.obj");
         byteCodeModifier.addRuntimeEnvironment();
         byteCodeManager.generateClassFile(byteCodeModifier.allByteCode, path);
 
