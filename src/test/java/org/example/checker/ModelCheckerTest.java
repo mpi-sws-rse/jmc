@@ -8,7 +8,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,21 +15,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ModelCheckerTest {
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private static final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
 
     ModelChecker checker;
 
-    /*
-     * @BeforeEach
-     * public void setUpStreams() {
-     * System.setOut(new PrintStream(outContent, true));
-     * }
-     * 
-     * @AfterEach
-     * public void cleanUpStreams() {
-     * System.setOut(null);
-     * }
-     */
+    
+    @BeforeAll
+    public static void setUpStreams() {
+        System.setOut(new PrintStream(outContent, true));
+    }
+    @AfterAll
+    public static void cleanUpStreams() {
+        System.setOut(null);
+    }
+    
 
     @BeforeEach
     void setUp() {
@@ -45,19 +43,55 @@ class ModelCheckerTest {
         var t = new TestTarget("org.example.concurrent.programs.wrong.counter.",
                 "BuggyCounter",
                 "main",
-                "src/main/java/org/example/concurrent/programs/wrong/counter/");
+                "src/test/java/org/example/concurrent/programs/wrong/counter/");
         assertEquals(true, checker.check(t),
                 "Call works");
     }
 
     @Test
     @DisplayName("Inconsistent counter with a race condition")
-    void testCall() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+    void testInconsistentCounter() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
             IllegalAccessException, IOException {
-        var t = new TestTarget("org.example.concurrent.programs.wrong.counter.",
-                "BuggyCounter",
+        var t = new TestTarget("org.example.concurrent.programs.inconsistent.counter.",
+                "InconsistentCounter",
                 "main",
-                "src/test/java/org/example/concurrent/programs/wrong/counter/");
+                "src/test/java/org/example/concurrent/programs/inconsistent/counter/");
+        assertEquals(true, checker.check(t),
+                "Call works");
+    }
+
+    @Test
+    @DisplayName("Complex counter")
+    void testComplexCounter() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException, IOException {
+        var t = new TestTarget("org.example.concurrent.programs.complex.counter.",
+                "ComplexCounter",
+                "main",
+                "src/test/java/org/example/concurrent/programs/complex/counter/");
+        assertEquals(true, checker.check(t),
+                "Call works");
+    }
+
+    @Test
+    @DisplayName("Correct counter")
+    void testCorrectCounter() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException, IOException {
+        var t = new TestTarget("org.example.concurrent.programs.correct.counter.",
+                "CorrectCounter",
+                "main",
+                "src/test/java/org/example/concurrent/programs/correct/counter/");
+        assertEquals(true, checker.check(t),
+                "Call works");
+    }
+
+    @Test
+    @DisplayName("Simple counter")
+    void testSimpleCounter() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException, IOException {
+        var t = new TestTarget("org.example.concurrent.programs.simple.counter.",
+                "SimpleCounter",
+                "main",
+                "src/test/java/org/example/concurrent/programs/simple/counter/");
         assertEquals(true, checker.check(t),
                 "Call works");
     }
