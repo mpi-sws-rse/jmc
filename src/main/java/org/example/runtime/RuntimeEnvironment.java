@@ -1,5 +1,11 @@
 package org.example.runtime;
 
+import executionGraph.ExecutionGraph;
+import org.example.checker.CheckerConfiguration;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +46,7 @@ public class RuntimeEnvironment {
     // @monitorList is used to store the monitor objects which are acquired by the threads
     public static Map<Object, Thread> monitorList = new HashMap<>();
 
+    public static CheckerConfiguration config;
 
     // The constructor is private to prevent the instantiation of the class
     private RuntimeEnvironment(){}
@@ -57,6 +64,9 @@ public class RuntimeEnvironment {
      */
     public static void init(Thread main){
         System.out.println("[Runtime Environment Message] : The Runtime Environment has been deployed");
+        loadConfig();
+        System.out.println("[Runtime Environment Message] : The CheckerConfiguration has been loaded");
+        System.out.println("[Runtime Environment Message] : The verbos mode is "+config.verbose +" , the random seed is "+config.seed+" , the maximum events per execution is "+config.maxEventsPerExecution +" , and the maximum iteration is : "+config.maxIterations);
         Object lock = new Object();
         locks.put(main.getId(), lock);
         createdThreadList.add(main);
@@ -65,6 +75,21 @@ public class RuntimeEnvironment {
         System.out.println("[Runtime Environment Message] : "+main.getName() +" added to the createdThreadList of the Runtime Environment");
         System.out.println("[Runtime Environment Message] : "+main.getName() +" added to the readyThreadList of the Runtime Environment");
         System.out.println("[Runtime Environment Message] : "+main.getName() +" has the "+main.getState()+" state");
+    }
+
+    public static void loadConfig() {
+        try {
+            FileInputStream fileIn = new FileInputStream("src/main/resources/config/config.obj");
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            config = (CheckerConfiguration) in.readObject();
+            in.close();
+            fileIn.close();
+        } catch (IOException i) {
+            i.printStackTrace();
+        } catch (ClassNotFoundException c) {
+            System.out.println("Class not found");
+            c.printStackTrace();
+        }
     }
 
     /*

@@ -1,9 +1,8 @@
 package org.example.checker;
+import java.io.Serializable;
 import java.util.Random;
 
 import org.example.checker.CheckerConfiguration.StrategyOption.RandomStrategy;
-
-import java.io.Serializable;
 
 public final class CheckerConfiguration implements Serializable {
     public long maxEventsPerExecution;
