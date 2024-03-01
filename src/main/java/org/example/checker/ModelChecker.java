@@ -9,7 +9,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.instrumenter.ByteCodeModifier;
-import org.example.Transformer.ByteCodeManager;
+import org.example.manager.ByteCodeManager;
 
 public class ModelChecker {
     public static final Logger logger = LogManager.getLogger(ModelChecker.class);
