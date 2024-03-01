@@ -2,7 +2,7 @@ package org.example;
 
 import org.example.checker.CheckerConfiguration;
 import org.example.instrumenter.ByteCodeModifier;
-import org.example.transformer.ByteCodeManager;
+import org.example.manager.ByteCodeManager;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
