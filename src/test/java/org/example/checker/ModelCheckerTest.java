@@ -39,8 +39,8 @@ class ModelCheckerTest {
     }
 
     @Test
-    @DisplayName("Call check")
-    void testCall() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+    @DisplayName("Buggy counter that deadlocks")
+    void testBuggyCounterThatDeadlocks() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
             IllegalAccessException, IOException {
         var t = new TestTarget("org.example.concurrent.programs.wrong.counter.",
                 "BuggyCounter",
@@ -50,4 +50,15 @@ class ModelCheckerTest {
                 "Call works");
     }
 
+    @Test
+    @DisplayName("Inconsistent counter with a race condition")
+    void testCall() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException, IOException {
+        var t = new TestTarget("org.example.concurrent.programs.wrong.counter.",
+                "BuggyCounter",
+                "main",
+                "src/test/java/org/example/concurrent/programs/wrong/counter/");
+        assertEquals(true, checker.check(t),
+                "Call works");
+    }
 }

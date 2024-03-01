@@ -1,7 +1,11 @@
 package org.example.checker;
 import java.util.Random;
 
-public final class CheckerConfiguration {
+import org.example.checker.CheckerConfiguration.StrategyOption.RandomStrategy;
+
+import java.io.Serializable;
+
+public final class CheckerConfiguration implements Serializable {
     public long maxEventsPerExecution;
     public long maxIterations;
     public long progressReport;
@@ -17,23 +21,31 @@ public final class CheckerConfiguration {
         System.out.println("Random seed: " + seed);
     }
 
+    public void generateByteCode() {
+        // TODO
+    }
+
     public static class ConfigurationBuilder {
         public long maxEventsPerExecution = 1000;
         public long maxIterations = 1000;
         public long progressReport = 0;
+        public org.example.checker.CheckerConfiguration.StrategyOption searchStrategy = new RandomStrategy(); 
         public boolean verbose = false;
         public long seed = new Random().nextLong(); // can be overwritten to a user-specified seed for reproducibility
 
-        public ConfigurationBuilder() {
-
-        }
+        public ConfigurationBuilder() {}
 
         public CheckerConfiguration build() {
             return new CheckerConfiguration(this);
         }
 
-        ConfigurationBuilder withMaxEventsPerExexution(long m) {
+        public ConfigurationBuilder withMaxEventsPerExexution(long m) {
             this.maxEventsPerExecution = m;
+            return this;
+        }
+
+        public ConfigurationBuilder withSearchStrategy(StrategyOption option) {
+            this.searchStrategy = option;
             return this;
         }
 
@@ -57,6 +69,11 @@ public final class CheckerConfiguration {
             return this;
         }
 
+    }
+
+    public static sealed interface StrategyOption {
+        record RandomStrategy() implements StrategyOption {}
+        record DPORStrategy() implements StrategyOption {}
     }
 
 }
