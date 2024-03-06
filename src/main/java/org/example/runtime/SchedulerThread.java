@@ -32,7 +32,7 @@ public class SchedulerThread extends Thread {
     // finished or not.
     private boolean isFinished = false;
 
-    private SearchStrategy strategy = new RandomStrategy();
+    private SearchStrategy strategy = new RandomStrategy(RuntimeEnvironment.config); // TODO: make a factory
 
     @Override
     public void run() {

@@ -1,4 +1,10 @@
 package org.example.checker;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+
 import java.io.Serializable;
 import java.util.Random;
 
@@ -20,19 +26,41 @@ public final class CheckerConfiguration implements Serializable {
         System.out.println("Random seed: " + seed);
     }
 
-    public void generateByteCode() {
-        // TODO
+    public byte[] generateBytes() {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(bos);
+            out.writeObject(this);
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            assert(false);
+        }
+        return bos.toByteArray();
+    }
+
+    public void saveConfig(String fileName) {
+        try {
+            FileOutputStream fileOut = new FileOutputStream(fileName);
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(this);
+            out.close();
+            fileOut.close();
+        } catch (IOException i) {
+            i.printStackTrace();
+        }
     }
 
     public static class ConfigurationBuilder {
         public long maxEventsPerExecution = 1000;
         public long maxIterations = 1000;
         public long progressReport = 0;
-        public org.example.checker.CheckerConfiguration.StrategyOption searchStrategy = new RandomStrategy(); 
+        public org.example.checker.CheckerConfiguration.StrategyOption searchStrategy = new RandomStrategy();
         public boolean verbose = false;
         public long seed = new Random().nextLong(); // can be overwritten to a user-specified seed for reproducibility
 
-        public ConfigurationBuilder() {}
+        public ConfigurationBuilder() {
+        }
 
         public CheckerConfiguration build() {
             return new CheckerConfiguration(this);
@@ -71,8 +99,11 @@ public final class CheckerConfiguration implements Serializable {
     }
 
     public static sealed interface StrategyOption {
-        record RandomStrategy() implements StrategyOption {}
-        record DPORStrategy() implements StrategyOption {}
+        record RandomStrategy() implements StrategyOption {
+        }
+
+        record DPORStrategy() implements StrategyOption {
+        }
     }
 
 }

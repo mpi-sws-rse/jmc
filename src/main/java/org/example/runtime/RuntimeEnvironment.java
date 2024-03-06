@@ -5,6 +5,7 @@ import org.example.checker.CheckerConfiguration;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -15,8 +16,8 @@ import java.util.Random;
 
 public class RuntimeEnvironment {
 
-    public static CheckerConfiguration config;
-    private static Random rng = new Random();
+    public static CheckerConfiguration config = null;
+    public static Random rng = new Random();
 
     // @threadCount is used to generate the name of the threads as "Thread-"+@threadCount++
     private static int threadCount = 1;
@@ -77,8 +78,15 @@ public class RuntimeEnvironment {
         System.out.println("[Runtime Environment Message] : "+main.getName() +" has the "+main.getState()+" state");
     }
 
-    public static void loadConfig() {
+    public static void loadConfig(/*byte[] bytes*/) {
         try {
+            /* 
+            ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+            ObjectInputStream in = new ObjectInputStream(bis);
+            config = (CheckerConfiguration) in.readObject();
+            in.close();
+            bis.close();
+            */
             FileInputStream fileIn = new FileInputStream("src/main/resources/config/config.obj");
             ObjectInputStream in = new ObjectInputStream(fileIn);
             config = (CheckerConfiguration) in.readObject();

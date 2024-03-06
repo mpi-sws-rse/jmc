@@ -36,6 +36,8 @@ class ModelCheckerTest {
         checker = new ModelChecker(config);
     }
 
+    // various "litmus tests": concurrent threads with a shared variable
+
     @Test
     @DisplayName("Buggy counter that deadlocks")
     void testBuggyCounterThatDeadlocks() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
@@ -92,6 +94,18 @@ class ModelCheckerTest {
                 "SimpleCounter",
                 "main",
                 "src/test/java/org/example/concurrent/programs/simple/counter/");
+        assertEquals(true, checker.check(t),
+                "Call works");
+    }
+
+    @Test
+    @DisplayName("Multiple threads each spawning new threads with a shared counter")
+    void testMultipleSpawns() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException, IOException {
+        var t = new TestTarget("org.example.concurrent.programs.thread_dependency",
+                "MultipleThreads",
+                "main",
+                "src/test/java/org/example/concurrent/programs/thread_dependency/");
         assertEquals(true, checker.check(t),
                 "Call works");
     }

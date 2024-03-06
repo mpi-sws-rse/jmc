@@ -106,6 +106,12 @@ public class ByteCodeModifier {
                             mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "init",
                                     "(Ljava/lang/Thread;)V", false);
 
+                            // TODO: check how to write byte[] in ASM
+                            //mv.visitLdcInsn(new Object[] (config.generateBytes()));
+                            //mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "loadConfig",
+                            //        "([B)V", false);
+                            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "loadConfig",
+                                    "()V", false);
                             mv.visitLdcInsn(Long.valueOf(config.seed));
                             mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/example/runtime/RuntimeEnvironment", "setRandomSeed",
                                     "(J)V", false);
