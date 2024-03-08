@@ -1,5 +1,17 @@
 package programStructure
 
-enum class EventType {
-    INITIAL, WRITE, READ, OTHER
+import java.io.Serializable
+
+/**
+ * Enum class for the different types of events that can occur in a program.
+ */
+enum class EventType: Serializable {
+
+    INITIAL,
+    WRITE,
+    READ,
+    START,
+    JOIN,
+    FINISH,
+    OTHER
 }

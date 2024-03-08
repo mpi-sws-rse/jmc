@@ -55,7 +55,7 @@ public class ModelChecker {
         if (this.configuration.verbose) {
             byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode, path);
         }
-
+        System.out.println("Running the modified bytecode");
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage());
     }
 
@@ -63,6 +63,7 @@ public class ModelChecker {
             IllegalAccessException, IOException {
         logger.trace("Starting checker");
         this.target = t;
+        System.out.println("Checking " + t.getTestClass());
         this.run(t); // fix exceptions
         return true;
     }

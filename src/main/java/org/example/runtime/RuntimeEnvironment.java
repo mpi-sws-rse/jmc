@@ -1,84 +1,216 @@
 package org.example.runtime;
 
-import executionGraph.ExecutionGraph;
 import org.example.checker.CheckerConfiguration;
+import executionGraph.ExecutionGraph;
+import programStructure.*;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 public class RuntimeEnvironment {
 
-    public static CheckerConfiguration config = null;
-    public static Random rng = new Random();
+    /**
+     * @property config is used to store the CheckerConfiguration object which is loaded from the config.obj file.
+     */
+    private static CheckerConfiguration config = null;
 
-    // @threadCount is used to generate the name of the threads as "Thread-"+@threadCount++
+    /**
+     * @property threadCount is used to store the number of threads that are created in the program under test.
+     */
     private static int threadCount = 1;
-    // @threadWaitReq is used to store the thread that requested to wait
+
+    /**
+     * @property threadWaitReq is used to store the thread that requested to wait
+     */
     public static Thread threadWaitReq = null;
-    // @threadWaitReqLock is used to synchronize the access to @threadWaitReq
+
+    /**
+     * @property threadWaitReqLock is used to store the lock object for the threadWaitReq
+     * It is used to synchronize the access to {@link RuntimeEnvironment#threadWaitReq}
+     */
     public static Object threadWaitReqLock = new Object();
-    // @threadStartReq is used to store the thread that requested to start
+
+    /**
+     * @property threadStartReq is used to store the thread that requested to start
+     */
     public static Thread threadStartReq = null;
-    // @threadEnterMonitorReq is used to store the thread that requested to enter the monitor
+
+    /**
+     * @property threadEnterMonitorReq is used to store the thread that requested to enter the monitor
+     */
     public static Thread threadEnterMonitorReq = null;
-    // @objectEnterMonitorReq is used to store the object that a thread requested to enter the monitor
+
+    /**
+     * @property objectEnterMonitorReq is used to store the object that the
+     * {@link RuntimeEnvironment#threadEnterMonitorReq} requested to enter the monitor
+     */
     public static Object objectEnterMonitorReq = null;
-    // @threadJoinReq is used to store the thread that requested to join to other thread
+
+    /**
+     * @property threadJoinReq is used to store the thread that requested to join to the
+     * {@link RuntimeEnvironment#threadJoinRes}
+     */
     public static Thread threadJoinReq = null;
-    // @threadJoinRes is used to store the thread that another thread requested to join over it
+
+    /**
+     * @property threadJoinRes is used to store the thread that the {@link RuntimeEnvironment#threadJoinReq} requested
+     * to join over it.
+     */
     public static Thread threadJoinRes = null;
-    // @assertFlag is used to inform the SchedulerThread that an assert statement is executed, and it failed.
-    // Thus, the SchedulerThread will terminate the program execution.
+
+    /**
+     * @property assertFlag is used to inform the SchedulerThread that an assert statement is executed, and it failed.
+     * Thus, the SchedulerThread will terminate the program execution.
+     */
     public static boolean assertFlag = false;
-    // @locks is used to store the locks for the threads. The key is the id of the thread and the value is the lock object.
-    // @locks.get(@thread.getId()) is used to synchronize @thread and the SchedulerThread which are running concurrently.
+
+    /**
+     * @property locks is used to store the locks for the threads. The key is the thread id and the value is the
+     * lock object.
+     */
     public static Map<Long, Object> locks = new HashMap<>();
-    // @createdThreadList is used to store the threads that are created
+
+    /**
+     * @property createdThreadList is used to store the threads that are created in the program under test.
+     */
     public static List<Thread> createdThreadList = new ArrayList<>();
-    // @readyThreadList is used to store the threads that are ready to run
+
+    /**
+     * @property readyThreadList is used to store the threads that are ready to run in the program under test.
+     */
     public static List<Thread> readyThreadList = new ArrayList<>();
-    // @monitorList is used to store the monitor objects which are acquired by the threads
+
+    /**
+     * @property monitorList is used to store the monitor objects which are acquired by the threads.
+     */
     public static Map<Object, Thread> monitorList = new HashMap<>();
 
+    /**
+     * @property MCThreads is used to store the threads in a proper format to be used by the model checker.
+     * TODO() : Check if it is necessary to have it.
+     * TODO() : Refactor the name of the property to mcThreads
+     */
+    public static Map<Integer, JMCThread> MCThreads= new HashMap<>();
 
-    // The constructor is private to prevent the instantiation of the class
-    private RuntimeEnvironment(){}
+    /**
+     * @property MCThreadsSerialNumber is used to store the number of seen events for each thread.
+     * This number is used to generate the serial number for the events of the threads.
+     * TODO() : Refactor the name of the property to mcThreadSerialNumber
+     */
+    public static Map<Integer, Integer> MCThreadsSerialNumber = new HashMap<>();
+
+    /**
+     * @property MCGraphs is used to store the execution graphs which are generated by the model checker.
+     * TODO() : Check if it is necessary to have it.
+     * TODO() : Refactor the name of the property to mcGraphs
+     */
+    public static List<ExecutionGraph> MCGraphs = new ArrayList<>();
+
+    /**
+     * @property tempMCGraphs is a temp for {@link RuntimeEnvironment#MCGraphs}
+     * TODO() : Check if it is necessary to have it.
+     */
+    public static List<ExecutionGraph> tempMCGraphs = new ArrayList<>();
+
+    /**
+     * @property MCEvent is used to store the event that a thread will execute.
+     * TODO() : Refactor the name of the property to mcEvent
+     */
+    public static ThreadEvent MCEvent;
+
+    /**
+     * @property numOfGraphs is used to store the number of the execution graphs that are generated by the model checker
+     * at the end of each iteration.
+     */
+    public static int numOfGraphs = 0;
+
+    /**
+     * @property threadIdMap is used to store the mapping between each thread id generated by JVM and the thread id
+     * generated by the RuntimeEnvironment.
+     */
+    public static Map<Long, Long> threadIdMap = new HashMap<>();
+
+    /**
+     * @property isFinished is used to indicate that the program execution is finished.
+     */
+    public static boolean isFinished = false;
+
+    /**
+     * @property strategyType is used to store the strategy type that is used by the RuntimeEnvironment and SchedulerThread.
+     * The supported strategy types are: randomizedTesting and DPORMC
+     */
+    public static String strategyType;
+
+    /**
+     * @property numOfExecutions is used to store the maximum number of the executions that the SchedulerThread will explore.
+     */
+    private static final int maxNumOfExecutions = 100;
+
+    /**
+     * @property numOfExecutionsCounter is used to count the number of the executions that the program has been tested.
+     * TODO() : Refactor the name of the property to numOfExecutions
+     */
+    public static int numOfExecutionsCounter = 0;
+
+
+    /**
+     * The constructor is private to prevent the instantiation of the class
+     */
+    private RuntimeEnvironment() {}
 
     public static void setRandomSeed(long seed) {
-        rng.setSeed(seed);
+        // rng.setSeed(seed);
     }
-    /*
-     * The @init method is used to initialize the Runtime Environment. It is called by the main method of the program.
-     * By using the @init method, the main thread is added to the @createdThreadList and the @readyThreadList.
-     * The @locks map is also initialized with the lock object of the main thread.
-     * After the initialization, the main thread's name will be "Thread-1".
+    /**
+     * The init method is used to initialize the RuntimeEnvironment.
+     * It is called by the main method of the program under test.
      * As this method is called by the main method in a single-threaded environment, there is no need to synchronize
-     * the access to the @createdThreadList, @readyThreadList, and @locks.
+     * the access to the {@link RuntimeEnvironment#createdThreadList}, {@link RuntimeEnvironment#readyThreadList}, and
+     * {@link RuntimeEnvironment#locks}.
      */
-    public static void init(Thread main){
-        System.out.println("[Runtime Environment Message] : The Runtime Environment has been deployed");
+    public static void init(Thread thread) throws IOException {
+        System.out.println("[Runtime Environment Message] : The RuntimeEnvironment has been deployed");
+
+        numOfExecutionsCounter++;
+        System.out.println("[Runtime Environment Message] : The number of executions is " + numOfExecutionsCounter);
+
         loadConfig();
         System.out.println("[Runtime Environment Message] : The CheckerConfiguration has been loaded");
-        System.out.println("[Runtime Environment Message] : The verbos mode is "+config.verbose +" , the random seed is "+config.seed+" , the maximum events per execution is "+config.maxEventsPerExecution +" , and the maximum iteration is : "+config.maxIterations);
+        System.out.println("[Debugging Message] : The verbos mode is" + config.verbose + ", the random seed is "
+                + config.seed +", the maximum events per execution is" + config.maxEventsPerExecution +
+                ", and the maximum iteration is " + config.maxIterations);
+
+        threadIdMap.put(thread.getId(), (long) threadCount);
+        thread.setName("Thread-"+threadCount++);
+        System.out.println("[Runtime Environment Message] : " + threadIdMap.get(thread.getId()) +
+                " added to the createdThreadList of the Runtime Environment");
+
         Object lock = new Object();
-        locks.put(main.getId(), lock);
-        createdThreadList.add(main);
-        readyThreadList.add(main);
-        main.setName("Thread-"+threadCount++);
-        System.out.println("[Runtime Environment Message] : "+main.getName() +" added to the createdThreadList of the Runtime Environment");
-        System.out.println("[Runtime Environment Message] : "+main.getName() +" added to the readyThreadList of the Runtime Environment");
-        System.out.println("[Runtime Environment Message] : "+main.getName() +" has the "+main.getState()+" state");
+        locks.put(threadIdMap.get(thread.getId()), lock);
+
+        createdThreadList.add(thread);
+        readyThreadList.add(thread);
+
+        JMCThread trd = new JMCThread(threadIdMap.get(thread.getId()).intValue(),new ArrayList<>());
+        MCThreads.put(threadIdMap.get(thread.getId()).intValue(), trd);
+        MCThreadsSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
+
+
+        System.out.println("[Runtime Environment Message] : "+ thread.getName() +" added to the createdThreadList of the" +
+                " Runtime Environment");
+        System.out.println("[Runtime Environment Message] : "+ thread.getName() +" added to the readyThreadList of the " +
+                "Runtime Environment");
+        System.out.println("[Runtime Environment Message] : "+ thread.getName() +" has the "+ thread.getState()+" state");
     }
 
-    public static void loadConfig(/*byte[] bytes*/) {
+    public static void loadConfig(/*byte[] bytes*/) throws IOException {
         try {
             /* 
             ByteArrayInputStream bis = new ByteArrayInputStream(bytes);

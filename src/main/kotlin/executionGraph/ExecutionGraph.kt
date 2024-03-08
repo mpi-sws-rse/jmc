@@ -176,7 +176,7 @@ data class ExecutionGraph(var root : RootNode? = null,
 
         for (i in 0 until this.COs.size){
             if(!this.deleted.contains(this.COs[i].secondWrite)){
-                if(this.COs[i].firstWrite is Initialization){
+                if(this.COs[i].firstWrite is InitializationEvent){
                     newGraph.COs.add(this.COs[i].deepCopy())
                 }else{
                     val firstWrite = this.COs[i].firstWrite as WriteEvent
@@ -226,7 +226,7 @@ data class ExecutionGraph(var root : RootNode? = null,
                     println(write)
                 }
                 EventType.INITIAL -> {
-                    val init : Initialization = e as Initialization
+                    val init : InitializationEvent = e as InitializationEvent
                     println(init)
                 }
 
@@ -297,7 +297,7 @@ data class ExecutionGraph(var root : RootNode? = null,
                         val readFrom = read.rf as WriteEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
-                    } else if (read.rf is Initialization){
+                    } else if (read.rf is InitializationEvent){
                         bufferedWriter.newLine()
                         bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
                     }
@@ -346,7 +346,7 @@ data class ExecutionGraph(var root : RootNode? = null,
                                 val readFrom = read.rf as WriteEvent
                                 bufferedWriter.newLine()
                                 bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
-                            } else if (read.rf is Initialization){
+                            } else if (read.rf is InitializationEvent){
                                 bufferedWriter.newLine()
                                 bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
                             }
@@ -396,7 +396,7 @@ data class ExecutionGraph(var root : RootNode? = null,
                                 val readFrom = read.rf as WriteEvent
                                 bufferedWriter.newLine()
                                 bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
-                            } else if (read.rf is Initialization){
+                            } else if (read.rf is InitializationEvent){
                                 bufferedWriter.newLine()
                                 bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
                             }
@@ -466,7 +466,7 @@ data class ExecutionGraph(var root : RootNode? = null,
                 )
             } else {
                 newExecutionGraph.COs.add(
-                    CO(newExecutionGraph.graphEvents.find { it.equals(this.COs[i].firstWrite) } as Initialization,
+                    CO(newExecutionGraph.graphEvents.find { it.equals(this.COs[i].firstWrite) } as InitializationEvent,
                         newExecutionGraph.graphEvents.find { it.equals(this.COs[i].secondWrite) } as WriteEvent)
                 )
             }

@@ -14,26 +14,26 @@ import programStructure.*
 
 class Trust {
     private var graph : ExecutionGraph = ExecutionGraph()
-    var allThreads: MutableMap<Int, Threads>? = mutableMapOf()
+    var allJMCThread: MutableMap<Int, JMCThread>? = mutableMapOf()
     private var allEvents : MutableList<Event> = mutableListOf()
     private var graphCounter : Int = 0
 
 
 
     init {
-        val init : Event = Initialization()
+        val init : Event = InitializationEvent()
         this.allEvents.add(init)
     }
 
     private fun makeAllEvents(){
-        for (i in this.allThreads!!.keys)
-           for (e in this.allThreads?.get(i)?.instructions!!) {
+        for (i in this.allJMCThread!!.keys)
+           for (e in this.allJMCThread?.get(i)?.instructions!!) {
                this.allEvents.add(e)
                println("[MC Message] : the event : $e")
            }
     }
-    fun setThreads(trds: MutableMap<Int, Threads>?){
-        this.allThreads = trds
+    fun setThreads(trds: MutableMap<Int, JMCThread>?){
+        this.allJMCThread = trds
         makeAllEvents()
     }
 
@@ -49,7 +49,7 @@ class Trust {
                     println(write)
                 }
                 EventType.INITIAL -> {
-                    val init : Initialization = i as Initialization
+                    val init : InitializationEvent = i as InitializationEvent
                     println(init)
                 }
 
@@ -111,7 +111,7 @@ class Trust {
                             val G2 = G.deepCopy()
                             val newNextEvent = nextReadEvent.deepCopy()
                             val newNextReadEvent = newNextEvent as ReadEvent
-                            newNextReadEvent.rf = (G.graphEvents[i].deepCopy()) as Initialization
+                            newNextReadEvent.rf = (G.graphEvents[i].deepCopy()) as InitializationEvent
                             G2.addEvent(newNextReadEvent as Event)
                             val newAllEvents = deepCopyAllEvents(allEvents)
                             visit(G2,newAllEvents)
@@ -246,7 +246,7 @@ class Trust {
                     visit(newG,deepCopyAllEvents(allEvents))
                 }
             } else if (G.graphEvents[i].type == EventType.INITIAL){
-                val findInitEvent = G.graphEvents[i] as Initialization
+                val findInitEvent = G.graphEvents[i] as InitializationEvent
                 val newWriteEvent = writeEvent.deepCopy() as WriteEvent
                 val newG = G.deepCopy()
 

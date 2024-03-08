@@ -12,7 +12,7 @@ import java.io.File
 
 class Tokenizer (private var threadCounter : Int = 0, private var serialNumber : Int = 0){
     private var errorHappened = false
-    private var threads = mutableMapOf<Int, Threads>()
+    private var JMCThread = mutableMapOf<Int, JMCThread>()
     fun readFile(fileName: String){
         File(fileName).forEachLine {
             when {
@@ -26,8 +26,8 @@ class Tokenizer (private var threadCounter : Int = 0, private var serialNumber :
     }
     private fun newThread() {
         threadCounter += 1
-        val trd = Threads(threadCounter)
-        threads[threadCounter] = trd
+        val trd = JMCThread(threadCounter)
+        JMCThread[threadCounter] = trd
         serialNumber = 0
         //println("Thread Number : "+ this.threadCounter) for debugging
         //println(command) for debugging
@@ -91,13 +91,13 @@ class Tokenizer (private var threadCounter : Int = 0, private var serialNumber :
                 if (rd != null) { // The flow logic of my code indicates that if we are in this line, it means that wr has been created, but the compiler does not give the permission fo direct assignment
                     serialNumber += 1
                     rd.serial = serialNumber
-                    threads[rd.tid]?.instructions?.add(rd)
+                    JMCThread[rd.tid]?.instructions?.add(rd)
                 }
             }
             serialNumber += 1
             if (wr != null) { // The flow logic of my code indicates that if we are in this line, it means that wr has been created, but the compiler does not give the permission fo direct assignment
                 wr.serial = serialNumber
-                threads[wr.tid]?.instructions?.add(wr)
+                JMCThread[wr.tid]?.instructions?.add(wr)
             }
             //println(this.serialNumber.toString()+" -- "+command) for debugging
         } else {
@@ -161,14 +161,14 @@ class Tokenizer (private var threadCounter : Int = 0, private var serialNumber :
                     if (rd1 != null) { // The flow logic of my code indicates that if we are in this line, it means that wr has been created, but the compiler does not give the permission fo direct assignment
                         serialNumber += 1
                         rd1.serial = serialNumber
-                        threads[rd1.tid]?.instructions?.add(rd1)
+                        JMCThread[rd1.tid]?.instructions?.add(rd1)
                     }
                 }
                 if (isReadHappened2) {
                     if (rd2 != null) { // The flow logic of my code indicates that if we are in this line, it means that wr has been created, but the compiler does not give the permission fo direct assignment
                         serialNumber += 1
                         rd2.serial = serialNumber
-                        threads[rd2.tid]?.instructions?.add(rd2)
+                        JMCThread[rd2.tid]?.instructions?.add(rd2)
                     }
                 }
                 // println(this.serialNumber.toString()+" -- "+command) for debugging
@@ -218,8 +218,8 @@ class Tokenizer (private var threadCounter : Int = 0, private var serialNumber :
     private fun notValidStatement(command : String){
         println("Dude! this statement is not valid in Kotlin : $command")
     }
-    fun getThreadsInfo() : MutableMap<Int, Threads>? {
+    fun getThreadsInfo() : MutableMap<Int, JMCThread>? {
         return if(errorHappened) null
-               else this.threads
+               else this.JMCThread
     }
 }

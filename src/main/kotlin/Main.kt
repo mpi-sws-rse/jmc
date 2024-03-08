@@ -53,7 +53,7 @@ fun main() {
     To Check the consistency for integration between
         Trust and Tokenizer uncomment the following.
 
-    if (trust.allThreads != null){
+    if (trust.allJMCThread != null){
         println("---------------------------")
         for (t in fr.threads){
             println(t)
@@ -73,7 +73,7 @@ fun main() {
     */
 
     // Here the Trust algorithm will be run
-    if (trust.allThreads != null){
+    if (trust.allJMCThread != null){
         println("Parsing has been completed")
         trust.verify()
         println("All the possible execution graphs have been visited.")
