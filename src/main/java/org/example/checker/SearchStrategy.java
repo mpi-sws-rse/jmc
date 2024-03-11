@@ -1,9 +1,12 @@
 package org.example.checker;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface SearchStrategy {
-    public void newExecution(); // new execution
-    public Optional<Thread> nextTask();
+
+    public void startEvent(Thread thread);
+
     public boolean done();    
 }

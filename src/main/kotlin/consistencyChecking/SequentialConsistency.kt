@@ -6,7 +6,7 @@ import programStructure.ReadEvent
 
 /*
 
-In graph class you can find to method for Sequential Consistency(SC)
+In this class you can find two method for Sequential Consistency(SC)
 checking against an execution graph. The first method, which seems to be
 incomplete is checking acyclicity of the "porf" relation based on the
 Trust algorithm. The second approach is based on Kater's paper and is so
@@ -52,9 +52,30 @@ class SequentialConsistency {
          sc = {po \cup rf \cup co \cup fr}^+
          fr = rf^{-1} ; co
          */
-        
-        @JvmStatic
+
         fun scAcyclicity(graph: ExecutionGraph) : Boolean{
+
+            // First, computing the sc of graph
+            graph.computeSc()
+
+            // Finally, finding a cycle within it
+            var cycleFound = false
+
+
+            for (pair in graph.sc.toList()){
+                val (a,b) = pair
+                if (a.equals(b)){
+                    cycleFound = true
+                    println("[SC Checker] Cycle found in SC relation and the cycle is: $a -> $b")
+                    graph.printSc()
+                    break
+                }
+            }
+            return !cycleFound
+        }
+
+        @JvmStatic
+        fun oldSCAcyclicity(graph: ExecutionGraph) : Boolean{
 
             // First, computing the sc of graph
             val sc = mutableListOf<Pair<Event,Event>>()

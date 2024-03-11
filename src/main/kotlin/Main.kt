@@ -1,16 +1,11 @@
 import dpor.Trust
 import parser.Tokenizer
 
-//import programStructure.Location
-
 /*
-    TODO(): Write an intro for the reader
+ * TODO(): Write an intro for the reader
  */
 
 fun main() {
-
-    //val rv = RV()
-    //rv.readSource()
 
     // Creating a tokenizer object
     val tknzr = Tokenizer()
@@ -28,7 +23,7 @@ fun main() {
      It captures all the write and read events from each tread.
      */
 
-    tknzr.readFile("src/main/resources/Input_Program/Program_Test_5")
+    tknzr.readFile("src/main/resources/Input_Program/Program_Test_6")
 
     /*
      For testing different programs use these :

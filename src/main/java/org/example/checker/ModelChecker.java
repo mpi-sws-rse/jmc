@@ -38,10 +38,10 @@ public class ModelChecker {
         String classPath = target.getTestPackage() + target.getTestClass();
         logger.trace("Generating bytecode for " + path + " " + classPath);
 
-        ByteCodeManager byteCodeManager = new ByteCodeManager(this.configuration, path, target.getTestClass());
+        ByteCodeManager byteCodeManager = new ByteCodeManager(path, target.getTestClass());
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
-        ByteCodeModifier byteCodeModifier = new ByteCodeModifier(this.configuration, allBytecode, classPath);
+        ByteCodeModifier byteCodeModifier = new ByteCodeModifier(allBytecode, classPath);
         byteCodeModifier.modifyThreadCreation();
         byteCodeModifier.modifyThreadStart();
         byteCodeModifier.modifyThreadRun();

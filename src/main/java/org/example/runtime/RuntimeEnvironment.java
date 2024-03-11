@@ -2,6 +2,8 @@ package org.example.runtime;
 
 import org.example.checker.CheckerConfiguration;
 import executionGraph.ExecutionGraph;
+import org.example.checker.SearchStrategy;
+import org.example.checker.StrategyType;
 import programStructure.*;
 
 import java.io.FileInputStream;
@@ -17,144 +19,145 @@ import java.util.Map;
 public class RuntimeEnvironment {
 
     /**
-     * @property config is used to store the CheckerConfiguration object which is loaded from the config.obj file.
+     * @property {@link #config} is used to store the {@link CheckerConfiguration} object which is loaded from the
+     * config.obj file.
      */
     private static CheckerConfiguration config = null;
 
     /**
-     * @property threadCount is used to store the number of threads that are created in the program under test.
+     * @property {@link #threadCount} is used to store the number of threads that are created in the program under test.
      */
     private static int threadCount = 1;
 
     /**
-     * @property threadWaitReq is used to store the thread that requested to wait
+     * @property {@link #threadWaitReq} is used to store the thread that requested to wait
      */
     public static Thread threadWaitReq = null;
 
     /**
-     * @property threadWaitReqLock is used to store the lock object for the threadWaitReq
-     * It is used to synchronize the access to {@link RuntimeEnvironment#threadWaitReq}
+     * @property {@link #threadWaitReqLock} is used to store the lock object for the {@link #threadWaitReq}
+     * It is used to synchronize the access to {@link #threadWaitReq}
      */
     public static Object threadWaitReqLock = new Object();
 
     /**
-     * @property threadStartReq is used to store the thread that requested to start
+     * @property {@link #threadStartReq} is used to store the thread that requested to start
      */
     public static Thread threadStartReq = null;
 
     /**
-     * @property threadEnterMonitorReq is used to store the thread that requested to enter the monitor
+     * @property {@link #threadEnterMonitorReq} is used to store the thread that requested to enter the monitor
      */
     public static Thread threadEnterMonitorReq = null;
 
     /**
-     * @property objectEnterMonitorReq is used to store the object that the
-     * {@link RuntimeEnvironment#threadEnterMonitorReq} requested to enter the monitor
+     * @property {@link #objectEnterMonitorReq} is used to store the object that the {@link #threadEnterMonitorReq}
+     * requested to enter the monitor
      */
     public static Object objectEnterMonitorReq = null;
 
     /**
-     * @property threadJoinReq is used to store the thread that requested to join to the
-     * {@link RuntimeEnvironment#threadJoinRes}
+     * @property {@link #threadJoinReq} is used to store the thread that requested to join to the {@link #threadJoinRes}
      */
     public static Thread threadJoinReq = null;
 
     /**
-     * @property threadJoinRes is used to store the thread that the {@link RuntimeEnvironment#threadJoinReq} requested
+     * @property {@link #threadJoinRes} is used to store the thread that the {@link #threadJoinReq} requested
      * to join over it.
      */
     public static Thread threadJoinRes = null;
 
     /**
-     * @property assertFlag is used to inform the SchedulerThread that an assert statement is executed, and it failed.
-     * Thus, the SchedulerThread will terminate the program execution.
+     * @property {@link #assertFlag} is used to inform the {@link SchedulerThread} object that an assert statement is
+     * executed, and it failed. Thus, the {@link SchedulerThread} object will terminate the program execution.
      */
     public static boolean assertFlag = false;
 
     /**
-     * @property locks is used to store the locks for the threads. The key is the thread id and the value is the
-     * lock object.
+     * @property {@link #locks} is used to store the locks for the threads. The key is the thread id and the value is
+     * the lock object.
      */
     public static Map<Long, Object> locks = new HashMap<>();
 
     /**
-     * @property createdThreadList is used to store the threads that are created in the program under test.
+     * @property {@link #createdThreadList} is used to store the threads that are created in the program under test.
      */
     public static List<Thread> createdThreadList = new ArrayList<>();
 
     /**
-     * @property readyThreadList is used to store the threads that are ready to run in the program under test.
+     * @property {@link #readyThreadList} is used to store the threads that are ready to run in the program under test.
      */
     public static List<Thread> readyThreadList = new ArrayList<>();
 
     /**
-     * @property monitorList is used to store the monitor objects which are acquired by the threads.
+     * @property {@link #monitorList} is used to store the monitor objects which are acquired by the threads.
      */
     public static Map<Object, Thread> monitorList = new HashMap<>();
 
+    // TODO() : Check if it is necessary to have it.
+    // TODO() : Refactor the name of the property to mcThreads
     /**
-     * @property MCThreads is used to store the threads in a proper format to be used by the model checker.
-     * TODO() : Check if it is necessary to have it.
-     * TODO() : Refactor the name of the property to mcThreads
+     * @property {@link #MCThreads} is used to store the threads in a proper format to be used by the model checker.
      */
     public static Map<Integer, JMCThread> MCThreads= new HashMap<>();
 
+    //TODO() : Refactor the name of the property to mcThreadSerialNumber
     /**
-     * @property MCThreadsSerialNumber is used to store the number of seen events for each thread.
+     * @property {@link #MCThreadsSerialNumber} is used to store the number of seen events for each thread.
      * This number is used to generate the serial number for the events of the threads.
-     * TODO() : Refactor the name of the property to mcThreadSerialNumber
      */
     public static Map<Integer, Integer> MCThreadsSerialNumber = new HashMap<>();
 
+    // TODO() : Check if it is necessary to have it.
+    // TODO() : Refactor the name of the property to mcGraphs
     /**
-     * @property MCGraphs is used to store the execution graphs which are generated by the model checker.
-     * TODO() : Check if it is necessary to have it.
-     * TODO() : Refactor the name of the property to mcGraphs
+     * @property {@link #MCGraphs} is used to store the execution graphs which are generated by the model checker.
      */
     public static List<ExecutionGraph> MCGraphs = new ArrayList<>();
 
+    // TODO() : Check if it is necessary to have it.
     /**
-     * @property tempMCGraphs is a temp for {@link RuntimeEnvironment#MCGraphs}
-     * TODO() : Check if it is necessary to have it.
+     * @property {@link #tempMCGraphs} is a temp for {@link #MCGraphs}
      */
     public static List<ExecutionGraph> tempMCGraphs = new ArrayList<>();
 
+    // TODO() : Refactor the name of the property to mcEvent
     /**
-     * @property MCEvent is used to store the event that a thread will execute.
-     * TODO() : Refactor the name of the property to mcEvent
+     * @property {@link #MCEvent} is used to store the event that a thread will execute.
      */
     public static ThreadEvent MCEvent;
 
     /**
-     * @property numOfGraphs is used to store the number of the execution graphs that are generated by the model checker
-     * at the end of each iteration.
+     * @property {@link #numOfGraphs} is used to store the number of the execution graphs that are generated by the
+     * model checker at the end of each iteration.
      */
     public static int numOfGraphs = 0;
 
     /**
-     * @property threadIdMap is used to store the mapping between each thread id generated by JVM and the thread id
-     * generated by the RuntimeEnvironment.
+     * @property {@link #threadIdMap} is used to store the mapping between each thread id generated by JVM and the
+     * thread id generated by the RuntimeEnvironment.
      */
     public static Map<Long, Long> threadIdMap = new HashMap<>();
 
     /**
-     * @property isFinished is used to indicate that the program execution is finished.
+     * @property {@link #isFinished} is used to indicate that the program execution is finished.
      */
     public static boolean isFinished = false;
 
     /**
-     * @property strategyType is used to store the strategy type that is used by the RuntimeEnvironment and SchedulerThread.
-     * The supported strategy types are: randomizedTesting and DPORMC
+     * @property {@link #strategyType} is used to store the strategy type that is used by the RuntimeEnvironment and
+     * SchedulerThread. The supported strategy types are: randomizedTesting and DPORMC
      */
-    public static String strategyType;
+    public static StrategyType strategyType;
 
     /**
-     * @property numOfExecutions is used to store the maximum number of the executions that the SchedulerThread will explore.
+     * @property {@link #maxNumOfExecutions} is used to store the maximum number of the executions that the
+     * SchedulerThread will explore.
      */
     private static final int maxNumOfExecutions = 100;
 
     /**
-     * @property numOfExecutionsCounter is used to count the number of the executions that the program has been tested.
+     * @property {@link #numOfExecutionsCounter} is used to count the number of the executions that the program has been tested.
      * TODO() : Refactor the name of the property to numOfExecutions
      */
     public static int numOfExecutionsCounter = 0;
@@ -168,12 +171,14 @@ public class RuntimeEnvironment {
     public static void setRandomSeed(long seed) {
         // rng.setSeed(seed);
     }
+
     /**
-     * The init method is used to initialize the RuntimeEnvironment.
-     * It is called by the main method of the program under test.
-     * As this method is called by the main method in a single-threaded environment, there is no need to synchronize
-     * the access to the {@link RuntimeEnvironment#createdThreadList}, {@link RuntimeEnvironment#readyThreadList}, and
-     * {@link RuntimeEnvironment#locks}.
+     * Initializes the RuntimeEnvironment.
+     * <p>
+     * This method is invoked by the main method of the program under test. As it is called in a single-threaded environment,
+     * there is no need to synchronize the access to the {@link #createdThreadList}, {@link #readyThreadList}, and {@link #locks}.
+     *
+     * @param thread The main thread of the program under test.
      */
     public static void init(Thread thread) throws IOException {
         System.out.println("[Runtime Environment Message] : The RuntimeEnvironment has been deployed");
@@ -182,6 +187,7 @@ public class RuntimeEnvironment {
         System.out.println("[Runtime Environment Message] : The number of executions is " + numOfExecutionsCounter);
 
         loadConfig();
+        strategyType = config.strategyType;
         System.out.println("[Runtime Environment Message] : The CheckerConfiguration has been loaded");
         System.out.println("[Debugging Message] : The verbos mode is" + config.verbose + ", the random seed is "
                 + config.seed +", the maximum events per execution is" + config.maxEventsPerExecution +
@@ -210,268 +216,734 @@ public class RuntimeEnvironment {
         System.out.println("[Runtime Environment Message] : "+ thread.getName() +" has the "+ thread.getState()+" state");
     }
 
-    public static void loadConfig(/*byte[] bytes*/) throws IOException {
+    /**
+     * Loads the {@link CheckerConfiguration} object from the config.obj file and assigns it to {@link #config}.
+     * <p>
+     * This method is invoked by the {@link #init(Thread)} method.
+     *
+     * @throws FileNotFoundException if the config.obj file is not found.
+     * @throws ClassNotFoundException if the CheckerConfiguration class is not found.
+     * @throws AssertionError if the loaded {@link #config} is null.
+     */
+    public static void loadConfig() {
         try {
-            /* 
-            ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-            ObjectInputStream in = new ObjectInputStream(bis);
-            config = (CheckerConfiguration) in.readObject();
-            in.close();
-            bis.close();
-            */
             FileInputStream fileIn = new FileInputStream("src/main/resources/config/config.obj");
             ObjectInputStream in = new ObjectInputStream(fileIn);
             config = (CheckerConfiguration) in.readObject();
-            assert(config!=null);
-            System.out.println("[Runtime Environment Message] : The verbose mode is "+config.verbose +" , the random seed is "+config.seed+" , the maximum events per execution is "+config.maxEventsPerExecution +" , and the maximum iteration is : "+config.maxIterations);
+            assert(config != null) : "The CheckerConfiguration is null";
+            System.out.println("[Runtime Environment Message] : The verbose mode is "+config.verbose +
+                    " , the random seed is " + config.seed + " , the maximum events per execution is " +
+                    config.maxEventsPerExecution + " , and the maximum iteration is : " + config.maxIterations);
             in.close();
             fileIn.close();
         } catch (IOException i) {
             i.printStackTrace();
-            assert(false);
+            assert(false) : "IOException in loadConfig method";
         } catch (ClassNotFoundException c) {
-            System.out.println("Class not found");
             c.printStackTrace();
-            assert(false);
+            assert(false) : "Class not found in loadConfig method";
         }
     }
 
-    /*
-     * The @addThread method is used to add the @thread to the Runtime Environment. It is called when a new object of the
-     * Thread class(or castable to Thread class) is created.
-     * By using the @addThread method, the @thread is added to the @createdThreadList.
-     * After the addition, the @thread's name will be "Thread-"+@threadCount++.
-     * The corresponding @lock object of the @thread is also added to the @locks map.
-     * As this method is called by a single-threaded environment(This is guaranteed by the SchedulerThread),
-     * there is no need to synchronize the access to the @createdThreadList and @locks.
+    // TODO() : Complete the description of the method
+    /**
+     * Adds a new thread to the Runtime Environment.
+     * <p>
+     * This method is invoked when a new instance of the Thread class (or a class castable to Thread) is created.
+     * The new thread is added to the {@link #createdThreadList}.
+     * <p>
+     * The method assigns a unique name to the thread in the format "Thread-"+threadCount and increments the threadCount.
+     * It also creates a corresponding lock object for the thread and adds it to the {@link #locks} map.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #createdThreadList} and {@link #locks}.
+     * <p>
+     * If the thread is already in the createdThreadList, a message is printed to the console and no further action is taken.
+     *
+     * @param thread The thread to be added to the RuntimeEnvironment.
+     * <p>
      */
-    public static void addThread(Thread thread){
+    public static void addThread(Thread thread) {
+        threadIdMap.put(thread.getId(), (long) threadCount);
         if (!createdThreadList.contains(thread)) {
-            thread.setName("Thread-"+threadCount++);
+            thread.setName("Thread-" + threadCount++);
             Object lock = new Object();
-            locks.put(thread.getId(), lock);
+            locks.put(threadIdMap.get(thread.getId()), lock);
             createdThreadList.add(thread);
-            System.out.println("[Runtime Environment Message] : "+thread.getName()+ " added to the createdThreadList of the Runtime Environment");
-            System.out.println("[Runtime Environment Message] : "+thread.getName()+ " has the "+thread.getState()+" state");
+
+            JMCThread trd = new JMCThread(threadIdMap.get(thread.getId()).intValue(),new ArrayList<>());
+            MCThreads.put(threadIdMap.get(thread.getId()).intValue(),trd);
+            MCThreadsSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
+
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " added to the createdThreadList " +
+                    "of the Runtime Environment");
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() +
+                    " state");
         } else {
-            System.out.println("[Runtime Environment Message] : "+thread.getName()+":"+ thread.getId() +" is already in the createdThreadlist of the Runtime Environment");
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + ":" + thread.getId() +
+                    " is already in the createdThreadlist of the Runtime Environment");
         }
     }
 
-    /*
-     * The @threadStart method is used to add the @thread to the @readyThreadList of the Runtime Environment.
-     * It is called when the start() method of the @thread is called.
-     * By using the @threadStart method, the @thread is added to the @readyThreadList.
-     * As the SchedulerThread needs to know that the @thread is ready to run, the @threadStartReq is assigned to the @thread.
-     * Thus, the @currentThread will request to wait to hand over the control to the SchedulerThread for deciding which thread to run.
-     * As this method is called by a single-threaded environment(This is guaranteed by the SchedulerThread),
-     * there is no need to synchronize the access to the @readyThreadList.
+    /**
+     * Adds a new thread to the readyThreadList of the Runtime Environment.
+     * <p>
+     * This method is invoked when a thread in the program under test calls the start() method. The thread is then added
+     * to the {@link #readyThreadList}.
+     * <p>
+     * The method assigns the thread to the {@link #threadStartReq} to inform the SchedulerThread that the thread is
+     * ready to run. It then calls the {@link #waitRequest(Thread)} method to make the current thread wait and hand over
+     * control to the SchedulerThread for deciding which thread to run next.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #readyThreadList}.
+     * <p>
+     * If the thread is not in the createdThreadList or is already in the readyThreadList, a message is printed to the
+     * console and no further action is taken.
+     *
+     * @param thread The thread to be added to the readyThreadList.
+     * @param currentThread The current thread that is running.
      */
-    public static void threadStart(Thread thread, Thread currentThread){
+    public static void threadStart(Thread thread, Thread currentThread) {
         if (createdThreadList.contains(thread) && !readyThreadList.contains(thread)) {
-            System.out.println("[Runtime Environment Message] : "+thread.getName() +" requested to run the start() inside the "+currentThread.getName());
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to run the start()" +
+                    " inside the " + currentThread.getName());
             readyThreadList.add(thread);
-            System.out.println("[Runtime Environment Message] : "+thread.getName()+ " added to the readyThreadList of the Runtime Environment");
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " added to the readyThreadList " +
+                    "of the Runtime Environment");
             threadStartReq = thread;
             waitRequest(currentThread);
         } else {
-            System.out.println("[Runtime Environment Message] : "+thread.getName()+ " is not in the createdThreadList");
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " is not in the createdThreadList");
         }
     }
-
-    /*
-     * The @threadJoin method is used by the @threadReq when its next instruction is a join() over the @threadRes.
-     * After this request, the @threadReq will request to wait to hand over the control to the SchedulerThread for deciding which thread to run.
-     * As the SchedulerThread needs to know that the @threadReq requested to join over the @threadRes, the @threadJoinReq and @threadJoinRes are assigned to the @threadReq and @threadRes respectively.
+    /**
+     * Handles a join request from one thread to another.
+     * <p>
+     * This method is invoked when a thread in the program under test calls the join() method on another thread. The
+     * calling thread is then set as the {@link #threadJoinReq} and the thread it wishes to join is set as the
+     * {@link #threadJoinRes}.
+     * <p>
+     * The method then calls the {@link #waitRequest(Thread)} method to make the calling thread wait and hand over
+     * control to the SchedulerThread for deciding which thread to run next.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #threadJoinReq} and {@link #threadJoinRes}.
+     *
+     * @param threadReq The thread that requested to join over the threadRes.
+     * @param threadRes The thread that the threadReq requested to join over it.
      */
-    public static void threadJoin(Thread threadReq, Thread threadRes){
-        System.out.println("[Runtime Environment Message] : "+threadReq.getName() +" requested to join over the "+threadRes.getName());
+    public static void threadJoin(Thread threadReq, Thread threadRes) {
+        System.out.println("[Runtime Environment Message] : " + threadReq.getName() + " requested to join over the " +
+                threadRes.getName());
         threadJoinReq = threadReq;
         threadJoinRes = threadRes;
         waitRequest(threadReq);
     }
 
-    /*
-     * The @getPermission method is used to give the permission to the @thread to run.
-     * It is called by the SchedulerThread to give the permission from the @thread to run.
-     * For now, the @thread is the main thread of the program.
+    // TODO() : Check if it is necessary to have it.
+    /**
+     * Requests permission for a thread to run.
+     * <p>
+     * This method is invoked by the SchedulerThread to request permission from a thread to execute. It ensures that
+     * access to {@link #threadWaitReq} is synchronized and race-free.
+     * <p>
+     * The method uses the lock associated with the thread (retrieved from the {@link #locks} map) to synchronize the
+     * access. This ensures that the thread can safely run without any race conditions.
+     *
+     * @param thread The thread for which permission to run is requested.
      */
-    public static void getPermission(Thread thread){
-        synchronized (locks.get(thread.getId())) {
-            System.out.println("[Runtime Environment Message] : "+Thread.currentThread().getName()+ " got permitted to RUN");
+    public static void getPermission(Thread thread) {
+        synchronized (locks.get(threadIdMap.get(thread.getId()))) {
+            System.out.println("[Runtime Environment Message] : " + Thread.currentThread().getName() + " got permitted to RUN");
         }
     }
 
-    /*
-     * The @waitRequest method is used by the @thread to request to wait.
-     * It is called by the @thread for various reasons such as a new thread wants to start, read or write operations are requested.
+    /**
+     * Handles a wait request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test needs to wait. The waiting thread could be due to
+     * various reasons such as a new thread wanting to start, read or write operations being requested, monitor enter
+     * operation being requested, join operation being requested, or an assert statement being executed.
+     * <p>
+     * The method assigns the waiting thread to the {@link #threadWaitReq} to inform the SchedulerThread that the thread
+     * is waiting. It then makes the current thread wait by calling the wait() method on the lock associated with the
+     * thread (retrieved from the {@link #locks} map). This hands over control to the SchedulerThread for deciding which
+     * thread to run next.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #threadWaitReq}.
+     * <p>
+     *
+     * @param thread The thread that requested to wait.
+     * @throws InterruptedException if the thread is interrupted while waiting.
      */
-    public static void waitRequest(Thread thread){
-        synchronized (locks.get(thread.getId())) {
-            System.out.println("[Runtime Environment Message] : "+thread.getName()+ " has requested to WAIT");
-            /*
-             * There could be a race condition on @threadWaitReq in the following assignment statement. While the @thread is
-             * changing the value of @threadWaitReq, SchedulerThread can read the value of @threadWaitReq.
-             * To avoid from this situation, we used the @threadWaitReqLock object to synchronize the access to @threadWaitReq.
+    public static void waitRequest(Thread thread) {
+        synchronized (locks.get(threadIdMap.get(thread.getId()))) {
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has requested to WAIT");
+            /**
+             * There could be a race condition on {@link #threadWaitReq} in the following assignment statement.
+             * While the thread is changing the value of {@link #threadWaitReq}, SchedulerThread can read the value of
+             * {@link #threadWaitReq}. To avoid from this situation, we used the {@link #threadWaitReqLock} object to
+             * synchronize the access to {@link #threadWaitReq}.
              */
-            synchronized (threadWaitReqLock){
+            synchronized (threadWaitReqLock) {
                 threadWaitReq = thread;
             }
             try {
-                locks.get(thread.getId()).wait();
+                locks.get(threadIdMap.get(thread.getId())).wait();
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
+                assert (false) : "InterruptedException in waitRequest method";
             }
 
         }
     }
 
-    /*
-     * The @initSchedulerThread method is used to initialize the SchedulerThread. It is called by the main method of the program.
-     * By using the @initSchedulerThread method, the SchedulerThread is started and the main thread is requested to wait.
-     * Since the SchedulerThread is running concurrently with the main thread, the @locks.get(@main.getId()) is used by the main thread,
-     * and the SchedulerThread first calls the RuntimeEnvironment.getPermission(RuntimeEnvironment.createdThreadList.get(0)) to ensure that
-     * the @threadWaitReq is race-free.
+    /**
+     * Initializes the SchedulerThread and makes the main thread wait.
+     * <p>
+     * This method is invoked by the main method of the program under test. It starts the SchedulerThread and then makes
+     * the main thread wait. This allows the SchedulerThread to take control of the execution order of the threads in
+     * the program.
+     * <p>
+     * The method first starts the SchedulerThread and then assigns the main thread to the {@link #threadWaitReq} to
+     * inform the SchedulerThread that the main thread is waiting. It then makes the main thread wait by calling the
+     * wait() method on the lock associated with the main thread (retrieved from the {@link #locks} map). This hands
+     * over control to the SchedulerThread for deciding which thread to run next.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #threadWaitReq}.
+     *
+     * @param main The main thread of the program under test.
+     * @param st The SchedulerThread of the program under test.
+     * @throws InterruptedException if the main thread is interrupted while waiting.
      */
-    public static void initSchedulerThread(Thread main, Thread st){
-        synchronized (locks.get(main.getId())){
-            System.out.println("[Runtime Environment Message] : "+main.getName()+ " is calling the start() of the SchedulerThread");
+    public static void initSchedulerThread(Thread main, Thread st) {
+        synchronized (locks.get(threadIdMap.get(main.getId()))) {
+            System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(main.getId()) + " is calling " +
+                    "the start() of the SchedulerThread");
             st.start();
-            System.out.println("[Runtime Environment Message] : "+st.getName()+ " has the "+st.getState()+" state");
-            System.out.println("[Runtime Environment Message] : "+main.getName()+ " has requested to WAIT");
+            System.out.println("[Runtime Environment Message] : " + st.getName() + " has the " + st.getState() + " state");
+            System.out.println("[Runtime Environment Message] : " + main.getName() + " has requested to WAIT");
             threadWaitReq = main;
             try {
-                locks.get(main.getId()).wait();
+                locks.get(threadIdMap.get(main.getId())).wait();
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
+                assert (false) : "InterruptedException in initSchedulerThread method";
             }
         }
     }
 
-    /*
-     * The @finishThreadRequest method is used by the @thread to request to finish.
-     * By calling the @finishThreadRequest method, the @thread is removed from the @createdThreadList and @readyThreadList.
+    /**
+     * Handles a finish request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test has completed its execution and needs to be
+     * removed from the active threads list. The thread is then removed from both the {@link #createdThreadList} and
+     * {@link #readyThreadList}.
+     * <p>
+     * The method checks if the thread is the main thread. If it is, it sets the {@link #isFinished} flag to true, makes
+     * the main thread wait by calling the {@link #waitRequest(Thread)} method, and then calls the
+     * {@link #terminateExecution()} method to end the program execution.
+     * <p>
+     * If the thread is not the main thread, it sets the {@link #isFinished} flag to true and assigns the thread to
+     * the {@link #threadWaitReq} to inform the SchedulerThread that the thread has finished its execution.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #createdThreadList}, {@link #readyThreadList}, and {@link #threadWaitReq}.
+     *
+     * @param thread The thread that requested to finish.
      */
-    public static void finishThreadRequest(Thread thread){
-        synchronized (locks.get(thread.getId())){
-            System.out.println("[Runtime Environment Message] : "+thread.getName()+" has requested to FINISH");
-
-            /*
-             * There could be a race condition on @threadWaitReq in the following assignment statement. While the @thread is
-             * changing the value of @threadWaitReq, SchedulerThread can read the value of @threadWaitReq.
-             * To avoid from this situation, we used the @threadWaitReqLock object to synchronize the access to @threadWaitReq.
-             * Since the @SchedulerThread will wait on the @threadWaitReqLock, the createdThreadList and readyThreadList will be race-free.
-             */
+    public static void finishThreadRequest(Thread thread) {
+        synchronized (locks.get(threadIdMap.get(thread.getId()))) {
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has requested to FINISH");
             createdThreadList.remove(thread);
             readyThreadList.remove(thread);
-            if (thread.getId() == 1){
+            if (threadIdMap.get(thread.getId()) == 1) {
+                isFinished = true;
                 waitRequest(thread);
-                System.exit(0);
-            }else {
+                terminateExecution();
+            } else {
+                /**
+                 * There could be a race condition on {@link #threadWaitReq} in the following assignment statement. While
+                 * the thread is changing the value of {@link #threadWaitReq}, SchedulerThread can read the value of
+                 * {@link #threadWaitReq}. To avoid from this situation, we used the {@link #threadWaitReqLock} object to
+                 * synchronize the access to {@link #threadWaitReq}. Since the SchedulerThread will wait on the
+                 * {@link #threadWaitReqLock}, the {@link #createdThreadList} and {@link #readyThreadList} will be race-free.
+                 */
                 synchronized (threadWaitReqLock) {
+                    isFinished = true;
                     threadWaitReq = thread;
                 }
             }
         }
     }
 
-    /*
-     * The @readOperation method is used by the @thread when its next instruction is a read operation(GETFIELD).
-     * It is called by the @thread to request to read the value of the @obj.@name which is from the @owner class.
-     * The @descriptor is used to specify the type of the field.
-     * After this request, the @thread will request to wait to hand over the control to the SchedulerThread for deciding which thread to run.
+    //TODO() : Change the way of termination ( using the System.exit(0) method is not good)
+    /**
+     * Terminates the execution of the program under test and resets the RuntimeEnvironment.
+     * <p>
+     * This method is invoked when the main thread of the program under test has completed its execution. It first
+     * resets the RuntimeEnvironment by calling the {@link #resetRuntimeEnvironment()} method. Then, based on the
+     * strategy type and the states of the RuntimeEnvironment, it decides whether to terminate the life-cycle process
+     * of testing or continue the testing with the next iteration.
+     * <p>
+     * If the {@link #MCGraphs} list is empty and the {@link #strategyType} is "DPORMC", the method terminates the
+     * program execution.
+     * If the {@link #numOfExecutionsCounter} is less than the {@link #maxNumOfExecutions} and the {@link #strategyType}
+     * is "randomizedTesting", the method terminates the program execution.
+     * If the {@link #numOfExecutionsCounter} is equal to the {@link #maxNumOfExecutions} and the {@link #strategyType}
+     * is "randomizedTesting", the method terminates the program execution.
+     * <p>
+     * The termination of the program execution is done by calling the System.exit(0) method.
      */
-    public static void ReadOperation(Object obj, Thread thread, String owner, String name, String descriptor){
+    private static void terminateExecution() {
+        resetRuntimeEnvironment();
+        if (MCGraphs.isEmpty() && strategyType.equals("DPORMC")) {
+            System.exit(0);
+        } else if (numOfExecutionsCounter < maxNumOfExecutions && strategyType.equals("randomizedTesting")) {
+            System.out.println("[Runtime Environment Message] : The " + numOfExecutionsCounter + " execution is finished");
+            numOfExecutionsCounter++;
+        } else if (numOfExecutionsCounter == maxNumOfExecutions && strategyType.equals("randomizedTesting")) {
+            System.out.println("[Runtime Environment Message] : The " + numOfExecutionsCounter + " execution is finished");
+            System.out.println("[Runtime Environment Message] : The maximum number of the executions is reached");
+            System.exit(0);
+        }
+    }
+
+    // TODO() : Refactor the name of this method to the readOperation
+    /**
+     * Handles a read operation request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test is about to execute a read operation ({@code GETFIELD}).
+     * The thread is requesting to read the value of a field from an object.
+     * <p>
+     * The method first creates a location based on the provided object, owner class, field name, and descriptor.
+     * It then checks if the location is of a primitive type. If it is, a ReadEvent is created for the thread and the
+     * thread is made to wait by calling the {@link #waitRequest(Thread)} method. This hands over control to the
+     * SchedulerThread for deciding which thread to run next.
+     * <p>
+     * If the location is not of a primitive type, a message is printed to the console indicating that the ModelChecker
+     * will not consider this operation as it does not involve a primitive type.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #MCEvent}.
+     *
+     * @param obj The object that the thread wants to read the value of the field from it.
+     * @param thread The thread that wants to read the value of the field.
+     * @param owner The class that the field is from it.
+     * @param name The name of the field.
+     * @param descriptor The type of the field.
+     */
+    public static void ReadOperation(Object obj, Thread thread, String owner, String name, String descriptor) {
+        Location location = createLocation(obj, thread, owner, name, descriptor);
+        System.out.println("[Runtime Environment Message] : " + threadIdMap.get(thread.getId()) + " requested to " +
+                "read the value of " + owner + "." + name + "(" + descriptor + ") = " + location.getValue());
+        if (location.isPrimitive()) {
+            ReadEvent readEvent = createReadEvent(thread, location);
+            MCEvent = readEvent;
+            waitRequest(thread);
+        } else {
+            System.out.println("[Runtime Environment Message] : Since the value is not a primitive type, the Model" +
+                    "Checker will not care about it");
+        }
+    }
+
+    // TODO() : Refactor the name of this method to writeOperation
+    /**
+     * Handles a write operation request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test is about to execute a write operation ({@code PUTFIELD}).
+     * The thread is requesting to write a new value to a field of an object.
+     * <p>
+     * The method first creates a location based on the provided object, owner class, field name, and descriptor.
+     * It then checks if the location is of a primitive type. If it is, a WriteEvent is created for the thread and the
+     * thread is made to wait by calling the {@link #waitRequest(Thread)} method. This hands over control to the
+     * SchedulerThread for deciding which thread to run next.
+     * <p>
+     * If the location is not of a primitive type, a message is printed to the console indicating that the ModelChecker
+     * will not consider this operation as it does not involve a primitive type.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #MCEvent}.
+     *
+     * @param obj The object that the thread wants to write the new value to its field.
+     * @param newVal The new value that the thread wants to write to the field.
+     * @param thread The thread that wants to write the new value to the field.
+     * @param owner The class that the field belongs to.
+     * @param name The name of the field.
+     * @param descriptor The type of the field.
+     */
+    public static void WriteOperation(Object obj, Object newVal, Thread thread, String owner, String name,
+                                      String descriptor) {
+        Location location = createLocation(obj, thread, owner, name, descriptor);
+        System.out.println("[Runtime Environment Message] : " + threadIdMap.get(thread.getId()) + " requested to " +
+                "write the [" + newVal + "] value to " + owner + "." + name + "(" + descriptor + ") with old value " +
+                "of [" + location.getValue() + "]");
+        if (location.isPrimitive()) {
+            WriteEvent writeEvent = createWriteEvent(thread, location, newVal);
+            MCEvent = writeEvent;
+            waitRequest(thread);
+        } else {
+            System.out.println("[Runtime Environment Message] : Since the value is not a primitive type, the Model " +
+                    "Checker will not care about it");
+        }
+    }
+
+    /**
+     * Handles a monitor entry request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test is about to execute a {@code MONITORENTER} operation.
+     * The thread is requesting to enter the monitor of a lock.
+     * <p>
+     * The method assigns the requesting thread to the {@link #threadEnterMonitorReq} and the lock to the
+     * {@link #objectEnterMonitorReq} to inform the SchedulerThread that the thread has requested to enter the monitor.
+     * It then makes the requesting thread wait by calling the {@link #waitRequest(Thread)} method. This hands over
+     * control to the SchedulerThread for deciding which thread to run next.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #threadEnterMonitorReq} and {@link #objectEnterMonitorReq}.
+     *
+     * @param lock The lock that the thread wishes to enter.
+     * @param thread The thread that wishes to enter the lock.
+     */
+    public static void enterMonitor(Object lock, Thread thread) {
+        System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to MONITORENTER over " +
+                "the " + lock.toString());
+        threadEnterMonitorReq = thread;
+        objectEnterMonitorReq = lock;
+        waitRequest(thread);
+    }
+
+    // TODO() :  It is called by the @thread to request to exit the monitor of the @lock.
+    // TODO() : After this request, the @thread will request to wait to hand over the control to the SchedulerThread
+    //  for deciding which thread to run.
+    /**
+     * Handles a monitor exit request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test is about to execute a {@code MONITOREXIT} operation.
+     * The thread is requesting to exit the monitor of a lock.
+     * <p>
+     * The method logs the request of the thread to exit the monitor of the lock. However, it does not perform any
+     * action or change any state in the RuntimeEnvironment. The actual exit operation is handled by the JVM.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to any shared resources.
+     *
+     * @param lock The lock that the thread wishes to exit.
+     * @param thread The thread that wishes to exit the lock.
+     */
+    public static void exitMonitor(Object lock, Thread thread) {
+        System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to MONITOREXIT over " +
+                "the " + lock.toString());
+    }
+
+    /**
+     * Handles a lock acquisition event from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test has successfully acquired a lock. The thread and
+     * the lock it acquired are then recorded in the {@link #monitorList}.
+     * <p>
+     * The method logs the lock acquisition event and adds the lock and thread to the {@link #monitorList}. This allows
+     * the RuntimeEnvironment to keep track of which threads hold which locks, which is essential for handling
+     * synchronization and preventing deadlocks.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no
+     * need to synchronize access to the {@link #monitorList}.
+     *
+     * @param lock The lock that the thread has acquired.
+     * @param thread The thread that has acquired the lock.
+     */
+    public static void acquiredLock(Object lock, Thread thread) {
+        System.out.println("[Runtime Environment Message] : " + thread.getName() + " acquired the " + lock.toString() +
+                " lock");
+        monitorList.put(lock, thread);
+        System.out.println("[Runtime Environment Message] : (" + lock + ", " + thread.getName() + ") added to the " +
+                "monitorList of the RuntimeEnvironment");
+    }
+
+    /**
+     * Handles a lock release event from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test has successfully released a lock. The thread and
+     * the lock it released are then removed from the {@link #monitorList}.
+     * <p>
+     * The method logs the lock release event and removes the lock and thread from the {@link #monitorList}. This allows
+     * the RuntimeEnvironment to keep track of which threads hold which locks, which is essential for handling
+     * synchronization and preventing deadlocks.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no
+     * need to synchronize access to the {@link #monitorList}.
+     *
+     * @param lock The lock that the thread has released.
+     * @param thread The thread that has released the lock.
+     */
+    public static void releasedLock(Object lock, Thread thread) {
+        System.out.println("[Runtime Environment Message] : " + thread.getName() + " released the " + lock.toString() +
+                " lock");
+        monitorList.remove(lock, thread);
+        System.out.println("[Runtime Environment Message] : (" + lock + ", " + thread.getName() + ") removed from the " +
+                "monitorList of the RuntimeEnvironment");
+    }
+
+    /**
+     * Handles an assertion failure from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test encounters a failed assert statement. The thread
+     * uses this method to notify the RuntimeEnvironment about the assertion failure.
+     * <p>
+     * The method sets the {@link #assertFlag} to true, indicating that an assertion has failed. It then logs the
+     * provided failure message to the console. Finally, it makes the current thread wait by calling the
+     * {@link #waitRequest(Thread)} method. This hands over control to the SchedulerThread for deciding which thread
+     * to run next.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #assertFlag}.
+     *
+     * @param message The failure message associated with the assert statement.
+     */
+    public static void assertOperation(String message) {
+        System.out.println("[Runtime Environment Message] : " + message);
+        assertFlag = true;
+        waitRequest(Thread.currentThread());
+    }
+
+    /**
+     * Creates a JoinEvent for a thread that has requested to join another thread.
+     * <p>
+     * This method is invoked by the SchedulerThread when a thread in the program under test has requested to join
+     * another thread and the latter has finished its execution. The method creates a JoinEvent for the requesting
+     * thread over the finished thread.
+     * <p>
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)} method.
+     * It then creates a new JoinEvent with the {@code EventType.JOIN}, the IDs of the requesting and finished threads,
+     * and the generated serial number.
+     * <p>
+     * The created JoinEvent is then added to the instructions of the requesting thread in the {@link #MCThreads} map.
+     * This allows the SchedulerThread to keep track of the join events in the program execution.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no
+     * need to synchronize access to the {@link #MCThreads} map.
+     *
+     * @param threadReq The thread that has requested to join over the threadRes.
+     * @param threadRes The thread that the threadReq has requested to join over it.
+     * @return The created JoinEvent for the threadReq over the threadRes.
+     */
+    public static JoinEvent createJoinEvent(Thread threadReq, Thread threadRes) {
+        int serialNumber = getNextSerialNumber(threadReq);
+        JoinEvent joinEvent = new JoinEvent(EventType.JOIN, threadIdMap.get(threadReq.getId()).intValue(), serialNumber,
+                threadIdMap.get(threadRes.getId()).intValue());
+        MCThreads.get(threadIdMap.get(threadReq.getId()).intValue()).getInstructions().add(joinEvent);
+        return joinEvent;
+    }
+
+    /**
+     * Creates a StartEvent for a thread that has been started by another thread.
+     * <p>
+     * This method is invoked by the SchedulerThread when a thread (the callerThread) in the program under test has
+     * started another thread (the calleeThread). The method creates a StartEvent for the calleeThread.
+     * <p>
+     * The method creates a new StartEvent with the {@code EventType.START}, the IDs of the calleeThread and callerThread.
+     * The serial number for the event is set to 0 as it is the first event for the calleeThread.
+     * <p>
+     * The created StartEvent is then added to the instructions of the calleeThread in the {@link #MCThreads} map. This
+     * allows the SchedulerThread to keep track of the start events in the program execution.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #MCThreads} map.
+     *
+     * @param calleeThread The thread for which the StartEvent is being created.
+     * @param callerThread The thread that started the calleeThread.
+     * @return The created StartEvent for the calleeThread.
+     */
+    public static StartEvent createStartEvent(Thread calleeThread, Thread callerThread) {
+        StartEvent startEvent = new StartEvent(EventType.START, threadIdMap.get(calleeThread.getId()).intValue(), 0,
+                threadIdMap.get(callerThread.getId()).intValue());
+        MCThreads.get(threadIdMap.get(calleeThread.getId()).intValue()).getInstructions().add(startEvent);
+        return startEvent;
+    }
+
+    /**
+     * Creates a FinishEvent for a thread that has completed its execution.
+     * <p>
+     * This method is invoked by the SchedulerThread when a thread in the program under test has finished its execution.
+     * The method creates a FinishEvent for the finished thread.
+     * <p>
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new FinishEvent with the {@code EventType.FINISH}, the ID of the finished thread, and
+     * the generated serial number.
+     * <p>
+     * The created FinishEvent is then added to the instructions of the finished thread in the {@link #MCThreads} map.
+     * This allows the SchedulerThread to keep track of the finish events in the program execution.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no
+     * need to synchronize access to the {@link #MCThreads} map.
+     *
+     * @param thread The thread for which the FinishEvent is being created.
+     * @return The created FinishEvent for the finished thread.
+     */
+    public static FinishEvent createFinishEvent(Thread thread) {
+        int serialNumber = getNextSerialNumber(thread);
+        FinishEvent finishEvent = new FinishEvent(EventType.FINISH, threadIdMap.get(thread.getId()).intValue(), serialNumber);
+        MCThreads.get(threadIdMap.get(thread.getId()).intValue()).getInstructions().add(finishEvent);
+        return finishEvent;
+    }
+
+    /**
+     * Creates a ReadEvent for a thread that is about to read a value from a location.
+     * <p>
+     * This method is invoked by the RuntimeEnvironment when a thread in the program under test is about to execute a
+     * read operation. The method creates a ReadEvent for the thread and the location it wants to read from.
+     * <p>
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new ReadEvent with the {@code EventType.READ}, the ID of the thread, the generated
+     * serial number, the current value of the location, and the location itself.
+     * <p>
+     * The created ReadEvent is then added to the instructions of the thread in the {@link #MCThreads} map. This allows
+     * the SchedulerThread to keep track of the read events in the program execution.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no
+     * need to synchronize access to the {@link #MCThreads} map.
+     *
+     * @param thread The thread for which the ReadEvent is being created.
+     * @param location The location that the thread wants to read from.
+     * @return The created ReadEvent for the thread.
+     */
+    public static ReadEvent createReadEvent(Thread thread, Location location) {
+        int serialNumber = getNextSerialNumber(thread);
+        ReadEvent readEvent = new ReadEvent(threadIdMap.get(thread.getId()).intValue(), EventType.READ, serialNumber,
+                location.getValue(), null, location);
+        MCThreads.get(threadIdMap.get(thread.getId()).intValue()).getInstructions().add(readEvent);
+        return readEvent;
+    }
+
+    /**
+     * Creates a WriteEvent for a thread that is about to write a value to a location.
+     * <p>
+     * This method is invoked by the RuntimeEnvironment when a thread in the program under test is about to execute a
+     * write operation. The method creates a WriteEvent for the thread, the location it wants to write to, and the new
+     * value it wants to write.
+     * <p>
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new WriteEvent with the {@code EventType.WRITE}, the ID of the thread, the generated
+     * serial number, the new value, and the location itself.
+     * <p>
+     * The created WriteEvent is then added to the instructions of the thread in the {@link #MCThreads} map. This allows
+     * the SchedulerThread to keep track of the write events in the program execution.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #MCThreads} map.
+     *
+     * @param thread The thread for which the WriteEvent is being created.
+     * @param location The location that the thread wants to write to.
+     * @param newVal The new value that the thread wants to write to the location.
+     * @return The created WriteEvent for the thread.
+     */
+    public static WriteEvent createWriteEvent(Thread thread, Location location, Object newVal) {
+        int serialNumber = getNextSerialNumber(thread);
+        WriteEvent writeEvent = new WriteEvent(threadIdMap.get(thread.getId()).intValue(), EventType.WRITE, serialNumber,
+                newVal, location);
+        MCThreads.get(threadIdMap.get(thread.getId()).intValue()).getInstructions().add(writeEvent);
+        return writeEvent;
+    }
+
+    /**
+     * Creates a Location object for a thread that is about to perform a read or write operation on a field.
+     * <p>
+     * This method is invoked by the RuntimeEnvironment when a thread in the program under test is about to execute a
+     * read or write operation. The method creates a {@link Location} object for the field that the thread wants to access.
+     * <p>
+     * The method first retrieves the Class object of the owner class and the Field object of the field. It then
+     * retrieves the current value of the field from the provided object. Using these, it creates a new Location
+     * object with the Class object, the object instance, the Field object, the current value, and the descriptor of
+     * the field.
+     * <p>
+     * The created Location object can then be used to create a ReadEvent or WriteEvent for the thread.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no
+     * need to synchronize access to the field.
+     *
+     * @param obj The object that the thread wants to read from or write to.
+     * @param thread The thread that wants to perform the read or write operation.
+     * @param owner The fully qualified name of the class that the field belongs to.
+     * @param name The name of the field.
+     * @param descriptor The type descriptor of the field.
+     * @return The created Location object for the field.
+     * @throws ClassNotFoundException if the owner class is not found.
+     * @throws NoSuchFieldException if the field is not found in the owner class.
+     * @throws IllegalAccessException if the field is not accessible.
+     */
+    private static Location createLocation(Object obj, Thread thread, String owner, String name, String descriptor) {
         try {
             Class<?> clazz = Class.forName(owner.replace("/", "."));
             Object instance = clazz.cast(obj);
             Field field = clazz.getDeclaredField(name);
             field.setAccessible(true);
             Object value = field.get(instance);
-            System.out.println("[Runtime Environment Message] : "+thread.getName()+ " requested to read the value of "+owner+"."+name+"("+descriptor+") = "+value);
-            waitRequest(thread);
-        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            Location location = new Location(clazz, instance, field, value, descriptor);
+            return location;
+        } catch (ClassNotFoundException c) {
+            c.printStackTrace();
+            assert (false) : "ClassNotFoundException in createLocation method";
+        } catch (NoSuchFieldException n) {
+            n.printStackTrace();
+            assert (false) : "NoSuchFieldException in createLocation method";
+        } catch (IllegalAccessException i) {
+            i.printStackTrace();
+            assert (false) : "IllegalAccessException in createLocation method";
         }
+        return null;
     }
 
-    /*
-     * The @writeOperation method is used by the @thread when its next instruction is a write operation(PUTFIELD).
-     * It is called by the @thread to request to write the @newVal to the @obj.@name with @oldValue which is from the @owner class.
-     * The @descriptor is used to specify the type of the field.
-     * After this request, the @thread will request to wait to hand over the control to the SchedulerThread for deciding which thread to run.
+    /**
+     * Retrieves the next serial number for the events of a specific thread and increments it by one.
+     * <p>
+     * This method is invoked when a new event is being created for a thread in the program under test. The method
+     * retrieves the current serial number for the thread's events from the {@link #MCThreadsSerialNumber} map,
+     * increments it by one, and then updates the map with the new serial number.
+     * <p>
+     * The serial number is used to order the events of a thread in the sequence they were created. This allows the
+     * SchedulerThread to replay the events in the same order during the model checking process.
+     * <p>
+     * As this method is invoked in a single-threaded environment (guaranteed by the SchedulerThread), there is no need
+     * to synchronize access to the {@link #MCThreadsSerialNumber} map.
+     *
+     * @param thread The thread for which the next serial number is being retrieved and incremented.
+     * @return The next serial number for the events of the thread.
      */
-    public static void WriteOperation(Object obj, Object newVal, Thread thread, String owner, String name, String descriptor){
-        try {
-            Class<?> clazz = Class.forName(owner.replace("/", "."));
-            Object instance = clazz.cast(obj);
-            Field field = clazz.getDeclaredField(name);
-            field.setAccessible(true);
-            Object oldValue = field.get(instance);
-            System.out.println("[Runtime Environment Message] : "+thread.getName() +" requested to write the ["+ newVal +"] value to "+owner+"."+name+"("+descriptor+") with old value of ["+oldValue+"]");
-            waitRequest(thread);
-        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+    public static int getNextSerialNumber(Thread thread) {
+        int serialNumber = MCThreadsSerialNumber.get(threadIdMap.get(thread.getId()).intValue()) + 1;
+        MCThreadsSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), serialNumber);
+        return serialNumber;
     }
 
-    /*
-     * The @enterMonitor method is used by the @thread when its next instruction is a monitor enter(MONITORENTER).
-     * It is called by the @thread to request to enter the monitor of the @lock.
-     * After this request, the @thread will request to wait to hand over the control to the SchedulerThread for deciding which thread to run.
-     * As the SchedulerThread needs to know that the @thread requested to enter the monitor, the @threadEnterMonitorReq and @objectEnterMonitorReq are assigned to the @thread and @lock respectively.
+    /**
+     * Resets the RuntimeEnvironment to its initial state.
+     * <p>
+     * This method is invoked by the terminateExecution method after the execution of the program under test is
+     * finished. It resets all the fields of the RuntimeEnvironment to their initial values, effectively preparing
+     * the RuntimeEnvironment for the next execution of the program.
      */
-    public static void enterMonitor(Object lock, Thread thread){
-        System.out.println("[Runtime Environment Message] : "+thread.getName() +" requested to MONITORENTER over the "+lock.toString());
-        threadEnterMonitorReq = thread;
-        objectEnterMonitorReq = lock;
-        waitRequest(thread);
+    public static void resetRuntimeEnvironment(){
+        threadCount = 1;
+        threadWaitReq = null;
+        threadWaitReqLock = new Object();
+        threadStartReq = null;
+        threadEnterMonitorReq = null;
+        objectEnterMonitorReq = null;
+        threadJoinReq = null;
+        threadJoinRes = null;
+        assertFlag = false;
+        locks = new HashMap<>();
+        createdThreadList = new ArrayList<>();
+        readyThreadList = new ArrayList<>();
+        monitorList = new HashMap<>();
+        MCThreads= new HashMap<>();
+        MCThreadsSerialNumber = new HashMap<>();
+        MCGraphs.addAll(tempMCGraphs);
+        tempMCGraphs = new ArrayList<>();
+        MCEvent = null;
+        threadIdMap = new HashMap<>();
     }
-
-    /*
-     * The @exitMonitor method is used by the @thread when its next instruction is a monitor exit(MONITOREXIT).
-     * TODO() :  It is called by the @thread to request to exit the monitor of the @lock.
-     * TODO() : After this request, the @thread will request to wait to hand over the control to the SchedulerThread for deciding which thread to run.
-     */
-    public static void exitMonitor(Object lock, Thread thread){
-        System.out.println("[Runtime Environment Message] : "+thread.getName() +" requested to MONITOREXIT over the "+lock.toString());
-    }
-
-    /*
-     * The @acquiredLock method is used by the @thread when it acquired the @lock.
-     * It is called by the @thread to inform the Runtime Environment that it acquired the @lock.
-     * After this request, the @lock and @thread are added to the @monitorList.
-     */
-    public static void acquiredLock(Object lock, Thread thread){
-        System.out.println("[Runtime Environment Message] : "+thread.getName() +" acquired the "+lock.toString()+ " lock");
-        monitorList.put(lock, thread);
-        System.out.println("[Runtime Environment Message] : ("+lock.toString() +", "+thread.getName()+") added to the monitorList of the Runtime Environment");
-    }
-
-    /*
-     * The @releasedLock method is used by the @thread when it released the @lock.
-     * It is called by the @thread to inform the Runtime Environment that it released the @lock.
-     * After this request, the @lock and @thread are removed from the @monitorList.
-     */
-    public static void releasedLock(Object lock, Thread thread){
-        System.out.println("[Runtime Environment Message] : "+thread.getName() +" released the "+lock.toString()+ " lock");
-        monitorList.remove(lock, thread);
-        System.out.println("[Runtime Environment Message] : ("+lock.toString() +", "+thread.getName()+") removed from the monitorList of the Runtime Environment");
-    }
-
-    /*
-     * The @assertOperation method is used by a thread when it executed the assert statement and it failed.
-     * It is called by a thread to inform the Runtime Environment that an assert statement is executed and it failed.
-     * After this request, the @assertFlag is set to true and the @thread will request to wait to hand over the control to the SchedulerThread.
-     */
-    public static void assertOperation(String message){
-        System.out.println("[Runtime Environment Message] : " + message);
-        assertFlag = true;
-        waitRequest(Thread.currentThread());
-    }
-
-    //public static void ReadOperation(Object value, Thread thread, String owner, String name, String descriptor){
-    //    System.out.println("[Runtime Environment Message] : "+thread.getName()+":"+ thread.getId() +" requested to read the value of "+owner+"."+name+"("+descriptor+")");
-    //    System.out.println("[Runtime Environment Message] : "+thread.getName()+":"+ thread.getId() +" read the value of "+owner+"."+name+"("+descriptor+") = "+value);
-    //}
 }

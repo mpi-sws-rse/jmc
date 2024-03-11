@@ -1,7 +1,10 @@
 package parser
 
+import com.sun.jna.IntegerType
 import programStructure.*
 import java.io.File
+import java.lang.reflect.Field
+import java.lang.reflect.Type
 
 // TODO() : This Tokenizer accepts only global variables (I will extend it with local variables)
 // TODO() : Checking var or val for local variables should be considered in future
@@ -185,7 +188,7 @@ class Tokenizer (private var threadCounter : Int = 0, private var serialNumber :
         if (!Regex("""\.""").containsMatchIn(word)){
             // Consistency checking of class variable
             return if(Regex("""[a-zA-Z_]""").matches(word.first().toString())){
-                loc = Location(null,word)
+                loc = Location(null,null,null,null,word)
                 loc
             } else null
         }else{
@@ -197,7 +200,7 @@ class Tokenizer (private var threadCounter : Int = 0, private var serialNumber :
                 if(!Regex("""[a-zA-Z_]""").matches(variable.first().toString()) ||
                     !Regex("""[a-zA-Z_]""").matches(obj.first().toString())) null
                 else{
-                    loc = Location(obj,variable)
+                    loc = Location(null,null,null,null,obj+"."+variable)
                     loc
                 }
             }
@@ -220,6 +223,6 @@ class Tokenizer (private var threadCounter : Int = 0, private var serialNumber :
     }
     fun getThreadsInfo() : MutableMap<Int, JMCThread>? {
         return if(errorHappened) null
-               else this.JMCThread
+        else this.JMCThread
     }
 }

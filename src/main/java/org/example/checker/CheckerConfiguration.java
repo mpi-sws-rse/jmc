@@ -16,6 +16,7 @@ public final class CheckerConfiguration implements Serializable {
     public long progressReport;
     public boolean verbose;
     public long seed;
+    public StrategyType strategyType;
 
     private CheckerConfiguration(ConfigurationBuilder builder) {
         maxEventsPerExecution = builder.maxEventsPerExecution;
@@ -23,7 +24,7 @@ public final class CheckerConfiguration implements Serializable {
         progressReport = builder.progressReport;
         verbose = builder.verbose;
         seed = builder.seed;
-        System.out.println("Random seed: " + seed);
+        strategyType = builder.strategyType;
     }
 
     public byte[] generateBytes() {
@@ -55,9 +56,10 @@ public final class CheckerConfiguration implements Serializable {
         public long maxEventsPerExecution = 1000;
         public long maxIterations = 1000;
         public long progressReport = 0;
-        public org.example.checker.CheckerConfiguration.StrategyOption searchStrategy = new RandomStrategy();
+        //public org.example.checker.CheckerConfiguration.StrategyOption searchStrategy = new RandomStrategy();
         public boolean verbose = false;
         public long seed = new Random().nextLong(); // can be overwritten to a user-specified seed for reproducibility
+        public StrategyType strategyType = StrategyType.RANDOMSTRAREGY;
 
         public ConfigurationBuilder() {
         }
@@ -71,10 +73,10 @@ public final class CheckerConfiguration implements Serializable {
             return this;
         }
 
-        public ConfigurationBuilder withSearchStrategy(StrategyOption option) {
-            this.searchStrategy = option;
-            return this;
-        }
+//        public ConfigurationBuilder withSearchStrategy(StrategyOption option) {
+//            this.searchStrategy = option;
+//            return this;
+//        }
 
         ConfigurationBuilder withMaxIterations(long m) {
             this.maxIterations = m;
@@ -93,6 +95,11 @@ public final class CheckerConfiguration implements Serializable {
 
         ConfigurationBuilder withVerbose(boolean t) {
             this.verbose = t;
+            return this;
+        }
+
+        ConfigurationBuilder withStrategyType(StrategyType t) {
+            this.strategyType = t;
             return this;
         }
 
