@@ -50,6 +50,22 @@ public class ByteCodeManager {
         // Print whether the compilation was successful
         System.out.println("Compilation " + (success && schedulerSuccess ? "succeeded" : "failed"));
 
+        File checkerPath = new File("src/main/java/org/example/checker/");
+        File[] checkerFiles = checkerPath.listFiles((dir, name) -> name.endsWith(".java"));
+        Iterable<? extends JavaFileObject> checkerCompilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(checkerFiles));
+        JavaCompiler.CompilationTask checkerTask = compiler.getTask(null, fileManager, null, null, null, checkerCompilationUnits);
+        boolean checkerSuccess = checkerTask.call();
+        // Print whether the compilation was successful
+        System.out.println("Compilation " + (checkerSuccess ? "succeeded" : "failed"));
+
+        File strategyPath = new File("src/main/java/org/example/checker/strategy/");
+        File[] strategyFiles = strategyPath.listFiles((dir, name) -> name.endsWith(".java"));
+        Iterable<? extends JavaFileObject> strategyCompilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(strategyFiles));
+        JavaCompiler.CompilationTask strategyTask = compiler.getTask(null, fileManager, null, null, null, strategyCompilationUnits);
+        boolean strategySuccess = strategyTask.call();
+        // Print whether the compilation was successful
+        System.out.println("Compilation " + (strategySuccess ? "succeeded" : "failed"));
+
         // Close the file manager
         try {
             fileManager.close();

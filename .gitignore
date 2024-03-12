@@ -3,6 +3,9 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+src/main/java/org/example/checker/*.class
+src/main/java/org/example/checker/strategy/*.class
+src/main/resources
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

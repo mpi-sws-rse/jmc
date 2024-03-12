@@ -31,6 +31,10 @@ public class SchedulerThread extends Thread{
         // The following expression is used to set the strategy type of the @SchedulerThread.
         strategyType = RuntimeEnvironment.strategyType;
         createSearchStrategy();
+        RuntimeEnvironment.x = true;
+        System.out.println("[Scheduler] : Before :" + RuntimeEnvironment.x);
+        searchStrategy.test();
+        System.out.println("[Scheduler] : After :" + RuntimeEnvironment.x);
         System.out.println("[Scheduler Thread Message] : The strategy type is " + strategyType);
 
         // The following part is used to initialize the @SchedulerThread based on the @strategyType.
@@ -43,9 +47,6 @@ public class SchedulerThread extends Thread{
             System.out.println("[Scheduler Thread Message] : The strategy type is not supported");
             System.exit(0);
         }
-
-
-
     }
 
 
@@ -282,7 +283,7 @@ public class SchedulerThread extends Thread{
                 isFinished = true;
                 System.out.println("**********************************************************************************************");
                 System.out.println("[*** Assertion Fail ***]");
-                System.out.println("[*** Number of execution iteration : " + RuntimeEnvironment.numOfExecutionsCounter + " ***]");
+                System.out.println("[*** Number of execution iteration : " + RuntimeEnvironment.numOfExecutions + " ***]");
                 System.out.println("[*** The SchedulerThread requested to FINISH***]");
                 System.out.println("**********************************************************************************************");
                 System.exit(0);
