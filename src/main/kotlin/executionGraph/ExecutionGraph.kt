@@ -365,7 +365,6 @@ data class ExecutionGraph(var root : RootNode? = null,
                     val create : StartEvent = e as StartEvent
                     println(create)
                 }
-                EventType.OTHER -> TODO()
                 EventType.JOIN -> {
                     val join : JoinEvent = e as JoinEvent
                     println(join)
@@ -374,6 +373,15 @@ data class ExecutionGraph(var root : RootNode? = null,
                     val finish : FinishEvent = e as FinishEvent
                     println(finish)
                 }
+                EventType.ENTER_MONITOR -> {
+                    val enter : EnterMonitorEvent = e as EnterMonitorEvent
+                    println(enter)
+                }
+                EventType.EXIT_MONITOR -> {
+                    val exit : ExitMonitorEvent = e as ExitMonitorEvent
+                    println(exit)
+                }
+                EventType.OTHER -> TODO()
             }
         }
 

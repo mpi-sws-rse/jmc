@@ -69,6 +69,14 @@ class Trust {
                     val finish : FinishEvent = i as FinishEvent
                     println(finish)
                 }
+                EventType.ENTER_MONITOR -> {
+                    val enterMonitor : EnterMonitorEvent = i as EnterMonitorEvent
+                    println(enterMonitor)
+                }
+                EventType.EXIT_MONITOR -> {
+                    val exitMonitor : ExitMonitorEvent = i as ExitMonitorEvent
+                    println(exitMonitor)
+                }
                 EventType.OTHER -> TODO()
             }
         }

@@ -6,6 +6,7 @@ build/
 src/main/java/org/example/checker/*.class
 src/main/java/org/example/checker/strategy/*.class
 src/main/resources
+src/main/java/org/example/runtime/*.class
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
@@ -19,9 +20,6 @@ src/main/resources
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-src/main/java/org/example/checker/*.class
-src/main/java/org/example/checker/strategy/*.class
-src/main/resources
 
 ### Eclipse ###
 .apt_generated

@@ -13,5 +13,7 @@ enum class EventType: Serializable {
     START,
     JOIN,
     FINISH,
+    ENTER_MONITOR,
+    EXIT_MONITOR,
     OTHER
 }
