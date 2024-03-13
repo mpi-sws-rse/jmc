@@ -1,10 +1,8 @@
 package org.example.instrumenter;
 
-import org.example.instrumenter.adapter.RuntimeEnvironmentAdapter;
 import org.example.instrumenter.strategy.ClassStrategy;
 import org.example.instrumenter.strategy.MethodClassStrategy;
 import org.objectweb.asm.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +54,8 @@ public class ByteCodeModifier {
         this.allByteCode = allByteCode;
     }
 
-    public void applyModifications(ClassStrategy classStrategy, ClassWriter classWriter, byte[] byteCode, String className) {
+    public void applyModifications(ClassStrategy classStrategy, ClassWriter classWriter,
+                                   byte[] byteCode, String className) {
         ClassReader cr = new ClassReader(byteCode);
         cr.accept(classStrategy, 0);
         byte[] modifiedByteCode = classWriter.toByteArray();
@@ -75,49 +74,17 @@ public class ByteCodeModifier {
      */
     public void addRuntimeEnvironment() {
         byte[] byteCode = allByteCode.get(mainClassName);
-        nextVarIndex = getNextVarIndex(byteCode, "main", "([Ljava/lang/String;)V");
         ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-
-        // Create an instance of MethodClassStrategy and pass the adapter to it
         MethodClassStrategy strategy = new MethodClassStrategy(
                 classWriter,
                 ModificationType.ADD_RUNTIME_ENVIRONMENT,
                 "main",
-                "([Ljava/lang/String;)V"
+                "([Ljava/lang/String;)V",
+                byteCode
         );
-
-        // Use the strategy to visit the methods of the class and apply the modifications
         applyModifications(strategy, classWriter, byteCode, mainClassName);
     }
 
-    /*
-     * Following method is used to get the index of the next free local variable
-     * This method finds the maxLocals of the @methodName with @methodDescriptor and returns it
-     * @byteCode : contains the bytecode of the compiled class
-     * @nextVarIndex : contains the index of the next local variable
-     */
-    private int getNextVarIndex(byte[] byteCode, String methodName, String methodDescriptor) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
-            @Override
-            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-                MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
-                if (name.equals(methodName) && descriptor.equals(methodDescriptor)) {
-                    methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
-                        @Override
-                        public void visitMaxs(int maxStack, int maxLocals) {
-                            //System.out.println("[Debugging Message] : Max Locals: " + maxLocals);
-                            nextVarIndex =  maxLocals ;
-                        }
-                    };
-                }
-                return methodVisitor;
-            }
-        };
-        ClassReader cr = new ClassReader(byteCode);
-        cr.accept(classVisitor, 0);
-        return nextVarIndex;
-    }
 
     /*
      * The following method is used to find all the points in the user program where threads are created
