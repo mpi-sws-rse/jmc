@@ -22,28 +22,16 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     LINENUMBER 8 L1
     ALOAD 0
     ALOAD 1
-    DUP2
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
-    LDC "counter1"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter1 : Lorg/example/concurrent/programs/wrong/counter/Counter;
    L2
     LINENUMBER 9 L2
     ALOAD 0
     ALOAD 2
-    DUP2
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
-    LDC "counter2"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter2 : Lorg/example/concurrent/programs/wrong/counter/Counter;
    L3
     LINENUMBER 10 L3
     RETURN
-    MAXSTACK = 8
+    MAXSTACK = 2
     MAXLOCALS = 3
 
   // access flags 0x1
@@ -57,12 +45,6 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
    L8
     LINENUMBER 13 L8
     ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
-    LDC "counter1"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter1 : Lorg/example/concurrent/programs/wrong/counter/Counter;
     DUP
     ASTORE 1
@@ -76,12 +58,6 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.acquiredLock (Ljava/lang/Object;Ljava/lang/Thread;)V
     ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
-    LDC "counter1"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter1 : Lorg/example/concurrent/programs/wrong/counter/Counter;
     DUP
     DUP
@@ -89,8 +65,11 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     LDC "org.example.concurrent.programs.wrong.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     ICONST_1
     IADD
     DUP2
@@ -99,28 +78,28 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     LDC "org.example.concurrent.programs.wrong.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.writeOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
    L9
     LINENUMBER 15 L9
     GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
     ALOAD 0
     INVOKEVIRTUAL org/example/concurrent/programs/wrong/counter/BuggyCounter.getName ()Ljava/lang/String;
     ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
-    LDC "counter1"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter1 : Lorg/example/concurrent/programs/wrong/counter/Counter;
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     LDC "org.example.concurrent.programs.wrong.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;I)Ljava/lang/String; [
       // handle kind 0x6 : INVOKESTATIC
       java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
@@ -131,12 +110,6 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
    L10
     LINENUMBER 16 L10
     ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
-    LDC "counter2"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter2 : Lorg/example/concurrent/programs/wrong/counter/Counter;
     DUP
     ASTORE 2
@@ -150,12 +123,6 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.acquiredLock (Ljava/lang/Object;Ljava/lang/Thread;)V
     ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
-    LDC "counter2"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter2 : Lorg/example/concurrent/programs/wrong/counter/Counter;
     DUP
     DUP
@@ -163,8 +130,11 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     LDC "org.example.concurrent.programs.wrong.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     ICONST_1
     IADD
     DUP2
@@ -173,28 +143,28 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
     LDC "org.example.concurrent.programs.wrong.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.writeOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
    L11
     LINENUMBER 18 L11
     GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
     ALOAD 0
     INVOKEVIRTUAL org/example/concurrent/programs/wrong/counter/BuggyCounter.getName ()Ljava/lang/String;
     ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.wrong.counter.BuggyCounter"
-    LDC "counter1"
-    LDC "Lorg/example/concurrent/programs/wrong/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/BuggyCounter.counter1 : Lorg/example/concurrent/programs/wrong/counter/Counter;
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     LDC "org.example.concurrent.programs.wrong.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/wrong/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;I)Ljava/lang/String; [
       // handle kind 0x6 : INVOKESTATIC
       java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
@@ -266,9 +236,6 @@ public class org/example/concurrent/programs/wrong/counter/BuggyCounter extends 
   public static main([Ljava/lang/String;)V
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.init (Ljava/lang/Thread;)V
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.loadConfig ()V
-    LDC 3550850463567148987
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.setRandomSeed (J)V
     NEW org/example/runtime/SchedulerThread
     DUP
     INVOKESPECIAL org/example/runtime/SchedulerThread.<init> ()V

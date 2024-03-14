@@ -4,6 +4,7 @@ import org.example.checker.CheckerConfiguration;
 import executionGraph.ExecutionGraph;
 import org.example.checker.StrategyType;
 import programStructure.*;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -190,20 +191,35 @@ public class RuntimeEnvironment {
      * @property {@link #maxNumOfExecutions} is used to store the maximum number of the executions that the
      * {@link SchedulerThread} will explore.
      */
-    private static final int maxNumOfExecutions = 100;
+    public static int maxNumOfExecutions = 100;
 
     /**
      * @property {@link #numOfExecutions} is used to count the number of the executions that the program has been tested.
      */
     public static int numOfExecutions = 0;
 
+    /**
+     * @property {@link #executionFinished} is used to indicate that the execution is finished.
+     */
     public static boolean executionFinished = false;
 
+    /**
+     * @property {@link #deadlockHappened} is used to indicate that a deadlock happened.
+     */
+    public static boolean deadlockHappened = false;
+
+    /**
+     * @property {@link #allExecutionsFinished} is used to indicate that all executions are finished.
+     */
+    public static boolean allExecutionsFinished = false;
+
+    public static long seed = 0;
 
     /**
      * The constructor is private to prevent the instantiation of the class
      */
-    private RuntimeEnvironment() {}
+    private RuntimeEnvironment() {
+    }
 
     public static void setRandomSeed(long seed) {
         // rng.setSeed(seed);
@@ -222,26 +238,25 @@ public class RuntimeEnvironment {
         numOfExecutions++;
         System.out.println("[Runtime Environment Message] : The number of executions is " + numOfExecutions);
         loadConfig();
-        strategyType = config.strategyType;
         System.out.println("[Runtime Environment Message] : The CheckerConfiguration has been loaded");
         threadIdMap.put(thread.getId(), (long) threadCount);
-        thread.setName("Thread-"+threadCount++);
+        thread.setName("Thread-" + threadCount++);
         System.out.println(
                 "[Runtime Environment Message] : " + threadIdMap.get(thread.getId()) +
-                    " added to the createdThreadList of the Runtime Environment"
+                        " added to the createdThreadList of the Runtime Environment"
         );
         Object lock = new Object();
         locks.put(threadIdMap.get(thread.getId()), lock);
         createdThreadList.add(thread);
         readyThreadList.add(thread);
-        JMCThread trd = new JMCThread(threadIdMap.get(thread.getId()).intValue(),new ArrayList<>());
+        JMCThread trd = new JMCThread(threadIdMap.get(thread.getId()).intValue(), new ArrayList<>());
         mcThreads.put(threadIdMap.get(thread.getId()).intValue(), trd);
         mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
-        System.out.println("[Runtime Environment Message] : "+ thread.getName() +" added to the createdThreadList of the" +
+        System.out.println("[Runtime Environment Message] : " + thread.getName() + " added to the createdThreadList of the" +
                 " Runtime Environment");
-        System.out.println("[Runtime Environment Message] : "+ thread.getName() +" added to the readyThreadList of the " +
+        System.out.println("[Runtime Environment Message] : " + thread.getName() + " added to the readyThreadList of the " +
                 "Runtime Environment");
-        System.out.println("[Runtime Environment Message] : "+ thread.getName() +" has the "+ thread.getState()+" state");
+        System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() + " state");
     }
 
     /**
@@ -249,8 +264,8 @@ public class RuntimeEnvironment {
      * <p>
      * This method is invoked by the {@link #init(Thread)} method.
      *
-     * @throws FileNotFoundException if the config.obj file is not found.
-     * @throws IOException if an I/O error occurs while reading the config.obj file.
+     * @throws FileNotFoundException  if the config.obj file is not found.
+     * @throws IOException            if an I/O error occurs while reading the config.obj file.
      * @throws ClassNotFoundException if the {@link CheckerConfiguration} class is not found.
      */
     public static void loadConfig() {
@@ -258,25 +273,32 @@ public class RuntimeEnvironment {
             FileInputStream fileIn = new FileInputStream("src/main/resources/config/config.obj");
             ObjectInputStream in = new ObjectInputStream(fileIn);
             config = (CheckerConfiguration) in.readObject();
-            assert(config != null) : "The CheckerConfiguration is null";
+            assert (config != null) : "The CheckerConfiguration is null";
             System.out.println(
                     "[Runtime Environment Message] : The verbose mode is " + config.verbose +
-                        " , the random seed is " + config.seed +
-                        " , the maximum events per execution is " + config.maxEventsPerExecution +
-                        " , and the maximum iteration is : " + config.maxIterations
+                            " , the random seed is " + config.seed +
+                            " , the maximum events per execution is " + config.maxEventsPerExecution +
+                            " , and the maximum iteration is : " + config.maxIterations
             );
             in.close();
             fileIn.close();
+            readConfig();
         } catch (FileNotFoundException f) {
             f.printStackTrace();
-            assert(false) : "FileNotFoundException in loadConfig method";
+            assert (false) : "FileNotFoundException in loadConfig method";
         } catch (IOException i) {
             i.printStackTrace();
-            assert(false) : "IOException in loadConfig method";
+            assert (false) : "IOException in loadConfig method";
         } catch (ClassNotFoundException c) {
             c.printStackTrace();
-            assert(false) : "Class not found in loadConfig method";
+            assert (false) : "Class not found in loadConfig method";
         }
+    }
+
+    private static void readConfig() {
+        maxNumOfExecutions = config.maxIterations;
+        strategyType = config.strategyType;
+        seed = config.seed;
     }
 
     /**
@@ -298,7 +320,7 @@ public class RuntimeEnvironment {
      * action is taken.
      *
      * @param thread The thread to be added to the {@link #RuntimeEnvironment}.
-     * <p>
+     *               <p>
      */
     public static void addThread(Thread thread) {
         threadIdMap.put(thread.getId(), (long) threadCount);
@@ -307,12 +329,12 @@ public class RuntimeEnvironment {
             Object lock = new Object();
             locks.put(threadIdMap.get(thread.getId()), lock);
             createdThreadList.add(thread);
-            JMCThread trd = new JMCThread(threadIdMap.get(thread.getId()).intValue(),new ArrayList<>());
-            mcThreads.put(threadIdMap.get(thread.getId()).intValue(),trd);
+            JMCThread trd = new JMCThread(threadIdMap.get(thread.getId()).intValue(), new ArrayList<>());
+            mcThreads.put(threadIdMap.get(thread.getId()).intValue(), trd);
             mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
             System.out.println(
                     "[Runtime Environment Message] : " + thread.getName() + " added to the createdThreadList " +
-                        "of the Runtime Environment"
+                            "of the Runtime Environment"
             );
             System.out.println(
                     "[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() + " state"
@@ -320,7 +342,7 @@ public class RuntimeEnvironment {
         } else {
             System.out.println(
                     "[Runtime Environment Message] : " + thread.getName() +
-                        " is already in the createdThreadList of the RuntimeEnvironment"
+                            " is already in the createdThreadList of the RuntimeEnvironment"
             );
         }
     }
@@ -341,19 +363,19 @@ public class RuntimeEnvironment {
      * If the thread is not in the {@link #createdThreadList} or is already in the {@link #readyThreadList}, a message
      * is printed to the console and no further action is taken.
      *
-     * @param thread The thread to be added to the {@link #readyThreadList}.
+     * @param thread        The thread to be added to the {@link #readyThreadList}.
      * @param currentThread The current thread that is running.
      */
     public static void threadStart(Thread thread, Thread currentThread) {
         if (createdThreadList.contains(thread) && !readyThreadList.contains(thread)) {
             System.out.println(
                     "[Runtime Environment Message] : " + thread.getName() + " requested to run the start()" +
-                        " inside the " + currentThread.getName()
+                            " inside the " + currentThread.getName()
             );
             readyThreadList.add(thread);
             System.out.println(
                     "[Runtime Environment Message] : " + thread.getName() + " added to the readyThreadList " +
-                        "of the Runtime Environment"
+                            "of the Runtime Environment"
             );
             threadStartReq = thread;
             waitRequest(currentThread);
@@ -361,6 +383,7 @@ public class RuntimeEnvironment {
             System.out.println("[Runtime Environment Message] : " + thread.getName() + " is not in the createdThreadList");
         }
     }
+
     /**
      * Handles a join request from one thread to another.
      * <p>
@@ -380,7 +403,7 @@ public class RuntimeEnvironment {
     public static void threadJoin(Thread threadReq, Thread threadRes) {
         System.out.println(
                 "[Runtime Environment Message] : " + threadReq.getName() + " requested to join over the " +
-                    threadRes.getName()
+                        threadRes.getName()
         );
         threadJoinReq = threadReq;
         threadJoinRes = threadRes;
@@ -388,6 +411,7 @@ public class RuntimeEnvironment {
     }
 
     // TODO() : Check if it is necessary to have it.
+
     /**
      * Requests permission for a thread to run.
      * <p>
@@ -462,14 +486,14 @@ public class RuntimeEnvironment {
      * no need to synchronize access to the {@link #threadWaitReq}.
      *
      * @param main The main thread of the program under test.
-     * @param st The {@link SchedulerThread} of the program under test.
+     * @param st   The {@link SchedulerThread} of the program under test.
      * @throws InterruptedException if the main thread is interrupted while waiting.
      */
     public static void initSchedulerThread(Thread main, Thread st) {
         synchronized (locks.get(threadIdMap.get(main.getId()))) {
             System.out.println(
                     "[Runtime Environment Message] : Thread-" + threadIdMap.get(main.getId()) + " is calling " +
-                        "the start() of the SchedulerThread"
+                            "the start() of the SchedulerThread"
             );
             st.start();
             System.out.println("[Runtime Environment Message] : " + st.getName() + " has the " + st.getState() + " state");
@@ -508,8 +532,8 @@ public class RuntimeEnvironment {
             System.out.println("[Runtime Environment Message] : " + thread.getName() + " has requested to FINISH");
             createdThreadList.remove(thread);
             readyThreadList.remove(thread);
+            isFinished = true;
             if (threadIdMap.get(thread.getId()) == 1) {
-                isFinished = true;
                 waitRequest(thread);
                 terminateExecution();
             } else {
@@ -521,7 +545,6 @@ public class RuntimeEnvironment {
                   {@link #threadWaitReqLock}, the {@link #createdThreadList} and {@link #readyThreadList} will be race-free.
                  */
                 synchronized (threadWaitReqLock) {
-                    isFinished = true;
                     threadWaitReq = thread;
                 }
             }
@@ -529,6 +552,7 @@ public class RuntimeEnvironment {
     }
 
     //TODO() : Change the way of termination ( using the System.exit(0) method is not good)
+
     /**
      * Terminates the execution of the program under test and resets the {@link RuntimeEnvironment}.
      * <p>
@@ -547,19 +571,16 @@ public class RuntimeEnvironment {
      * The termination of the program execution is done by calling the System.exit(0) method.
      */
     private static void terminateExecution() {
-        System.out.println("[Runtime Environment Message] : The executed events are :");
-        for (Event e : randomEventsRecord) {
-            System.out.println(e);
-        }
-        resetRuntimeEnvironment();
-        if (mcGraphs.isEmpty() && strategyType.equals(StrategyType.TRUSTSTRATEGY)) {
+        if (deadlockHappened) {
+            System.out.println("[Runtime Environment Message] : The deadlock happened");
             System.exit(0);
-        } else if (numOfExecutions < maxNumOfExecutions && strategyType.equals(StrategyType.RANDOMSTRAREGY)) {
-            System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
-        } else if (numOfExecutions == maxNumOfExecutions && strategyType.equals(StrategyType.RANDOMSTRAREGY)) {
+        } else if (allExecutionsFinished) {
             System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
             System.out.println("[Runtime Environment Message] : The maximum number of the executions is reached");
             System.exit(0);
+        } else {
+            System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
+            resetRuntimeEnvironment();
         }
     }
 
@@ -580,10 +601,10 @@ public class RuntimeEnvironment {
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
      * no need to synchronize access to the {@link #writeEventReq}.
      *
-     * @param obj The object that the thread wants to read the value of the field from it.
-     * @param thread The thread that wants to read the value of the field.
-     * @param owner The class that the field is from it.
-     * @param name The name of the field.
+     * @param obj        The object that the thread wants to read the value of the field from it.
+     * @param thread     The thread that wants to read the value of the field.
+     * @param owner      The class that the field is from it.
+     * @param name       The name of the field.
      * @param descriptor The type of the field.
      * @throws NullPointerException if the {@link Location} is null.
      */
@@ -591,7 +612,7 @@ public class RuntimeEnvironment {
         Location location = createLocation(obj, owner, name, descriptor);
         System.out.println(
                 "[Runtime Environment Message] : " + threadIdMap.get(thread.getId()) + " requested to " +
-                    "read the value of " + owner + "." + name + "(" + descriptor + ") = " + Objects.requireNonNull(location).getValue()
+                        "read the value of " + owner + "." + name + "(" + descriptor + ") = " + Objects.requireNonNull(location).getValue()
         );
         if (location.isPrimitive()) {
             readEventReq = createReadEvent(thread, location);
@@ -599,7 +620,7 @@ public class RuntimeEnvironment {
         } else {
             System.out.println(
                     "[Runtime Environment Message] : Since the value is not a primitive type, the Model" +
-                        "Checker will not care about it"
+                            "Checker will not care about it"
             );
         }
     }
@@ -621,11 +642,11 @@ public class RuntimeEnvironment {
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is no need
      * to synchronize access to the {@link #writeEventReq}.
      *
-     * @param obj The object that the thread wants to write the new value to its field.
-     * @param newVal The new value that the thread wants to write to the field.
-     * @param thread The thread that wants to write the new value to the field.
-     * @param owner The class that the field belongs to.
-     * @param name The name of the field.
+     * @param obj        The object that the thread wants to write the new value to its field.
+     * @param newVal     The new value that the thread wants to write to the field.
+     * @param thread     The thread that wants to write the new value to the field.
+     * @param owner      The class that the field belongs to.
+     * @param name       The name of the field.
      * @param descriptor The type of the field.
      * @throws NullPointerException if the {@link Location} is null.
      */
@@ -633,9 +654,9 @@ public class RuntimeEnvironment {
                                       String descriptor) {
         Location location = createLocation(obj, owner, name, descriptor);
         System.out.println(
-                "[Runtime Environment Message] : " + threadIdMap.get(thread.getId()) + " requested to " +
-                    "write the [" + newVal + "] value to " + owner + "." + name + "(" + descriptor + ") with old value " +
-                    "of [" + Objects.requireNonNull(location).getValue() + "]"
+                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
+                        "write the [" + newVal + "] value to " + owner + "." + name + "(" + descriptor + ") with old value " +
+                        "of [" + Objects.requireNonNull(location).getValue() + "]"
         );
         if (location.isPrimitive()) {
             writeEventReq = createWriteEvent(thread, location, newVal);
@@ -643,7 +664,7 @@ public class RuntimeEnvironment {
         } else {
             System.out.println(
                     "[Runtime Environment Message] : Since the value is not a primitive type, the Model " +
-                        "Checker will not care about it"
+                            "Checker will not care about it"
             );
         }
     }
@@ -662,13 +683,13 @@ public class RuntimeEnvironment {
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
      * no need to synchronize access to the {@link #threadEnterMonitorReq} and {@link #objectEnterMonitorReq}.
      *
-     * @param lock The lock that the thread wishes to enter.
+     * @param lock   The lock that the thread wishes to enter.
      * @param thread The thread that wishes to enter the lock.
      */
     public static void enterMonitor(Object lock, Thread thread) {
         System.out.println(
                 "[Runtime Environment Message] : " + thread.getName() + " requested to MONITORENTER over " +
-                    "the " + lock.toString()
+                        "the " + lock.toString()
         );
         threadEnterMonitorReq = thread;
         objectEnterMonitorReq = lock;
@@ -678,6 +699,7 @@ public class RuntimeEnvironment {
     // TODO() :  It is called by the @thread to request to exit the monitor of the @lock.
     // TODO() : After this request, the @thread will request to wait to hand over the control to the SchedulerThread
     //  for deciding which thread to run.
+
     /**
      * Handles a monitor exit request from a thread.
      * <p>
@@ -690,13 +712,13 @@ public class RuntimeEnvironment {
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
      * no need to synchronize access to any shared resources.
      *
-     * @param lock The lock that the thread wishes to exit.
+     * @param lock   The lock that the thread wishes to exit.
      * @param thread The thread that wishes to exit the lock.
      */
     public static void exitMonitor(Object lock, Thread thread) {
         System.out.println(
                 "[Runtime Environment Message] : " + thread.getName() + " requested to MONITOREXIT over " +
-                    "the " + lock.toString()
+                        "the " + lock.toString()
         );
     }
 
@@ -713,7 +735,7 @@ public class RuntimeEnvironment {
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
      * no need to synchronize access to the {@link #monitorList}.
      *
-     * @param lock The lock that the thread has acquired.
+     * @param lock   The lock that the thread has acquired.
      * @param thread The thread that has acquired the lock.
      */
     public static void acquiredLock(Object lock, Thread thread) {
@@ -723,7 +745,7 @@ public class RuntimeEnvironment {
         monitorList.put(lock, thread);
         System.out.println(
                 "[Runtime Environment Message] : (" + lock + ", " + thread.getName() + ") added to the " +
-                    "monitorList of the RuntimeEnvironment"
+                        "monitorList of the RuntimeEnvironment"
         );
     }
 
@@ -740,20 +762,20 @@ public class RuntimeEnvironment {
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
      * no need to synchronize access to the {@link #monitorList}.
      *
-     * @param lock The lock that the thread has released.
+     * @param lock   The lock that the thread has released.
      * @param thread The thread that has released the lock.
      */
     public static void releasedLock(Object lock, Thread thread) {
         System.out.println(
                 "[Runtime Environment Message] : " + thread.getName() + " released the " + lock.toString() +
-                    " lock"
+                        " lock"
         );
         monitorList.remove(lock, thread);
         threadExitMonitorReq = thread;
         objectExitMonitorReq = lock;
         System.out.println(
                 "[Runtime Environment Message] : (" + lock + ", " + thread.getName() + ") removed from the " +
-                    "monitorList of the RuntimeEnvironment"
+                        "monitorList of the RuntimeEnvironment"
         );
         waitRequest(thread);
     }
@@ -877,7 +899,7 @@ public class RuntimeEnvironment {
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is no
      * need to synchronize access to the {@link #mcThreads} map.
      *
-     * @param thread The thread for which the {@link ReadEvent} is being created.
+     * @param thread   The thread for which the {@link ReadEvent} is being created.
      * @param location The {@link Location} that the thread wants to read from.
      * @return The created {@link ReadEvent} for the thread.
      * @throws NullPointerException if the location is null.
@@ -907,9 +929,9 @@ public class RuntimeEnvironment {
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is no need
      * to synchronize access to the {@link #mcThreads} map.
      *
-     * @param thread The thread for which the {@link WriteEvent} is being created.
+     * @param thread   The thread for which the {@link WriteEvent} is being created.
      * @param location The {@link Location} that the thread wants to write to.
-     * @param newVal The new value that the thread wants to write to the {@link Location}.
+     * @param newVal   The new value that the thread wants to write to the {@link Location}.
      * @return The created {@link WriteEvent} for the thread.
      */
     public static WriteEvent createWriteEvent(Thread thread, Location location, Object newVal) {
@@ -938,7 +960,7 @@ public class RuntimeEnvironment {
      * no need to synchronize access to the {@link #mcThreads} map.
      *
      * @param thread The thread for which the {@link EnterMonitorEvent} is being created.
-     * @param lock The lock that the thread wants to enter.
+     * @param lock   The lock that the thread wants to enter.
      * @return The created {@link EnterMonitorEvent} for the thread.
      */
     public static EnterMonitorEvent createEnterMonitorEvent(Thread thread, Object lock) {
@@ -967,7 +989,7 @@ public class RuntimeEnvironment {
      * no need to synchronize access to the {@link #mcThreads} map.
      *
      * @param thread The thread for which the {@link ExitMonitorEvent} is being created.
-     * @param lock The lock that the thread wants to exit.
+     * @param lock   The lock that the thread wants to exit.
      * @return The created {@link ExitMonitorEvent} for the thread.
      */
     public static ExitMonitorEvent createExitMonitorEvent(Thread thread, Object lock) {
@@ -1077,7 +1099,7 @@ public class RuntimeEnvironment {
      * finished. It resets all the fields of the {@link RuntimeEnvironment} to their initial values, effectively preparing
      * the {@link RuntimeEnvironment} for the next execution of the program.
      */
-    public static void resetRuntimeEnvironment(){
+    public static void resetRuntimeEnvironment() {
         threadCount = 1;
         threadWaitReq = null;
         threadStartReq = null;

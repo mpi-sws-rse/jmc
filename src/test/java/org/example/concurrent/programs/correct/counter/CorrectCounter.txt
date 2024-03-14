@@ -22,17 +22,11 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     LINENUMBER 7 L1
     ALOAD 0
     ALOAD 1
-    DUP2
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.correct.counter.CorrectCounter"
-    LDC "counter"
-    LDC "Lorg/example/concurrent/programs/correct/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/correct/counter/CorrectCounter.counter : Lorg/example/concurrent/programs/correct/counter/Counter;
    L2
     LINENUMBER 8 L2
     RETURN
-    MAXSTACK = 8
+    MAXSTACK = 2
     MAXLOCALS = 2
 
   // access flags 0x1
@@ -44,12 +38,6 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
    L4
     LINENUMBER 12 L4
     ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.correct.counter.CorrectCounter"
-    LDC "counter"
-    LDC "Lorg/example/concurrent/programs/correct/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/correct/counter/CorrectCounter.counter : Lorg/example/concurrent/programs/correct/counter/Counter;
     DUP
     ASTORE 1
@@ -63,28 +51,19 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.acquiredLock (Ljava/lang/Object;Ljava/lang/Thread;)V
     ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.correct.counter.CorrectCounter"
-    LDC "counter"
-    LDC "Lorg/example/concurrent/programs/correct/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/correct/counter/CorrectCounter.counter : Lorg/example/concurrent/programs/correct/counter/Counter;
     ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.correct.counter.CorrectCounter"
-    LDC "counter"
-    LDC "Lorg/example/concurrent/programs/correct/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/correct/counter/CorrectCounter.counter : Lorg/example/concurrent/programs/correct/counter/Counter;
     DUP
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     LDC "org.example.concurrent.programs.correct.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     ICONST_1
     IADD
     DUP2
@@ -93,44 +72,20 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     LDC "org.example.concurrent.programs.correct.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.writeOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
    L5
     LINENUMBER 14 L5
-    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
-    ALOAD 0
-    INVOKEVIRTUAL org/example/concurrent/programs/correct/counter/CorrectCounter.getName ()Ljava/lang/String;
-    ALOAD 0
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.correct.counter.CorrectCounter"
-    LDC "counter"
-    LDC "Lorg/example/concurrent/programs/correct/counter/Counter;"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    GETFIELD org/example/concurrent/programs/correct/counter/CorrectCounter.counter : Lorg/example/concurrent/programs/correct/counter/Counter;
-    DUP
-    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
-    LDC "org.example.concurrent.programs.correct.counter.Counter"
-    LDC "count"
-    LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-    GETFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
-    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;I)Ljava/lang/String; [
-      // handle kind 0x6 : INVOKESTATIC
-      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
-      // arguments:
-      "[\u0001 message] : The counter value is \u0001"
-    ]
-    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
-   L6
-    LINENUMBER 15 L6
     ALOAD 1
     ALOAD 1
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.exitMonitor (Ljava/lang/Object;Ljava/lang/Thread;)V
     MONITOREXIT
    L1
-    GOTO L7
+    GOTO L6
    L2
    FRAME FULL [org/example/concurrent/programs/correct/counter/CorrectCounter org/example/concurrent/programs/correct/counter/Counter] [java/lang/Throwable]
     ASTORE 2
@@ -144,8 +99,8 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
     ATHROW
-   L7
-    LINENUMBER 16 L7
+   L6
+    LINENUMBER 15 L6
    FRAME SAME
     ALOAD 1
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
@@ -161,9 +116,6 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     TRYCATCHBLOCK L0 L1 L2 java/lang/AssertionError
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.init (Ljava/lang/Thread;)V
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.loadConfig ()V
-    LDC -2886139048645399628
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.setRandomSeed (J)V
     NEW org/example/runtime/SchedulerThread
     DUP
     INVOKESPECIAL org/example/runtime/SchedulerThread.<init> ()V
@@ -175,13 +127,13 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     ALOAD 5
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.initSchedulerThread (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L3
-    LINENUMBER 19 L3
+    LINENUMBER 18 L3
     NEW org/example/concurrent/programs/correct/counter/Counter
     DUP
     INVOKESPECIAL org/example/concurrent/programs/correct/counter/Counter.<init> ()V
     ASTORE 1
    L4
-    LINENUMBER 20 L4
+    LINENUMBER 19 L4
     NEW org/example/concurrent/programs/correct/counter/CorrectCounter
     DUP
     ALOAD 1
@@ -190,7 +142,7 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     ALOAD 2
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
    L5
-    LINENUMBER 21 L5
+    LINENUMBER 20 L5
     NEW org/example/concurrent/programs/correct/counter/CorrectCounter
     DUP
     ALOAD 1
@@ -199,31 +151,35 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     ALOAD 3
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
    L6
-    LINENUMBER 22 L6
+    LINENUMBER 21 L6
     ALOAD 2
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L7
-    LINENUMBER 23 L7
+    LINENUMBER 22 L7
     ALOAD 3
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
    L8
-    LINENUMBER 24 L8
+    LINENUMBER 23 L8
     ALOAD 2
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     ALOAD 2
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
     INVOKEVIRTUAL org/example/concurrent/programs/correct/counter/CorrectCounter.join ()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
    L9
-    LINENUMBER 25 L9
+    LINENUMBER 24 L9
     ALOAD 3
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     ALOAD 3
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
     INVOKEVIRTUAL org/example/concurrent/programs/correct/counter/CorrectCounter.join ()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
    L0
-    LINENUMBER 28 L0
+    LINENUMBER 27 L0
     GETSTATIC org/example/concurrent/programs/correct/counter/CorrectCounter.$assertionsDisabled : Z
     IFNE L1
     ALOAD 1
@@ -232,8 +188,11 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     LDC "org.example.concurrent.programs.correct.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     ICONST_2
     IF_ICMPEQ L1
     NEW java/lang/AssertionError
@@ -244,8 +203,11 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     LDC "org.example.concurrent.programs.correct.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
       // handle kind 0x6 : INVOKESTATIC
       java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
@@ -257,21 +219,21 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
     RETURN
    L1
-    LINENUMBER 31 L1
+    LINENUMBER 30 L1
    FRAME FULL [[Ljava/lang/String; org/example/concurrent/programs/correct/counter/Counter org/example/concurrent/programs/correct/counter/CorrectCounter org/example/concurrent/programs/correct/counter/CorrectCounter T org/example/runtime/SchedulerThread] []
     GOTO L10
    L2
-    LINENUMBER 29 L2
+    LINENUMBER 28 L2
    FRAME SAME1 java/lang/AssertionError
     ASTORE 4
    L11
-    LINENUMBER 30 L11
+    LINENUMBER 29 L11
     GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
     ALOAD 4
     INVOKEVIRTUAL java/lang/AssertionError.getMessage ()Ljava/lang/String;
     INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
    L10
-    LINENUMBER 33 L10
+    LINENUMBER 32 L10
    FRAME SAME
     GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
@@ -282,8 +244,11 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     LDC "org.example.concurrent.programs.correct.counter.Counter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/correct/counter/Counter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;I)Ljava/lang/String; [
       // handle kind 0x6 : INVOKESTATIC
       java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
@@ -292,7 +257,7 @@ public class org/example/concurrent/programs/correct/counter/CorrectCounter exte
     ]
     INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
    L12
-    LINENUMBER 36 L12
+    LINENUMBER 35 L12
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
     RETURN

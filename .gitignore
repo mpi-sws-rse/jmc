@@ -7,6 +7,12 @@ src/main/java/org/example/checker/*.class
 src/main/java/org/example/checker/strategy/*.class
 src/main/resources
 src/main/java/org/example/runtime/*.class
+src/test/java/org/example/concurrent/programs/complex/counter/*.class
+src/test/java/org/example/concurrent/programs/correct/counter/*.class
+src/test/java/org/example/concurrent/programs/inconsistent/counter/*.class
+src/test/java/org/example/concurrent/programs/simple/counter/*.class
+src/test/java/org/example/concurrent/programs/wrong/counter/*.class
+src/test/java/org/example/concurrent/programs/thread_dependency/*.class
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

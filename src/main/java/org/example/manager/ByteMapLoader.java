@@ -17,10 +17,16 @@ public class ByteMapLoader extends ClassLoader{
         classFilePath = Paths.get("src/main/java/org/example/runtime/SchedulerThread.class");
         bytecode = Files.readAllBytes(classFilePath);
         classes.put("org.example.runtime.SchedulerThread", bytecode);
+        classFilePath = Paths.get("src/main/java/org/example/runtime/RequestType.class");
+        bytecode = Files.readAllBytes(classFilePath);
+        classes.put("org.example.runtime.RequestType", bytecode);
         // add all the .class files in the checker package and strategy subpackages as byte arrays to the classes map
         classFilePath = Paths.get("src/main/java/org/example/checker/CheckerConfiguration.class");
         bytecode = Files.readAllBytes(classFilePath);
         classes.put("org.example.checker.CheckerConfiguration", bytecode);
+        classFilePath = Paths.get("src/main/java/org/example/checker/CheckerConfiguration$ConfigurationBuilder.class");
+        bytecode = Files.readAllBytes(classFilePath);
+        classes.put("org.example.checker.CheckerConfiguration$ConfigurationBuilder", bytecode);
         classFilePath = Paths.get("src/main/java/org/example/checker/ModelChecker.class");
         bytecode = Files.readAllBytes(classFilePath);
         classes.put("org.example.checker.ModelChecker", bytecode);
@@ -33,7 +39,7 @@ public class ByteMapLoader extends ClassLoader{
         classFilePath = Paths.get("src/main/java/org/example/checker/strategy/RandomStrategy.class");
         bytecode = Files.readAllBytes(classFilePath);
         classes.put("org.example.checker.strategy.RandomStrategy", bytecode);
-        
+
     }
 
     @Override

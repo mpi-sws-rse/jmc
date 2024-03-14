@@ -4,17 +4,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
-
 import java.io.Serializable;
 import java.util.Random;
 
-import org.example.checker.CheckerConfiguration.StrategyOption.RandomStrategy;
-
 public final class CheckerConfiguration implements Serializable {
     public long maxEventsPerExecution;
-    public long maxIterations;
     public long progressReport;
     public boolean verbose;
+    public int maxIterations;
     public long seed;
     public StrategyType strategyType;
 
@@ -53,12 +50,11 @@ public final class CheckerConfiguration implements Serializable {
     }
 
     public static class ConfigurationBuilder {
-        public long maxEventsPerExecution = 1000;
-        public long maxIterations = 1000;
+        public long maxEventsPerExecution = 100;
+        public int maxIterations = 100;
         public long progressReport = 0;
-        //public org.example.checker.CheckerConfiguration.StrategyOption searchStrategy = new RandomStrategy();
         public boolean verbose = false;
-        public long seed = new Random().nextLong(); // can be overwritten to a user-specified seed for reproducibility
+        public long seed = new Random().nextLong(); 
         public StrategyType strategyType = StrategyType.RANDOMSTRAREGY;
 
         public ConfigurationBuilder() {
@@ -73,12 +69,8 @@ public final class CheckerConfiguration implements Serializable {
             return this;
         }
 
-//        public ConfigurationBuilder withSearchStrategy(StrategyOption option) {
-//            this.searchStrategy = option;
-//            return this;
-//        }
 
-        ConfigurationBuilder withMaxIterations(long m) {
+        ConfigurationBuilder withMaxIterations(int m) {
             this.maxIterations = m;
             return this;
         }
@@ -104,13 +96,4 @@ public final class CheckerConfiguration implements Serializable {
         }
 
     }
-
-    public static sealed interface StrategyOption {
-        record RandomStrategy() implements StrategyOption {
-        }
-
-        record DPORStrategy() implements StrategyOption {
-        }
-    }
-
 }
