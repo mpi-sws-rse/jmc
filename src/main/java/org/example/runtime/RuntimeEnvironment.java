@@ -239,10 +239,6 @@ public class RuntimeEnvironment {
     private RuntimeEnvironment() {
     }
 
-    public static void setRandomSeed(long seed) {
-        // rng.setSeed(seed);
-    }
-
     /**
      * Initializes the {@link RuntimeEnvironment}.
      * <p>

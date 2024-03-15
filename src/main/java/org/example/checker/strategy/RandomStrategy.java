@@ -3,35 +3,34 @@ package org.example.checker.strategy;
 import org.example.checker.SearchStrategy;
 import org.example.runtime.RuntimeEnvironment;
 import programStructure.*;
-
 import java.util.*;
 
 /**
  * The RandomStrategy class implements the {@link SearchStrategy} interface and is responsible for managing the execution
- * order of events in a multithreaded program using a random strategy. It maintains a record of random events and a seed
- * for the random strategy. The class provides functionality to handle various types of events including start,
- * enter monitor, exit monitor, join, read, write, and finish events. The class uses the {@link RuntimeEnvironment} API to
- * create and record events. The class requires a seed for the random strategy upon construction. It also includes
- * functionality for printing the execution trace and checking if the execution is done. The RandomStrategy class is
- * designed to control the flow of a program's execution and ensure a random execution order of operations.
+ * order of events in a multithreaded program using a random strategy. It maintains a record of random events and a
+ * random number generator for the random strategy. The class provides functionality to handle various types of events
+ * including start, enter monitor, exit monitor, join, read, write, and finish events. The class uses the
+ * {@link RuntimeEnvironment} API to create and record events. The class initializes the random number generator with
+ * the seed value from the {@link RuntimeEnvironment}. It also includes functionality for printing the execution trace
+ * and checking if the execution is done. The RandomStrategy class is designed to control the flow of a program's
+ * execution and ensure a random execution order of operations.
  */
 public class RandomStrategy implements SearchStrategy {
 
     /**
-     * @property {@link #seed} The seed for the random strategy.
+     * @property {@link #random} is a random number generator.
      */
-    public long seed;
-
     public Random random;
 
     /**
-     * The following constructor initializes the random events record and the seed for the random strategy.
+     * The following constructor initializes the random events record and the random number generator with the given
+     * seed.
      */
     public RandomStrategy() {
         RuntimeEnvironment.randomEventsRecord = new ArrayList<>();
-        seed = RuntimeEnvironment.seed;
-        random = new Random(seed);
+        random = new Random(RuntimeEnvironment.seed);
     }
+
 
     @Override
     public Thread selectRandomThread(List<Thread> readyThreadList) {
@@ -80,6 +79,7 @@ public class RandomStrategy implements SearchStrategy {
      * <p>
      * This method creates an {@link ExitMonitorEvent} for the corresponding exiting a monitor request of a thread.
      * The created {@link ExitMonitorEvent} is added to the {@link RuntimeEnvironment#randomEventsRecord}.
+     * The method also analyzes the suspended threads for the released monitor.
      *
      * @param thread is the thread that is going to exit the monitor.
      * @param monitor is the monitor that is going to be exited by the thread.
@@ -137,6 +137,7 @@ public class RandomStrategy implements SearchStrategy {
      * <p>
      * This method creates a {@link FinishEvent} for the corresponding finishing execution request of a thread.
      * The created {@link FinishEvent} is added to the {@link RuntimeEnvironment#randomEventsRecord}.
+     * The method also analyzes the suspended threads for joining the finished thread.
      *
      * @param thread is the thread that is going to be finished.
      */
