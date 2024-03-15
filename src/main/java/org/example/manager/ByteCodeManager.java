@@ -209,8 +209,10 @@ public class ByteCodeManager {
             // Prepare arguments for the main method
             String[] mainMethodArgs = {};  // Add any required arguments here
             // Invoke the main method
-            while (true){
+            Boolean isFinished = returnFinishObject();
+            while (isFinished == Boolean.FALSE){
                 mainMethod.invoke(null, (Object) mainMethodArgs);
+                isFinished = returnFinishObject();
             }
         } catch (IOException e) {
             System.err.println("Error reading bytecode file: " + e.getMessage());
@@ -231,6 +233,17 @@ public class ByteCodeManager {
             System.err.println("Error accessing the main method: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    public Boolean returnFinishObject() {
+        try (FileInputStream fileIn = new FileInputStream("src/main/resources/finish/finish.obj");
+             ObjectInputStream in = new ObjectInputStream(fileIn)) {
+            Boolean deserializedBoolean = (Boolean) in.readObject();
+            return deserializedBoolean;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return Boolean.FALSE;
     }
 
     /**

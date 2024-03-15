@@ -25,8 +25,11 @@ public class org/example/concurrent/programs/simple/counter/SimpleCounter extend
     LDC "org.example.concurrent.programs.simple.counter.SimpleCounter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.writeOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/simple/counter/SimpleCounter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
    L2
     LINENUMBER 7 L2
     RETURN
@@ -60,8 +63,11 @@ public class org/example/concurrent/programs/simple/counter/SimpleCounter extend
     LDC "org.example.concurrent.programs.simple.counter.SimpleCounter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/simple/counter/SimpleCounter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     ICONST_1
     IADD
     DUP2
@@ -70,8 +76,11 @@ public class org/example/concurrent/programs/simple/counter/SimpleCounter extend
     LDC "org.example.concurrent.programs.simple.counter.SimpleCounter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.WriteOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.writeOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     PUTFIELD org/example/concurrent/programs/simple/counter/SimpleCounter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
    L5
     LINENUMBER 12 L5
     GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
@@ -83,8 +92,11 @@ public class org/example/concurrent/programs/simple/counter/SimpleCounter extend
     LDC "org.example.concurrent.programs.simple.counter.SimpleCounter"
     LDC "count"
     LDC "I"
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.ReadOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
     GETFIELD org/example/concurrent/programs/simple/counter/SimpleCounter.count : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/example/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
     INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;I)Ljava/lang/String; [
       // handle kind 0x6 : INVOKESTATIC
       java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
@@ -130,9 +142,6 @@ public class org/example/concurrent/programs/simple/counter/SimpleCounter extend
   public static main([Ljava/lang/String;)V
     INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
     INVOKESTATIC org/example/runtime/RuntimeEnvironment.init (Ljava/lang/Thread;)V
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.loadConfig ()V
-    LDC -8595878505778267901
-    INVOKESTATIC org/example/runtime/RuntimeEnvironment.setRandomSeed (J)V
     NEW org/example/runtime/SchedulerThread
     DUP
     INVOKESPECIAL org/example/runtime/SchedulerThread.<init> ()V

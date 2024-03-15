@@ -1,5 +1,9 @@
 package org.example.checker;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,6 +53,22 @@ public class ModelChecker {
     }
 
     /**
+     * Checks the specified TestTarget.
+     * <br>
+     * The check involves running the model checking process on the program under test.
+     *
+     * @param target The program under test.
+     * @return true if the check was successful, false otherwise.
+     */
+    public boolean check(TestTarget target) {
+        logger.trace("Starting checker");
+        this.target = target;
+        System.out.println("Checking " + target.getTestClass());
+        this.run(target);
+        return true;
+    }
+
+    /**
      * Runs the model checking process on the specified TestTarget.
      * <br>
      * The process involves generating bytecode for the program under test, modifying the bytecode, and running the
@@ -71,6 +91,7 @@ public class ModelChecker {
             byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode, path);
         }
         System.out.println("Running the modified bytecode");
+        createFinishObject();
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage());
     }
 
@@ -93,19 +114,17 @@ public class ModelChecker {
         byteCodeModifier.addRuntimeEnvironment();
     }
 
-    /**
-     * Checks the specified TestTarget.
-     * <br>
-     * The check involves running the model checking process on the program under test.
-     *
-     * @param target The program under test.
-     * @return true if the check was successful, false otherwise.
-     */
-    public boolean check(TestTarget target) {
-        logger.trace("Starting checker");
-        this.target = target;
-        System.out.println("Checking " + target.getTestClass());
-        this.run(target);
-        return true;
+    private void createFinishObject() {
+        Boolean finish = Boolean.FALSE;
+        // Serialize the Boolean object
+        try (FileOutputStream fileOut = new FileOutputStream("src/main/resources/finish/finish.obj");
+             ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+            out.writeObject(finish);
+
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("File not found");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

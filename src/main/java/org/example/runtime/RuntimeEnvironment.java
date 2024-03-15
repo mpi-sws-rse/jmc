@@ -5,10 +5,7 @@ import executionGraph.ExecutionGraph;
 import org.example.checker.StrategyType;
 import programStructure.*;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -587,11 +584,11 @@ public class RuntimeEnvironment {
     private static void terminateExecution() {
         if (deadlockHappened) {
             System.out.println("[Runtime Environment Message] : The deadlock happened");
-            System.exit(0);
+            createFinishObject();
         } else if (allExecutionsFinished) {
             System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
             System.out.println("[Runtime Environment Message] : The maximum number of the executions is reached");
-            System.exit(0);
+            createFinishObject();
         } else {
             System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
             resetRuntimeEnvironment();
@@ -1104,6 +1101,30 @@ public class RuntimeEnvironment {
         int serialNumber = mcThreadSerialNumber.get(threadIdMap.get(thread.getId()).intValue()) + 1;
         mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), serialNumber);
         return serialNumber;
+    }
+
+    /**
+     * Creates finish object for the {@link org.example.manager.ByteCodeManager} to indicate that the model checking
+     * process is finished.
+     * <br>
+     * The finish object is a Boolean object with the value of {@code true}. It is serialized and written to a file
+     * named "finish.obj" in the "src/main/resources/finish" directory. The file is then read by the
+     * {@link org.example.manager.ByteCodeManager} to indicate that the model checking process is finished.
+     *
+     * @throws RuntimeException if the file is not found.
+     */
+    private static void createFinishObject() {
+        Boolean finish = true;
+        // Serialize the Boolean object
+        try (FileOutputStream fileOut = new FileOutputStream("src/main/resources/finish/finish.obj");
+             ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+            out.writeObject(finish);
+
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("File not found");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

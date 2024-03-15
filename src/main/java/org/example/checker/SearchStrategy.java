@@ -209,6 +209,34 @@ public interface SearchStrategy {
     }
 
     /**
+     * Analyzes the suspended threads that are waiting for the monitor.
+     *
+     * @param monitor the monitor that the suspended threads are waiting for.
+     */
+    default void analyzeSuspendedThreadsForMonitor(Object monitor) {
+        List<Thread> threads = findSuspendedThreads(monitor);
+        if (!threads.isEmpty()) {
+            for (Thread t : threads) {
+                unsuspendThread(t);
+            }
+        }
+    }
+
+    /**
+     * Analyzes the suspended threads that are waiting for the join request.
+     *
+     * @param joinRes the thread that the suspended threads are waiting to join.
+     */
+    default void analyzeSuspendedThreadsForJoin(Thread joinRes) {
+        List<Thread> threads = findSuspendedThreads(joinRes);
+        if (!threads.isEmpty()) {
+            for (Thread t : threads) {
+                unsuspendThread(t);
+            }
+        }
+    }
+
+    /**
      * Suspends the selected thread.
      *<br>
      * This method is used to suspend the selected thread and remove it from the {@link RuntimeEnvironment#readyThreadList}
@@ -260,33 +288,5 @@ public interface SearchStrategy {
         return RuntimeEnvironment.suspendedThreads.stream()
                 .filter(thread -> RuntimeEnvironment.joinRequest.get(thread) == joinRes)
                 .toList();
-    }
-
-    /**
-     * Analyzes the suspended threads that are waiting for the monitor.
-     *
-     * @param monitor the monitor that the suspended threads are waiting for.
-     */
-    default void analyzeSuspendedThreadsForMonitor(Object monitor) {
-        List<Thread> threads = findSuspendedThreads(monitor);
-        if (threads.size() > 0) {
-            for (Thread t : threads) {
-                unsuspendThread(t);
-            }
-        }
-    }
-
-    /**
-     * Analyzes the suspended threads that are waiting for the join request.
-     *
-     * @param joinRes the thread that the suspended threads are waiting to join.
-     */
-    default void analyzeSuspendedThreadsForJoin(Thread joinRes) {
-        List<Thread> threads = findSuspendedThreads(joinRes);
-        if (threads.size() > 0) {
-            for (Thread t : threads) {
-                unsuspendThread(t);
-            }
-        }
     }
 }
