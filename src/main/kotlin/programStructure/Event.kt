@@ -4,11 +4,16 @@ import java.io.Serializable
 
 /**
  * Event interface
- * @property type the type of the event
  */
 interface Event: Serializable {
 
+    /**
+     * @property type the type of the event
+     */
     val type: EventType
 
+    /**
+     * Returns a deep copy of this object
+     */
     fun deepCopy() : Event
 }

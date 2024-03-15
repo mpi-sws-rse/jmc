@@ -1,10 +1,6 @@
 package org.example.checker;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.util.Random;
 
 public final class CheckerConfiguration implements Serializable {
@@ -25,27 +21,21 @@ public final class CheckerConfiguration implements Serializable {
     }
 
     public byte[] generateBytes() {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(bos);
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream out = new ObjectOutputStream(bos)) {
             out.writeObject(this);
-            out.close();
+            return bos.toByteArray();
         } catch (IOException e) {
-            e.printStackTrace();
-            assert(false);
+            throw new RuntimeException("Failed to generate bytes", e);
         }
-        return bos.toByteArray();
     }
 
     public void saveConfig(String fileName) {
-        try {
-            FileOutputStream fileOut = new FileOutputStream(fileName);
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+        try (FileOutputStream fileOut = new FileOutputStream(fileName);
+             ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
             out.writeObject(this);
-            out.close();
-            fileOut.close();
         } catch (IOException i) {
-            i.printStackTrace();
+            throw new RuntimeException("Failed to save configuration", i);
         }
     }
 
@@ -54,7 +44,7 @@ public final class CheckerConfiguration implements Serializable {
         public int maxIterations = 100;
         public long progressReport = 0;
         public boolean verbose = false;
-        public long seed = new Random().nextLong(); 
+        public long seed = new Random().nextLong();
         public StrategyType strategyType = StrategyType.RANDOMSTRAREGY;
 
         public ConfigurationBuilder() {
@@ -64,34 +54,33 @@ public final class CheckerConfiguration implements Serializable {
             return new CheckerConfiguration(this);
         }
 
-        public ConfigurationBuilder withMaxEventsPerExexution(long m) {
-            this.maxEventsPerExecution = m;
+        public ConfigurationBuilder withMaxEventsPerExecution(long maxEventsPerExecution) {
+            this.maxEventsPerExecution = maxEventsPerExecution;
             return this;
         }
 
-
-        ConfigurationBuilder withMaxIterations(int m) {
-            this.maxIterations = m;
+        public ConfigurationBuilder withMaxIterations(int maxIterations) {
+            this.maxIterations = maxIterations;
             return this;
         }
 
-        ConfigurationBuilder withProgressRepose(long m) {
-            this.progressReport = m;
+        public ConfigurationBuilder withProgressReport(long progressReport) {
+            this.progressReport = progressReport;
             return this;
         }
 
-        ConfigurationBuilder withSeed(long m) {
-            this.seed = m;
+        public ConfigurationBuilder withSeed(long seed) {
+            this.seed = seed;
             return this;
         }
 
-        ConfigurationBuilder withVerbose(boolean t) {
-            this.verbose = t;
+        public ConfigurationBuilder withVerbose(boolean verbose) {
+            this.verbose = verbose;
             return this;
         }
 
-        ConfigurationBuilder withStrategyType(StrategyType t) {
-            this.strategyType = t;
+        public ConfigurationBuilder withStrategyType(StrategyType strategyType) {
+            this.strategyType = strategyType;
             return this;
         }
 

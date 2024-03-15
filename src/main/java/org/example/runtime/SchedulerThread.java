@@ -223,23 +223,32 @@ public class SchedulerThread extends Thread {
      */
     private void eventHandler() {
         RequestType request = determineEventType();
-        if (request == RequestType.START_REQUEST) {
-            startEventHandler();
-        } else if (request == RequestType.ENTER_MONITOR_REQUEST) {
-            enterMonitorRequestHandler();
-        } else if (request == RequestType.EXIT_MONITOR_REQUEST) {
-            exitMonitorRequestHandler();
-        } else if (request == RequestType.JOIN_REQUEST) {
-            joinRequestHandler();
-        } else if (request == RequestType.READ_REQUEST) {
-            readRequestHandler();
-        } else if (request == RequestType.WRITE_REQUEST) {
-            writeRequestHandler();
-        } else if (request == RequestType.FINISH_REQUEST) {
-            finishRequestHandler();
-        } else {
-            RuntimeEnvironment.threadWaitReq = null;
-            pickNextThread();
+        switch (request) {
+            case START_REQUEST:
+                startEventHandler();
+                break;
+            case ENTER_MONITOR_REQUEST:
+                enterMonitorRequestHandler();
+                break;
+            case EXIT_MONITOR_REQUEST:
+                exitMonitorRequestHandler();
+                break;
+            case JOIN_REQUEST:
+                joinRequestHandler();
+                break;
+            case READ_REQUEST:
+                readRequestHandler();
+                break;
+            case WRITE_REQUEST:
+                writeRequestHandler();
+                break;
+            case FINISH_REQUEST:
+                finishRequestHandler();
+                break;
+            default:
+                RuntimeEnvironment.threadWaitReq = null;
+                pickNextThread();
+                break;
         }
     }
 

@@ -4,46 +4,79 @@ import java.io.Serializable
 import java.lang.reflect.Field
 
 /**
- * Location class
- * This class is used to store the location of a field in a class
- * @property clazz The class of the field
- * @property instance The instance of the class
- * @property field The field
- * @property value The value of the field
- * @property type The type of the field
+ * Location class  is used to store the location of a field in a class.
  */
 data class Location(
+
     /**
-     * The following fields are transient because they are not serializable.
+     * @property clazz The class of the field
+     * <p>
+     * This field is transient and is not serialized
      */
     @Transient
     var clazz: Class<*>?,
+
+    /**
+     * @property instance The instance of the class
+     * <p>
+     * This field is transient and is not serialized
+     */
     @Transient
     var instance: Any?,
+
+    /**
+     * @property field The field
+     * <p>
+     * This field is transient and is not serialized
+     */
     @Transient
     var field: Field?,
+
+    /**
+     * @property value The value of the field
+     * <p>
+     * This field is transient and is not serialized
+     */
     @Transient
     var value: Any?,
+
+    /**
+     * @property type The type of the field
+     */
     var type: String?
 ): Serializable {
 
     /**
-     * The following fields are used to store the string representation
-     * of the class, instance, field and value. This is used to avoid
-     * serialization issues when the class is serialized and deserialized.
+     * @property clazzString The class of the field as a string
+     * <p>
+     * This field is used to avoid serialization issues when the class is serialized and deserialized.
      */
-    var clazzString: String? = null
-    var instanceString: String? = null
-    var fieldString: String? = null
-    var valueString: String? = null
+    var clazzString: String? = clazz?.name + "@" + clazz?.`package`?.name
 
-    init {
-        clazzString = clazz?.name + "@" + clazz?.`package`?.name
-        instanceString = instance?.let { "${it}@${it.hashCode().toString(16)}" }
-        fieldString = field?.let { "${it.name}@${it.hashCode().toString(16)}" }
-        valueString = value?.let { "${it}@${it.hashCode().toString(16)}" }
-    }
+    /**
+     * @property instanceString The instance of the class as a string
+     * <p>
+     * This field is used to avoid serialization issues when the instance is serialized and deserialized.
+     */
+    var instanceString: String? = instance?.let { "${it}@${it.hashCode().toString(16)}" }
 
+    /**
+     * @property fieldString The field as a string
+     * <p>
+     * This field is used to avoid serialization issues when the field is serialized and deserialized.
+     */
+    var fieldString: String? = field?.let { "${it.name}@${it.hashCode().toString(16)}" }
+
+    /**
+     * @property valueString The value of the field as a string
+     * <p>
+     * This field is used to avoid serialization issues when the value is serialized and deserialized.
+     */
+    var valueString: String? = value?.let { "${it}@${it.hashCode().toString(16)}" }
+
+    /**
+     * Returns a deep copy of this object
+     */
     fun deepCopy(): Location {
         return Location(
             clazz = copy().clazz,
@@ -55,27 +88,14 @@ data class Location(
     }
 
     /**
-     * This method is used check if the field is a primitive type
+     * Checks if the field is a primitive type or not.
+     *<p>
+     * The primitive types are: int(I), long(J), float(F), double(D), char(S), byte(B), short(C), boolean(Z)
      * @return true if the field is a primitive type, false otherwise
      */
     fun isPrimitive(): Boolean {
         return when(type){
-            // int
-            "I" -> true
-            // long
-            "Z" -> true
-            // float
-            "F" -> true
-            // double
-            "D" -> true
-            // char
-            "S" -> true
-            // byte
-            "J" -> true
-            // short
-            "C" -> true
-            // boolean
-            "B" -> true
+            "I", "Z", "F", "D", "S", "J", "C", "B" -> true
             else -> false
         }
     }

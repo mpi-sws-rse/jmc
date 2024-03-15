@@ -1,16 +1,12 @@
 package org.example.checker;
 
 
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.example.instrumenter.ByteCodeModifier;
-
 import org.example.manager.ByteCodeManager;
 
 public class ModelChecker {
@@ -31,8 +27,7 @@ public class ModelChecker {
 
     void run(TestTarget target) throws IOException, ClassNotFoundException, NoSuchMethodException,
             InvocationTargetException, IllegalAccessException {
-        
-        saveConfig(this.configuration, "src/main/resources/config/config.obj");
+        this.configuration.saveConfig("src/main/resources/config/config.obj");
 
         String path = target.getTestPath();
         String classPath = target.getTestPackage() + target.getTestClass();
@@ -66,17 +61,5 @@ public class ModelChecker {
         System.out.println("Checking " + t.getTestClass());
         this.run(t); // fix exceptions
         return true;
-    }
-
-    public void saveConfig(CheckerConfiguration c, String fileName) {
-        try {
-            FileOutputStream fileOut = new FileOutputStream(fileName);
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(c);
-            out.close();
-            fileOut.close();
-        } catch (IOException i) {
-            i.printStackTrace();
-        }
     }
 }

@@ -5,62 +5,30 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/RequestType.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RequestType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration$ConfigurationBuilder.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration$StrategyOption$DPORStrategy.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration$StrategyOption$RandomStrategy.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration$StrategyOption.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/SearchStrategy.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/SearchStrategy.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/SearchStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/SearchStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/strategy/RandomStrategy.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/strategy/RandomStrategy.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/strategy/RandomStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/manager/ByteMapLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/ByteMapLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/config/config.obj" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/config/config.obj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/Counter.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/Counter.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/Counter.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/Counter.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration$ConfigurationBuilder.class" beforeDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration$StrategyOption$DPORStrategy.class" beforeDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration$StrategyOption$RandomStrategy.class" beforeDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration$StrategyOption.class" beforeDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration.class" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/SearchStrategy.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/SearchStrategy.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/SearchStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/SearchStrategy.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.class" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/ByteMapLoader.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/ByteMapLoader.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.class" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/EnterMonitorEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/EnterMonitorEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Event.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Event.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/EventType.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/EventType.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ExitMonitorEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ExitMonitorEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/FinishEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/FinishEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/InitializationEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/InitializationEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/JMCThread.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/JMCThread.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/JoinEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/JoinEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Location.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Location.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Monitor.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Monitor.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ReadEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ReadEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/StartEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/StartEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ThreadEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ThreadEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/WriteEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/WriteEvent.kt" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/config/config.obj" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/config/config.obj" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.txt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.txt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/Counter.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/Counter.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/Counter.txt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/Counter.txt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -198,7 +166,7 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.testCorrectCounter">
     <configuration name="ModelCheckerTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -328,9 +296,9 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
-        <item itemvalue="Gradle.ModelCheckerTest.testInconsistentCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.testInconsistentCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
         <item itemvalue="Gradle.ModelCheckerTest" />
         <item itemvalue="Gradle.ModelCheckerTest.testSimpleCounter" />
       </list>
@@ -375,7 +343,7 @@
       <workItem from="1710153613874" duration="22870000" />
       <workItem from="1710232725196" duration="73540000" />
       <workItem from="1710417374523" duration="14487000" />
-      <workItem from="1710439923817" duration="7835000" />
+      <workItem from="1710439923817" duration="14440000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />

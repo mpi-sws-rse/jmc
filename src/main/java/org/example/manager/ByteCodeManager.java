@@ -212,23 +212,6 @@ public class ByteCodeManager {
 
     }
 
-    /*
-     * TODO(): Following method is deprecated and should be removed
-     */
-
-//    public void generateReadableByteCode(byte[] byteCode, String path ,String fileName) throws IOException {
-//        ClassReader cr = new ClassReader(byteCode);
-//        StringWriter sw = new StringWriter();
-//        PrintWriter pw = new PrintWriter(sw);
-//        ClassVisitor cv = new TraceClassVisitor(null, new Textifier(), pw);
-//
-//        cr.accept(cv, 0);
-//
-//        // Write the human-readable bytecode to a file
-//        try (FileWriter fileWriter = new FileWriter(path+fileName+".txt")) {
-//            fileWriter.write(sw.toString());
-//        }
-//    }
 
     public void generateReadableByteCode(Map<String, byte[]> allBytecode, String path) throws IOException {
         for (String className1 : allBytecode.keySet()) {

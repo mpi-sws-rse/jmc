@@ -17,6 +17,9 @@ public class ByteMapLoader extends ClassLoader{
         classFilePath = Paths.get("src/main/java/org/example/runtime/SchedulerThread.class");
         bytecode = Files.readAllBytes(classFilePath);
         classes.put("org.example.runtime.SchedulerThread", bytecode);
+        classFilePath = Paths.get("src/main/java/org/example/runtime/SchedulerThread$1.class");
+        bytecode = Files.readAllBytes(classFilePath);
+        classes.put("org.example.runtime.SchedulerThread$1", bytecode);
         classFilePath = Paths.get("src/main/java/org/example/runtime/RequestType.class");
         bytecode = Files.readAllBytes(classFilePath);
         classes.put("org.example.runtime.RequestType", bytecode);
