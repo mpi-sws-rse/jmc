@@ -18,7 +18,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
+ * The ByteCodeManager class is responsible for managing the bytecode of Java classes.
+ * It provides functionality to generate bytecode from .java files, read bytecode from .class files,
+ * write bytecode to .class files, invoke the main method of a class, and generate human-readable bytecode.
+ * The class uses the JavaCompiler API to compile .java files and the ASM library to read and write bytecode.
+ * It also uses reflection to invoke the main method of a class.
+ * The class requires the path to the directory containing the .java files and the name of the main class.
  */
 public class ByteCodeManager {
 

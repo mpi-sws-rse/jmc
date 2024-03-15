@@ -1,5 +1,8 @@
 package org.example.runtime;
 
+/**
+ * Enumerates the different types of requests that can be made to the runtime.
+ */
 public enum RequestType {
     START_REQUEST,
     ENTER_MONITOR_REQUEST,

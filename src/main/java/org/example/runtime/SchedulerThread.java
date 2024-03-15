@@ -7,6 +7,14 @@ import programStructure.ReadEvent;
 import programStructure.WriteEvent;
 import java.util.*;
 
+/**
+ * The SchedulerThread class extends the Thread class and is responsible for managing the execution of threads in a
+ * multithreaded program. It uses a SearchStrategy to determine the next thread to be executed based on a selected
+ * strategy type. The SchedulerThread class handles various types of requests including start, enter monitor,
+ * exit monitor, join, read, write, and finish requests. It also includes functionality for deadlock detection among
+ * threads waiting to enter a monitor. The SchedulerThread class is designed to control the flow of a program's execution
+ * and ensure sequential execution of operations.
+ */
 public class SchedulerThread extends Thread {
 
     /**
