@@ -12,6 +12,16 @@ import java.io.ObjectInputStream;
 import java.lang.reflect.Field;
 import java.util.*;
 
+/**
+ * The RuntimeEnvironment class is a singleton that manages the execution state of a multithreaded program under test.
+ * It tracks and controls various aspects of the program's execution, including thread creation, synchronization,
+ * termination, and read/write operations on shared resources. It also handles events like thread start, join,
+ * monitor enter/exit, read/write operations, and assertion failures. The class provides functionality to load
+ * a CheckerConfiguration object from a file, which is used to configure the execution of the program under test.
+ * It also provides methods to control the execution of the program, including setting a random seed, initializing
+ * the scheduler thread, and terminating the execution. The class is designed to be used in a single-threaded
+ * environment, where the SchedulerThread guarantees the sequential execution of operations.
+ */
 public class RuntimeEnvironment {
 
     /**
