@@ -223,7 +223,15 @@ public class RuntimeEnvironment {
      */
     public static boolean allExecutionsFinished = false;
 
+    /**
+     * @property {@link #seed} is used to store the random seed that is used by the a search strategy object.
+     */
     public static long seed = 0;
+
+    /**
+     * @property {@link #suspendedThreads} is used to store the threads that are suspended in the program under test.
+     */
+    public static List<Thread> suspendedThreads = new ArrayList<>();
 
     /**
      * The constructor is private to prevent the instantiation of the class
@@ -1132,5 +1140,6 @@ public class RuntimeEnvironment {
         threadIdMap = new HashMap<>();
         executionFinished = false;
         randomEventsRecord = null;
+        suspendedThreads = new ArrayList<>();
     }
 }

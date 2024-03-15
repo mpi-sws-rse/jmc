@@ -5,6 +5,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The ByteCodeModifier class is responsible for modifying the bytecode of the user's program to integrate with the
+ * {@link org.example.runtime.RuntimeEnvironment}. It maintains a map of class names to their bytecode, which is used to
+ * modify classes. The class provides functionality to modify various aspects of the user's program, including thread
+ * creation, thread joining, thread starting, read/write operations, assert statements, and monitor instructions. The
+ * class uses the ASM library to analyze and modify the bytecode of the user's program. The class requires a map of
+ * class names to their bytecode and the name of the main class upon construction. It also includes functionality for
+ * identifying classes that are castable to Thread and checking if a given type is a primitive type. The ByteCodeModifier
+ * class is designed to modify the user's program to enable the {@link org.example.runtime.RuntimeEnvironment} to manage
+ * and schedule threads during execution.
+ */
 public class ByteCodeModifier {
 
     /**

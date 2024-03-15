@@ -6,6 +6,15 @@ import programStructure.*;
 
 import java.util.*;
 
+/**
+ * The RandomStrategy class implements the {@link SearchStrategy} interface and is responsible for managing the execution
+ * order of events in a multithreaded program using a random strategy. It maintains a record of random events and a seed
+ * for the random strategy. The class provides functionality to handle various types of events including start,
+ * enter monitor, exit monitor, join, read, write, and finish events. The class uses the {@link RuntimeEnvironment} API to
+ * create and record events. The class requires a seed for the random strategy upon construction. It also includes
+ * functionality for printing the execution trace and checking if the execution is done. The RandomStrategy class is
+ * designed to control the flow of a program's execution and ensure a random execution order of operations.
+ */
 public class RandomStrategy implements SearchStrategy {
 
     /**
@@ -13,12 +22,26 @@ public class RandomStrategy implements SearchStrategy {
      */
     public long seed;
 
+    public Random random;
+
     /**
      * The following constructor initializes the random events record and the seed for the random strategy.
      */
     public RandomStrategy() {
         RuntimeEnvironment.randomEventsRecord = new ArrayList<>();
         seed = RuntimeEnvironment.seed;
+        random = new Random(seed);
+    }
+
+    @Override
+    public Thread selectRandomThread(List<Thread> readyThreadList) {
+        int randomIndex = random.nextInt(readyThreadList.size());
+        Thread randomElement = readyThreadList.get(randomIndex);
+        System.out.println(
+                "[Scheduler Thread Message] : " + randomElement.getName() + " is selected to to be a " +
+                        "candidate to run"
+        );
+        return randomElement;
     }
 
 
@@ -65,6 +88,7 @@ public class RandomStrategy implements SearchStrategy {
     public void nextExitMonitorEvent(Thread thread, Object monitor) {
         ExitMonitorEvent exitMonitorEvent = RuntimeEnvironment.createExitMonitorEvent(thread, monitor);
         RuntimeEnvironment.randomEventsRecord.add(exitMonitorEvent);
+        analyzeSuspendedThreadsForMonitor(monitor);
     }
 
     /**
@@ -120,6 +144,7 @@ public class RandomStrategy implements SearchStrategy {
     public void nextFinishEvent(Thread thread) {
         FinishEvent finishEvent = RuntimeEnvironment.createFinishEvent(thread);
         RuntimeEnvironment.randomEventsRecord.add(finishEvent);
+        analyzeSuspendedThreadsForJoin(thread);
     }
 
     /**

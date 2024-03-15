@@ -3,14 +3,56 @@ package org.example.checker;
 import java.io.*;
 import java.util.Random;
 
+/**
+ * The CheckerConfiguration class is responsible for managing the configuration of the checker. It maintains several
+ * configuration parameters including the maximum number of events per execution, progress report interval, verbosity,
+ * maximum number of iterations, seed for random number generator, and the strategy type.
+ * The class provides functionality to generate a byte array of the configuration object and to save the configuration
+ * to a file. The class uses the Serializable interface to serialize and deserialize the configuration object.
+ * The class requires a ConfigurationBuilder object upon construction, which is used to set the configuration parameters.
+ * The ConfigurationBuilder class is a static inner class of the CheckerConfiguration class and is used to build the
+ * configuration object. The CheckerConfiguration class is designed to manage the configuration of the checker and to
+ * provide an easy way to set and save the configuration parameters.
+ */
 public final class CheckerConfiguration implements Serializable {
+
+    /**
+     * @property {@link #maxEventsPerExecution} maximum number of events to be executed in a single execution
+     */
     public long maxEventsPerExecution;
+
+    /**
+     * @property {@link #progressReport} progress report interval
+     */
     public long progressReport;
+
+    /**
+     * @property {@link #verbose} verbose mode
+     */
     public boolean verbose;
+
+    /**
+     * @property {@link #maxIterations} maximum number of iterations
+     */
     public int maxIterations;
+
+    /**
+     * @property {@link #seed} seed for random number generator
+     */
     public long seed;
+
+    /**
+     * @property {@link #strategyType} strategy type to be used
+     */
     public StrategyType strategyType;
 
+    /**
+     * The following constructor is used to initialize the configuration with default values.
+     * <br>
+     * This constructor is private and only accessible through the builder.
+     *
+     * @param builder the builder to be used to initialize the configuration
+     */
     private CheckerConfiguration(ConfigurationBuilder builder) {
         maxEventsPerExecution = builder.maxEventsPerExecution;
         maxIterations = builder.maxIterations;
@@ -20,6 +62,12 @@ public final class CheckerConfiguration implements Serializable {
         strategyType = builder.strategyType;
     }
 
+    /**
+     * Generates the byte array of the configuration object.
+     *
+     * @return the bytes of the configuration
+     * @throws RuntimeException if the bytes cannot be generated
+     */
     public byte[] generateBytes() {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
              ObjectOutputStream out = new ObjectOutputStream(bos)) {
@@ -30,6 +78,12 @@ public final class CheckerConfiguration implements Serializable {
         }
     }
 
+    /**
+     * Saves the configuration to a given file name.
+     *
+     * @param fileName the file name to load the configuration from
+     * @throws RuntimeException if the configuration cannot be saved
+     */
     public void saveConfig(String fileName) {
         try (FileOutputStream fileOut = new FileOutputStream(fileName);
              ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
@@ -39,7 +93,15 @@ public final class CheckerConfiguration implements Serializable {
         }
     }
 
+    /**
+     * The following static class is used to build the configuration object.
+     * <br>
+     * The builder is used to set the configuration parameters and then build the configuration object.
+     * It provides default values for the configuration parameters. Additionally, it provides methods to set the
+     * configuration parameters.
+     */
     public static class ConfigurationBuilder {
+
         public long maxEventsPerExecution = 100;
         public int maxIterations = 100;
         public long progressReport = 0;
@@ -83,6 +145,5 @@ public final class CheckerConfiguration implements Serializable {
             this.strategyType = strategyType;
             return this;
         }
-
     }
 }

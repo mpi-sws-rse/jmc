@@ -7,6 +7,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+/**
+ * The SearchStrategy interface defines the methods that any search strategy must implement.
+ * It provides a way to manage the execution order of events in a multithreaded program.
+ * The interface includes methods for handling various types of events including start, enter monitor, exit monitor,
+ * join, read, write, and finish events. It also includes methods for printing the execution trace and checking if the
+ * execution is done. The SearchStrategy interface is designed to be implemented by classes that provide different
+ * strategies for managing the execution order of events. The strategy is used by the SchedulerThread class to control
+ * the flow of a program's execution and ensure a specific execution order of operations.
+ */
 public interface SearchStrategy {
 
     /**
@@ -155,6 +164,7 @@ public interface SearchStrategy {
                     "[Scheduler Thread Message] : The monitor " + monitor + " is already in use by " +
                             RuntimeEnvironment.threadIdMap.get(RuntimeEnvironment.monitorList.get(monitor).getId())
             );
+            suspendThread(thread);
             return pickNextRandomThread();
         } else {
             System.out.println("[Scheduler Thread Message] : The monitor " + monitor + " is available");
@@ -192,12 +202,91 @@ public interface SearchStrategy {
             nextJoinEvent(thread, joinRes);
             return thread;
         } else {
-            System.out.println(
-                    "[Scheduler Thread Message] : " + thread.getName() +  " is requested to join " +
-                        joinRes.getName()
-            );
             System.out.println("[Scheduler Thread Message] : However, " + joinRes.getName() + " is not finished yet");
+            suspendThread(thread);
             return pickNextRandomThread();
+        }
+    }
+
+    /**
+     * Suspends the selected thread.
+     *<br>
+     * This method is used to suspend the selected thread and remove it from the {@link RuntimeEnvironment#readyThreadList}
+     * list and add it to the {@link RuntimeEnvironment#suspendedThreads} list. This action is required when the selected
+     * thread is waiting for a monitor or a join request.
+     *
+     * @param thread the selected thread.
+     */
+    default void suspendThread(Thread thread) {
+        System.out.println("[Scheduler Thread Message] : " + thread.getName() + " is suspended");
+        RuntimeEnvironment.readyThreadList.remove(thread);
+        RuntimeEnvironment.suspendedThreads.add(thread);
+    }
+
+    /**
+     * Unsuspends the selected thread.
+     *<br>
+     * This method is used to unsuspend the selected thread and remove it from the {@link RuntimeEnvironment#suspendedThreads}
+     * list and add it to the {@link RuntimeEnvironment#readyThreadList} list. This action is required when the monitor or
+     * join request of the selected thread is available.
+     *
+     * @param thread the selected thread.
+     */
+    default void unsuspendThread(Thread thread) {
+        System.out.println("[Scheduler Thread Message] : " + thread.getName() + " is unsuspended");
+        RuntimeEnvironment.suspendedThreads.remove(thread);
+        RuntimeEnvironment.readyThreadList.add(thread);
+    }
+
+    /**
+     * Finds the suspended threads that are waiting for the monitor.
+     *
+     * @param monitor the monitor that the suspended threads are waiting for.
+     * @return the list of suspended threads that are waiting for the monitor.
+     */
+    default List<Thread> findSuspendedThreads(Object monitor) {
+        return RuntimeEnvironment.suspendedThreads.stream()
+                .filter(thread -> RuntimeEnvironment.monitorRequest.get(thread) == monitor)
+                .toList();
+    }
+
+    /**
+     * Finds the suspended threads that are waiting for the join request.
+     *
+     * @param joinRes the thread that the suspended threads are waiting to join.
+     * @return the list of suspended threads that are waiting for the join request.
+     */
+    default List<Thread> findSuspendedThreads(Thread joinRes) {
+        return RuntimeEnvironment.suspendedThreads.stream()
+                .filter(thread -> RuntimeEnvironment.joinRequest.get(thread) == joinRes)
+                .toList();
+    }
+
+    /**
+     * Analyzes the suspended threads that are waiting for the monitor.
+     *
+     * @param monitor the monitor that the suspended threads are waiting for.
+     */
+    default void analyzeSuspendedThreadsForMonitor(Object monitor) {
+        List<Thread> threads = findSuspendedThreads(monitor);
+        if (threads.size() > 0) {
+            for (Thread t : threads) {
+                unsuspendThread(t);
+            }
+        }
+    }
+
+    /**
+     * Analyzes the suspended threads that are waiting for the join request.
+     *
+     * @param joinRes the thread that the suspended threads are waiting to join.
+     */
+    default void analyzeSuspendedThreadsForJoin(Thread joinRes) {
+        List<Thread> threads = findSuspendedThreads(joinRes);
+        if (threads.size() > 0) {
+            for (Thread t : threads) {
+                unsuspendThread(t);
+            }
         }
     }
 }
