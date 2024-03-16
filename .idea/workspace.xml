@@ -4,7 +4,50 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added" />
+    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_1.dot" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_1.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_2.dot" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/Visualized_Graphs/Execution_Graph_2.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/config/config.obj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/Counter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/correct/counter/Counter.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/inconsistent/counter/Counter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/inconsistent/counter/Counter.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/simple/counter/SimpleCounter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/simple/counter/SimpleCounter.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_1.dot" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_1.png" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_2.dot" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/Visualized_Graphs/Execution_Graph_2.png" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/resources/config/config.obj" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/CorrectCounter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/Counter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/correct/counter/Counter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/inconsistent/counter/Counter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/inconsistent/counter/Counter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/simple/counter/SimpleCounter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/simple/counter/SimpleCounter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -318,7 +361,7 @@
       <workItem from="1710153613874" duration="22870000" />
       <workItem from="1710232725196" duration="73540000" />
       <workItem from="1710417374523" duration="14487000" />
-      <workItem from="1710439923817" duration="42736000" />
+      <workItem from="1710439923817" duration="44441000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />
