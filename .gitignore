@@ -5,7 +5,7 @@ build/
 !**/src/test/**/build/
 src/main/java/org/example/checker/*.class
 src/main/java/org/example/checker/strategy/*.class
-src/main/resources
+src/main/resources/finish/*.obj
 src/main/java/org/example/runtime/*.class
 src/test/java/org/example/concurrent/programs/complex/counter/*.class
 src/test/java/org/example/concurrent/programs/correct/counter/*.class

@@ -26,7 +26,7 @@ public class InconsistentCounter extends Thread{
 
         assert(counter.count == 2) : " ***The assert did not pass, the counter value is " + counter.count+"***";
 
-        // System.out.println("["+Thread.currentThread().getName()+" message] : If you see this message, the assert passed. The counter value is " + counter.count);
+        System.out.println("["+Thread.currentThread().getName()+" message] : If you see this message, the assert passed. The counter value is " + counter.count);
 
     }
 }
