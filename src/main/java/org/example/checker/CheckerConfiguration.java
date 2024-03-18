@@ -1,63 +1,113 @@
 package org.example.checker;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
-
-import java.io.Serializable;
+import java.io.*;
 import java.util.Random;
 
-import org.example.checker.CheckerConfiguration.StrategyOption.RandomStrategy;
-
+/**
+ * The CheckerConfiguration class is responsible for managing the configuration of the checker. It maintains several
+ * configuration parameters including the maximum number of events per execution, progress report interval, verbosity,
+ * maximum number of iterations, seed for random number generator, and the strategy type.
+ * The class provides functionality to generate a byte array of the configuration object and to save the configuration
+ * to a file. The class uses the Serializable interface to serialize and deserialize the configuration object.
+ * The class requires a ConfigurationBuilder object upon construction, which is used to set the configuration parameters.
+ * The ConfigurationBuilder class is a static inner class of the CheckerConfiguration class and is used to build the
+ * configuration object. The CheckerConfiguration class is designed to manage the configuration of the checker and to
+ * provide an easy way to set and save the configuration parameters.
+ */
 public final class CheckerConfiguration implements Serializable {
+
+    /**
+     * @property {@link #maxEventsPerExecution} maximum number of events to be executed in a single execution
+     */
     public long maxEventsPerExecution;
-    public long maxIterations;
+
+    /**
+     * @property {@link #progressReport} progress report interval
+     */
     public long progressReport;
+
+    /**
+     * @property {@link #verbose} verbose mode
+     */
     public boolean verbose;
+
+    /**
+     * @property {@link #maxIterations} maximum number of iterations
+     */
+    public int maxIterations;
+
+    /**
+     * @property {@link #seed} seed for random number generator
+     */
     public long seed;
 
+    /**
+     * @property {@link #strategyType} strategy type to be used
+     */
+    public StrategyType strategyType;
+
+    /**
+     * The following constructor is used to initialize the configuration with default values.
+     * <br>
+     * This constructor is private and only accessible through the builder.
+     *
+     * @param builder the builder to be used to initialize the configuration
+     */
     private CheckerConfiguration(ConfigurationBuilder builder) {
         maxEventsPerExecution = builder.maxEventsPerExecution;
         maxIterations = builder.maxIterations;
         progressReport = builder.progressReport;
         verbose = builder.verbose;
         seed = builder.seed;
-        System.out.println("Random seed: " + seed);
+        strategyType = builder.strategyType;
     }
 
+    /**
+     * Generates the byte array of the configuration object.
+     *
+     * @return the bytes of the configuration
+     * @throws RuntimeException if the bytes cannot be generated
+     */
     public byte[] generateBytes() {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(bos);
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream out = new ObjectOutputStream(bos)) {
             out.writeObject(this);
-            out.close();
+            return bos.toByteArray();
         } catch (IOException e) {
-            e.printStackTrace();
-            assert(false);
+            throw new RuntimeException("Failed to generate bytes", e);
         }
-        return bos.toByteArray();
     }
 
+    /**
+     * Saves the configuration to a given file name.
+     *
+     * @param fileName the file name to load the configuration from
+     * @throws RuntimeException if the configuration cannot be saved
+     */
     public void saveConfig(String fileName) {
-        try {
-            FileOutputStream fileOut = new FileOutputStream(fileName);
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+        try (FileOutputStream fileOut = new FileOutputStream(fileName);
+             ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
             out.writeObject(this);
-            out.close();
-            fileOut.close();
         } catch (IOException i) {
-            i.printStackTrace();
+            throw new RuntimeException("Failed to save configuration", i);
         }
     }
 
+    /**
+     * The following static class is used to build the configuration object.
+     * <br>
+     * The builder is used to set the configuration parameters and then build the configuration object.
+     * It provides default values for the configuration parameters. Additionally, it provides methods to set the
+     * configuration parameters.
+     */
     public static class ConfigurationBuilder {
-        public long maxEventsPerExecution = 1000;
-        public long maxIterations = 1000;
+
+        public long maxEventsPerExecution = 100;
+        public int maxIterations = 100;
         public long progressReport = 0;
-        public org.example.checker.CheckerConfiguration.StrategyOption searchStrategy = new RandomStrategy();
         public boolean verbose = false;
-        public long seed = new Random().nextLong(); // can be overwritten to a user-specified seed for reproducibility
+        public long seed = new Random().nextLong();
+        public StrategyType strategyType = StrategyType.RANDOMSTRAREGY;
 
         public ConfigurationBuilder() {
         }
@@ -66,44 +116,34 @@ public final class CheckerConfiguration implements Serializable {
             return new CheckerConfiguration(this);
         }
 
-        public ConfigurationBuilder withMaxEventsPerExexution(long m) {
-            this.maxEventsPerExecution = m;
+        public ConfigurationBuilder withMaxEventsPerExecution(long maxEventsPerExecution) {
+            this.maxEventsPerExecution = maxEventsPerExecution;
             return this;
         }
 
-        public ConfigurationBuilder withSearchStrategy(StrategyOption option) {
-            this.searchStrategy = option;
+        public ConfigurationBuilder withMaxIterations(int maxIterations) {
+            this.maxIterations = maxIterations;
             return this;
         }
 
-        ConfigurationBuilder withMaxIterations(long m) {
-            this.maxIterations = m;
+        public ConfigurationBuilder withProgressReport(long progressReport) {
+            this.progressReport = progressReport;
             return this;
         }
 
-        ConfigurationBuilder withProgressRepose(long m) {
-            this.progressReport = m;
+        public ConfigurationBuilder withSeed(long seed) {
+            this.seed = seed;
             return this;
         }
 
-        ConfigurationBuilder withSeed(long m) {
-            this.seed = m;
+        public ConfigurationBuilder withVerbose(boolean verbose) {
+            this.verbose = verbose;
             return this;
         }
 
-        ConfigurationBuilder withVerbose(boolean t) {
-            this.verbose = t;
+        public ConfigurationBuilder withStrategyType(StrategyType strategyType) {
+            this.strategyType = strategyType;
             return this;
-        }
-
-    }
-
-    public static sealed interface StrategyOption {
-        record RandomStrategy() implements StrategyOption {
-        }
-
-        record DPORStrategy() implements StrategyOption {
         }
     }
-
 }

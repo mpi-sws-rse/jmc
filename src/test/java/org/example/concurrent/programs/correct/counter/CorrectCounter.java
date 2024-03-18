@@ -11,7 +11,6 @@ public class CorrectCounter extends Thread {
     public void run() {
         synchronized (counter) {
             counter.count = counter.count + 1;
-            System.out.println("[" + this.getName() + " message] : " + "The counter value is " + counter.count);
         }
     }
 

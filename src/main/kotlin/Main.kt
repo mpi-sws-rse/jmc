@@ -1,16 +1,11 @@
 import dpor.Trust
 import parser.Tokenizer
 
-//import programStructure.Location
-
 /*
-    TODO(): Write an intro for the reader
+ * TODO(): Write an intro for the reader
  */
 
 fun main() {
-
-    //val rv = RV()
-    //rv.readSource()
 
     // Creating a tokenizer object
     val tknzr = Tokenizer()
@@ -28,7 +23,7 @@ fun main() {
      It captures all the write and read events from each tread.
      */
 
-    tknzr.readFile("src/main/resources/Input_Program/Program_Test_5")
+    tknzr.readFile("src/main/resources/Input_Program/Program_Test_6")
 
     /*
      For testing different programs use these :
@@ -53,7 +48,7 @@ fun main() {
     To Check the consistency for integration between
         Trust and Tokenizer uncomment the following.
 
-    if (trust.allThreads != null){
+    if (trust.allJMCThread != null){
         println("---------------------------")
         for (t in fr.threads){
             println(t)
@@ -73,7 +68,7 @@ fun main() {
     */
 
     // Here the Trust algorithm will be run
-    if (trust.allThreads != null){
+    if (trust.allJMCThread != null){
         println("Parsing has been completed")
         trust.verify()
         println("All the possible execution graphs have been visited.")

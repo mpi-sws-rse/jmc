@@ -15,6 +15,7 @@ public class InconsistentCounter extends Thread{
     }
 
     public static void main(String[] args) throws InterruptedException {
+        //System.out.println(this.getName());
         Counter counter = new Counter();
         InconsistentCounter thread1 = new InconsistentCounter(counter);
         InconsistentCounter thread2 = new InconsistentCounter(counter);
@@ -23,11 +24,7 @@ public class InconsistentCounter extends Thread{
         thread1.join();
         thread2.join();
 
-        try {
-            assert(counter.count == 2) : " ***The assert did not pass, the counter value is " + counter.count+"***";
-        } catch (AssertionError e) {
-            System.out.println(e.getMessage());
-        }
+        assert(counter.count == 2) : " ***The assert did not pass, the counter value is " + counter.count+"***";
 
         System.out.println("["+Thread.currentThread().getName()+" message] : If you see this message, the assert passed. The counter value is " + counter.count);
 

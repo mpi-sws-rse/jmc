@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="">
+    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +21,9 @@
   <component name="ExternalProjectsManager">
     <system id="GRADLE">
       <state>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
         <projects_view>
           <tree_state>
             <expand>
@@ -57,6 +60,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Kotlin Class" />
+        <option value="Kotlin Data Class" />
+        <option value="Enum" />
         <option value="Class" />
       </list>
     </option>
@@ -67,6 +72,9 @@
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 0
@@ -84,6 +92,7 @@
     "ASKED_ADD_EXTERNAL_FILES": "true",
     "Application.Main.executor": "Run",
     "Application.TestInconsistentCounter.executor": "Run",
+    "Downloaded.Files.Path.Enabled": "false",
     "Gradle.Build JMC4FUN.executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:BuggyCounter.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:InconsistentCounter.main()].executor": "Run",
@@ -95,13 +104,22 @@
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestInconsistentCounter.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestKotlinCounter.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestSimpleCounter.main()].executor": "Run",
+    "Gradle.ModelCheckerTest.executor": "Run",
+    "Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor": "Run",
+    "Gradle.ModelCheckerTest.testCorrectCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testSimpleCounter.executor": "Run",
     "Kotlin.CounterKt.executor": "Run",
     "Kotlin.MainKt.executor": "Run",
+    "Repository.Attach.Annotations": "false",
+    "Repository.Attach.JavaDocs": "false",
+    "Repository.Attach.Sources": "false",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "random",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/wrong/counter",
+    "last_opened_file_path": "/home/mkhoshechin/Desktop/JMC4FUN-master",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -111,7 +129,7 @@
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "reference.settingsdialog.project.gradle",
+    "settings.editor.selected.configurable": "preferences.lookFeel",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -130,32 +148,150 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.TestInconsistentCounter">
-    <configuration name="TestInconsistentCounter" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.example.TestInconsistentCounter" />
-      <module name="org.example.JMC4FUN.main" />
-      <option name="VM_PARAMETERS" value="-ea" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.testCorrectCounter">
+    <configuration name="ModelCheckerTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.example.checker.ModelCheckerTest&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
     </configuration>
-    <configuration name="CounterKt" type="JetRunConfigurationType" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.example.concurrent.programs.kotlin.counter.CounterKt" />
-      <module name="org.example.JMC4FUN.main" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
+    <configuration name="ModelCheckerTest.testBuggyCounterThatDeadlocks" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.testBuggyCounterThatDeadlocks&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="ModelCheckerTest.testCorrectCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.testCorrectCounter&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="ModelCheckerTest.testInconsistentCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.testInconsistentCounter&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="ModelCheckerTest.testSimpleCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.testSimpleCounter&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" value="-ea" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Application.TestInconsistentCounter" />
-      <item itemvalue="Kotlin.CounterKt" />
+      <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
+      <item itemvalue="Gradle.ModelCheckerTest" />
+      <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
+      <item itemvalue="Gradle.ModelCheckerTest.testInconsistentCounter" />
+      <item itemvalue="Gradle.ModelCheckerTest.testSimpleCounter" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.TestInconsistentCounter" />
-        <item itemvalue="Kotlin.CounterKt" />
+        <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
+        <item itemvalue="Gradle.ModelCheckerTest.testInconsistentCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.testSimpleCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest" />
       </list>
     </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="jdk-17.0.10-corretto-17.0.10-4caba194b151-25a4bffe" />
+      </set>
+    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -175,6 +311,26 @@
       <workItem from="1707387896765" duration="30574000" />
       <workItem from="1707702012015" duration="31347000" />
       <workItem from="1707997767771" duration="7403000" />
+      <workItem from="1709728600008" duration="5578000" />
+      <workItem from="1709741175233" duration="6957000" />
+      <workItem from="1709815404116" duration="4368000" />
+      <workItem from="1709819783658" duration="4121000" />
+      <workItem from="1709823912907" duration="3289000" />
+      <workItem from="1710060489017" duration="3183000" />
+      <workItem from="1710091708111" duration="55000" />
+      <workItem from="1710091769488" duration="4774000" />
+      <workItem from="1710144809866" duration="3337000" />
+      <workItem from="1710150237745" duration="2810000" />
+      <workItem from="1710153057155" duration="550000" />
+      <workItem from="1710153613874" duration="22870000" />
+      <workItem from="1710232725196" duration="73540000" />
+      <workItem from="1710417374523" duration="14487000" />
+      <workItem from="1710439923817" duration="45169000" />
+      <workItem from="1710618774924" duration="3082000" />
+      <workItem from="1710750032064" duration="1323000" />
+      <workItem from="1710752472974" duration="16641000" />
+      <workItem from="1710773125498" duration="52000" />
+      <workItem from="1710773184097" duration="21000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />
@@ -222,6 +378,17 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="For fix" />
@@ -239,7 +406,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="kotlin-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
-          <line>33</line>
+          <line>28</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
