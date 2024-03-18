@@ -174,7 +174,7 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.testCorrectCounter">
     <configuration name="ModelCheckerTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -304,10 +304,10 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
         <item itemvalue="Gradle.ModelCheckerTest.testInconsistentCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.testSimpleCounter" />
-        <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
         <item itemvalue="Gradle.ModelCheckerTest" />
       </list>
     </recent_temporary>

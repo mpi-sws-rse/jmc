@@ -8,11 +8,17 @@ src/main/java/org/example/checker/strategy/*.class
 src/main/resources/
 src/main/java/org/example/runtime/*.class
 src/test/java/org/example/concurrent/programs/complex/counter/*.class
+src/test/java/org/example/concurrent/programs/complex/counter/*.txt
 src/test/java/org/example/concurrent/programs/correct/counter/*.class
+src/test/java/org/example/concurrent/programs/correct/counter/*.txt
 src/test/java/org/example/concurrent/programs/inconsistent/counter/*.class
+src/test/java/org/example/concurrent/programs/inconsistent/counter/*.txt
 src/test/java/org/example/concurrent/programs/simple/counter/*.class
+src/test/java/org/example/concurrent/programs/simple/counter/*.txt
 src/test/java/org/example/concurrent/programs/wrong/counter/*.class
+src/test/java/org/example/concurrent/programs/wrong/counter/*.txt
 src/test/java/org/example/concurrent/programs/thread_dependency/*.class
+src/test/java/org/example/concurrent/programs/thread_dependency/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
