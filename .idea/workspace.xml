@@ -4,36 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/Finished.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/FinishedType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/HaltExecutionException.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/inconsistent/counter/Counter.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/Finished.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/FinishedType.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/HaltExecutionException.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/inconsistent/counter/Counter.txt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.txt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/manager/ByteCodeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/ByteCodeManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/checker/ModelCheckerTest.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/ByteCodeManager.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/ByteCodeManager.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/checker/ModelCheckerTest.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/checker/ModelCheckerTest.java" afterDir="false" />
-    </list>
+    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -354,7 +325,7 @@
       <workItem from="1710439923817" duration="45169000" />
       <workItem from="1710618774924" duration="3082000" />
       <workItem from="1710750032064" duration="1323000" />
-      <workItem from="1710752472974" duration="16051000" />
+      <workItem from="1710752472974" duration="16397000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />
