@@ -3,6 +3,7 @@ package org.example.runtime;
 import org.example.checker.SearchStrategy;
 import org.example.checker.StrategyType;
 import org.example.checker.strategy.RandomStrategy;
+import org.example.manager.HaltExecutionException;
 import programStructure.ReadEvent;
 import programStructure.WriteEvent;
 import java.util.*;
@@ -55,14 +56,13 @@ public class SchedulerThread extends Thread {
      * handles the events until the execution is finished.
      */
     @Override
-    public void run() {
+    public void run(){
         waitForMainThread();
         printStartMessage();
         while (!RuntimeEnvironment.executionFinished) {
             waitForOtherThread();
             if (checkAssertFlag()) {
                 handleAssertFail();
-                break;
             }
             System.out.println("[Scheduler Thread Message] : All threads are in waiting state");
             waitForThreadStateChange();
@@ -436,6 +436,12 @@ public class SchedulerThread extends Thread {
         }
     }
 
+    /**
+     * Handles the finish request of a thread.
+     * <p>
+     * This method is used to handle the finish request of a thread. It retrieves the thread that requested to finish,
+     * handles the finish request, sets the thread wait request to null, and then picks the next thread to run.
+     */
     public void finishRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Finish request handler is called");
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
@@ -447,6 +453,12 @@ public class SchedulerThread extends Thread {
         }
     }
 
+    /**
+     * Checks whether the last execution is finished or not.
+     * <p>
+     * This method is used to check whether the last execution is finished or not. If the search strategy is done, it
+     * sets the {@link RuntimeEnvironment#allExecutionsFinished} flag to true.
+     */
     public void wasLastExecution() {
         if (searchStrategy.done()) {
             RuntimeEnvironment.allExecutionsFinished = true;

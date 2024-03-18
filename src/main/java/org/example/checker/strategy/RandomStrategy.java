@@ -32,6 +32,14 @@ public class RandomStrategy implements SearchStrategy {
     }
 
 
+    /**
+     * Selects a random thread from the ready thread list based on the {@link #random} object.
+     * <p>
+     * This method selects a random thread from the ready thread list.
+     *
+     * @param readyThreadList is the list of threads that are ready to run.
+     * @return the selected random thread.
+     */
     @Override
     public Thread selectRandomThread(List<Thread> readyThreadList) {
         int randomIndex = random.nextInt(readyThreadList.size());
@@ -42,7 +50,6 @@ public class RandomStrategy implements SearchStrategy {
         );
         return randomElement;
     }
-
 
     /**
      * Creates a {@link StartEvent} for the corresponding starting a thread request of a thread

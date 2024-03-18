@@ -187,13 +187,14 @@ public class ByteCodeManager {
      * @param allBytecode - A map of class names to bytecode
      * @param packageName - The package name of the main class
      *
+     * @throws InvocationTargetException if the main method encounters an exception
      * @throws IllegalArgumentException if the bytecode map or package name is null
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if an invalid argument is provided
-     * @throws ClassNotFoundException if the class cannot be loaded
+     * @throws ClassNotFoundException if the class cannot be found
      * @throws NoSuchMethodException if the main method cannot be found
-     * @throws InvocationTargetException if the main method cannot be invoked
      * @throws IllegalAccessException if the main method cannot be accessed
+     * @throws InvocationTargetException if the main method cannot be invoked
+     *
      */
     public void invokeMainMethod(Map<String,byte[]> allBytecode, String packageName) {
         if (allBytecode == null || packageName == null) {
@@ -209,11 +210,24 @@ public class ByteCodeManager {
             // Prepare arguments for the main method
             String[] mainMethodArgs = {};  // Add any required arguments here
             // Invoke the main method
-            Boolean isFinished = returnFinishObject();
-            while (isFinished == Boolean.FALSE){
-                mainMethod.invoke(null, (Object) mainMethodArgs);
-                isFinished = returnFinishObject();
+            //Boolean isFinished = returnFinishObject();
+            Finished finished = saveFinishObject();
+            while (finished.terminate == false){
+                try {
+                    mainMethod.invoke(null, (Object) mainMethodArgs);
+                    finished = loadFinishObject();
+                }  catch (InvocationTargetException e) {
+                    if (e.getTargetException() instanceof HaltExecutionException) {
+                        System.out.println("HaltExecutionException happened");
+                        finished = loadFinishObject();
+                    } else {
+                        // Handle other exceptions
+                        System.err.println("Error invoking the main method: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                }
             }
+            state(finished);
         } catch (IOException e) {
             System.err.println("Error reading bytecode file: " + e.getMessage());
             e.printStackTrace();
@@ -226,24 +240,46 @@ public class ByteCodeManager {
         } catch (NoSuchMethodException e) {
             System.err.println("Error getting the main method: " + e.getMessage());
             e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            System.err.println("Error invoking the main method: " + e.getMessage());
-            e.printStackTrace();
         } catch (IllegalAccessException e) {
             System.err.println("Error accessing the main method: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    public Boolean returnFinishObject() {
+    /**
+     * Save the finished object to a file
+     *
+     * @return the finished object
+     */
+    public Finished saveFinishObject() {
+        Finished finished = new Finished();
+        // Serialize the Boolean object
+        try (FileOutputStream fileOut = new FileOutputStream("src/main/resources/finish/finish.obj");
+             ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+            out.writeObject(finished);
+            return finished;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("File not found");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Load the finished object from a file
+     *
+     * @return the finished object
+     */
+    public Finished loadFinishObject() {
         try (FileInputStream fileIn = new FileInputStream("src/main/resources/finish/finish.obj");
              ObjectInputStream in = new ObjectInputStream(fileIn)) {
-            Boolean deserializedBoolean = (Boolean) in.readObject();
-            return deserializedBoolean;
+            Finished deserializedFinished = (Finished) in.readObject();
+            return deserializedFinished;
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
-        return Boolean.FALSE;
+        return null;
     }
 
     /**
@@ -277,6 +313,20 @@ public class ByteCodeManager {
                 System.err.println("Error generating readable bytecode for class: " + className);
                 e.printStackTrace();
             }
+        }
+    }
+
+    /**
+     * Print the state of the model checking process
+     */
+    public void state(Finished finished){
+        System.out.println("The Model Checking process has finished");
+        if (finished.type == FinishedType.SUCCESS){
+            System.out.println("The program is thread-safe");
+        } else if (finished.type == FinishedType.DEADLOCK){
+            System.out.println("The program has a potential deadlock");
+        } else if (finished.type == FinishedType.BUG){
+            System.out.println("The program is not thread-safe");
         }
     }
 }

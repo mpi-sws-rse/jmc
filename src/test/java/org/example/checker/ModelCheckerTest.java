@@ -7,34 +7,35 @@ import org.junit.jupiter.api.*;
 
 
 class ModelCheckerTest {
-    private static final PrintStream originalOut = System.out;
-    private static final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+//    private static final PrintStream originalOut = System.out;
+//    private static final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
     private ModelChecker checker;
 
 
-    @BeforeAll
-    public static void setUpStreams() {
-        System.setOut(new PrintStream(outContent, true));
-    }
-
-    @AfterAll
-    public static void cleanUpStreams() {
-        System.setOut(null);
-    }
+//    @BeforeAll
+//    public static void setUpStreams() {
+//        System.setOut(new PrintStream(outContent, true));
+//    }
+//
+//    @AfterAll
+//    public static void cleanUpStreams() {
+//        System.setOut(null);
+//    }
 
     @BeforeEach
     void setUp() {
+        System.out.println("setUp");
         CheckerConfiguration config = new CheckerConfiguration.ConfigurationBuilder().withVerbose(true).build();
         checker = new ModelChecker(config);
     }
 
-    @AfterEach
-    void tearDown() {
-        System.setOut(originalOut);
-        System.out.println(outContent.toString().trim());
-        checker = null;
-        outContent.reset();
-    }
+//    @AfterEach
+//    void tearDown() {
+//        System.setOut(originalOut);
+//        System.out.println("finished");
+//        checker = null;
+//        outContent.reset();
+//    }
 
     // various "litmus tests": concurrent threads with a shared variable
 
@@ -49,8 +50,11 @@ class ModelCheckerTest {
         assertEquals(true, checker.check(t), "Call works");
     }
 
+
+
     @Test
     @DisplayName("Inconsistent counter with a race condition")
+
     void testInconsistentCounter() {
         System.out.println("InconsistentCounter");
         var t = new TestTarget("org.example.concurrent.programs.inconsistent.counter.",
@@ -58,6 +62,7 @@ class ModelCheckerTest {
                         "main",
                         "src/test/java/org/example/concurrent/programs/inconsistent/counter/"
         );
+        System.out.println("InconsistentCounter finished");
         assertEquals(true, checker.check(t), "call works");
     }
 

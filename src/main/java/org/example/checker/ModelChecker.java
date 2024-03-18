@@ -91,7 +91,6 @@ public class ModelChecker {
             byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode, path);
         }
         System.out.println("Running the modified bytecode");
-        createFinishObject();
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage());
     }
 
@@ -112,19 +111,5 @@ public class ModelChecker {
         byteCodeModifier.modifyThreadJoin();
         byteCodeModifier.modifyAssert();
         byteCodeModifier.addRuntimeEnvironment();
-    }
-
-    private void createFinishObject() {
-        Boolean finish = Boolean.FALSE;
-        // Serialize the Boolean object
-        try (FileOutputStream fileOut = new FileOutputStream("src/main/resources/finish/finish.obj");
-             ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
-            out.writeObject(finish);
-
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("File not found");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

@@ -5,8 +5,34 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/Finished.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/FinishedType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/HaltExecutionException.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/inconsistent/counter/Counter.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/Finished.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/FinishedType.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/HaltExecutionException.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/inconsistent/counter/Counter.txt" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/inconsistent/counter/InconsistentCounter.txt" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.txt" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/Counter.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/manager/ByteCodeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/ByteCodeManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/checker/ModelCheckerTest.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/ByteCodeManager.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/ByteCodeManager.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/checker/ModelCheckerTest.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/checker/ModelCheckerTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,9 +86,9 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Kotlin Class" />
-        <option value="Class" />
         <option value="Kotlin Data Class" />
         <option value="Enum" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -92,6 +118,7 @@
     &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
     &quot;Application.Main.executor&quot;: &quot;Run&quot;,
     &quot;Application.TestInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Downloaded.Files.Path.Enabled&quot;: &quot;false&quot;,
     &quot;Gradle.Build JMC4FUN.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:BuggyCounter.main()].executor&quot;: &quot;Run&quot;,
     &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:InconsistentCounter.main()].executor&quot;: &quot;Run&quot;,
@@ -110,6 +137,9 @@
     &quot;Gradle.ModelCheckerTest.testSimpleCounter.executor&quot;: &quot;Run&quot;,
     &quot;Kotlin.CounterKt.executor&quot;: &quot;Run&quot;,
     &quot;Kotlin.MainKt.executor&quot;: &quot;Run&quot;,
+    &quot;Repository.Attach.Annotations&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.JavaDocs&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.Sources&quot;: &quot;false&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
@@ -144,7 +174,7 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.testInconsistentCounter">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks">
     <configuration name="ModelCheckerTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -274,9 +304,9 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
         <item itemvalue="Gradle.ModelCheckerTest.testInconsistentCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.testSimpleCounter" />
-        <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
         <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
         <item itemvalue="Gradle.ModelCheckerTest" />
       </list>
@@ -322,6 +352,9 @@
       <workItem from="1710232725196" duration="73540000" />
       <workItem from="1710417374523" duration="14487000" />
       <workItem from="1710439923817" duration="45169000" />
+      <workItem from="1710618774924" duration="3082000" />
+      <workItem from="1710750032064" duration="1323000" />
+      <workItem from="1710752472974" duration="16051000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />

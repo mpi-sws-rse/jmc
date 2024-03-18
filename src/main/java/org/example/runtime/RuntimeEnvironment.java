@@ -3,6 +3,9 @@ package org.example.runtime;
 import org.example.checker.CheckerConfiguration;
 import executionGraph.ExecutionGraph;
 import org.example.checker.StrategyType;
+import org.example.manager.Finished;
+import org.example.manager.FinishedType;
+import org.example.manager.HaltExecutionException;
 import programStructure.*;
 
 import java.io.*;
@@ -306,6 +309,11 @@ public class RuntimeEnvironment {
         }
     }
 
+    /**
+     * Reads the {@link CheckerConfiguration} object and assigns the values to the corresponding fields.
+     * <p>
+     * This method is invoked by the {@link #loadConfig()} method.
+     */
     private static void readConfig() {
         maxNumOfExecutions = config.maxIterations;
         strategyType = config.strategyType;
@@ -477,7 +485,6 @@ public class RuntimeEnvironment {
                 e.printStackTrace();
                 assert (false) : "InterruptedException in waitRequest method";
             }
-
         }
     }
 
@@ -538,7 +545,7 @@ public class RuntimeEnvironment {
      *
      * @param thread The thread that requested to finish.
      */
-    public static void finishThreadRequest(Thread thread) {
+    public static void finishThreadRequest(Thread thread) throws HaltExecutionException {
         synchronized (locks.get(threadIdMap.get(thread.getId()))) {
             System.out.println("[Runtime Environment Message] : " + thread.getName() + " has requested to FINISH");
             createdThreadList.remove(thread);
@@ -579,16 +586,21 @@ public class RuntimeEnvironment {
      * If the {@link #numOfExecutions} is equal to the {@link #maxNumOfExecutions} and the {@link #strategyType}
      * is {@link StrategyType#RANDOMSTRAREGY}, the method terminates the program execution.
      * <p>
-     * The termination of the program execution is done by calling the System.exit(0) method.
+     * The termination of the program execution is done by throwing a {@link HaltExecutionException} which is caught
+     * by the {@link org.example.manager.ByteCodeManager} class.
      */
-    private static void terminateExecution() {
+    private static void terminateExecution() throws HaltExecutionException {
         if (deadlockHappened) {
             System.out.println("[Runtime Environment Message] : The deadlock happened");
-            createFinishObject();
+            createFinishObject(true, FinishedType.DEADLOCK);
+            throw new HaltExecutionException();
+            //System.exit(0);
         } else if (allExecutionsFinished) {
             System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
             System.out.println("[Runtime Environment Message] : The maximum number of the executions is reached");
-            createFinishObject();
+            createFinishObject(true, FinishedType.SUCCESS);
+            throw new HaltExecutionException();
+            //System.exit(0);
         } else {
             System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
             resetRuntimeEnvironment();
@@ -710,7 +722,6 @@ public class RuntimeEnvironment {
     // TODO() :  It is called by the @thread to request to exit the monitor of the @lock.
     // TODO() : After this request, the @thread will request to wait to hand over the control to the SchedulerThread
     //  for deciding which thread to run.
-
     /**
      * Handles a monitor exit request from a thread.
      * <p>
@@ -1107,19 +1118,21 @@ public class RuntimeEnvironment {
      * Creates finish object for the {@link org.example.manager.ByteCodeManager} to indicate that the model checking
      * process is finished.
      * <br>
-     * The finish object is a Boolean object with the value of {@code true}. It is serialized and written to a file
-     * named "finish.obj" in the "src/main/resources/finish" directory. The file is then read by the
-     * {@link org.example.manager.ByteCodeManager} to indicate that the model checking process is finished.
+     * The finish object is a {@link Finished} object with a boolean field indicating whether the model checking process
+     * should terminate and a {@link FinishedType} field indicating the type of the finish event.
+     * <br>
+     * It is serialized and written to a file named "finish.obj" in the "src/main/resources/finish" directory.
+     * The file is then read by the {@link org.example.manager.ByteCodeManager} to indicate that the model checking
+     * process is finished.
      *
      * @throws RuntimeException if the file is not found.
      */
-    private static void createFinishObject() {
-        Boolean finish = true;
+    private static void createFinishObject(boolean terminate, FinishedType finishedType) {
+        Finished finished = new Finished(terminate, finishedType);
         // Serialize the Boolean object
         try (FileOutputStream fileOut = new FileOutputStream("src/main/resources/finish/finish.obj");
              ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
-            out.writeObject(finish);
-
+            out.writeObject(finished);
         } catch (FileNotFoundException e) {
             throw new RuntimeException("File not found");
         } catch (IOException e) {
