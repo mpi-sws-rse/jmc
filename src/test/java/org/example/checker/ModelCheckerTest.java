@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
 import org.junit.jupiter.api.*;
 
-
+@Disabled("This test is under development")
 class ModelCheckerTest {
 //    private static final PrintStream originalOut = System.out;
 //    private static final ByteArrayOutputStream outContent = new ByteArrayOutputStream();

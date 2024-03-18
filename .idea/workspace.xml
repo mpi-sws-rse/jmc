@@ -117,7 +117,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "random",
+    "git-widget-placeholder": "master",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "/home/mkhoshechin/Desktop/JMC4FUN-master",
     "node.js.detected.package.eslint": "true",
@@ -148,7 +148,7 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.testCorrectCounter">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks">
     <configuration name="ModelCheckerTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -278,8 +278,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
+        <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.testInconsistentCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.testSimpleCounter" />
         <item itemvalue="Gradle.ModelCheckerTest" />
@@ -404,11 +404,6 @@
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" type="kotlin-line">
-          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
-          <line>28</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
         <breakpoint enabled="true" type="java-exception">
           <properties class="java.io.IOException" package="java.io" />
           <option name="timeStamp" value="2" />
