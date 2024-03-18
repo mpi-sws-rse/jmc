@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

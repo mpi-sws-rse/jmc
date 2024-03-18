@@ -5,7 +5,7 @@ import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
 import org.junit.jupiter.api.*;
 
-@Disabled("This test is under development")
+
 class ModelCheckerTest {
 //    private static final PrintStream originalOut = System.out;
 //    private static final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
@@ -66,6 +66,7 @@ class ModelCheckerTest {
         assertEquals(true, checker.check(t), "call works");
     }
 
+    @Disabled("This test is disabled")
     @Test
     @DisplayName("Complex counter")
     void testComplexCounter() {
@@ -88,6 +89,7 @@ class ModelCheckerTest {
         assertEquals(true, checker.check(t), "Call works");
     }
 
+    @Disabled("This test is disabled")
     @Test
     @DisplayName("Simple counter")
     void testSimpleCounter() {
@@ -99,6 +101,7 @@ class ModelCheckerTest {
         assertEquals(true, checker.check(t), "Call works");
     }
 
+    @Disabled("This test is disabled")
     @Test
     @DisplayName("Multiple threads each spawning new threads with a shared counter")
     void testMultipleSpawns() {
