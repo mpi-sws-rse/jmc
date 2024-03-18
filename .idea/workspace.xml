@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added" />
+    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -84,52 +87,52 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestInconsistentCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Downloaded.Files.Path.Enabled&quot;: &quot;false&quot;,
-    &quot;Gradle.Build JMC4FUN.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:BuggyCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:InconsistentCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:KTest.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:Main.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestBuggyCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestComplexCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestCorrectCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestInconsistentCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestKotlinCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestSimpleCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testCorrectCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testInconsistentCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testSimpleCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Kotlin.CounterKt.executor&quot;: &quot;Run&quot;,
-    &quot;Kotlin.MainKt.executor&quot;: &quot;Run&quot;,
-    &quot;Repository.Attach.Annotations&quot;: &quot;false&quot;,
-    &quot;Repository.Attach.JavaDocs&quot;: &quot;false&quot;,
-    &quot;Repository.Attach.Sources&quot;: &quot;false&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;random&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/wrong/counter&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "Application.Main.executor": "Run",
+    "Application.TestInconsistentCounter.executor": "Run",
+    "Downloaded.Files.Path.Enabled": "false",
+    "Gradle.Build JMC4FUN.executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:BuggyCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:InconsistentCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:KTest.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:Main.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestBuggyCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestComplexCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestCorrectCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestInconsistentCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestKotlinCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestSimpleCounter.main()].executor": "Run",
+    "Gradle.ModelCheckerTest.executor": "Run",
+    "Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor": "Run",
+    "Gradle.ModelCheckerTest.testCorrectCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testSimpleCounter.executor": "Run",
+    "Kotlin.CounterKt.executor": "Run",
+    "Kotlin.MainKt.executor": "Run",
+    "Repository.Attach.Annotations": "false",
+    "Repository.Attach.JavaDocs": "false",
+    "Repository.Attach.Sources": "false",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "random",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/home/mkhoshechin/Desktop/JMC4FUN-master",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.lookFeel",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/wrong/counter" />
@@ -325,7 +328,9 @@
       <workItem from="1710439923817" duration="45169000" />
       <workItem from="1710618774924" duration="3082000" />
       <workItem from="1710750032064" duration="1323000" />
-      <workItem from="1710752472974" duration="16397000" />
+      <workItem from="1710752472974" duration="16641000" />
+      <workItem from="1710773125498" duration="52000" />
+      <workItem from="1710773184097" duration="21000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />

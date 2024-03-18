@@ -32,6 +32,7 @@ src/test/java/org/example/concurrent/programs/thread_dependency/*.txt
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
+.idea/workspace.xml
 
 ### Eclipse ###
 .apt_generated
