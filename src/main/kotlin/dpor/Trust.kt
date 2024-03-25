@@ -205,7 +205,7 @@ class Trust {
                                         read.rf = nextEvent.deepCopy() as WriteEvent
                                         println("The rf has been set to the $read")
                                     }
-                                    val newnewAllEvents = (deepCopyAllEvents(G3.deleted) + (newAllEvents ?: emptyList<Event>())) as MutableList<Event>
+                                    val newnewAllEvents = (deepCopyAllEvents(G3.deleted) + newAllEvents) as MutableList<Event>
                                     println("The new All event is : ")
                                     println(newnewAllEvents)
                                     visitCOs(G4.deepCopy(),nextEvent.deepCopy() as WriteEvent, newnewAllEvents)

@@ -50,6 +50,8 @@ public interface SearchStrategy {
      */
     void nextJoinEvent(Thread joinReq, Thread joinRes);
 
+    Thread nextJoinRequest(Thread joinReq, Thread joinRes);
+
     /**
      * This method represents the required strategy for the next read event.
      *
@@ -70,6 +72,8 @@ public interface SearchStrategy {
      * @param thread is the thread that is going to be finished.
      */
     void nextFinishEvent(Thread thread);
+
+    Thread nextFinishRequest(Thread thread);
 
     /**
      * This method prints the current execution trace.
@@ -289,4 +293,8 @@ public interface SearchStrategy {
                 .filter(thread -> RuntimeEnvironment.joinRequest.get(thread) == joinRes)
                 .toList();
     }
+
+    Thread pickNextThread();
+
+    void saveExecutionState();
 }

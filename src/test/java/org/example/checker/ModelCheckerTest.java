@@ -1,6 +1,8 @@
 package org.example.checker;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
 import org.junit.jupiter.api.*;
@@ -47,7 +49,7 @@ class ModelCheckerTest {
                     "main",
                     "src/test/java/org/example/concurrent/programs/wrong/counter/"
         );
-        assertEquals(true, checker.check(t), "Call works");
+        assertTrue(checker.check(t), "Call works");
     }
 
 
@@ -63,7 +65,7 @@ class ModelCheckerTest {
                         "src/test/java/org/example/concurrent/programs/inconsistent/counter/"
         );
         System.out.println("InconsistentCounter finished");
-        assertEquals(true, checker.check(t), "call works");
+        assertTrue(checker.check(t), "call works");
     }
 
     @Disabled("This test is disabled")
@@ -75,7 +77,7 @@ class ModelCheckerTest {
                         "main",
                         "src/test/java/org/example/concurrent/programs/complex/counter/"
         );
-        assertEquals(true, checker.check(t), "Call works");
+        assertTrue(checker.check(t), "Call works");
     }
 
     @Test
@@ -86,7 +88,7 @@ class ModelCheckerTest {
                     "main",
                     "src/test/java/org/example/concurrent/programs/correct/counter/"
         );
-        assertEquals(true, checker.check(t), "Call works");
+        assertTrue(checker.check(t), "Call works");
     }
 
     @Disabled("This test is disabled")
@@ -98,7 +100,7 @@ class ModelCheckerTest {
                     "main",
                     "src/test/java/org/example/concurrent/programs/simple/counter/"
         );
-        assertEquals(true, checker.check(t), "Call works");
+        assertTrue(checker.check(t), "Call works");
     }
 
     @Disabled("This test is disabled")
@@ -110,6 +112,6 @@ class ModelCheckerTest {
                     "main",
                     "src/test/java/org/example/concurrent/programs/thread_dependency/"
         );
-        assertEquals(true, checker.check(t), "Call works");
+        assertTrue(checker.check(t), "Call works");
     }
 }

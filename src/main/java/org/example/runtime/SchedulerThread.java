@@ -1,12 +1,14 @@
 package org.example.runtime;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import org.example.checker.SearchStrategy;
 import org.example.checker.StrategyType;
 import org.example.checker.strategy.RandomStrategy;
-import org.example.manager.HaltExecutionException;
+import org.example.checker.strategy.TrustStrategy;
 import programStructure.ReadEvent;
 import programStructure.WriteEvent;
-import java.util.*;
 
 /**
  * The SchedulerThread class extends the Thread class and is responsible for managing the execution of threads in a
@@ -43,8 +45,13 @@ public class SchedulerThread extends Thread {
         StrategyType strategyType = RuntimeEnvironment.strategyType;
         if (strategyType == StrategyType.RANDOMSTRAREGY) {
             searchStrategy = new RandomStrategy();
+        } else if (strategyType == StrategyType.TRUSTSTRATEGY) {
+            searchStrategy = new TrustStrategy();
         } else {
-            throw new IllegalArgumentException("Unsupported strategy type: " + strategyType);
+            // TODO() : Fix it
+            System.out.println("[Scheduler Thread Message] : Unsupported strategy type: " + strategyType);
+            //throw new IllegalArgumentException("Unsupported strategy type: " + strategyType);
+            System.exit(1);
         }
     }
 
@@ -56,7 +63,7 @@ public class SchedulerThread extends Thread {
      * handles the events until the execution is finished.
      */
     @Override
-    public void run(){
+    public void run() {
         waitForMainThread();
         printStartMessage();
         while (!RuntimeEnvironment.executionFinished) {
@@ -69,8 +76,13 @@ public class SchedulerThread extends Thread {
             eventHandler();
         }
         printEndMessage();
+        saveExecutionState();
         wasLastExecution();
         notifyMainThread();
+    }
+
+    private void saveExecutionState() {
+        searchStrategy.saveExecutionState();
     }
 
     /**
@@ -157,7 +169,6 @@ public class SchedulerThread extends Thread {
         System.out.println("******************************************************************************************");
         System.out.println("[*** The SchedulerThread requested to FINISH***]");
         System.out.println("******************************************************************************************");
-        searchStrategy.printExecutionTrace();
     }
 
     /**
@@ -179,13 +190,9 @@ public class SchedulerThread extends Thread {
      * <br>
      * Finding the next thread to be executed is based on the selected strategy.
      */
-    private void pickNextThread() {
-        Optional<Thread> nextThread = Optional.ofNullable(searchStrategy.pickNextRandomThread());
-        if (nextThread.isPresent()) {
-            notifyThread(nextThread.get());
-        } else {
-            RuntimeEnvironment.executionFinished = true;
-        }
+    private void waitEventHandler() {
+        Thread thread = searchStrategy.pickNextThread();
+        notifyThread(thread);
     }
 
     /**
@@ -201,13 +208,15 @@ public class SchedulerThread extends Thread {
      */
     private void notifyThread(Thread thread) {
         Optional<Thread> optionalThread = Optional.ofNullable(thread);
-        optionalThread.ifPresent(t -> {
-            Long threadId = getThreadId(t);
+        if (optionalThread.isPresent()) {
+            Long threadId = getThreadId(optionalThread.get());
             System.out.println("[Scheduler Thread Message] : Thread-" + threadId + " is selected to run");
             synchronized (RuntimeEnvironment.locks.get(threadId)) {
                 RuntimeEnvironment.locks.get(threadId).notify();
             }
-        });
+        } else {
+            RuntimeEnvironment.executionFinished = true;
+        }
     }
 
     /**
@@ -255,7 +264,7 @@ public class SchedulerThread extends Thread {
                 break;
             default:
                 RuntimeEnvironment.threadWaitReq = null;
-                pickNextThread();
+                waitEventHandler();
                 break;
         }
     }
@@ -284,8 +293,7 @@ public class SchedulerThread extends Thread {
         } else if (RuntimeEnvironment.isFinished) {
             return RequestType.FINISH_REQUEST;
         } else {
-            RuntimeEnvironment.threadWaitReq = null;
-            return RequestType.NONE;
+            return RequestType.WAIT_REQUEST;
         }
     }
 
@@ -300,9 +308,10 @@ public class SchedulerThread extends Thread {
         System.out.println("[Scheduler Thread Message] : Start event handler is called");
         Optional<Thread> calleeThread = Optional.ofNullable(RuntimeEnvironment.threadStartReq);
         Optional<Thread> callerThread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        RuntimeEnvironment.threadWaitReq = null;
+        RuntimeEnvironment.threadStartReq = null;
         if (calleeThread.isPresent() && callerThread.isPresent()) {
             searchStrategy.nextStartEvent(calleeThread.get(), callerThread.get());
-            RuntimeEnvironment.threadWaitReq = null;
             startThread(calleeThread.get());
         }
     }
@@ -319,7 +328,7 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.threadStartReq = null;
         System.out.println(
                 "[Scheduler Thread Message] : Thread-" + getThreadId(thread) +
-                    " is selected to run for loading in the runtime environment"
+                        " is selected to run for loading in the runtime environment"
         );
         thread.start();
     }
@@ -335,16 +344,16 @@ public class SchedulerThread extends Thread {
         System.out.println("[Scheduler Thread Message] : Enter monitor request handler is called");
         Optional<Thread> enterMonitorThread = Optional.ofNullable(RuntimeEnvironment.threadEnterMonitorReq);
         Optional<Object> enterMonitorObject = Optional.ofNullable(RuntimeEnvironment.objectEnterMonitorReq);
+        RuntimeEnvironment.threadEnterMonitorReq = null;
+        RuntimeEnvironment.objectEnterMonitorReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
         if (enterMonitorThread.isPresent() && enterMonitorObject.isPresent()) {
             RuntimeEnvironment.monitorRequest.put(enterMonitorThread.get(), enterMonitorObject.get());
-            RuntimeEnvironment.threadEnterMonitorReq = null;
-            RuntimeEnvironment.objectEnterMonitorReq = null;
             if (monitorsDeadlockDetection()) {
                 System.out.println(
                         "[Scheduler Thread Message] : There is a deadlock between the threads in using " +
                                 "the monitors"
                 );
-                RuntimeEnvironment.threadWaitReq = null;
                 RuntimeEnvironment.deadlockHappened = true;
                 RuntimeEnvironment.executionFinished = true;
             } else {
@@ -352,8 +361,7 @@ public class SchedulerThread extends Thread {
                         "[Scheduler Thread Message] : There is no deadlock between the threads in using " +
                                 "the monitors"
                 );
-                RuntimeEnvironment.threadWaitReq = null;
-                pickNextThread();
+                waitEventHandler();
             }
         }
     }
@@ -369,12 +377,12 @@ public class SchedulerThread extends Thread {
         System.out.println("[Scheduler Thread Message] : Exit monitor request handler is called");
         Optional<Thread> exitMonitorThread = Optional.ofNullable(RuntimeEnvironment.threadExitMonitorReq);
         Optional<Object> exitMonitorObject = Optional.ofNullable(RuntimeEnvironment.objectExitMonitorReq);
+        RuntimeEnvironment.threadExitMonitorReq = null;
+        RuntimeEnvironment.objectExitMonitorReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
         if (exitMonitorThread.isPresent() && exitMonitorObject.isPresent()) {
             searchStrategy.nextExitMonitorEvent(exitMonitorThread.get(), exitMonitorObject.get());
-            RuntimeEnvironment.threadExitMonitorReq = null;
-            RuntimeEnvironment.objectExitMonitorReq = null;
-            RuntimeEnvironment.threadWaitReq = null;
-            pickNextThread();
+            waitEventHandler();
         }
     }
 
@@ -389,12 +397,16 @@ public class SchedulerThread extends Thread {
         System.out.println("[Scheduler Thread Message] : Join request handler is called");
         Optional<Thread> joinRequestThread = Optional.ofNullable(RuntimeEnvironment.threadJoinReq);
         Optional<Thread> joinResponseThread = Optional.ofNullable(RuntimeEnvironment.threadJoinRes);
+        RuntimeEnvironment.threadJoinReq = null;
+        RuntimeEnvironment.threadJoinRes = null;
+        RuntimeEnvironment.threadWaitReq = null;
         if (joinRequestThread.isPresent() && joinResponseThread.isPresent()) {
-            RuntimeEnvironment.joinRequest.put(joinRequestThread.get(), joinResponseThread.get());
-            RuntimeEnvironment.threadJoinReq = null;
-            RuntimeEnvironment.threadJoinRes = null;
-            RuntimeEnvironment.threadWaitReq = null;
-            pickNextThread();
+            Optional<Thread> thread = Optional.ofNullable(
+                    searchStrategy.nextJoinRequest(
+                            joinRequestThread.get(), joinResponseThread.get()
+                    )
+            );
+            notifyThread(thread.get());
         }
     }
 
@@ -409,10 +421,10 @@ public class SchedulerThread extends Thread {
         System.out.println("[Scheduler Thread Message] : Read request handler is called");
         Optional<ReadEvent> readRequestEvent = Optional.ofNullable(RuntimeEnvironment.readEventReq);
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        RuntimeEnvironment.readEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
         if (readRequestEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextReadEvent(readRequestEvent.get());
-            RuntimeEnvironment.readEventReq = null;
-            RuntimeEnvironment.threadWaitReq = null;
             notifyThread(thread.get());
         }
     }
@@ -428,10 +440,10 @@ public class SchedulerThread extends Thread {
         System.out.println("[Scheduler Thread Message] : Write request handler is called");
         Optional<WriteEvent> writeRequestEvent = Optional.ofNullable(RuntimeEnvironment.writeEventReq);
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        RuntimeEnvironment.writeEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
         if (writeRequestEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextWriteEvent(writeRequestEvent.get());
-            RuntimeEnvironment.writeEventReq = null;
-            RuntimeEnvironment.threadWaitReq = null;
             notifyThread(thread.get());
         }
     }
@@ -444,12 +456,12 @@ public class SchedulerThread extends Thread {
      */
     public void finishRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Finish request handler is called");
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        if (thread.isPresent()) {
-            searchStrategy.nextFinishEvent(thread.get());
-            RuntimeEnvironment.threadWaitReq = null;
-            RuntimeEnvironment.isFinished = false;
-            pickNextThread();
+        Optional<Thread> finishedThread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        RuntimeEnvironment.threadWaitReq = null;
+        RuntimeEnvironment.isFinished = false;
+        if (finishedThread.isPresent()) {
+            Thread thread = searchStrategy.nextFinishRequest(finishedThread.get());
+            notifyThread(thread);
         }
     }
 
@@ -501,7 +513,7 @@ public class SchedulerThread extends Thread {
             }
             // Compute the complete transitive closure of the (@monitorRequest \cup @monitorList) relation.
             boolean addedNewPairs = true;
-            while (addedNewPairs){
+            while (addedNewPairs) {
                 addedNewPairs = false;
                 for (Map.Entry<Thread, Thread> entry : threadClosure.entrySet()) {
                     for (Map.Entry<Thread, Thread> entry2 : threadClosure.entrySet()) {

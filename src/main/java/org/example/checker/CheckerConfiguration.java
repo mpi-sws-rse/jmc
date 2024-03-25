@@ -107,7 +107,7 @@ public final class CheckerConfiguration implements Serializable {
         public long progressReport = 0;
         public boolean verbose = false;
         public long seed = new Random().nextLong();
-        public StrategyType strategyType = StrategyType.RANDOMSTRAREGY;
+        public StrategyType strategyType = StrategyType.TRUSTSTRATEGY;
 
         public ConfigurationBuilder() {
         }

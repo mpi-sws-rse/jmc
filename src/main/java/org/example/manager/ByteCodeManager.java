@@ -212,7 +212,7 @@ public class ByteCodeManager {
             // Invoke the main method
             //Boolean isFinished = returnFinishObject();
             Finished finished = saveFinishObject();
-            while (finished.terminate == false){
+            while (!finished.terminate){
                 try {
                     mainMethod.invoke(null, (Object) mainMethodArgs);
                     finished = loadFinishObject();

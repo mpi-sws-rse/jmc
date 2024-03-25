@@ -22,6 +22,8 @@ src/test/java/org/example/concurrent/programs/thread_dependency/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
+/.idea/workspace.xml
+/.idea/checkstyle-idea.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/

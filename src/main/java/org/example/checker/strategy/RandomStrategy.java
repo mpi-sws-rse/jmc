@@ -113,6 +113,12 @@ public class RandomStrategy implements SearchStrategy {
         RuntimeEnvironment.randomEventsRecord.add(joinEvent);
     }
 
+    @Override
+    public Thread nextJoinRequest(Thread joinReq, Thread joinRes) {
+        RuntimeEnvironment.joinRequest.put(joinReq, joinRes);
+        return pickNextRandomThread();
+    }
+
     /**
      * Records the created {@link ReadEvent} for the corresponding reading a variable request of a thread
      * <p>
@@ -155,6 +161,12 @@ public class RandomStrategy implements SearchStrategy {
         analyzeSuspendedThreadsForJoin(thread);
     }
 
+    @Override
+    public Thread nextFinishRequest(Thread thread) {
+        nextFinishEvent(thread);
+        return pickNextRandomThread();
+    }
+
     /**
      * Prints the current execution trace.
      */
@@ -165,6 +177,16 @@ public class RandomStrategy implements SearchStrategy {
             int index = RuntimeEnvironment.randomEventsRecord.indexOf(event) + 1;
             System.out.println("[Search Strategy Message] : " + index + "." + event);
         }
+    }
+
+    @Override
+    public Thread pickNextThread() {
+        return pickNextRandomThread();
+    }
+
+    @Override
+    public void saveExecutionState(){
+        printExecutionTrace();
     }
 
     /**
