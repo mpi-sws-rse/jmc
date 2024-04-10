@@ -1,8 +1,0 @@
-$TREAD 1
-if ( a == 1)
-a = 0
-if ( a == 1)
-$TREAD 2
-if ( a == 1)
-a = 0
-if ( a == 1)

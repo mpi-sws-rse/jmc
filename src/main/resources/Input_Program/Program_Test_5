@@ -1,4 +1,0 @@
-$TREAD 1
-a = 0
-$TREAD 2
-a = 1

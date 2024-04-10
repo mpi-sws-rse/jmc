@@ -5,7 +5,8 @@ build/
 !**/src/test/**/build/
 src/main/java/org/example/checker/*.class
 src/main/java/org/example/checker/strategy/*.class
-src/main/resources/
+src/main/resources/log4j2.xml
+src/main/resources/Input_Program/
 src/main/java/org/example/runtime/*.class
 src/test/java/org/example/concurrent/programs/complex/counter/*.class
 src/test/java/org/example/concurrent/programs/complex/counter/*.txt
