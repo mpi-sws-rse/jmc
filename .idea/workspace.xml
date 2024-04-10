@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AnalysisUIOptions">
+    <option name="ANALYZE_INJECTED_CODE" value="false" />
+    <option name="SCOPE_TYPE" value="3" />
+  </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
@@ -57,9 +61,10 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Kotlin Class" />
-        <option value="Kotlin Data Class" />
         <option value="Enum" />
+        <option value="Interface" />
         <option value="Class" />
+        <option value="Kotlin Data Class" />
       </list>
     </option>
   </component>
@@ -67,6 +72,18 @@
     <option name="RECENT_GIT_ROOT_PATH" value="/local/home/mkhoshechin/IdeaProjects/JMC4FUN" />
     <option name="ROOT_SYNC" value="SYNC" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;joulook&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/joulook/JMC4FUN.git&quot;,
+    &quot;accountId&quot;: &quot;a98a09d3-7424-461c-93fe-2f998b143f81&quot;
+  }
+}</component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -92,22 +109,40 @@
     "Downloaded.Files.Path.Enabled": "false",
     "Gradle.Build JMC4FUN.executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:BuggyCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:CorrectCounter.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:DiningPhilosophers.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:InconsistentCounter.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:KTest.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:Main.main()].executor": "Run",
+    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:MainMutex.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestBuggyCounter.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestComplexCounter.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestCorrectCounter.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestInconsistentCounter.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestKotlinCounter.main()].executor": "Run",
     "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestSimpleCounter.main()].executor": "Run",
+    "Gradle.ModelCheckerTest (1).executor": "Run",
     "Gradle.ModelCheckerTest.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestDiningPhilosophers.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestSimpleCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestDiningPhilosophers.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestSimpleCounter.executor": "Run",
     "Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor": "Run",
+    "Gradle.ModelCheckerTest.testComplexCounter.executor": "Run",
     "Gradle.ModelCheckerTest.testCorrectCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testDiningPhilosophers.executor": "Run",
     "Gradle.ModelCheckerTest.testInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testMutex.executor": "Run",
     "Gradle.ModelCheckerTest.testSimpleCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestSimpleCounter.executor": "Run",
     "Kotlin.CounterKt.executor": "Run",
     "Kotlin.MainKt.executor": "Run",
+    "OverrideImplement.generate.javadoc": "true",
     "Repository.Attach.Annotations": "false",
     "Repository.Attach.JavaDocs": "false",
     "Repository.Attach.Sources": "false",
@@ -123,11 +158,17 @@
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "onboarding.tips.debug.path": "/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt",
-    "project.structure.last.edited": "Project",
+    "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.lookFeel",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "kotlin-gradle-user-dirs": [
+      "/local/home/mkhoshechin/.gradle"
+    ]
   }
 }]]></component>
   <component name="RecentsManager">
@@ -145,8 +186,8 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks">
-    <configuration name="ModelCheckerTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks">
+    <configuration name="ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -159,7 +200,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.example.checker.ModelCheckerTest&quot;" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -170,7 +211,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.testBuggyCounterThatDeadlocks" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.replayTestBuggyCounterThatDeadlocks" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -183,7 +224,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.example.checker.ModelCheckerTest.testBuggyCounterThatDeadlocks&quot;" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -194,7 +235,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.testCorrectCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.replayTestSimpleCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -207,7 +248,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.example.checker.ModelCheckerTest.testCorrectCounter&quot;" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.replayTestSimpleCounter&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -218,7 +259,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.testInconsistentCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestInconsistentCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -231,7 +272,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.example.checker.ModelCheckerTest.testInconsistentCounter&quot;" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.trustTestInconsistentCounter&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -242,7 +283,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.testSimpleCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestSimpleCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -255,10 +296,10 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.example.checker.ModelCheckerTest.testSimpleCounter&quot;" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.trustTestSimpleCounter&quot;" />
           </list>
         </option>
-        <option name="vmOptions" value="-ea" />
+        <option name="vmOptions" />
       </ExternalSystemSettings>
       <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
       <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
@@ -267,26 +308,27 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
-      <item itemvalue="Gradle.ModelCheckerTest" />
-      <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
-      <item itemvalue="Gradle.ModelCheckerTest.testInconsistentCounter" />
-      <item itemvalue="Gradle.ModelCheckerTest.testSimpleCounter" />
+      <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
+      <item itemvalue="Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks" />
+      <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestInconsistentCounter" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks" />
-        <item itemvalue="Gradle.ModelCheckerTest.testCorrectCounter" />
-        <item itemvalue="Gradle.ModelCheckerTest.testInconsistentCounter" />
-        <item itemvalue="Gradle.ModelCheckerTest.testSimpleCounter" />
-        <item itemvalue="Gradle.ModelCheckerTest" />
+        <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestInconsistentCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks" />
+        <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="jdk-17.0.10-corretto-17.0.10-4caba194b151-25a4bffe" />
+        <option value="bundled-jdk-9f38398b9061-18abd8497189-intellij.indexing.shared.core-IU-241.14494.240" />
+        <option value="bundled-js-predefined-1d06a55b98c1-74d2a5396914-JavaScript-IU-241.14494.240" />
       </set>
     </attachedChunks>
   </component>
@@ -328,6 +370,15 @@
       <workItem from="1710752472974" duration="16641000" />
       <workItem from="1710773125498" duration="52000" />
       <workItem from="1710773184097" duration="21000" />
+      <workItem from="1711058025073" duration="101000" />
+      <workItem from="1711058141267" duration="29000" />
+      <workItem from="1711058176358" duration="70000" />
+      <workItem from="1711058252119" duration="73473000" />
+      <workItem from="1711826777518" duration="57952000" />
+      <workItem from="1712307769216" duration="10984000" />
+      <workItem from="1712579279986" duration="46349000" />
+      <workItem from="1712736561475" duration="20238000" />
+      <workItem from="1712757828892" duration="1085000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />
@@ -407,5 +458,9 @@
         </breakpoint>
       </breakpoints>
     </breakpoint-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>
