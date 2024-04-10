@@ -14,5 +14,8 @@ enum class EventType: Serializable {
     FINISH,
     ENTER_MONITOR,
     EXIT_MONITOR,
+    FAILURE,
+    DEADLOCK,
+    MONITOR_REQUEST,
     OTHER
 }

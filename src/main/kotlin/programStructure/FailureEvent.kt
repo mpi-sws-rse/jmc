@@ -3,14 +3,14 @@ package programStructure
 import java.io.Serializable
 
 /**
- * FinishEvent is a subclass of [ThreadEvent] and represents the end of a thread.
+ * FailureEvent is a subclass of [ThreadEvent] and represents a failure event.
  */
-data class FinishEvent(
+data class FailureEvent(
 
     /**
      * @property type The type of event.
      */
-    override val type: EventType = EventType.FINISH,
+    override val type: EventType,
 
     /**
      * @property tid The thread id.
@@ -29,8 +29,8 @@ data class FinishEvent(
      * @return A deep copy of this object
      */
     override fun deepCopy(): Event {
-        return FinishEvent(
-            type = EventType.FINISH,
+        return FailureEvent(
+            type = EventType.FAILURE,
             tid = copy().tid,
             serial = copy().serial
         )

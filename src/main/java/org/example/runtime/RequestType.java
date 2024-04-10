@@ -11,5 +11,5 @@ public enum RequestType {
     READ_REQUEST,
     WRITE_REQUEST,
     FINISH_REQUEST,
-    NONE
+    WAIT_REQUEST
 }

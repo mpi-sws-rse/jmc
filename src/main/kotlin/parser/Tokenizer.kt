@@ -6,6 +6,8 @@ import java.io.File
 import java.lang.reflect.Field
 import java.lang.reflect.Type
 
+// TODO() : This class is deprecated, It will be removed in the future.
+
 // TODO() : This Tokenizer accepts only global variables (I will extend it with local variables)
 // TODO() : Checking var or val for local variables should be considered in future
 // TODO() : This Tokenizer assumes type safety (I will extend it with type checker)

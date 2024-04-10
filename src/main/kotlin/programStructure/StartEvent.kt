@@ -30,6 +30,8 @@ data class StartEvent(
 
     /**
      * Returns a deep copy of this object
+     *
+     * @return a deep copy of this object
      */
     override fun deepCopy(): Event {
         return StartEvent(

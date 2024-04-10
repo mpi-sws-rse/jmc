@@ -62,7 +62,7 @@ public class ByteMapLoader extends ClassLoader{
                             byte[] bytecode = Files.readAllBytes(path);
                             classes.put(className, bytecode);
                         } catch (IOException e) {
-                            System.err.println("Error reading bytecode from file: " + path);
+                            System.out.println("[Byte Map Loader Message] : Error reading bytecode from file: " + path);
                             e.printStackTrace();
                         }
                     });
@@ -93,7 +93,7 @@ public class ByteMapLoader extends ClassLoader{
                 return defineClass(name, bytecode, 0, bytecode.length);
             }
         } catch (ClassNotFoundException e) {
-            System.err.println("Error finding class: " + name);
+            System.out.println("[Byte Map Loader Message] : Error finding class: " + name);
             throw e;
         }
     }

@@ -1,22 +1,32 @@
 package org.example.concurrent.programs.simple.counter;
 
 public class SimpleCounter extends Thread{
-    private int count;
-    public SimpleCounter(int count) {
-        this.count = count;
-    }
 
+    private Counter counter;
+
+    public SimpleCounter(Counter count) {
+        this.counter = count;
+    }
+    @Override
     public void run() {
-        synchronized (this) {
-            this.count = this.count + 1;
-            System.out.println("[" + this.getName() + " message] : " + "The counter value is " + this.count);
-        }
+        counter.increment();
+        HelpingThread helpingThread = new HelpingThread(counter);
+        helpingThread.start();
     }
 
     public static void main(String[] args) {
-        SimpleCounter thread1 = new SimpleCounter(0);
-        SimpleCounter thread2 = new SimpleCounter(0);
+        Counter counter = new Counter();
+        SimpleCounter thread1 = new SimpleCounter(counter);
+        SimpleCounter thread2 = new SimpleCounter(counter);
         thread1.start();
         thread2.start();
+        try {
+            thread1.join();
+            thread2.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        assert counter.getValue() == 4 : "Counter value is not 4";
+        System.out.println("Counter value is 4");
     }
 }

@@ -8,7 +8,112 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added" />
+    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/strategy/ReplayStrategy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/DeadlockEvent.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/FailureEvent.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/MonitorRequestEvent.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/dining/DiningPhilosophers.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/dining/DiningPhilosophers.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/dining/DiningPhilosophers.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/dining/Philosopher.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/dining/Philosopher.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/dining/Philosopher.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/mutex/Counter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/mutex/Lock.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/mutex/LockOne.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/mutex/MainMutex.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/mutex/common/LocalThread.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/simple/counter/Counter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/simple/counter/HelpingThread.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/ReplayStrategy.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/DeadlockEvent.kt" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/FailureEvent.kt" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/MonitorRequestEvent.kt" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/dining/DiningPhilosophers.class" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/dining/DiningPhilosophers.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/dining/DiningPhilosophers.txt" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/dining/Philosopher.class" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/dining/Philosopher.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/dining/Philosopher.txt" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/mutex/Counter.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/mutex/Lock.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/mutex/LockOne.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/mutex/MainMutex.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/mutex/common/LocalThread.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/simple/counter/Counter.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/simple/counter/HelpingThread.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/CheckerConfiguration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/ModelChecker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/ModelChecker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/SearchStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/SearchStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/StrategyType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/StrategyType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/strategy/RandomStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/checker/strategy/TrustStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/instrumenter/ByteCodeModifier.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/instrumenter/ByteCodeModifier.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/manager/ByteCodeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/manager/ByteCodeManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/RuntimeEnvironment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/runtime/SchedulerThread.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/CO.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/CO.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/EventNode.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/EventNode.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/Node.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/Node.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/RootNode.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/RootNode.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/parser/Tokenizer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/parser/Tokenizer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/EnterMonitorEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/EnterMonitorEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/Event.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/Event.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/EventType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/EventType.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/ExitMonitorEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/ExitMonitorEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/FinishEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/FinishEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/InitializationEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/InitializationEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/JoinEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/JoinEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/Location.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/Location.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/Monitor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/Monitor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/ReadEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/ReadEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/StartEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/StartEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/WriteEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/WriteEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/checker/ModelCheckerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/simple/counter/SimpleCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/simple/counter/SimpleCounter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/CheckerConfiguration.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/ModelChecker.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/SearchStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/SearchStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/StrategyType.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/StrategyType.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/RandomStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/checker/strategy/TrustStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/instrumenter/ByteCodeModifier.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/instrumenter/ByteCodeModifier.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/ByteCodeManager.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/manager/ByteCodeManager.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/RuntimeEnvironment.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/runtime/SchedulerThread.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/CO.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/CO.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/EventNode.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/EventNode.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/Node.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/Node.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/RootNode.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/executionGraph/RootNode.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/parser/Tokenizer.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/parser/Tokenizer.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/EnterMonitorEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/EnterMonitorEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Event.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Event.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/EventType.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/EventType.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ExitMonitorEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ExitMonitorEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/FinishEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/FinishEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/InitializationEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/InitializationEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/JoinEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/JoinEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Location.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Location.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Monitor.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/Monitor.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ReadEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/ReadEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/StartEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/StartEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/WriteEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/programStructure/WriteEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/checker/ModelCheckerTest.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/checker/ModelCheckerTest.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/simple/counter/SimpleCounter.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/simple/counter/SimpleCounter.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/test/java/org/example/concurrent/programs/wrong/counter/BuggyCounter.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -101,76 +206,76 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "Application.Main.executor": "Run",
-    "Application.TestInconsistentCounter.executor": "Run",
-    "Downloaded.Files.Path.Enabled": "false",
-    "Gradle.Build JMC4FUN.executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:BuggyCounter.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:CorrectCounter.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:DiningPhilosophers.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:InconsistentCounter.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:KTest.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:Main.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:MainMutex.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestBuggyCounter.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestComplexCounter.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestCorrectCounter.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestInconsistentCounter.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestKotlinCounter.main()].executor": "Run",
-    "Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestSimpleCounter.main()].executor": "Run",
-    "Gradle.ModelCheckerTest (1).executor": "Run",
-    "Gradle.ModelCheckerTest.executor": "Run",
-    "Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks.executor": "Run",
-    "Gradle.ModelCheckerTest.randomTestDiningPhilosophers.executor": "Run",
-    "Gradle.ModelCheckerTest.randomTestInconsistentCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.randomTestSimpleCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks.executor": "Run",
-    "Gradle.ModelCheckerTest.replayTestDiningPhilosophers.executor": "Run",
-    "Gradle.ModelCheckerTest.replayTestInconsistentCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.replayTestSimpleCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor": "Run",
-    "Gradle.ModelCheckerTest.testComplexCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.testCorrectCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.testDiningPhilosophers.executor": "Run",
-    "Gradle.ModelCheckerTest.testInconsistentCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.testMutex.executor": "Run",
-    "Gradle.ModelCheckerTest.testSimpleCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.trustTestInconsistentCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.trustTestSimpleCounter.executor": "Run",
-    "Kotlin.CounterKt.executor": "Run",
-    "Kotlin.MainKt.executor": "Run",
-    "OverrideImplement.generate.javadoc": "true",
-    "Repository.Attach.Annotations": "false",
-    "Repository.Attach.JavaDocs": "false",
-    "Repository.Attach.Sources": "false",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/home/mkhoshechin/Desktop/JMC4FUN-master",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "onboarding.tips.debug.path": "/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Downloaded.Files.Path.Enabled&quot;: &quot;false&quot;,
+    &quot;Gradle.Build JMC4FUN.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:BuggyCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:CorrectCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:DiningPhilosophers.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:InconsistentCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:KTest.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:Main.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:MainMutex.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestBuggyCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestComplexCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestCorrectCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestInconsistentCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestKotlinCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.JMC4FUN::local:home:mkhoshechin:IdeaProjects:JMC4FUN [:TestSimpleCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest (1).executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.randomTestDiningPhilosophers.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.randomTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.randomTestSimpleCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.replayTestDiningPhilosophers.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.replayTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.replayTestSimpleCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testComplexCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testCorrectCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testDiningPhilosophers.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testMutex.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testSimpleCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.trustTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.trustTestSimpleCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Kotlin.CounterKt.executor&quot;: &quot;Run&quot;,
+    &quot;Kotlin.MainKt.executor&quot;: &quot;Run&quot;,
+    &quot;OverrideImplement.generate.javadoc&quot;: &quot;true&quot;,
+    &quot;Repository.Attach.Annotations&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.JavaDocs&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.Sources&quot;: &quot;false&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;random&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/mkhoshechin/Desktop/JMC4FUN-master&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/kotlin/Main.kt&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "kotlin-gradle-user-dirs": [
-      "/local/home/mkhoshechin/.gradle"
+  &quot;keyToStringList&quot;: {
+    &quot;kotlin-gradle-user-dirs&quot;: [
+      &quot;/local/home/mkhoshechin/.gradle&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/example/concurrent/programs/wrong/counter" />
@@ -186,7 +291,7 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.replayTestSimpleCounter">
     <configuration name="ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -235,6 +340,30 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
+    <configuration name="ModelCheckerTest.replayTestDiningPhilosophers" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.example.checker.ModelCheckerTest.replayTestDiningPhilosophers&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
     <configuration name="ModelCheckerTest.replayTestSimpleCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -249,30 +378,6 @@
             <option value=":test" />
             <option value="--tests" />
             <option value="&quot;org.example.checker.ModelCheckerTest.replayTestSimpleCounter&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <method v="2" />
-    </configuration>
-    <configuration name="ModelCheckerTest.trustTestInconsistentCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;org.example.checker.ModelCheckerTest.trustTestInconsistentCounter&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -310,17 +415,17 @@
     <list>
       <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
       <item itemvalue="Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks" />
+      <item itemvalue="Gradle.ModelCheckerTest.replayTestDiningPhilosophers" />
       <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestInconsistentCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestInconsistentCounter" />
-        <item itemvalue="Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks" />
         <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks" />
+        <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
+        <item itemvalue="Gradle.ModelCheckerTest.replayTestDiningPhilosophers" />
       </list>
     </recent_temporary>
   </component>
@@ -377,8 +482,7 @@
       <workItem from="1711826777518" duration="57952000" />
       <workItem from="1712307769216" duration="10984000" />
       <workItem from="1712579279986" duration="46349000" />
-      <workItem from="1712736561475" duration="20238000" />
-      <workItem from="1712757828892" duration="1085000" />
+      <workItem from="1712736561475" duration="9602000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />

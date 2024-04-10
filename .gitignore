@@ -19,9 +19,18 @@ src/test/java/org/example/concurrent/programs/wrong/counter/*.class
 src/test/java/org/example/concurrent/programs/wrong/counter/*.txt
 src/test/java/org/example/concurrent/programs/thread_dependency/*.class
 src/test/java/org/example/concurrent/programs/thread_dependency/*.txt
+src/test/java/org/example/concurrent/programs/dining/*.class
+src/test/java/org/example/concurrent/programs/dining/*.txt
+src/test/java/org/example/concurrent/programs/mutex/*.class
+src/test/java/org/example/concurrent/programs/mutex/*.txt
+src/test/java/org/example/concurrent/programs/mutex/common/*.class
+src/test/java/org/example/concurrent/programs/mutex/common/*.txt
+
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
+/.idea/workspace.xml
+/.idea/checkstyle-idea.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
