@@ -66,9 +66,9 @@ public class ByteCodeManager {
         )) {
             // Compile the .java files in the specified directories
             compileJavaFilesInDirectory(compiler, fileManager, new File(this.path));
-            compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/example/runtime/"));
-            compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/example/checker/"));
-            compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/example/checker/strategy/"));
+            compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/runtime/"));
+            compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/checker/"));
+            compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/checker/strategy/"));
         } catch (IOException e) {
             throw new RuntimeException("Error closing the file manager", e);
         }
@@ -143,6 +143,8 @@ public class ByteCodeManager {
         }
         File directory = new File(this.path);
         if (!directory.exists() || !directory.isDirectory()) {
+            System.out.println(path);
+            System.out.println(directory);
             throw new IllegalArgumentException("Path must point to an existing directory");
         }
         Map<String, byte[]> classToBytecode = new HashMap<>();

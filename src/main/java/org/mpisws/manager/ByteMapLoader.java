@@ -37,10 +37,10 @@ public class ByteMapLoader extends ClassLoader{
         }
         this.classes = classes;
         // Load classes from the runtime and checker packages
-        loadClassesFromPackage("src/main/java/org/example/runtime/", "org.example.runtime");
-        loadClassesFromPackage("src/main/java/org/example/checker/", "org.example.checker");
-        loadClassesFromPackage("src/main/java/org/example/checker/strategy/",
-                "org.example.checker.strategy");
+        loadClassesFromPackage("src/main/java/org/mpisws/runtime/", "org.mpisws.runtime");
+        loadClassesFromPackage("src/main/java/org/mpisws/checker/", "org.mpisws.checker");
+        loadClassesFromPackage("src/main/java/org/mpisws/checker/strategy/",
+                "org.mpisws.checker.strategy");
     }
 
     /**

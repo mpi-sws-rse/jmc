@@ -49,10 +49,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("Buggy counter that deadlocks - RandomStrategy")
     void randomTestBuggyCounterThatDeadlocks() {
-        var t = new TestTarget("org.example.concurrent.programs.wrong.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.wrong.counter",
                     "BuggyCounter",
                     "main",
-                    "src/test/java/org/example/concurrent/programs/wrong/counter/"
+                    "src/test/java/org/mpisws/concurrent/programs/wrong/counter/"
         );
         System.out.println("BuggyCounter RandomStrategy Started");
         checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
@@ -64,10 +64,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("Buggy counter that deadlocks - ReplayStrategy")
     void replayTestBuggyCounterThatDeadlocks() {
-        var t = new TestTarget("org.example.concurrent.programs.wrong.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.wrong.counter",
                 "BuggyCounter",
                 "main",
-                "src/test/java/org/example/concurrent/programs/wrong/counter/"
+                "src/test/java/org/mpisws/concurrent/programs/wrong/counter/"
         );
         System.out.println("BuggyCounter ReplayStrategy Started");
         checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
@@ -84,10 +84,10 @@ private ModelChecker checker;
     @DisplayName("Inconsistent counter with a race condition - RandomStrategy")
     void randomTestInconsistentCounter() {
         System.out.println("InconsistentCounter");
-        var t = new TestTarget("org.example.concurrent.programs.inconsistent.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.inconsistent.counter",
                         "InconsistentCounter",
                         "main",
-                        "src/test/java/org/example/concurrent/programs/inconsistent/counter/"
+                        "src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/"
         );
         System.out.println("InconsistentCounter - RandomStrategy");
         checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
@@ -100,10 +100,10 @@ private ModelChecker checker;
     @DisplayName("Inconsistent counter with a race condition - TrustStrategy")
     void trustTestInconsistentCounter() {
         System.out.println("InconsistentCounter");
-        var t = new TestTarget("org.example.concurrent.programs.inconsistent.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.inconsistent.counter",
                 "InconsistentCounter",
                 "main",
-                "src/test/java/org/example/concurrent/programs/inconsistent/counter/"
+                "src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/"
         );
         System.out.println("InconsistentCounter TrustStrategy Started");
         checker.configuration.strategyType = StrategyType.TRUSTSTRATEGY;
@@ -117,10 +117,10 @@ private ModelChecker checker;
     @DisplayName("Inconsistent counter with a race condition - Replay")
     void replayTestInconsistentCounter() {
         System.out.println("InconsistentCounter");
-        var t = new TestTarget("org.example.concurrent.programs.inconsistent.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.inconsistent.counter",
                 "InconsistentCounter",
                 "main",
-                "src/test/java/org/example/concurrent/programs/inconsistent/counter/"
+                "src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/"
         );
         System.out.println("InconsistentCounter ReplayStrategy Started");
         checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
@@ -137,10 +137,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("A concurrent counter with nested class structure - RandomStrategy")
     void randomTestComplexCounter() {
-        var t = new TestTarget("org.example.concurrent.programs.complex.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.complex.counter",
                         "ComplexCounter",
                         "main",
-                        "src/test/java/org/example/concurrent/programs/complex/counter/"
+                        "src/test/java/org/mpisws/concurrent/programs/complex/counter/"
         );
         checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
         System.out.println("ComplexCounter RandomStrategy Started");
@@ -157,10 +157,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("A correct concurrent counter using synchronized blocks - RandomStrategy")
     void randomTestCorrectCounter() {
-        var t = new TestTarget("org.example.concurrent.programs.correct.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.correct.counter",
                     "CorrectCounter",
                     "main",
-                    "src/test/java/org/example/concurrent/programs/correct/counter/"
+                    "src/test/java/org/mpisws/concurrent/programs/correct/counter/"
         );
         checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
         System.out.println("CorrectCounter RandomStrategy Started");
@@ -177,10 +177,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("A concurrent counter using nested thread spawning - RandomStrategy")
     void randomTestSimpleCounter() {
-        var t = new TestTarget("org.example.concurrent.programs.simple.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.simple.counter",
                     "SimpleCounter",
                     "main",
-                    "src/test/java/org/example/concurrent/programs/simple/counter/"
+                    "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
         );
         System.out.println("SimpleCounter RandomStrategy Started");
         checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
@@ -192,10 +192,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("A concurrent counter using nested thread spawning - TrustStrategy")
     void trustTestSimpleCounter() {
-        var t = new TestTarget("org.example.concurrent.programs.simple.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.simple.counter",
                 "SimpleCounter",
                 "main",
-                "src/test/java/org/example/concurrent/programs/simple/counter/"
+                "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
         );
         System.out.println("SimpleCounter TrustStrategy Started");
         checker.configuration.strategyType = StrategyType.TRUSTSTRATEGY;
@@ -208,10 +208,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("A concurrent counter using nested thread spawning - ReplayStrategy")
     void replayTestSimpleCounter() {
-        var t = new TestTarget("org.example.concurrent.programs.simple.counter",
+        var t = new TestTarget("org.mpisws.concurrent.programs.simple.counter",
                 "SimpleCounter",
                 "main",
-                "src/test/java/org/example/concurrent/programs/simple/counter/"
+                "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
         );
         System.out.println("SimpleCounter ReplayStrategy Started");
         checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
@@ -228,10 +228,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("Dining philosophers problem with deadlock - RandomStrategy")
     void randomTestDiningPhilosophers() {
-        var t = new TestTarget("org.example.concurrent.programs.dining",
+        var t = new TestTarget("org.mpisws.concurrent.programs.dining",
                 "DiningPhilosophers",
                 "main",
-                "src/test/java/org/example/concurrent/programs/dining/"
+                "src/test/java/org/mpisws/concurrent/programs/dining/"
         );
         System.out.println("DiningPhilosophers RandomStrategy Started");
         checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
@@ -243,10 +243,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("Dining philosophers problem with deadlock - ReplayStrategy")
     void replayTestDiningPhilosophers() {
-        var t = new TestTarget("org.example.concurrent.programs.dining",
+        var t = new TestTarget("org.mpisws.concurrent.programs.dining",
                 "DiningPhilosophers",
                 "main",
-                "src/test/java/org/example/concurrent/programs/dining/"
+                "src/test/java/org/mpisws/concurrent/programs/dining/"
         );
         System.out.println("DiningPhilosophers ReplayStrategy Started");
         checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
@@ -263,10 +263,10 @@ private ModelChecker checker;
     @Test
     @DisplayName("Multiple threads each spawning new threads with a shared counter")
     void testMultipleSpawns() {
-        var t = new TestTarget("org.example.concurrent.programs.thread_dependency",
+        var t = new TestTarget("org.mpisws.concurrent.programs.thread_dependency",
                     "MultipleThreads",
                     "main",
-                    "src/test/java/org/example/concurrent/programs/thread_dependency/"
+                    "src/test/java/org/mpisws/concurrent/programs/thread_dependency/"
         );
         assertTrue(checker.check(t), "Call works");
     }
@@ -275,10 +275,10 @@ private ModelChecker checker;
     @Disabled("This test is disabled due to using while(true) loop for thread waiting")
     @DisplayName("LockOne Mutex")
     void testMutex() {
-        var t = new TestTarget("org.example.concurrent.programs.mutex",
+        var t = new TestTarget("org.mpisws.concurrent.programs.mutex",
                     "MainMutex",
                     "main",
-                    "src/test/java/org/example/concurrent/programs/mutex/"
+                    "src/test/java/org/mpisws/concurrent/programs/mutex/"
         );
         assertTrue(checker.check(t), "Call works");
     }
