@@ -9,7 +9,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/mpisws/manager/ByteCodeManager.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/src/main/java/org/mpisws/manager/ByteCodeManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.gitignore" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/JMC4FUN/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -133,6 +136,7 @@
     "Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks.executor": "Run",
     "Gradle.ModelCheckerTest.replayTestDiningPhilosophers.executor": "Run",
     "Gradle.ModelCheckerTest.replayTestInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestSimpleCounter (1).executor": "Run",
     "Gradle.ModelCheckerTest.replayTestSimpleCounter.executor": "Run",
     "Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor": "Run",
     "Gradle.ModelCheckerTest.testComplexCounter.executor": "Run",
@@ -142,6 +146,7 @@
     "Gradle.ModelCheckerTest.testMutex.executor": "Run",
     "Gradle.ModelCheckerTest.testSimpleCounter.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestSimpleCounter (1).executor": "Run",
     "Gradle.ModelCheckerTest.trustTestSimpleCounter.executor": "Run",
     "Kotlin.CounterKt.executor": "Run",
     "Kotlin.MainKt.executor": "Run",
@@ -189,7 +194,7 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks (1)">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.replayTestSimpleCounter (1)">
     <configuration name="ModelCheckerTest.randomTestBuggyCounterThatDeadlocks (1)" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -262,7 +267,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.replayTestSimpleCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.replayTestSimpleCounter (1)" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -275,7 +280,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.example.checker.ModelCheckerTest.replayTestSimpleCounter&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.replayTestSimpleCounter&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -286,7 +291,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestSimpleCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestSimpleCounter (1)" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -299,7 +304,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.example.checker.ModelCheckerTest.trustTestSimpleCounter&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestSimpleCounter&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -312,18 +317,18 @@
     </configuration>
     <list>
       <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks (1)" />
+      <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter (1)" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter (1)" />
       <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
       <item itemvalue="Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks" />
-      <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter (1)" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter (1)" />
         <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks (1)" />
         <item itemvalue="Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks" />
         <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
-        <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter" />
       </list>
     </recent_temporary>
   </component>
