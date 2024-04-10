@@ -12,12 +12,13 @@ import programStructure.*
  TODO() : Extends this algorithm by discharging the above-mentioned assumptions
  */
 
-class Trust {
+class Trust(path : String) {
     private var graph : ExecutionGraph = ExecutionGraph()
     var allJMCThread: MutableMap<Int, JMCThread>? = mutableMapOf()
     var allEvents : MutableList<Event> = mutableListOf()
     var graphCounter : Int = 0
     var allGraphs : MutableList<ExecutionGraph> = mutableListOf()
+    var graphsPath : String = path
 
 
 
@@ -77,6 +78,18 @@ class Trust {
                     val exitMonitor : ExitMonitorEvent = i as ExitMonitorEvent
                     println(exitMonitor)
                 }
+                EventType.DEADLOCK -> {
+                    val deadlock : DeadlockEvent = i as DeadlockEvent
+                    println(deadlock)
+                }
+                EventType.MONITOR_REQUEST -> {
+                    val monitorRequestEvent : MonitorRequestEvent = i as MonitorRequestEvent
+                    println(monitorRequestEvent)
+                }
+                EventType.FAILURE -> {
+                    val failureEvent : FailureEvent = i as FailureEvent
+                    println(failureEvent)
+                }
                 EventType.OTHER -> TODO()
             }
         }
@@ -112,7 +125,7 @@ class Trust {
                     this.graphCounter++
                     G.id = this.graphCounter
                     println("[Model Checker Message] : Visited full execution graph G_$graphCounter")
-                    G.visualizeGraph(this.graphCounter)
+                    G.visualizeGraph(this.graphCounter, this.graphsPath)
                     allGraphs.add(G)
                     //G.printEvents()
                     //G.printPorf()
@@ -226,7 +239,7 @@ class Trust {
                         println("[Model Checker Message] : The finish event is found")
                         println("[Model Checker Message] : The finish event is : $finishEvent")
                         G.addEvent(nextEvent)
-                        G.JTs.add(Pair(finishEvent, nextEvent))
+                        G.addJT(finishEvent,nextEvent)
                         visit(G,allEvents)
                     }
                 }
@@ -242,7 +255,7 @@ class Trust {
                         println("[Model Checker Message] : The thread event is found")
                         println("[Model Checker Message] : The thread event is : $threadEvent")
                         G.addEvent(nextEvent)
-                        G.STs.add(Pair(threadEvent, nextEvent))
+                        G.addST(threadEvent,nextEvent)
                         visit(G,allEvents)
                     }
                 }
@@ -250,6 +263,22 @@ class Trust {
                     // The following is for debugging purposes only
                     println("[Model Checker Message] : The next event is a FINISH event")
                     println("[Model Checker Message] : The FINISH event is : $nextEvent")
+
+                    G.addEvent(nextEvent)
+                    visit(G,allEvents)
+                }
+                nextEvent.type == EventType.FAILURE -> {
+                    // The following is for debugging purposes only
+                    println("[Model Checker Message] : The next event is a FAILURE event")
+                    println("[Model Checker Message] : The FAILURE event is : $nextEvent")
+
+                    G.addEvent(nextEvent)
+                    visit(G,allEvents)
+                }
+                nextEvent.type == EventType.DEADLOCK -> {
+                    // The following is for debugging purposes only
+                    println("[Model Checker Message] : The next event is a DEADLOCK event")
+                    println("[Model Checker Message] : The DEADLOCK event is : $nextEvent")
 
                     G.addEvent(nextEvent)
                     visit(G,allEvents)

@@ -1,9 +1,5 @@
 package org.example.checker;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,16 +75,16 @@ public class ModelChecker {
     void run(TestTarget target) {
         this.configuration.saveConfig("src/main/resources/config/config.obj");
         String path = target.getTestPath();
-        String classPath = target.getTestPackage() + target.getTestClass();
+        String classPath = target.getTestPackage() + "." + target.getTestClass();
         logger.trace("Generating bytecode for " + path + " " + classPath);
         ByteCodeManager byteCodeManager = new ByteCodeManager(path, target.getTestClass());
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
         ByteCodeModifier byteCodeModifier = new ByteCodeModifier(allBytecode, classPath);
         modifyByteCode(byteCodeModifier);
-        byteCodeManager.generateClassFile(byteCodeModifier.allByteCode, path);
+        byteCodeManager.generateClassFile(byteCodeModifier.allByteCode);
         if (this.configuration.verbose) {
-            byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode, path);
+            byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode);
         }
         System.out.println("Running the modified bytecode");
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage());
@@ -108,8 +104,8 @@ public class ModelChecker {
         byteCodeModifier.modifyThreadRun();
         byteCodeModifier.modifyReadWriteOperation();
         byteCodeModifier.modifyMonitorInstructions();
-        byteCodeModifier.modifyThreadJoin();
         byteCodeModifier.modifyAssert();
+        byteCodeModifier.modifyThreadJoin();
         byteCodeModifier.addRuntimeEnvironment();
     }
 }

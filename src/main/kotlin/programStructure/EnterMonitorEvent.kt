@@ -31,6 +31,8 @@ data class EnterMonitorEvent(
 
     /**
      * Returns a deep copy of this object
+     *
+     * @return A deep copy of this object
      */
     override fun deepCopy(): Event {
         return EnterMonitorEvent(

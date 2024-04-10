@@ -7,5 +7,6 @@ import java.io.Serializable;
  */
 public enum StrategyType implements Serializable {
     RANDOMSTRAREGY,
-    TRUSTSTRATEGY
+    TRUSTSTRATEGY,
+    REPLAYSTRATEGY
 }

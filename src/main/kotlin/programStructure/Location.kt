@@ -76,6 +76,8 @@ data class Location(
 
     /**
      * Returns a deep copy of this object
+     *
+     * @return a deep copy of this object
      */
     fun deepCopy(): Location {
         return Location(
@@ -89,8 +91,9 @@ data class Location(
 
     /**
      * Checks if the field is a primitive type or not.
-     *<p>
+     *
      * The primitive types are: int(I), long(J), float(F), double(D), char(S), byte(B), short(C), boolean(Z)
+     *
      * @return true if the field is a primitive type, false otherwise
      */
     fun isPrimitive(): Boolean {

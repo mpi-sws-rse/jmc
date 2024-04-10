@@ -133,10 +133,10 @@ public class RuntimeEnvironment {
     public static Map<Thread, Thread> joinRequest = new HashMap<>();
 
     /**
-     * @property {@link #randomEventsRecord} is used to store the events that are executed by the threads in the
+     * @property {@link #eventsRecord} is used to store the events that are executed by the threads in the
      * program under test using the {@link org.example.checker.strategy.RandomStrategy}.
      */
-    public static List<Event> randomEventsRecord;
+    public static List<Event> eventsRecord = new ArrayList<>();
 
     /**
      * @property {@link #mcThreadSerialNumber} is used to store the number of seen events for each thread.
@@ -230,6 +230,21 @@ public class RuntimeEnvironment {
      * @property {@link #suspendedThreads} is used to store the threads that are suspended in the program under test.
      */
     public static List<Thread> suspendedThreads = new ArrayList<>();
+
+    /**
+     * @property {@link #buggyTracePath} is used to store the path to the buggy trace object.
+     */
+    public static String buggyTracePath;
+
+    /**
+     * @property {@link #buggyTraceFile} is used to store the name of the buggy trace file.
+     */
+    public static String buggyTraceFile;
+
+    /**
+     * @property {@link #executionGraphsPath} is used to store the path to the visualized execution graphs.
+     */
+    public static String executionGraphsPath;
 
     /**
      * The constructor is private to prevent the instantiation of the class
@@ -326,6 +341,9 @@ public class RuntimeEnvironment {
         maxNumOfExecutions = config.maxIterations;
         strategyType = config.strategyType;
         seed = config.seed;
+        buggyTracePath = config.buggyTracePath;
+        executionGraphsPath = config.executionGraphsPath;
+        buggyTraceFile = config.buggyTraceFile;
     }
 
     /**
@@ -401,7 +419,7 @@ public class RuntimeEnvironment {
             threadStartReq = thread;
             waitRequest(currentThread);
         } else {
-            System.out.println("[Runtime Environment Message] : " + thread.getName() + " is not in the createdThreadList");
+            System.out.println("[Runtime Environment Message] : thread-" + threadIdMap.get(thread.getId()) + " is not in the createdThreadList");
         }
     }
 
@@ -420,7 +438,7 @@ public class RuntimeEnvironment {
      * @param threadReq The thread that requested to join over the threadRes.
      * @param threadRes The thread that the threadReq requested to join over it.
      */
-    public static void threadJoin(Thread threadReq, Thread threadRes) {
+    public static void threadJoin(Thread threadRes, Thread threadReq) {
         System.out.println(
                 "[Runtime Environment Message] : " + threadReq.getName() + " requested to join over the " +
                         threadRes.getName()
@@ -952,6 +970,61 @@ public class RuntimeEnvironment {
     }
 
     /**
+     * Creates a {@link DeadlockEvent} for a thread that has encountered a deadlock.
+     * <p>
+     * This method is invoked by the {@link SchedulerThread} when a deadlock is detected in the program under test.
+     * The method creates a {@link DeadlockEvent} for the thread that has encountered the deadlock.
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new {@link DeadlockEvent} with the {@code EventType.DEADLOCK} and the ID of the thread.
+     * </p>
+     *
+     * @param thread The thread that has encountered the deadlock.
+     * @return The created {@link DeadlockEvent} for the thread.
+     */
+    public static DeadlockEvent createDeadlockEvent(Thread thread) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new DeadlockEvent(EventType.DEADLOCK, threadIdMap.get(thread.getId()).intValue(), serialNumber);
+    }
+
+    /**
+     * Creates a {@link FailureEvent} for a thread that has encountered a failure.
+     * <p>
+     * This method is invoked by the {@link SchedulerThread} when a thread in the program under test has encountered a
+     * failure. The method creates a {@link FailureEvent} for the thread that has encountered the failure.
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new {@link FailureEvent} with the {@code EventType.FAILURE} and the ID of the thread.
+     * </p>
+     *
+     * @param thread The thread that has encountered the failure.
+     * @return The created {@link FailureEvent} for the thread.
+     */
+    public static FailureEvent createFailureEvent(Thread thread) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new FailureEvent(EventType.FAILURE, threadIdMap.get(thread.getId()).intValue(), serialNumber);
+    }
+
+    /**
+     * Creates a {@link MonitorRequestEvent} for a thread that is about to request a monitor.
+     * <p>
+     * This method is invoked by the {@link RuntimeEnvironment} when a thread in the program under test is about to
+     * execute a {@code MONITORENTER} operation. The method creates a {@link MonitorRequestEvent} for the thread and
+     * the lock it wants to enter.
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new {@link MonitorRequestEvent} with the {@code EventType.MONITOR_REQUEST}, the ID of
+     * the thread, the generated serial number, and the monitor it wants to enter.
+     * </p>
+     *
+     * @param thread The thread for which the {@link MonitorRequestEvent} is being created.
+     * @param lock   The lock that the thread wants to enter.
+     * @return The created {@link MonitorRequestEvent} for the thread.
+     */
+    public static MonitorRequestEvent createMonitorRequestEvent(Thread thread, Object lock) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new MonitorRequestEvent(EventType.MONITOR_REQUEST, threadIdMap.get(thread.getId()).intValue(),
+                serialNumber, createMonitor(lock));
+    }
+
+    /**
      * Creates a {@link Monitor} object for a lock that a thread is about to enter or exit.
      * <p>
      * This method is invoked by the {@link RuntimeEnvironment} when a thread in the program under test is about to
@@ -1096,7 +1169,7 @@ public class RuntimeEnvironment {
         writeEventReq = null;
         threadIdMap = new HashMap<>();
         executionFinished = false;
-        randomEventsRecord = null;
+        eventsRecord = new ArrayList<>();
         suspendedThreads = new ArrayList<>();
         threadObjectMap = new HashMap<>();
     }

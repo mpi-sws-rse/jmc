@@ -41,6 +41,8 @@ data class ReadEvent(
 
     /**
      * Returns a deep copy of this object
+     *
+     * @return A deep copy of this object
      */
     override fun deepCopy(): Event {
         return ReadEvent(
@@ -55,6 +57,8 @@ data class ReadEvent(
 
     /**
      * Returns a deep copy of the ReadsFrom object
+     *
+     * @return A deep copy of the ReadsFrom object
      */
     private fun deepCopyRf(): ReadsFrom? {
         return when (this.rf) {

@@ -8,10 +8,21 @@ import kotlin.Pair;
 import org.example.checker.SearchStrategy;
 import org.example.runtime.RuntimeEnvironment;
 import programStructure.*;
-
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * The TrustStrategy class implements the {@link SearchStrategy} interface and is responsible for managing the execution
+ * order of events in a multithreaded program using the {@link Trust} model checker. It maintains a record of execution
+ * graphs and a trust object for the trust model checker. The class provides functionality to handle various types of
+ * events including start, join, read, write, and finish events. The class uses the {@link RuntimeEnvironment} API to
+ * create and record events. The TrustStrategy class is designed to control the flow of a program's
+ * execution by using trust model checker. When it faces a new event, it passes the event to the trust model checker and
+ * updates the current graph based on the model checker's response. Based on the response, it picks the next thread to
+ * execute. The class also provides functionality to save the execution graphs to a file.
+ */
 public class TrustStrategy implements SearchStrategy {
 
     /**
@@ -61,10 +72,36 @@ public class TrustStrategy implements SearchStrategy {
     private Event guidingEvent;
 
     /**
+     * @property {@link #buggyTracePath} is used to store the path of the buggy trace file.
+     */
+    private final String buggyTracePath;
+
+    /**
+     * @property {@link #buggyTraceFile} is used to store the name of the buggy trace file.
+     */
+    private final String buggyTraceFile;
+
+    /**
+     * @property {@link #executionGraphsPath} is used to store the path of the execution graphs directory.
+     */
+    private final String executionGraphsPath;
+
+    /**
      * The following constructor initializes the model checker graphs list, the current execution graph, trust object,
      * the guiding execution graph if it is available, and the guiding events list.
      */
     public TrustStrategy() {
+        buggyTracePath = RuntimeEnvironment.buggyTracePath;
+        buggyTraceFile = RuntimeEnvironment.buggyTraceFile;
+        executionGraphsPath = RuntimeEnvironment.executionGraphsPath;
+        if (!Files.exists(Paths.get(executionGraphsPath))) {
+            System.out.println("[Trust Strategy Message] : Directory " + executionGraphsPath + " does not exist ");
+            System.exit(0);
+        }
+        if (!Files.exists(Paths.get(buggyTracePath))) {
+            System.out.println("[Trust Strategy Message] : Directory " + buggyTracePath + " does not exist ");
+            System.exit(0);
+        }
         initMcGraphs();
         initCurrentGraph();
         initTrust();
@@ -105,7 +142,7 @@ public class TrustStrategy implements SearchStrategy {
      * </p>
      */
     private void initTrust() {
-        trust = new Trust();
+        trust = new Trust(executionGraphsPath);
         trust.setGraphCounter(RuntimeEnvironment.numOfGraphs);
     }
 
@@ -147,10 +184,9 @@ public class TrustStrategy implements SearchStrategy {
      * <p>
      * This method adds the root event of the {@link #currentGraph} to the {@link Trust#getAllEvents()}.
      * </p>
-     *
      */
     private void noGuidingGraph() {
-        System.out.println("[Trust Strategy Message] : The MCGraphs are empty");
+        System.out.println("[Trust Strategy Message] : The guiding execution graph is empty");
         Optional<Event> event = Optional.of(Objects.requireNonNull(currentGraph.getRoot()).getValue());
         event.ifPresent(value -> trust.getAllEvents().add(value));
     }
@@ -206,6 +242,7 @@ public class TrustStrategy implements SearchStrategy {
     @Override
     public void nextStartEvent(Thread calleeThread, Thread callerThread) {
         StartEvent st = RuntimeEnvironment.createStartEvent(calleeThread, callerThread);
+        RuntimeEnvironment.eventsRecord.add(st);
         if (guidingActivate) {
             addEventToCurrentGraph(st);
         } else {
@@ -214,7 +251,7 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
-     * Passes the event to the {@link #trust} model checker.
+     * Passes the given event to the {@link #trust} model checker.
      * <p>
      * This method passes the event to the trust model checker. It sets the {@link Trust#getAllGraphs()} ()} with an
      * empty list to make sure that the {@link #trust} model checker does not have any previous graphs. Then, it calls
@@ -231,7 +268,7 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
-     * Adds the event to the current graph.
+     * Adds the given event to the current graph.
      * <p>
      * This method adds the event to the current graph. It sets the {@link #currentGraph} with the given event.
      * </p>
@@ -270,7 +307,7 @@ public class TrustStrategy implements SearchStrategy {
      */
     @Override
     public void nextExitMonitorEvent(Thread thread, Object monitor) {
-        System.out.println("[Scheduler Thread Message] : This version of Trust does not support the exit monitor event");
+        System.out.println("[Trust Strategy Message] : This version of Trust does not support the exit monitor event");
         System.exit(0);
     }
 
@@ -288,10 +325,12 @@ public class TrustStrategy implements SearchStrategy {
      */
     @Override
     public void nextJoinEvent(Thread joinReq, Thread joinRes) {
+        JoinEvent joinEvent = RuntimeEnvironment.createJoinEvent(joinReq, joinRes);
+        RuntimeEnvironment.eventsRecord.add(joinEvent);
         if (guidingActivate) {
-            addEventToCurrentGraph(RuntimeEnvironment.createJoinEvent(joinReq, joinRes));
+            addEventToCurrentGraph(joinEvent);
         } else {
-            passEventToTrust(RuntimeEnvironment.createJoinEvent(joinReq, joinRes));
+            passEventToTrust(joinEvent);
         }
     }
 
@@ -319,6 +358,19 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
+     * Represents the required strategy for the next enter monitor request.
+     *
+     * @param thread  is the thread that is going to enter the monitor.
+     * @param monitor is the monitor that is going to be entered by the thread.
+     */
+    @Override
+    public Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
+        System.out.println("[Trust Strategy Message] : This version of Trust does not support the enter monitor event");
+        System.exit(0);
+        return null;
+    }
+
+    /**
      * Represents the required strategy for the next read event.
      * <p>
      * This method represents the required strategy for the next read event. It passes the read event to the {@link #trust}
@@ -330,6 +382,7 @@ public class TrustStrategy implements SearchStrategy {
      */
     @Override
     public void nextReadEvent(ReadEvent readEvent) {
+        RuntimeEnvironment.eventsRecord.add(readEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(readEvent);
             addRfEdgeToCurrentGraph(readEvent);
@@ -404,9 +457,9 @@ public class TrustStrategy implements SearchStrategy {
         } else {
             int numOfGraphs = trust.getGraphCounter() + 1;
             trust.setGraphCounter(numOfGraphs);
-            currentGraph.visualizeGraph(numOfGraphs);
-            System.out.println("[Trust Strategy] : There is no new graph from model checker");
-            System.out.println("[Trust Strategy] : visited full execution graph G_" + numOfGraphs);
+            currentGraph.visualizeGraph(numOfGraphs, executionGraphsPath);
+            System.out.println("[Trust Strategy Message] : There is no new graph from model checker");
+            System.out.println("[Trust Strategy Message] : visited full execution graph G_" + numOfGraphs);
         }
     }
 
@@ -433,7 +486,7 @@ public class TrustStrategy implements SearchStrategy {
                     mcGraphs.remove(graph);
                 });
 
-        System.out.println("[Scheduler Thread Message] : The chosen graph is : " + currentGraph.getId());
+        System.out.println("[Trust Strategy Message] : The chosen graph is : " + currentGraph.getId());
     }
 
     /**
@@ -466,6 +519,7 @@ public class TrustStrategy implements SearchStrategy {
      */
     @Override
     public void nextWriteEvent(WriteEvent writeEvent) {
+        RuntimeEnvironment.eventsRecord.add(writeEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(writeEvent);
         } else {
@@ -488,6 +542,7 @@ public class TrustStrategy implements SearchStrategy {
     @Override
     public void nextFinishEvent(Thread thread) {
         FinishEvent finishEvent = RuntimeEnvironment.createFinishEvent(thread);
+        RuntimeEnvironment.eventsRecord.add(finishEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(finishEvent);
             analyzeSuspendedThreadsForJoin(thread);
@@ -515,6 +570,28 @@ public class TrustStrategy implements SearchStrategy {
             return pickNextGuidedThread();
         } else {
             return pickNextRandomThread();
+        }
+    }
+
+    @Override
+    public void nextFailureEvent(Thread thread) {
+        FailureEvent failureEvent = RuntimeEnvironment.createFailureEvent(thread);
+        RuntimeEnvironment.eventsRecord.add(failureEvent);
+        if (guidingActivate) {
+            addEventToCurrentGraph(failureEvent);
+        } else {
+            passEventToTrust(failureEvent);
+        }
+    }
+
+    @Override
+    public void nextDeadlockEvent(Thread thread) {
+        DeadlockEvent deadlockEvent = RuntimeEnvironment.createDeadlockEvent(thread);
+        RuntimeEnvironment.eventsRecord.add(deadlockEvent);
+        if (guidingActivate) {
+            addEventToCurrentGraph(deadlockEvent);
+        } else {
+            passEventToTrust(deadlockEvent);
         }
     }
 
@@ -691,19 +768,7 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
-     * Prints the current execution trace.
-     * <p>
-     * This method prints the current execution trace. It calls the {@link ExecutionGraph#printGraph()} method of the
-     * {@link #currentGraph}.
-     * </p>
-     */
-    @Override
-    public void printExecutionTrace() {
-        currentGraph.printGraph();
-    }
-
-    /**
-     * Picks the next random thread.
+     * Picks the next thread.
      * <p>
      * This method picks the next thread that is going to be executed. It returns the next guided thread if the
      * {@link #guidingActivate} is true. Otherwise, it returns the next random thread.
@@ -794,6 +859,27 @@ public class TrustStrategy implements SearchStrategy {
         }
 
         return loadedGraphs;
+    }
+
+    /**
+     * Saves the buggy execution trace.
+     * <p>
+     * This method saves the buggy execution trace. It writes the {@link RuntimeEnvironment#eventsRecord} to the file.
+     * </p>
+     */
+    @Override
+    public void saveBuggyExecutionTrace() {
+        try {
+            FileOutputStream fileOut = new FileOutputStream(buggyTracePath + buggyTraceFile);
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(RuntimeEnvironment.eventsRecord);
+            out.close();
+            fileOut.close();
+            System.out.println("[Trust Strategy Message] : Buggy execution trace is saved in " + buggyTracePath +
+                    buggyTraceFile);
+        } catch (IOException i) {
+            i.printStackTrace();
+        }
     }
 
     /**

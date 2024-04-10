@@ -1,11 +1,10 @@
 package org.example.checker;
 
 import org.example.runtime.RuntimeEnvironment;
+import programStructure.Event;
 import programStructure.ReadEvent;
 import programStructure.WriteEvent;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 /**
  * The SearchStrategy interface defines the methods that any search strategy must implement.
@@ -19,7 +18,7 @@ import java.util.Random;
 public interface SearchStrategy {
 
     /**
-     * This method represents the required strategy for the next start event.
+     * Represents the required strategy for the next start event.
      *
      * @param calleeThread is the thread that is going to be started.
      * @param callerThread is the thread that is going to call the start method of the calleeThread.
@@ -27,7 +26,7 @@ public interface SearchStrategy {
     void nextStartEvent(Thread calleeThread, Thread callerThread);
 
     /**
-     * This method represents the required strategy for the next enter monitor event.
+     * Represents the required strategy for the next enter monitor event.
      *
      * @param thread is the thread that is going to enter the monitor.
      * @param monitor is the monitor that is going to be entered by the thread.
@@ -35,7 +34,7 @@ public interface SearchStrategy {
     void nextEnterMonitorEvent(Thread thread, Object monitor);
 
     /**
-     * This method represents the required strategy for the next exit monitor event.
+     * Represents the required strategy for the next exit monitor event.
      *
      * @param thread is the thread that is going to exit the monitor.
      * @param monitor is the monitor that is going to be exited by the thread.
@@ -43,45 +42,84 @@ public interface SearchStrategy {
     void nextExitMonitorEvent(Thread thread, Object monitor);
 
     /**
-     * This method represents the required strategy for the next join event.
+     * Represents the required strategy for the next join event.
      *
      * @param joinReq is the thread that is going to join another thread.
      * @param joinRes is the thread that is going to be joined by another thread.
      */
     void nextJoinEvent(Thread joinReq, Thread joinRes);
 
+    /**
+     * Represents the required strategy for the next join request.
+     *
+     * @param joinReq is the thread that is going to join another thread.
+     * @param joinRes is the thread that is going to be joined by another thread.
+     */
     Thread nextJoinRequest(Thread joinReq, Thread joinRes);
 
     /**
-     * This method represents the required strategy for the next read event.
+     * Represents the required strategy for the next enter monitor request.
+     *
+     * @param thread is the thread that is going to enter the monitor.
+     * @param monitor is the monitor that is going to be entered by the thread.
+     */
+    Thread nextEnterMonitorRequest(Thread thread, Object monitor);
+
+    /**
+     * Represents the required strategy for the next read event.
      *
      * @param readEvent is the read event that is going to be executed.
      */
     void nextReadEvent(ReadEvent readEvent);
 
     /**
-     * This method represents the required strategy for the next write event.
+     * Represents the required strategy for the next write event.
      *
      * @param writeEvent is the write event that is going to be executed.
      */
     void nextWriteEvent(WriteEvent writeEvent);
 
     /**
-     * This method represents the required strategy for the next finish event.
+     * Represents the required strategy for the next finish event.
      *
      * @param thread is the thread that is going to be finished.
      */
     void nextFinishEvent(Thread thread);
 
+    /**
+     * Represents the required strategy for the next failure event.
+     *
+     * @param thread is the thread that is going to be finished.
+     */
+    void nextFailureEvent(Thread thread);
+
+    /**
+     * Represents the required strategy for the next deadlock event.
+     *
+     * @param thread is the thread that is going to be finished.
+     */
+    void nextDeadlockEvent(Thread thread);
+
+    /**
+     * Represents the required strategy for the next finish request.
+     *
+     * @param thread is the thread that is going to be finished.
+     */
     Thread nextFinishRequest(Thread thread);
 
     /**
-     * This method prints the current execution trace.
+     * Prints the current execution trace.
      */
-    void printExecutionTrace();
+    default void printExecutionTrace() {
+        System.out.println("[Search Strategy Message] : Execution trace:");
+        for (Event event : RuntimeEnvironment.eventsRecord) {
+            int index = RuntimeEnvironment.eventsRecord.indexOf(event) + 1;
+            System.out.println("[Search Strategy Message] : " + index + "." + event);
+        }
+    }
 
     /**
-     * This method indicates whether the execution is done or not.
+     * Indicates whether the execution is done or not.
      *
      * @return true if the execution is done, otherwise false.
      */
@@ -92,6 +130,7 @@ public interface SearchStrategy {
      * <p>
      * This method is used to select the next random thread to run. It checks the monitor request and join request of the
      * candidate thread and handles them appropriately.
+     * </p>
      *
      * @return the next random thread to run.
      */
@@ -156,10 +195,9 @@ public interface SearchStrategy {
      * @return the candidate thread if it can run, otherwise selects another random thread.
      */
     default Thread handleMonitorRequest(Thread thread) {
-        // Get the monitor of the selected thread
         Object monitor = RuntimeEnvironment.monitorRequest.get(thread);
         System.out.println(
-                "[Scheduler Thread Message] : " + RuntimeEnvironment.threadIdMap.get(thread.getId())
+                "[Scheduler Thread Message] : Thread-" + RuntimeEnvironment.threadIdMap.get(thread.getId())
                         + " is requested to enter the monitor " + monitor
         );
         if (RuntimeEnvironment.monitorList.containsKey(monitor)) {
@@ -189,7 +227,6 @@ public interface SearchStrategy {
      * @return the candidate thread if it can run, otherwise selects another random thread.
      */
     default Thread handleJoinRequest(Thread thread) {
-        // Get the join request of the selected thread
         Thread joinRes = RuntimeEnvironment.joinRequest.get(thread);
         System.out.println(
                 "[Scheduler Thread Message] : " + thread.getName() + " is requested to join "
@@ -241,11 +278,12 @@ public interface SearchStrategy {
     }
 
     /**
-     * Suspends the selected thread.
-     *<br>
+     * Suspends the given thread.
+     * <p>
      * This method is used to suspend the selected thread and remove it from the {@link RuntimeEnvironment#readyThreadList}
      * list and add it to the {@link RuntimeEnvironment#suspendedThreads} list. This action is required when the selected
      * thread is waiting for a monitor or a join request.
+     * </p>
      *
      * @param thread the selected thread.
      */
@@ -256,11 +294,12 @@ public interface SearchStrategy {
     }
 
     /**
-     * Unsuspends the selected thread.
-     *<br>
+     * Unsuspend the given thread.
+     * <p>
      * This method is used to unsuspend the selected thread and remove it from the {@link RuntimeEnvironment#suspendedThreads}
      * list and add it to the {@link RuntimeEnvironment#readyThreadList} list. This action is required when the monitor or
      * join request of the selected thread is available.
+     * </p>
      *
      * @param thread the selected thread.
      */
@@ -271,7 +310,7 @@ public interface SearchStrategy {
     }
 
     /**
-     * Finds the suspended threads that are waiting for the monitor.
+     * Finds the suspended threads that are waiting for the given monitor.
      *
      * @param monitor the monitor that the suspended threads are waiting for.
      * @return the list of suspended threads that are waiting for the monitor.
@@ -283,7 +322,7 @@ public interface SearchStrategy {
     }
 
     /**
-     * Finds the suspended threads that are waiting for the join request.
+     * Finds the suspended threads that are waiting for the given thread.
      *
      * @param joinRes the thread that the suspended threads are waiting to join.
      * @return the list of suspended threads that are waiting for the join request.
@@ -294,7 +333,85 @@ public interface SearchStrategy {
                 .toList();
     }
 
+    /**
+     * Picks the next thread to run.
+     *
+     * @return the next thread to run.
+     */
     Thread pickNextThread();
 
+    /**
+     * Saves the execution state.
+     */
     void saveExecutionState();
+
+    /**
+     * Saves the buggy execution trace.
+     */
+    void saveBuggyExecutionTrace();
+
+    /**
+     * Detects potential deadlocks in the threads that are waiting to enter a monitor.
+     *
+     * <p>
+     * This method is used to detect potential deadlocks in the threads that are waiting to enter a monitor.
+     * It computes the transitive closure of the (@monitorRequest \cup @monitorList) relation and checks whether the
+     * relation is irreflexive or not.
+     * If the relation is irreflexive, there is no deadlock and the method returns false.
+     * Otherwise, there is a deadlock and the method returns true.
+     * </p>
+     *
+     * @return {@code true} if there is a deadlock, {@code false} otherwise.
+     */
+    default boolean monitorsDeadlockDetection() {
+        System.out.println("[Search Strategy Message] : The deadlock detection phase is started");
+        Optional<Map<Thread, Thread>> threadClosure = computeTransitiveClosure();
+        if (threadClosure.isPresent()) {
+            return checkIrreflexivity(threadClosure.get());
+        } else {
+            System.out.println("[Search Strategy Message] : There is no need to check the deadlock");
+            return false;
+        }
+    }
+
+    private Optional<Map<Thread, Thread>> computeTransitiveClosure() {
+        if (RuntimeEnvironment.monitorList.isEmpty()) {
+            return Optional.empty();
+        } else {
+            Map<Thread, Thread> threadClosure = new HashMap<>();
+            // Compute the primitive closure of the (@monitorRequest \cup @monitorList) relation.
+            for (Map.Entry<Thread, Object> entry : RuntimeEnvironment.monitorRequest.entrySet()) {
+                for (Map.Entry<Object, Thread> entry2 : RuntimeEnvironment.monitorList.entrySet()) {
+                    if (entry.getValue().equals(entry2.getKey())) {
+                        threadClosure.put(entry.getKey(), entry2.getValue());
+                    }
+                }
+            }
+            // Compute the complete transitive closure of the (@monitorRequest \cup @monitorList) relation.
+            boolean addedNewPairs = true;
+            while (addedNewPairs) {
+                addedNewPairs = false;
+                for (Map.Entry<Thread, Thread> entry : threadClosure.entrySet()) {
+                    for (Map.Entry<Thread, Thread> entry2 : threadClosure.entrySet()) {
+                        if (entry.getValue().equals(entry2.getKey()) &&
+                                threadClosure.entrySet().stream().noneMatch(e ->
+                                        e.getKey().equals(entry.getKey()) && e.getValue().equals(entry2.getValue()))) {
+                            threadClosure.put(entry.getKey(), entry2.getValue());
+                            addedNewPairs = true;
+                        }
+                    }
+                }
+            }
+            return Optional.of(threadClosure);
+        }
+    }
+
+    private boolean checkIrreflexivity(Map<Thread, Thread> threadClosure) {
+        for (Map.Entry<Thread, Thread> entry : threadClosure.entrySet()) {
+            if (entry.getKey().equals(entry.getValue())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

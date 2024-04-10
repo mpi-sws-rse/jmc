@@ -47,6 +47,21 @@ public final class CheckerConfiguration implements Serializable {
     public StrategyType strategyType;
 
     /**
+     * @property {@link #buggyTracePath} path to the buggy trace object
+     */
+    public String buggyTracePath;
+
+    /**
+     * @property {@link #buggyTraceFile} name of the buggy trace file
+     */
+    public String buggyTraceFile;
+
+    /**
+     * @property {@link #executionGraphsPath} path to the visualized execution graphs
+     */
+    public String executionGraphsPath;
+
+    /**
      * The following constructor is used to initialize the configuration with default values.
      * <br>
      * This constructor is private and only accessible through the builder.
@@ -60,6 +75,9 @@ public final class CheckerConfiguration implements Serializable {
         verbose = builder.verbose;
         seed = builder.seed;
         strategyType = builder.strategyType;
+        buggyTracePath = builder.buggyTracePath;
+        executionGraphsPath = builder.executionGraphsPath;
+        buggyTraceFile = builder.buggyTraceFile;
     }
 
     /**
@@ -103,11 +121,14 @@ public final class CheckerConfiguration implements Serializable {
     public static class ConfigurationBuilder {
 
         public long maxEventsPerExecution = 100;
-        public int maxIterations = 100;
+        public int maxIterations = 10;
         public long progressReport = 0;
         public boolean verbose = false;
         public long seed = new Random().nextLong();
-        public StrategyType strategyType = StrategyType.TRUSTSTRATEGY;
+        public StrategyType strategyType = StrategyType.REPLAYSTRATEGY;
+        public String buggyTracePath = "src/main/resources/buggyTrace/";
+        public String buggyTraceFile = "buggyTrace.obj";
+        public String executionGraphsPath = "src/main/resources/Visualized_Graphs/";
 
         public ConfigurationBuilder() {
         }
@@ -143,6 +164,21 @@ public final class CheckerConfiguration implements Serializable {
 
         public ConfigurationBuilder withStrategyType(StrategyType strategyType) {
             this.strategyType = strategyType;
+            return this;
+        }
+
+        public ConfigurationBuilder withBuggyTracePath(String buggyTracePath) {
+            this.buggyTracePath = buggyTracePath;
+            return this;
+        }
+
+        public ConfigurationBuilder withExecutionGraphsPath(String executionGraphsPath) {
+            this.executionGraphsPath = executionGraphsPath;
+            return this;
+        }
+
+        public ConfigurationBuilder withBuggyTraceFile(String buggyTraceFile) {
+            this.buggyTraceFile = buggyTraceFile;
             return this;
         }
     }

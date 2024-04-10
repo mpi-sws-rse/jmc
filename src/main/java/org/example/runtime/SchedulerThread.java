@@ -1,11 +1,10 @@
 package org.example.runtime;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import org.example.checker.SearchStrategy;
 import org.example.checker.StrategyType;
 import org.example.checker.strategy.RandomStrategy;
+import org.example.checker.strategy.ReplayStrategy;
 import org.example.checker.strategy.TrustStrategy;
 import programStructure.ReadEvent;
 import programStructure.WriteEvent;
@@ -47,6 +46,8 @@ public class SchedulerThread extends Thread {
             searchStrategy = new RandomStrategy();
         } else if (strategyType == StrategyType.TRUSTSTRATEGY) {
             searchStrategy = new TrustStrategy();
+        } else if (strategyType == StrategyType.REPLAYSTRATEGY){
+            searchStrategy = new ReplayStrategy();
         } else {
             // TODO() : Fix it
             System.out.println("[Scheduler Thread Message] : Unsupported strategy type: " + strategyType);
@@ -81,6 +82,12 @@ public class SchedulerThread extends Thread {
         notifyMainThread();
     }
 
+    /**
+     * Saves the execution state.
+     * <p>
+     * This method is used to save the execution state. It calls the {@link SearchStrategy#saveExecutionState()} method
+     * to save the execution state.
+     */
     private void saveExecutionState() {
         searchStrategy.saveExecutionState();
     }
@@ -145,7 +152,10 @@ public class SchedulerThread extends Thread {
         System.out.println("[*** Number of execution iteration : " + RuntimeEnvironment.numOfExecutions + " ***]");
         System.out.println("[*** The SchedulerThread requested to FINISH***]");
         System.out.println("******************************************************************************************");
+        // TODO() : Create FailureEvent and replace the following line with the nextFailureEvent method
+        searchStrategy.nextFailureEvent(RuntimeEnvironment.threadWaitReq);
         searchStrategy.printExecutionTrace();
+        searchStrategy.saveBuggyExecutionTrace();
         System.exit(0);
     }
 
@@ -177,6 +187,10 @@ public class SchedulerThread extends Thread {
      * This method is used to notify the main thread to continue the execution to finish the current execution iteration.
      */
     private void notifyMainThread() {
+        if (RuntimeEnvironment.deadlockHappened){
+            searchStrategy.saveBuggyExecutionTrace();
+            System.exit(0);
+        }
         synchronized (RuntimeEnvironment.locks.get((long) 1)) {
             RuntimeEnvironment.locks.get((long) 1).notify();
         }
@@ -348,20 +362,15 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.objectEnterMonitorReq = null;
         RuntimeEnvironment.threadWaitReq = null;
         if (enterMonitorThread.isPresent() && enterMonitorObject.isPresent()) {
-            RuntimeEnvironment.monitorRequest.put(enterMonitorThread.get(), enterMonitorObject.get());
-            if (monitorsDeadlockDetection()) {
-                System.out.println(
-                        "[Scheduler Thread Message] : There is a deadlock between the threads in using " +
-                                "the monitors"
-                );
-                RuntimeEnvironment.deadlockHappened = true;
-                RuntimeEnvironment.executionFinished = true;
+            Optional<Thread> thread = Optional.ofNullable(
+                    searchStrategy.nextEnterMonitorRequest(
+                            enterMonitorThread.get(), enterMonitorObject.get()
+                    )
+            );
+            if (thread.isPresent()){
+                notifyThread(thread.get());
             } else {
-                System.out.println(
-                        "[Scheduler Thread Message] : There is no deadlock between the threads in using " +
-                                "the monitors"
-                );
-                waitEventHandler();
+                searchStrategy.nextDeadlockEvent(enterMonitorThread.get());
             }
         }
     }
@@ -406,7 +415,7 @@ public class SchedulerThread extends Thread {
                             joinRequestThread.get(), joinResponseThread.get()
                     )
             );
-            notifyThread(thread.get());
+            thread.ifPresent(this::notifyThread);
         }
     }
 
@@ -475,67 +484,5 @@ public class SchedulerThread extends Thread {
         if (searchStrategy.done()) {
             RuntimeEnvironment.allExecutionsFinished = true;
         }
-    }
-
-    /**
-     * This method is used to detect potential deadlocks in the threads that are waiting to enter a monitor.
-     * It computes the transitive closure of the (@monitorRequest \cup @monitorList) relation and checks whether the
-     * relation is irreflexive or not.
-     * If the relation is irreflexive, there is no deadlock and the method returns false.
-     * Otherwise, there is a deadlock and the method returns true.
-     *
-     * @return {@code true} if there is a deadlock, {@code false} otherwise.
-     */
-    public boolean monitorsDeadlockDetection() {
-        System.out.println("[Scheduler Thread Message] : The deadlock detection phase is started");
-        Optional<Map<Thread, Thread>> threadClosure = computeTransitiveClosure();
-        if (threadClosure.isPresent()) {
-            return checkIrreflexivity(threadClosure.get());
-        } else {
-            System.out.println("[Scheduler Thread Message] : There is no need to check the deadlock");
-            return false;
-        }
-    }
-
-    private Optional<Map<Thread, Thread>> computeTransitiveClosure() {
-        if (RuntimeEnvironment.monitorList.isEmpty()) {
-            return Optional.empty();
-        } else {
-            System.out.println("[Scheduler Thread Message] : The deadlock detection phase is started");
-            Map<Thread, Thread> threadClosure = new HashMap<>();
-            // Compute the primitive closure of the (@monitorRequest \cup @monitorList) relation.
-            for (Map.Entry<Thread, Object> entry : RuntimeEnvironment.monitorRequest.entrySet()) {
-                for (Map.Entry<Object, Thread> entry2 : RuntimeEnvironment.monitorList.entrySet()) {
-                    if (entry.getValue().equals(entry2.getKey())) {
-                        threadClosure.put(entry.getKey(), entry2.getValue());
-                    }
-                }
-            }
-            // Compute the complete transitive closure of the (@monitorRequest \cup @monitorList) relation.
-            boolean addedNewPairs = true;
-            while (addedNewPairs) {
-                addedNewPairs = false;
-                for (Map.Entry<Thread, Thread> entry : threadClosure.entrySet()) {
-                    for (Map.Entry<Thread, Thread> entry2 : threadClosure.entrySet()) {
-                        if (entry.getValue().equals(entry2.getKey()) &&
-                                threadClosure.entrySet().stream().noneMatch(e ->
-                                        e.getKey().equals(entry.getKey()) && e.getValue().equals(entry2.getValue()))) {
-                            threadClosure.put(entry.getKey(), entry2.getValue());
-                            addedNewPairs = true;
-                        }
-                    }
-                }
-            }
-            return Optional.of(threadClosure);
-        }
-    }
-
-    private boolean checkIrreflexivity(Map<Thread, Thread> threadClosure) {
-        for (Map.Entry<Thread, Thread> entry : threadClosure.entrySet()) {
-            if (entry.getKey().equals(entry.getValue())) {
-                return true;
-            }
-        }
-        return false;
     }
 }

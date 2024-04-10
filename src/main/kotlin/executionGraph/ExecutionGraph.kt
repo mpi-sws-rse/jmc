@@ -7,70 +7,127 @@ import java.io.File
 import java.io.FileWriter
 import java.io.Serializable
 
-/*
- Here the 'GraphEvents' class property represents the 'G.E' in Trust paper
- The 'eventOrder' represents $\leq_G$ on G.E
- */
+data class ExecutionGraph(
 
-data class ExecutionGraph(var root : RootNode? = null,
-                          var graphEvents : MutableList<Event> = mutableListOf(),
-                          var eventsOrder : MutableList<Event> = mutableListOf(),
-                          var COs : MutableList<CO> = mutableListOf(),
-                          var STs : MutableSet<Pair<Event,Event>> = mutableSetOf(),
-                          var JTs : MutableSet<Pair<Event,Event>> = mutableSetOf(),
-                          var porf : MutableSet<Pair<Event,Event>> = mutableSetOf(),
-                          var sc : MutableSet<Pair<Event,Event>> = mutableSetOf(),
-                          var deleted : MutableList<Event> = mutableListOf(),
-                          var previous : MutableList<Event> = mutableListOf(),
-                          var id : Int = 0
-) : Serializable {
+    /**
+     * @property root The root of the execution graph
+     */
+    var root : RootNode? = null,
 
+    /**
+     * @property graphEvents The list of all events in the graph (Represents G.E in Trust paper)
+     */
+    var graphEvents : MutableList<Event> = mutableListOf(),
+
+    /**
+     * @property eventsOrder The ordered list of added events to trust algorithm (Represents $\leq_G$ in Trust paper)
+     */
+    var eventsOrder : MutableList<Event> = mutableListOf(),
+
+    /**
+     * @property COs The list of CO relations in the graph
+     */
+    var COs : MutableList<CO> = mutableListOf(),
+
+    /**
+     * @property STs The list of start thread (ST) relations in the graph
+     */
+    var STs : MutableSet<Pair<Event,Event>> = mutableSetOf(),
+
+    /**
+     * @property JTs The list of join thread (JT) relations in the graph
+     */
+    var JTs : MutableSet<Pair<Event,Event>> = mutableSetOf(),
+
+    /**
+     * @property porf The relation of program order and reads from (porf) in the graph
+     */
+    var porf : MutableSet<Pair<Event,Event>> = mutableSetOf(),
+
+    /**
+     * @property sc The relation of sequential consistency (sc) in the graph
+     */
+    var sc : MutableSet<Pair<Event,Event>> = mutableSetOf(),
+
+    /**
+     * @property deleted The list of deleted events in the graph (Represents Deleted set in Trust algorithm)
+     */
+    var deleted : MutableList<Event> = mutableListOf(),
+
+    /**
+     * @property previous The list of previous events of a given event in the graph with respect to its relation with
+     * a given write event (Represents previous set in Trust algorithm)
+     */
+    var previous : MutableList<Event> = mutableListOf(),
+
+    /**
+     * @property id The id of the graph
+     */
+    var id : Int = 0
+): Serializable {
+
+    /**
+     * Adds an event to the execution graph if it's not already present.
+     *
+     * This method adds the event to the [graphEvents] list and the [eventsOrder] list if it's not already present.
+     * Additionally, it updates the children of the [root] node if the event is not an initial event.
+     *
+     * @param event The event to be added to the execution graph.
+     */
     fun addEvent(event : Event) {
         if (event !in graphEvents) {
             graphEvents.add(event)
-            if (event !in eventsOrder) {
-                eventsOrder.add(event)
-                if (event.type != EventType.INITIAL) {
-                    val threadEvent = event as ThreadEvent
-                    if (root?.children?.keys?.contains(threadEvent.tid) == true) {
-                        var nextNode = root?.children!![threadEvent.tid]
-                        while (nextNode?.child != null) {
-                            nextNode = nextNode.child
-                        }
-                        nextNode?.child = EventNode(threadEvent)
-                        /*
-                         for debugging
-
-                         println("Reached Inside if: $event")
-                         println("Reached Inside if: ${nextNode?.child}")
-                         */
-                    }else {
-                        root?.children?.put(threadEvent.tid,EventNode(threadEvent))
-                        /*
-                         for debugging
-                         println("Reached Inside else: $event")
-                         */
-                    }
-                }
+            eventsOrder.add(event)
+            if (event.type != EventType.INITIAL) {
+                updateRootChildren(event)
             }
         }
-        /*
-         for debugging
-         println("Reached Here : $event")
-         printEvents()
-         printEventsOrder()
-         */
-
     }
 
+    /**
+     * Updates the children of the [root] node with respect to the given event.
+     *
+     * This method is called by the [addEvent] method to update the children of the [root] node with respect to the
+     * given event.
+     */
+    private fun updateRootChildren(event: Event) {
+        val threadEvent = event as ThreadEvent
+        if (root?.children?.keys?.contains(threadEvent.tid) == true) {
+            var nextNode = root?.children!![threadEvent.tid]
+            while (nextNode?.child != null) {
+                nextNode = nextNode.child
+            }
+            nextNode?.child = EventNode(threadEvent)
+        } else {
+            root?.children?.put(threadEvent.tid, EventNode(threadEvent))
+        }
+    }
+
+    /**
+     * Adds a ST relation between two given events.
+     *
+     * @param firstEvent The first event in the ST relation.
+     * @param secondEvent The second event in the ST relation.
+     */
     fun addST(firstEvent: Event, secondEvent: Event) {
         STs.add(Pair(firstEvent,secondEvent))
     }
 
+    /**
+     * Adds a JT relation between two given events.
+     *
+     * @param firstEvent The first event in the JT relation.
+     * @param secondEvent The second event in the JT relation.
+     */
     fun addJT(firstEvent: Event, secondEvent: Event) {
         JTs.add(Pair(firstEvent,secondEvent))
     }
 
+    /**
+     * Adds the root node to the execution graph.
+     *
+     * @param event The root event to be added to the execution graph.
+     */
     fun addRoot(event: Event) {
         if (root == null) {
             root = RootNode(event)
@@ -79,29 +136,68 @@ data class ExecutionGraph(var root : RootNode? = null,
         }
     }
 
+    /**
+     * Computes the SC relation of the graph.
+     *
+     * This method computes the SC relation of the graph. First, it clears the [sc] set. Then, it adds pairs of the
+     * initialization and each graph event to the [sc] set. Next, it computes the PO, RF, and FR relations of the graph.
+     * After that, it adds the [COs] edges to the [sc] set. Then, it adds the [STs] edges to the [sc] set. Finally, it
+     * adds the [JTs] edges to the [sc] set. Finally, it computes the transitive closure of the [sc] relation.
+     */
     fun computeSc() {
-        // First, computing the sc of graph
+        // First, clearing the sc of the graph
         this.sc = mutableSetOf()
 
         // Adding pairs of initialization event to each graph event
-        for (i in 1..<this.graphEvents.size) {
-            this.porf.add(Pair(this.graphEvents[0],this.graphEvents[i]))
-        }
+        addInitializationPairsToGraph()
 
         // The whole following part computes the po, rf, and fr relations
+        computeRelations()
+
+        //This part adds the co edges
+        addCoEdges()
+
+        // This part adds the st edges
+        addStEdges()
+
+        // This part adds the jt edges
+        addJtEdges()
+
+        // Next, computing the transitive closure of sc relation
+        computeTransitiveClosure()
+    }
+
+    /**
+     * Adds the relation of the initialization event and each graph event to the [sc] set.
+     */
+    private fun addInitializationPairsToGraph() {
+        for (i in 1 until this.graphEvents.size) {
+            this.porf.add(Pair(this.graphEvents[0], this.graphEvents[i]))
+        }
+    }
+
+    /**
+     * Computes the PO, RF, and FR relations of the graph.
+     *
+     * This method computes the relations of the graph. It first iterates over the children of the [root] node and adds
+     * the RF relation if the event is a read event. Also, it adds the FR relation if the read event has an RF relation.
+     * Then, it iterates over the children of each thread and adds the PO relation between the events. Finally, it adds
+     * the RF relation if the event is a read event and adds the FR relation if the read event has an RF relation.
+     */
+    private fun computeRelations() {
         for (i in this.root?.children!!.keys) {
             var node = this.root?.children!![i]!!
             // Adding rf
             if (node.value is ReadEvent) {
                 val read = node.value as ReadEvent
                 if (read.rf != null) {
-                    this.sc.add(Pair(read.rf as Event , read as Event))
+                    this.sc.add(Pair(read.rf as Event, read as Event))
 
                     //Adding fr = rf^{-1} ; co
                     // rf^{-1} = Pair(read,read.rf)
-                    for (j in 0..(this.COs.size-1)) {
+                    for (j in 0 until this.COs.size) {
                         if (read.rf!!.equals(this.COs[j].firstWrite as Event)) {
-                            this.sc.add(Pair(read,this.COs[j].secondWrite as Event))
+                            this.sc.add(Pair(read, this.COs[j].secondWrite as Event))
                         }
                     }
                 }
@@ -110,52 +206,68 @@ data class ExecutionGraph(var root : RootNode? = null,
             // Adding po
             var next = node.child
             while (next != null) {
-                this.sc.add(Pair(node.value ,next.value))
+                this.sc.add(Pair(node.value, next.value))
                 node = next
                 next = node.child
                 // Adding rf
                 if (node.value is ReadEvent) {
                     val read = node.value as ReadEvent
                     if (read.rf != null) {
-                        this.sc.add(Pair(read.rf as Event , read as Event))
+                        this.sc.add(Pair(read.rf as Event, read as Event))
 
                         //Adding fr = rf^{-1} ; co
                         // rf^{-1} = Pair(read,read.rf)
-                        for (j in 0..(this.COs.size-1)) {
+                        for (j in 0 until this.COs.size) {
                             if (read.rf!!.equals(this.COs[j].firstWrite as Event)) {
-                                this.sc.add(Pair(read,this.COs[j].secondWrite as Event))
+                                this.sc.add(Pair(read, this.COs[j].secondWrite as Event))
                             }
                         }
                     }
                 }
             }
         }
+    }
 
-        //This part adds the co edges
-        for (i in 0..(this.COs.size-1)) {
-            this.sc.add(Pair(this.COs[i].firstWrite as Event,this.COs[i].secondWrite as Event))
+    /**
+     * Adds the [COs] edges to the [sc] set.
+     */
+    private fun addCoEdges() {
+        for (i in 0 until this.COs.size) {
+            this.sc.add(Pair(this.COs[i].firstWrite as Event, this.COs[i].secondWrite as Event))
         }
+    }
 
-        // This part adds the st edges
+    /**
+     * Adds the [STs] edges to the [sc] set.
+     */
+    private fun addStEdges() {
         for (i in this.STs.indices) {
-            this.sc.add(Pair(this.STs.elementAt(i).first,this.STs.elementAt(i).second))
+            this.sc.add(Pair(this.STs.elementAt(i).first, this.STs.elementAt(i).second))
         }
+    }
 
-        // This part adds the jt edges
+    /**
+     * Adds the [JTs] edges to the [sc] set.
+     */
+    private fun addJtEdges() {
         for (i in this.JTs.indices) {
-            this.sc.add(Pair(this.JTs.elementAt(i).first,this.JTs.elementAt(i).second))
+            this.sc.add(Pair(this.JTs.elementAt(i).first, this.JTs.elementAt(i).second))
         }
+    }
 
-        // Next, computing the transitive closure of sc relation
+    /**
+     * Computes the transitive closure of the [sc] relation.
+     */
+    private fun computeTransitiveClosure() {
         var addedNewPairs = true
         while (addedNewPairs) {
             addedNewPairs = false
             for (pair in this.sc.toList()) {
-                val (a,b) = pair
+                val (a, b) = pair
                 for (otherPair in this.sc.toList()) {
-                    val (c,d) = otherPair
-                    if (b.equals(c) && !this.sc.contains(Pair(a,d))) {
-                        this.sc.add(Pair(a,d))
+                    val (c, d) = otherPair
+                    if (b.equals(c) && !this.sc.contains(Pair(a, d))) {
+                        this.sc.add(Pair(a, d))
                         addedNewPairs = true
                     }
                 }
@@ -381,6 +493,18 @@ data class ExecutionGraph(var root : RootNode? = null,
                     val exit : ExitMonitorEvent = e as ExitMonitorEvent
                     println(exit)
                 }
+                EventType.DEADLOCK -> {
+                    val deadlock : DeadlockEvent = e as DeadlockEvent
+                    println(deadlock)
+                }
+                EventType.MONITOR_REQUEST -> {
+                    val monitorRequestEvent : MonitorRequestEvent = e as MonitorRequestEvent
+                    println(monitorRequestEvent)
+                }
+                EventType.FAILURE -> {
+                    val failureEvent : FailureEvent = e as FailureEvent
+                    println(failureEvent)
+                }
                 EventType.OTHER -> TODO()
             }
         }
@@ -407,8 +531,8 @@ data class ExecutionGraph(var root : RootNode? = null,
      If you cannot read and understand the following code, please do not blame me :))
           Since, I was so exhausted when I was writing this code
      */
-    fun visualizeGraph(graphID : Int) {
-        val dotFile = File("src/main/resources/Visualized_Graphs/Execution_Graph_${graphID}.dot")
+    fun visualizeGraph(graphID : Int, path : String) {
+        val dotFile = File("${path}Execution_Graph_${graphID}.dot")
         val fileWriter = FileWriter(dotFile)
         val bufferedWriter = BufferedWriter(fileWriter)
         bufferedWriter.write("digraph {")
@@ -443,34 +567,46 @@ data class ExecutionGraph(var root : RootNode? = null,
                         "${read.serial}.R(${param})\"]")
                 bufferedWriter.newLine()
                 bufferedWriter.write("root -> ${read.tid}${read.serial};")
-                if(read.rf != null){
-                    if(read.rf is WriteEvent){
+                if(read.rf != null) {
+                    if(read.rf is WriteEvent) {
                         val readFrom = read.rf as WriteEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
-                    } else if (read.rf is InitializationEvent){
+                    } else if (read.rf is InitializationEvent) {
                         bufferedWriter.newLine()
                         bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
                     }
                 }
-            } else if (root?.children!![i]!!.value.type == EventType.START){
+            } else if (root?.children!![i]!!.value.type == EventType.START) {
                 val create = root?.children!![i]!!.value as StartEvent
                 bufferedWriter.newLine()
                 bufferedWriter.write("${create.tid}${create.serial} [label=\"${create.tid}:${create.serial}.Thread Started\"]")
                 bufferedWriter.newLine()
                 bufferedWriter.write("root -> ${create.tid}${create.serial};")
-            } else if (root?.children!![i]!!.value.type == EventType.JOIN){
+            } else if (root?.children!![i]!!.value.type == EventType.JOIN) {
                 val join = root?.children!![i]!!.value as JoinEvent
                 bufferedWriter.newLine()
                 bufferedWriter.write("${join.tid}${join.serial} [label=\"${join.tid}:${join.serial}.Thread Joined thread-${join.joinTid}\"]")
                 bufferedWriter.newLine()
                 bufferedWriter.write("root -> ${join.tid}${join.serial};")
-            } else if (root?.children!![i]!!.value.type == EventType.FINISH){
+            } else if (root?.children!![i]!!.value.type == EventType.FINISH) {
                 val finish = root?.children!![i]!!.value as FinishEvent
                 bufferedWriter.newLine()
                 bufferedWriter.write("${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}.Thread Finished\"]")
                 bufferedWriter.newLine()
                 bufferedWriter.write("root -> ${finish.tid}${finish.serial};")
+            } else if (root?.children!![i]!!.value.type == EventType.FAILURE) {
+                val failure = root?.children!![i]!!.value as FailureEvent
+                bufferedWriter.newLine()
+                bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                bufferedWriter.newLine()
+                bufferedWriter.write("root -> ${failure.tid}${failure.serial};")
+            } else if (root?.children!![i]!!.value.type == EventType.DEADLOCK) {
+                val deadlock = root?.children!![i]!!.value as DeadlockEvent
+                bufferedWriter.newLine()
+                bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                bufferedWriter.newLine()
+                bufferedWriter.write("root -> ${deadlock.tid}${deadlock.serial};")
             }
 
         }
@@ -545,6 +681,22 @@ data class ExecutionGraph(var root : RootNode? = null,
                         bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
                         tid = finish.tid
                         serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE){
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK){
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
                     }
                     //readParent = nextChild.value as ReadEvent
                     nextChild = nextChild.child
@@ -617,6 +769,22 @@ data class ExecutionGraph(var root : RootNode? = null,
                         bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
                         tid = finish.tid
                         serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE){
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK){
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -696,6 +864,22 @@ data class ExecutionGraph(var root : RootNode? = null,
                         bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
                         tid = finish.tid
                         serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE) {
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -777,6 +961,22 @@ data class ExecutionGraph(var root : RootNode? = null,
                         bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
                         tid = finish.tid
                         serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE) {
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -831,7 +1031,7 @@ data class ExecutionGraph(var root : RootNode? = null,
         bufferedWriter.write("}")
         bufferedWriter.close()
 
-        dot2png("src/main/resources/Visualized_Graphs/","Execution_Graph_${graphID}")
+        dot2png(path,"Execution_Graph_${graphID}")
     }
 
     /*

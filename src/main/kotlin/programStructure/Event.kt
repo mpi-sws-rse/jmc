@@ -3,7 +3,7 @@ package programStructure
 import java.io.Serializable
 
 /**
- * Event interface
+ * Event interface that represents an event in the program
  */
 interface Event: Serializable {
 
@@ -14,6 +14,8 @@ interface Event: Serializable {
 
     /**
      * Returns a deep copy of this object
+     *
+     * @return a deep copy of this object
      */
     fun deepCopy() : Event
 }

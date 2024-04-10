@@ -79,6 +79,7 @@ public class ByteCodeModifier {
      * with the current thread. <br>
      * These modifications allow the RuntimeEnvironment to manage and schedule threads during the execution of the
      * user's program.
+     * </p>
      */
     public void addRuntimeEnvironment() {
         byte[] byteCode = allByteCode.get(mainClassName);
@@ -187,6 +188,7 @@ public class ByteCodeModifier {
      * in a specific method. It then returns the index of the next available local variable frame in the method's local
      * variable table. This is useful when modifying the bytecode of a method to add new local variables, ensuring that
      * the new variables do not overwrite existing ones.
+     * </p>
      *
      * @param byteCode The bytecode of the compiled class.
      * @param methodName The name of the method in which to find the next available local variable index.
@@ -222,13 +224,13 @@ public class ByteCodeModifier {
      * This method iteratively analyzes the bytecode of the user's program, starting with the main class, and identifies
      * points where new threads are created. When such a point is found, it modifies the bytecode to include a call to
      * the {@link org.example.runtime.RuntimeEnvironment#addThread(Thread)} method immediately after the thread creation.
-     * This allows the {@link org.example.runtime.RuntimeEnvironment} to keep track of all threads created during the
+     * This allows the {@link org.example.runtime.SchedulerThread} to keep track of all threads created during the
      * execution of the user's program. The method uses an iterative analysis approach, starting with the main class and
      * then examining all classes that have a method which is called by one of the methods of the previously analyzed
      * class. This ensures that all thread creation points in the user's program are covered.
-     * <p>
-     * The modifications made by this method enable the {@link org.example.runtime.RuntimeEnvironment} to manage and
+     * The modifications made by this method enable the {@link org.example.runtime.SchedulerThread} to manage and
      * schedule threads during the execution of the user's program.
+     * </p>
      */
     public void modifyThreadCreation() {
         threadClassCandidate.add(mainClassName);
@@ -244,53 +246,25 @@ public class ByteCodeModifier {
                     MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
                     methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
                         private boolean isNew = false;
-                        private boolean isDup = false;
-                        private boolean isInit = false;
-
-                        @Override
-                        public void visitInsn(int opcode) {
-                            if (opcode == Opcodes.DUP && isNew) {
-                                isDup = true;
-                            } else if (isDup) {
-                                // Do nothing
-                            } else {
-                                resetFlags();
-                            }
-                            super.visitInsn(opcode);
-                        }
 
                         @Override
                         public void visitTypeInsn(int opcode, String type) {
                             if (opcode == Opcodes.NEW && isCastableToThread(type)) {
                                 resetFlags();
                                 isNew = true;
+                                super.visitTypeInsn(opcode, type);
+                                mv.visitInsn(Opcodes.DUP);
                             } else {
                                 resetFlags();
+                                super.visitTypeInsn(opcode, type);
                             }
-                            super.visitTypeInsn(opcode, type);
                         }
 
                         @Override
                         public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
                                                     boolean isInterface) {
-                            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && isDup) {
-                                isInit = true;
-                            } else {
-                                resetFlags();
-                            }
-                            String ownerClassName = owner.replace("/", ".");
-                            if (!ownerClassName.equals(newClassName) && !threadClassCandidate.contains(ownerClassName) &&
-                                    allByteCode.containsKey(ownerClassName)) {
-                                threadClassCandidate.add(ownerClassName);
-                            }
-                            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
-                        }
-
-                        @Override
-                        public void visitVarInsn(int opcode, int var) {
-                            if (opcode == Opcodes.ASTORE && isInit) {
-                                super.visitVarInsn(opcode, var);
-                                mv.visitVarInsn(Opcodes.ALOAD, var);
+                            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && isNew) {
+                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "org/example/runtime/RuntimeEnvironment",
@@ -298,18 +272,19 @@ public class ByteCodeModifier {
                                         "(Ljava/lang/Thread;)V",
                                         false
                                 );
-                                resetFlags();
-                            } else if (isDup) {
-                                super.visitVarInsn(opcode, var);
                             } else {
                                 resetFlags();
-                                super.visitVarInsn(opcode, var);
+                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
                             }
-
+                            String ownerClassName = owner.replace("/", ".");
+                            if (!ownerClassName.equals(newClassName) && !threadClassCandidate.contains(ownerClassName) &&
+                                    allByteCode.containsKey(ownerClassName)) {
+                                threadClassCandidate.add(ownerClassName);
+                            }
                         }
 
                         private void resetFlags() {
-                            isNew = isDup = isInit = false;
+                            isNew = false;
                         }
                     };
                     return methodVisitor;
@@ -328,15 +303,16 @@ public class ByteCodeModifier {
      * This method iteratively analyzes the bytecode of the user's program, starting with the main class, and identifies
      * points where threads are joined. When such a point is found, it modifies the bytecode to include a call to the
      * {@link org.example.runtime.RuntimeEnvironment#threadJoin(Thread, Thread)} method immediately before the thread
-     * join operation. This allows the {@link org.example.runtime.RuntimeEnvironment} to keep track of all threads being
+     * join operation. This allows the {@link org.example.runtime.SchedulerThread} to keep track of all threads being
      * joined during the execution of the user's program.
      * <br>
      * The method uses an iterative analysis approach, starting with the main class and then examining all classes that
      * have a method which is called by one of the methods of the previously analyzed class. This ensures that all thread
      * join points in the user's program are covered.
      * <br>
-     * The modifications made by this method enable the {@link org.example.runtime.RuntimeEnvironment} to manage and
+     * The modifications made by this method enable the {@link org.example.runtime.SchedulerThread} to manage and
      * schedule threads during the execution of the user's program.
+     * </p>
      */
     public void modifyThreadJoin() {
         threadJoinCandidate.add(mainClassName);
@@ -351,14 +327,13 @@ public class ByteCodeModifier {
                                                  String[] exceptions) {
                     MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
                     methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
-                        private boolean isALOAD = false;
-                        private int varThread = -1;
 
                         @Override
                         public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
                                                     boolean isInterface) {
-                            if (opcode == Opcodes.INVOKEVIRTUAL && name.equals("join") &&
-                                    isALOAD && isCastableToThread(owner)) {
+                            if (opcode == Opcodes.INVOKEVIRTUAL && name.equals("join") && descriptor.equals("()V") &&
+                                     isCastableToThread(owner)) {
+                                mv.visitInsn(Opcodes.DUP);
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "java/lang/Thread",
@@ -366,7 +341,6 @@ public class ByteCodeModifier {
                                         "()Ljava/lang/Thread;",
                                         false
                                 );
-                                mv.visitVarInsn(Opcodes.ALOAD, varThread);
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "org/example/runtime/RuntimeEnvironment",
@@ -374,7 +348,6 @@ public class ByteCodeModifier {
                                         "(Ljava/lang/Thread;Ljava/lang/Thread;)V",
                                         false
                                 );
-                                resetFlags();
                                 super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
@@ -392,31 +365,13 @@ public class ByteCodeModifier {
                                 );
                             } else {
                                 String ownerClassName = owner.replace("/", ".");
-                                if (!ownerClassName.equals(newClassName) && !threadJoinCandidate.contains(ownerClassName) &&
+                                if (!ownerClassName.equals(newClassName) &&
+                                        !threadJoinCandidate.contains(ownerClassName) &&
                                         allByteCode.containsKey(ownerClassName)) {
                                     threadJoinCandidate.add(ownerClassName);
                                 }
-                                resetFlags();
                                 super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
                             }
-                        }
-
-                        @Override
-                        public void visitVarInsn(int opcode, int var) {
-                            if (opcode == Opcodes.ALOAD) {
-                                resetFlags();
-                                isALOAD = true;
-                                varThread = var;
-                                super.visitVarInsn(opcode, var);
-                            } else {
-                                resetFlags();
-                                super.visitVarInsn(opcode, var);
-                            }
-                        }
-
-                        private void resetFlags() {
-                            isALOAD = false;
-                            varThread = -1;
                         }
                     };
                     return methodVisitor;
@@ -431,19 +386,20 @@ public class ByteCodeModifier {
 
     /**
      * Identifies and modifies points in the user's program where threads are started.
-     *<p>
+     * <p>
      * This method iteratively analyzes the bytecode of the user's program, starting with the main class, and identifies
      * points where threads are started. When such a point is found, it modifies the bytecode to include a call to
      * the {@link org.example.runtime.RuntimeEnvironment#threadStart(Thread, Thread)} method immediately before the thread
-     * start operation. This allows the {@link org.example.runtime.RuntimeEnvironment} to keep track of all threads being
+     * start operation. This allows the {@link org.example.runtime.SchedulerThread} to keep track of all threads being
      * started during the execution of the user's program.
      * <br>
      * The method uses an iterative analysis approach, starting with the main class and then examining all classes that
      * have a method which is called by one of the methods of the previously analyzed class. This ensures that all thread
      * start points in the user's program are covered.
      * <br>
-     * The modifications made by this method enable the {@link org.example.runtime.RuntimeEnvironment} to manage and
+     * The modifications made by this method enable the {@link org.example.runtime.SchedulerThread} to manage and
      * schedule threads during the execution of the user's program.
+     * </p>
      */
     public void modifyThreadStart() {
         threadStartCandidate.add(mainClassName);
@@ -458,12 +414,11 @@ public class ByteCodeModifier {
                                                  String[] exceptions) {
                     MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
                     methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
-                        private boolean isALOAD = false;
 
                         @Override
                         public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
                                                     boolean isInterface) {
-                            if (opcode == Opcodes.INVOKEVIRTUAL && name.equals("start") && isALOAD &&
+                            if (opcode == Opcodes.INVOKEVIRTUAL && name.equals("start") && descriptor.equals("()V") &&
                                     isCastableToThread(owner)) {
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
@@ -479,32 +434,15 @@ public class ByteCodeModifier {
                                         "(Ljava/lang/Thread;Ljava/lang/Thread;)V",
                                         false
                                 );
-                                resetFlags();
                             } else {
                                 String ownerClassName = owner.replace("/", ".");
-                                if (!ownerClassName.equals(newClassName) && !threadStartCandidate.contains(ownerClassName) &&
+                                if (!ownerClassName.equals(newClassName) &&
+                                        !threadStartCandidate.contains(ownerClassName) &&
                                         allByteCode.containsKey(ownerClassName)) {
                                     threadStartCandidate.add(ownerClassName);
                                 }
-                                resetFlags();
                                 super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
                             }
-                        }
-
-                        @Override
-                        public void visitVarInsn(int opcode, int var) {
-                            if (opcode == Opcodes.ALOAD) {
-                                resetFlags();
-                                isALOAD = true;
-                                super.visitVarInsn(opcode, var);
-                            } else {
-                                resetFlags();
-                                super.visitVarInsn(opcode, var);
-                            }
-                        }
-
-                        private void resetFlags() {
-                            isALOAD = false;
                         }
                     };
                     return methodVisitor;
@@ -538,6 +476,22 @@ public class ByteCodeModifier {
      * <br>
      * The modifications made by this method enable the {@link org.example.runtime.RuntimeEnvironment} to track all
      * field read and write operations during the execution of the user's program.
+     * <br>
+     * In the case of a field write operation, if the field is of type long or double, the method duplicates the top
+     * operand stack and puts the duplicated value before the second operand stack value. By using {@code DUP2_X1}, the
+     * operand stack from : ..., value2, value1 -> ..., value1, value2, value1 is achieved. After wrapping the primitive
+     * value into its corresponding wrapper class, the operand stack is as follows: ..., value1, value2, wrapperValue1.
+     * The method then swaps the top two operand stack using {@code SWAP} to get the operand stack as follows:
+     * ..., value1, wrapperValue1, value2. The method then duplicates the top operand stack value using {@code DUP_X1}
+     * to get the operand stack as follows: ..., value1, value2, wrapperValue1, value2. The method then swaps the top two
+     * operand stack values using {@code SWAP} to get the operand stack as follows: ..., value1, value2, value2,
+     * wrapperValue1. The method then invokes the {@link org.example.runtime.RuntimeEnvironment#writeOperation(Object,
+     * Object, Thread, String, String, String)} method. Now the operand stack is as follows: ..., value1, value2. The
+     * method then duplicates the top operand stack value using {@code DUP_X2} to get the operand stack as follows: ...,
+     * value2, value1, value2. The method then pops the top operand stack value using {@code POP} to get the operand stack
+     * as follows: ..., value2, value1. Now the operand stack is in consistent state. This procedure is necessary to
+     * handle the long and double types as they occupy two frames in the operand stack.
+     * </p>
      */
     public void modifyReadWriteOperation() {
         for (String newClass : allByteCode.keySet()) {
@@ -727,7 +681,7 @@ public class ByteCodeModifier {
 
     /**
      * Checks if the given type is a primitive type.
-     * <p>
+     *
      * @param type The type to check.
      * @return {@code true} if the type is a primitive type, {@code false} otherwise.
      */
@@ -744,13 +698,14 @@ public class ByteCodeModifier {
      * {@link org.example.runtime.RuntimeEnvironment#waitRequest(Thread)} method at the start of the `run` method and the
      * {@link org.example.runtime.RuntimeEnvironment#finishThreadRequest(Thread)} method at the end of the `run` method.
      * <br>
-     * The modifications made by this method enable the {@link org.example.runtime.RuntimeEnvironment} to manage and
+     * The modifications made by this method enable the {@link org.example.runtime.SchedulerThread} to manage and
      * schedule threads during the execution of the user's program, specifically handling the lifecycle of threads that
      * have a custom `run` method.
-     * <p>
+     * <br>
      * The method starts by checking all classes in the {@link #allByteCode} map to see if they are castable to `Thread`.
      * If a class is castable to `Thread`, it is assumed that it may override the `run` method, and its bytecode is
      * modified accordingly.
+     * </p>
      */
     public void modifyThreadRun() {
         for (String className : allByteCode.keySet()) {
@@ -787,8 +742,7 @@ public class ByteCodeModifier {
 
                                 @Override
                                 public void visitInsn(int opcode) {
-                                    if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN) ||
-                                            opcode == Opcodes.ATHROW) {
+                                    if ((opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN)) {
                                         mv.visitMethodInsn(
                                                 Opcodes.INVOKESTATIC,
                                                 "java/lang/Thread",
@@ -825,7 +779,7 @@ public class ByteCodeModifier {
      * This method iteratively analyzes the bytecode of the user's program, identifying points where assert statements
      * are used. When such a point is found, it modifies the bytecode to replace the call to the {@link AssertionError}
      * constructor with a call to the {@link org.example.runtime.RuntimeEnvironment#assertOperation(String)} method.
-     * This allows the {@link org.example.runtime.RuntimeEnvironment} to handle assertion failures during the execution
+     * This allows the {@link org.example.runtime.SchedulerThread} to handle assertion failures during the execution
      * of the user's program.
      * <br>
      * Additionally, the method replaces the throw instruction that follows the {@link AssertionError} constructor call
@@ -835,8 +789,9 @@ public class ByteCodeModifier {
      * The method analyzes all methods of all classes in the {@link #allByteCode} map and makes the necessary
      * modifications to the corresponding methods.
      * <br>
-     * The modifications made by this method enable the {@link org.example.runtime.RuntimeEnvironment} to manage and
+     * The modifications made by this method enable the {@link org.example.runtime.SchedulerThread} to manage and
      * handle assertion failures during the execution of the user's program.
+     * </p>
      */
     public void modifyAssert() {
         for (String className : allByteCode.keySet()) {
@@ -855,7 +810,7 @@ public class ByteCodeModifier {
                         public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
                                                     boolean isInterface) {
                             if (opcode == Opcodes.INVOKESPECIAL && owner.equals("java/lang/AssertionError") &&
-                                    name.equals("<init>")) {
+                                    name.equals("<init>") ) {
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "org/example/runtime/RuntimeEnvironment",
@@ -932,9 +887,10 @@ public class ByteCodeModifier {
      * The method analyzes all methods of all classes in the {@link #allByteCode} map and adds the instructions to the
      * corresponding methods.
      * <br>
-     * The modifications made by this method enable the {@link org.example.runtime.RuntimeEnvironment} to track all
+     * The modifications made by this method enable the {@link org.example.runtime.SchedulerThread} to track all
      * monitor lock acquisitions and releases during the execution of the user's program, providing a mechanism for
      * managing and scheduling threads based on their lock states.
+     * </p>
      */
     public void modifyMonitorInstructions() {
         for (Map.Entry<String, byte[]> entry : allByteCode.entrySet()) {
@@ -970,8 +926,10 @@ public class ByteCodeModifier {
 
                         @Override
                         public void visitInsn(int opcode) {
-                            if (opcode == Opcodes.MONITORENTER && isASTORE) {
-                                mv.visitVarInsn(Opcodes.ALOAD, var);
+                            if (opcode == Opcodes.MONITORENTER) {
+                                //mv.visitVarInsn(Opcodes.ALOAD, var);
+                                mv.visitInsn(Opcodes.DUP);
+                                mv.visitInsn(Opcodes.DUP);
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "java/lang/Thread",
@@ -989,8 +947,10 @@ public class ByteCodeModifier {
                                 super.visitInsn(opcode);
                                 isASTORE = false;
                                 foundMonitorEnter = true;
-                            } else if (opcode == Opcodes.MONITOREXIT && isALOAD) {
-                                mv.visitVarInsn(Opcodes.ALOAD, var);
+                            } else if (opcode == Opcodes.MONITOREXIT) {
+                                //mv.visitVarInsn(Opcodes.ALOAD, var);
+                                mv.visitInsn(Opcodes.DUP);
+                                mv.visitInsn(Opcodes.DUP);
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "java/lang/Thread",
@@ -1019,7 +979,7 @@ public class ByteCodeModifier {
                             super.visitLineNumber(line, start);
                             if (foundMonitorEnter) {
                                 foundMonitorEnter = false;
-                                mv.visitVarInsn(Opcodes.ALOAD, var);
+                                //mv.visitVarInsn(Opcodes.ALOAD, var);
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "java/lang/Thread",
@@ -1034,9 +994,23 @@ public class ByteCodeModifier {
                                         "(Ljava/lang/Object;Ljava/lang/Thread;)V",
                                         false
                                 );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "java/lang/Thread",
+                                        "currentThread",
+                                        "()Ljava/lang/Thread;",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/example/runtime/RuntimeEnvironment",
+                                        "waitRequest",
+                                        "(Ljava/lang/Thread;)V",
+                                        false
+                                );
                             } else if (foundMonitorExit) {
                                 foundMonitorExit = false;
-                                mv.visitVarInsn(Opcodes.ALOAD, oldvar);
+                                //mv.visitVarInsn(Opcodes.ALOAD, oldvar);
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "java/lang/Thread",
@@ -1049,6 +1023,20 @@ public class ByteCodeModifier {
                                         "org/example/runtime/RuntimeEnvironment",
                                         "releasedLock",
                                         "(Ljava/lang/Object;Ljava/lang/Thread;)V",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "java/lang/Thread",
+                                        "currentThread",
+                                        "()Ljava/lang/Thread;",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/example/runtime/RuntimeEnvironment",
+                                        "waitRequest",
+                                        "(Ljava/lang/Thread;)V",
                                         false
                                 );
                             }

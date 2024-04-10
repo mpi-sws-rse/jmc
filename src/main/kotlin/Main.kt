@@ -2,7 +2,7 @@ import dpor.Trust
 import parser.Tokenizer
 
 /*
- * TODO(): Write an intro for the reader
+ * TODO(): This file is deprecated. It will be removed in the future.
  */
 
 fun main() {
@@ -40,7 +40,7 @@ fun main() {
      */
 
     // Then, it will give these events to the trust algorithm
-    val trust = Trust()
+    val trust = Trust("src/main/resources/Visualized_Graphs/")
     trust.setThreads(tknzr.getThreadsInfo())
 
 

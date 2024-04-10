@@ -8,7 +8,13 @@ import java.io.Serializable
  */
 interface Node: Serializable {
 
+    /**
+     * The event that the node represents
+     */
     var value: Event
 
+    /**
+     * Creates a deep copy of the node
+     */
     fun deepCopy(): Node
 }
