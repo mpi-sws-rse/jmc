@@ -432,5 +432,5 @@ Upon executing this test case, JMC will replay the buggy trace and present the i
 as depicted earlier. You can utilize this trace to debug your program and pinpoint the origin of the deadlock.
 
 ## Contact Us
-If you have any questions or need further clarification, please do not hesitate to contact us at `mkhoshechin@mpi-sws.org`
+If you have any questions or find any issues with JMC, please do not hesitate to contact us at `mkhoshechin@mpi-sws.org`
 or `rupak@mpi-sws.org`.
