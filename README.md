@@ -16,12 +16,6 @@ any desired location within your program to verify the consistency of these shar
 will produce various potential execution traces of the program based on the selected search strategy, aiming to identify
 a trace that violates the assertions. Upon identifying such a trace, JMC will store it in a file and notify you accordingly.
 
-### Deadlock detection
-JMC keeps track of the monitors that are acquired and released by each thread. If there is a potential deadlock in an
-execution trace of your program, where a thread is waiting for a monitor that is held by another thread, and the other
-thread is waiting for a monitor that is held by the first thread, JMC will detect this deadlock and return the trace
-as a file and notify you about it.
-
 ### Identifying Deadlocks
 JMC keeps track of the acquisition and release of monitors by each thread. In the event of a potential deadlock within an
 execution trace of your program, where one thread is waiting for a monitor held by another thread, and the other thread
