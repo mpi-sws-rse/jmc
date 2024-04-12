@@ -35,18 +35,18 @@ public class SchedulerThread extends Thread {
      * Initializes the {@link SearchStrategy} based on the selected strategy type.
      * <p>
      * The following method is used to initialize the {@link SearchStrategy} based on the selected strategy type.
-     * If the selected strategy type is {@link StrategyType#RANDOMSTRAREGY}, the method initializes the {@link RandomStrategy}.
+     * If the selected strategy type is {@link StrategyType#RANDOM}, the method initializes the {@link RandomStrategy}.
      * Otherwise, the method throws an {@link IllegalArgumentException}.
      *
      * @throws IllegalArgumentException if the selected strategy type is not supported.
      */
     private void createSearchStrategy() {
         StrategyType strategyType = RuntimeEnvironment.strategyType;
-        if (strategyType == StrategyType.RANDOMSTRAREGY) {
+        if (strategyType == StrategyType.RANDOM) {
             searchStrategy = new RandomStrategy();
-        } else if (strategyType == StrategyType.TRUSTSTRATEGY) {
+        } else if (strategyType == StrategyType.TRUST) {
             searchStrategy = new TrustStrategy();
-        } else if (strategyType == StrategyType.REPLAYSTRATEGY){
+        } else if (strategyType == StrategyType.REPLAY){
             searchStrategy = new ReplayStrategy();
         } else {
             // TODO() : Fix it
@@ -161,8 +161,9 @@ public class SchedulerThread extends Thread {
 
     /**
      * Waits for the state of the only other running thread to change to the WAIT state.
-     * <p>
-     * This method is used to wait until the state of the only other running thread changes to the WAIT state.
+     *
+     * <p>This method is used to wait until the state of the only other running thread
+     * changes to the WAIT state.</p>
      */
     private void waitForThreadStateChange() {
         synchronized (RuntimeEnvironment.locks.get(getThreadId(RuntimeEnvironment.threadWaitReq))) {
@@ -172,8 +173,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Prints the end message.
-     * <p>
-     * This method is used to print the end message.
+     *
+     * <p>This method is used to print the end message.</p>
      */
     private void printEndMessage() {
         System.out.println("******************************************************************************************");
@@ -211,8 +212,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Notifies the specified thread to continue its execution.
-     * <p>
-     * This method is used to notify the specified thread to continue its execution. If the thread is null, it does
+     *
+     * <p>This method is used to notify the specified thread to continue its execution. If the thread is null, it does
      * nothing.
      * <br>
      * The method retrieves the thread's ID, prints a message indicating that the thread is selected to run, and then
@@ -235,8 +236,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Retrieves the ID of the specified thread.
-     * <p>
-     * This method is used to retrieve the ID of the specified thread.
+     *
+     * <p>This method is used to retrieve the ID of the specified thread.
      *
      * @param thread the thread whose ID is to be retrieved.
      * @return the ID of the thread.
@@ -247,8 +248,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the event based on the type of the event.
-     * <p>
-     * This method is used to handle the event based on the type of the event.
+     *
+     * <p>This method is used to handle the event based on the type of the event.
      * It calls the appropriate handler method
      * based on the event type.
      */
@@ -285,8 +286,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Determines the type of the event.
-     * <p>
-     * This method is used to determine the type of the event. It checks the state of the runtime environment and returns
+     *
+     * <p>This method is used to determine the type of the event. It checks the state of the runtime environment and returns
      * the type of the event that should be handled next.
      *
      * @return the type of the event that should be handled next.
@@ -313,8 +314,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the start event.
-     * <p>
-     * This method is used to handle the start event. It retrieves the thread that requested to start, sets the thread
+     *
+     * <p>This method is used to handle the start event. It retrieves the thread that requested to start, sets the thread
      * wait request to null, prints a message indicating that the thread is selected to run for loading in the runtime
      * environment, and then starts the thread.
      */
@@ -332,8 +333,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Starts the specified thread.
-     * <p>
-     * This method is used to start the specified thread. It sets the thread start request to null, prints a message
+     *
+     * <p>This method is used to start the specified thread. It sets the thread start request to null, prints a message
      * indicating that the thread is selected to run for loading in the runtime environment, and then starts the thread.
      *
      * @param thread the thread to be started.
@@ -349,8 +350,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the enter monitor request of a thread.
-     * <p>
-     * This method is used to handle the enter monitor request of a thread. It adds the thread and the monitor into the
+     *
+     * <p>This method is used to handle the enter monitor request of a thread. It adds the thread and the monitor into the
      * monitorRequest and checks whether there is a deadlock between the threads in using the monitors or not. If there
      * is a deadlock, the execution is set to be finished. Otherwise, it picks the next thread to run.
      */
@@ -377,8 +378,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the exit monitor request of a thread.
-     * <p>
-     * This method is used to handle the exit monitor request of a thread. It retrieves the thread and the monitor that
+     *
+     * <p>This method is used to handle the exit monitor request of a thread. It retrieves the thread and the monitor that
      * requested to exit, handles the exit monitor event, sets the thread exit monitor request and the object exit monitor
      * request to null, sets the thread wait request to null, and then picks the next thread to run.
      */
@@ -397,8 +398,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the join request of a thread.
-     * <p>
-     * This method is used to handle the join request of a thread. It retrieves the thread that requested to join and the
+     *
+     * <p>This method is used to handle the join request of a thread. It retrieves the thread that requested to join and the
      * thread that is joined, handles the join request, sets the thread join request and the thread join response to null,
      * sets the thread wait request to null, and then picks the next thread to run.
      */
@@ -421,8 +422,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the read request of a thread.
-     * <p>
-     * This method is used to handle the read request event of a thread. It retrieves the read event that requested by
+     *
+     * <p>This method is used to handle the read request event of a thread. It retrieves the read event that requested by
      * the thread, handles the read request, sets the read event request to null, sets the thread wait request to null,
      * and then notifies the thread.
      */
@@ -440,8 +441,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the write request of a thread.
-     * <p>
-     * This method is used to handle the write request of a thread. It retrieves the write event that requested by
+     *
+     * <p>This method is used to handle the write request of a thread. It retrieves the write event that requested by
      * the thread, handles the write request, sets the write event request to null, sets the thread wait request to null,
      * and then notifies the thread.
      */
@@ -459,8 +460,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the finish request of a thread.
-     * <p>
-     * This method is used to handle the finish request of a thread. It retrieves the thread that requested to finish,
+     *
+     * <p>This method is used to handle the finish request of a thread. It retrieves the thread that requested to finish,
      * handles the finish request, sets the thread wait request to null, and then picks the next thread to run.
      */
     public void finishRequestHandler() {
@@ -476,8 +477,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Checks whether the last execution is finished or not.
-     * <p>
-     * This method is used to check whether the last execution is finished or not. If the search strategy is done, it
+     *
+     * <p>This method is used to check whether the last execution is finished or not. If the search strategy is done, it
      * sets the {@link RuntimeEnvironment#allExecutionsFinished} flag to true.
      */
     public void wasLastExecution() {

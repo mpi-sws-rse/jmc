@@ -1,6 +1,7 @@
 package org.mpisws.checker;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.*;
 
 
@@ -27,7 +28,8 @@ private ModelChecker checker;
     @BeforeEach
     void setUp() {
         System.out.println("setUp");
-        CheckerConfiguration config = new CheckerConfiguration.ConfigurationBuilder().withVerbose(true).build();
+        CheckerConfiguration config =
+                new CheckerConfiguration.ConfigurationBuilder().withVerbose(true).build();
         checker = new ModelChecker(config);
     }
 
@@ -55,7 +57,7 @@ private ModelChecker checker;
                     "src/test/java/org/mpisws/concurrent/programs/wrong/counter/"
         );
         System.out.println("BuggyCounter RandomStrategy Started");
-        checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
+        checker.configuration.strategyType = StrategyType.RANDOM;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "BuggyCounter RandomStrategy Finished");
@@ -70,7 +72,7 @@ private ModelChecker checker;
                 "src/test/java/org/mpisws/concurrent/programs/wrong/counter/"
         );
         System.out.println("BuggyCounter ReplayStrategy Started");
-        checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
+        checker.configuration.strategyType = StrategyType.REPLAY;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "BuggyCounter ReplayStrategy Finished");
@@ -90,7 +92,7 @@ private ModelChecker checker;
                         "src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/"
         );
         System.out.println("InconsistentCounter - RandomStrategy");
-        checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
+        checker.configuration.strategyType = StrategyType.RANDOM;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "call works");
@@ -106,7 +108,7 @@ private ModelChecker checker;
                 "src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/"
         );
         System.out.println("InconsistentCounter TrustStrategy Started");
-        checker.configuration.strategyType = StrategyType.TRUSTSTRATEGY;
+        checker.configuration.strategyType = StrategyType.TRUST;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
@@ -123,7 +125,7 @@ private ModelChecker checker;
                 "src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/"
         );
         System.out.println("InconsistentCounter ReplayStrategy Started");
-        checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
+        checker.configuration.strategyType = StrategyType.REPLAY;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "InconsistentCounter ReplayStrategy Finished");
@@ -142,7 +144,7 @@ private ModelChecker checker;
                         "main",
                         "src/test/java/org/mpisws/concurrent/programs/complex/counter/"
         );
-        checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
+        checker.configuration.strategyType = StrategyType.RANDOM;
         System.out.println("ComplexCounter RandomStrategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -162,7 +164,7 @@ private ModelChecker checker;
                     "main",
                     "src/test/java/org/mpisws/concurrent/programs/correct/counter/"
         );
-        checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
+        checker.configuration.strategyType = StrategyType.RANDOM;
         System.out.println("CorrectCounter RandomStrategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -183,7 +185,7 @@ private ModelChecker checker;
                     "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
         );
         System.out.println("SimpleCounter RandomStrategy Started");
-        checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
+        checker.configuration.strategyType = StrategyType.RANDOM;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "SimpleCounter RandomStrategy Finished");
@@ -198,7 +200,7 @@ private ModelChecker checker;
                 "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
         );
         System.out.println("SimpleCounter TrustStrategy Started");
-        checker.configuration.strategyType = StrategyType.TRUSTSTRATEGY;
+        checker.configuration.strategyType = StrategyType.TRUST;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
@@ -214,7 +216,7 @@ private ModelChecker checker;
                 "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
         );
         System.out.println("SimpleCounter ReplayStrategy Started");
-        checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
+        checker.configuration.strategyType = StrategyType.REPLAY;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "SimpleCounter ReplayStrategy Finished");
@@ -234,7 +236,7 @@ private ModelChecker checker;
                 "src/test/java/org/mpisws/concurrent/programs/dining/"
         );
         System.out.println("DiningPhilosophers RandomStrategy Started");
-        checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
+        checker.configuration.strategyType = StrategyType.RANDOM;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "DiningPhilosophers RandomStrategy Finished");
@@ -249,7 +251,7 @@ private ModelChecker checker;
                 "src/test/java/org/mpisws/concurrent/programs/dining/"
         );
         System.out.println("DiningPhilosophers ReplayStrategy Started");
-        checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
+        checker.configuration.strategyType = StrategyType.REPLAY;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "DiningPhilosophers ReplayStrategy Finished");

@@ -1,10 +1,14 @@
 package org.mpisws.checker;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 import org.mpisws.runtime.RuntimeEnvironment;
 import programStructure.Event;
 import programStructure.ReadEvent;
 import programStructure.WriteEvent;
-import java.util.*;
 
 /**
  * The SearchStrategy interface defines the methods that any search strategy must implement.

@@ -8,16 +8,15 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * The ByteMapLoader class extends the ClassLoader class and is responsible for loading Java classes from bytecode.
- * It maintains a map of class names to their bytecode, which is used to load classes.
+ * The ByteMapLoader class extends the ClassLoader class and is responsible for loading
+ * Java classes from bytecode. It maintains a map of class names to their bytecode, which is used to load classes.
  * The class provides functionality to load classes from a package, find a class by its name, and load a class by its name.
  * The class uses the ClassLoader API to load classes and the Files API to read bytecode from .class files.
  * The class requires a map of class names to their bytecode upon construction.
  * It also requires the path to the package and the name of the package when loading classes from a package.
  * The class throws a ClassNotFoundException if a class cannot be found or loaded.
  */
-public class ByteMapLoader extends ClassLoader{
-
+public class ByteMapLoader extends ClassLoader {
     /**
      * @property {@link #classes} - A map of class names to their bytecode
      */

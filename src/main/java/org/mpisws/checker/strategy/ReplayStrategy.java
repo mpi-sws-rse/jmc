@@ -1,10 +1,15 @@
 package org.mpisws.checker.strategy;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.List;
+
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.runtime.RuntimeEnvironment;
 import programStructure.*;
-import java.io.*;
-import java.util.List;
+
 
 /**
  * The ReplayStrategy class implements the {@link SearchStrategy} interface and is responsible for managing the execution
@@ -43,8 +48,8 @@ public class ReplayStrategy implements SearchStrategy {
 
     /**
      * The constructor of the ReplayStrategy class.
-     * <p>
-     * It initializes the {@link #buggyTracePath} and {@link #buggyTraceFile} properties and loads the guiding trace.
+     *
+     * <p>It initializes the {@link #buggyTracePath} and {@link #buggyTraceFile} properties and loads the guiding trace.
      * </p>
      */
     public ReplayStrategy() {
@@ -138,7 +143,7 @@ public class ReplayStrategy implements SearchStrategy {
             RuntimeEnvironment.deadlockHappened = true;
             RuntimeEnvironment.executionFinished = true;
             return null;
-        }else {
+        } else {
             System.out.println("[Replay Strategy Message] : No Deadlock is detected");
             return pickNextThread();
         }
@@ -242,7 +247,7 @@ public class ReplayStrategy implements SearchStrategy {
         } else {
             guidingThread = ((ThreadEvent) guidingEvent).getTid();
         }
-        if (guidingEvent.getType() == EventType.ENTER_MONITOR){
+        if (guidingEvent.getType() == EventType.ENTER_MONITOR) {
             removeMonitorRequest(guidingThread);
         }
         System.out.println("[Replay Strategy Message] : Guiding event is " + guidingEvent);
@@ -301,7 +306,7 @@ public class ReplayStrategy implements SearchStrategy {
      * No need to save the buggy execution trace in the replay strategy.
      */
     @Override
-    public void saveBuggyExecutionTrace(){
+    public void saveBuggyExecutionTrace() {
 
     }
 }

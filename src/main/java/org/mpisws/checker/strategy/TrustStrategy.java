@@ -1,5 +1,15 @@
 package org.mpisws.checker.strategy;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
 import dpor.Trust;
 import executionGraph.CO;
 import executionGraph.ExecutionGraph;
@@ -8,10 +18,6 @@ import kotlin.Pair;
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.runtime.RuntimeEnvironment;
 import programStructure.*;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
 
 /**
  * The TrustStrategy class implements the {@link SearchStrategy} interface and is responsible for managing the execution
@@ -116,7 +122,7 @@ public class TrustStrategy implements SearchStrategy {
      * </p>
      */
     private void initMcGraphs() {
-        if (RuntimeEnvironment.mcGraphs == null){
+        if (RuntimeEnvironment.mcGraphs == null) {
             RuntimeEnvironment.mcGraphs = new ArrayList<>();
         }
         RuntimeEnvironment.tempMcGraphs = new ArrayList<>();
@@ -472,7 +478,7 @@ public class TrustStrategy implements SearchStrategy {
      * new graph. Otherwise, it removes the new graph from the {@link #mcGraphs} list.
      * </p>
      *
-     * @param newGraphs is the list of new graphs that are going to be checked.
+     * @param newGraphs   is the list of new graphs that are going to be checked.
      * @param threadEvent is the thread event that is going to be checked.
      */
     public void findExtendingGraph(List<ExecutionGraph> newGraphs, ThreadEvent threadEvent) {
@@ -496,7 +502,7 @@ public class TrustStrategy implements SearchStrategy {
      * graph does not contain the given thread event. Otherwise, it returns false.
      * </p>
      *
-     * @param graph is the graph that is going to be checked.
+     * @param graph       is the graph that is going to be checked.
      * @param threadEvent is the thread event that is going to be checked.
      * @return true if the graph is valid, otherwise false.
      */
@@ -691,6 +697,7 @@ public class TrustStrategy implements SearchStrategy {
      * This method finds the write event based on the current graph. It returns the write event that is available in the
      * {@link #currentGraph}.
      * </p>
+     *
      * @param tempWrite is the write event that is going to be found.
      * @return the write event that is available in the current graph.
      */
@@ -807,9 +814,9 @@ public class TrustStrategy implements SearchStrategy {
      * </p>
      *
      * @param executionGraphs is the list of execution graphs that are going to be saved.
-     * @param fileName is the name of the file that is going to be created.
+     * @param fileName        is the name of the file that is going to be created.
      * @throws IllegalArgumentException if the execution graphs or the file name is null.
-     * @throws RuntimeException if an error occurred while saving the graphs to the file.
+     * @throws RuntimeException         if an error occurred while saving the graphs to the file.
      */
     public void saveGraphsToFile(List<ExecutionGraph> executionGraphs, String fileName) {
         if (executionGraphs == null || fileName == null) {
@@ -834,7 +841,7 @@ public class TrustStrategy implements SearchStrategy {
      * @param fileName is the name of the file that is going to be read.
      * @return the loaded execution graphs.
      * @throws IllegalArgumentException if the file name is null or empty.
-     * @throws RuntimeException if an error occurred while loading the graphs from the file.
+     * @throws RuntimeException         if an error occurred while loading the graphs from the file.
      */
     @SuppressWarnings("unchecked")
     public List<ExecutionGraph> loadGraphsFromFile(String fileName) {

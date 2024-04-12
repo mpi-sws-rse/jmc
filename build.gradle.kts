@@ -2,8 +2,8 @@ plugins {
     kotlin("jvm") version "1.9.21"
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "org.mpisws"
+version = "0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -13,7 +13,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    
+
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.ow2.asm:asm:9.6")
     implementation("org.ow2.asm:asm-util:9.6")

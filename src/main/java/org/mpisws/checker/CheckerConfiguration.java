@@ -1,6 +1,11 @@
 package org.mpisws.checker;
 
-import java.io.*;
+//import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Random;
 
 /**
@@ -125,7 +130,7 @@ public final class CheckerConfiguration implements Serializable {
         public long progressReport = 0;
         public boolean verbose = false;
         public long seed = new Random().nextLong();
-        public StrategyType strategyType = StrategyType.REPLAYSTRATEGY;
+        public StrategyType strategyType = StrategyType.REPLAY;
         public String buggyTracePath = "src/main/resources/buggyTrace/";
         public String buggyTraceFile = "buggyTrace.obj";
         public String executionGraphsPath = "src/main/resources/Visualized_Graphs/";

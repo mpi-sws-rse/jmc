@@ -1,20 +1,23 @@
 package org.mpisws.checker.strategy;
 
-import org.mpisws.checker.SearchStrategy;
-import org.mpisws.runtime.RuntimeEnvironment;
-import programStructure.*;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.List;
+import java.util.Random;
+
+import org.mpisws.checker.SearchStrategy;
+import org.mpisws.runtime.RuntimeEnvironment;
+import programStructure.*;
+
 
 /**
- * The RandomStrategy class implements the {@link SearchStrategy} interface and is responsible for managing the execution
- * order of events in a multithreaded program using a random strategy. It maintains a record of random events and a
- * random number generator for the random strategy. The class provides functionality to handle various types of events
+ * The RandomStrategy class implements the {@link SearchStrategy} interface and is responsible for managing
+ * the execution order of events in a multithreaded program using a random strategy.
+ * It maintains a record of random events and a random number generator for the random strategy.
+ * The class provides functionality to handle various types of events
  * including start, enter monitor, exit monitor, join, read, write, and finish events. The class uses the
  * {@link RuntimeEnvironment} API to create and record events. The class initializes the random number generator with
  * the seed value from the {@link RuntimeEnvironment}. It also includes functionality for printing the execution trace
@@ -24,6 +27,8 @@ import java.util.*;
 public class RandomStrategy implements SearchStrategy {
 
     /**
+     * The internal random number generator
+     *
      * @property {@link #random} is a random number generator.
      */
     public Random random;
@@ -95,7 +100,7 @@ public class RandomStrategy implements SearchStrategy {
      * The created {@link EnterMonitorEvent} is added to the {@link RuntimeEnvironment#eventsRecord}.
      * </p>
      *
-     * @param thread is the thread that is going to enter the monitor.
+     * @param thread  is the thread that is going to enter the monitor.
      * @param monitor is the monitor that is going to be entered by the thread.
      */
     @Override
@@ -112,7 +117,7 @@ public class RandomStrategy implements SearchStrategy {
      * The method also analyzes the suspended threads for the released monitor.
      * </p>
      *
-     * @param thread is the thread that is going to exit the monitor.
+     * @param thread  is the thread that is going to exit the monitor.
      * @param monitor is the monitor that is going to be exited by the thread.
      */
     @Override
@@ -166,7 +171,7 @@ public class RandomStrategy implements SearchStrategy {
      * selects the next random thread to run.
      * </p>
      *
-     * @param thread is the thread that is requested to enter the monitor.
+     * @param thread  is the thread that is requested to enter the monitor.
      * @param monitor is the monitor that is requested to be entered by the thread.
      * @return the next random thread to run.
      */
@@ -304,8 +309,8 @@ public class RandomStrategy implements SearchStrategy {
 
     /**
      * Picks the next thread to run.
-     * <p>
-     * This method picks the next thread to run based on the {@link #random} object.
+     *
+     * <p>This method picks the next thread to run based on the {@link #random} object.
      * </p>
      *
      * @return the next random thread to run.
@@ -319,14 +324,14 @@ public class RandomStrategy implements SearchStrategy {
      * Saves the current execution state.
      */
     @Override
-    public void saveExecutionState(){
+    public void saveExecutionState() {
         printExecutionTrace();
     }
 
     /**
      * Indicates whether the execution is done or not.
-     * <p>
-     * This method indicates whether the execution is done or not.
+     *
+     * <p>This method indicates whether the execution is done or not.
      *
      * @return true if the execution is done, otherwise false.
      */
