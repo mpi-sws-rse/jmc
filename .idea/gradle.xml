@@ -8,7 +8,7 @@
         <option name="gradleJvm" value="17" />
         <option name="modules">
           <set>
-            <option value="/local/home/mkhoshechin/IdeaProjects/JMC4FUN" />
+            <option value="$PROJECT_DIR$" />
           </set>
         </option>
       </GradleProjectSettings>

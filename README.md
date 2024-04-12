@@ -6,30 +6,34 @@ strategy is the only one available for testing concurrent Java programs using JM
 includes a replay strategy that can be utilized to replay the execution trace of a concurrent Java program identified as
 buggy by JMC.
 
+Please note that this is an early release of the tool for evaluation and all interfaces may change in future versions.
+
 ## JMC Capabilities
-The current version of JMC is capable of identifying data races and deadlocks that stem from shared resources.
+The current version of JMC is capable of identifying assertion violations and deadlocks that stem from shared resources.
 
 
-### Detecting Data Races
-Within your shared-memory multi-threaded Java program, you have the ability to place assertions over shared objects at
-any desired location within your program to verify the consistency of these shared objects. When JMC is executed, it
-will produce various potential execution traces of the program based on the selected search strategy, aiming to identify
-a trace that violates the assertions. Upon identifying such a trace, JMC will store it in a file and notify you accordingly.
+### Detecting Assertion Violations 
+Within your shared-memory multi-threaded Java program, you can place assertions over shared objects. 
+When JMC is executed, it will produce various potential execution traces of the program based on the selected search strategy.
+These traces explore different scheduling choices of the threads. 
+The goal of the exploration is to identify a schedule that violates the assertions. 
+Upon identifying such a trace, JMC will store it in a file and notify you.
+The stored trace can be replayed for debugging.
 
 ### Identifying Deadlocks
-JMC keeps track of the acquisition and release of monitors by each thread. In the event of a potential deadlock within an
+JMC also keeps track of the acquisition and release of monitors by each thread. In the event of a potential deadlock within an
 execution trace of your program, where one thread is waiting for a monitor held by another thread, and the other thread
 is waiting for a monitor held by the first thread, JMC will recognize this deadlock, save the trace as a file, and notify
-you accordingly.
+you accordingly. The trace can be replayed.
 
-### Debugging Functionality
-JMC can serve as a tool for debugging. If you have a concurrent Java program that you suspect may contain a data race or
-deadlock, you can utilize JMC to test your program and identify any problematic execution traces. Subsequently, you can
-employ the replay strategy to reenact the execution of the problematic trace and debug your program.
+### Debugging 
+JMC can serve as a tool for debugging concurrent programs. If you have a concurrent Java program that you suspect may contain an
+assertion violation or deadlock, you can use JMC to test your program and identify any problematic execution traces. 
+Subsequently, you can employ the replay strategy to reenact the execution of the problematic trace and debug your program.
 
 ## Using JMC
 
-The current version of JMC does not include jar files. To utilize JMC, follow these steps:
+The current version of JMC does not include jar files. To use JMC, follow these steps:
 
 1. Clone the repository and open the project in an IDE like IntelliJ IDEA.
 2. Build the project.
@@ -56,25 +60,27 @@ For each test case, follow these steps:
 Once the configuration parameters are set, call the `checker.check()` method to initiate the testing process.
 
 ## Limitations of JMC
-The current version of JMC is subject to the following limitations:
+The current version of JMC is an early release, and has many limitations:
 
 - Currently, JMC only accepts the `main` method as the entry point for the program. If your program does not contain a
-  main method, you must create one to serve as the entry point for JMC.
+  main method, you must create one to serve as the entry point for a JMC test.
 
-- Your program must utilize the Java Thread class to define and create threads exclusively. Thread creation must be
+- Your program must use the Java Thread class to define and create threads exclusively. Thread creation must be
   accomplished by defining classes that extend the `Thread` class. Alternative methods, such as using the `Runnable`
-  interface, Thread Factory, or any other means to create threads, are not permitted.
+  interface, Thread Factory, or any other means to create threads, are not supported.
 
 - Overriding the `run()` method of the `Thread` class as a lambda expression is prohibited. The `run()` method must be
   defined in the same class that extends the `Thread` class. using lambda expressions to instantiate
   threads is also prohibited.
 
 - Use of features from the `java.util.concurrent` package is not allowed. Only the `Thread` class may be used to create
-  threads. Synchronization of threads can be achieved using the `synchronized` block and `join()` method. Utilizing any
-  other features may lead to inaccurate results in the testing process.
+  threads. Synchronization of threads can be achieved using the `synchronized` block and `join()` method. We also do not support
+  additional concurrency interfaces such as `Executor`s or `Future`s.
+  Using any other features may lead to inaccurate results in the testing process.
 
 - Avoid using spin loops for synchronization purposes.
 
+We expect to handle these features in future releases.
 
 
 ## Running the Project
@@ -87,10 +93,12 @@ This project uses Java's `assert` statement, so you need to enable assertions wh
 4. Click `Apply` and then `OK`.
 
 Now, when you run the project, assertions will be enabled.
+Without these flags, asserts are silently ignored.
 
 ## Examples
-In this section, we provide two examples of concurrent Java programs which one of them contains a data race over a shared
-objects, and the other contains a deadlock in using monitors.
+In this section, we provide two examples of concurrent Java programs run on JMC.
+One of them contains a data race over a shared object which leads to an assertion violation.
+The other contains a deadlock in using monitors.
 
 ### Inconsistent Simple Concurrent Counter
 
@@ -426,5 +434,6 @@ Upon executing this test case, JMC will replay the buggy trace and present the i
 as depicted earlier. You can utilize this trace to debug your program and pinpoint the origin of the deadlock.
 
 ## Contact Us
-If you have any questions or find any issues with JMC, please do not hesitate to contact us at `mkhoshechin@mpi-sws.org`
+If you have any questions or find any issues with JMC, or if you would like us to prioritize particular features,
+please do not hesitate to contact us at `mkhoshechin@mpi-sws.org`
 or `rupak@mpi-sws.org`.
