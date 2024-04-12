@@ -9,22 +9,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change afterPath="$PROJECT_DIR$/config/checkstyle/checkstyle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/checkstyle-idea.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/checkstyle-idea.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/CheckerConfiguration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/CheckerConfiguration.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/SearchStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/SearchStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/StrategyType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/StrategyType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/manager/ByteCodeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/manager/ByteCodeManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/manager/ByteMapLoader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/manager/ByteMapLoader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/SchedulerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/SchedulerThread.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

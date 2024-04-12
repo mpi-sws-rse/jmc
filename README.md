@@ -1,5 +1,7 @@
 # JMC
-The Java Model Checker (JMC) is a tool designed for testing concurrent Java programs. It comes with two search strategies
+
+The Java Model Checker (JMC) is a tool designed for testing concurrent Java programs. It comes with two search
+strategies
 to guide the testing process: a random strategy and an optimal DPOR-based stateless model checking strategy. However,
 the implementation of the DPOR-based strategy is not fully complete in this version of JMC. Therefore, the random
 strategy is the only one available for testing concurrent Java programs using JMC at the moment. Additionally, JMC
@@ -9,27 +11,35 @@ buggy by JMC.
 Please note that this is an early release of the tool for evaluation and all interfaces may change in future versions.
 
 ## JMC Capabilities
+
 The current version of JMC is capable of identifying assertion violations and deadlocks that stem from shared resources.
 
+### Detecting Assertion Violations
 
-### Detecting Assertion Violations 
-Within your shared-memory multi-threaded Java program, you can place assertions over shared objects. 
-When JMC is executed, it will produce various potential execution traces of the program based on the selected search strategy.
-These traces explore different scheduling choices of the threads. 
-The goal of the exploration is to identify a schedule that violates the assertions. 
+Within your shared-memory multi-threaded Java program, you can place assertions over shared objects.
+When JMC is executed, it will produce various potential execution traces of the program based on the selected search
+strategy.
+These traces explore different scheduling choices of the threads.
+The goal of the exploration is to identify a schedule that violates the assertions.
 Upon identifying such a trace, JMC will store it in a file and notify you.
 The stored trace can be replayed for debugging.
 
 ### Identifying Deadlocks
-JMC also keeps track of the acquisition and release of monitors by each thread. In the event of a potential deadlock within an
+
+JMC also keeps track of the acquisition and release of monitors by each thread. In the event of a potential deadlock
+within an
 execution trace of your program, where one thread is waiting for a monitor held by another thread, and the other thread
-is waiting for a monitor held by the first thread, JMC will recognize this deadlock, save the trace as a file, and notify
+is waiting for a monitor held by the first thread, JMC will recognize this deadlock, save the trace as a file, and
+notify
 you accordingly. The trace can be replayed.
 
-### Debugging 
-JMC can serve as a tool for debugging concurrent programs. If you have a concurrent Java program that you suspect may contain an
-assertion violation or deadlock, you can use JMC to test your program and identify any problematic execution traces. 
-Subsequently, you can employ the replay strategy to reenact the execution of the problematic trace and debug your program.
+### Debugging
+
+JMC can serve as a tool for debugging concurrent programs. If you have a concurrent Java program that you suspect may
+contain an
+assertion violation or deadlock, you can use JMC to test your program and identify any problematic execution traces.
+Subsequently, you can employ the replay strategy to reenact the execution of the problematic trace and debug your
+program.
 
 ## Using JMC
 
@@ -43,6 +53,7 @@ In the `ModelCheckerTest.java` class, each test case is represented as a method 
 Each test case is annotated with `@Test`, indicating that it is a JUnit test case.
 
 For each test case, follow these steps:
+
 - Create a `TestTarget` object and initialize it with the package name, class name, method name, and the path to the
   Java program you want to test.
 - Set your desired configuration for the testing process using the `checker` object, which is an instance of the
@@ -53,13 +64,15 @@ For each test case, follow these steps:
     - `StrategyType strategyType`: the strategy to use for the testing process (default value: `StrategyType.RANDOM`).
       You can change it to `StrategyType.REPLAYSTRATEGY` to use the replay strategy.
     - `String buggyTracePath`: the path to save and load the buggy trace, used by the random strategy to save the
-      potential buggy trace found during the testing process, and by the replay strategy to load and replay the execution
+      potential buggy trace found during the testing process, and by the replay strategy to load and replay the
+      execution
       of the buggy trace (default value: `src/main/resources/buggyTrace/`).
     - `String buggyTraceFile`: the name of the file containing the buggy trace (default value: `buggyTrace.obj`).
 
 Once the configuration parameters are set, call the `checker.check()` method to initiate the testing process.
 
 ## Limitations of JMC
+
 The current version of JMC is an early release, and has many limitations:
 
 - Currently, JMC only accepts the `main` method as the entry point for the program. If your program does not contain a
@@ -74,7 +87,8 @@ The current version of JMC is an early release, and has many limitations:
   threads is also prohibited.
 
 - Use of features from the `java.util.concurrent` package is not allowed. Only the `Thread` class may be used to create
-  threads. Synchronization of threads can be achieved using the `synchronized` block and `join()` method. We also do not support
+  threads. Synchronization of threads can be achieved using the `synchronized` block and `join()` method. We also do not
+  support
   additional concurrency interfaces such as `Executor`s or `Future`s.
   Using any other features may lead to inaccurate results in the testing process.
 
@@ -82,10 +96,10 @@ The current version of JMC is an early release, and has many limitations:
 
 We expect to handle these features in future releases.
 
-
 ## Running the Project
 
-This project uses Java's `assert` statement, so you need to enable assertions when running the project. If you're using IntelliJ IDEA, follow these steps:
+This project uses Java's `assert` statement, so you need to enable assertions when running the project. If you're using
+IntelliJ IDEA, follow these steps:
 
 1. Go to `Run` -> `Edit Configurations...`
 2. In the `Configuration` tab, find the `VM options` field.
@@ -96,6 +110,7 @@ Now, when you run the project, assertions will be enabled.
 Without these flags, asserts are silently ignored.
 
 ## Examples
+
 In this section, we provide two examples of concurrent Java programs run on JMC.
 One of them contains a data race over a shared object which leads to an assertion violation.
 The other contains a deadlock in using monitors.
@@ -106,14 +121,14 @@ Let's consider a Java program that creates two threads and shares a counter betw
 counter and then spawns a new helping thread to further increment the counter. The program is outlined below:
 
 ```java
-public class SimpleCounter extends Thread{
+public class SimpleCounter extends Thread {
 
-    private Counter counter;
+    private final Counter counter;
 
     public SimpleCounter(Counter count) {
         this.counter = count;
     }
-    
+
     @Override
     public void run() {
         counter.increment();
@@ -138,7 +153,9 @@ public class SimpleCounter extends Thread{
     }
 }
 ```
+
 Where the Counter class is defined as follows:
+
 ```java
 public class Counter {
     private int count = 0;
@@ -154,12 +171,13 @@ public class Counter {
 ```
 
 And the HelpingThread class is defined as follows:
+
 ```java
-public class HelpingThread extends Thread{
+public class HelpingThread extends Thread {
 
     Counter counter;
 
-    HelpingThread(Counter counter){
+    HelpingThread(Counter counter) {
         this.counter = counter;
     }
 
@@ -169,6 +187,7 @@ public class HelpingThread extends Thread{
     }
 }
 ```
+
 As expected, the counter value should be 4 at the end of the program. Nevertheless, owing to the data race
 concerning the `counter` object, the counter value may not reach 4.
 
@@ -176,6 +195,7 @@ This program is located in the `src/main/java/org/mpisws/concurrent/programs/sim
 program using JMC, you can create a test case in the `ModelCheckerTest.java` class as illustrated below:
 
 ```java
+
 @Test
 @DisplayName("A concurrent counter using nested thread spawning - RandomStrategy")
 void randomTestSimpleCounter() {
@@ -185,12 +205,13 @@ void randomTestSimpleCounter() {
             "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
     );
     System.out.println("SimpleCounter RandomStrategy Started");
-    checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
+    checker.configuration.strategyType = StrategyType.RANDOM;
     checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
     checker.configuration.buggyTraceFile = "buggyTrace.obj";
     assertTrue(checker.check(t), "SimpleCounter RandomStrategy Finished");
 }
 ```
+
 When you execute this test case, you will observe messages in the console detailing how JMC is scheduling the threads
 and the outcome of each execution iteration. Since the strategy is configured as RANDOMSTRAREGY, JMC may not identify
 the execution trace that violates the assertion. If JMC attempts to check the program multiple times and reaches the
@@ -208,7 +229,8 @@ indicating that the buggy trace was not found, as shown below:
 If you execute the test case multiple times, you may discover that JMC will eventually uncover the buggy trace. In this
 particular example, we did not specify a seed for the random number generator, thus JMC will utilize a random seed for
 each execution. Once JMC identifies the buggy trace, it will store it in the `src/main/resources/buggyTrace/` directory
-under the name `buggyTrace.obj`. Additionally, it will display the trace in the console. An example of a buggy trace that
+under the name `buggyTrace.obj`. Additionally, it will display the trace in the console. An example of a buggy trace
+that
 JMC may uncover is provided below:
 
 ```
@@ -233,15 +255,18 @@ JMC may uncover is provided below:
 [Search Strategy Message] : 18.FailureEvent(type=FAILURE, tid=1, serial=5)
 [Random Strategy Message] : Buggy execution trace is saved in src/main/resources/buggyTrace/buggyTrace.obj
 ```
-Each line of the trace depicts a recorded event, comprising the thread ID, event type, serial number, value, and location.
+
+Each line of the trace depicts a recorded event, comprising the thread ID, event type, serial number, value, and
+location.
 For instance, in event 17, the counter value is recorded as 2, which violates the assertion specifying that the counter
 value should be 4. The thread with ID 1 is the main thread of the program, the thread with ID 2 is the first spawned
 thread, and so on. The `FailureEvent` indicates that the assertion was violated in the execution trace. JMC will store
 this trace in the `src/main/resources/buggyTrace/` directory under the name `buggyTrace.obj`. You can now employ the
-replay strategy to reenact the buggy trace and debug your program. To do so, you  can create a test case in the
+replay strategy to reenact the buggy trace and debug your program. To do so, you can create a test case in the
 `ModelCheckerTest.java` class as demonstrated below:
 
 ```java
+
 @Test
 @DisplayName("A concurrent counter using nested thread spawning - ReplayStrategy")
 void replayTestSimpleCounter() {
@@ -251,20 +276,23 @@ void replayTestSimpleCounter() {
             "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
     );
     System.out.println("SimpleCounter ReplayStrategy Started");
-    checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
+    checker.configuration.strategyType = StrategyType.REPLAY;
     checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
     checker.configuration.buggyTraceFile = "buggyTrace.obj";
     assertTrue(checker.check(t), "SimpleCounter ReplayStrategy Finished");
 }
 ```
+
 Upon executing this test case, JMC will replay the buggy trace and present the identical execution trace in the console,
 as depicted earlier. You can utilize this trace to debug your program and pinpoint the origin of the data race.
 
 ### Dining Philosophers with Deadlock
 
-Let's consider a Java program that simulates the dining philosophers problem. The program creates five philosophers, each
+Let's consider a Java program that simulates the dining philosophers problem. The program creates five philosophers,
+each
 represented as a thread, and five forks, each represented as a monitor object. Each philosopher first thinks, then
-tries to eat by acquiring the right fork and consequently the left fork. After acquiring both forks, the philosopher eats and then releases
+tries to eat by acquiring the right fork and consequently the left fork. After acquiring both forks, the philosopher
+eats and then releases
 the forks. The program is outlined below:
 
 ```java
@@ -303,14 +331,16 @@ public class DiningPhilosophers {
     }
 }
 ```
+
 Where the Philosopher class is defined as follows:
+
 ```java
-public class Philosopher extends Thread{
+public class Philosopher extends Thread {
     private final int id;
     private final Object leftStick;
     private final Object rightStick;
 
-    public Philosopher(int id, Object leftFork, Object rightFork){
+    public Philosopher(int id, Object leftFork, Object rightFork) {
         this.id = id;
         this.leftStick = leftFork;
         this.rightStick = rightFork;
@@ -321,8 +351,8 @@ public class Philosopher extends Thread{
     }
 
     private void tryToEat() throws InterruptedException {
-        synchronized (rightStick){
-            synchronized (leftStick){
+        synchronized (rightStick) {
+            synchronized (leftStick) {
                 eat();
             }
             System.out.println("Philosopher " + id + " has put down the left stick.");
@@ -333,7 +363,7 @@ public class Philosopher extends Thread{
     private void eat() throws InterruptedException {
         System.out.println("Philosopher " + id + " is eating.");
     }
-    
+
     @Override
     public void run() {
         try {
@@ -345,6 +375,7 @@ public class Philosopher extends Thread{
     }
 }
 ```
+
 In this program, there is a subtle scenario that can potentially result in a deadlock. If each philosopher sequentially
 picks up the right fork and then waits for the left fork, a deadlock will ensue. In other words, when each philosopher
 holds a fork (monitor) and awaits the release of the other fork (monitor) a deadlock will happen. The program can be
@@ -352,21 +383,23 @@ found in the `src/main/java/org/mpisws/concurrent/programs/dining/` package. To 
 create a test case in the `ModelCheckerTest.java` class as demonstrated below:
 
 ```java
-    @Test
-    @DisplayName("Dining philosophers problem with deadlock - RandomStrategy")
-    void randomTestDiningPhilosophers() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.dining",
-                "DiningPhilosophers",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/dining/"
-        );
-        System.out.println("DiningPhilosophers RandomStrategy Started");
-        checker.configuration.strategyType = StrategyType.RANDOMSTRAREGY;
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "DiningPhilosophers RandomStrategy Finished");
-    }
+
+@Test
+@DisplayName("Dining philosophers problem with deadlock - RandomStrategy")
+void randomTestDiningPhilosophers() {
+    var t = new TestTarget("org.mpisws.concurrent.programs.dining",
+            "DiningPhilosophers",
+            "main",
+            "src/test/java/org/mpisws/concurrent/programs/dining/"
+    );
+    System.out.println("DiningPhilosophers RandomStrategy Started");
+    checker.configuration.strategyType = StrategyType.RANDOM;
+    checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+    checker.configuration.buggyTraceFile = "buggyTrace.obj";
+    assertTrue(checker.check(t), "DiningPhilosophers RandomStrategy Finished");
+}
 ```
+
 Just like the previous example, when you execute this test case, you will observe messages in the console detailing how
 JMC is scheduling the threads and the outcome of each execution iteration. Since the strategy is configured as
 RANDOMSTRAREGY, JMC may not identify the execution trace that violates the assertion. If JMC attempts to check the
@@ -409,31 +442,36 @@ JMC may uncover is provided below:
 [Search Strategy Message] : 31.DeadlockEvent(type=DEADLOCK, tid=5, serial=5)
 [Random Strategy Message] : Buggy execution trace is saved in src/main/resources/buggyTrace/buggyTrace.obj
 ```
-The trace demonstrates that the program has reached a deadlock. The `DeadlockEvent` indicates that a deadlock has occurred
+
+The trace demonstrates that the program has reached a deadlock. The `DeadlockEvent` indicates that a deadlock has
+occurred
 in the execution trace. JMC will store this trace in the `src/main/resources/buggyTrace/` directory under the name
 `buggyTrace.obj`. You can now utilize the replay strategy to reenact the buggy trace and debug your program. To do so,
 you can create a test case in the `ModelCheckerTest.java` class as demonstrated below:
 
 ```java
-    @Test
-    @DisplayName("Dining philosophers problem with deadlock - ReplayStrategy")
-    void replayTestDiningPhilosophers() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.dining",
-                "DiningPhilosophers",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/dining/"
-        );
-        System.out.println("DiningPhilosophers ReplayStrategy Started");
-        checker.configuration.strategyType = StrategyType.REPLAYSTRATEGY;
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "DiningPhilosophers ReplayStrategy Finished");
-    }
+
+@Test
+@DisplayName("Dining philosophers problem with deadlock - ReplayStrategy")
+void replayTestDiningPhilosophers() {
+    var t = new TestTarget("org.mpisws.concurrent.programs.dining",
+            "DiningPhilosophers",
+            "main",
+            "src/test/java/org/mpisws/concurrent/programs/dining/"
+    );
+    System.out.println("DiningPhilosophers ReplayStrategy Started");
+    checker.configuration.strategyType = StrategyType.REPLAY;
+    checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+    checker.configuration.buggyTraceFile = "buggyTrace.obj";
+    assertTrue(checker.check(t), "DiningPhilosophers ReplayStrategy Finished");
+}
 ```
+
 Upon executing this test case, JMC will replay the buggy trace and present the identical execution trace in the console,
 as depicted earlier. You can utilize this trace to debug your program and pinpoint the origin of the deadlock.
 
 ## Contact Us
+
 If you have any questions or find any issues with JMC, or if you would like us to prioritize particular features,
 please do not hesitate to contact us at `mkhoshechin@mpi-sws.org`
 or `rupak@mpi-sws.org`.
