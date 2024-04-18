@@ -117,15 +117,13 @@ public class TrustStrategy implements SearchStrategy {
     /**
      * Initializes the model checker graphs list.
      * <p>
-     * This method initializes the {@link RuntimeEnvironment#mcGraphs} list, {@link RuntimeEnvironment#tempMcGraphs} list,
-     * and {@link #mcGraphs} list.
+     * This method initializes the {@link RuntimeEnvironment#mcGraphs} list and {@link #mcGraphs} list.
      * </p>
      */
     private void initMcGraphs() {
         if (RuntimeEnvironment.mcGraphs == null) {
             RuntimeEnvironment.mcGraphs = new ArrayList<>();
         }
-        RuntimeEnvironment.tempMcGraphs = new ArrayList<>();
         mcGraphs = new ArrayList<>();
     }
 
@@ -482,15 +480,16 @@ public class TrustStrategy implements SearchStrategy {
      * @param threadEvent is the thread event that is going to be checked.
      */
     public void findExtendingGraph(List<ExecutionGraph> newGraphs, ThreadEvent threadEvent) {
-        mcGraphs.addAll(newGraphs);
 
         newGraphs.stream()
                 .filter(graph -> isValidGraph(graph, threadEvent))
                 .findFirst()
                 .ifPresent(graph -> {
                     currentGraph = graph;
-                    mcGraphs.remove(graph);
+                    newGraphs.remove(graph);
                 });
+
+        mcGraphs.addAll(newGraphs);
 
         System.out.println("[Trust Strategy Message] : The chosen graph is : " + currentGraph.getId());
     }
@@ -796,14 +795,14 @@ public class TrustStrategy implements SearchStrategy {
      * Indicates whether the execution is done or not.
      * <p>
      * This method indicates whether the execution is done or not. It returns true if the
-     * {@link RuntimeEnvironment#tempMcGraphs} is empty. Otherwise, it returns false.
+     * {@link RuntimeEnvironment#mcGraphs} is empty. Otherwise, it returns false.
      * </p>
      *
      * @return true if the execution is done, otherwise false.
      */
     @Override
     public boolean done() {
-        return RuntimeEnvironment.tempMcGraphs.isEmpty();
+        return RuntimeEnvironment.mcGraphs.isEmpty();
     }
 
     /**
@@ -893,15 +892,15 @@ public class TrustStrategy implements SearchStrategy {
      * Saves the execution state.
      * <p>
      * This method saves the execution state. It saves the {@link #mcGraphs} to the file and loads the saved graphs
-     * to the {@link RuntimeEnvironment#tempMcGraphs} list. It also sets the {@link RuntimeEnvironment#numOfGraphs}
+     * to the {@link RuntimeEnvironment#mcGraphs} list. It also sets the {@link RuntimeEnvironment#numOfGraphs}
      * with the number of graphs that are available in the {@link Trust#getGraphCounter()}.
      * </p>
      */
     @Override
     public void saveExecutionState() {
-        saveGraphsToFile(mcGraphs, "src/main/resources/ObjectStore/mcGraphs.obj");
-        List<ExecutionGraph> savedGraphs = loadGraphsFromFile("src/main/resources/ObjectStore/mcGraphs.obj");
-        RuntimeEnvironment.tempMcGraphs.addAll(savedGraphs);
+        if (!mcGraphs.isEmpty()) {
+            RuntimeEnvironment.mcGraphs.addAll(mcGraphs);
+        }
         RuntimeEnvironment.numOfGraphs = trust.getGraphCounter();
     }
 }

@@ -9,7 +9,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/InconsistentCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/InconsistentCounter.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/gradle.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/misc.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/misc.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/vcs.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/InconsistentCounter.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/InconsistentCounter.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -77,7 +92,7 @@
     <option name="myRunOnSave" value="true" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_GIT_ROOT_PATH" value="/local/home/mkhoshechin/IdeaProjects/jmc" />
     <option name="ROOT_SYNC" value="SYNC" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -109,81 +124,81 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "Application.Main.executor": "Run",
-    "Application.TestInconsistentCounter.executor": "Run",
-    "Downloaded.Files.Path.Enabled": "false",
-    "Gradle.Build jmc.executor": "Run",
-    "Gradle.ModelCheckerTest (1).executor": "Run",
-    "Gradle.ModelCheckerTest.executor": "Run",
-    "Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks (1).executor": "Run",
-    "Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks.executor": "Run",
-    "Gradle.ModelCheckerTest.randomTestDiningPhilosophers.executor": "Run",
-    "Gradle.ModelCheckerTest.randomTestInconsistentCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.randomTestSimpleCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks.executor": "Run",
-    "Gradle.ModelCheckerTest.replayTestDiningPhilosophers.executor": "Run",
-    "Gradle.ModelCheckerTest.replayTestInconsistentCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.replayTestSimpleCounter (1).executor": "Run",
-    "Gradle.ModelCheckerTest.replayTestSimpleCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor": "Run",
-    "Gradle.ModelCheckerTest.testComplexCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.testCorrectCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.testDiningPhilosophers.executor": "Run",
-    "Gradle.ModelCheckerTest.testInconsistentCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.testMutex.executor": "Run",
-    "Gradle.ModelCheckerTest.testSimpleCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.trustTestInconsistentCounter.executor": "Run",
-    "Gradle.ModelCheckerTest.trustTestSimpleCounter (1).executor": "Run",
-    "Gradle.ModelCheckerTest.trustTestSimpleCounter.executor": "Run",
-    "Gradle.jmc [build].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:BuggyCounter.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:CorrectCounter.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:DiningPhilosophers.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:InconsistentCounter.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:KTest.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:Main.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:MainMutex.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestBuggyCounter.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestComplexCounter.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestCorrectCounter.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestInconsistentCounter.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestKotlinCounter.main()].executor": "Run",
-    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestSimpleCounter.main()].executor": "Run",
-    "Kotlin.CounterKt.executor": "Run",
-    "Kotlin.MainKt.executor": "Run",
-    "OverrideImplement.generate.javadoc": "true",
-    "Repository.Attach.Annotations": "false",
-    "Repository.Attach.JavaDocs": "false",
-    "Repository.Attach.Sources": "false",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "code.cleanup.on.save": "true",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/Users/rupak/Code/jmc",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "onboarding.tips.debug.path": "/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/Main.kt",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "actions.on.save",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Downloaded.Files.Path.Enabled&quot;: &quot;false&quot;,
+    &quot;Gradle.Build jmc.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest (1).executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks (1).executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.randomTestDiningPhilosophers.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.randomTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.randomTestSimpleCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.replayTestDiningPhilosophers.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.replayTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.replayTestSimpleCounter (1).executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.replayTestSimpleCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testComplexCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testCorrectCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testDiningPhilosophers.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testMutex.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.testSimpleCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.trustTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.trustTestSimpleCounter (1).executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.trustTestSimpleCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc [build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:BuggyCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:CorrectCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:DiningPhilosophers.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:InconsistentCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:KTest.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:Main.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:MainMutex.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestBuggyCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestComplexCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestCorrectCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestInconsistentCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestKotlinCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestSimpleCounter.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Kotlin.CounterKt.executor&quot;: &quot;Run&quot;,
+    &quot;Kotlin.MainKt.executor&quot;: &quot;Run&quot;,
+    &quot;OverrideImplement.generate.javadoc&quot;: &quot;true&quot;,
+    &quot;Repository.Attach.Annotations&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.JavaDocs&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.Sources&quot;: &quot;false&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;code.cleanup.on.save&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/rupak/Code/jmc&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/Main.kt&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "kotlin-gradle-user-dirs": [
-      "/local/home/mkhoshechin/.gradle"
+  &quot;keyToStringList&quot;: {
+    &quot;kotlin-gradle-user-dirs&quot;: [
+      &quot;/local/home/mkhoshechin/.gradle&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/example/concurrent/programs/wrong/counter" />
@@ -199,7 +214,7 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.jmc [build]">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.trustTestInconsistentCounter">
     <configuration name="ModelCheckerTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -214,6 +229,30 @@
             <option value=":test" />
             <option value="--tests" />
             <option value="&quot;org.mpisws.checker.ModelCheckerTest&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -248,7 +287,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.replayTestSimpleCounter (1)" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestInconsistentCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -261,31 +300,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.replayTestSimpleCounter&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <method v="2" />
-    </configuration>
-    <configuration name="ModelCheckerTest.trustTestSimpleCounter (1)" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestSimpleCounter&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestInconsistentCounter&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -319,27 +334,27 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestInconsistentCounter" />
+      <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
       <item itemvalue="Gradle.jmc [build]" />
       <item itemvalue="Gradle.ModelCheckerTest" />
       <item itemvalue="Gradle.ModelCheckerTest.replayTestDiningPhilosophers" />
-      <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter (1)" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter (1)" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestInconsistentCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
         <item itemvalue="Gradle.jmc [build]" />
         <item itemvalue="Gradle.ModelCheckerTest.replayTestDiningPhilosophers" />
         <item itemvalue="Gradle.ModelCheckerTest" />
-        <item itemvalue="Gradle.ModelCheckerTest.replayTestSimpleCounter (1)" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter (1)" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="jdk-17.0.10-temurin-17.0.10-3183f394aec4-539a993e" />
-        <option value="jdk-21.0.2-openjdk-21.0.2-4caba194b151-322ed176" />
+        <option value="bundled-jdk-9f38398b9061-18abd8497189-intellij.indexing.shared.core-IU-241.14494.240" />
+        <option value="bundled-js-predefined-1d06a55b98c1-74d2a5396914-JavaScript-IU-241.14494.240" />
       </set>
     </attachedChunks>
   </component>
@@ -389,6 +404,9 @@
       <workItem from="1712307769216" duration="10984000" />
       <workItem from="1712579279986" duration="46349000" />
       <workItem from="1712736561475" duration="9602000" />
+      <workItem from="1713425994763" duration="2061000" />
+      <workItem from="1713429783614" duration="8562000" />
+      <workItem from="1713440621578" duration="2541000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />
