@@ -1,6 +1,7 @@
 package org.mpisws.runtime;
 
 import java.util.Optional;
+
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.checker.StrategyType;
 import org.mpisws.checker.strategy.RandomStrategy;
@@ -46,7 +47,7 @@ public class SchedulerThread extends Thread {
             searchStrategy = new RandomStrategy();
         } else if (strategyType == StrategyType.TRUST) {
             searchStrategy = new TrustStrategy();
-        } else if (strategyType == StrategyType.REPLAY){
+        } else if (strategyType == StrategyType.REPLAY) {
             searchStrategy = new ReplayStrategy();
         } else {
             // TODO() : Fix it
@@ -188,7 +189,8 @@ public class SchedulerThread extends Thread {
      * This method is used to notify the main thread to continue the execution to finish the current execution iteration.
      */
     private void notifyMainThread() {
-        if (RuntimeEnvironment.deadlockHappened){
+        if (RuntimeEnvironment.deadlockHappened) {
+            searchStrategy.printExecutionTrace();
             searchStrategy.saveBuggyExecutionTrace();
             System.exit(0);
         }
@@ -368,7 +370,7 @@ public class SchedulerThread extends Thread {
                             enterMonitorThread.get(), enterMonitorObject.get()
                     )
             );
-            if (thread.isPresent()){
+            if (thread.isPresent()) {
                 notifyThread(thread.get());
             } else {
                 searchStrategy.nextDeadlockEvent(enterMonitorThread.get());

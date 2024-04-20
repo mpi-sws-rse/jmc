@@ -6,7 +6,7 @@ import java.util.List;
 public class DiningPhilosophers {
 
     public static void main(String[] args) {
-        final int NUM_PHILOSOPHERS = 5;
+        final int NUM_PHILOSOPHERS = 4;
 
         List<Philosopher> philosophers = new ArrayList<>(NUM_PHILOSOPHERS);
         List<Object> sticks = new ArrayList<>(NUM_PHILOSOPHERS);

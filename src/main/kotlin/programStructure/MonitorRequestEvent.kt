@@ -23,13 +23,14 @@ data class MonitorRequestEvent(
      * @property monitor The monitor that was requested.
      */
     val monitor: Monitor? = null
-): ThreadEvent(), Serializable {
+) : ThreadEvent(), Serializable {
 
     override fun deepCopy(): Event {
         return MonitorRequestEvent(
             type = EventType.MONITOR_REQUEST,
             tid = copy().tid,
-            serial = copy().serial
+            serial = copy().serial,
+            monitor = monitor?.deepCopy()
         )
     }
 }

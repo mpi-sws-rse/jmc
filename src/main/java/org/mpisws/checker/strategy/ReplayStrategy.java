@@ -120,36 +120,6 @@ public class ReplayStrategy implements SearchStrategy {
     }
 
     /**
-     * Represents the required strategy for the next enter monitor request.
-     * <p>
-     * This method records the monitor request event and checks if there is a deadlock between the threads in using the
-     * monitors. If there is a deadlock, it sets the {@link RuntimeEnvironment#deadlockHappened} to true and the
-     * {@link RuntimeEnvironment#executionFinished} to true. Otherwise, it returns the next thread to run.
-     * </p>
-     *
-     * @param thread  is the thread that is requested to enter the monitor.
-     * @param monitor is the monitor that is requested to be entered by the thread.
-     */
-    @Override
-    public Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
-        MonitorRequestEvent monitorRequestEvent = RuntimeEnvironment.createMonitorRequestEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(monitorRequestEvent);
-        RuntimeEnvironment.monitorRequest.put(thread, monitor);
-        if (monitorsDeadlockDetection()) {
-            System.out.println(
-                    "[Replay Strategy Message] : There is a deadlock between the threads in using " +
-                            "the monitors"
-            );
-            RuntimeEnvironment.deadlockHappened = true;
-            RuntimeEnvironment.executionFinished = true;
-            return null;
-        } else {
-            System.out.println("[Replay Strategy Message] : No Deadlock is detected");
-            return pickNextThread();
-        }
-    }
-
-    /**
      * Represents the required strategy for the next read event.
      *
      * @param readEvent is the read event that is going to be executed.

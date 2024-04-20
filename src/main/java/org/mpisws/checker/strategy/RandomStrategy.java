@@ -162,42 +162,6 @@ public class RandomStrategy implements SearchStrategy {
     }
 
     /**
-     * Handles the next enter monitor request of a given thread.
-     * <p>
-     * This method records the monitor request in the {@link RuntimeEnvironment#monitorRequest} map. It also checks
-     * for a deadlock between the threads in using the monitors. If a deadlock is detected, the method sets the
-     * {@link RuntimeEnvironment#deadlockHappened} flag to true and the {@link RuntimeEnvironment#executionFinished}
-     * flag to true. Otherwise, it sets the {@link RuntimeEnvironment#deadlockHappened} flag to false. The method also
-     * selects the next random thread to run.
-     * </p>
-     *
-     * @param thread  is the thread that is requested to enter the monitor.
-     * @param monitor is the monitor that is requested to be entered by the thread.
-     * @return the next random thread to run.
-     */
-    @Override
-    public Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
-        MonitorRequestEvent monitorRequestEvent = RuntimeEnvironment.createMonitorRequestEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(monitorRequestEvent);
-        RuntimeEnvironment.monitorRequest.put(thread, monitor);
-        if (monitorsDeadlockDetection()) {
-            System.out.println(
-                    "[Random Strategy Message] : There is a deadlock between the threads in using " +
-                            "the monitors"
-            );
-            RuntimeEnvironment.deadlockHappened = true;
-            RuntimeEnvironment.executionFinished = true;
-            return null;
-        } else {
-            System.out.println(
-                    "[Random Strategy Message] : There is no deadlock between the threads in using " +
-                            "the monitors"
-            );
-            return pickNextThread();
-        }
-    }
-
-    /**
      * Records the created {@link ReadEvent} for the corresponding reading a variable request of a thread
      * <p>
      * This method records the created {@link ReadEvent} for the corresponding reading a variable request of a thread.

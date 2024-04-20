@@ -288,6 +288,18 @@ public class RuntimeEnvironment {
                 "[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() +
                         " state"
         );
+        printState();
+    }
+
+    public static void printState() {
+        System.out.println("[Runtime Environment Message] : The state of the threads in the createdThreadList");
+        for (Thread thread : createdThreadList) {
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() + " state");
+        }
+        System.out.println("[Runtime Environment Message] : The state of the threads in the readyThreadList");
+        for (Thread thread : readyThreadList) {
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() + " state");
+        }
     }
 
     /**

@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+
 import org.mpisws.runtime.RuntimeEnvironment;
 import programStructure.Event;
+import programStructure.MonitorRequestEvent;
 import programStructure.ReadEvent;
 import programStructure.WriteEvent;
 
@@ -32,7 +34,7 @@ public interface SearchStrategy {
     /**
      * Represents the required strategy for the next enter monitor event.
      *
-     * @param thread is the thread that is going to enter the monitor.
+     * @param thread  is the thread that is going to enter the monitor.
      * @param monitor is the monitor that is going to be entered by the thread.
      */
     void nextEnterMonitorEvent(Thread thread, Object monitor);
@@ -40,7 +42,7 @@ public interface SearchStrategy {
     /**
      * Represents the required strategy for the next exit monitor event.
      *
-     * @param thread is the thread that is going to exit the monitor.
+     * @param thread  is the thread that is going to exit the monitor.
      * @param monitor is the monitor that is going to be exited by the thread.
      */
     void nextExitMonitorEvent(Thread thread, Object monitor);
@@ -62,12 +64,39 @@ public interface SearchStrategy {
     Thread nextJoinRequest(Thread joinReq, Thread joinRes);
 
     /**
-     * Represents the required strategy for the next enter monitor request.
+     * Handles the next enter monitor request of a given thread and monitor.
+     * <p>
+     * This method records the monitor request in the {@link RuntimeEnvironment#monitorRequest} map. It also checks
+     * for a deadlock between the threads in using the monitors. If a deadlock is detected, the method sets the
+     * {@link RuntimeEnvironment#deadlockHappened} flag to true and the {@link RuntimeEnvironment#executionFinished}
+     * flag to true. Otherwise, it sets the {@link RuntimeEnvironment#deadlockHappened} flag to false. The method also
+     * selects the next thread to run.
+     * </p>
      *
-     * @param thread is the thread that is going to enter the monitor.
-     * @param monitor is the monitor that is going to be entered by the thread.
+     * @param thread  is the thread that is requested to enter the monitor.
+     * @param monitor is the monitor that is requested to be entered by the thread.
+     * @return the next random thread to run.
      */
-    Thread nextEnterMonitorRequest(Thread thread, Object monitor);
+    default Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
+        MonitorRequestEvent monitorRequestEvent = RuntimeEnvironment.createMonitorRequestEvent(thread, monitor);
+        RuntimeEnvironment.eventsRecord.add(monitorRequestEvent);
+        RuntimeEnvironment.monitorRequest.put(thread, monitor);
+        if (monitorsDeadlockDetection()) {
+            System.out.println(
+                    "[Search Strategy Message] : There is a deadlock between the threads in using " +
+                            "the monitors"
+            );
+            RuntimeEnvironment.deadlockHappened = true;
+            RuntimeEnvironment.executionFinished = true;
+            return null;
+        } else {
+            System.out.println(
+                    "[Search Strategy Message] : There is no deadlock between the threads in using " +
+                            "the monitors"
+            );
+            return pickNextThread();
+        }
+    }
 
     /**
      * Represents the required strategy for the next read event.
@@ -217,7 +246,7 @@ public interface SearchStrategy {
             RuntimeEnvironment.monitorRequest.remove(thread, monitor);
             System.out.println(
                     "[Scheduler Thread Message] : The request of " + thread.getName() +
-                        " to enter the monitor " + monitor + " is removed from the monitorRequest"
+                            " to enter the monitor " + monitor + " is removed from the monitorRequest"
             );
             nextEnterMonitorEvent(thread, monitor);
             return thread;
@@ -234,15 +263,15 @@ public interface SearchStrategy {
         Thread joinRes = RuntimeEnvironment.joinRequest.get(thread);
         System.out.println(
                 "[Scheduler Thread Message] : " + thread.getName() + " is requested to join "
-                    + joinRes.getName()
+                        + joinRes.getName()
         );
         if (!RuntimeEnvironment.createdThreadList.contains(joinRes) &&
                 !RuntimeEnvironment.readyThreadList.contains(joinRes)) {
             RuntimeEnvironment.joinRequest.remove(thread, joinRes);
             System.out.println(
                     "[Scheduler Thread Message] : As " + joinRes.getName() + " is not in the " +
-                        "createdThreadList or the readyThreadList, the request of " + thread.getName() +
-                        " to join " + joinRes.getName() + " is removed from the joinRequest"
+                            "createdThreadList or the readyThreadList, the request of " + thread.getName() +
+                            " to join " + joinRes.getName() + " is removed from the joinRequest"
             );
             nextJoinEvent(thread, joinRes);
             return thread;

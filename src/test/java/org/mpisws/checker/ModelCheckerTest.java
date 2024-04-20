@@ -6,11 +6,11 @@ import org.junit.jupiter.api.*;
 
 
 class ModelCheckerTest {
-/*
-    private static final PrintStream originalOut = System.out;
-    private static final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-*/
-private ModelChecker checker;
+    /*
+        private static final PrintStream originalOut = System.out;
+        private static final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    */
+    private ModelChecker checker;
 
 
 /*
@@ -52,9 +52,9 @@ private ModelChecker checker;
     @DisplayName("Buggy counter that deadlocks - RandomStrategy")
     void randomTestBuggyCounterThatDeadlocks() {
         var t = new TestTarget("org.mpisws.concurrent.programs.wrong.counter",
-                    "BuggyCounter",
-                    "main",
-                    "src/test/java/org/mpisws/concurrent/programs/wrong/counter/"
+                "BuggyCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/wrong/counter/"
         );
         System.out.println("BuggyCounter RandomStrategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
@@ -78,6 +78,21 @@ private ModelChecker checker;
         assertTrue(checker.check(t), "BuggyCounter ReplayStrategy Finished");
     }
 
+    @Test
+    @DisplayName("Buggy counter that deadlocks - TrustStrategy")
+    void trustTestBuggyCounterThatDeadlocks() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.wrong.counter",
+                "BuggyCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/wrong/counter/"
+        );
+        System.out.println("BuggyCounter ReplayStrategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "BuggyCounter TrustStrategy Finished");
+    }
+
     /*
      *                                      INCONSISTENT COUNTERS
      */
@@ -87,9 +102,9 @@ private ModelChecker checker;
     void randomTestInconsistentCounter() {
         System.out.println("InconsistentCounter");
         var t = new TestTarget("org.mpisws.concurrent.programs.inconsistent.counter",
-                        "InconsistentCounter",
-                        "main",
-                        "src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/"
+                "InconsistentCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/"
         );
         System.out.println("InconsistentCounter - RandomStrategy");
         checker.configuration.strategyType = StrategyType.RANDOM;
@@ -140,9 +155,9 @@ private ModelChecker checker;
     @DisplayName("A concurrent counter with nested class structure - RandomStrategy")
     void randomTestComplexCounter() {
         var t = new TestTarget("org.mpisws.concurrent.programs.complex.counter",
-                        "ComplexCounter",
-                        "main",
-                        "src/test/java/org/mpisws/concurrent/programs/complex/counter/"
+                "ComplexCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/complex/counter/"
         );
         checker.configuration.strategyType = StrategyType.RANDOM;
         System.out.println("ComplexCounter RandomStrategy Started");
@@ -160,15 +175,30 @@ private ModelChecker checker;
     @DisplayName("A correct concurrent counter using synchronized blocks - RandomStrategy")
     void randomTestCorrectCounter() {
         var t = new TestTarget("org.mpisws.concurrent.programs.correct.counter",
-                    "CorrectCounter",
-                    "main",
-                    "src/test/java/org/mpisws/concurrent/programs/correct/counter/"
+                "CorrectCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/correct/counter/"
         );
         checker.configuration.strategyType = StrategyType.RANDOM;
         System.out.println("CorrectCounter RandomStrategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "CorrectCounter RandomStrategy Finished");
+    }
+
+    @Test
+    @DisplayName("A correct concurrent counter using synchronized blocks - TrustStrategy")
+    void trustTestCorrectCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.correct.counter",
+                "CorrectCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/correct/counter/"
+        );
+        checker.configuration.strategyType = StrategyType.TRUST;
+        System.out.println("CorrectCounter RandomStrategy Started");
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "CorrectCounter TrustStrategy Finished");
     }
 
     /*
@@ -180,9 +210,9 @@ private ModelChecker checker;
     @DisplayName("A concurrent counter using nested thread spawning - RandomStrategy")
     void randomTestSimpleCounter() {
         var t = new TestTarget("org.mpisws.concurrent.programs.simple.counter",
-                    "SimpleCounter",
-                    "main",
-                    "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
+                "SimpleCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
         );
         System.out.println("SimpleCounter RandomStrategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
@@ -243,6 +273,22 @@ private ModelChecker checker;
     }
 
     @Test
+    @DisplayName("Dining philosophers problem with deadlock - TrustStrategy")
+    void trustTestDiningPhilosophers() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.dining",
+                "DiningPhilosophers",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/dining/"
+        );
+        System.out.println("DiningPhilosophers TrustStrategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
+        assertTrue(checker.check(t), "DiningPhilosophers TrustStrategy Finished");
+    }
+
+    @Test
     @DisplayName("Dining philosophers problem with deadlock - ReplayStrategy")
     void replayTestDiningPhilosophers() {
         var t = new TestTarget("org.mpisws.concurrent.programs.dining",
@@ -266,9 +312,9 @@ private ModelChecker checker;
     @DisplayName("Multiple threads each spawning new threads with a shared counter")
     void testMultipleSpawns() {
         var t = new TestTarget("org.mpisws.concurrent.programs.thread_dependency",
-                    "MultipleThreads",
-                    "main",
-                    "src/test/java/org/mpisws/concurrent/programs/thread_dependency/"
+                "MultipleThreads",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/thread_dependency/"
         );
         assertTrue(checker.check(t), "Call works");
     }
@@ -278,9 +324,9 @@ private ModelChecker checker;
     @DisplayName("LockOne Mutex")
     void testMutex() {
         var t = new TestTarget("org.mpisws.concurrent.programs.mutex",
-                    "MainMutex",
-                    "main",
-                    "src/test/java/org/mpisws/concurrent/programs/mutex/"
+                "MainMutex",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/mutex/"
         );
         assertTrue(checker.check(t), "Call works");
     }

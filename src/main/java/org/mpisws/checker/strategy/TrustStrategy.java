@@ -160,6 +160,13 @@ public class TrustStrategy implements SearchStrategy {
     private void initGuidingGraph() {
         if (!RuntimeEnvironment.mcGraphs.isEmpty()) {
             loadGuidingGraph();
+            System.out.println("[Debugging Message] : The guiding execution graph is loaded");
+            System.out.println("[Debugging Message] : The guiding execution graph is : G_" + guidingExecutionGraph.getId());
+            int index = 1;
+            for (Event event : guidingEvents) {
+                System.out.println("[Debugging Message] : " + index + "-" + event);
+                index++;
+            }
         } else {
             noGuidingGraph();
         }
@@ -295,8 +302,14 @@ public class TrustStrategy implements SearchStrategy {
      */
     @Override
     public void nextEnterMonitorEvent(Thread thread, Object monitor) {
-        System.out.println("[Trust Strategy Message] : This version of Trust does not support the enter monitor event");
-        System.exit(0);
+        EnterMonitorEvent enterMonitorEvent = RuntimeEnvironment.createEnterMonitorEvent(thread, monitor);
+        RuntimeEnvironment.eventsRecord.add(enterMonitorEvent);
+        if (guidingActivate) {
+            addEventToCurrentGraph(enterMonitorEvent);
+        } else {
+            passEventToTrust(enterMonitorEvent);
+            updateCurrentGraph(enterMonitorEvent);
+        }
     }
 
     /**
@@ -311,8 +324,16 @@ public class TrustStrategy implements SearchStrategy {
      */
     @Override
     public void nextExitMonitorEvent(Thread thread, Object monitor) {
-        System.out.println("[Trust Strategy Message] : This version of Trust does not support the exit monitor event");
-        System.exit(0);
+        ExitMonitorEvent exitMonitorEvent = RuntimeEnvironment.createExitMonitorEvent(thread, monitor);
+        RuntimeEnvironment.eventsRecord.add(exitMonitorEvent);
+        if (guidingActivate) {
+            addEventToCurrentGraph(exitMonitorEvent);
+            analyzeSuspendedThreadsForMonitor(monitor);
+        } else {
+            passEventToTrust(exitMonitorEvent);
+            updateCurrentGraph(exitMonitorEvent);
+            analyzeSuspendedThreadsForMonitor(monitor);
+        }
     }
 
     /**
@@ -359,19 +380,6 @@ public class TrustStrategy implements SearchStrategy {
             RuntimeEnvironment.joinRequest.put(joinReq, joinRes);
             return pickNextRandomThread();
         }
-    }
-
-    /**
-     * Represents the required strategy for the next enter monitor request.
-     *
-     * @param thread  is the thread that is going to enter the monitor.
-     * @param monitor is the monitor that is going to be entered by the thread.
-     */
-    @Override
-    public Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
-        System.out.println("[Trust Strategy Message] : This version of Trust does not support the enter monitor event");
-        System.exit(0);
-        return null;
     }
 
     /**
@@ -557,6 +565,33 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    @Override
+    public Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
+        MonitorRequestEvent monitorRequestEvent = RuntimeEnvironment.createMonitorRequestEvent(thread, monitor);
+        RuntimeEnvironment.eventsRecord.add(monitorRequestEvent);
+        RuntimeEnvironment.monitorRequest.put(thread, monitor);
+        if (guidingActivate) {
+            addEventToCurrentGraph(monitorRequestEvent);
+        } else {
+            passEventToTrust(monitorRequestEvent);
+        }
+        if (monitorsDeadlockDetection()) {
+            System.out.println(
+                    "[Trust Strategy Message] : There is a deadlock between the threads in using " +
+                            "the monitors"
+            );
+            RuntimeEnvironment.deadlockHappened = true;
+            RuntimeEnvironment.executionFinished = true;
+            return null;
+        } else {
+            System.out.println(
+                    "[Trust Strategy Message] : There is no deadlock between the threads in using " +
+                            "the monitors"
+            );
+            return pickNextThread();
+        }
+    }
+
     /**
      * Represents the required strategy for the next finish request.
      * <p>
@@ -625,8 +660,19 @@ public class TrustStrategy implements SearchStrategy {
             guidingThread = ((ThreadEvent) guidingEvent).getTid();
         }
 
-        System.out.println("[Trust Strategy Message] : Thread-" + guidingThread + " is selected to run");
+        if (guidingEvent.getType() == EventType.ENTER_MONITOR) {
+            guidedEnterMonitorEventHelper((EnterMonitorEvent) guidingEvent);
+        }
+
+        System.out.println("[Trust Strategy Message] : Thread-" + guidingThread + " is the next guided thread");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+    }
+
+    private void guidedEnterMonitorEventHelper(EnterMonitorEvent enterMonitorEvent) {
+        Thread thread = RuntimeEnvironment.threadObjectMap.get((long) enterMonitorEvent.getTid());
+        Object monitor = RuntimeEnvironment.monitorRequest.get(thread);
+        RuntimeEnvironment.monitorRequest.remove(thread, monitor);
+        nextEnterMonitorEvent(thread, monitor);
     }
 
     /**
@@ -658,6 +704,8 @@ public class TrustStrategy implements SearchStrategy {
         currentGraph.setCOs(findNewCOs());
         currentGraph.setSTs(findNewSTs());
         currentGraph.setJTs(findNewJTs());
+        currentGraph.setMCs(findNewMCs());
+        currentGraph.setTCs(findNewTCs());
         guidingActivate = false;
     }
 
@@ -729,6 +777,39 @@ public class TrustStrategy implements SearchStrategy {
             }
         }
         return newSTs;
+    }
+
+    /**
+     * Finds the new MCs based on the current graph.
+     * <p>
+     * This method finds the new MCs based on the current graph. It iterates over the {@link ExecutionGraph#getMCs()} of
+     * the {@link #guidingExecutionGraph} and finds the new MCs based on the current graph. It returns the new MCs.
+     * </p>
+     *
+     * @return the new MCs based on the current graph.
+     */
+    private Set<Pair<Event, Event>> findNewMCs() {
+        Set<Pair<Event, Event>> newMCs = new HashSet<>();
+        for (Pair<Event, Event> mc : guidingExecutionGraph.getMCs()) {
+            ThreadEvent firstThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) mc.component1());
+            ThreadEvent secondThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) mc.component2());
+            if (firstThreadEvent != null && secondThreadEvent != null) {
+                newMCs.add(new Pair<>(firstThreadEvent, secondThreadEvent));
+            }
+        }
+        return newMCs;
+    }
+
+    private Set<Pair<Event, Event>> findNewTCs() {
+        Set<Pair<Event, Event>> newTCs = new HashSet<>();
+        for (Pair<Event, Event> tc : guidingExecutionGraph.getTCs()) {
+            ThreadEvent firstThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) tc.component1());
+            ThreadEvent secondThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) tc.component2());
+            if (firstThreadEvent != null && secondThreadEvent != null) {
+                newTCs.add(new Pair<>(firstThreadEvent, secondThreadEvent));
+            }
+        }
+        return newTCs;
     }
 
     /**

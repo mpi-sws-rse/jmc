@@ -8,7 +8,31 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added" />
+    <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/SearchStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/SearchStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/SchedulerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/SchedulerThread.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/MonitorRequestEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/MonitorRequestEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/SearchStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/SearchStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/SchedulerThread.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/SchedulerThread.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/MonitorRequestEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/MonitorRequestEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/dining/DiningPhilosophers.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/dining/DiningPhilosophers.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -133,6 +157,9 @@
     &quot;Gradle.ModelCheckerTest.testInconsistentCounter.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.testMutex.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.testSimpleCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.trustTestBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.trustTestCorrectCounter.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.trustTestDiningPhilosophers.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.trustTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.trustTestSimpleCounter (1).executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.trustTestSimpleCounter.executor&quot;: &quot;Run&quot;,
@@ -160,7 +187,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;code.cleanup.on.save&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;kcdev&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/rupak/Code/jmc&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
@@ -197,8 +224,8 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.trustTestInconsistentCounter">
-    <configuration name="ModelCheckerTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.trustTestDiningPhilosophers">
+    <configuration name="ModelCheckerTest.trustTestBuggyCounterThatDeadlocks" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -211,7 +238,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestBuggyCounterThatDeadlocks&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -222,7 +249,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestCorrectCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -235,7 +262,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestCorrectCounter&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -246,7 +273,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.replayTestDiningPhilosophers" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestDiningPhilosophers" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -259,7 +286,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.replayTestDiningPhilosophers&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDiningPhilosophers&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -294,42 +321,44 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="jmc [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestSimpleCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" />
+        <option name="scriptParameters" value="" />
         <option name="taskDescriptions">
           <list />
         </option>
         <option name="taskNames">
           <list>
-            <option value="build" />
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestSimpleCounter&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
       </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
       <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
       <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>false</RunAsTest>
+      <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestBuggyCounterThatDeadlocks" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestCorrectCounter" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestDiningPhilosophers" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestInconsistentCounter" />
-      <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
-      <item itemvalue="Gradle.jmc [build]" />
-      <item itemvalue="Gradle.ModelCheckerTest" />
-      <item itemvalue="Gradle.ModelCheckerTest.replayTestDiningPhilosophers" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestDiningPhilosophers" />
         <item itemvalue="Gradle.ModelCheckerTest.trustTestInconsistentCounter" />
-        <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
-        <item itemvalue="Gradle.jmc [build]" />
-        <item itemvalue="Gradle.ModelCheckerTest.replayTestDiningPhilosophers" />
-        <item itemvalue="Gradle.ModelCheckerTest" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestBuggyCounterThatDeadlocks" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestCorrectCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter" />
       </list>
     </recent_temporary>
   </component>
@@ -390,7 +419,9 @@
       <workItem from="1713425994763" duration="2061000" />
       <workItem from="1713429783614" duration="8562000" />
       <workItem from="1713440621578" duration="2541000" />
-      <workItem from="1713443392953" duration="401000" />
+      <workItem from="1713443392953" duration="10375000" />
+      <workItem from="1713472025991" duration="47237000" />
+      <workItem from="1713645429047" duration="9324000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />

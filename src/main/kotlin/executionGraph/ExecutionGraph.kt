@@ -12,59 +12,69 @@ data class ExecutionGraph(
     /**
      * @property root The root of the execution graph
      */
-    var root : RootNode? = null,
+    var root: RootNode? = null,
 
     /**
      * @property graphEvents The list of all events in the graph (Represents G.E in Trust paper)
      */
-    var graphEvents : MutableList<Event> = mutableListOf(),
+    var graphEvents: MutableList<Event> = mutableListOf(),
 
     /**
      * @property eventsOrder The ordered list of added events to trust algorithm (Represents $\leq_G$ in Trust paper)
      */
-    var eventsOrder : MutableList<Event> = mutableListOf(),
+    var eventsOrder: MutableList<Event> = mutableListOf(),
 
     /**
      * @property COs The list of CO relations in the graph
      */
-    var COs : MutableList<CO> = mutableListOf(),
+    var COs: MutableList<CO> = mutableListOf(),
 
     /**
      * @property STs The list of start thread (ST) relations in the graph
      */
-    var STs : MutableSet<Pair<Event,Event>> = mutableSetOf(),
+    var STs: MutableSet<Pair<Event, Event>> = mutableSetOf(),
 
     /**
      * @property JTs The list of join thread (JT) relations in the graph
      */
-    var JTs : MutableSet<Pair<Event,Event>> = mutableSetOf(),
+    var JTs: MutableSet<Pair<Event, Event>> = mutableSetOf(),
+
+    /**
+     * @property MCs The list of monitor coherency (MC) relations in the graph
+     */
+    var MCs: MutableSet<Pair<Event, Event>> = mutableSetOf(),
+
+    /**
+     * @property TCs The list of Thread Coherency (TC) relations in the graph
+     */
+    var TCs: MutableSet<Pair<Event, Event>> = mutableSetOf(),
 
     /**
      * @property porf The relation of program order and reads from (porf) in the graph
      */
-    var porf : MutableSet<Pair<Event,Event>> = mutableSetOf(),
+    var porf: MutableSet<Pair<Event, Event>> = mutableSetOf(),
 
     /**
      * @property sc The relation of sequential consistency (sc) in the graph
      */
-    var sc : MutableSet<Pair<Event,Event>> = mutableSetOf(),
+    var sc: MutableSet<Pair<Event, Event>> = mutableSetOf(),
 
     /**
      * @property deleted The list of deleted events in the graph (Represents Deleted set in Trust algorithm)
      */
-    var deleted : MutableList<Event> = mutableListOf(),
+    var deleted: MutableList<Event> = mutableListOf(),
 
     /**
      * @property previous The list of previous events of a given event in the graph with respect to its relation with
      * a given write event (Represents previous set in Trust algorithm)
      */
-    var previous : MutableList<Event> = mutableListOf(),
+    var previous: MutableList<Event> = mutableListOf(),
 
     /**
      * @property id The id of the graph
      */
-    var id : Int = 0
-): Serializable {
+    var id: Int = 0
+) : Serializable {
 
     /**
      * Adds an event to the execution graph if it's not already present.
@@ -74,7 +84,7 @@ data class ExecutionGraph(
      *
      * @param event The event to be added to the execution graph.
      */
-    fun addEvent(event : Event) {
+    fun addEvent(event: Event) {
         if (event !in graphEvents) {
             graphEvents.add(event)
             eventsOrder.add(event)
@@ -110,7 +120,7 @@ data class ExecutionGraph(
      * @param secondEvent The second event in the ST relation.
      */
     fun addST(firstEvent: Event, secondEvent: Event) {
-        STs.add(Pair(firstEvent,secondEvent))
+        STs.add(Pair(firstEvent, secondEvent))
     }
 
     /**
@@ -120,7 +130,27 @@ data class ExecutionGraph(
      * @param secondEvent The second event in the JT relation.
      */
     fun addJT(firstEvent: Event, secondEvent: Event) {
-        JTs.add(Pair(firstEvent,secondEvent))
+        JTs.add(Pair(firstEvent, secondEvent))
+    }
+
+    /**
+     * Adds a MC relation between two given events.
+     *
+     * @param firstEvent The first event in the MC relation.
+     * @param secondEvent The second event in the MC relation.
+     */
+    fun addMC(firstEvent: Event, secondEvent: Event) {
+        MCs.add(Pair(firstEvent, secondEvent))
+    }
+
+    /**
+     * Adds a TC relation between two given start events.
+     *
+     * @param firstEvent The first event in the TC relation.
+     * @param secondEvent The second event in the TC relation.
+     */
+    fun addTC(firstEvent: Event, secondEvent: Event) {
+        TCs.add(Pair(firstEvent, secondEvent))
     }
 
     /**
@@ -162,6 +192,12 @@ data class ExecutionGraph(
 
         // This part adds the jt edges
         addJtEdges()
+
+        // This part adds the mc edges
+        addMcEdges()
+
+        // This part adds the tc edges
+        addTcEdges()
 
         // Next, computing the transitive closure of sc relation
         computeTransitiveClosure()
@@ -256,6 +292,24 @@ data class ExecutionGraph(
     }
 
     /**
+     * Adds the [MCs] edges to the [sc] set.
+     */
+    private fun addMcEdges() {
+        for (i in this.MCs.indices) {
+            this.sc.add(Pair(this.MCs.elementAt(i).first, this.MCs.elementAt(i).second))
+        }
+    }
+
+    /**
+     * Adds the [TCs] edges to the [sc] set.
+     */
+    private fun addTcEdges() {
+        for (i in this.TCs.indices) {
+            this.sc.add(Pair(this.TCs.elementAt(i).first, this.TCs.elementAt(i).second))
+        }
+    }
+
+    /**
      * Computes the transitive closure of the [sc] relation.
      */
     private fun computeTransitiveClosure() {
@@ -280,8 +334,8 @@ data class ExecutionGraph(
         // To make sure that a new porf is constructed
         this.porf = mutableSetOf()
 
-        for (i in 1..< this.graphEvents.size) {
-            this.porf.add(Pair(this.graphEvents[0],this.graphEvents[i]))
+        for (i in 1..<this.graphEvents.size) {
+            this.porf.add(Pair(this.graphEvents[0], this.graphEvents[i]))
         }
 
         // This part computes the primitives porf elements
@@ -289,22 +343,32 @@ data class ExecutionGraph(
             var node = this.root?.children!![i]!!
             if (node.value is ReadEvent) {
                 val read = node.value as ReadEvent
-                if (read.rf != null){
-                    this.porf.add(Pair(read.rf as Event , read as Event))
+                if (read.rf != null) {
+                    this.porf.add(Pair(read.rf as Event, read as Event))
                 }
             }
             var next = node.child
             while (next != null) {
-                this.porf.add(Pair(node.value ,next.value))
+                this.porf.add(Pair(node.value, next.value))
                 node = next
                 next = node.child
                 if (node.value is ReadEvent) {
                     val read = node.value as ReadEvent
                     if (read.rf != null) {
-                        this.porf.add(Pair(read.rf as Event , read as Event))
+                        this.porf.add(Pair(read.rf as Event, read as Event))
                     }
                 }
             }
+        }
+
+        // This part computes the mc relation
+        for (i in 0 until this.MCs.size) {
+            this.porf.add(Pair(this.MCs.elementAt(i).first, this.MCs.elementAt(i).second))
+        }
+
+        // This part computes the tc relation
+        for (i in 0 until this.TCs.size) {
+            this.porf.add(Pair(this.TCs.elementAt(i).first, this.TCs.elementAt(i).second))
         }
 
         // this part computes the complete transitive closure of porf
@@ -312,11 +376,11 @@ data class ExecutionGraph(
         while (addedNewPairs) {
             addedNewPairs = false
             for (pair in this.porf.toList()) {
-                val (a,b) = pair
+                val (a, b) = pair
                 for (otherPair in this.porf.toList()) {
-                    val (c,d) = otherPair
-                    if (b.equals(c) && !this.porf.contains(Pair(a,d))) {
-                        this.porf.add(Pair(a,d))
+                    val (c, d) = otherPair
+                    if (b.equals(c) && !this.porf.contains(Pair(a, d))) {
+                        this.porf.add(Pair(a, d))
                         addedNewPairs = true
                     }
                 }
@@ -324,13 +388,13 @@ data class ExecutionGraph(
         }
     }
 
-    fun computeDeleted(pivotEvent: Event,writeEvent: Event) {
+    fun computeDeleted(pivotEvent: Event, newAddedEvent: Event) {
         // To make sure that a new Porf is constructed
         this.deleted = mutableListOf()
 
         val index = this.eventsOrder.indexOf(pivotEvent)
-        for (i in index+1 until this.eventsOrder.size - 1)
-            if (!this.porf.contains(Pair(this.eventsOrder[i] , writeEvent)))
+        for (i in index + 1 until this.eventsOrder.size - 1)
+            if (!this.porf.contains(Pair(this.eventsOrder[i], newAddedEvent)))
                 deleted.add(this.eventsOrder[i])
     }
 
@@ -347,7 +411,7 @@ data class ExecutionGraph(
     }
 
     fun printPorf() {
-        println("Transitive Closure:")
+        println("Porf is:")
         if (this.porf.isEmpty())
             println("No porf exists")
         else {
@@ -368,22 +432,22 @@ data class ExecutionGraph(
         }
     }
 
-    fun computePrevious(firstEvent: Event,secondEvent: Event) {
+    fun computePrevious(firstEvent: Event, secondEvent: Event) {
 
         // To make sure that a new previous is constructed
         this.previous = mutableListOf()
 
         val index = this.eventsOrder.indexOf(firstEvent)
         for (i in 0 until this.graphEvents.size) {
-            if(this.porf.contains(Pair(this.graphEvents[i],secondEvent))) {
+            if (this.porf.contains(Pair(this.graphEvents[i], secondEvent))) {
                 this.previous.add(this.graphEvents[i])
-            }else if (this.eventsOrder.indexOf(this.graphEvents[i]) <= index) {
+            } else if (this.eventsOrder.indexOf(this.graphEvents[i]) <= index) {
                 this.previous.add(this.graphEvents[i])
             }
         }
     }
 
-    fun restrictingGraph() : ExecutionGraph {
+    fun restrictingGraph(): ExecutionGraph {
         val newGraph = ExecutionGraph()
 
         for (i in 0 until this.graphEvents.size) {
@@ -397,8 +461,8 @@ data class ExecutionGraph(
         }
 
         for (i in 0 until this.COs.size) {
-            if(!this.deleted.contains(this.COs[i].secondWrite)) {
-                if(this.COs[i].firstWrite is InitializationEvent) {
+            if (!this.deleted.contains(this.COs[i].secondWrite)) {
+                if (this.COs[i].firstWrite is InitializationEvent) {
                     newGraph.COs.add(this.COs[i].deepCopy())
                 } else {
                     val firstWrite = this.COs[i].firstWrite as WriteEvent
@@ -411,22 +475,40 @@ data class ExecutionGraph(
 
         for (i in 0 until this.STs.size) {
             if (!this.deleted.contains(this.STs.elementAt(i).first) &&
-                !this.deleted.contains(this.STs.elementAt(i).second)) {
-                newGraph.STs.add(Pair(this.STs.elementAt(i).first.deepCopy(),this.STs.elementAt(i).second.deepCopy()))
+                !this.deleted.contains(this.STs.elementAt(i).second)
+            ) {
+                newGraph.STs.add(Pair(this.STs.elementAt(i).first.deepCopy(), this.STs.elementAt(i).second.deepCopy()))
             }
         }
 
         for (i in 0 until this.JTs.size) {
             if (!this.deleted.contains(this.JTs.elementAt(i).first) &&
-                !this.deleted.contains(this.JTs.elementAt(i).second)) {
-                newGraph.JTs.add(Pair(this.JTs.elementAt(i).first.deepCopy(),this.JTs.elementAt(i).second.deepCopy()))
+                !this.deleted.contains(this.JTs.elementAt(i).second)
+            ) {
+                newGraph.JTs.add(Pair(this.JTs.elementAt(i).first.deepCopy(), this.JTs.elementAt(i).second.deepCopy()))
+            }
+        }
+
+        for (i in 0 until this.MCs.size) {
+            if (!this.deleted.contains(this.MCs.elementAt(i).first) &&
+                !this.deleted.contains(this.MCs.elementAt(i).second)
+            ) {
+                newGraph.MCs.add(Pair(this.MCs.elementAt(i).first.deepCopy(), this.MCs.elementAt(i).second.deepCopy()))
+            }
+        }
+
+        for (i in 0 until this.TCs.size) {
+            if (!this.deleted.contains(this.TCs.elementAt(i).first) &&
+                !this.deleted.contains(this.TCs.elementAt(i).second)
+            ) {
+                newGraph.TCs.add(Pair(this.TCs.elementAt(i).first.deepCopy(), this.TCs.elementAt(i).second.deepCopy()))
             }
         }
 
         for (i in 0 until this.deleted.size) {
             val threadEvent = this.deleted[i] as ThreadEvent
             if (this.root?.children?.keys?.contains(threadEvent.tid) == true) {
-                if(root?.children!![threadEvent.tid]?.value!!.equals(this.deleted[i])) {
+                if (root?.children!![threadEvent.tid]?.value!!.equals(this.deleted[i])) {
                     root?.children!!.remove(threadEvent.tid)
                 } else {
                     var node = root?.children!![threadEvent.tid]
@@ -458,6 +540,7 @@ data class ExecutionGraph(
             println(e)
         }
     }
+
     fun printEvents() {
         for (e in this.graphEvents) {
             when (e.type) {
@@ -465,51 +548,63 @@ data class ExecutionGraph(
                     val read: ReadEvent? = e as ReadEvent?
                     println(read)
                 }
+
                 EventType.WRITE -> {
                     val write: WriteEvent = e as WriteEvent
                     println(write)
                 }
+
                 EventType.INITIAL -> {
-                    val init : InitializationEvent = e as InitializationEvent
+                    val init: InitializationEvent = e as InitializationEvent
                     println(init)
                 }
+
                 EventType.START -> {
-                    val create : StartEvent = e as StartEvent
+                    val create: StartEvent = e as StartEvent
                     println(create)
                 }
+
                 EventType.JOIN -> {
-                    val join : JoinEvent = e as JoinEvent
+                    val join: JoinEvent = e as JoinEvent
                     println(join)
                 }
+
                 EventType.FINISH -> {
-                    val finish : FinishEvent = e as FinishEvent
+                    val finish: FinishEvent = e as FinishEvent
                     println(finish)
                 }
+
                 EventType.ENTER_MONITOR -> {
-                    val enter : EnterMonitorEvent = e as EnterMonitorEvent
+                    val enter: EnterMonitorEvent = e as EnterMonitorEvent
                     println(enter)
                 }
+
                 EventType.EXIT_MONITOR -> {
-                    val exit : ExitMonitorEvent = e as ExitMonitorEvent
+                    val exit: ExitMonitorEvent = e as ExitMonitorEvent
                     println(exit)
                 }
+
                 EventType.DEADLOCK -> {
-                    val deadlock : DeadlockEvent = e as DeadlockEvent
+                    val deadlock: DeadlockEvent = e as DeadlockEvent
                     println(deadlock)
                 }
+
                 EventType.MONITOR_REQUEST -> {
-                    val monitorRequestEvent : MonitorRequestEvent = e as MonitorRequestEvent
+                    val monitorRequestEvent: MonitorRequestEvent = e as MonitorRequestEvent
                     println(monitorRequestEvent)
                 }
+
                 EventType.FAILURE -> {
-                    val failureEvent : FailureEvent = e as FailureEvent
+                    val failureEvent: FailureEvent = e as FailureEvent
                     println(failureEvent)
                 }
+
                 EventType.OTHER -> TODO()
             }
         }
 
     }
+
     fun printGraph() {
         println("------@@@----- Here is the execution graph ------@@@-----")
         println(root)
@@ -531,7 +626,7 @@ data class ExecutionGraph(
      If you cannot read and understand the following code, please do not blame me :))
           Since, I was so exhausted when I was writing this code
      */
-    fun visualizeGraph(graphID : Int, path : String) {
+    fun visualizeGraph(graphID: Int, path: String) {
         val dotFile = File("${path}Execution_Graph_${graphID}.dot")
         val fileWriter = FileWriter(dotFile)
         val bufferedWriter = BufferedWriter(fileWriter)
@@ -539,36 +634,40 @@ data class ExecutionGraph(
 
         // This part prints the children of the root node
         for (i in root?.children?.keys!!) {
-            if(root?.children!![i]!!.value.type == EventType.WRITE) {
+            if (root?.children!![i]!!.value.type == EventType.WRITE) {
                 val write = root?.children!![i]!!.value as WriteEvent
                 var param: String
                 if (write.loc?.instance == null) {
                     param = write.loc?.field?.name + " : ${write.loc?.type} "
                 } else {
-                    param = write.loc?.instance.toString().substringAfterLast('.') +"@" +
-                            write.loc?.instance.hashCode().toString(16) +"." +
-                            write.loc?.field?.name+ "@" + write.loc?.field?.hashCode()?.toString(16) +
+                    param = write.loc?.instance.toString().substringAfterLast('.') + "@" +
+                            write.loc?.instance.hashCode().toString(16) + "." +
+                            write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
                             " : ${write.loc?.type.toString().substringAfterLast('/')} "
                 }
                 bufferedWriter.newLine()
                 bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
                 bufferedWriter.newLine()
                 bufferedWriter.write("root -> ${write.tid}${write.serial};")
-            } else if (root?.children!![i]!!.value.type == EventType.READ){
+            } else if (root?.children!![i]!!.value.type == EventType.READ) {
                 val read = root?.children!![i]!!.value as ReadEvent
                 var param: String
-                if (read.loc?.instance == null){
+                if (read.loc?.instance == null) {
                     param = read.loc?.field.toString() + " : ${read.loc?.type} "
-                } else{
-                    param = read.loc?.instance.toString().substringAfterLast('.')+"@"+ read.loc?.instance.hashCode().toString(16) +"." + read.loc?.field?.name+ "@" + read.loc?.field?.hashCode()?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
+                } else {
+                    param = read.loc?.instance.toString().substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
+                        .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                        ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                 }
                 bufferedWriter.newLine()
-                bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:" +
-                        "${read.serial}.R(${param})\"]")
+                bufferedWriter.write(
+                    "${read.tid}${read.serial} [label=\"${read.tid}:" +
+                            "${read.serial}.R(${param})\"]"
+                )
                 bufferedWriter.newLine()
                 bufferedWriter.write("root -> ${read.tid}${read.serial};")
-                if(read.rf != null) {
-                    if(read.rf is WriteEvent) {
+                if (read.rf != null) {
+                    if (read.rf is WriteEvent) {
                         val readFrom = read.rf as WriteEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
@@ -607,25 +706,58 @@ data class ExecutionGraph(
                 bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
                 bufferedWriter.newLine()
                 bufferedWriter.write("root -> ${deadlock.tid}${deadlock.serial};")
+            } else if (root?.children!![i]!!.value.type == EventType.MONITOR_REQUEST) {
+                val monitorRequest = root?.children!![i]!!.value as MonitorRequestEvent
+                bufferedWriter.newLine()
+                bufferedWriter.write(
+                    "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                        monitorRequest.monitor.hashCode().toString(16)
+                    }\"]"
+                )
+                bufferedWriter.newLine()
+                bufferedWriter.write("root -> ${monitorRequest.tid}${monitorRequest.serial};")
+            } else if (root?.children!![i]!!.value.type == EventType.ENTER_MONITOR) {
+                val enterMonitor = root?.children!![i]!!.value as EnterMonitorEvent
+                bufferedWriter.newLine()
+                bufferedWriter.write(
+                    "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                        enterMonitor.monitor.hashCode().toString(16)
+                    }\"]"
+                )
+                bufferedWriter.newLine()
+                bufferedWriter.write("root -> ${enterMonitor.tid}${enterMonitor.serial};")
+            } else if (root?.children!![i]!!.value.type == EventType.EXIT_MONITOR) {
+                val exitMonitor = root?.children!![i]!!.value as ExitMonitorEvent
+                bufferedWriter.newLine()
+                bufferedWriter.write(
+                    "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                        exitMonitor.monitor.hashCode().toString(16)
+                    }\"]"
+                )
+                bufferedWriter.newLine()
+                bufferedWriter.write("root -> ${exitMonitor.tid}${exitMonitor.serial};")
             }
 
         }
 
         // This part prints each thread of the root's children
-        for (i in root?.children?.keys!!){
-            if(root?.children!![i]!!.value.type == EventType.READ){
+        for (i in root?.children?.keys!!) {
+            if (root?.children!![i]!!.value.type == EventType.READ) {
                 val readParent = root?.children!![i]!!.value as ReadEvent
                 var nextChild = root?.children!![i]!!.child
                 var tid = readParent.tid
                 var serial = readParent.serial
-                while (nextChild != null){
-                    if(nextChild.value.type == EventType.WRITE){
+                while (nextChild != null) {
+                    if (nextChild.value.type == EventType.WRITE) {
                         val write = nextChild.value as WriteEvent
                         var param: String
-                        if (write.loc?.instance == null){
+                        if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
-                        } else{
-                            param = write.loc?.instance.toString().substringAfterLast('.')+"@"+ write.loc?.instance.hashCode().toString(16) +"." + write.loc?.field?.name+ "@" + write.loc?.field?.hashCode()?.toString(16) + " : ${write.loc?.type.toString().substringAfterLast('/')} "
+                        } else {
+                            param = write.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
+                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -633,31 +765,34 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${write.tid}${write.serial};")
                         tid = write.tid
                         serial = write.serial
-                    } else if (nextChild.value.type == EventType.READ){
+                    } else if (nextChild.value.type == EventType.READ) {
                         val read = nextChild.value as ReadEvent
                         var param: String
-                        if (read.loc?.instance == null){
+                        if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
-                        } else{
-                            param = read.loc?.instance.toString().substringAfterLast('.')+"@"+ read.loc?.instance.hashCode().toString(16) +"." + read.loc?.field?.name+ "@" + read.loc?.field?.hashCode()?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
+                        } else {
+                            param = read.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
                         bufferedWriter.newLine()
                         bufferedWriter.write("${tid}${serial} -> ${read.tid}${read.serial};")
-                        if(read.rf != null){
-                            if(read.rf is WriteEvent){
+                        if (read.rf != null) {
+                            if (read.rf is WriteEvent) {
                                 val readFrom = read.rf as WriteEvent
                                 bufferedWriter.newLine()
                                 bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
-                            } else if (read.rf is InitializationEvent){
+                            } else if (read.rf is InitializationEvent) {
                                 bufferedWriter.newLine()
                                 bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
                             }
                         }
                         tid = read.tid
                         serial = read.serial
-                    } else if (nextChild.value.type == EventType.START){
+                    } else if (nextChild.value.type == EventType.START) {
                         val create = nextChild.value as StartEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${create.tid}${create.serial} [label=\"${create.tid}:${create.serial}.Thread Started\"]")
@@ -665,7 +800,7 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${create.tid}${create.serial};")
                         tid = create.tid
                         serial = create.serial
-                    } else if (nextChild.value.type == EventType.JOIN){
+                    } else if (nextChild.value.type == EventType.JOIN) {
                         val join = nextChild.value as JoinEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${join.tid}${join.serial} [label=\"${join.tid}:${join.serial}.Thread Joined thread-${join.joinTid}\"]")
@@ -673,7 +808,7 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${join.tid}${join.serial};")
                         tid = join.tid
                         serial = join.serial
-                    } else if (nextChild.value.type == EventType.FINISH){
+                    } else if (nextChild.value.type == EventType.FINISH) {
                         val finish = nextChild.value as FinishEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}.Thread Finished\"]")
@@ -681,7 +816,7 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
                         tid = finish.tid
                         serial = finish.serial
-                    } else if (nextChild.value.type == EventType.FAILURE){
+                    } else if (nextChild.value.type == EventType.FAILURE) {
                         val failure = nextChild.value as FailureEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
@@ -689,7 +824,7 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
                         tid = failure.tid
                         serial = failure.serial
-                    } else if (nextChild.value.type == EventType.DEADLOCK){
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
                         val deadlock = nextChild.value as DeadlockEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
@@ -697,23 +832,62 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
                         tid = deadlock.tid
                         serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
                     }
                     //readParent = nextChild.value as ReadEvent
                     nextChild = nextChild.child
                 }
-            } else if (root?.children!![i]!!.value.type == EventType.WRITE){
+            } else if (root?.children!![i]!!.value.type == EventType.WRITE) {
                 val writeParent = root?.children!![i]!!.value as WriteEvent
                 var nextChild = root?.children!![i]!!.child
                 var tid = writeParent.tid
                 var serial = writeParent.serial
-                while (nextChild != null){
-                    if(nextChild.value.type == EventType.WRITE){
+                while (nextChild != null) {
+                    if (nextChild.value.type == EventType.WRITE) {
                         val write = nextChild.value as WriteEvent
                         var param: String
-                        if (write.loc?.instance == null){
+                        if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
-                        } else{
-                            param = write.loc?.instance.toString().substringAfterLast('.')+"@"+ write.loc?.instance.hashCode().toString(16) +"." + write.loc?.field?.name+ "@" + write.loc?.field?.hashCode()?.toString(16) + " : ${write.loc?.type.toString().substringAfterLast('/')} "
+                        } else {
+                            param = write.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
+                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -721,31 +895,34 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${write.tid}${write.serial};")
                         tid = write.tid
                         serial = write.serial
-                    } else if (nextChild.value.type == EventType.READ){
+                    } else if (nextChild.value.type == EventType.READ) {
                         val read = nextChild.value as ReadEvent
                         var param: String
-                        if (read.loc?.instance == null){
+                        if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
-                        } else{
-                            param = read.loc?.instance.toString().substringAfterLast('.')+"@"+ read.loc?.instance.hashCode().toString(16) +"." + read.loc?.field?.name+ "@" + read.loc?.field?.hashCode()?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
+                        } else {
+                            param = read.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
                         bufferedWriter.newLine()
                         bufferedWriter.write("${tid}${serial} -> ${read.tid}${read.serial};")
-                        if(read.rf != null){
-                            if(read.rf is WriteEvent){
+                        if (read.rf != null) {
+                            if (read.rf is WriteEvent) {
                                 val readFrom = read.rf as WriteEvent
                                 bufferedWriter.newLine()
                                 bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
-                            } else if (read.rf is InitializationEvent){
+                            } else if (read.rf is InitializationEvent) {
                                 bufferedWriter.newLine()
                                 bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
                             }
                         }
                         tid = read.tid
                         serial = read.serial
-                    } else if (nextChild.value.type == EventType.START){
+                    } else if (nextChild.value.type == EventType.START) {
                         val create = nextChild.value as StartEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${create.tid}${create.serial} [label=\"${create.tid}:${create.serial}.Thread Started\"]")
@@ -753,7 +930,7 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${create.tid}${create.serial};")
                         tid = create.tid
                         serial = create.serial
-                    } else if (nextChild.value.type == EventType.JOIN){
+                    } else if (nextChild.value.type == EventType.JOIN) {
                         val join = nextChild.value as JoinEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${join.tid}${join.serial} [label=\"${join.tid}:${join.serial}.Thread Joined thread-${join.joinTid}\"]")
@@ -761,7 +938,7 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${join.tid}${join.serial};")
                         tid = join.tid
                         serial = join.serial
-                    } else if (nextChild.value.type == EventType.FINISH){
+                    } else if (nextChild.value.type == EventType.FINISH) {
                         val finish = nextChild.value as FinishEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}.Thread Finished\"]")
@@ -769,7 +946,7 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
                         tid = finish.tid
                         serial = finish.serial
-                    } else if (nextChild.value.type == EventType.FAILURE){
+                    } else if (nextChild.value.type == EventType.FAILURE) {
                         val failure = nextChild.value as FailureEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
@@ -777,7 +954,7 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
                         tid = failure.tid
                         serial = failure.serial
-                    } else if (nextChild.value.type == EventType.DEADLOCK){
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
                         val deadlock = nextChild.value as DeadlockEvent
                         bufferedWriter.newLine()
                         bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
@@ -785,10 +962,46 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
                         tid = deadlock.tid
                         serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
                     }
                     nextChild = nextChild.child
                 }
-            } else if (root?.children!![i]!!.value.type == EventType.START){
+            } else if (root?.children!![i]!!.value.type == EventType.START) {
                 val createParent = root?.children!![i]!!.value as StartEvent
                 var nextChild = root?.children!![i]!!.child
                 var tid = createParent.tid
@@ -802,7 +1015,8 @@ data class ExecutionGraph(
                         } else {
                             param = write.loc?.instance.toString()
                                 .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name+ "@" + write.loc?.field?.hashCode()?.toString(16) + " : ${
+                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
                                 write.loc?.type.toString().substringAfterLast('/')
                             } "
                         }
@@ -820,7 +1034,8 @@ data class ExecutionGraph(
                         } else {
                             param = read.loc?.instance.toString()
                                 .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name+ "@" + read.loc?.field?.hashCode()?.toString(16) + " : ${
+                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
                                 read.loc?.type.toString().substringAfterLast('/')
                             } "
                         }
@@ -880,6 +1095,42 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
                         tid = deadlock.tid
                         serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -977,6 +1228,441 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
                         tid = deadlock.tid
                         serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
+                    }
+                    nextChild = nextChild.child
+                }
+            } else if (root?.children!![i]!!.value.type == EventType.MONITOR_REQUEST) {
+                val monitorRequestParent = root?.children!![i]!!.value as MonitorRequestEvent
+                var nextChild = root?.children!![i]!!.child
+                var tid = monitorRequestParent.tid
+                var serial = monitorRequestParent.serial
+                while (nextChild != null) {
+                    if (nextChild.value.type == EventType.WRITE) {
+                        val write = nextChild.value as WriteEvent
+                        var param: String
+                        if (write.loc?.instance == null) {
+                            param = write.loc?.field?.name + " : ${write.loc?.type} "
+                        } else {
+                            param = write.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
+                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                write.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${write.tid}${write.serial};")
+                        tid = write.tid
+                        serial = write.serial
+                    } else if (nextChild.value.type == EventType.READ) {
+                        val read = nextChild.value as ReadEvent
+                        var param: String
+                        if (read.loc?.instance == null) {
+                            param = read.loc?.field?.name + " : ${read.loc?.type} "
+                        } else {
+                            param = read.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                read.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${read.tid}${read.serial};")
+                        if (read.rf != null) {
+                            if (read.rf is WriteEvent) {
+                                val readFrom = read.rf as WriteEvent
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            } else if (read.rf is InitializationEvent) {
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            }
+                        }
+                        tid = read.tid
+                        serial = read.serial
+                    } else if (nextChild.value.type == EventType.START) {
+                        val create = nextChild.value as StartEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${create.tid}${create.serial} [label=\"${create.tid}:${create.serial}.Thread Started\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${create.tid}${create.serial};")
+                        tid = create.tid
+                        serial = create.serial
+                    } else if (nextChild.value.type == EventType.JOIN) {
+                        val join = nextChild.value as JoinEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${join.tid}${join.serial} [label=\"${join.tid}:${join.serial}.Thread Joined thread-${join.joinTid}\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${join.tid}${join.serial};")
+                        tid = join.tid
+                        serial = join.serial
+                    } else if (nextChild.value.type == EventType.FINISH) {
+                        val finish = nextChild.value as FinishEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}.Thread Finished\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
+                        tid = finish.tid
+                        serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE) {
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
+                    }
+                    nextChild = nextChild.child
+                }
+            } else if (root?.children!![i]!!.value.type == EventType.ENTER_MONITOR) {
+                val enterMonitorParent = root?.children!![i]!!.value as EnterMonitorEvent
+                var nextChild = root?.children!![i]!!.child
+                var tid = enterMonitorParent.tid
+                var serial = enterMonitorParent.serial
+                while (nextChild != null) {
+                    if (nextChild.value.type == EventType.WRITE) {
+                        val write = nextChild.value as WriteEvent
+                        var param: String
+                        if (write.loc?.instance == null) {
+                            param = write.loc?.field?.name + " : ${write.loc?.type} "
+                        } else {
+                            param = write.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
+                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                write.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${write.tid}${write.serial};")
+                        tid = write.tid
+                        serial = write.serial
+                    } else if (nextChild.value.type == EventType.READ) {
+                        val read = nextChild.value as ReadEvent
+                        var param: String
+                        if (read.loc?.instance == null) {
+                            param = read.loc?.field?.name + " : ${read.loc?.type} "
+                        } else {
+                            param = read.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                read.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${read.tid}${read.serial};")
+                        if (read.rf != null) {
+                            if (read.rf is WriteEvent) {
+                                val readFrom = read.rf as WriteEvent
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            } else if (read.rf is InitializationEvent) {
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            }
+                        }
+                        tid = read.tid
+                        serial = read.serial
+                    } else if (nextChild.value.type == EventType.START) {
+                        val create = nextChild.value as StartEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${create.tid}${create.serial} [label=\"${create.tid}:${create.serial}.Thread Started\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${create.tid}${create.serial};")
+                        tid = create.tid
+                        serial = create.serial
+                    } else if (nextChild.value.type == EventType.JOIN) {
+                        val join = nextChild.value as JoinEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${join.tid}${join.serial} [label=\"${join.tid}:${join.serial}.Thread Joined thread-${join.joinTid}\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${join.tid}${join.serial};")
+                        tid = join.tid
+                        serial = join.serial
+                    } else if (nextChild.value.type == EventType.FINISH) {
+                        val finish = nextChild.value as FinishEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}.Thread Finished\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
+                        tid = finish.tid
+                        serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE) {
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
+                    }
+                    nextChild = nextChild.child
+                }
+            } else if (root?.children!![i]!!.value.type == EventType.EXIT_MONITOR) {
+                val exitMonitorParent = root?.children!![i]!!.value as ExitMonitorEvent
+                var nextChild = root?.children!![i]!!.child
+                var tid = exitMonitorParent.tid
+                var serial = exitMonitorParent.serial
+                while (nextChild != null) {
+                    if (nextChild.value.type == EventType.WRITE) {
+                        val write = nextChild.value as WriteEvent
+                        var param: String
+                        if (write.loc?.instance == null) {
+                            param = write.loc?.field?.name + " : ${write.loc?.type} "
+                        } else {
+                            param = write.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
+                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                write.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${write.tid}${write.serial};")
+                        tid = write.tid
+                        serial = write.serial
+                    } else if (nextChild.value.type == EventType.READ) {
+                        val read = nextChild.value as ReadEvent
+                        var param: String
+                        if (read.loc?.instance == null) {
+                            param = read.loc?.field?.name + " : ${read.loc?.type} "
+                        } else {
+                            param = read.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                read.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${read.tid}${read.serial};")
+                        if (read.rf != null) {
+                            if (read.rf is WriteEvent) {
+                                val readFrom = read.rf as WriteEvent
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            } else if (read.rf is InitializationEvent) {
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            }
+                        }
+                        tid = read.tid
+                        serial = read.serial
+                    } else if (nextChild.value.type == EventType.START) {
+                        val create = nextChild.value as StartEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${create.tid}${create.serial} [label=\"${create.tid}:${create.serial}.Thread Started\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${create.tid}${create.serial};")
+                        tid = create.tid
+                        serial = create.serial
+                    } else if (nextChild.value.type == EventType.JOIN) {
+                        val join = nextChild.value as JoinEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${join.tid}${join.serial} [label=\"${join.tid}:${join.serial}.Thread Joined thread-${join.joinTid}\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${join.tid}${join.serial};")
+                        tid = join.tid
+                        serial = join.serial
+                    } else if (nextChild.value.type == EventType.FINISH) {
+                        val finish = nextChild.value as FinishEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}.Thread Finished\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
+                        tid = finish.tid
+                        serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE) {
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -984,16 +1670,16 @@ data class ExecutionGraph(
         }
 
         // This part prints the CO edges
-        if(this.COs.isNotEmpty()){
-            for (i in 0 until this.COs.size){
-                if (this.COs[i].firstWrite is WriteEvent){
+        if (this.COs.isNotEmpty()) {
+            for (i in 0 until this.COs.size) {
+                if (this.COs[i].firstWrite is WriteEvent) {
                     val firstTid = (this.COs[i].firstWrite as WriteEvent).tid
                     val firstSerial = (this.COs[i].firstWrite as WriteEvent).serial
                     val secondTid = this.COs[i].secondWrite.tid
                     val secondSerial = this.COs[i].secondWrite.serial
                     bufferedWriter.newLine()
                     bufferedWriter.write("${firstTid}${firstSerial} -> ${secondTid}${secondSerial}[color=blue, label=\"co\"];")
-                }else{
+                } else {
                     val secondTid = this.COs[i].secondWrite.tid
                     val secondSerial = this.COs[i].secondWrite.serial
                     bufferedWriter.newLine()
@@ -1004,8 +1690,8 @@ data class ExecutionGraph(
         }
 
         // This part prints the ST edges
-        if(this.STs.isNotEmpty()){
-            for (i in this.STs.indices){
+        if (this.STs.isNotEmpty()) {
+            for (i in this.STs.indices) {
                 val firstTid = (this.STs.elementAt(i).first as ThreadEvent).tid
                 val firstSerial = (this.STs.elementAt(i).first as ThreadEvent).serial
                 val secondTid = (this.STs.elementAt(i).second as ThreadEvent).tid
@@ -1016,8 +1702,8 @@ data class ExecutionGraph(
         }
 
         // This part prints the JT edges
-        if(this.JTs.isNotEmpty()){
-            for (i in this.JTs.indices){
+        if (this.JTs.isNotEmpty()) {
+            for (i in this.JTs.indices) {
                 val firstTid = (this.JTs.elementAt(i).first as ThreadEvent).tid
                 val firstSerial = (this.JTs.elementAt(i).first as ThreadEvent).serial
                 val secondTid = (this.JTs.elementAt(i).second as ThreadEvent).tid
@@ -1027,19 +1713,44 @@ data class ExecutionGraph(
             }
         }
 
+        // This part prints the MC edges
+        if (this.MCs.isNotEmpty()) {
+            for (i in this.MCs.indices) {
+                val firstTid = (this.MCs.elementAt(i).first as ThreadEvent).tid
+                val firstSerial = (this.MCs.elementAt(i).first as ThreadEvent).serial
+                val secondTid = (this.MCs.elementAt(i).second as ThreadEvent).tid
+                val secondSerial = (this.MCs.elementAt(i).second as ThreadEvent).serial
+                bufferedWriter.newLine()
+                bufferedWriter.write("${firstTid}${firstSerial} -> ${secondTid}${secondSerial}[color=darkorchid3, label=\"mc\"];")
+            }
+        }
+
+        // This part prints the TC edges
+        if (this.TCs.isNotEmpty()) {
+            for (i in this.TCs.indices) {
+                val firstTid = (this.TCs.elementAt(i).first as ThreadEvent).tid
+                val firstSerial = (this.TCs.elementAt(i).first as ThreadEvent).serial
+                val secondTid = (this.TCs.elementAt(i).second as ThreadEvent).tid
+                val secondSerial = (this.TCs.elementAt(i).second as ThreadEvent).serial
+                bufferedWriter.newLine()
+                bufferedWriter.write("${firstTid}${firstSerial} -> ${secondTid}${secondSerial}[color=turquoise4, label=\"tc\"];")
+            }
+        }
+
         bufferedWriter.newLine()
         bufferedWriter.write("}")
         bufferedWriter.close()
 
-        dot2png(path,"Execution_Graph_${graphID}")
+        dot2png(path, "Execution_Graph_${graphID}")
     }
 
     /*
      When you make a deepCopy from a graph, the reference dependencies between events
         will be preserved within the ExecutionGraph object
      */
-    fun deepCopy() : ExecutionGraph{
-        val newExecutionGraph = ExecutionGraph(root = null,
+    fun deepCopy(): ExecutionGraph {
+        val newExecutionGraph = ExecutionGraph(
+            root = null,
             graphEvents = mutableListOf(),
             eventsOrder = mutableListOf(),
             COs = mutableListOf(),
@@ -1048,19 +1759,21 @@ data class ExecutionGraph(
             deleted = mutableListOf(),
             previous = mutableListOf(),
             JTs = mutableSetOf(),
-            STs = mutableSetOf()
+            STs = mutableSetOf(),
+            MCs = mutableSetOf(),
+            TCs = mutableSetOf()
         )
-        for (i in 0 until this.graphEvents.size){
+        for (i in 0 until this.graphEvents.size) {
             newExecutionGraph.graphEvents.add(this.graphEvents[i].deepCopy())
         }
 
-        for (i in 0 until this.eventsOrder.size){
+        for (i in 0 until this.eventsOrder.size) {
             newExecutionGraph.eventsOrder.add(
                 newExecutionGraph.graphEvents.find { it.equals(this.eventsOrder[i]) }!!
             )
         }
-        for (i in 0 until this.COs.size){
-            if (this.COs[i].firstWrite is WriteEvent){
+        for (i in 0 until this.COs.size) {
+            if (this.COs[i].firstWrite is WriteEvent) {
                 newExecutionGraph.COs.add(
                     CO(newExecutionGraph.graphEvents.find { it.equals(this.COs[i].firstWrite) } as WriteEvent,
                         newExecutionGraph.graphEvents.find { it.equals(this.COs[i].secondWrite) } as WriteEvent)
@@ -1074,38 +1787,64 @@ data class ExecutionGraph(
 
         }
 
-        for (i in this.STs.indices){
+        for (i in this.STs.indices) {
             newExecutionGraph.STs.add(
-                Pair(newExecutionGraph.graphEvents.find { it.equals(this.STs.elementAt(i).first) }!!,
-                    newExecutionGraph.graphEvents.find { it.equals(this.STs.elementAt(i).second) }!!)
+                Pair(
+                    newExecutionGraph.graphEvents.find { it.equals(this.STs.elementAt(i).first) }!!,
+                    newExecutionGraph.graphEvents.find { it.equals(this.STs.elementAt(i).second) }!!
+                )
             )
         }
 
-        for (i in this.JTs.indices){
+        for (i in this.JTs.indices) {
             newExecutionGraph.JTs.add(
-                Pair(newExecutionGraph.graphEvents.find { it.equals(this.JTs.elementAt(i).first) }!!,
-                    newExecutionGraph.graphEvents.find { it.equals(this.JTs.elementAt(i).second) }!!)
+                Pair(
+                    newExecutionGraph.graphEvents.find { it.equals(this.JTs.elementAt(i).first) }!!,
+                    newExecutionGraph.graphEvents.find { it.equals(this.JTs.elementAt(i).second) }!!
+                )
             )
         }
 
-        for (i in this.porf.indices){
+        for (i in this.MCs.indices) {
+            newExecutionGraph.MCs.add(
+                Pair(
+                    newExecutionGraph.graphEvents.find { it.equals(this.MCs.elementAt(i).first) }!!,
+                    newExecutionGraph.graphEvents.find { it.equals(this.MCs.elementAt(i).second) }!!
+                )
+            )
+        }
+
+        for (i in this.TCs.indices) {
+            newExecutionGraph.TCs.add(
+                Pair(
+                    newExecutionGraph.graphEvents.find { it.equals(this.TCs.elementAt(i).first) }!!,
+                    newExecutionGraph.graphEvents.find { it.equals(this.TCs.elementAt(i).second) }!!
+                )
+            )
+        }
+
+        for (i in this.porf.indices) {
             newExecutionGraph.porf.add(
-                Pair(newExecutionGraph.graphEvents.find { it.equals(this.porf.elementAt(i).first) }!!,
-                    newExecutionGraph.graphEvents.find { it.equals(this.porf.elementAt(i).second) }!!)
+                Pair(
+                    newExecutionGraph.graphEvents.find { it.equals(this.porf.elementAt(i).first) }!!,
+                    newExecutionGraph.graphEvents.find { it.equals(this.porf.elementAt(i).second) }!!
+                )
             )
         }
-        for (i in this.sc.indices){
+        for (i in this.sc.indices) {
             newExecutionGraph.sc.add(
-                Pair(newExecutionGraph.graphEvents.find { it.equals(this.sc.elementAt(i).first) }!!,
-                    newExecutionGraph.graphEvents.find { it.equals(this.sc.elementAt(i).second) }!!)
+                Pair(
+                    newExecutionGraph.graphEvents.find { it.equals(this.sc.elementAt(i).first) }!!,
+                    newExecutionGraph.graphEvents.find { it.equals(this.sc.elementAt(i).second) }!!
+                )
             )
         }
-        for (i in 0 until this.deleted.size){
+        for (i in 0 until this.deleted.size) {
             newExecutionGraph.deleted.add(
                 newExecutionGraph.graphEvents.find { it.equals(this.deleted[i]) }!!
             )
         }
-        for (i in 0 until this.previous.size){
+        for (i in 0 until this.previous.size) {
             newExecutionGraph.previous.add(
                 newExecutionGraph.graphEvents.find { it.equals(this.previous[i]) }!!
             )
@@ -1115,17 +1854,21 @@ data class ExecutionGraph(
             newExecutionGraph.graphEvents.find { it.equals(this.root?.value) }!!
         )
 
-        for (i in this.root?.children?.keys!!){
-            newExecutionGraph.root?.children!!.put(i,
-                EventNode(newExecutionGraph.graphEvents.find { it.equals(this.root?.children!![i]!!.value) }!!,
-                    null)
+        for (i in this.root?.children?.keys!!) {
+            newExecutionGraph.root?.children!!.put(
+                i,
+                EventNode(
+                    newExecutionGraph.graphEvents.find { it.equals(this.root?.children!![i]!!.value) }!!,
+                    null
+                )
             )
             var node = this.root?.children!![i]!!
             var copyNode = newExecutionGraph.root?.children!![i]!!
-            while (node.child != null){
+            while (node.child != null) {
                 copyNode.child = EventNode(
                     newExecutionGraph.graphEvents.find { it.equals(node.child!!.value) }!!,
-                    null)
+                    null
+                )
                 node = node.child!!
                 copyNode = copyNode.child!!
             }
@@ -1135,12 +1878,14 @@ data class ExecutionGraph(
         return newExecutionGraph
 
     }
+
     /*
      When you make a deepestCopy from a graph, the reference dependencies between
         events will "NOT" be preserved within the ExecutionGraph object
      */
-    fun deepestCopy() : ExecutionGraph{
-        val newExecutionGraph = ExecutionGraph(root = (this.root?.deepCopy()) as RootNode,
+    fun deepestCopy(): ExecutionGraph {
+        val newExecutionGraph = ExecutionGraph(
+            root = (this.root?.deepCopy()) as RootNode,
             graphEvents = mutableListOf(),
             eventsOrder = mutableListOf(),
             COs = mutableListOf(),
@@ -1149,33 +1894,71 @@ data class ExecutionGraph(
             deleted = mutableListOf(),
             previous = mutableListOf(),
             JTs = mutableSetOf(),
-            STs = mutableSetOf()
+            STs = mutableSetOf(),
+            MCs = mutableSetOf(),
+            TCs = mutableSetOf()
         )
-        for (i in 0 until this.graphEvents.size){
+        for (i in 0 until this.graphEvents.size) {
             newExecutionGraph.graphEvents.add(this.graphEvents[i].deepCopy())
         }
-        for (i in 0 until this.eventsOrder.size){
+        for (i in 0 until this.eventsOrder.size) {
             newExecutionGraph.eventsOrder.add(this.eventsOrder[i].deepCopy())
         }
-        for (i in 0 until this.COs.size){
+        for (i in 0 until this.COs.size) {
             newExecutionGraph.COs.add(this.COs[i].deepCopy())
         }
-        for (i in this.STs.indices){
-            newExecutionGraph.STs.add(Pair(this.STs.elementAt(i).first.deepCopy(),this.STs.elementAt(i).second.deepCopy()))
+        for (i in this.STs.indices) {
+            newExecutionGraph.STs.add(
+                Pair(
+                    this.STs.elementAt(i).first.deepCopy(),
+                    this.STs.elementAt(i).second.deepCopy()
+                )
+            )
         }
-        for (i in this.JTs.indices){
-            newExecutionGraph.JTs.add(Pair(this.JTs.elementAt(i).first.deepCopy(),this.JTs.elementAt(i).second.deepCopy()))
+        for (i in this.JTs.indices) {
+            newExecutionGraph.JTs.add(
+                Pair(
+                    this.JTs.elementAt(i).first.deepCopy(),
+                    this.JTs.elementAt(i).second.deepCopy()
+                )
+            )
         }
-        for (i in this.porf.indices){
-            newExecutionGraph.porf.add(Pair(this.porf.elementAt(i).first.deepCopy(),this.porf.elementAt(i).second.deepCopy()))
+        for (i in this.MCs.indices) {
+            newExecutionGraph.MCs.add(
+                Pair(
+                    this.MCs.elementAt(i).first.deepCopy(),
+                    this.MCs.elementAt(i).second.deepCopy()
+                )
+            )
         }
-        for (i in this.sc.indices){
-            newExecutionGraph.sc.add(Pair(this.sc.elementAt(i).first.deepCopy(),this.sc.elementAt(i).second.deepCopy()))
+        for (i in this.TCs.indices) {
+            newExecutionGraph.TCs.add(
+                Pair(
+                    this.TCs.elementAt(i).first.deepCopy(),
+                    this.TCs.elementAt(i).second.deepCopy()
+                )
+            )
         }
-        for (i in 0 until this.deleted.size){
+        for (i in this.porf.indices) {
+            newExecutionGraph.porf.add(
+                Pair(
+                    this.porf.elementAt(i).first.deepCopy(),
+                    this.porf.elementAt(i).second.deepCopy()
+                )
+            )
+        }
+        for (i in this.sc.indices) {
+            newExecutionGraph.sc.add(
+                Pair(
+                    this.sc.elementAt(i).first.deepCopy(),
+                    this.sc.elementAt(i).second.deepCopy()
+                )
+            )
+        }
+        for (i in 0 until this.deleted.size) {
             newExecutionGraph.deleted.add(this.deleted[i].deepCopy())
         }
-        for (i in 0 until this.previous.size){
+        for (i in 0 until this.previous.size) {
             newExecutionGraph.previous.add(this.previous[i].deepCopy())
         }
 
@@ -1193,8 +1976,9 @@ data class ExecutionGraph(
         }
      */
 
-    private fun dot2png(dotPath : String, dotName : String) {
-        val processBuilder = ProcessBuilder("dot", "-Tpng", "-o", "${dotPath}/${dotName}.png", "${dotPath}/${dotName}.dot")
+    private fun dot2png(dotPath: String, dotName: String) {
+        val processBuilder =
+            ProcessBuilder("dot", "-Tpng", "-o", "${dotPath}/${dotName}.png", "${dotPath}/${dotName}.dot")
         processBuilder.redirectErrorStream(true)
         val process = processBuilder.start()
         process.waitFor()
