@@ -1,5 +1,6 @@
 package org.mpisws.runtime;
 
+import kotlin.Pair;
 import org.mpisws.checker.CheckerConfiguration;
 import executionGraph.ExecutionGraph;
 import org.mpisws.checker.StrategyType;
@@ -242,6 +243,8 @@ public class RuntimeEnvironment {
      */
     public static String executionGraphsPath;
 
+    public static Map<Object, Set<Pair<Long, Long>>> suspendPriority = new HashMap<>();
+
     /**
      * The constructor is private to prevent the instantiation of the class
      */
@@ -268,7 +271,7 @@ public class RuntimeEnvironment {
         threadObjectMap.put(threadIdMap.get(thread.getId()), thread);
         thread.setName("Thread-" + threadCount++);
         System.out.println(
-                "[Runtime Environment Message] : " + threadIdMap.get(thread.getId()) +
+                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) +
                         " added to the createdThreadList of the Runtime Environment"
         );
         Object lock = new Object();
@@ -415,7 +418,7 @@ public class RuntimeEnvironment {
     public static void threadStart(Thread thread, Thread currentThread) {
         if (createdThreadList.contains(thread) && !readyThreadList.contains(thread)) {
             System.out.println(
-                    "[Runtime Environment Message] : " + thread.getName() + " requested to run the start()" +
+                    "[Runtime Environment Message] : Thread-" + thread.getName() + " requested to run the start()" +
                             " inside the " + currentThread.getName()
             );
             readyThreadList.add(thread);
@@ -648,7 +651,7 @@ public class RuntimeEnvironment {
     public static void readOperation(Object obj, Thread thread, String owner, String name, String descriptor) {
         Location location = createLocation(obj, owner, name, descriptor);
         System.out.println(
-                "[Runtime Environment Message] : " + threadIdMap.get(thread.getId()) + " requested to " +
+                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
                         "read the value of " + owner + "." + name + "(" + descriptor + ") = " +
                         Objects.requireNonNull(location).getValue()
         );
@@ -777,7 +780,7 @@ public class RuntimeEnvironment {
         );
         monitorList.put(lock, thread);
         System.out.println(
-                "[Runtime Environment Message] : (" + lock + ", " + thread.getName() + ") added to the " +
+                "[Runtime Environment Message] : The monitor (" + lock + ", " + thread.getName() + ") added to the " +
                         "monitorList of the RuntimeEnvironment"
         );
     }
@@ -806,7 +809,7 @@ public class RuntimeEnvironment {
         threadExitMonitorReq = thread;
         objectExitMonitorReq = lock;
         System.out.println(
-                "[Runtime Environment Message] : (" + lock + ", " + thread.getName() + ") removed from the " +
+                "[Runtime Environment Message] : Monitor (" + lock + ", " + thread.getName() + ") removed from the " +
                         "monitorList of the RuntimeEnvironment"
         );
         waitRequest(thread);
@@ -975,6 +978,12 @@ public class RuntimeEnvironment {
         int serialNumber = getNextSerialNumber(thread);
         return new ExitMonitorEvent(threadIdMap.get(thread.getId()).intValue(),
                 EventType.EXIT_MONITOR, serialNumber, createMonitor(lock));
+    }
+
+    public static SuspendEvent createSuspendEvent(Thread thread, Object lock) {
+        int serialNumber = getNextSerialNumber(thread);
+        mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), mcThreadSerialNumber.get(threadIdMap.get(thread.getId()).intValue()) - 1);
+        return new SuspendEvent(EventType.SUSPEND, threadIdMap.get(thread.getId()).intValue(), serialNumber, createMonitor(lock));
     }
 
     /**
@@ -1176,5 +1185,6 @@ public class RuntimeEnvironment {
         eventsRecord = new ArrayList<>();
         suspendedThreads = new ArrayList<>();
         threadObjectMap = new HashMap<>();
+        suspendPriority = new HashMap<>();
     }
 }

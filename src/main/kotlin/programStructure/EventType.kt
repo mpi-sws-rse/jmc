@@ -5,7 +5,7 @@ import java.io.Serializable
 /**
  * Enum class for the different types of events that can occur in a program.
  */
-enum class EventType: Serializable {
+enum class EventType : Serializable {
     INITIAL,
     WRITE,
     READ,
@@ -17,5 +17,7 @@ enum class EventType: Serializable {
     FAILURE,
     DEADLOCK,
     MONITOR_REQUEST,
+    SUSPEND,
+    UNSUSPEND,
     OTHER
 }

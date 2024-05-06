@@ -28,7 +28,7 @@ class SequentialConsistency {
 
          */
         @JvmStatic
-        fun porfAcyclicity(graph: ExecutionGraph) : Boolean{
+        fun porfAcyclicity(graph: ExecutionGraph): Boolean {
 
             // First, computing the porf of graph
             graph.computePorf()
@@ -36,9 +36,9 @@ class SequentialConsistency {
             // Next, finding a cycle within it
             var cycleFound = false
 
-            for (pair in graph.porf.toList()){
-                val (a,b) = pair
-                if (a.equals(b)){
+            for (pair in graph.porf.toList()) {
+                val (a, b) = pair
+                if (a.equals(b)) {
                     cycleFound = true
                     break
                 }
@@ -53,7 +53,7 @@ class SequentialConsistency {
          fr = rf^{-1} ; co
          */
 
-        fun scAcyclicity(graph: ExecutionGraph) : Boolean{
+        fun scAcyclicity(graph: ExecutionGraph): Boolean {
 
             // First, computing the sc of graph
             graph.computeSc()
@@ -62,12 +62,12 @@ class SequentialConsistency {
             var cycleFound = false
 
 
-            for (pair in graph.sc.toList()){
-                val (a,b) = pair
-                if (a.equals(b)){
+            for (pair in graph.sc.toList()) {
+                val (a, b) = pair
+                if (a.equals(b)) {
                     cycleFound = true
-                    println("[SC Checker] Cycle found in SC relation and the cycle is: $a -> $b")
-                    graph.printSc()
+                    println("[Sequential Consistency Checker Message] : Cycle found in SC relation and the cycle is: $a -> $b")
+                    //graph.printSc()
                     break
                 }
             }
@@ -75,30 +75,30 @@ class SequentialConsistency {
         }
 
         @JvmStatic
-        fun oldSCAcyclicity(graph: ExecutionGraph) : Boolean{
+        fun oldSCAcyclicity(graph: ExecutionGraph): Boolean {
 
             // First, computing the sc of graph
-            val sc = mutableListOf<Pair<Event,Event>>()
+            val sc = mutableListOf<Pair<Event, Event>>()
 
             // Adding pairs of initialization event to each graph event
             for (i in 1..<graph.graphEvents.size) {
-                graph.porf.add(Pair(graph.graphEvents[0],graph.graphEvents[i]))
+                graph.porf.add(Pair(graph.graphEvents[0], graph.graphEvents[i]))
             }
 
             // The whole following part computes the po, rf, and fr relations
-            for (i in graph.root?.children!!.keys){
+            for (i in graph.root?.children!!.keys) {
                 var node = graph.root?.children!![i]!!
                 // Adding rf
-                if (node.value is ReadEvent){
+                if (node.value is ReadEvent) {
                     val read = node.value as ReadEvent
-                    if (read.rf != null){
-                        sc.add(Pair(read.rf as Event , read as Event))
+                    if (read.rf != null) {
+                        sc.add(Pair(read.rf as Event, read as Event))
 
                         //Adding fr = rf^{-1} ; co
                         // rf^{-1} = Pair(read,read.rf)
-                        for (j in 0..(graph.COs.size-1)){
-                            if (read.rf!!.equals(graph.COs[j].firstWrite as Event)){
-                                sc.add(Pair(read,graph.COs[j].secondWrite as Event))
+                        for (j in 0..(graph.COs.size - 1)) {
+                            if (read.rf!!.equals(graph.COs[j].firstWrite as Event)) {
+                                sc.add(Pair(read, graph.COs[j].secondWrite as Event))
                             }
                         }
                     }
@@ -106,21 +106,21 @@ class SequentialConsistency {
 
                 // Adding po
                 var next = node.child
-                while (next != null){
-                    sc.add(Pair(node.value ,next.value))
+                while (next != null) {
+                    sc.add(Pair(node.value, next.value))
                     node = next
                     next = node.child
                     // Adding rf
-                    if (node.value is ReadEvent){
+                    if (node.value is ReadEvent) {
                         val read = node.value as ReadEvent
-                        if (read.rf != null){
-                            sc.add(Pair(read.rf as Event , read as Event))
+                        if (read.rf != null) {
+                            sc.add(Pair(read.rf as Event, read as Event))
 
                             //Adding fr = rf^{-1} ; co
                             // rf^{-1} = Pair(read,read.rf)
-                            for (j in 0..(graph.COs.size-1)){
-                                if (read.rf!!.equals(graph.COs[j].firstWrite as Event)){
-                                    sc.add(Pair(read,graph.COs[j].secondWrite as Event))
+                            for (j in 0..(graph.COs.size - 1)) {
+                                if (read.rf!!.equals(graph.COs[j].firstWrite as Event)) {
+                                    sc.add(Pair(read, graph.COs[j].secondWrite as Event))
                                 }
                             }
                         }
@@ -129,20 +129,20 @@ class SequentialConsistency {
             }
 
             //This part adds the co edges
-            for (i in 0..(graph.COs.size-1)){
-                sc.add(Pair(graph.COs[i].firstWrite as Event,graph.COs[i].secondWrite as Event))
+            for (i in 0..(graph.COs.size - 1)) {
+                sc.add(Pair(graph.COs[i].firstWrite as Event, graph.COs[i].secondWrite as Event))
             }
 
             // Next, computing the transitive closure of sc relation
             var addedNewPairs = true
             while (addedNewPairs) {
                 addedNewPairs = false
-                for (pair in sc.toList()){
-                    val (a,b) = pair
-                    for (otherPair in sc.toList()){
-                        val (c,d) = otherPair
-                        if (b.equals(c) && !sc.contains(Pair(a,d))){
-                            sc.add(Pair(a,d))
+                for (pair in sc.toList()) {
+                    val (a, b) = pair
+                    for (otherPair in sc.toList()) {
+                        val (c, d) = otherPair
+                        if (b.equals(c) && !sc.contains(Pair(a, d))) {
+                            sc.add(Pair(a, d))
                             addedNewPairs = true
                         }
                     }
@@ -152,9 +152,9 @@ class SequentialConsistency {
             // Finally, finding a cycle within it
             var cycleFound = false
 
-            for (pair in sc.toList()){
-                val (a,b) = pair
-                if (a.equals(b)){
+            for (pair in sc.toList()) {
+                val (a, b) = pair
+                if (a.equals(b)) {
                     cycleFound = true
                     break
                 }

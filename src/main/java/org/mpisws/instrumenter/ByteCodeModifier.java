@@ -1,6 +1,7 @@
 package org.mpisws.instrumenter;
 
 import org.objectweb.asm.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public class ByteCodeModifier {
      * The key of the map is the name of the class and the value is the bytecode of the class
      * These classes are the user program classes that are going to be modified
      */
-    public Map<String,byte[]> allByteCode;
+    public Map<String, byte[]> allByteCode;
 
     /**
      * @property {@link #mainClassName} is used to store the name of the main class of the user program.
@@ -178,7 +179,7 @@ public class ByteCodeModifier {
         ClassReader cr = new ClassReader(byteCode);
         cr.accept(classVisitor, 0);
         modifiedByteCode = cw.toByteArray();
-        allByteCode.put(mainClassName,modifiedByteCode);
+        allByteCode.put(mainClassName, modifiedByteCode);
     }
 
     /**
@@ -190,8 +191,8 @@ public class ByteCodeModifier {
      * the new variables do not overwrite existing ones.
      * </p>
      *
-     * @param byteCode The bytecode of the compiled class.
-     * @param methodName The name of the method in which to find the next available local variable index.
+     * @param byteCode         The bytecode of the compiled class.
+     * @param methodName       The name of the method in which to find the next available local variable index.
      * @param methodDescriptor The descriptor of the method (includes return type and parameters).
      * @return The index of the next available local variable in the specified method.
      */
@@ -206,7 +207,7 @@ public class ByteCodeModifier {
                     methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
                         @Override
                         public void visitMaxs(int maxStack, int maxLocals) {
-                            nextVarIndex =  maxLocals ;
+                            nextVarIndex = maxLocals;
                         }
                     };
                 }
@@ -235,8 +236,8 @@ public class ByteCodeModifier {
     public void modifyThreadCreation() {
         threadClassCandidate.add(mainClassName);
         while (!threadClassCandidate.isEmpty()) {
-            String newClassName = threadClassCandidate.remove(threadClassCandidate.size()-1);
-            byte [] byteCode = allByteCode.get(newClassName);
+            String newClassName = threadClassCandidate.remove(threadClassCandidate.size() - 1);
+            byte[] byteCode = allByteCode.get(newClassName);
             byte[] modifiedByteCode;
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
             ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
@@ -293,7 +294,7 @@ public class ByteCodeModifier {
             ClassReader cr = new ClassReader(byteCode);
             cr.accept(classVisitor, 0);
             modifiedByteCode = cw.toByteArray();
-            allByteCode.put(newClassName,modifiedByteCode);
+            allByteCode.put(newClassName, modifiedByteCode);
         }
     }
 
@@ -332,7 +333,7 @@ public class ByteCodeModifier {
                         public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
                                                     boolean isInterface) {
                             if (opcode == Opcodes.INVOKEVIRTUAL && name.equals("join") && descriptor.equals("()V") &&
-                                     isCastableToThread(owner)) {
+                                    isCastableToThread(owner)) {
                                 mv.visitInsn(Opcodes.DUP);
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
@@ -380,7 +381,7 @@ public class ByteCodeModifier {
             ClassReader cr = new ClassReader(byteCode);
             cr.accept(classVisitor, 0);
             modifiedByteCode = cw.toByteArray();
-            allByteCode.put(newClassName,modifiedByteCode);
+            allByteCode.put(newClassName, modifiedByteCode);
         }
     }
 
@@ -451,7 +452,7 @@ public class ByteCodeModifier {
             ClassReader cr = new ClassReader(byteCode);
             cr.accept(classVisitor, 0);
             modifiedByteCode = cw.toByteArray();
-            allByteCode.put(newClassName,modifiedByteCode);
+            allByteCode.put(newClassName, modifiedByteCode);
         }
     }
 
@@ -664,7 +665,7 @@ public class ByteCodeModifier {
                                         false
                                 );
                                 mv.visitInsn(Opcodes.NOP);
-                            }else {
+                            } else {
                                 super.visitFieldInsn(opcode, owner, name, descriptor);
                             }
                         }
@@ -675,7 +676,7 @@ public class ByteCodeModifier {
             ClassReader cr = new ClassReader(byteCode);
             cr.accept(classVisitor, 0);
             modifiedByteCode = cw.toByteArray();
-            allByteCode.put(newClass,modifiedByteCode);
+            allByteCode.put(newClass, modifiedByteCode);
         }
     }
 
@@ -768,7 +769,7 @@ public class ByteCodeModifier {
                 ClassReader cr = new ClassReader(byteCode);
                 cr.accept(classVisitor, 0);
                 modifiedByteCode = cw.toByteArray();
-                allByteCode.put(className,modifiedByteCode);
+                allByteCode.put(className, modifiedByteCode);
             }
         }
     }
@@ -806,11 +807,12 @@ public class ByteCodeModifier {
                     methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
 
                         boolean replaced = false;
+
                         @Override
                         public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
                                                     boolean isInterface) {
                             if (opcode == Opcodes.INVOKESPECIAL && owner.equals("java/lang/AssertionError") &&
-                                    name.equals("<init>") ) {
+                                    name.equals("<init>")) {
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "org/mpisws/runtime/RuntimeEnvironment",
@@ -840,7 +842,7 @@ public class ByteCodeModifier {
             ClassReader cr = new ClassReader(byteCode);
             cr.accept(classVisitor, 0);
             modifiedByteCode = cw.toByteArray();
-            allByteCode.put(className,modifiedByteCode);
+            allByteCode.put(className, modifiedByteCode);
         }
     }
 
@@ -1025,20 +1027,20 @@ public class ByteCodeModifier {
                                         "(Ljava/lang/Object;Ljava/lang/Thread;)V",
                                         false
                                 );
-                                mv.visitMethodInsn(
-                                        Opcodes.INVOKESTATIC,
-                                        "java/lang/Thread",
-                                        "currentThread",
-                                        "()Ljava/lang/Thread;",
-                                        false
-                                );
-                                mv.visitMethodInsn(
-                                        Opcodes.INVOKESTATIC,
-                                        "org/mpisws/runtime/RuntimeEnvironment",
-                                        "waitRequest",
-                                        "(Ljava/lang/Thread;)V",
-                                        false
-                                );
+//                                mv.visitMethodInsn(
+//                                        Opcodes.INVOKESTATIC,
+//                                        "java/lang/Thread",
+//                                        "currentThread",
+//                                        "()Ljava/lang/Thread;",
+//                                        false
+//                                );
+//                                mv.visitMethodInsn(
+//                                        Opcodes.INVOKESTATIC,
+//                                        "org/mpisws/runtime/RuntimeEnvironment",
+//                                        "waitRequest",
+//                                        "(Ljava/lang/Thread;)V",
+//                                        false
+//                                );
                             }
                         }
                     };

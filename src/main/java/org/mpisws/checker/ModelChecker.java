@@ -1,6 +1,7 @@
 package org.mpisws.checker;
 
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.instrumenter.ByteCodeModifier;
@@ -86,7 +87,7 @@ public class ModelChecker {
         if (this.configuration.verbose) {
             byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode);
         }
-        System.out.println("Running the modified bytecode");
+        System.out.println("[JMC Message] : Running the modified bytecode");
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage());
     }
 

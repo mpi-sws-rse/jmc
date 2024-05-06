@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import dpor.Trust;
 import executionGraph.CO;
@@ -160,11 +161,12 @@ public class TrustStrategy implements SearchStrategy {
     private void initGuidingGraph() {
         if (!RuntimeEnvironment.mcGraphs.isEmpty()) {
             loadGuidingGraph();
-            System.out.println("[Debugging Message] : The guiding execution graph is loaded");
-            System.out.println("[Debugging Message] : The guiding execution graph is : G_" + guidingExecutionGraph.getId());
+            System.out.println("[Trust Message] : The guiding execution graph is loaded");
+            System.out.println("[Trust Message] : The guiding execution graph is : G_" + guidingExecutionGraph.getId());
+            System.out.println("[Trust Message] : The guiding ordered events are : ");
             int index = 1;
             for (Event event : guidingEvents) {
-                System.out.println("[Debugging Message] : " + index + "-" + event);
+                System.out.println("[Trust Message] : " + index + "-" + event);
                 index++;
             }
         } else {
@@ -222,7 +224,7 @@ public class TrustStrategy implements SearchStrategy {
 
         List<Event> remainingEvents = new ArrayList<>(guidingExecutionGraph.getGraphEvents());
         remainingEvents.remove(guidingNode.getValue()); // remove the initialization event
-
+        guidingExecutionGraph.computeSc();
         while (!remainingEvents.isEmpty()) {
             remainingEvents.removeIf(event -> {
                 boolean isEventFree = guidingExecutionGraph.getSc().stream()
@@ -328,11 +330,11 @@ public class TrustStrategy implements SearchStrategy {
         RuntimeEnvironment.eventsRecord.add(exitMonitorEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(exitMonitorEvent);
-            analyzeSuspendedThreadsForMonitor(monitor);
+            analyzeSuspendedThreadsForMonitor(monitor, thread);
         } else {
             passEventToTrust(exitMonitorEvent);
             updateCurrentGraph(exitMonitorEvent);
-            analyzeSuspendedThreadsForMonitor(monitor);
+            analyzeSuspendedThreadsForMonitor(monitor, thread);
         }
     }
 
@@ -635,6 +637,11 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    private void nextSuspendEvent(Thread thread, Object monitor) {
+        SuspendEvent suspendEvent = RuntimeEnvironment.createSuspendEvent(thread, monitor);
+        addEventToCurrentGraph(suspendEvent);
+    }
+
     /**
      * Picks the next guided thread.
      * <p>
@@ -664,6 +671,11 @@ public class TrustStrategy implements SearchStrategy {
             guidedEnterMonitorEventHelper((EnterMonitorEvent) guidingEvent);
         }
 
+        if (guidingEvent.getType() == EventType.SUSPEND) {
+            guidedSuspendEventHelper((SuspendEvent) guidingEvent);
+            return pickNextGuidedThread();
+        }
+
         System.out.println("[Trust Strategy Message] : Thread-" + guidingThread + " is the next guided thread");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
     }
@@ -673,6 +685,28 @@ public class TrustStrategy implements SearchStrategy {
         Object monitor = RuntimeEnvironment.monitorRequest.get(thread);
         RuntimeEnvironment.monitorRequest.remove(thread, monitor);
         nextEnterMonitorEvent(thread, monitor);
+    }
+
+    private void guidedSuspendEventHelper(SuspendEvent suspendEvent) {
+        Thread suspendThread = RuntimeEnvironment.threadObjectMap.get((long) suspendEvent.getTid());
+        suspendThread(suspendThread);
+
+        Set<Pair<Event, Event>> mcs = guidingExecutionGraph.getMCs();
+        ThreadEvent firstThreadEvent = null;
+        for (Pair<Event, Event> mc : mcs) {
+            if (mc.component2().equals(suspendEvent)) {
+                firstThreadEvent = (ThreadEvent) mc.component1();
+                break;
+            }
+        }
+
+        Object monitor = RuntimeEnvironment.monitorRequest.get(suspendThread);
+        if (!RuntimeEnvironment.suspendPriority.containsKey(monitor)) {
+            RuntimeEnvironment.suspendPriority.put(monitor, new HashSet<>());
+        }
+
+        RuntimeEnvironment.suspendPriority.get(monitor).add(new Pair<>((long) firstThreadEvent.getTid(), (long) suspendEvent.getTid()));
+        nextSuspendEvent(suspendThread, monitor);
     }
 
     /**
@@ -983,5 +1017,43 @@ public class TrustStrategy implements SearchStrategy {
             RuntimeEnvironment.mcGraphs.addAll(mcGraphs);
         }
         RuntimeEnvironment.numOfGraphs = trust.getGraphCounter();
+    }
+
+
+    private void analyzeSuspendedThreadsForMonitor(Object monitor, Thread thread) {
+        updateSuspendPriority(monitor, thread);
+        List<Thread> candidateThreads = findSuspendedThreads(monitor);
+        //System.out.println("[Debugging Message] : The candidate threads for resuming are : ");
+        //candidateThreads.forEach(t -> System.out.println("Thread-" + RuntimeEnvironment.threadIdMap.get(t.getId())));
+        List<Thread> forbiddenThreads = findForbiddenThreads(monitor);
+        //System.out.println("[Debugging Message] : The forbidden threads for resuming are : ");
+        //forbiddenThreads.forEach(t -> System.out.println("Thread-" + RuntimeEnvironment.threadIdMap.get(t.getId())));
+        if (!candidateThreads.isEmpty()) {
+            for (Thread t : candidateThreads) {
+                if (!forbiddenThreads.contains(t)) {
+                    //System.out.println("[Debugging Message] : Thread-" + RuntimeEnvironment.threadIdMap.get(t.getId()) +
+                    //        " is going to be unsuspended");
+                    unsuspendThread(t);
+                }
+            }
+        }
+    }
+
+    private void updateSuspendPriority(Object monitor, Thread thread) {
+        if (RuntimeEnvironment.suspendPriority.containsKey(monitor)) {
+            RuntimeEnvironment.suspendPriority.get(monitor).removeIf(pair -> pair.component1().equals(RuntimeEnvironment.threadIdMap.get(thread.getId())));
+        }
+    }
+
+    private List<Thread> findForbiddenThreads(Object monitor) {
+        List<Thread> forbiddenThreads = new ArrayList<>();
+        if (RuntimeEnvironment.suspendPriority.containsKey(monitor)) {
+            // Find all the second elements of the pairs in the set of pairs, corresponding to the monitor, and add them
+            // to the forbidden threads list.
+            forbiddenThreads = RuntimeEnvironment.suspendPriority.get(monitor).stream()
+                    .map(pair -> RuntimeEnvironment.threadObjectMap.get(pair.component2()))
+                    .collect(Collectors.toList());
+        }
+        return forbiddenThreads;
     }
 }

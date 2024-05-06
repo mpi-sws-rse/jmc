@@ -29,8 +29,7 @@ public class CorrectCounter extends Thread {
             System.out.println(e.getMessage());
         }
 
-        System.out.println("[" + Thread.currentThread().getName()
-                + " message] : If you see this message, the assert passed. The counter value is " + counter.count);
+        System.out.println("[Correct Counter message] : If you see this message, the assert passed. The counter value is " + counter.count);
 
     }
 }

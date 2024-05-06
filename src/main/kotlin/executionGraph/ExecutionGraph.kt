@@ -6,6 +6,7 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.Serializable
+import kotlin.math.E
 
 data class ExecutionGraph(
 
@@ -450,6 +451,9 @@ data class ExecutionGraph(
     fun restrictingGraph(): ExecutionGraph {
         val newGraph = ExecutionGraph()
 
+        //println("Debugging Graph-" + this.id)
+        //this.printDeleted()
+
         for (i in 0 until this.graphEvents.size) {
             if (!this.deleted.contains(this.graphEvents[i]))
                 newGraph.graphEvents.add(this.graphEvents[i].deepCopy())
@@ -527,6 +531,48 @@ data class ExecutionGraph(
 
     }
 
+    fun turnEnterMonitorToSuspend(enterMonitorEvent: EnterMonitorEvent) {
+        // Strat from the rootNode, find the child by the thread id of the enterMonitorEvent
+        var node = this.root?.children?.get(enterMonitorEvent.tid)
+        // traverse the child until the enterMonitorEvent is found
+        while (node?.value != enterMonitorEvent) {
+            node = node?.child
+        }
+        // create a new SuspendEvent with the same tid and serial number and monitor as the enterMonitorEvent
+        val suspendEvent = SuspendEvent(
+            tid = enterMonitorEvent.tid,
+            serial = enterMonitorEvent.serial,
+            monitor = enterMonitorEvent.monitor
+        )
+        // replace the enterMonitorEvent with the suspendEvent
+        node.value = suspendEvent
+
+        // In the graphEvents, fine the index of the enterMonitorEvent and replace it with the suspendEvent
+        val index = this.graphEvents.indexOf(enterMonitorEvent)
+        this.graphEvents[index] = suspendEvent
+
+        // In the eventsOrder, fine the index of the enterMonitorEvent and replace it with the suspendEvent
+        val index2 = this.eventsOrder.indexOf(enterMonitorEvent)
+        this.eventsOrder[index2] = suspendEvent
+
+        // for all pairs in the MCs set, if the second element is the enterMonitorEvent, replace it with the suspendEvent
+        var firstEvent: Event?
+        var matchpair = this.MCs.find { it.second == enterMonitorEvent }
+        if (matchpair != null) {
+            firstEvent = matchpair.first
+            this.MCs.remove(matchpair)
+            this.addMC(firstEvent, suspendEvent as Event)
+        }
+        var secondEvent: Event?
+        matchpair = this.MCs.find { it.first == enterMonitorEvent }
+        if (matchpair != null) {
+            secondEvent = matchpair.second
+            this.MCs.remove(matchpair)
+            this.addMC(suspendEvent as Event, secondEvent)
+        }
+    }
+
+
     fun printEventsOrder() {
         for (e in eventsOrder) {
             println("The $e event has index of ${eventsOrder.indexOf(e)}")
@@ -597,6 +643,16 @@ data class ExecutionGraph(
                 EventType.FAILURE -> {
                     val failureEvent: FailureEvent = e as FailureEvent
                     println(failureEvent)
+                }
+
+                EventType.SUSPEND -> {
+                    val suspendEvent: SuspendEvent = e as SuspendEvent
+                    println(suspendEvent)
+                }
+
+                EventType.UNSUSPEND -> {
+                    val unsuspendEvent: UnsuspendEvent = e as UnsuspendEvent
+                    println(unsuspendEvent)
                 }
 
                 EventType.OTHER -> TODO()
@@ -736,6 +792,18 @@ data class ExecutionGraph(
                 )
                 bufferedWriter.newLine()
                 bufferedWriter.write("root -> ${exitMonitor.tid}${exitMonitor.serial};")
+            } else if (root?.children!![i]!!.value.type == EventType.SUSPEND) {
+                val suspend = root?.children!![i]!!.value as SuspendEvent
+                bufferedWriter.newLine()
+                bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                bufferedWriter.newLine()
+                bufferedWriter.write("root -> ${suspend.tid}${suspend.serial};")
+            } else if (root?.children!![i]!!.value.type == EventType.UNSUSPEND) {
+                val unsuspend = root?.children!![i]!!.value as UnsuspendEvent
+                bufferedWriter.newLine()
+                bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                bufferedWriter.newLine()
+                bufferedWriter.write("root -> ${unsuspend.tid}${unsuspend.serial};")
             }
 
         }
@@ -868,6 +936,22 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
                         tid = exitMonitor.tid
                         serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
                     }
                     //readParent = nextChild.value as ReadEvent
                     nextChild = nextChild.child
@@ -998,6 +1082,22 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
                         tid = exitMonitor.tid
                         serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1131,6 +1231,22 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
                         tid = exitMonitor.tid
                         serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1264,6 +1380,22 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
                         tid = exitMonitor.tid
                         serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1397,6 +1529,22 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
                         tid = exitMonitor.tid
                         serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1530,6 +1678,22 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
                         tid = exitMonitor.tid
                         serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1663,6 +1827,320 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
                         tid = exitMonitor.tid
                         serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
+                    }
+                    nextChild = nextChild.child
+                }
+            } else if (root?.children!![i]!!.value.type == EventType.SUSPEND) {
+                val suspendParent = root?.children!![i]!!.value as SuspendEvent
+                var nextChild = root?.children!![i]!!.child
+                var tid = suspendParent.tid
+                var serial = suspendParent.serial
+                while (nextChild != null) {
+                    if (nextChild.value.type == EventType.WRITE) {
+                        val write = nextChild.value as WriteEvent
+                        var param: String
+                        if (write.loc?.instance == null) {
+                            param = write.loc?.field?.name + " : ${write.loc?.type} "
+                        } else {
+                            param = write.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
+                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                write.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${write.tid}${write.serial};")
+                        tid = write.tid
+                        serial = write.serial
+                    } else if (nextChild.value.type == EventType.READ) {
+                        val read = nextChild.value as ReadEvent
+                        var param: String
+                        if (read.loc?.instance == null) {
+                            param = read.loc?.field?.name + " : ${read.loc?.type} "
+                        } else {
+                            param = read.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                read.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${read.tid}${read.serial};")
+                        if (read.rf != null) {
+                            if (read.rf is WriteEvent) {
+                                val readFrom = read.rf as WriteEvent
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            } else if (read.rf is InitializationEvent) {
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            }
+                        }
+                        tid = read.tid
+                        serial = read.serial
+                    } else if (nextChild.value.type == EventType.START) {
+                        val create = nextChild.value as StartEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${create.tid}${create.serial} [label=\"${create.tid}:${create.serial}.Thread Started\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${create.tid}${create.serial};")
+                        tid = create.tid
+                        serial = create.serial
+                    } else if (nextChild.value.type == EventType.JOIN) {
+                        val join = nextChild.value as JoinEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${join.tid}${join.serial} [label=\"${join.tid}:${join.serial}.Thread Joined thread-${join.joinTid}\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${join.tid}${join.serial};")
+                        tid = join.tid
+                        serial = join.serial
+                    } else if (nextChild.value.type == EventType.FINISH) {
+                        val finish = nextChild.value as FinishEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}.Thread Finished\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
+                        tid = finish.tid
+                        serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE) {
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
+                    }
+                    nextChild = nextChild.child
+                }
+            } else if (root?.children!![i]!!.value.type == EventType.UNSUSPEND) {
+                val unsuspendParent = root?.children!![i]!!.value as UnsuspendEvent
+                var nextChild = root?.children!![i]!!.child
+                var tid = unsuspendParent.tid
+                var serial = unsuspendParent.serial
+                while (nextChild != null) {
+                    if (nextChild.value.type == EventType.WRITE) {
+                        val write = nextChild.value as WriteEvent
+                        var param: String
+                        if (write.loc?.instance == null) {
+                            param = write.loc?.field?.name + " : ${write.loc?.type} "
+                        } else {
+                            param = write.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
+                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                write.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${write.tid}${write.serial};")
+                        tid = write.tid
+                        serial = write.serial
+                    } else if (nextChild.value.type == EventType.READ) {
+                        val read = nextChild.value as ReadEvent
+                        var param: String
+                        if (read.loc?.instance == null) {
+                            param = read.loc?.field?.name + " : ${read.loc?.type} "
+                        } else {
+                            param = read.loc?.instance.toString()
+                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${
+                                read.loc?.type.toString().substringAfterLast('/')
+                            } "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${read.tid}${read.serial};")
+                        if (read.rf != null) {
+                            if (read.rf is WriteEvent) {
+                                val readFrom = read.rf as WriteEvent
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            } else if (read.rf is InitializationEvent) {
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            }
+                        }
+                        tid = read.tid
+                        serial = read.serial
+                    } else if (nextChild.value.type == EventType.START) {
+                        val create = nextChild.value as StartEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${create.tid}${create.serial} [label=\"${create.tid}:${create.serial}.Thread Started\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${create.tid}${create.serial};")
+                        tid = create.tid
+                        serial = create.serial
+                    } else if (nextChild.value.type == EventType.JOIN) {
+                        val join = nextChild.value as JoinEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${join.tid}${join.serial} [label=\"${join.tid}:${join.serial}.Thread Joined thread-${join.joinTid}\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${join.tid}${join.serial};")
+                        tid = join.tid
+                        serial = join.serial
+                    } else if (nextChild.value.type == EventType.FINISH) {
+                        val finish = nextChild.value as FinishEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}.Thread Finished\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
+                        tid = finish.tid
+                        serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE) {
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1761,7 +2239,8 @@ data class ExecutionGraph(
             JTs = mutableSetOf(),
             STs = mutableSetOf(),
             MCs = mutableSetOf(),
-            TCs = mutableSetOf()
+            TCs = mutableSetOf(),
+            id = this.id
         )
         for (i in 0 until this.graphEvents.size) {
             newExecutionGraph.graphEvents.add(this.graphEvents[i].deepCopy())
@@ -1806,6 +2285,8 @@ data class ExecutionGraph(
         }
 
         for (i in this.MCs.indices) {
+            //println("MCs: ${this.MCs.elementAt(i).first} ${this.MCs.elementAt(i).second}")
+            //this.printEvents()
             newExecutionGraph.MCs.add(
                 Pair(
                     newExecutionGraph.graphEvents.find { it.equals(this.MCs.elementAt(i).first) }!!,
@@ -1896,7 +2377,8 @@ data class ExecutionGraph(
             JTs = mutableSetOf(),
             STs = mutableSetOf(),
             MCs = mutableSetOf(),
-            TCs = mutableSetOf()
+            TCs = mutableSetOf(),
+            id = this.id
         )
         for (i in 0 until this.graphEvents.size) {
             newExecutionGraph.graphEvents.add(this.graphEvents[i].deepCopy())
