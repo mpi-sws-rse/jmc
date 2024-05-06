@@ -1,12 +1,10 @@
 # JMC
 
-The Java Model Checker (JMC) is a tool designed for testing concurrent Java programs. It comes with two search
-strategies
-to guide the testing process: a random strategy and an optimal DPOR-based stateless model checking strategy. However,
-the implementation of the DPOR-based strategy is not fully complete in this version of JMC. Therefore, the random
-strategy is the only one available for testing concurrent Java programs using JMC at the moment. Additionally, JMC
-includes a replay strategy that can be utilized to replay the execution trace of a concurrent Java program identified as
-buggy by JMC.
+The Java Model Checker (JMC) is a tool designed for testing concurrent Java programs. It comes with two main search
+strategies to guide the testing process: a random strategy and an optimal DPOR-based stateless model checking strategy
+(Trust Strategy). The implementation of DPOR in JMC is based on the Trust algorithm[[1]](#1) with various extensions.
+Additionally, JMC includes a replay strategy that can be utilized to replay the execution trace of a concurrent Java
+program identified as buggy by JMC.
 
 Please note that this is an early release of the tool for evaluation and all interfaces may change in future versions.
 
@@ -62,12 +60,16 @@ For each test case, follow these steps:
     - `int maxIterations`: the maximum number of iterations to run the testing process (default value: `10`).
     - `long seed`: the seed for the random number generator (default value: `new Random().nextLong()`).
     - `StrategyType strategyType`: the strategy to use for the testing process (default value: `StrategyType.RANDOM`).
-      You can change it to `StrategyType.REPLAYSTRATEGY` to use the replay strategy.
+      You can change it to `StrategyType.TRUST` to use the trust strategy and `StrategyType.REPLAY` to replay the buggy
+      trace.
     - `String buggyTracePath`: the path to save and load the buggy trace, used by the random strategy to save the
       potential buggy trace found during the testing process, and by the replay strategy to load and replay the
       execution
       of the buggy trace (default value: `src/main/resources/buggyTrace/`).
     - `String buggyTraceFile`: the name of the file containing the buggy trace (default value: `buggyTrace.obj`).
+    - `String executionGraphsPath`: the path to save the .dot and .png files of generated execution graphs during the
+      testing process under trust strategy. This field should be ignored when using the random and replay strategies
+      (default value: `src/main/resources/Visualized_Graphs/`).
 
 Once the configuration parameters are set, call the `checker.check()` method to initiate the testing process.
 
@@ -197,18 +199,18 @@ program using JMC, you can create a test case in the `ModelCheckerTest.java` cla
 ```java
 
 @Test
-@DisplayName("A concurrent counter using nested thread spawning - RandomStrategy")
+@DisplayName("A concurrent counter using nested thread spawning - Random")
 void randomTestSimpleCounter() {
     var t = new TestTarget("org.mpisws.concurrent.programs.simple.counter",
             "SimpleCounter",
             "main",
             "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
     );
-    System.out.println("SimpleCounter RandomStrategy Started");
+    System.out.println("SimpleCounter Random Strategy Started");
     checker.configuration.strategyType = StrategyType.RANDOM;
     checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
     checker.configuration.buggyTraceFile = "buggyTrace.obj";
-    assertTrue(checker.check(t), "SimpleCounter RandomStrategy Finished");
+    assertTrue(checker.check(t), "SimpleCounter Random Strategy Finished");
 }
 ```
 
@@ -268,23 +270,63 @@ replay strategy to reenact the buggy trace and debug your program. To do so, you
 ```java
 
 @Test
-@DisplayName("A concurrent counter using nested thread spawning - ReplayStrategy")
+@DisplayName("A concurrent counter using nested thread spawning - Replay")
 void replayTestSimpleCounter() {
     var t = new TestTarget("org.mpisws.concurrent.programs.simple.counter",
             "SimpleCounter",
             "main",
             "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
     );
-    System.out.println("SimpleCounter ReplayStrategy Started");
+    System.out.println("SimpleCounter Replay Strategy Started");
     checker.configuration.strategyType = StrategyType.REPLAY;
     checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
     checker.configuration.buggyTraceFile = "buggyTrace.obj";
-    assertTrue(checker.check(t), "SimpleCounter ReplayStrategy Finished");
+    assertTrue(checker.check(t), "SimpleCounter Replay Strategy Finished");
 }
 ```
 
 Upon executing this test case, JMC will replay the buggy trace and present the identical execution trace in the console,
 as depicted earlier. You can utilize this trace to debug your program and pinpoint the origin of the data race.
+
+Moreover, you can use the Trust strategy to test the program. To do so, you can create a test case in the
+`ModelCheckerTest.java` class as demonstrated below:
+
+```java
+
+@Test
+@DisplayName("A concurrent counter using nested thread spawning - Trust")
+void trustTestSimpleCounter() {
+    var t = new TestTarget("org.mpisws.concurrent.programs.simple.counter",
+            "SimpleCounter",
+            "main",
+            "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
+    );
+    System.out.println("SimpleCounter Trust Strategy Started");
+    checker.configuration.strategyType = StrategyType.TRUST;
+    checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+    checker.configuration.buggyTraceFile = "buggyTrace.obj";
+    checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
+    assertTrue(checker.check(t), "SimpleCounter Trust Strategy Finished");
+}
+```
+
+By executing this test case, output messages similar to the random strategy will be displayed in the console.
+Additionally, JMC will generate execution graphs, each representing an equivalent class of execution traces. Using the
+trust strategy, JMC will generate all possible execution graphs at runtime and execute the program based on these
+classes.
+If an assertion is violated in any of representative execution trace of the equivalent classes, JMC will store the buggy
+trace and return it. If no assertion violation is found in any of the classes, JMC will return a message indicating
+that the program is thread-safe.
+
+Since the SimpleCounter class contains a data race on the shared counter object, there exists a buggy trace that
+violates the assertion. The trust strategy employed by JMC will eventually identify this buggy trace. One of the
+execution
+graphs that leads to the assertion violation which is found by JMC for for the SimpleCounter is as follows:
+
+![Graph Visualization](sampleGraph.png)
+
+Also, JMC will store the found buggy trace by the trust strategy in it is possible to replay the buggy trace and debug
+the program.
 
 ### Dining Philosophers with Deadlock
 
@@ -385,18 +427,18 @@ create a test case in the `ModelCheckerTest.java` class as demonstrated below:
 ```java
 
 @Test
-@DisplayName("Dining philosophers problem with deadlock - RandomStrategy")
+@DisplayName("Dining philosophers problem with deadlock - Random")
 void randomTestDiningPhilosophers() {
     var t = new TestTarget("org.mpisws.concurrent.programs.dining",
             "DiningPhilosophers",
             "main",
             "src/test/java/org/mpisws/concurrent/programs/dining/"
     );
-    System.out.println("DiningPhilosophers RandomStrategy Started");
+    System.out.println("DiningPhilosophers Random Strategy Started");
     checker.configuration.strategyType = StrategyType.RANDOM;
     checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
     checker.configuration.buggyTraceFile = "buggyTrace.obj";
-    assertTrue(checker.check(t), "DiningPhilosophers RandomStrategy Finished");
+    assertTrue(checker.check(t), "DiningPhilosophers Random Strategy Finished");
 }
 ```
 
@@ -452,26 +494,67 @@ you can create a test case in the `ModelCheckerTest.java` class as demonstrated 
 ```java
 
 @Test
-@DisplayName("Dining philosophers problem with deadlock - ReplayStrategy")
+@DisplayName("Dining philosophers problem with deadlock - Replay")
 void replayTestDiningPhilosophers() {
     var t = new TestTarget("org.mpisws.concurrent.programs.dining",
             "DiningPhilosophers",
             "main",
             "src/test/java/org/mpisws/concurrent/programs/dining/"
     );
-    System.out.println("DiningPhilosophers ReplayStrategy Started");
+    System.out.println("DiningPhilosophers Replay Strategy Started");
     checker.configuration.strategyType = StrategyType.REPLAY;
     checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
     checker.configuration.buggyTraceFile = "buggyTrace.obj";
-    assertTrue(checker.check(t), "DiningPhilosophers ReplayStrategy Finished");
+    assertTrue(checker.check(t), "DiningPhilosophers Replay Strategy Finished");
 }
 ```
 
 Upon executing this test case, JMC will replay the buggy trace and present the identical execution trace in the console,
 as depicted earlier. You can utilize this trace to debug your program and pinpoint the origin of the deadlock.
 
+Finding the deadlock using the Trust strategy is also possible. To do so, you can create a test case in the
+`ModelCheckerTest.java` class as demonstrated below:
+
+```java
+
+@Test
+@DisplayName("Dining philosophers problem with deadlock - Trust")
+void trustTestDiningPhilosophers() {
+    var t = new TestTarget("org.mpisws.concurrent.programs.dining",
+            "DiningPhilosophers",
+            "main",
+            "src/test/java/org/mpisws/concurrent/programs/dining/"
+    );
+    System.out.println("DiningPhilosophers Trust Strategy Started");
+    checker.configuration.strategyType = StrategyType.TRUST;
+    checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+    checker.configuration.buggyTraceFile = "buggyTrace.obj";
+    checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
+    assertTrue(checker.check(t), "DiningPhilosophers Trust Strategy Finished");
+}
+```
+
+Using the trust strategy, JMC will generate all possible execution graphs at runtime and execute the program based on
+these classes. If a deadlock is found in any of the representative execution traces of the equivalent classes, JMC will
+store the buggy trace and return it. If no deadlock is found in any of the classes, JMC will return a message indicating
+that the program is deadlock-free.
+
+Since the DiningPhilosophers class contains a deadlock, the trust strategy employed by JMC will eventually identify this
+deadlock. One of the execution graphs that leads to the deadlock which is found by JMC for the DiningPhilosophers
+with `NUM_PHILOSOPHERS =3`
+is as follows:
+
+![Graph Visualization](sampleGraph2.png)
+
 ## Contact Us
 
 If you have any questions or find any issues with JMC, or if you would like us to prioritize particular features,
 please do not hesitate to contact us at `mkhoshechin@mpi-sws.org`
 or `rupak@mpi-sws.org`.
+
+## References
+
+<a id="1">[1]</a>
+Kokologiannakis, Michalis, Iason Marmanis, Vladimir Gladstein, and Viktor Vafeiadis.
+[Truly stateless, optimal dynamic partial order reduction](https://plv.mpi-sws.org/genmc/popl2022-trust.pdf).
+Proceedings of the ACM on Programming Languages 6, no. POPL (2022): 1-28.

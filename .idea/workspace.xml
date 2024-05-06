@@ -9,30 +9,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/SuspendEvent.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/UnsuspendEvent.kt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/SuspendEvent.kt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/UnsuspendEvent.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/sampleGraph.png" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/sampleGraph.png" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/ModelChecker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/ModelChecker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/instrumenter/ByteCodeModifier.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/instrumenter/ByteCodeModifier.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/consistencyChecking/SequentialConsistency.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/consistencyChecking/SequentialConsistency.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/EventType.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/EventType.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/correct/counter/CorrectCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/correct/counter/CorrectCounter.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/ModelChecker.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/ModelChecker.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/instrumenter/ByteCodeModifier.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/instrumenter/ByteCodeModifier.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/consistencyChecking/SequentialConsistency.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/consistencyChecking/SequentialConsistency.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/README.md" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/README.md" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/EventType.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/EventType.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/correct/counter/CorrectCounter.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/correct/counter/CorrectCounter.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -189,7 +173,7 @@
     "code.cleanup.on.save": "true",
     "git-widget-placeholder": "kcdev",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/Users/rupak/Code/jmc",
+    "last_opened_file_path": "/local/home/mkhoshechin/IdeaProjects/jmc",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -211,11 +195,11 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="/local/home/mkhoshechin/IdeaProjects/jmc" />
       <recent name="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/example/concurrent/programs/wrong/counter" />
       <recent name="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/example/concurrent/programs/correct/counter" />
       <recent name="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/example/concurrent/programs/complex/counter" />
       <recent name="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/example" />
-      <recent name="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/example/Transformer" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/example/concurrent/programs/kotlin/counter" />
@@ -355,9 +339,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="Gradle.ModelCheckerTest.trustTestDiningPhilosophers" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestBuggyCounterThatDeadlocks" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestCorrectCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.trustTestSimpleCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestCorrectCounter" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestBuggyCounterThatDeadlocks" />
         <item itemvalue="Gradle.ModelCheckerTest.trustTestInconsistentCounter" />
       </list>
     </recent_temporary>
@@ -437,6 +421,8 @@
       <workItem from="1714858588386" duration="4196000" />
       <workItem from="1714980562906" duration="829000" />
       <workItem from="1714981774776" duration="291000" />
+      <workItem from="1714982070617" duration="1471000" />
+      <workItem from="1714983550490" duration="2704000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />

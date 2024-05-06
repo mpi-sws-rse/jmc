@@ -146,7 +146,7 @@ class Trust(path: String) {
                     this.graphCounter++
                     G.id = this.graphCounter
                     println("[Model Checker Message] : Visited full execution graph G_$graphCounter")
-                    //G.visualizeGraph(this.graphCounter, this.graphsPath)
+                    G.visualizeGraph(this.graphCounter, this.graphsPath)
                     allGraphs.add(G)
                     //G.printEvents()
                     //G.printPorf()
