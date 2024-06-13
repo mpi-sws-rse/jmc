@@ -111,6 +111,11 @@ class Trust(path: String) {
                     println(unsuspendEvent)
                 }
 
+                EventType.SYM_EXECUTION -> {
+                    val symExecutionEvent: SymExecutionEvent = i as SymExecutionEvent
+                    println(symExecutionEvent)
+                }
+
                 EventType.OTHER -> TODO()
             }
         }
@@ -485,6 +490,23 @@ class Trust(path: String) {
                     // The following is for debugging purposes only
                     //println("[Model Checker Message] : The next event is a EXIT_MONITOR event")
                     //println("[Model Checker Message] : The EXIT_MONITOR event is : $nextEvent")
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.SYM_EXECUTION -> {
+                    // The following is for debugging purposes only
+                    println("[Model Checker Message] : The next event is a SYM_EXECUTION event")
+                    println("[Model Checker Message] : The SYM_EXECUTION event is : $nextEvent")
+                    var nextSymEvent = nextEvent as SymExecutionEvent
+                    if (nextSymEvent.isNegatable) {
+                        val G1 = G.deepCopy()
+                        val negatedSymEvent = nextSymEvent.deepCopy() as SymExecutionEvent
+                        negatedSymEvent.result = !negatedSymEvent.result
+                        negatedSymEvent.formula = "(not (${negatedSymEvent.formula}))"
+                        G1.addEvent(negatedSymEvent)
+                        visit(G1, allEvents)
+                    }
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }

@@ -40,6 +40,8 @@ public class ByteMapLoader extends ClassLoader {
         loadClassesFromPackage("src/main/java/org/mpisws/checker/", "org.mpisws.checker");
         loadClassesFromPackage("src/main/java/org/mpisws/checker/strategy/",
                 "org.mpisws.checker.strategy");
+        loadClassesFromPackage("src/main/java/org/mpisws/solver/", "org.mpisws.solver");
+        loadClassesFromPackage("src/main/java/org/mpisws/symbolic/", "org.mpisws.symbolic");
     }
 
     /**

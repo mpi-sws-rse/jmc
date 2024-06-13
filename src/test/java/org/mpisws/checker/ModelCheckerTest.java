@@ -312,6 +312,55 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  RANDOM COUNTER
+     */
+
+    @Test
+    @DisplayName("Random Counter")
+    void randomTestRandomCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.random.counter",
+                "RandomCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/random/counter/"
+        );
+        System.out.println("RandomCounter Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "RandomCounter Random Strategy Finished");
+    }
+    
+    @Test
+    @DisplayName("Random Counter")
+    void trustTestRandomCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.random.counter",
+                "RandomCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/random/counter/"
+        );
+        System.out.println("RandomCounter Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "RandomCounter Trust Strategy Finished");
+    }
+
+    @Test
+    @DisplayName("Random Counter")
+    void replayTestRandomCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.random.counter",
+                "RandomCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/random/counter/"
+        );
+        System.out.println("RandomCounter Replay Strategy Started");
+        checker.configuration.strategyType = StrategyType.REPLAY;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "RandomCounter Replay Strategy Finished");
+    }
+
+    /*
      *                                    DISABLED TESTS - DO NOT RUN
      */
 

@@ -6,7 +6,6 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.Serializable
-import kotlin.math.E
 
 data class ExecutionGraph(
 
@@ -655,6 +654,11 @@ data class ExecutionGraph(
                     println(unsuspendEvent)
                 }
 
+                EventType.SYM_EXECUTION -> {
+                    val symExecutionEvent: SymExecutionEvent = e as SymExecutionEvent
+                    println(symExecutionEvent)
+                }
+
                 EventType.OTHER -> TODO()
             }
         }
@@ -696,8 +700,8 @@ data class ExecutionGraph(
                 if (write.loc?.instance == null) {
                     param = write.loc?.field?.name + " : ${write.loc?.type} "
                 } else {
-                    param = write.loc?.instance.toString().substringAfterLast('.') + "@" +
-                            write.loc?.instance.hashCode().toString(16) + "." +
+                    param = write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                            write.loc?.instance.hashCode().toString(16) + ":" +
                             write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
                             " : ${write.loc?.type.toString().substringAfterLast('/')} "
                 }
@@ -711,8 +715,9 @@ data class ExecutionGraph(
                 if (read.loc?.instance == null) {
                     param = read.loc?.field.toString() + " : ${read.loc?.type} "
                 } else {
-                    param = read.loc?.instance.toString().substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                        .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                    param = read.loc?.instance.toString().substringAfterLast('.')
+                        .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                        .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
                         ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                 }
                 bufferedWriter.newLine()
@@ -804,8 +809,17 @@ data class ExecutionGraph(
                 bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
                 bufferedWriter.newLine()
                 bufferedWriter.write("root -> ${unsuspend.tid}${unsuspend.serial};")
+            } else if (root?.children!![i]!!.value.type == EventType.SYM_EXECUTION) {
+                val symExecution = root?.children!![i]!!.value as SymExecutionEvent
+                bufferedWriter.newLine()
+                bufferedWriter.write(
+                    "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                        symExecution.formula
+                    }\"]"
+                )
+                bufferedWriter.newLine()
+                bufferedWriter.write("root -> ${symExecution.tid}${symExecution.serial};")
             }
-
         }
 
         // This part prints each thread of the root's children
@@ -822,10 +836,11 @@ data class ExecutionGraph(
                         if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
                         } else {
-                            param = write.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${write.loc?.type.toString().substringAfterLast('/')} "
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -839,9 +854,9 @@ data class ExecutionGraph(
                         if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
                         } else {
-                            param = read.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
                                 ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
@@ -952,6 +967,18 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
                         tid = unsuspend.tid
                         serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
                     }
                     //readParent = nextChild.value as ReadEvent
                     nextChild = nextChild.child
@@ -968,10 +995,11 @@ data class ExecutionGraph(
                         if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
                         } else {
-                            param = write.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${write.loc?.type.toString().substringAfterLast('/')} "
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -985,9 +1013,9 @@ data class ExecutionGraph(
                         if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
                         } else {
-                            param = read.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
                                 ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
@@ -1098,6 +1126,18 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
                         tid = unsuspend.tid
                         serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1113,12 +1153,11 @@ data class ExecutionGraph(
                         if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
                         } else {
-                            param = write.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                write.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -1132,12 +1171,10 @@ data class ExecutionGraph(
                         if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
                         } else {
-                            param = read.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                read.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
@@ -1247,6 +1284,18 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
                         tid = unsuspend.tid
                         serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1262,12 +1311,11 @@ data class ExecutionGraph(
                         if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
                         } else {
-                            param = write.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                write.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -1281,12 +1329,10 @@ data class ExecutionGraph(
                         if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
                         } else {
-                            param = read.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                read.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
@@ -1396,6 +1442,18 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
                         tid = unsuspend.tid
                         serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1411,12 +1469,11 @@ data class ExecutionGraph(
                         if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
                         } else {
-                            param = write.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                write.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -1430,12 +1487,10 @@ data class ExecutionGraph(
                         if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
                         } else {
-                            param = read.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                read.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
@@ -1545,6 +1600,18 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
                         tid = unsuspend.tid
                         serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1560,12 +1627,11 @@ data class ExecutionGraph(
                         if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
                         } else {
-                            param = write.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                write.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -1579,12 +1645,10 @@ data class ExecutionGraph(
                         if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
                         } else {
-                            param = read.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                read.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
@@ -1694,6 +1758,18 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
                         tid = unsuspend.tid
                         serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1709,12 +1785,11 @@ data class ExecutionGraph(
                         if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
                         } else {
-                            param = write.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                write.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -1728,12 +1803,10 @@ data class ExecutionGraph(
                         if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
                         } else {
-                            param = read.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                read.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
@@ -1843,6 +1916,18 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
                         tid = unsuspend.tid
                         serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -1858,12 +1943,11 @@ data class ExecutionGraph(
                         if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
                         } else {
-                            param = write.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                write.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -1877,12 +1961,10 @@ data class ExecutionGraph(
                         if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
                         } else {
-                            param = read.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                read.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
@@ -1992,6 +2074,18 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
                         tid = unsuspend.tid
                         serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
                     }
                     nextChild = nextChild.child
                 }
@@ -2007,12 +2101,11 @@ data class ExecutionGraph(
                         if (write.loc?.instance == null) {
                             param = write.loc?.field?.name + " : ${write.loc?.type} "
                         } else {
-                            param = write.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + write.loc?.instance.hashCode()
-                                .toString(16) + "." + write.loc?.field?.name + "@" + write.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                write.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
@@ -2026,12 +2119,10 @@ data class ExecutionGraph(
                         if (read.loc?.instance == null) {
                             param = read.loc?.field?.name + " : ${read.loc?.type} "
                         } else {
-                            param = read.loc?.instance.toString()
-                                .substringAfterLast('.') + "@" + read.loc?.instance.hashCode()
-                                .toString(16) + "." + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
-                                ?.toString(16) + " : ${
-                                read.loc?.type.toString().substringAfterLast('/')
-                            } "
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
                         }
                         bufferedWriter.newLine()
                         bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
@@ -2141,6 +2232,176 @@ data class ExecutionGraph(
                         bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
                         tid = unsuspend.tid
                         serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
+                    }
+                    nextChild = nextChild.child
+                }
+            } else if (root?.children!![i]!!.value.type == EventType.SYM_EXECUTION) {
+                val symExecutionParent = root?.children!![i]!!.value as SymExecutionEvent
+                var nextChild = root?.children!![i]!!.child
+                var tid = symExecutionParent.tid
+                var serial = symExecutionParent.serial
+                while (nextChild != null) {
+                    if (nextChild.value.type == EventType.WRITE) {
+                        val write = nextChild.value as WriteEvent
+                        var param: String
+                        if (write.loc?.instance == null) {
+                            param = write.loc?.field?.name + " : ${write.loc?.type} "
+                        } else {
+                            param =
+                                write.loc?.instance.toString().substringAfterLast('.').substringBeforeLast('@') + "@" +
+                                        write.loc?.instance.hashCode().toString(16) + ":" +
+                                        write.loc?.field?.name + "@" + write.loc?.field?.hashCode()?.toString(16) +
+                                        " : ${write.loc?.type.toString().substringAfterLast('/')} "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${write.tid}${write.serial} [label=\"${write.tid}:${write.serial}.W(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${write.tid}${write.serial};")
+                        tid = write.tid
+                        serial = write.serial
+                    } else if (nextChild.value.type == EventType.READ) {
+                        val read = nextChild.value as ReadEvent
+                        var param: String
+                        if (read.loc?.instance == null) {
+                            param = read.loc?.field?.name + " : ${read.loc?.type} "
+                        } else {
+                            param = read.loc?.instance.toString().substringAfterLast('.')
+                                .substringBeforeLast('@') + "@" + read.loc?.instance.hashCode()
+                                .toString(16) + ":" + read.loc?.field?.name + "@" + read.loc?.field?.hashCode()
+                                ?.toString(16) + " : ${read.loc?.type.toString().substringAfterLast('/')} "
+                        }
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${read.tid}${read.serial} [label=\"${read.tid}:${read.serial}.R(${param})\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${read.tid}${read.serial};")
+                        if (read.rf != null) {
+                            if (read.rf is WriteEvent) {
+                                val readFrom = read.rf as WriteEvent
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            } else if (read.rf is InitializationEvent) {
+                                bufferedWriter.newLine()
+                                bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+                            }
+                        }
+                        tid = read.tid
+                        serial = read.serial
+                    } else if (nextChild.value.type == EventType.START) {
+                        val create = nextChild.value as StartEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${create.tid}${create.serial} [label=\"${create.tid}:${create.serial}.Thread Started\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${create.tid}${create.serial};")
+                        tid = create.tid
+                        serial = create.serial
+                    } else if (nextChild.value.type == EventType.JOIN) {
+                        val join = nextChild.value as JoinEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${join.tid}${join.serial} [label=\"${join.tid}:${join.serial}.Thread Joined thread-${join.joinTid}\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${join.tid}${join.serial};")
+                        tid = join.tid
+                        serial = join.serial
+                    } else if (nextChild.value.type == EventType.FINISH) {
+                        val finish = nextChild.value as FinishEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}.Thread Finished\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${finish.tid}${finish.serial};")
+                        tid = finish.tid
+                        serial = finish.serial
+                    } else if (nextChild.value.type == EventType.FAILURE) {
+                        val failure = nextChild.value as FailureEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${failure.tid}${failure.serial} [label=\"${failure.tid}:${failure.serial}.Thread Failure\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${failure.tid}${failure.serial};")
+                        tid = failure.tid
+                        serial = failure.serial
+                    } else if (nextChild.value.type == EventType.DEADLOCK) {
+                        val deadlock = nextChild.value as DeadlockEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${deadlock.tid}${deadlock.serial} [label=\"${deadlock.tid}:${deadlock.serial}.Deadlock\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${deadlock.tid}${deadlock.serial};")
+                        tid = deadlock.tid
+                        serial = deadlock.serial
+                    } else if (nextChild.value.type == EventType.MONITOR_REQUEST) {
+                        val monitorRequest = nextChild.value as MonitorRequestEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${monitorRequest.tid}${monitorRequest.serial} [label=\"${monitorRequest.tid}:${monitorRequest.serial}.Monitor Request@${
+                                monitorRequest.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${monitorRequest.tid}${monitorRequest.serial};")
+                        tid = monitorRequest.tid
+                        serial = monitorRequest.serial
+                    } else if (nextChild.value.type == EventType.ENTER_MONITOR) {
+                        val enterMonitor = nextChild.value as EnterMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${enterMonitor.tid}${enterMonitor.serial} [label=\"${enterMonitor.tid}:${enterMonitor.serial}.Enter Monitor@${
+                                enterMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${enterMonitor.tid}${enterMonitor.serial};")
+                        tid = enterMonitor.tid
+                        serial = enterMonitor.serial
+                    } else if (nextChild.value.type == EventType.EXIT_MONITOR) {
+                        val exitMonitor = nextChild.value as ExitMonitorEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${exitMonitor.tid}${exitMonitor.serial} [label=\"${exitMonitor.tid}:${exitMonitor.serial}.Exit Monitor@${
+                                exitMonitor.monitor.hashCode().toString(16)
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${exitMonitor.tid}${exitMonitor.serial};")
+                        tid = exitMonitor.tid
+                        serial = exitMonitor.serial
+                    } else if (nextChild.value.type == EventType.SUSPEND) {
+                        val suspend = nextChild.value as SuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${suspend.tid}${suspend.serial} [label=\"${suspend.tid}:${suspend.serial}.Suspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${suspend.tid}${suspend.serial};")
+                        tid = suspend.tid
+                        serial = suspend.serial
+                    } else if (nextChild.value.type == EventType.UNSUSPEND) {
+                        val unsuspend = nextChild.value as UnsuspendEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${unsuspend.tid}${unsuspend.serial} [label=\"${unsuspend.tid}:${unsuspend.serial}.Unsuspend\"]")
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${unsuspend.tid}${unsuspend.serial};")
+                        tid = unsuspend.tid
+                        serial = unsuspend.serial
+                    } else if (nextChild.value.type == EventType.SYM_EXECUTION) {
+                        val symExecution = nextChild.value as SymExecutionEvent
+                        bufferedWriter.newLine()
+                        bufferedWriter.write(
+                            "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}.Sym Execution:${
+                                symExecution.formula
+                            }\"]"
+                        )
+                        bufferedWriter.newLine()
+                        bufferedWriter.write("${tid}${serial} -> ${symExecution.tid}${symExecution.serial};")
+                        tid = symExecution.tid
+                        serial = symExecution.serial
                     }
                     nextChild = nextChild.child
                 }

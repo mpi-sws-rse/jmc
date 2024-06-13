@@ -846,6 +846,55 @@ public class ByteCodeModifier {
         }
     }
 
+    public void modifySymbolicEval() {
+        for (String className : allByteCode.keySet()) {
+            System.out.println(className);
+            byte[] byteCode = allByteCode.get(className);
+            byte[] modifiedByteCode;
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+                @Override
+                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                                 String[] exceptions) {
+                    MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+                    methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+                        // INVOKEVIRTUAL org/mpisws/symbolic/SymbolicFormula.evaluate (Lorg/mpisws/symbolic/SymbolicOperation;)Z
+                        @Override
+                        public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
+                                                    boolean isInterface) {
+                            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                            if (opcode == Opcodes.INVOKEVIRTUAL && name.equals("evaluate") &&
+                                    descriptor.equals("(Lorg/mpisws/symbolic/SymbolicOperation;)Z") &&
+                                    owner.equals("org/mpisws/symbolic/SymbolicFormula")) {
+                                System.out.println("opcode: " + opcode + ", owner: " + owner + ", name: " + name + ", descriptor: " + descriptor);
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "java/lang/Thread",
+                                        "currentThread",
+                                        "()Ljava/lang/Thread;",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/runtime/RuntimeEnvironment",
+                                        "waitRequest",
+                                        "(Ljava/lang/Thread;)V",
+                                        false
+                                );
+                                mv.visitInsn(Opcodes.NOP);
+                            }
+                        }
+                    };
+                    return methodVisitor;
+                }
+            };
+            ClassReader cr = new ClassReader(byteCode);
+            cr.accept(classVisitor, 0);
+            modifiedByteCode = cw.toByteArray();
+            allByteCode.put(className, modifiedByteCode);
+        }
+    }
+
     /**
      * Checks if the given class is castable to `Thread` class.
      *

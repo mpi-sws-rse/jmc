@@ -19,5 +19,6 @@ enum class EventType : Serializable {
     MONITOR_REQUEST,
     SUSPEND,
     UNSUSPEND,
+    SYM_EXECUTION,
     OTHER
 }

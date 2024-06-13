@@ -1,0 +1,421 @@
+// class version 61.0 (61)
+// access flags 0x21
+public class org/mpisws/concurrent/programs/random/counter/RandomCounter extends java/lang/Thread {
+
+  // compiled from: RandomCounter.java
+  // access flags 0x19
+  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
+
+  // access flags 0x0
+  Lorg/mpisws/concurrent/programs/random/counter/Counter; counter
+
+  // access flags 0x0
+  Lorg/mpisws/symbolic/SymbolicInteger; x
+
+  // access flags 0x0
+  Lorg/mpisws/symbolic/SymbolicInteger; y
+
+  // access flags 0x0
+  Lorg/mpisws/symbolic/SymbolicBoolean; a
+
+  // access flags 0x0
+  Lorg/mpisws/symbolic/SymbolicBoolean; b
+
+  // access flags 0x1018
+  final static synthetic Z $assertionsDisabled
+
+  // access flags 0x1
+  public <init>(Lorg/mpisws/concurrent/programs/random/counter/Counter;Lorg/mpisws/symbolic/SymbolicInteger;Lorg/mpisws/symbolic/SymbolicInteger;Lorg/mpisws/symbolic/SymbolicBoolean;Lorg/mpisws/symbolic/SymbolicBoolean;)V
+   L0
+    LINENUMBER 14 L0
+    ALOAD 0
+    INVOKESPECIAL java/lang/Thread.<init> ()V
+   L1
+    LINENUMBER 15 L1
+    ALOAD 0
+    ALOAD 1
+    PUTFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.counter : Lorg/mpisws/concurrent/programs/random/counter/Counter;
+   L2
+    LINENUMBER 16 L2
+    ALOAD 0
+    ALOAD 2
+    PUTFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.x : Lorg/mpisws/symbolic/SymbolicInteger;
+   L3
+    LINENUMBER 17 L3
+    ALOAD 0
+    ALOAD 3
+    PUTFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.y : Lorg/mpisws/symbolic/SymbolicInteger;
+   L4
+    LINENUMBER 18 L4
+    ALOAD 0
+    ALOAD 4
+    PUTFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.a : Lorg/mpisws/symbolic/SymbolicBoolean;
+   L5
+    LINENUMBER 19 L5
+    ALOAD 0
+    ALOAD 5
+    PUTFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.b : Lorg/mpisws/symbolic/SymbolicBoolean;
+   L6
+    LINENUMBER 20 L6
+    RETURN
+    MAXSTACK = 2
+    MAXLOCALS = 6
+
+  // access flags 0x1
+  public run()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L0
+    LINENUMBER 24 L0
+    NEW org/mpisws/symbolic/ArithmeticFormula
+    DUP
+    INVOKESPECIAL org/mpisws/symbolic/ArithmeticFormula.<init> ()V
+    ASTORE 1
+   L1
+    LINENUMBER 25 L1
+    ALOAD 1
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.x : Lorg/mpisws/symbolic/SymbolicInteger;
+    ICONST_1
+    INVOKEVIRTUAL org/mpisws/symbolic/ArithmeticFormula.geq (Lorg/mpisws/symbolic/AbstractInteger;I)Lorg/mpisws/symbolic/SymbolicOperation;
+    ASTORE 2
+   L2
+    LINENUMBER 27 L2
+    NEW org/mpisws/symbolic/PropositionalFormula
+    DUP
+    INVOKESPECIAL org/mpisws/symbolic/PropositionalFormula.<init> ()V
+    ASTORE 3
+   L3
+    LINENUMBER 28 L3
+    ALOAD 3
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.b : Lorg/mpisws/symbolic/SymbolicBoolean;
+    ALOAD 2
+    INVOKEVIRTUAL org/mpisws/symbolic/PropositionalFormula.and (Lorg/mpisws/symbolic/SymbolicBoolean;Lorg/mpisws/symbolic/SymbolicOperation;)Lorg/mpisws/symbolic/SymbolicOperation;
+    ASTORE 4
+   L4
+    LINENUMBER 30 L4
+    NEW org/mpisws/symbolic/ArithmeticStatement
+    DUP
+    INVOKESPECIAL org/mpisws/symbolic/ArithmeticStatement.<init> ()V
+    ASTORE 5
+   L5
+    LINENUMBER 31 L5
+    ALOAD 5
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.y : Lorg/mpisws/symbolic/SymbolicInteger;
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.x : Lorg/mpisws/symbolic/SymbolicInteger;
+    INVOKEVIRTUAL org/mpisws/symbolic/ArithmeticStatement.add (Lorg/mpisws/symbolic/AbstractInteger;Lorg/mpisws/symbolic/AbstractInteger;)V
+   L6
+    LINENUMBER 32 L6
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.x : Lorg/mpisws/symbolic/SymbolicInteger;
+    ALOAD 5
+    INVOKEVIRTUAL org/mpisws/symbolic/SymbolicInteger.assign (Lorg/mpisws/symbolic/ArithmeticStatement;)V
+   L7
+    LINENUMBER 34 L7
+    NEW org/mpisws/symbolic/ArithmeticStatement
+    DUP
+    INVOKESPECIAL org/mpisws/symbolic/ArithmeticStatement.<init> ()V
+    ASTORE 6
+   L8
+    LINENUMBER 35 L8
+    ALOAD 6
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.y : Lorg/mpisws/symbolic/SymbolicInteger;
+    ICONST_3
+    INVOKEVIRTUAL org/mpisws/symbolic/ArithmeticStatement.mul (Lorg/mpisws/symbolic/AbstractInteger;I)V
+   L9
+    LINENUMBER 36 L9
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.y : Lorg/mpisws/symbolic/SymbolicInteger;
+    ALOAD 6
+    INVOKEVIRTUAL org/mpisws/symbolic/SymbolicInteger.assign (Lorg/mpisws/symbolic/ArithmeticStatement;)V
+   L10
+    LINENUMBER 38 L10
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.a : Lorg/mpisws/symbolic/SymbolicBoolean;
+    ALOAD 3
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.a : Lorg/mpisws/symbolic/SymbolicBoolean;
+    INVOKEVIRTUAL org/mpisws/symbolic/PropositionalFormula.not (Lorg/mpisws/symbolic/SymbolicBoolean;)Lorg/mpisws/symbolic/SymbolicOperation;
+    INVOKEVIRTUAL org/mpisws/symbolic/SymbolicBoolean.assign (Lorg/mpisws/symbolic/SymbolicOperation;)V
+   L11
+    LINENUMBER 40 L11
+    NEW org/mpisws/symbolic/SymbolicFormula
+    DUP
+    INVOKESPECIAL org/mpisws/symbolic/SymbolicFormula.<init> ()V
+    ASTORE 7
+   L12
+    LINENUMBER 41 L12
+    ALOAD 7
+    ALOAD 4
+    INVOKEVIRTUAL org/mpisws/symbolic/SymbolicFormula.evaluate (Lorg/mpisws/symbolic/SymbolicOperation;)Z
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+    IFEQ L13
+   L14
+    LINENUMBER 42 L14
+    ALOAD 1
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.x : Lorg/mpisws/symbolic/SymbolicInteger;
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.y : Lorg/mpisws/symbolic/SymbolicInteger;
+    INVOKEVIRTUAL org/mpisws/symbolic/ArithmeticFormula.gt (Lorg/mpisws/symbolic/AbstractInteger;Lorg/mpisws/symbolic/AbstractInteger;)Lorg/mpisws/symbolic/SymbolicOperation;
+    ASTORE 8
+   L15
+    LINENUMBER 43 L15
+    ALOAD 3
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.b : Lorg/mpisws/symbolic/SymbolicBoolean;
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.a : Lorg/mpisws/symbolic/SymbolicBoolean;
+    INVOKEVIRTUAL org/mpisws/symbolic/PropositionalFormula.implies (Lorg/mpisws/symbolic/SymbolicBoolean;Lorg/mpisws/symbolic/SymbolicBoolean;)Lorg/mpisws/symbolic/SymbolicOperation;
+    ASTORE 9
+   L16
+    LINENUMBER 44 L16
+    ALOAD 3
+    ALOAD 8
+    ALOAD 9
+    INVOKEVIRTUAL org/mpisws/symbolic/PropositionalFormula.and (Lorg/mpisws/symbolic/SymbolicOperation;Lorg/mpisws/symbolic/SymbolicOperation;)Lorg/mpisws/symbolic/SymbolicOperation;
+    ASTORE 10
+   L17
+    LINENUMBER 45 L17
+    ALOAD 7
+    ALOAD 10
+    INVOKEVIRTUAL org/mpisws/symbolic/SymbolicFormula.evaluate (Lorg/mpisws/symbolic/SymbolicOperation;)Z
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+    IFEQ L13
+   L18
+    LINENUMBER 46 L18
+    ALOAD 0
+    GETFIELD org/mpisws/concurrent/programs/random/counter/RandomCounter.counter : Lorg/mpisws/concurrent/programs/random/counter/Counter;
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/random/counter/Counter.increment ()V
+   L13
+    LINENUMBER 49 L13
+   FRAME FULL [org/mpisws/concurrent/programs/random/counter/RandomCounter org/mpisws/symbolic/ArithmeticFormula org/mpisws/symbolic/SymbolicOperation org/mpisws/symbolic/PropositionalFormula org/mpisws/symbolic/SymbolicOperation org/mpisws/symbolic/ArithmeticStatement org/mpisws/symbolic/ArithmeticStatement org/mpisws/symbolic/SymbolicFormula] []
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+    MAXSTACK = 3
+    MAXLOCALS = 11
+
+  // access flags 0x9
+  public static main([Ljava/lang/String;)V throws java/lang/InterruptedException
+    TRYCATCHBLOCK L0 L1 L2 java/lang/AssertionError
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.init (Ljava/lang/Thread;)V
+    NEW org/mpisws/runtime/SchedulerThread
+    DUP
+    INVOKESPECIAL org/mpisws/runtime/SchedulerThread.<init> ()V
+    ASTORE 13
+    ALOAD 13
+    LDC "SchedulerThread"
+    INVOKEVIRTUAL org/mpisws/runtime/SchedulerThread.setName (Ljava/lang/String;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    ALOAD 13
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.initSchedulerThread (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L3
+    LINENUMBER 52 L3
+    NEW org/mpisws/concurrent/programs/random/counter/Counter
+    DUP
+    INVOKESPECIAL org/mpisws/concurrent/programs/random/counter/Counter.<init> ()V
+    ASTORE 1
+   L4
+    LINENUMBER 53 L4
+    NEW org/mpisws/symbolic/SymbolicInteger
+    DUP
+    LDC "x1"
+    ICONST_0
+    INVOKESPECIAL org/mpisws/symbolic/SymbolicInteger.<init> (Ljava/lang/String;Z)V
+    ASTORE 2
+   L5
+    LINENUMBER 54 L5
+    NEW org/mpisws/symbolic/SymbolicInteger
+    DUP
+    LDC "x2"
+    ICONST_0
+    INVOKESPECIAL org/mpisws/symbolic/SymbolicInteger.<init> (Ljava/lang/String;Z)V
+    ASTORE 3
+   L6
+    LINENUMBER 55 L6
+    NEW org/mpisws/symbolic/SymbolicInteger
+    DUP
+    LDC "y1"
+    ICONST_0
+    INVOKESPECIAL org/mpisws/symbolic/SymbolicInteger.<init> (Ljava/lang/String;Z)V
+    ASTORE 4
+   L7
+    LINENUMBER 56 L7
+    NEW org/mpisws/symbolic/SymbolicInteger
+    DUP
+    LDC "y2"
+    ICONST_0
+    INVOKESPECIAL org/mpisws/symbolic/SymbolicInteger.<init> (Ljava/lang/String;Z)V
+    ASTORE 5
+   L8
+    LINENUMBER 57 L8
+    NEW org/mpisws/symbolic/SymbolicBoolean
+    DUP
+    LDC "a1"
+    ICONST_0
+    INVOKESPECIAL org/mpisws/symbolic/SymbolicBoolean.<init> (Ljava/lang/String;Z)V
+    ASTORE 6
+   L9
+    LINENUMBER 58 L9
+    NEW org/mpisws/symbolic/SymbolicBoolean
+    DUP
+    LDC "a2"
+    ICONST_0
+    INVOKESPECIAL org/mpisws/symbolic/SymbolicBoolean.<init> (Ljava/lang/String;Z)V
+    ASTORE 7
+   L10
+    LINENUMBER 59 L10
+    NEW org/mpisws/symbolic/SymbolicBoolean
+    DUP
+    LDC "b1"
+    ICONST_0
+    INVOKESPECIAL org/mpisws/symbolic/SymbolicBoolean.<init> (Ljava/lang/String;Z)V
+    ASTORE 8
+   L11
+    LINENUMBER 60 L11
+    NEW org/mpisws/symbolic/SymbolicBoolean
+    DUP
+    LDC "b2"
+    ICONST_0
+    INVOKESPECIAL org/mpisws/symbolic/SymbolicBoolean.<init> (Ljava/lang/String;Z)V
+    ASTORE 9
+   L12
+    LINENUMBER 61 L12
+    NEW org/mpisws/concurrent/programs/random/counter/RandomCounter
+    DUP
+    DUP
+    ALOAD 1
+    ALOAD 2
+    ALOAD 4
+    ALOAD 6
+    ALOAD 8
+    INVOKESPECIAL org/mpisws/concurrent/programs/random/counter/RandomCounter.<init> (Lorg/mpisws/concurrent/programs/random/counter/Counter;Lorg/mpisws/symbolic/SymbolicInteger;Lorg/mpisws/symbolic/SymbolicInteger;Lorg/mpisws/symbolic/SymbolicBoolean;Lorg/mpisws/symbolic/SymbolicBoolean;)V
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
+    ASTORE 10
+   L13
+    LINENUMBER 62 L13
+    NEW org/mpisws/concurrent/programs/random/counter/RandomCounter
+    DUP
+    DUP
+    ALOAD 1
+    ALOAD 3
+    ALOAD 5
+    ALOAD 7
+    ALOAD 9
+    INVOKESPECIAL org/mpisws/concurrent/programs/random/counter/RandomCounter.<init> (Lorg/mpisws/concurrent/programs/random/counter/Counter;Lorg/mpisws/symbolic/SymbolicInteger;Lorg/mpisws/symbolic/SymbolicInteger;Lorg/mpisws/symbolic/SymbolicBoolean;Lorg/mpisws/symbolic/SymbolicBoolean;)V
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
+    ASTORE 11
+   L14
+    LINENUMBER 63 L14
+    ALOAD 10
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L15
+    LINENUMBER 64 L15
+    ALOAD 11
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L16
+    LINENUMBER 65 L16
+    ALOAD 10
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/random/counter/RandomCounter.join ()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L17
+    LINENUMBER 66 L17
+    ALOAD 11
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/random/counter/RandomCounter.join ()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L0
+    LINENUMBER 69 L0
+    GETSTATIC org/mpisws/concurrent/programs/random/counter/RandomCounter.$assertionsDisabled : Z
+    IFNE L1
+    ALOAD 1
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/random/counter/Counter.getValue ()I
+    ICONST_2
+    IF_ICMPEQ L1
+    NEW java/lang/AssertionError
+    DUP
+    ALOAD 1
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/random/counter/Counter.getValue ()I
+    INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      " ***The assert did not pass, the counter value is \u0001***"
+    ]
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.assertOperation (Ljava/lang/String;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+   L1
+    LINENUMBER 72 L1
+   FRAME FULL [[Ljava/lang/String; org/mpisws/concurrent/programs/random/counter/Counter org/mpisws/symbolic/SymbolicInteger org/mpisws/symbolic/SymbolicInteger org/mpisws/symbolic/SymbolicInteger org/mpisws/symbolic/SymbolicInteger org/mpisws/symbolic/SymbolicBoolean org/mpisws/symbolic/SymbolicBoolean org/mpisws/symbolic/SymbolicBoolean org/mpisws/symbolic/SymbolicBoolean org/mpisws/concurrent/programs/random/counter/RandomCounter org/mpisws/concurrent/programs/random/counter/RandomCounter T org/mpisws/runtime/SchedulerThread] []
+    GOTO L18
+   L2
+    LINENUMBER 70 L2
+   FRAME SAME1 java/lang/AssertionError
+    ASTORE 12
+   L19
+    LINENUMBER 71 L19
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    ALOAD 12
+    INVOKEVIRTUAL java/lang/AssertionError.getMessage ()Ljava/lang/String;
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L18
+    LINENUMBER 74 L18
+   FRAME SAME
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    ALOAD 1
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/random/counter/Counter.getValue ()I
+    INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "[Random Counter message] : If you see this message, the assert passed. The counter value is \u0001"
+    ]
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L20
+    LINENUMBER 75 L20
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+    MAXSTACK = 8
+    MAXLOCALS = 14
+
+  // access flags 0x8
+  static <clinit>()V
+   L0
+    LINENUMBER 5 L0
+    LDC Lorg/mpisws/concurrent/programs/random/counter/RandomCounter;.class
+    INVOKEVIRTUAL java/lang/Class.desiredAssertionStatus ()Z
+    IFNE L1
+    ICONST_1
+    GOTO L2
+   L1
+   FRAME SAME
+    ICONST_0
+   L2
+   FRAME SAME1 I
+    PUTSTATIC org/mpisws/concurrent/programs/random/counter/RandomCounter.$assertionsDisabled : Z
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 0
+}

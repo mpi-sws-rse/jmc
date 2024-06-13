@@ -7,6 +7,7 @@ import org.mpisws.checker.StrategyType;
 import org.mpisws.checker.strategy.RandomStrategy;
 import org.mpisws.checker.strategy.ReplayStrategy;
 import org.mpisws.checker.strategy.TrustStrategy;
+import org.mpisws.symbolic.SymbolicOperation;
 import programStructure.ReadEvent;
 import programStructure.WriteEvent;
 
@@ -279,6 +280,9 @@ public class SchedulerThread extends Thread {
             case FINISH_REQUEST:
                 finishRequestHandler();
                 break;
+            case SYMB_ARTH_REQUEST:
+                symbolicArithmeticRequestHandler();
+                break;
             default:
                 RuntimeEnvironment.threadWaitReq = null;
                 waitEventHandler();
@@ -309,6 +313,8 @@ public class SchedulerThread extends Thread {
             return RequestType.READ_REQUEST;
         } else if (RuntimeEnvironment.isFinished) {
             return RequestType.FINISH_REQUEST;
+        } else if (RuntimeEnvironment.symbolicOperation != null) {
+            return RequestType.SYMB_ARTH_REQUEST;
         } else {
             return RequestType.WAIT_REQUEST;
         }
@@ -474,6 +480,18 @@ public class SchedulerThread extends Thread {
         if (finishedThread.isPresent()) {
             Thread thread = searchStrategy.nextFinishRequest(finishedThread.get());
             notifyThread(thread);
+        }
+    }
+
+    public void symbolicArithmeticRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : Symbolic arithmetic request handler is called");
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<SymbolicOperation> symbolicOperation = Optional.ofNullable(RuntimeEnvironment.symbolicOperation);
+        RuntimeEnvironment.threadWaitReq = null;
+        RuntimeEnvironment.symbolicOperation = null;
+        if (thread.isPresent() && symbolicOperation.isPresent()) {
+            searchStrategy.nextSymbolicOperationRequest(thread.get(), symbolicOperation.get());
+            notifyThread(thread.get());
         }
     }
 

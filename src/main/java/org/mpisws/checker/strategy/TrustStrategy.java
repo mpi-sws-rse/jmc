@@ -3,12 +3,7 @@ package org.mpisws.checker.strategy;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import dpor.Trust;
@@ -18,6 +13,8 @@ import executionGraph.Node;
 import kotlin.Pair;
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.solver.SymbolicSolver;
+import org.mpisws.symbolic.SymbolicOperation;
 import programStructure.*;
 
 /**
@@ -93,6 +90,10 @@ public class TrustStrategy implements SearchStrategy {
      */
     private final String executionGraphsPath;
 
+    private final SymbolicSolver solver;
+
+    private boolean isNegatable = false;
+
     /**
      * The following constructor initializes the model checker graphs list, the current execution graph, trust object,
      * the guiding execution graph if it is available, and the guiding events list.
@@ -101,6 +102,7 @@ public class TrustStrategy implements SearchStrategy {
         buggyTracePath = RuntimeEnvironment.buggyTracePath;
         buggyTraceFile = RuntimeEnvironment.buggyTraceFile;
         executionGraphsPath = RuntimeEnvironment.executionGraphsPath;
+        solver = RuntimeEnvironment.solver;
         if (!Files.exists(Paths.get(executionGraphsPath))) {
             System.out.println("[Trust Strategy Message] : Directory " + executionGraphsPath + " does not exist ");
             System.exit(0);
@@ -612,6 +614,133 @@ public class TrustStrategy implements SearchStrategy {
             return pickNextGuidedThread();
         } else {
             return pickNextRandomThread();
+        }
+    }
+
+    /**
+     * @param symbolicOperation
+     */
+    @Override
+    public void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        if (guidingActivate) {
+            handleGuidingSymbolicOperationRequest(thread, symbolicOperation);
+        } else {
+            handleNewSymbolicOperationRequest(thread, symbolicOperation);
+        }
+    }
+
+    public void handleGuidingSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        SymExecutionEvent guidingSymExecutionEvent = (SymExecutionEvent) guidingEvent;
+        RuntimeEnvironment.solverResult = guidingSymExecutionEvent.getResult();
+        updatePathSymbolicOperations(symbolicOperation, thread);
+        SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
+                symbolicOperation.getFormula().toString(), guidingSymExecutionEvent.isNegatable());
+        RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
+        addEventToCurrentGraph(symExecutionEvent);
+    }
+
+    public void handleNewSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        List<SymbolicOperation> dependentOperations = findDependentFormulas(symbolicOperation);
+        if (dependentOperations == null) {
+            handleFreeFormulas(symbolicOperation, thread);
+            System.out.println("[Trust Strategy Message] : The result of the symbolic arithmetic operation is " +
+                    RuntimeEnvironment.solverResult);
+        } else {
+            handleDependentFormulas(symbolicOperation, dependentOperations, thread);
+            System.out.println("[Trust Strategy Message] : The result of the symbolic arithmetic operation is " +
+                    RuntimeEnvironment.solverResult);
+        }
+        updatePathSymbolicOperations(symbolicOperation, thread);
+        SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
+                symbolicOperation.getFormula().toString(), isNegatable);
+        RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
+        passEventToTrust(symExecutionEvent);
+    }
+
+    private List<SymbolicOperation> findDependentFormulas(SymbolicOperation symbolicOperation) {
+        List<SymbolicOperation> dependencyOperations = new ArrayList<>();
+        List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.pathSymbolicOperations;
+        for (SymbolicOperation symOp : symbolicOperations) {
+            if (symOp.isFormulaDependent(symbolicOperation)) {
+                dependencyOperations.add(symOp);
+            }
+        }
+        if (dependencyOperations.isEmpty()) {
+            return null;
+        } else {
+            return dependencyOperations;
+        }
+    }
+
+    private List<SymbolicOperation> findDependentThreadFormulas(Thread thread, SymbolicOperation symbolicOperation) {
+        List<SymbolicOperation> dependencyOperations = new ArrayList<>();
+        List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.threadSymbolicOperation.get(
+                RuntimeEnvironment.threadIdMap.get(thread.getId())
+        );
+        for (SymbolicOperation symOp : symbolicOperations) {
+            if (symOp.isFormulaDependent(symbolicOperation)) {
+                dependencyOperations.add(symOp);
+            }
+        }
+        if (dependencyOperations.isEmpty()) {
+            return null;
+        } else {
+            return dependencyOperations;
+        }
+
+    }
+
+    private void handleFreeFormulas(SymbolicOperation symbolicOperation, Thread thread) {
+        System.out.println("[Random Strategy Message] : The symbolic arithmetic operation is free from dependencies");
+        boolean sat = solveSat(symbolicOperation);
+        boolean unSat = solveUnsat(symbolicOperation);
+        isNegatable = sat && unSat;
+        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
+    }
+
+    private void handleDependentFormulas(SymbolicOperation symbolicOperation, List<SymbolicOperation> dependentOperations, Thread thread) {
+        System.out.println("[Random Strategy Message] : The symbolic arithmetic operation has dependencies");
+        SymbolicOperation dependency = solver.makeDependencyOperation(dependentOperations);
+        boolean sat = solveDependentSat(symbolicOperation, dependency);
+        boolean unSat = solveDependentUnsat(symbolicOperation, dependency);
+        isNegatable = sat && unSat;
+        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
+    }
+
+    private boolean solveSat(SymbolicOperation symbolicOperation) {
+        return solver.solveSymbolicFormula(symbolicOperation);
+    }
+
+    private boolean solveDependentSat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
+        return solver.solveDependentSymbolicFormulas(symbolicOperation, dependency);
+    }
+
+    private boolean solveUnsat(SymbolicOperation symbolicOperation) {
+        return solver.disSolveSymbolicFormula(symbolicOperation);
+    }
+
+    private boolean solveDependentUnsat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
+        return solver.disSolveDependentSymbolicFormulas(symbolicOperation, dependency);
+    }
+
+    private boolean pickSatOrUnsat(boolean sat, boolean unSat) {
+        if (sat && unSat) {
+            System.out.println("[Random Strategy Message] : Both SAT and UNSAT are possible for the symbolic " +
+                    "arithmetic operation");
+            return new Random().nextBoolean();
+        } else if (sat) {
+            System.out.println("[Random Strategy Message] : Only SAT is possible for the symbolic arithmetic " +
+                    "operation");
+            return true;
+        } else if (unSat) {
+            System.out.println("[Random Strategy Message] : Only UNSAT is possible for the symbolic arithmetic " +
+                    "operation");
+            return false;
+        } else {
+            System.out.println("[Random Strategy Message] : No solution is found for the symbolic arithmetic " +
+                    "operation");
+            System.exit(0);
+            return false;
         }
     }
 

@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.symbolic.SymbolicOperation;
 import programStructure.*;
 
 
@@ -181,6 +182,22 @@ public class ReplayStrategy implements SearchStrategy {
     public Thread nextFinishRequest(Thread thread) {
         nextFinishEvent(thread);
         return pickNextThread();
+    }
+
+    /**
+     * @param symbolicOperation
+     */
+    @Override
+    public void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        if (guidingEvent.getType() != EventType.SYM_EXECUTION) {
+            System.out.println("[Replay Strategy Message] : The next event is not a symbolic operation");
+            System.exit(0);
+        }
+        SymExecutionEvent symEvent = (SymExecutionEvent) this.guidingEvent;
+        RuntimeEnvironment.solverResult = symEvent.getResult();
+        SymExecutionEvent symbolicOperationEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
+                symbolicOperation.getFormula().toString(), symEvent.isNegatable());
+        RuntimeEnvironment.eventsRecord.add(symbolicOperationEvent);
     }
 
     /**

@@ -1,16 +1,13 @@
 package org.mpisws.checker;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 import org.mpisws.runtime.RuntimeEnvironment;
 import programStructure.Event;
 import programStructure.MonitorRequestEvent;
 import programStructure.ReadEvent;
 import programStructure.WriteEvent;
+import org.mpisws.symbolic.SymbolicOperation;
 
 /**
  * The SearchStrategy interface defines the methods that any search strategy must implement.
@@ -22,7 +19,6 @@ import programStructure.WriteEvent;
  * the flow of a program's execution and ensure a specific execution order of operations.
  */
 public interface SearchStrategy {
-
     /**
      * Represents the required strategy for the next start event.
      *
@@ -139,6 +135,37 @@ public interface SearchStrategy {
      * @param thread is the thread that is going to be finished.
      */
     Thread nextFinishRequest(Thread thread);
+
+    void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation);
+
+    default void updatePathSymbolicOperations(SymbolicOperation symbolicOperation, Thread thread) {
+        if (RuntimeEnvironment.solverResult) {
+            updatePathAndThreadSymbolicOperations(symbolicOperation, thread);
+        } else {
+            updatePathSymbolicOperationsWithNegate(symbolicOperation, thread);
+        }
+    }
+
+    private void updatePathAndThreadSymbolicOperations(SymbolicOperation symbolicOperation, Thread thread) {
+        RuntimeEnvironment.pathSymbolicOperations.add(symbolicOperation);
+        if (RuntimeEnvironment.threadSymbolicOperation.containsKey(RuntimeEnvironment.threadIdMap.get(thread.getId()))) {
+            RuntimeEnvironment.threadSymbolicOperation.get(RuntimeEnvironment.threadIdMap.get(thread.getId())).add(symbolicOperation);
+        } else {
+            List<SymbolicOperation> symbolicOperations = new ArrayList<>();
+            symbolicOperations.add(symbolicOperation);
+            RuntimeEnvironment.threadSymbolicOperation.put(RuntimeEnvironment.threadIdMap.get(thread.getId()), symbolicOperations);
+        }
+    }
+
+    private void updatePathSymbolicOperationsWithNegate(SymbolicOperation symbolicOperation, Thread thread) {
+        updatePathAndThreadSymbolicOperations(negateSymbolicOperation(symbolicOperation), thread);
+    }
+
+
+    private SymbolicOperation negateSymbolicOperation(SymbolicOperation symbolicOperation) {
+        symbolicOperation.setFormula(RuntimeEnvironment.solver.negateFormula(symbolicOperation.getFormula()));
+        return symbolicOperation;
+    }
 
     /**
      * Prints the current execution trace.

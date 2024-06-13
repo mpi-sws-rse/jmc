@@ -7,6 +7,8 @@ src/main/java/org/mpisws/checker/*.class
 src/main/java/org/mpisws/checker/strategy/*.class
 src/main/resources/
 src/main/java/org/mpisws/runtime/*.class
+src/main/java/org/mpisws/solver/*.class
+src/main/java/org/mpisws/symbolic/*.class
 src/test/java/org/mpisws/concurrent/programs/complex/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/complex/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/correct/counter/*.class

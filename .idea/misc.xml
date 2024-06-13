@@ -3,6 +3,7 @@
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="web" url="file://$PROJECT_DIR$" />
+    <file type="web" url="file:///local/home/mkhoshechin/IdeaProjects/jmc" />
     <file type="web" url="file:///local/home/mkhoshechin/IdeaProjects/JMC4FUN" />
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="openjdk-21" project-jdk-type="JavaSDK">

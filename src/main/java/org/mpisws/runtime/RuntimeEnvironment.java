@@ -7,7 +7,9 @@ import org.mpisws.checker.StrategyType;
 import org.mpisws.manager.Finished;
 import org.mpisws.manager.FinishedType;
 import org.mpisws.manager.HaltExecutionException;
+import org.mpisws.solver.SymbolicSolver;
 import programStructure.*;
+import org.mpisws.symbolic.SymbolicOperation;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -244,6 +246,17 @@ public class RuntimeEnvironment {
     public static String executionGraphsPath;
 
     public static Map<Object, Set<Pair<Long, Long>>> suspendPriority = new HashMap<>();
+
+    public static SymbolicOperation symbolicOperation;
+
+    public static Boolean solverResult = null;
+
+    // create a map from thread id to a list of SymbolicOperation
+    public static Map<Long, List<SymbolicOperation>> threadSymbolicOperation = new HashMap<>();
+
+    public static List<SymbolicOperation> pathSymbolicOperations = new ArrayList<>();
+
+    public static SymbolicSolver solver = new SymbolicSolver();
 
     /**
      * The constructor is private to prevent the instantiation of the class
@@ -708,6 +721,14 @@ public class RuntimeEnvironment {
         }
     }
 
+    public static boolean symbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to execute a symbolic " +
+                "arithmetic operation");
+        RuntimeEnvironment.symbolicOperation = symbolicOperation;
+        waitRequest(thread);
+        return solverResult;
+    }
+
     /**
      * Handles a monitor entry request from a thread.
      * <p>
@@ -986,6 +1007,12 @@ public class RuntimeEnvironment {
         return new SuspendEvent(EventType.SUSPEND, threadIdMap.get(thread.getId()).intValue(), serialNumber, createMonitor(lock));
     }
 
+    public static SymExecutionEvent createSymExecutionEvent(Thread thread, String formula, boolean isNegatable) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new SymExecutionEvent(threadIdMap.get(thread.getId()).intValue(), EventType.SYM_EXECUTION, serialNumber,
+                solverResult, formula, isNegatable);
+    }
+
     /**
      * Creates a {@link DeadlockEvent} for a thread that has encountered a deadlock.
      * <p>
@@ -1186,5 +1213,8 @@ public class RuntimeEnvironment {
         suspendedThreads = new ArrayList<>();
         threadObjectMap = new HashMap<>();
         suspendPriority = new HashMap<>();
+        solver = new SymbolicSolver();
+        symbolicOperation = null;
+        solverResult = false;
     }
 }

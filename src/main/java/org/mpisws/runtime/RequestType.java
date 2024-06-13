@@ -11,5 +11,6 @@ public enum RequestType {
     READ_REQUEST,
     WRITE_REQUEST,
     FINISH_REQUEST,
-    WAIT_REQUEST
+    WAIT_REQUEST,
+    SYMB_ARTH_REQUEST,
 }

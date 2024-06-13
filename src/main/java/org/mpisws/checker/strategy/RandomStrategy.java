@@ -5,11 +5,15 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.solver.SymbolicSolver;
+import org.mpisws.symbolic.SymbolicOperation;
+
 import programStructure.*;
 
 
@@ -43,6 +47,10 @@ public class RandomStrategy implements SearchStrategy {
      */
     private final String buggyTraceFile;
 
+    private final SymbolicSolver solver;
+
+    private boolean isNegatable = false;
+
     /**
      * The following constructor initializes the random events record and the random number generator with the given
      * seed. It also initializes the path to the buggy trace object.
@@ -55,6 +63,7 @@ public class RandomStrategy implements SearchStrategy {
         }
         buggyTraceFile = RuntimeEnvironment.buggyTraceFile;
         random = new Random(RuntimeEnvironment.seed);
+        solver = RuntimeEnvironment.solver;
     }
 
     /**
@@ -233,6 +242,111 @@ public class RandomStrategy implements SearchStrategy {
     public void nextFailureEvent(Thread thread) {
         FailureEvent failureEvent = RuntimeEnvironment.createFailureEvent(thread);
         RuntimeEnvironment.eventsRecord.add(failureEvent);
+    }
+
+    @Override
+    public void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        List<SymbolicOperation> dependentOperations = findDependentFormulas(symbolicOperation);
+        if (dependentOperations == null) {
+            handleFreeFormulas(symbolicOperation, thread);
+            System.out.println("[Random Strategy Message] : The result of the symbolic arithmetic operation is " +
+                    RuntimeEnvironment.solverResult);
+        } else {
+            handleDependentFormulas(symbolicOperation, dependentOperations, thread);
+            System.out.println("[Random Strategy Message] : The result of the symbolic arithmetic operation is " +
+                    RuntimeEnvironment.solverResult);
+        }
+        updatePathSymbolicOperations(symbolicOperation, thread);
+        SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
+                symbolicOperation.getFormula().toString(), isNegatable);
+        RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
+    }
+
+    private List<SymbolicOperation> findDependentFormulas(SymbolicOperation symbolicOperation) {
+        List<SymbolicOperation> dependencyOperations = new ArrayList<>();
+        List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.pathSymbolicOperations;
+        for (SymbolicOperation symOp : symbolicOperations) {
+            if (symOp.isFormulaDependent(symbolicOperation)) {
+                dependencyOperations.add(symOp);
+            }
+        }
+        if (dependencyOperations.isEmpty()) {
+            return null;
+        } else {
+            return dependencyOperations;
+        }
+    }
+
+    private List<SymbolicOperation> findDependentThreadFormulas(Thread thread, SymbolicOperation symbolicOperation) {
+        List<SymbolicOperation> dependencyOperations = new ArrayList<>();
+        List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.threadSymbolicOperation.get(
+                RuntimeEnvironment.threadIdMap.get(thread.getId())
+        );
+        for (SymbolicOperation symOp : symbolicOperations) {
+            if (symOp.isFormulaDependent(symbolicOperation)) {
+                dependencyOperations.add(symOp);
+            }
+        }
+        if (dependencyOperations.isEmpty()) {
+            return null;
+        } else {
+            return dependencyOperations;
+        }
+
+    }
+
+    private void handleFreeFormulas(SymbolicOperation symbolicOperation, Thread thread) {
+        System.out.println("[Random Strategy Message] : The symbolic arithmetic operation is free from dependencies");
+        boolean sat = solveSat(symbolicOperation);
+        boolean unSat = solveUnsat(symbolicOperation);
+        isNegatable = sat && unSat;
+        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
+    }
+
+    private void handleDependentFormulas(SymbolicOperation symbolicOperation, List<SymbolicOperation> dependentOperations, Thread thread) {
+        System.out.println("[Random Strategy Message] : The symbolic arithmetic operation has dependencies");
+        SymbolicOperation dependency = solver.makeDependencyOperation(dependentOperations);
+        boolean sat = solveDependentSat(symbolicOperation, dependency);
+        boolean unSat = solveDependentUnsat(symbolicOperation, dependency);
+        isNegatable = sat && unSat;
+        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
+    }
+
+    private boolean solveSat(SymbolicOperation symbolicOperation) {
+        return solver.solveSymbolicFormula(symbolicOperation);
+    }
+
+    private boolean solveDependentSat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
+        return solver.solveDependentSymbolicFormulas(symbolicOperation, dependency);
+    }
+
+    private boolean solveUnsat(SymbolicOperation symbolicOperation) {
+        return solver.disSolveSymbolicFormula(symbolicOperation);
+    }
+
+    private boolean solveDependentUnsat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
+        return solver.disSolveDependentSymbolicFormulas(symbolicOperation, dependency);
+    }
+
+    private boolean pickSatOrUnsat(boolean sat, boolean unSat) {
+        if (sat && unSat) {
+            System.out.println("[Random Strategy Message] : Both SAT and UNSAT are possible for the symbolic " +
+                    "arithmetic operation");
+            return random.nextBoolean();
+        } else if (sat) {
+            System.out.println("[Random Strategy Message] : Only SAT is possible for the symbolic arithmetic " +
+                    "operation");
+            return true;
+        } else if (unSat) {
+            System.out.println("[Random Strategy Message] : Only UNSAT is possible for the symbolic arithmetic " +
+                    "operation");
+            return false;
+        } else {
+            System.out.println("[Random Strategy Message] : No solution is found for the symbolic arithmetic " +
+                    "operation");
+            System.exit(0);
+            return false;
+        }
     }
 
     /**
