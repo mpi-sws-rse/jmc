@@ -9,67 +9,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.txt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.class" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.txt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.class" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/SearchStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/SearchStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/manager/ByteCodeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/manager/ByteCodeManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/SchedulerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/SchedulerThread.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/solver/SymbolicSolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/solver/SymbolicSolver.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/AbstractBoolean.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/AbstractBoolean.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/AbstractInteger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/AbstractInteger.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/ArithmeticFormula.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/ArithmeticFormula.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/ArithmeticStatement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/ArithmeticStatement.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/ConcreteBoolean.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/ConcreteBoolean.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/ConcreteInteger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/ConcreteInteger.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/PropositionalFormula.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/PropositionalFormula.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/SymbolicBoolean.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/SymbolicBoolean.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/SymbolicInteger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/symbolic/SymbolicInteger.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/Location.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/Location.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/symbolic/SymbolicInteger.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/symbolic/SymbolicInteger.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/InconsistentCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/InconsistentCounter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.class" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.txt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/SearchStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/SearchStrategy.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/manager/ByteCodeManager.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/manager/ByteCodeManager.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/SchedulerThread.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/SchedulerThread.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/solver/SymbolicSolver.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/solver/SymbolicSolver.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/AbstractBoolean.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/AbstractBoolean.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/AbstractInteger.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/AbstractInteger.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/ArithmeticFormula.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/ArithmeticFormula.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/ArithmeticStatement.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/ArithmeticStatement.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/ConcreteBoolean.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/ConcreteBoolean.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/ConcreteInteger.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/ConcreteInteger.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/PropositionalFormula.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/PropositionalFormula.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/SymbolicBoolean.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/SymbolicBoolean.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/SymbolicInteger.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/symbolic/SymbolicInteger.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/Location.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/Location.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/symbolic/SymbolicInteger.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/symbolic/SymbolicInteger.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.class" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.class" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.txt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/Counter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/Counter.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.gitignore" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.gitignore" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/Counter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/Counter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/random/counter/RandomCounter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/Counter.txt" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.class" beforeDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/symbolic/counter/SymbolicCounter.txt" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -508,7 +465,7 @@
       <workItem from="1718532832126" duration="72803000" />
       <workItem from="1718982550403" duration="7067000" />
       <workItem from="1719414789408" duration="34000" />
-      <workItem from="1719414832308" duration="1120000" />
+      <workItem from="1719414832308" duration="3748000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />

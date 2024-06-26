@@ -27,6 +27,10 @@ src/test/java/org/mpisws/concurrent/programs/mutex/*.class
 src/test/java/org/mpisws/concurrent/programs/mutex/*.txt
 src/test/java/org/mpisws/concurrent/programs/mutex/common/*.class
 src/test/java/org/mpisws/concurrent/programs/mutex/common/*.txt
+src/test/java/org/mpisws/concurrent/programs/symbolic/counter/*.class
+src/test/java/org/mpisws/concurrent/programs/symbolic/counter/*.txt
+src/test/java/org/mpisws/concurrent/programs/random/counter/*.class
+src/test/java/org/mpisws/concurrent/programs/random/counter/*.txt
 
 
 ### IntelliJ IDEA ###
