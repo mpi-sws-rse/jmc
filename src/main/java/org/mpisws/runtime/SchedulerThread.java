@@ -436,7 +436,7 @@ public class SchedulerThread extends Thread {
      * and then notifies the thread.
      */
     public void readRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Read request handler is called");
+        System.out.println("[Scheduler Thread Message] : read request handler is called");
         Optional<ReadEvent> readRequestEvent = Optional.ofNullable(RuntimeEnvironment.readEventReq);
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.readEventReq = null;
@@ -455,7 +455,7 @@ public class SchedulerThread extends Thread {
      * and then notifies the thread.
      */
     public void writeRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Write request handler is called");
+        System.out.println("[Scheduler Thread Message] : write request handler is called");
         Optional<WriteEvent> writeRequestEvent = Optional.ofNullable(RuntimeEnvironment.writeEventReq);
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.writeEventReq = null;

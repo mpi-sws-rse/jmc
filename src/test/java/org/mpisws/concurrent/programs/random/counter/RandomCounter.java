@@ -31,6 +31,10 @@ public class RandomCounter extends Thread {
         statement1.add(y, x);
         x.assign(statement1);
 
+        ArithmeticStatement statement3 = new ArithmeticStatement();
+        statement3.add(x, 1);
+        x.assign(statement3);
+
         ArithmeticStatement statement2 = new ArithmeticStatement();
         statement2.mul(y, 3);
         y.assign(statement2);

@@ -164,6 +164,7 @@ public interface SearchStrategy {
 
     private SymbolicOperation negateSymbolicOperation(SymbolicOperation symbolicOperation) {
         symbolicOperation.setFormula(RuntimeEnvironment.solver.negateFormula(symbolicOperation.getFormula()));
+        System.out.println("[Search Strategy Message] : The negated formula is saved " + symbolicOperation.getFormula());
         return symbolicOperation;
     }
 

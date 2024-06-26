@@ -29,4 +29,20 @@ public class ConcreteBoolean extends AbstractBoolean implements Serializable {
     public int hashCode() {
         return java.util.Objects.hash(this.getValue());
     }
+
+    @Override
+    public AbstractBoolean read() {
+        AbstractBoolean copy = new ConcreteBoolean(this.getValue());
+        return copy;
+    }
+
+    @Override
+    public void write(SymbolicOperation value) {
+        // Do nothing
+    }
+
+    @Override
+    public void write(SymbolicBoolean value) {
+        // Do nothing
+    }
 }

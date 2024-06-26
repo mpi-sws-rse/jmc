@@ -22,7 +22,7 @@ data class SymbolicInteger(
         }
     }
 
-    // Write a recursive function that prints the eval of this object. The eval is itself contains SymbolicOperation objects
+    // write a recursive function that prints the eval of this object. The eval is itself contains SymbolicOperation objects
     fun print() {
         if (eval != null) {
             if (eval?.left is SymbolicInteger) {

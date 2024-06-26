@@ -44,16 +44,22 @@ public class PropositionalFormula {
 
     public SymbolicOperation and(SymbolicBoolean var1, SymbolicBoolean var2) {
         if (var1.getEval() != null && var2.getEval() != null) {
-            return and(var1.getEval(), var2.getEval());
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return and(symbol1.getEval(), symbol2.getEval());
         } else if (var1.getEval() != null) {
-            return and(var1.getEval(), var2);
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            return and(symbol1.getEval(), var2);
         } else if (var2.getEval() != null) {
-            return and(var1, var2.getEval());
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return and(var1, symbol2.getEval());
         } else {
             booleanVariableMap.clear();
             SymbolicOperation symbolicOperation = new SymbolicOperation();
-            BooleanFormula leftOperand = makeBooleanFormula(var1);
-            BooleanFormula rightOperand = makeBooleanFormula(var2);
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            BooleanFormula leftOperand = makeBooleanFormula(symbol1);
+            BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.and(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
@@ -62,7 +68,8 @@ public class PropositionalFormula {
     }
 
     public SymbolicOperation and(SymbolicOperation op1, SymbolicBoolean var) {
-        SymbolicOperation op2 = makeSymbolicOperation(var);
+        SymbolicBoolean symbolicBoolean = (SymbolicBoolean) var.read();
+        SymbolicOperation op2 = makeSymbolicOperation(symbolicBoolean);
         return and(op1, op2);
     }
 
@@ -81,16 +88,22 @@ public class PropositionalFormula {
 
     public SymbolicOperation or(SymbolicBoolean var1, SymbolicBoolean var2) {
         if (var1.getEval() != null && var2.getEval() != null) {
-            return or(var1.getEval(), var2.getEval());
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return or(symbol1.getEval(), symbol2.getEval());
         } else if (var1.getEval() != null) {
-            return or(var1.getEval(), var2);
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            return or(symbol1.getEval(), var2);
         } else if (var2.getEval() != null) {
-            return or(var1, var2.getEval());
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return or(var1, symbol2.getEval());
         } else {
             booleanVariableMap.clear();
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
             SymbolicOperation symbolicOperation = new SymbolicOperation();
-            BooleanFormula leftOperand = makeBooleanFormula(var1);
-            BooleanFormula rightOperand = makeBooleanFormula(var2);
+            BooleanFormula leftOperand = makeBooleanFormula(symbol1);
+            BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.or(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
@@ -99,7 +112,8 @@ public class PropositionalFormula {
     }
 
     public SymbolicOperation or(SymbolicOperation op1, SymbolicBoolean var) {
-        SymbolicOperation op2 = makeSymbolicOperation(var);
+        SymbolicBoolean symbolicBoolean = (SymbolicBoolean) var.read();
+        SymbolicOperation op2 = makeSymbolicOperation(symbolicBoolean);
         return or(op1, op2);
     }
 
@@ -117,12 +131,13 @@ public class PropositionalFormula {
     }
 
     public SymbolicOperation not(SymbolicBoolean var) {
-        if (var.getEval() != null) {
-            return not(var.getEval());
+        SymbolicBoolean symbol = (SymbolicBoolean) var.read();
+        if (symbol.getEval() != null) {
+            return not(symbol.getEval());
         } else {
             booleanVariableMap.clear();
             SymbolicOperation symbolicOperation = new SymbolicOperation();
-            BooleanFormula formula = bmgr.not(makeBooleanFormula(var));
+            BooleanFormula formula = bmgr.not(makeBooleanFormula(symbol));
             symbolicOperation.setFormula(formula);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
             return symbolicOperation;
@@ -140,16 +155,22 @@ public class PropositionalFormula {
 
     public SymbolicOperation implies(SymbolicBoolean var1, SymbolicBoolean var2) {
         if (var1.getEval() != null && var2.getEval() != null) {
-            return implies(var1.getEval(), var2.getEval());
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return implies(symbol1.getEval(), symbol2.getEval());
         } else if (var1.getEval() != null) {
-            return implies(var1.getEval(), var2);
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            return implies(symbol1.getEval(), var2);
         } else if (var2.getEval() != null) {
-            return implies(var1, var2.getEval());
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return implies(var1, symbol2.getEval());
         } else {
             booleanVariableMap.clear();
             SymbolicOperation symbolicOperation = new SymbolicOperation();
-            BooleanFormula leftOperand = makeBooleanFormula(var1);
-            BooleanFormula rightOperand = makeBooleanFormula(var2);
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            BooleanFormula leftOperand = makeBooleanFormula(symbol1);
+            BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.implication(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
@@ -158,7 +179,8 @@ public class PropositionalFormula {
     }
 
     public SymbolicOperation implies(SymbolicOperation op, SymbolicBoolean var) {
-        SymbolicOperation op2 = makeSymbolicOperation(var);
+        SymbolicBoolean symbol = (SymbolicBoolean) var.read();
+        SymbolicOperation op2 = makeSymbolicOperation(symbol);
         return implies(op, op2);
     }
 
@@ -177,16 +199,22 @@ public class PropositionalFormula {
 
     public SymbolicOperation iff(SymbolicBoolean var1, SymbolicBoolean var2) {
         if (var1.getEval() != null && var2.getEval() != null) {
-            return iff(var1.getEval(), var2.getEval());
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return iff(symbol1.getEval(), symbol2.getEval());
         } else if (var1.getEval() != null) {
-            return iff(var1.getEval(), var2);
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            return iff(symbol1.getEval(), var2);
         } else if (var2.getEval() != null) {
-            return iff(var1, var2.getEval());
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return iff(var1, symbol2.getEval());
         } else {
             booleanVariableMap.clear();
             SymbolicOperation symbolicOperation = new SymbolicOperation();
-            BooleanFormula leftOperand = makeBooleanFormula(var1);
-            BooleanFormula rightOperand = makeBooleanFormula(var2);
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            BooleanFormula leftOperand = makeBooleanFormula(symbol1);
+            BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.equivalence(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
@@ -195,7 +223,8 @@ public class PropositionalFormula {
     }
 
     public SymbolicOperation iff(SymbolicOperation op, SymbolicBoolean var) {
-        SymbolicOperation op2 = makeSymbolicOperation(var);
+        SymbolicBoolean symbol = (SymbolicBoolean) var.read();
+        SymbolicOperation op2 = makeSymbolicOperation(symbol);
         return iff(op, op2);
     }
 
@@ -214,16 +243,22 @@ public class PropositionalFormula {
 
     public SymbolicOperation xor(SymbolicBoolean var1, SymbolicBoolean var2) {
         if (var1.getEval() != null && var2.getEval() != null) {
-            return xor(var1.getEval(), var2.getEval());
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return xor(symbol1.getEval(), symbol2.getEval());
         } else if (var1.getEval() != null) {
-            return xor(var1.getEval(), var2);
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            return xor(symbol1.getEval(), var2);
         } else if (var2.getEval() != null) {
-            return xor(var1, var2.getEval());
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            return xor(var1, symbol2.getEval());
         } else {
             booleanVariableMap.clear();
             SymbolicOperation symbolicOperation = new SymbolicOperation();
-            BooleanFormula leftOperand = makeBooleanFormula(var1);
-            BooleanFormula rightOperand = makeBooleanFormula(var2);
+            SymbolicBoolean symbol1 = (SymbolicBoolean) var1.read();
+            SymbolicBoolean symbol2 = (SymbolicBoolean) var2.read();
+            BooleanFormula leftOperand = makeBooleanFormula(symbol1);
+            BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.xor(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
@@ -232,7 +267,8 @@ public class PropositionalFormula {
     }
 
     public SymbolicOperation xor(SymbolicOperation op, SymbolicBoolean var) {
-        SymbolicOperation op2 = makeSymbolicOperation(var);
+        SymbolicBoolean symbol = (SymbolicBoolean) var.read();
+        SymbolicOperation op2 = makeSymbolicOperation(symbol);
         return xor(op, op2);
     }
 

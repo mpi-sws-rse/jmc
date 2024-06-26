@@ -15,4 +15,10 @@ public abstract class AbstractBoolean implements Serializable {
     public void setValue(boolean value) {
         this.value = value;
     }
+
+    public abstract AbstractBoolean read();
+
+    public abstract void write(SymbolicBoolean value);
+
+    public abstract void write(SymbolicOperation value);
 }

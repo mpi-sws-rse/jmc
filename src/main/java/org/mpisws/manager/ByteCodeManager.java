@@ -142,7 +142,7 @@ public class ByteCodeManager {
     }
 
     /**
-     * Read the bytecode from the .class files in the specified directory.
+     * read the bytecode from the .class files in the specified directory.
      *
      * @return A map of class names to bytecode
      * @throws IllegalArgumentException if the path is null
@@ -166,7 +166,7 @@ public class ByteCodeManager {
     }
 
     /**
-     * Read the bytecode from the .class files in the specified directory and its subdirectories.
+     * read the bytecode from the .class files in the specified directory and its subdirectories.
      *
      * @param directory       - The directory to read the .class files from
      * @param classToBytecode - A map of class names to bytecode

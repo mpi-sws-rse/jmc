@@ -662,6 +662,10 @@ public class TrustStrategy implements SearchStrategy {
         List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.pathSymbolicOperations;
         for (SymbolicOperation symOp : symbolicOperations) {
             if (symOp.isFormulaDependent(symbolicOperation)) {
+                System.out.println("[Trust Strategy Message] : The symbolic arithmetic operation is dependent on " +
+                        "another symbolic arithmetic operation");
+                System.out.println("[Trust Strategy Message] : The dependent symbolic arithmetic operations are : " +
+                        symOp.getFormula().toString() + " and " + symbolicOperation.getFormula().toString());
                 dependencyOperations.add(symOp);
             }
         }

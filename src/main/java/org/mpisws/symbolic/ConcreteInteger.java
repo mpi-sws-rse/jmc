@@ -29,4 +29,20 @@ public class ConcreteInteger extends AbstractInteger implements Serializable {
     public int hashCode() {
         return java.util.Objects.hash(this.getValue());
     }
+
+    @Override
+    public AbstractInteger read() {
+        AbstractInteger copy = new ConcreteInteger(this.getValue());
+        return copy;
+    }
+
+    @Override
+    public void write(AbstractInteger value) {
+        // Do nothing
+    }
+
+    @Override
+    public void write(ArithmeticStatement value) {
+        // Do nothing
+    }
 }

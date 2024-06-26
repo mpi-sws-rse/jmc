@@ -44,7 +44,7 @@ data class Location(
      * @property type The type of the field
      */
     var type: String?
-): Serializable {
+) : Serializable {
 
     /**
      * @property clazzString The class of the field as a string
@@ -92,13 +92,23 @@ data class Location(
     /**
      * Checks if the field is a primitive type or not.
      *
-     * The primitive types are: int(I), long(J), float(F), double(D), char(S), byte(B), short(C), boolean(Z)
+     * The primitive types are: int(I), long(J), float(F), double(D), char(S), byte(B), short(C), boolean(Z), symbolic int(SI),
+     * symbolic boolean(SZ)
      *
      * @return true if the field is a primitive type, false otherwise
      */
     fun isPrimitive(): Boolean {
-        return when(type){
-            "I", "Z", "F", "D", "S", "J", "C", "B" -> true
+        return when (type) {
+            "I",  // int(I)
+            "Z",  // boolean(Z)
+            "SZ", // symbolic boolean(SZ)
+            "F",  // float(F)
+            "D",  // double(D)
+            "S",  // char(S)
+            "J",  // long(J)
+            "C",  // short(C)
+            "B",  // byte(B)
+            "SI" -> true // symbolic int(SI)
             else -> false
         }
     }

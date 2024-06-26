@@ -8,74 +8,74 @@ public class ArithmeticStatement implements Serializable {
     private InstructionType operator;
 
     public void add(AbstractInteger var1, AbstractInteger var2) {
-        this.left = var1.deepCopy();
-        this.right = var2.deepCopy();
+        this.left = var1.read();
+        this.right = var2.read();
         this.operator = InstructionType.ADD;
     }
 
     public void add(AbstractInteger var1, int var2) {
-        this.left = var1.deepCopy();
+        this.left = var1.read();
         this.right = new ConcreteInteger(var2);
         this.operator = InstructionType.ADD;
     }
 
     public void add(int var1, AbstractInteger var2) {
         this.left = new ConcreteInteger(var1);
-        this.right = var2.deepCopy();
+        this.right = var2.read();
         this.operator = InstructionType.ADD;
     }
 
     public void sub(AbstractInteger var1, AbstractInteger var2) {
-        this.left = var1;
-        this.right = var2;
+        this.left = var1.read();
+        this.right = var2.read();
         this.operator = InstructionType.SUB;
     }
 
     public void sub(AbstractInteger var1, int var2) {
-        this.left = var1;
+        this.left = var1.read();
         this.right = new ConcreteInteger(var2);
         this.operator = InstructionType.SUB;
     }
 
     public void sub(int var1, AbstractInteger var2) {
         this.left = new ConcreteInteger(var1);
-        this.right = var2;
+        this.right = var2.read();
         this.operator = InstructionType.SUB;
     }
 
     public void mul(AbstractInteger var1, AbstractInteger var2) {
-        this.left = var1;
-        this.right = var2;
+        this.left = var1.read();
+        this.right = var2.read();
         this.operator = InstructionType.MUL;
     }
 
     public void mul(AbstractInteger var1, int var2) {
-        this.left = var1;
+        this.left = var1.read();
         this.right = new ConcreteInteger(var2);
         this.operator = InstructionType.MUL;
     }
 
     public void mul(int var1, AbstractInteger var2) {
         this.left = new ConcreteInteger(var1);
-        this.right = var2;
+        this.right = var2.read();
         this.operator = InstructionType.MUL;
     }
 
     public void div(AbstractInteger var1, AbstractInteger var2) {
-        this.left = var1;
-        this.right = var2;
+        this.left = var1.read();
+        this.right = var2.read();
         this.operator = InstructionType.DIV;
     }
 
     public void div(AbstractInteger var1, int var2) {
-        this.left = var1;
+        this.left = var1.read();
         this.right = new ConcreteInteger(var2);
         this.operator = InstructionType.DIV;
     }
 
     public void div(int var1, AbstractInteger var2) {
         this.left = new ConcreteInteger(var1);
-        this.right = var2;
+        this.right = var2.read();
         this.operator = InstructionType.DIV;
     }
 

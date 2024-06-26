@@ -167,7 +167,7 @@ class Trust(path: String) {
                 }
 
                 nextEvent.type == EventType.READ -> {
-                    //println("[Model Checker Message] : The next event is a READ event -> $nextEvent")
+                    println("[Model Checker Message] : The next event is a READ event -> $nextEvent")
                     val G1 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val nextReadEvent = (nextEvent as ReadEvent)
@@ -191,7 +191,7 @@ class Trust(path: String) {
                             newNextReadEvent.rf = (G.graphEvents[i].deepCopy()) as InitializationEvent
                             G3.addEvent(newNextReadEvent as Event)
                             val newAllEvents = deepCopyAllEvents(allEvents)
-                            //println("[Model Checker Message] : Forward Revisit(R -> I) : ($newNextReadEvent, ${G.graphEvents[i]})")
+                            println("[Model Checker Message] : Forward Revisit(R -> I) : ($newNextReadEvent, ${G.graphEvents[i]})")
                             visit(G3, newAllEvents)
                         }
                     }
@@ -210,7 +210,7 @@ class Trust(path: String) {
                         if (G3.graphEvents[i].type == EventType.READ) {
                             val findReadEvent = G3.graphEvents[i] as ReadEvent
                             val nextWriteEvent = nextEvent as WriteEvent
-//                            println("Inside Backward Revisit : Type is Read")
+//                            println("Inside Backward Revisit : Type is read")
 //                            println(
 //                                "Inside Backward Revisit : The location is equal? : " + locEquals(
 //                                    findReadEvent.loc!!,
@@ -516,9 +516,9 @@ class Trust(path: String) {
                     visit(G, allEvents)
                 }
             }
-
         } else {
             println("[Model Checker Message] : The graph is not consistent")
+            //G.printSc()
         }
     }
 
@@ -877,9 +877,11 @@ class Trust(path: String) {
 //                println("[Model Checking Message] : COs are -> ${newG.COs}")
                 for (j in 0..<G.COs.size) {
                     if (G.COs[j].firstWrite.equals(findInitEvent)) {
-                        val newCo = CO(firstWrite = newWriteEvent, secondWrite = G.COs[j].secondWrite)
-                        newG.COs.add(newCo)
-//                        println(
+                        val secondHandWrite = G.COs[j].secondWrite
+                        if (locEquals(newWriteEvent.loc!!, secondHandWrite.loc!!)) {
+                            val newCo = CO(firstWrite = newWriteEvent, secondWrite = secondHandWrite)
+                            newG.COs.add(newCo)
+                            //                        println(
 //                            "[Model Checking Message] : new CO added -> ${
 //                                CO(
 //                                    firstWrite = newWriteEvent,
@@ -888,6 +890,7 @@ class Trust(path: String) {
 //                            }"
 //                        )
 //                        println("[Model Checking Message] : COs are -> ${newG.COs}")
+                        }
                     }
                 }
 

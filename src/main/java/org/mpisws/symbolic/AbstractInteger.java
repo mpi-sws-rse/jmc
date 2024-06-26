@@ -15,4 +15,10 @@ public abstract class AbstractInteger implements Serializable {
     public void setValue(int value) {
         this.value = value;
     }
+
+    public abstract AbstractInteger read();
+
+    public abstract void write(AbstractInteger value);
+
+    public abstract void write(ArithmeticStatement value);
 }

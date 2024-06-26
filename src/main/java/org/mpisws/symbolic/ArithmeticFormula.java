@@ -37,20 +37,20 @@ public class ArithmeticFormula {
         integerVariableMap.clear();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.equal(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof SymbolicInteger && var2 instanceof ConcreteInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
             IntegerFormula rightOperand = imgr.makeNumber(var2.getValue());
             BooleanFormula formula = imgr.equal(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof ConcreteInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = imgr.makeNumber(var1.getValue());
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.equal(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
@@ -80,20 +80,20 @@ public class ArithmeticFormula {
         integerVariableMap.clear();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = bmgr.not(imgr.equal(leftOperand, rightOperand));
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof SymbolicInteger && var2 instanceof ConcreteInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
             IntegerFormula rightOperand = imgr.makeNumber(var2.getValue());
             BooleanFormula formula = bmgr.not(imgr.equal(leftOperand, rightOperand));
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof ConcreteInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = imgr.makeNumber(var1.getValue());
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = bmgr.not(imgr.equal(leftOperand, rightOperand));
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
@@ -123,20 +123,20 @@ public class ArithmeticFormula {
         integerVariableMap.clear();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.greaterOrEquals(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof SymbolicInteger && var2 instanceof ConcreteInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
             IntegerFormula rightOperand = imgr.makeNumber(var2.getValue());
             BooleanFormula formula = imgr.greaterOrEquals(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof ConcreteInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = imgr.makeNumber(var1.getValue());
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.greaterOrEquals(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
@@ -166,20 +166,20 @@ public class ArithmeticFormula {
         integerVariableMap.clear();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.lessOrEquals(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof SymbolicInteger && var2 instanceof ConcreteInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
             IntegerFormula rightOperand = imgr.makeNumber(var2.getValue());
             BooleanFormula formula = imgr.lessOrEquals(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof ConcreteInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = imgr.makeNumber(var1.getValue());
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.lessOrEquals(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
@@ -209,20 +209,20 @@ public class ArithmeticFormula {
         integerVariableMap.clear();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.greaterThan(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof SymbolicInteger && var2 instanceof ConcreteInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
             IntegerFormula rightOperand = imgr.makeNumber(var2.getValue());
             BooleanFormula formula = imgr.greaterThan(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof ConcreteInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = imgr.makeNumber(var1.getValue());
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.greaterThan(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
@@ -252,20 +252,20 @@ public class ArithmeticFormula {
         integerVariableMap.clear();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.lessThan(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof SymbolicInteger && var2 instanceof ConcreteInteger) {
-            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1);
+            IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
             IntegerFormula rightOperand = imgr.makeNumber(var2.getValue());
             BooleanFormula formula = imgr.lessThan(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else if (var1 instanceof ConcreteInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = imgr.makeNumber(var1.getValue());
-            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2);
+            IntegerFormula rightOperand = makeIntegerFormula((SymbolicInteger) var2.read());
             BooleanFormula formula = imgr.lessThan(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);

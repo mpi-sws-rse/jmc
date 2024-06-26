@@ -1,11 +1,14 @@
 package org.mpisws.symbolic;
 
+import org.mpisws.runtime.RuntimeEnvironment;
+
 import java.io.Serializable;
 
 public class SymbolicInteger extends AbstractInteger implements Serializable {
     private String name;
     private ArithmeticStatement eval;
     private boolean isShared = false;
+    private final int value = 0;
 
     public SymbolicInteger(String name, int value, boolean isShared) {
         this.name = name;
@@ -20,15 +23,11 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
     }
 
     public void assign(ArithmeticStatement expression) {
-        this.eval = expression.deepCopy();
+        write(expression);
     }
 
     public void assign(SymbolicInteger symbolicInteger) {
-        if (symbolicInteger.getEval() != null) {
-            this.eval = symbolicInteger.getEval().deepCopy();
-        } else {
-            this.name = symbolicInteger.getName();
-        }
+        write(symbolicInteger);
     }
 
     public void print() {
@@ -76,5 +75,49 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
 
     public void setEval(ArithmeticStatement eval) {
         this.eval = eval;
+    }
+
+    @Override
+    public AbstractInteger read() {
+        if (isShared) {
+            RuntimeEnvironment.readOperation(this, Thread.currentThread(), "org.mpisws.symbolic.SymbolicInteger", "value", "SI");
+            AbstractInteger copy = this.deepCopy();
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            return copy;
+        } else {
+            return this.deepCopy();
+        }
+    }
+
+    @Override
+    public void write(AbstractInteger value) {
+        SymbolicInteger symbolicInteger = (SymbolicInteger) value.read();
+
+        if (isShared) {
+            RuntimeEnvironment.writeOperation(this, symbolicInteger, Thread.currentThread(), "org.mpisws.symbolic.SymbolicInteger", "value", "SI");
+        }
+
+        if (symbolicInteger.getEval() != null) {
+            this.eval = symbolicInteger.getEval().deepCopy();
+        } else {
+            this.name = symbolicInteger.getName();
+        }
+
+        if (isShared) {
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+        }
+    }
+
+    @Override
+    public void write(ArithmeticStatement value) {
+        if (isShared) {
+            RuntimeEnvironment.writeOperation(this, value, Thread.currentThread(), "org.mpisws.symbolic.SymbolicInteger", "value", "SI");
+        }
+
+        this.eval = value.deepCopy();
+
+        if (isShared) {
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+        }
     }
 }

@@ -329,7 +329,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "RandomCounter Random Strategy Finished");
     }
-    
+
     @Test
     @DisplayName("Random Counter")
     void trustTestRandomCounter() {
@@ -358,6 +358,55 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "RandomCounter Replay Strategy Finished");
+    }
+
+    /*
+     *                                  SYMBOLIC COUNTER
+     */
+
+    @Test
+    @DisplayName("Symbolic Counter")
+    void randomTestSymbolicCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.symbolic.counter",
+                "SymbolicCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/symbolic/counter/"
+        );
+        System.out.println("SymbolicCounter Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "SymbolicCounter Random Strategy Finished");
+    }
+
+    @Test
+    @DisplayName("Symbolic Counter")
+    void trustTestSymbolicCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.symbolic.counter",
+                "SymbolicCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/symbolic/counter/"
+        );
+        System.out.println("SymbolicCounter Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "SymbolicCounter Trust Strategy Finished");
+    }
+
+    @Test
+    @DisplayName("Symbolic Counter")
+    void replayTestSymbolicCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.symbolic.counter",
+                "SymbolicCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/symbolic/counter/"
+        );
+        System.out.println("SymbolicCounter Replay Strategy Started");
+        checker.configuration.strategyType = StrategyType.REPLAY;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "SymbolicCounter Replay Strategy Finished");
     }
 
     /*

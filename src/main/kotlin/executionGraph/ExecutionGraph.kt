@@ -208,7 +208,7 @@ data class ExecutionGraph(
      */
     private fun addInitializationPairsToGraph() {
         for (i in 1 until this.graphEvents.size) {
-            this.porf.add(Pair(this.graphEvents[0], this.graphEvents[i]))
+            this.sc.add(Pair(this.graphEvents[0], this.graphEvents[i]))
         }
     }
 
@@ -233,7 +233,13 @@ data class ExecutionGraph(
                     // rf^{-1} = Pair(read,read.rf)
                     for (j in 0 until this.COs.size) {
                         if (read.rf!!.equals(this.COs[j].firstWrite as Event)) {
-                            this.sc.add(Pair(read, this.COs[j].secondWrite as Event))
+                            if (read.rf!! is WriteEvent) {
+                                this.sc.add(Pair(read, this.COs[j].secondWrite as Event))
+                            } else { // read.rf is Init
+                                if (locEquals(read.loc!!, this.COs[j].secondWrite.loc!!)) {
+                                    this.sc.add(Pair(read, this.COs[j].secondWrite as Event))
+                                }
+                            }
                         }
                     }
                 }
@@ -255,12 +261,29 @@ data class ExecutionGraph(
                         // rf^{-1} = Pair(read,read.rf)
                         for (j in 0 until this.COs.size) {
                             if (read.rf!!.equals(this.COs[j].firstWrite as Event)) {
-                                this.sc.add(Pair(read, this.COs[j].secondWrite as Event))
+                                if (read.rf!! is WriteEvent) {
+                                    this.sc.add(Pair(read, this.COs[j].secondWrite as Event))
+                                } else { // read.rf is Init
+                                    if (locEquals(read.loc!!, this.COs[j].secondWrite.loc!!)) {
+                                        this.sc.add(Pair(read, this.COs[j].secondWrite as Event))
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    private fun locEquals(loc1: Location, loc2: Location): Boolean {
+        if (loc1.isPrimitive() && loc2.isPrimitive()) {
+            return loc1.instance == loc2.instance && loc1.field == loc2.field && loc1.type == loc2.type
+        } else if (!loc1.isPrimitive() && !loc2.isPrimitive()) {
+            // TODO() : Right now, we assume that it is not needed to cover the case of non-primitive types for model checking
+            return false
+        } else {
+            return false
         }
     }
 

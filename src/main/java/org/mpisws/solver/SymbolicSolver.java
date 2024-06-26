@@ -52,7 +52,10 @@ public class SymbolicSolver {
     }
 
     public boolean solveDependentSymbolicFormulas(SymbolicOperation operation, SymbolicOperation dependencyOperation) {
+        System.out.println("[Debugging Message] : Inside SolveDep. Operation Formula: " + operation.getFormula());
+        System.out.println("[Debugging Message] : Inside SolveDep. Dependency Operation Formula: " + dependencyOperation.getFormula());
         BooleanFormula contextFormula = bmgr.and(operation.getFormula(), dependencyOperation.getFormula());
+        System.out.println("[Debugging Message] : Inside SolveDep. Context Formula: " + contextFormula);
         return solver(contextFormula);
     }
 
@@ -92,12 +95,14 @@ public class SymbolicSolver {
             }
         }
         dependencyOperation.setFormula(dependencyFormula);
+        System.out.println("[Debugging Message] : Dependency Operation: " + dependencyOperation.getFormula().toString());
         return dependencyOperation;
     }
 
     private boolean solver(BooleanFormula formula) {
         try (ProverEnvironment prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS)) {
             System.out.println("Formula: " + formula);
+            System.out.println("String Formula: " + formula.toString());
             prover.addConstraint(formula);
             boolean isUnsat = prover.isUnsat();
             if (!isUnsat) {
@@ -162,8 +167,10 @@ public class SymbolicSolver {
 
     public SymIntVariable getSymIntVariable(String name) {
         if (symIntVariableMap.containsKey(name)) {
+            System.out.println("Returning existing SymIntVariable: " + name);
             return symIntVariableMap.get(name);
         } else {
+            System.out.println("Creating new SymIntVariable: " + name);
             IntegerFormula symInt = imgr.makeVariable(name);
             SymIntVariable variable = new SymIntVariable(symInt);
             symIntVariableMap.put(name, variable);
@@ -173,8 +180,10 @@ public class SymbolicSolver {
 
     public SymBoolVariable getSymBoolVariable(String name) {
         if (symBoolVariableMap.containsKey(name)) {
+            System.out.println("Returning existing SymBoolVariable: " + name);
             return symBoolVariableMap.get(name);
         } else {
+            System.out.println("Creating new SymBoolVariable: " + name);
             BooleanFormula symBool = bmgr.makeVariable(name);
             SymBoolVariable variable = new SymBoolVariable(symBool);
             symBoolVariableMap.put(name, variable);
