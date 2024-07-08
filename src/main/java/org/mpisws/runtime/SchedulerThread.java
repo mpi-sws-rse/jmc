@@ -13,11 +13,11 @@ import programStructure.WriteEvent;
 
 /**
  * The SchedulerThread class extends the Thread class and is responsible for managing the execution of threads in a
- * multithreaded program. It uses a SearchStrategy to determine the next thread to be executed based on a selected
+ * multithreaded program. It uses a {@link SearchStrategy} to determine the next thread to be executed based on a selected
  * strategy type. The SchedulerThread class handles various types of requests including start, enter monitor,
- * exit monitor, join, read, write, and finish requests. It also includes functionality for deadlock detection among
- * threads waiting to enter a monitor. The SchedulerThread class is designed to control the flow of a program's execution
- * and ensure sequential execution of operations.
+ * exit monitor, join, read, write, finish, and symbolic arithmetic requests. It also includes functionality for deadlock
+ * detection among threads waiting to enter a monitor. The SchedulerThread class is designed to control the flow of a
+ * program's execution and ensure sequential execution of operations.
  */
 public class SchedulerThread extends Thread {
 
@@ -203,10 +203,11 @@ public class SchedulerThread extends Thread {
     /**
      * Selects the next thread to be executed.
      * <p>
-     * This method is used to select the next thread to be executed. If there are no more threads to be executed, it
-     * sets the execution to be finished.
+     * This method is used to select the next thread to be executed. It calls the {@link SearchStrategy#pickNextThread()}
+     * method to select the next thread to be executed. Then, it notifies the selected thread to continue its execution.
      * <br>
      * Finding the next thread to be executed is based on the selected strategy.
+     * </p>
      */
     private void waitEventHandler() {
         Thread thread = searchStrategy.pickNextThread();
@@ -215,12 +216,12 @@ public class SchedulerThread extends Thread {
 
     /**
      * Notifies the specified thread to continue its execution.
-     *
-     * <p>This method is used to notify the specified thread to continue its execution. If the thread is null, it does
-     * nothing.
-     * <br>
-     * The method retrieves the thread's ID, prints a message indicating that the thread is selected to run, and then
-     * notifies the thread.
+     * <p>
+     * This method is used to notify the specified thread to continue its execution. If the thread is null, it indicates
+     * that the execution is finished. In this case, the method sets the {@link RuntimeEnvironment#executionFinished}
+     * flag to true. Otherwise, The method retrieves the thread's ID, prints a message indicating that the thread is
+     * permitted to run, and then notifies the thread.
+     * </p>
      *
      * @param thread the thread to be notified.
      */
@@ -228,7 +229,7 @@ public class SchedulerThread extends Thread {
         Optional<Thread> optionalThread = Optional.ofNullable(thread);
         if (optionalThread.isPresent()) {
             Long threadId = getThreadId(optionalThread.get());
-            System.out.println("[Scheduler Thread Message] : Thread-" + threadId + " is selected to run");
+            System.out.println("[Scheduler Thread Message] : Thread-" + threadId + " is permitted to run");
             synchronized (RuntimeEnvironment.locks.get(threadId)) {
                 RuntimeEnvironment.locks.get(threadId).notify();
             }
@@ -239,8 +240,8 @@ public class SchedulerThread extends Thread {
 
     /**
      * Retrieves the ID of the specified thread.
-     *
-     * <p>This method is used to retrieve the ID of the specified thread.
+     * <br>
+     * This method is used to retrieve the ID of the specified thread.
      *
      * @param thread the thread whose ID is to be retrieved.
      * @return the ID of the thread.
@@ -251,10 +252,11 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the event based on the type of the event.
-     *
-     * <p>This method is used to handle the event based on the type of the event.
+     * <p>
+     * This method is used to handle the event based on the type of the event.
      * It calls the appropriate handler method
      * based on the event type.
+     * </p>
      */
     private void eventHandler() {
         RequestType request = determineEventType();
@@ -283,6 +285,12 @@ public class SchedulerThread extends Thread {
             case SYMB_ARTH_REQUEST:
                 symbolicArithmeticRequestHandler();
                 break;
+            case PARK_REQUEST:
+                parkRequestHandler();
+                break;
+            case UNPARK_REQUEST:
+                unparkRequestHandler();
+                break;
             default:
                 RuntimeEnvironment.threadWaitReq = null;
                 waitEventHandler();
@@ -292,9 +300,10 @@ public class SchedulerThread extends Thread {
 
     /**
      * Determines the type of the event.
-     *
-     * <p>This method is used to determine the type of the event. It checks the state of the runtime environment and returns
+     * <p>
+     * This method is used to determine the type of the event. It checks the state of the runtime environment and returns
      * the type of the event that should be handled next.
+     * </p>
      *
      * @return the type of the event that should be handled next.
      */
@@ -315,6 +324,10 @@ public class SchedulerThread extends Thread {
             return RequestType.FINISH_REQUEST;
         } else if (RuntimeEnvironment.symbolicOperation != null) {
             return RequestType.SYMB_ARTH_REQUEST;
+        } else if (RuntimeEnvironment.unparkerThread != null) {
+            return RequestType.UNPARK_REQUEST;
+        } else if (RuntimeEnvironment.threadToPark != null) {
+            return RequestType.PARK_REQUEST;
         } else {
             return RequestType.WAIT_REQUEST;
         }
@@ -322,10 +335,11 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the start event.
-     *
-     * <p>This method is used to handle the start event. It retrieves the thread that requested to start, sets the thread
-     * wait request to null, prints a message indicating that the thread is selected to run for loading in the runtime
-     * environment, and then starts the thread.
+     * <p>
+     * This method is used to handle the start event. It retrieves the thread that requested to start, sets the thread
+     * wait request to null, if both the callee thread and the caller thread are present, it calls the next start event
+     * method of the search strategy, and then starts the callee thread.
+     * </p>
      */
     private void startEventHandler() {
         System.out.println("[Scheduler Thread Message] : Start event handler is called");
@@ -341,27 +355,28 @@ public class SchedulerThread extends Thread {
 
     /**
      * Starts the specified thread.
-     *
-     * <p>This method is used to start the specified thread. It sets the thread start request to null, prints a message
-     * indicating that the thread is selected to run for loading in the runtime environment, and then starts the thread.
+     * <p>
+     * This method is used to start the specified thread. It prints a message indicating that the thread is permitted to
+     * run for loading in the runtime environment, and then starts the thread.
+     * </p>
      *
      * @param thread the thread to be started.
      */
     private void startThread(Thread thread) {
-        RuntimeEnvironment.threadStartReq = null;
         System.out.println(
                 "[Scheduler Thread Message] : Thread-" + getThreadId(thread) +
-                        " is selected to run for loading in the runtime environment"
+                        " is permitted to run for loading in the runtime environment"
         );
         thread.start();
     }
 
     /**
      * Handles the enter monitor request of a thread.
-     *
-     * <p>This method is used to handle the enter monitor request of a thread. It adds the thread and the monitor into the
-     * monitorRequest and checks whether there is a deadlock between the threads in using the monitors or not. If there
-     * is a deadlock, the execution is set to be finished. Otherwise, it picks the next thread to run.
+     * <p>
+     * This method is used to handle the enter monitor request of a thread. It adds the thread and the monitor into the
+     * monitorRequest and calls the next enter monitor request method of the search strategy. If the next thread to run is
+     * null, it calls the next deadlock event method of the search strategy. Otherwise, it notifies the thread to run.
+     * </p>
      */
     public void enterMonitorRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Enter monitor request handler is called");
@@ -386,10 +401,12 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the exit monitor request of a thread.
-     *
-     * <p>This method is used to handle the exit monitor request of a thread. It retrieves the thread and the monitor that
-     * requested to exit, handles the exit monitor event, sets the thread exit monitor request and the object exit monitor
-     * request to null, sets the thread wait request to null, and then picks the next thread to run.
+     * <p>
+     * This method is used to handle the exit monitor request of a thread. It retrieves the thread and the monitor that
+     * requested to exit, handles the exit monitor event by calling the next exit monitor event method of the search
+     * strategy, sets the thread exit monitor request and the object exit monitor request to null, sets the thread wait
+     * request to null, and finally calls the wait event handler, which selects the next thread to run.
+     * </p>
      */
     public void exitMonitorRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Exit monitor request handler is called");
@@ -406,10 +423,12 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the join request of a thread.
-     *
-     * <p>This method is used to handle the join request of a thread. It retrieves the thread that requested to join and the
-     * thread that is joined, handles the join request, sets the thread join request and the thread join response to null,
-     * sets the thread wait request to null, and then picks the next thread to run.
+     * <p>
+     * This method is used to handle the join request of a thread. It retrieves the thread that requested to join and the
+     * thread that is joined, sets the thread join request and the thread join response to null,
+     * sets the thread wait request to null, and finally handles the join request by calling the next join request method
+     * of the search strategy, and then notifies the thread to run.
+     * </p>
      */
     public void joinRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Join request handler is called");
@@ -430,10 +449,11 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the read request of a thread.
-     *
-     * <p>This method is used to handle the read request event of a thread. It retrieves the read event that requested by
+     * <p>
+     * This method is used to handle the read request event of a thread. It retrieves the read event that requested by
      * the thread, handles the read request, sets the read event request to null, sets the thread wait request to null,
      * and then notifies the thread.
+     * </p>
      */
     public void readRequestHandler() {
         System.out.println("[Scheduler Thread Message] : read request handler is called");
@@ -449,10 +469,11 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the write request of a thread.
-     *
-     * <p>This method is used to handle the write request of a thread. It retrieves the write event that requested by
+     * <p>
+     * This method is used to handle the write request of a thread. It retrieves the write event that requested by
      * the thread, handles the write request, sets the write event request to null, sets the thread wait request to null,
      * and then notifies the thread.
+     * </p>
      */
     public void writeRequestHandler() {
         System.out.println("[Scheduler Thread Message] : write request handler is called");
@@ -468,9 +489,11 @@ public class SchedulerThread extends Thread {
 
     /**
      * Handles the finish request of a thread.
-     *
-     * <p>This method is used to handle the finish request of a thread. It retrieves the thread that requested to finish,
-     * handles the finish request, sets the thread wait request to null, and then picks the next thread to run.
+     * <p>
+     * This method is used to handle the finish request of a thread. It retrieves the thread that requested to finish,
+     * sets the thread wait request to null, handles the finish request by calling the next finish request method of the
+     * search strategy, and then notifies the returned thread to run.
+     * </p>
      */
     public void finishRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Finish request handler is called");
@@ -483,6 +506,38 @@ public class SchedulerThread extends Thread {
         }
     }
 
+    public void unparkRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : Unpark request handler is called");
+        Optional<Thread> unparkerThread = Optional.ofNullable(RuntimeEnvironment.unparkerThread);
+        Optional<Thread> unparkeeThread = Optional.ofNullable(RuntimeEnvironment.unparkeeThread);
+        RuntimeEnvironment.unparkerThread = null;
+        RuntimeEnvironment.unparkeeThread = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (unparkerThread.isPresent() && unparkeeThread.isPresent()) {
+            searchStrategy.nextUnparkRequest(unparkerThread.get(), unparkeeThread.get());
+            //notifyThread(unparkerThread.get());
+        }
+    }
+
+    public void parkRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : Park request handler is called");
+        Optional<Thread> threadToPark = Optional.ofNullable(RuntimeEnvironment.threadToPark);
+        RuntimeEnvironment.threadToPark = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (threadToPark.isPresent()) {
+            searchStrategy.nextParkRequest(threadToPark.get());
+            //notifyThread(parkerThread.get());
+        }
+    }
+
+    /**
+     * Handles the symbolic arithmetic request of a thread.
+     * <p>
+     * This method is used to handle the symbolic arithmetic request of a thread. It retrieves the thread that requested
+     * the symbolic arithmetic operation, sets the thread wait request to null, and then calls the next symbolic operation
+     * request method of the search strategy. Finally, it notifies the thread to run.
+     * </p>
+     */
     public void symbolicArithmeticRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Symbolic arithmetic request handler is called");
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);

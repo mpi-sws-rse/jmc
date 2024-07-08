@@ -22,7 +22,6 @@ public class CorrectCounter extends Thread {
         thread2.start();
         thread1.join();
         thread2.join();
-
         try {
             assert (counter.count == 2) : " ***The assert did not pass, the counter value is " + counter.count + "***";
         } catch (AssertionError e) {
@@ -30,6 +29,5 @@ public class CorrectCounter extends Thread {
         }
 
         System.out.println("[Correct Counter message] : If you see this message, the assert passed. The counter value is " + counter.count);
-
     }
 }

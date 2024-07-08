@@ -682,6 +682,21 @@ data class ExecutionGraph(
                     println(symExecutionEvent)
                 }
 
+                EventType.PARK -> {
+                    val parkEvent: ParkEvent = e as ParkEvent
+                    println(parkEvent)
+                }
+
+                EventType.UNPARK -> {
+                    val unparkEvent: UnparkEvent = e as UnparkEvent
+                    println(unparkEvent)
+                }
+
+                EventType.UNPARKING -> {
+                    val unparkingEvent: UnparkingEvent = e as UnparkingEvent
+                    println(unparkingEvent)
+                }
+
                 EventType.OTHER -> TODO()
             }
         }

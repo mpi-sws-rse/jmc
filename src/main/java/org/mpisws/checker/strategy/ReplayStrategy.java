@@ -16,9 +16,9 @@ import programStructure.*;
  * The ReplayStrategy class implements the {@link SearchStrategy} interface and is responsible for managing the execution
  * order of events in a multithreaded program using a replay strategy. It maintains a guiding trace and a guiding event
  * to guide the execution. The class provides functionality to handle various types of events including start, enter
- * monitor, exit monitor, join, read, write, and finish events. The class uses the {@link RuntimeEnvironment} API to
- * create and record events. The ReplayStrategy class is designed to control the flow of a program's execution and
- * ensure a replay execution order of operations.
+ * monitor, exit monitor, join, read, write, finish, and symbolic arithmetic events. The class uses the
+ * {@link RuntimeEnvironment} API to create and record events. The ReplayStrategy class is designed to control the flow
+ * of a program's execution and ensure a replay execution order of operations.
  */
 public class ReplayStrategy implements SearchStrategy {
 
@@ -120,6 +120,16 @@ public class ReplayStrategy implements SearchStrategy {
         return joinReq;
     }
 
+    @Override
+    public void nextParkRequest(Thread thread) {
+
+    }
+
+    @Override
+    public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
+
+    }
+
     /**
      * Represents the required strategy for the next read event.
      *
@@ -185,6 +195,11 @@ public class ReplayStrategy implements SearchStrategy {
     }
 
     /**
+     * Represents the required strategy for the next symbolic operation request.
+     * <p>
+     * This method creates a symbolic execution event and adds it to the execution trace.
+     * </p>
+     *
      * @param symbolicOperation
      */
     @Override

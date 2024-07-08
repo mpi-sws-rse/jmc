@@ -774,6 +774,78 @@ public class ByteCodeModifier {
         }
     }
 
+    public void modifyParkAndUnpark() {
+        for (String className : allByteCode.keySet()) {
+            byte[] byteCode = allByteCode.get(className);
+            byte[] modifiedByteCode;
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+                @Override
+                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                                 String[] exceptions) {
+                    MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+                    methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+                        @Override
+                        public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
+                                                    boolean isInterface) {
+                            if (opcode == Opcodes.INVOKESTATIC && owner.equals("java/util/concurrent/locks/LockSupport")
+                                    && name.equals("park") && descriptor.equals("()V")) {
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/util/concurrent/LockSupport",
+                                        "park",
+                                        "()V",
+                                        false
+                                );
+                            } else if (opcode == Opcodes.INVOKESTATIC && owner.equals("java/util/concurrent/locks/LockSupport") &&
+                                    name.equals("unpark") && descriptor.equals("(Ljava/lang/Thread;)V")) {
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/util/concurrent/LockSupport",
+                                        "unpark",
+                                        "(Ljava/lang/Thread;)V",
+                                        false
+                                );
+                            } else {
+                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                            }
+                        }
+                    };
+                    return methodVisitor;
+                }
+            };
+            ClassReader cr = new ClassReader(byteCode);
+            cr.accept(classVisitor, 0);
+            modifiedByteCode = cw.toByteArray();
+            allByteCode.put(className, modifiedByteCode);
+        }
+    }
+
+    public void modifySyncMethod() {
+        for (String className : allByteCode.keySet()) {
+            byte[] byteCode = allByteCode.get(className);
+            byte[] modifiedByteCode;
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+                @Override
+                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                                 String[] exceptions) {
+                    MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+                    if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
+                        methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+                            // TODO: ADD MODIFICATIONS FOR SYNCHRONIZED METHODS
+                        };
+                    }
+                    return methodVisitor;
+                }
+            };
+            ClassReader cr = new ClassReader(byteCode);
+            cr.accept(classVisitor, 0);
+            modifiedByteCode = cw.toByteArray();
+            allByteCode.put(className, modifiedByteCode);
+        }
+    }
+
     /**
      * Identifies and modifies points in the user's program where assertions are made.
      * <p>

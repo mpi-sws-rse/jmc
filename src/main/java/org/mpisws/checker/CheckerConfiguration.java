@@ -1,6 +1,7 @@
 package org.mpisws.checker;
 
-//import java.io.*;
+import org.mpisws.solver.SMTSolverTypes;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -67,6 +68,11 @@ public final class CheckerConfiguration implements Serializable {
     public String executionGraphsPath;
 
     /**
+     * @property {@link #solverType} solver types to be used
+     */
+    public SMTSolverTypes solverType;
+
+    /**
      * The following constructor is used to initialize the configuration with default values.
      * <br>
      * This constructor is private and only accessible through the builder.
@@ -83,6 +89,7 @@ public final class CheckerConfiguration implements Serializable {
         buggyTracePath = builder.buggyTracePath;
         executionGraphsPath = builder.executionGraphsPath;
         buggyTraceFile = builder.buggyTraceFile;
+        solverType = builder.solverType;
     }
 
     /**
@@ -134,6 +141,7 @@ public final class CheckerConfiguration implements Serializable {
         public String buggyTracePath = "src/main/resources/buggyTrace/";
         public String buggyTraceFile = "buggyTrace.obj";
         public String executionGraphsPath = "src/main/resources/Visualized_Graphs/";
+        public SMTSolverTypes solverType = SMTSolverTypes.SMTINTERPOL;
 
         public ConfigurationBuilder() {
         }
@@ -184,6 +192,11 @@ public final class CheckerConfiguration implements Serializable {
 
         public ConfigurationBuilder withBuggyTraceFile(String buggyTraceFile) {
             this.buggyTraceFile = buggyTraceFile;
+            return this;
+        }
+
+        public ConfigurationBuilder withSolverType(SMTSolverTypes solverType) {
+            this.solverType = solverType;
             return this;
         }
     }

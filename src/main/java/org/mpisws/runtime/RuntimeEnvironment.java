@@ -7,6 +7,7 @@ import org.mpisws.checker.StrategyType;
 import org.mpisws.manager.Finished;
 import org.mpisws.manager.FinishedType;
 import org.mpisws.manager.HaltExecutionException;
+import org.mpisws.solver.SMTSolverTypes;
 import org.mpisws.solver.SymbolicSolver;
 import programStructure.*;
 import org.mpisws.symbolic.SymbolicOperation;
@@ -17,13 +18,13 @@ import java.util.*;
 
 /**
  * The RuntimeEnvironment class is a singleton that manages the execution state of a multithreaded program under test.
- * It tracks and controls various aspects of the program's execution, including thread creation, synchronization,
+ * It tracks and controls various aspects of the program's execution states, including thread creation, synchronization,
  * termination, and read/write operations on shared resources. It also handles events like thread start, join,
- * monitor enter/exit, read/write operations, and assertion failures. The class provides functionality to load
- * a CheckerConfiguration object from a file, which is used to configure the execution of the program under test.
- * It also provides methods to control the execution of the program, including setting a random seed, initializing
- * the scheduler thread, and terminating the execution. The class is designed to be used in a single-threaded
- * environment, where the SchedulerThread guarantees the sequential execution of operations.
+ * monitor enter/exit, read/write operations, assertion failures, and symbolic operations. The class provides functionality
+ * to load a {@link CheckerConfiguration} object from a file, which is used to configure the execution of the program
+ * under test. It also provides methods to control the execution of the program, including setting a random seed,
+ * initializing the scheduler thread, and terminating the execution. The class is designed to be used in a single-threaded
+ * environment, where the {@link SchedulerThread} guarantees the sequential execution of operations.
  */
 public class RuntimeEnvironment {
 
@@ -231,6 +232,11 @@ public class RuntimeEnvironment {
     public static List<Thread> suspendedThreads = new ArrayList<>();
 
     /**
+     * @property {@link #parkedThreadList} is used to store the threads that are parked in the program under test.
+     */
+    public static List<Thread> parkedThreadList = new ArrayList<>();
+
+    /**
      * @property {@link #buggyTracePath} is used to store the path to the buggy trace object.
      */
     public static String buggyTracePath;
@@ -245,18 +251,72 @@ public class RuntimeEnvironment {
      */
     public static String executionGraphsPath;
 
+    /**
+     * @property {@link #suspendPriority} is used to store suspender and suspendee threads in the program under test,
+     * based on the monitor that the suspendee thread is waiting to enter and the monitor that the suspender thread has
+     * already entered. (Currently, this feature is only used by trust strategy to sustain the consistency of the
+     * scheduling with respect to the suspend Events)
+     */
     public static Map<Object, Set<Pair<Long, Long>>> suspendPriority = new HashMap<>();
 
+    /**
+     * @property {@link #threadParkingPermit} is used to store the parking permit for the threads in the program under
+     * test. The key is the thread id and the value is the parking permit. When a thread is going to be parked or
+     * unparked, this field is used to check whether the thread has the parking permit or not.
+     */
+    public static Map<Long, Boolean> threadParkingPermit = new HashMap<>();
+
+    /**
+     * @property {@link #threadToPark} is used to store the thread that is going to be parked.
+     */
+    public static Thread threadToPark = null;
+
+    /**
+     * @property {@link #unparkerThread} is used to store the thread that is going to unpark {@link #unparkeeThread}.
+     */
+    public static Thread unparkerThread = null;
+
+    /**
+     * @property {@link #unparkeeThread} is used to store the thread that is going to be unparked.
+     */
+    public static Thread unparkeeThread = null;
+
+
+    /**
+     * @property {@link #symbolicOperation} is used to store the symbolic operation that is executed by the threads
+     * in the program under test.
+     */
     public static SymbolicOperation symbolicOperation;
 
+    /**
+     * @property {@link #solverResult} is used to store the result of the symbolic operation that is executed by the
+     * threads in the program under test. This result is returned by the {@link SymbolicSolver} object.
+     */
     public static Boolean solverResult = null;
 
-    // create a map from thread id to a list of SymbolicOperation
+    /**
+     * @property {@link #threadSymbolicOperation} is used to store the symbolic operations that are executed by the
+     * threads in the program under test. The key is the thread id and the value is the list of the symbolic operations.
+     * (Currently, this field is not used by {@link SchedulerThread}).
+     */
     public static Map<Long, List<SymbolicOperation>> threadSymbolicOperation = new HashMap<>();
 
+    /**
+     * @property {@link #pathSymbolicOperations} is used to store the symbolic operations that are executed in the
+     * path of the program under test, independently of the threads.
+     */
     public static List<SymbolicOperation> pathSymbolicOperations = new ArrayList<>();
 
-    public static SymbolicSolver solver = new SymbolicSolver();
+    /**
+     * @property {@link #solver} is used to store the {@link SymbolicSolver} object that is used to solve the symbolic
+     * operations by {@link SchedulerThread}.
+     */
+    public static SymbolicSolver solver;
+
+    /**
+     * @property {@link #solverType} is used to store the solver type that IS used by the {@link #solver}
+     */
+    public static SMTSolverTypes solverType;
 
     /**
      * The constructor is private to prevent the instantiation of the class
@@ -279,6 +339,11 @@ public class RuntimeEnvironment {
         numOfExecutions++;
         System.out.println("[Runtime Environment Message] : The number of executions is " + numOfExecutions);
         loadConfig();
+        if (solverType == null) {
+            solver = new SymbolicSolver();
+        } else {
+            solver = new SymbolicSolver(solverType);
+        }
         System.out.println("[Runtime Environment Message] : The CheckerConfiguration has been loaded");
         threadIdMap.put(thread.getId(), (long) threadCount);
         threadObjectMap.put(threadIdMap.get(thread.getId()), thread);
@@ -292,6 +357,7 @@ public class RuntimeEnvironment {
         createdThreadList.add(thread);
         readyThreadList.add(thread);
         mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
+        threadParkingPermit.put(threadIdMap.get(thread.getId()), false);
         System.out.println(
                 "[Runtime Environment Message] : " + thread.getName() + " added to the createdThreadList of" +
                         " the Runtime Environment"
@@ -310,11 +376,13 @@ public class RuntimeEnvironment {
     public static void printState() {
         System.out.println("[Runtime Environment Message] : The state of the threads in the createdThreadList");
         for (Thread thread : createdThreadList) {
-            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() + " state");
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() +
+                    " state");
         }
         System.out.println("[Runtime Environment Message] : The state of the threads in the readyThreadList");
         for (Thread thread : readyThreadList) {
-            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() + " state");
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() +
+                    " state");
         }
     }
 
@@ -368,6 +436,7 @@ public class RuntimeEnvironment {
         buggyTracePath = config.buggyTracePath;
         executionGraphsPath = config.executionGraphsPath;
         buggyTraceFile = config.buggyTraceFile;
+        solverType = config.solverType;
     }
 
     /**
@@ -396,6 +465,7 @@ public class RuntimeEnvironment {
             locks.put(threadIdMap.get(thread.getId()), lock);
             createdThreadList.add(thread);
             mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
+            threadParkingPermit.put(threadIdMap.get(thread.getId()), false);
             System.out.println(
                     "[Runtime Environment Message] : " + thread.getName() + " added to the createdThreadList " +
                             "of the Runtime Environment"
@@ -431,7 +501,7 @@ public class RuntimeEnvironment {
     public static void threadStart(Thread thread, Thread currentThread) {
         if (createdThreadList.contains(thread) && !readyThreadList.contains(thread)) {
             System.out.println(
-                    "[Runtime Environment Message] : Thread-" + thread.getName() + " requested to run the start()" +
+                    "[Runtime Environment Message] : " + thread.getName() + " requested to run the start()" +
                             " inside the " + currentThread.getName()
             );
             readyThreadList.add(thread);
@@ -442,7 +512,8 @@ public class RuntimeEnvironment {
             threadStartReq = thread;
             waitRequest(currentThread);
         } else {
-            System.out.println("[Runtime Environment Message] : thread-" + threadIdMap.get(thread.getId()) + " is not in the createdThreadList");
+            System.out.println("[Runtime Environment Message] : thread-" + threadIdMap.get(thread.getId()) + " is not " +
+                    "in the createdThreadList");
         }
     }
 
@@ -721,6 +792,27 @@ public class RuntimeEnvironment {
         }
     }
 
+    public static void parkOperation(Thread thread) {
+        System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to PARK");
+        threadToPark = thread;
+        waitRequest(thread);
+    }
+
+    public static void unparkOperation(Thread callerThread, Thread calleeThread) {
+        if (parkedThreadList.contains(calleeThread)) {
+            parkedThreadList.remove(calleeThread);
+            readyThreadList.add(calleeThread);
+        } else {
+            threadParkingPermit.put(threadIdMap.get(calleeThread.getId()), true);
+        }
+
+        System.out.println("[Runtime Environment Message] : " + callerThread.getName() + " requested to UNPARK " +
+                calleeThread.getName());
+        unparkerThread = callerThread;
+        unparkeeThread = calleeThread;
+        waitRequest(callerThread);
+    }
+
     public static boolean symbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to execute a symbolic " +
                 "arithmetic operation");
@@ -879,6 +971,63 @@ public class RuntimeEnvironment {
     }
 
     /**
+     * Creates a {@link ParkEvent} for a thread that is about to park.
+     * <p>
+     * This method is invoked by the {@link SchedulerThread} when a thread in the program under test is about to park.
+     * The method creates a {@link ParkEvent} for the thread.
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new {@link ParkEvent} with the {@code EventType.PARK} and the ID of the thread.
+     * </p>
+     *
+     * @param thread The thread for which the {@link ParkEvent} is being created.
+     * @return The created {@link ParkEvent} for the thread.
+     */
+    public static ParkEvent createParkEvent(Thread thread) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new ParkEvent(EventType.PARK, threadIdMap.get(thread.getId()).intValue(), serialNumber);
+    }
+
+    /**
+     * Creates a {@link UnparkEvent} for a thread that is about to unpark another thread.
+     * <p>
+     * This method is invoked by the {@link SchedulerThread} when a thread in the program under test is about to be
+     * unparked by another thread. The method creates an {@link UnparkEvent} for the unparkeeThread over the unparkerThread.
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new {@link UnparkEvent} with the {@code EventType.UNPARK}, the IDs of the unparkerThread
+     * and unparkeeThread, and the generated serial number.
+     * </p>
+     *
+     * @param unparkerThread The thread that is about to unpark the unparkeeThread.
+     * @param unparkeeThread The thread that is about to be unparked by the unparkerThread.
+     * @return The created {@link UnparkEvent} for the unparkerThread over the unparkeeThread.
+     */
+    public static UnparkEvent createUnparkEvent(Thread unparkerThread, Thread unparkeeThread) {
+        int serialNumber = getNextSerialNumber(unparkerThread);
+        return new UnparkEvent(EventType.UNPARK, threadIdMap.get(unparkeeThread.getId()).intValue(), serialNumber,
+                threadIdMap.get(unparkerThread.getId()).intValue());
+    }
+
+    /**
+     * Creates a {@link UnparkingEvent} for a thread that has unparked another thread.
+     * <p>
+     * This method is invoked by the {@link SchedulerThread} when a thread in the program under test has unparked another
+     * thread. The method creates an {@link UnparkingEvent} for the unparkerThread.
+     * The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new {@link UnparkingEvent} with the {@code EventType.UNPARKING} and the ID of the
+     * unparkerThread.
+     * </p>
+     *
+     * @param unparkerThread The thread that has unparked another unparkeeThread.
+     * @param unparkeeThread The thread that has been unparked by the unparkerThread.
+     * @return The created {@link UnparkingEvent} for the unparkerThread.
+     */
+    public static UnparkingEvent createUnparkingEvent(Thread unparkerThread, Thread unparkeeThread) {
+        int serialNumber = getNextSerialNumber(unparkerThread);
+        return new UnparkingEvent(EventType.UNPARKING, threadIdMap.get(unparkerThread.getId()).intValue(), serialNumber,
+                threadIdMap.get(unparkeeThread.getId()).intValue());
+    }
+
+    /**
      * Creates a {@link StartEvent} for a thread that has been started by another thread.
      * <p>
      * This method is invoked by the {@link SchedulerThread} when a thread (the callerThread) in the program under test
@@ -1001,12 +1150,41 @@ public class RuntimeEnvironment {
                 EventType.EXIT_MONITOR, serialNumber, createMonitor(lock));
     }
 
+    /**
+     * Creates a {@link SuspendEvent} for a thread that is about to be suspended.
+     * <p>
+     * This method is invoked by the {@link SchedulerThread} when it decides to suspend a thread in the program under,
+     * based on its strategy. The method creates a {@link SuspendEvent} for the thread and the monitor the thread wants
+     * to acquire. The method first generates a serial number for the event by calling the {@link #getNextSerialNumber(Thread)}
+     * method. It then creates a new {@link SuspendEvent} with the {@code EventType.SUSPEND}, the ID of the thread,
+     * the generated serial number, and the monitor it wants to suspend.
+     * </p>
+     *
+     * @param thread The thread for which the {@link SuspendEvent} is being created.
+     * @param lock   The lock that the thread wants to suspend.
+     * @return The created {@link SuspendEvent} for the thread.
+     */
     public static SuspendEvent createSuspendEvent(Thread thread, Object lock) {
         int serialNumber = getNextSerialNumber(thread);
         mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), mcThreadSerialNumber.get(threadIdMap.get(thread.getId()).intValue()) - 1);
         return new SuspendEvent(EventType.SUSPEND, threadIdMap.get(thread.getId()).intValue(), serialNumber, createMonitor(lock));
     }
 
+    /**
+     * Creates a {@link SymExecutionEvent} for a thread that is about to execute a symbolic execution.
+     * <p>
+     * This method is invoked by the {@link RuntimeEnvironment} when a thread in the program under test is about to
+     * execute a symbolic execution. The method creates a {@link SymExecutionEvent} for the thread and the formula it
+     * wants to execute symbolically. The method first generates a serial number for the event by calling the
+     * {@link #getNextSerialNumber(Thread)} method. It then creates a new {@link SymExecutionEvent} with the
+     * {@code EventType.SYM_EXECUTION}, the ID of the thread, the generated serial number, the result of the solver,
+     * the formula to execute symbolically, and whether the formula is negatable.
+     * </p>
+     *
+     * @param thread      The thread for which the {@link SymExecutionEvent} is being created.
+     * @param formula     The formula that the thread wants to execute symbolically.
+     * @param isNegatable Whether the formula is negatable.
+     */
     public static SymExecutionEvent createSymExecutionEvent(Thread thread, String formula, boolean isNegatable) {
         int serialNumber = getNextSerialNumber(thread);
         return new SymExecutionEvent(threadIdMap.get(thread.getId()).intValue(), EventType.SYM_EXECUTION, serialNumber,
@@ -1111,9 +1289,9 @@ public class RuntimeEnvironment {
      * @param name       The name of the field.
      * @param descriptor The type descriptor of the field.
      * @return The created {@link Location} object for the field.
-     * @throws ClassNotFoundException if the owner class is not found.
-     * @throws NoSuchFieldException   if the field is not found in the owner class.
-     * @throws IllegalAccessException if the field is not accessible.
+     * @throws ClassNotFoundException if the owner class is not found. (Replaced by an assertion)
+     * @throws NoSuchFieldException   if the field is not found in the owner class. (Replaced by an assertion)
+     * @throws IllegalAccessException if the field is not accessible. (Replaced by an assertion)
      */
     private static Location createLocation(Object obj, String owner, String name, String descriptor) {
         try {
@@ -1213,8 +1391,13 @@ public class RuntimeEnvironment {
         suspendedThreads = new ArrayList<>();
         threadObjectMap = new HashMap<>();
         suspendPriority = new HashMap<>();
-        solver = new SymbolicSolver();
+        if (solverType == null) {
+            solver = new SymbolicSolver();
+        } else {
+            solver = new SymbolicSolver(solverType);
+        }
         symbolicOperation = null;
         solverResult = false;
+        threadParkingPermit = new HashMap<>();
     }
 }

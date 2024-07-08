@@ -22,11 +22,11 @@ import programStructure.*;
  * the execution order of events in a multithreaded program using a random strategy.
  * It maintains a record of random events and a random number generator for the random strategy.
  * The class provides functionality to handle various types of events
- * including start, enter monitor, exit monitor, join, read, write, and finish events. The class uses the
- * {@link RuntimeEnvironment} API to create and record events. The class initializes the random number generator with
- * the seed value from the {@link RuntimeEnvironment}. It also includes functionality for printing the execution trace
- * and checking if the execution is done. The RandomStrategy class is designed to control the flow of a program's
- * execution and ensure a random execution order of operations.
+ * including start, enter monitor, exit monitor, join, read, write, finish, and symbolic arithmetic events. The class
+ * uses the {@link RuntimeEnvironment} API to create and record events. The class initializes the random number
+ * generator with the seed value from the {@link RuntimeEnvironment}. It also includes functionality for printing the
+ * execution trace and checking if the execution is done. The RandomStrategy class is designed to control the flow of
+ * a program's execution and ensure a random execution order of operations.
  */
 public class RandomStrategy implements SearchStrategy {
 
@@ -47,13 +47,22 @@ public class RandomStrategy implements SearchStrategy {
      */
     private final String buggyTraceFile;
 
+    /**
+     * @property {@link #solver} is keeping the reference to {@link RuntimeEnvironment#solver}
+     */
     private final SymbolicSolver solver;
 
+    /**
+     * @property {@link #isNegatable} is a boolean value to check if the symbolic arithmetic operation is negatable.
+     */
     private boolean isNegatable = false;
 
     /**
-     * The following constructor initializes the random events record and the random number generator with the given
-     * seed. It also initializes the path to the buggy trace object.
+     * The following constructor initializes {@link #buggyTraceFile} with the value from
+     * {@link RuntimeEnvironment#buggyTraceFile}, {@link #buggyTracePath} with the value from
+     * {@link RuntimeEnvironment#buggyTracePath}, and {@link #random} with a new random number generator with the seed
+     * value from {@link RuntimeEnvironment#seed}, and {@link #solver} with the value from
+     * {@link RuntimeEnvironment#solver}.
      */
     public RandomStrategy() {
         buggyTracePath = RuntimeEnvironment.buggyTracePath;
@@ -68,9 +77,6 @@ public class RandomStrategy implements SearchStrategy {
 
     /**
      * Selects a random thread from the ready thread list based on the {@link #random} object.
-     * <p>
-     * This method selects a random thread from the ready thread list.
-     * </p>
      *
      * @param readyThreadList is the list of threads that are ready to run.
      * @return the selected random thread.
@@ -152,6 +158,16 @@ public class RandomStrategy implements SearchStrategy {
         RuntimeEnvironment.eventsRecord.add(joinEvent);
     }
 
+    @Override
+    public void nextParkRequest(Thread thread) {
+
+    }
+
+    @Override
+    public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
+
+    }
+
     /**
      * Handles the next join request of a given thread.
      * <p>
@@ -203,6 +219,7 @@ public class RandomStrategy implements SearchStrategy {
      * This method creates a {@link FinishEvent} for the corresponding finishing execution request of a thread.
      * The created {@link FinishEvent} is added to the {@link RuntimeEnvironment#eventsRecord}.
      * The method also analyzes the suspended threads for joining the finished thread.
+     * </p>
      *
      * @param thread is the thread that is going to be finished.
      */
@@ -244,15 +261,27 @@ public class RandomStrategy implements SearchStrategy {
         RuntimeEnvironment.eventsRecord.add(failureEvent);
     }
 
+    /**
+     * Handles the next symbolic operation request of a given thread.
+     * <p>
+     * This method handles the next symbolic operation request of a given thread. It checks if the symbolic operation
+     * is dependent on other formulas. If the symbolic operation is dependent, it creates a dependency operation and
+     * solves the dependent formulas. If the symbolic operation is free from dependencies, it solves the formula. The
+     * method updates the path symbolic operations and creates a {@link SymExecutionEvent} for the symbolic operation.
+     * </p>
+     *
+     * @param thread            is the thread that is going to execute the symbolic operation.
+     * @param symbolicOperation is the symbolic operation that is going to be executed.
+     */
     @Override
     public void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependentOperations = findDependentFormulas(symbolicOperation);
         if (dependentOperations == null) {
-            handleFreeFormulas(symbolicOperation, thread);
+            handleFreeFormulas(symbolicOperation);
             System.out.println("[Random Strategy Message] : The result of the symbolic arithmetic operation is " +
                     RuntimeEnvironment.solverResult);
         } else {
-            handleDependentFormulas(symbolicOperation, dependentOperations, thread);
+            handleDependentFormulas(symbolicOperation, dependentOperations);
             System.out.println("[Random Strategy Message] : The result of the symbolic arithmetic operation is " +
                     RuntimeEnvironment.solverResult);
         }
@@ -262,6 +291,17 @@ public class RandomStrategy implements SearchStrategy {
         RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
     }
 
+    /**
+     * Finds dependent formulas for a given symbolic operation.
+     * <p>
+     * This method finds dependent formulas for a given symbolic operation. It iterates over the path symbolic
+     * operations and checks if the symbolic operation is dependent on other formulas. If the symbolic operation is
+     * dependent, it adds the dependent operation to the list of dependent operations.
+     * </p>
+     *
+     * @param symbolicOperation is the symbolic operation for which dependent formulas are going to be found.
+     * @return the list of dependent formulas.
+     */
     private List<SymbolicOperation> findDependentFormulas(SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependencyOperations = new ArrayList<>();
         List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.pathSymbolicOperations;
@@ -277,6 +317,18 @@ public class RandomStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Finds dependent formulas for a given symbolic operation in a given thread.
+     * <p>
+     * This method finds dependent formulas for a given symbolic operation in a given thread execution path. It
+     * iterates over the thread symbolic operations and checks if the symbolic operation is dependent on other formulas.
+     * If the symbolic operation is dependent, it adds the dependent operation to the list of dependent operations.
+     * </p>
+     *
+     * @param symbolicOperation is the symbolic operation for which dependent formulas are going to be found.
+     * @param thread            is the thread key for the thread symbolic operations.
+     * @return the list of dependent formulas.
+     */
     private List<SymbolicOperation> findDependentThreadFormulas(Thread thread, SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependencyOperations = new ArrayList<>();
         List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.threadSymbolicOperation.get(
@@ -292,10 +344,20 @@ public class RandomStrategy implements SearchStrategy {
         } else {
             return dependencyOperations;
         }
-
     }
 
-    private void handleFreeFormulas(SymbolicOperation symbolicOperation, Thread thread) {
+    /**
+     * Handles the free symbolic arithmetic operation for solving SAT and UNSAT.
+     * <p>
+     * This method handles the free symbolic arithmetic operation for solving SAT and UNSAT. It calls the solver to
+     * solve the symbolic formula and dis-solve the symbolic formula. The method also checks if the symbolic arithmetic
+     * operation is negatable. Finally, the method picks SAT or UNSAT based on the solver results. The method updates
+     * the {@link RuntimeEnvironment#solverResult} with the picked result.
+     * </p>
+     *
+     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
+     */
+    private void handleFreeFormulas(SymbolicOperation symbolicOperation) {
         System.out.println("[Random Strategy Message] : The symbolic arithmetic operation is free from dependencies");
         boolean sat = solveSat(symbolicOperation);
         boolean unSat = solveUnsat(symbolicOperation);
@@ -303,7 +365,21 @@ public class RandomStrategy implements SearchStrategy {
         RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
     }
 
-    private void handleDependentFormulas(SymbolicOperation symbolicOperation, List<SymbolicOperation> dependentOperations, Thread thread) {
+    /**
+     * Handles the dependent symbolic arithmetic operation for solving SAT and UNSAT.
+     * <p>
+     * This method handles the dependent symbolic arithmetic operation for solving SAT and UNSAT. It creates a
+     * dependency operation by conjuncting the dependent operations. The method calls the solver to solve the dependent
+     * symbolic formula with the dependency operation and dis-solve the dependent symbolic formula with the dependency
+     * operation. The method also checks if the symbolic arithmetic operation is negatable. Finally, the method picks
+     * SAT or UNSAT based on the solver results. The method updates the {@link RuntimeEnvironment#solverResult} with
+     * the picked result.
+     * </p>
+     *
+     * @param symbolicOperation   is the symbolic arithmetic operation that is going to be solved.
+     * @param dependentOperations is the list of dependent symbolic operations.
+     */
+    private void handleDependentFormulas(SymbolicOperation symbolicOperation, List<SymbolicOperation> dependentOperations) {
         System.out.println("[Random Strategy Message] : The symbolic arithmetic operation has dependencies");
         SymbolicOperation dependency = solver.makeDependencyOperation(dependentOperations);
         boolean sat = solveDependentSat(symbolicOperation, dependency);
@@ -312,22 +388,60 @@ public class RandomStrategy implements SearchStrategy {
         RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
     }
 
+    /**
+     * Solves the SAT for a given symbolic arithmetic operation.
+     *
+     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
+     * @return true if the symbolic arithmetic operation is satisfiable, otherwise false.
+     */
     private boolean solveSat(SymbolicOperation symbolicOperation) {
         return solver.solveSymbolicFormula(symbolicOperation);
     }
 
+    /**
+     * Solves the dependent SAT for a given symbolic arithmetic operation.
+     *
+     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
+     * @param dependency        is the dependency operation for the symbolic arithmetic operation.
+     * @return true if the symbolic arithmetic operation is satisfiable, otherwise false.
+     */
     private boolean solveDependentSat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
         return solver.solveDependentSymbolicFormulas(symbolicOperation, dependency);
     }
 
+    /**
+     * Solves the UNSAT for a given symbolic arithmetic operation.
+     *
+     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
+     * @return true if the symbolic arithmetic operation is unsatisfiable, otherwise false.
+     */
     private boolean solveUnsat(SymbolicOperation symbolicOperation) {
         return solver.disSolveSymbolicFormula(symbolicOperation);
     }
 
+    /**
+     * Solves the dependent UNSAT for a given symbolic arithmetic operation.
+     *
+     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
+     * @param dependency        is the dependency operation for the symbolic arithmetic operation.
+     * @return true if the symbolic arithmetic operation is unsatisfiable, otherwise false.
+     */
     private boolean solveDependentUnsat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
         return solver.disSolveDependentSymbolicFormulas(symbolicOperation, dependency);
     }
 
+    /**
+     * Picks SAT or UNSAT based on the solver results.
+     * <p>
+     * This method picks SAT or UNSAT based on the solver results. If both SAT and UNSAT are possible for the symbolic
+     * arithmetic operation, the method randomly picks SAT or UNSAT. If only SAT is possible, the method picks SAT. If
+     * only UNSAT is possible, the method picks UNSAT. If no solution is found, the method exits the program.
+     * </p>
+     *
+     * @param sat   the result of the SAT solver.
+     * @param unSat the result of the UNSAT solver.
+     * @return true if SAT is picked, otherwise false.
+     */
     private boolean pickSatOrUnsat(boolean sat, boolean unSat) {
         if (sat && unSat) {
             System.out.println("[Random Strategy Message] : Both SAT and UNSAT are possible for the symbolic " +

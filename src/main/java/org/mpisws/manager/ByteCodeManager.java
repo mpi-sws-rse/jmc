@@ -84,6 +84,7 @@ public class ByteCodeManager {
             compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/checker/strategy/"));
             compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/symbolic/"));
             compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/solver/"));
+            compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/util/concurrent/"));
         } catch (IOException e) {
             throw new RuntimeException("Error closing the file manager", e);
         }

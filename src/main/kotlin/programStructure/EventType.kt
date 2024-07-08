@@ -20,5 +20,8 @@ enum class EventType : Serializable {
     SUSPEND,
     UNSUSPEND,
     SYM_EXECUTION,
+    PARK,
+    UNPARK,
+    UNPARKING,
     OTHER
 }

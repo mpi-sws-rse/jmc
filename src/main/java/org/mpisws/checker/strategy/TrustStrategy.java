@@ -21,11 +21,11 @@ import programStructure.*;
  * The TrustStrategy class implements the {@link SearchStrategy} interface and is responsible for managing the execution
  * order of events in a multithreaded program using the {@link Trust} model checker. It maintains a record of execution
  * graphs and a trust object for the trust model checker. The class provides functionality to handle various types of
- * events including start, join, read, write, and finish events. The class uses the {@link RuntimeEnvironment} API to
- * create and record events. The TrustStrategy class is designed to control the flow of a program's
- * execution by using trust model checker. When it faces a new event, it passes the event to the trust model checker and
- * updates the current graph based on the model checker's response. Based on the response, it picks the next thread to
- * execute. The class also provides functionality to save the execution graphs to a file.
+ * events including start, join, read, write, finish, symbolic arithmetic events. The class uses the
+ * {@link RuntimeEnvironment} API to create and record events. The TrustStrategy class is designed to control the flow
+ * of a program's execution by using trust model checker. When it faces a new event, it passes the event to the trust
+ * model checker and updates the current graph based on the model checker's response. Based on the response, it picks
+ * the next thread to execute. The class also provides functionality to save the execution graphs to a file.
  */
 public class TrustStrategy implements SearchStrategy {
 
@@ -90,13 +90,20 @@ public class TrustStrategy implements SearchStrategy {
      */
     private final String executionGraphsPath;
 
+    /**
+     * @property {@link #solver} is keeping the reference to {@link RuntimeEnvironment#solver}
+     */
     private final SymbolicSolver solver;
 
+    /**
+     * @property {@link #isNegatable} is a boolean value to check if the symbolic arithmetic operation is negatable.
+     */
     private boolean isNegatable = false;
 
     /**
-     * The following constructor initializes the model checker graphs list, the current execution graph, trust object,
-     * the guiding execution graph if it is available, and the guiding events list.
+     * The following constructor initializes the model checker graphs list, the current execution graph, and trust object,
+     * the guiding execution graph if it is available. Moreover, it initializes the buggy trace path, the buggy trace file,
+     * the execution graphs path, and the solver.
      */
     public TrustStrategy() {
         buggyTracePath = RuntimeEnvironment.buggyTracePath;
@@ -297,8 +304,11 @@ public class TrustStrategy implements SearchStrategy {
     /**
      * Represents the required strategy for the next enter monitor event.
      * <p>
-     * This method represents the required strategy for the next enter monitor event. It prints a message that the
-     * current version of the trust strategy does not support the enter monitor event and exits the program.
+     * This method represents the required strategy for the next enter monitor event. It creates a {@link EnterMonitorEvent}
+     * for the corresponding entering a monitor request of a thread. First, it adds the created {@link EnterMonitorEvent}
+     * to the {@link RuntimeEnvironment#eventsRecord}. Then, it adds the event to the {@link #currentGraph} if the
+     * {@link #guidingActivate} is true. Otherwise, it passes the event to the {@link #trust} model checker and updates
+     * the current graph.
      * </p>
      *
      * @param thread  is the thread that is going to enter the monitor.
@@ -319,8 +329,11 @@ public class TrustStrategy implements SearchStrategy {
     /**
      * Represents the required strategy for the next exit monitor event.
      * <p>
-     * This method represents the required strategy for the next exit monitor event. It prints a message that the
-     * current version of the trust strategy does not support the exit monitor event and exits the program.
+     * This method represents the required strategy for the next exit monitor event. It creates a {@link ExitMonitorEvent}
+     * for the corresponding exiting a monitor request of a thread and records it. The created {@link ExitMonitorEvent}
+     * is added to the {@link #currentGraph} if the {@link #guidingActivate} is true. Otherwise, it passes the event to
+     * the {@link #trust} model checker and updates the current graph. The method also analyzes the suspended threads for
+     * the monitor.
      * </p>
      *
      * @param thread  is the thread that is going to exit the monitor.
@@ -344,7 +357,7 @@ public class TrustStrategy implements SearchStrategy {
      * Represents the required strategy for the next join event.
      * <p>
      * This method represents the required strategy for the next join event. It creates a {@link JoinEvent} for the
-     * corresponding joining a thread request of a thread. The created {@link JoinEvent} is added to the
+     * corresponding joining a thread request of a thread and records it. The created {@link JoinEvent} is added to the
      * {@link #currentGraph} if the {@link #guidingActivate} is true. Otherwise, it passes the event to the {@link #trust}
      * model checker.
      * </p>
@@ -360,6 +373,35 @@ public class TrustStrategy implements SearchStrategy {
             addEventToCurrentGraph(joinEvent);
         } else {
             passEventToTrust(joinEvent);
+        }
+    }
+
+    @Override
+    public void nextParkRequest(Thread thread) {
+        ParkEvent parkRequestEvent = RuntimeEnvironment.createParkEvent(thread);
+        RuntimeEnvironment.eventsRecord.add(parkRequestEvent);
+        if (guidingActivate) {
+            addEventToCurrentGraph(parkRequestEvent);
+        } else {
+            long tid = RuntimeEnvironment.threadIdMap.get(thread.getId());
+            if (RuntimeEnvironment.threadParkingPermit.get(tid)) {
+                RuntimeEnvironment.threadParkingPermit.put(tid, false);
+                passEventToTrust(parkRequestEvent);
+            } else {
+                parkThread(thread);
+                passEventToTrust(parkRequestEvent);
+            }
+        }
+    }
+
+    @Override
+    public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
+        UnparkingEvent unparkRequestEvent = RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
+        RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+        if (guidingActivate) {
+            addEventToCurrentGraph(unparkRequestEvent);
+        } else {
+            passEventToTrust(unparkRequestEvent);
         }
     }
 
@@ -390,8 +432,8 @@ public class TrustStrategy implements SearchStrategy {
      * Represents the required strategy for the next read event.
      * <p>
      * This method represents the required strategy for the next read event. It passes the read event to the {@link #trust}
-     * model checker if the {@link #guidingActivate} is false. Otherwise, it adds the read event to the current graph
-     * and adds the reads-from edge to the {@link #currentGraph}.
+     * model checker if the {@link #guidingActivate} is false and updates the current graph. Otherwise, it adds the read
+     * event to the current graph coupled with the reads-from edge.
      * </p>
      *
      * @param readEvent is the read event that is going to be executed.
@@ -448,7 +490,6 @@ public class TrustStrategy implements SearchStrategy {
                     .findFirst()
                     .orElse(null);
         }
-
         return readsFrom;
     }
 
@@ -528,8 +569,8 @@ public class TrustStrategy implements SearchStrategy {
      * Represents the required strategy for the next write event.
      * <p>
      * This method represents the required strategy for the next write event. It passes the write event to the
-     * {@link #trust} model checker if the {@link #guidingActivate} is false. Otherwise, it adds the write event to the
-     * current graph and adds the reads-from edge to the {@link #currentGraph}.
+     * {@link #trust} model checker if the {@link #guidingActivate} is false and updates the current graph. Otherwise,
+     * it adds the write event to the current graph.
      * </p>
      *
      * @param writeEvent is the write event that is going to be executed.
@@ -549,7 +590,7 @@ public class TrustStrategy implements SearchStrategy {
      * Represents the required strategy for the next finish event.
      * <p>
      * This method represents the required strategy for the next finish event. It creates a {@link FinishEvent} for the
-     * corresponding finishing execution request of a thread. The created {@link FinishEvent} is added to the
+     * corresponding finishing execution request of a thread and records it. The created {@link FinishEvent} is added to the
      * {@link #currentGraph} if the {@link #guidingActivate} is true. Otherwise, it passes the event to the {@link #trust}
      * model checker. The method also analyzes the suspended threads for joining the finished thread.
      * </p>
@@ -569,6 +610,22 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Represents the required strategy for the next enter monitor request.
+     * <p>
+     * This method represents the required strategy for the next enter monitor request. It creates a
+     * {@link MonitorRequestEvent} for the corresponding entering a monitor request of a thread and records it.
+     * The created {@link MonitorRequestEvent} is added to the {@link #currentGraph} if the {@link #guidingActivate} is
+     * true. Otherwise, it passes the event to the {@link #trust} model checker. The method also checks the deadlock
+     * detection between the threads in using the monitors. If there is a deadlock, it sets the
+     * {@link RuntimeEnvironment#deadlockHappened} to true and sets the {@link RuntimeEnvironment#executionFinished} to
+     * true. Otherwise, it picks the next thread to execute.
+     * </p>
+     *
+     * @param thread  is the thread that is going to enter the monitor.
+     * @param monitor is the monitor that is going to be entered by the thread.
+     * @return the next thread that is going to be executed.
+     */
     @Override
     public Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
         MonitorRequestEvent monitorRequestEvent = RuntimeEnvironment.createMonitorRequestEvent(thread, monitor);
@@ -618,7 +675,14 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
-     * @param symbolicOperation
+     * Represents the required strategy for the next symbolic operation request.
+     * <p>
+     * This method represents the required strategy for the next symbolic operation request. It calls the
+     * {@link #handleGuidingSymbolicOperationRequest(Thread, SymbolicOperation)} if the {@link #guidingActivate} is true.
+     * Otherwise, it calls the {@link #handleNewSymbolicOperationRequest(Thread, SymbolicOperation)}.
+     * </p>
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be executed.
      */
     @Override
     public void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
@@ -629,6 +693,20 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Handles the guiding symbolic operation request.
+     * <p>
+     * This method handles the guiding symbolic operation request. It sets the {@link RuntimeEnvironment#solverResult}
+     * with the result of the {@link SymExecutionEvent#getResult()} of the {@link #guidingEvent}. Then, it updates the
+     * path symbolic operations with the given symbolic operation and thread. It creates a new {@link SymExecutionEvent}
+     * with the given thread, the formula of the symbolic operation, and the negatable value of the {@link #guidingEvent}.
+     * Finally, it adds the created event to the {@link RuntimeEnvironment#eventsRecord} and passes the event to the
+     * current graph.
+     * </p>
+     *
+     * @param thread            is the thread that is going to execute the symbolic operation.
+     * @param symbolicOperation is the symbolic operation that is going to be executed.
+     */
     public void handleGuidingSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         SymExecutionEvent guidingSymExecutionEvent = (SymExecutionEvent) guidingEvent;
         RuntimeEnvironment.solverResult = guidingSymExecutionEvent.getResult();
@@ -639,14 +717,28 @@ public class TrustStrategy implements SearchStrategy {
         addEventToCurrentGraph(symExecutionEvent);
     }
 
+    /**
+     * Handles the new symbolic operation request.
+     * <p>
+     * This method handles the new symbolic operation request. It finds the dependent formulas of the given symbolic
+     * operation. If there is no dependent formula, it calls the {@link #handleFreeFormulas(SymbolicOperation)}
+     * method. Otherwise, it calls the {@link #handleDependentFormulas(SymbolicOperation, List)} method. Then, it
+     * updates the path symbolic operations with the given symbolic operation and thread. It creates a new
+     * {@link SymExecutionEvent} with the given thread, the formula of the symbolic operation, and the negatable value.
+     * Finally, it adds the created event to the {@link RuntimeEnvironment#eventsRecord} and passes the event to the trust.
+     * </p>
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be added to the path symbolic operations.
+     * @param thread            is the thread that is going to execute the symbolic operation.
+     */
     public void handleNewSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependentOperations = findDependentFormulas(symbolicOperation);
         if (dependentOperations == null) {
-            handleFreeFormulas(symbolicOperation, thread);
+            handleFreeFormulas(symbolicOperation);
             System.out.println("[Trust Strategy Message] : The result of the symbolic arithmetic operation is " +
                     RuntimeEnvironment.solverResult);
         } else {
-            handleDependentFormulas(symbolicOperation, dependentOperations, thread);
+            handleDependentFormulas(symbolicOperation, dependentOperations);
             System.out.println("[Trust Strategy Message] : The result of the symbolic arithmetic operation is " +
                     RuntimeEnvironment.solverResult);
         }
@@ -657,6 +749,17 @@ public class TrustStrategy implements SearchStrategy {
         passEventToTrust(symExecutionEvent);
     }
 
+    /**
+     * Finds the dependent formulas of the given symbolic operation.
+     * <p>
+     * This method finds the dependent formulas of the given symbolic operation. It iterates over the path symbolic
+     * operations and checks whether the given symbolic operation is dependent on another symbolic operation. If it is
+     * dependent, it adds the dependent symbolic operation to the list of dependent formulas. Otherwise, it returns null.
+     * </p>
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be checked.
+     * @return the list of dependent formulas of the given symbolic operation.
+     */
     private List<SymbolicOperation> findDependentFormulas(SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependencyOperations = new ArrayList<>();
         List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.pathSymbolicOperations;
@@ -676,6 +779,19 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Finds the dependent formulas of the given symbolic operation based on the thread.
+     * <p>
+     * This method finds the dependent formulas of the given symbolic operation based on the thread. It iterates over the
+     * symbolic operations of the thread and checks whether the given symbolic operation is dependent on another symbolic
+     * operation. If it is dependent, it adds the dependent symbolic operation to the list of dependent formulas. Otherwise,
+     * it returns null.
+     * </p>
+     *
+     * @param thread            is the thread that is going to be checked.
+     * @param symbolicOperation is the symbolic operation that is going to be checked.
+     * @return the list of dependent formulas of the given symbolic operation.
+     */
     private List<SymbolicOperation> findDependentThreadFormulas(Thread thread, SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependencyOperations = new ArrayList<>();
         List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.threadSymbolicOperation.get(
@@ -694,7 +810,18 @@ public class TrustStrategy implements SearchStrategy {
 
     }
 
-    private void handleFreeFormulas(SymbolicOperation symbolicOperation, Thread thread) {
+    /**
+     * Handles the free formulas.
+     * <p>
+     * This method handles the free formulas. It calls the {@link #solveSat(SymbolicOperation)} and
+     * {@link #solveUnsat(SymbolicOperation)} methods to solve the symbolic operation. Then, it calls the
+     * {@link #pickSatOrUnsat(boolean, boolean)} method to pick the result of the symbolic operation. Finally, it sets
+     * the {@link RuntimeEnvironment#solverResult} with the result of the symbolic operation.
+     * </p>
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be solved.
+     */
+    private void handleFreeFormulas(SymbolicOperation symbolicOperation) {
         System.out.println("[Random Strategy Message] : The symbolic arithmetic operation is free from dependencies");
         boolean sat = solveSat(symbolicOperation);
         boolean unSat = solveUnsat(symbolicOperation);
@@ -702,7 +829,20 @@ public class TrustStrategy implements SearchStrategy {
         RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
     }
 
-    private void handleDependentFormulas(SymbolicOperation symbolicOperation, List<SymbolicOperation> dependentOperations, Thread thread) {
+    /**
+     * Handles the dependent formulas.
+     * <p>
+     * This method handles the dependent formulas. First, it creates a dependency operation from the list of dependent
+     * formulas. Then, it calls the {@link #solveDependentSat(SymbolicOperation, SymbolicOperation)}
+     * and {@link #solveDependentUnsat(SymbolicOperation, SymbolicOperation)} methods to solve the symbolic operation. Then,
+     * it calls the {@link #pickSatOrUnsat(boolean, boolean)} method to pick the result of the symbolic operation. Finally,
+     * it sets the {@link RuntimeEnvironment#solverResult} with the result of the symbolic operation.
+     * </p>
+     *
+     * @param symbolicOperation   is the symbolic operation that is going to be solved.
+     * @param dependentOperations is the list of dependent formulas of the symbolic operation.
+     */
+    private void handleDependentFormulas(SymbolicOperation symbolicOperation, List<SymbolicOperation> dependentOperations) {
         System.out.println("[Random Strategy Message] : The symbolic arithmetic operation has dependencies");
         SymbolicOperation dependency = solver.makeDependencyOperation(dependentOperations);
         boolean sat = solveDependentSat(symbolicOperation, dependency);
@@ -711,22 +851,55 @@ public class TrustStrategy implements SearchStrategy {
         RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
     }
 
+    /**
+     * Solves the symbolic operation.
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be solved.
+     * @return true if the symbolic operation is satisfiable, otherwise false.
+     */
     private boolean solveSat(SymbolicOperation symbolicOperation) {
         return solver.solveSymbolicFormula(symbolicOperation);
     }
 
+    /**
+     * Solves the dependent symbolic operation.
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be solved.
+     * @param dependency        is the dependent symbolic operation.
+     * @return true if the symbolic operation is satisfiable, otherwise false.
+     */
     private boolean solveDependentSat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
         return solver.solveDependentSymbolicFormulas(symbolicOperation, dependency);
     }
 
+    /**
+     * Solves the unsatisfiable symbolic operation.
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be solved.
+     * @return true if the symbolic operation is unsatisfiable, otherwise false.
+     */
     private boolean solveUnsat(SymbolicOperation symbolicOperation) {
         return solver.disSolveSymbolicFormula(symbolicOperation);
     }
 
+    /**
+     * Solves the dependent unsatisfiable symbolic operation.
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be solved.
+     * @param dependency        is the dependent symbolic operation.
+     * @return true if the symbolic operation is unsatisfiable, otherwise false.
+     */
     private boolean solveDependentUnsat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
         return solver.disSolveDependentSymbolicFormulas(symbolicOperation, dependency);
     }
 
+    /**
+     * Picks the result of the symbolic operation.
+     *
+     * @param sat   is the satisfiability of the symbolic operation.
+     * @param unSat is the unsatisfiability of the symbolic operation.
+     * @return true if the symbolic operation is satisfiable, otherwise false.
+     */
     private boolean pickSatOrUnsat(boolean sat, boolean unSat) {
         if (sat && unSat) {
             System.out.println("[Random Strategy Message] : Both SAT and UNSAT are possible for the symbolic " +
@@ -748,6 +921,18 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Represents the required strategy for the next failure event.
+     * <p>
+     * This method represents the required strategy for the next failure event. It creates a {@link FailureEvent} for
+     * the corresponding failing execution request of a thread and records it. The created {@link FailureEvent} is added
+     * to the {@link #currentGraph} if the {@link #guidingActivate} is true. Otherwise, it passes the event to the
+     * {@link #trust} model checker.
+     *
+     * </p>
+     *
+     * @param thread is the thread that is going to be failed.
+     */
     @Override
     public void nextFailureEvent(Thread thread) {
         FailureEvent failureEvent = RuntimeEnvironment.createFailureEvent(thread);
@@ -759,6 +944,16 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Represents the required strategy for the next deadlock event.
+     * <p>
+     * This method represents the required strategy for the next deadlock event. It creates a {@link DeadlockEvent} for
+     * the corresponding deadlock between the threads and records it. The created {@link DeadlockEvent} is added
+     * to the {@link #currentGraph} if the {@link #guidingActivate} is true. Otherwise, it passes the event to the
+     * </p>
+     *
+     * @param thread is the thread that is going to be finished.
+     */
     @Override
     public void nextDeadlockEvent(Thread thread) {
         DeadlockEvent deadlockEvent = RuntimeEnvironment.createDeadlockEvent(thread);
@@ -770,6 +965,17 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Represents the required strategy for the next suspend event.
+     * <p>
+     * This method represents the required strategy for the next suspend event. It creates a {@link SuspendEvent} for
+     * the corresponding suspending execution request of a thread and records it. The created {@link SuspendEvent} is
+     * added to the {@link #currentGraph}.
+     * </p>
+     *
+     * @param thread  is the thread that is going to be suspended.
+     * @param monitor is the monitor that the thread is going to be suspended for it.
+     */
     private void nextSuspendEvent(Thread thread, Object monitor) {
         SuspendEvent suspendEvent = RuntimeEnvironment.createSuspendEvent(thread, monitor);
         addEventToCurrentGraph(suspendEvent);
@@ -782,7 +988,10 @@ public class TrustStrategy implements SearchStrategy {
      * empty, it calls the {@link #handleEmptyGuidingEvents()} method and picks the next random thread. Otherwise, it
      * picks the next guided thread based on the {@link #guidingEvents} list. If the {@link #guidingEvent} is an instance
      * of {@link StartEvent}, it finds the guiding thread from the {@link #guidingExecutionGraph}. Otherwise, it sets the
-     * {@link #guidingThread} with the thread id of the {@link #guidingEvent}.
+     * {@link #guidingThread} with the thread id of the {@link #guidingEvent}. If the {@link #guidingEvent} is an instance
+     * of {@link EnterMonitorEvent}, it calls the {@link #guidedEnterMonitorEventHelper(EnterMonitorEvent)} method. If the
+     * {@link #guidingEvent} is an instance of {@link SuspendEvent}, it calls the {@link #guidedSuspendEventHelper(SuspendEvent)}
+     * method and picks the next guided thread. Otherwise, it returns the next guided thread.
      * </p>
      *
      * @return the next guided thread that is going to be executed.
@@ -809,10 +1018,22 @@ public class TrustStrategy implements SearchStrategy {
             return pickNextGuidedThread();
         }
 
-        System.out.println("[Trust Strategy Message] : Thread-" + guidingThread + " is the next guided thread");
+        System.out.println("[Trust Strategy Message] : Thread-" +
+                RuntimeEnvironment.threadObjectMap.get((long) guidingThread) + " is the next guided thread");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
     }
 
+    /**
+     * Prepare the next guided enter monitor event.
+     * <p>
+     * This method prepares the next guided enter monitor event. It finds the thread from the
+     * {@link RuntimeEnvironment#threadObjectMap} and the monitor from the {@link RuntimeEnvironment#monitorRequest}.
+     * Then, it removes the pair of the thread and the monitor from the {@link RuntimeEnvironment#monitorRequest} and
+     * calls the {@link #nextEnterMonitorEvent(Thread, Object)} method.
+     * </p>
+     *
+     * @param enterMonitorEvent is the enter monitor event that is going to be executed.
+     */
     private void guidedEnterMonitorEventHelper(EnterMonitorEvent enterMonitorEvent) {
         Thread thread = RuntimeEnvironment.threadObjectMap.get((long) enterMonitorEvent.getTid());
         Object monitor = RuntimeEnvironment.monitorRequest.get(thread);
@@ -820,6 +1041,19 @@ public class TrustStrategy implements SearchStrategy {
         nextEnterMonitorEvent(thread, monitor);
     }
 
+    /**
+     * Prepare the next guided suspend event.
+     * <p>
+     * This method prepares the next guided suspend event. It finds the thread from the
+     * {@link RuntimeEnvironment#threadObjectMap} and calls the {@link #nextSuspendEvent(Thread, Object)} method.
+     * Then, by iterating through the {@link ExecutionGraph#getMCs()} , it finds the event which made the thread to suspend.
+     * It then updates the {@link RuntimeEnvironment#suspendPriority} map with the the pair of the thread id of the event
+     * which made the thread to suspend and the thread id of the thread which is going to be suspended, related to the monitor.
+     * Finally, it calls the {@link #nextSuspendEvent(Thread, Object)} method.
+     * </p>
+     *
+     * @param suspendEvent is the suspend event that is going to be executed.
+     */
     private void guidedSuspendEventHelper(SuspendEvent suspendEvent) {
         Thread suspendThread = RuntimeEnvironment.threadObjectMap.get((long) suspendEvent.getTid());
         suspendThread(suspendThread);
@@ -863,7 +1097,7 @@ public class TrustStrategy implements SearchStrategy {
      * Handles the empty guiding events.
      * <p>
      * This method handles the empty guiding events. It prints a message that the guiding events is empty and finds the
-     * new COs, STs, and JTs based on the current graph. Then, it sets the {@link #guidingActivate} to false.
+     * new COs, STs, JTs, MCs, and TCs based on the current graph. Then, it sets the {@link #guidingActivate} to false.
      * </p>
      */
     private void handleEmptyGuidingEvents() {
@@ -877,9 +1111,9 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
-     * Finds the new COs based on the current graph.
+     * Makes a new copy of the COs.
      * <p>
-     * This method finds the new COs based on the current graph. It iterates over the {@link ExecutionGraph#getCOs()} of
+     * This method makes a new copy of the current graph's COs. It iterates over the {@link ExecutionGraph#getCOs()} of
      * the {@link #guidingExecutionGraph} and finds the new COs based on the current graph. It returns the new COs.
      * </p>
      *
@@ -926,9 +1160,9 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
-     * Finds the new STs based on the current graph.
+     * Makes a new copy of the STs.
      * <p>
-     * This method finds the new STs based on the current graph. It iterates over the {@link ExecutionGraph#getSTs()} of
+     * This method makes a new copy of the current graph's STs. It iterates over the {@link ExecutionGraph#getSTs()} of
      * the {@link #guidingExecutionGraph} and finds the new STs based on the current graph. It returns the new STs.
      * </p>
      *
@@ -947,9 +1181,9 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
-     * Finds the new MCs based on the current graph.
+     * Makes a new copy of the MCs.
      * <p>
-     * This method finds the new MCs based on the current graph. It iterates over the {@link ExecutionGraph#getMCs()} of
+     * This method makes a new copy of the current graph's MCs. It iterates over the {@link ExecutionGraph#getMCs()} of
      * the {@link #guidingExecutionGraph} and finds the new MCs based on the current graph. It returns the new MCs.
      * </p>
      *
@@ -967,6 +1201,15 @@ public class TrustStrategy implements SearchStrategy {
         return newMCs;
     }
 
+    /**
+     * Makes a new copy of the TCs.
+     * <p>
+     * This method makes a new copy of the current graph's TCs. It iterates over the {@link ExecutionGraph#getTCs()} of
+     * the {@link #guidingExecutionGraph} and finds the new TCs based on the current graph. It returns the new TCs.
+     * </p>
+     *
+     * @return the new TCs based on the current graph.
+     */
     private Set<Pair<Event, Event>> findNewTCs() {
         Set<Pair<Event, Event>> newTCs = new HashSet<>();
         for (Pair<Event, Event> tc : guidingExecutionGraph.getTCs()) {
@@ -1001,9 +1244,9 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
-     * Finds the new JTs based on the current graph.
+     * Makes a new copy of the JTs.
      * <p>
-     * This method finds the new JTs based on the current graph. It iterates over the {@link ExecutionGraph#getJTs()} of
+     * This method makes a new copy of the current graph's JTs. It iterates over the {@link ExecutionGraph#getJTs()} of
      * the {@link #guidingExecutionGraph} and finds the new JTs based on the current graph. It returns the new JTs.
      * </p>
      *
@@ -1153,6 +1396,19 @@ public class TrustStrategy implements SearchStrategy {
     }
 
 
+    /**
+     * Analyzes suspended threads to make them unsuspend if possible.
+     * <p>
+     * This methods analyzes the suspended threads to make them unsuspend if possible. First, it updates the
+     * {@link RuntimeEnvironment#suspendPriority} map by calling the {@link #updateSuspendPriority(Object, Thread)} method.
+     * Then, it finds the candidate threads for being unsuspended by calling the {@link #findSuspendedThreads(Object)}
+     * method. It also finds the forbidden threads for being unsuspended by calling the {@link #findForbiddenThreads(Object)}
+     * method. Finally, it unsuspends the candidate threads if they are not in the forbidden threads list.
+     * </p>
+     *
+     * @param monitor is the monitor that some threads might be suspended for it.
+     * @param thread  is the thread that might be suspended other threads for the monitor.
+     */
     private void analyzeSuspendedThreadsForMonitor(Object monitor, Thread thread) {
         updateSuspendPriority(monitor, thread);
         List<Thread> candidateThreads = findSuspendedThreads(monitor);
@@ -1172,12 +1428,33 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Updates the suspend priority map.
+     * <p>
+     * This method removes the pairs from the {@link RuntimeEnvironment#suspendPriority} for the given existing monitor
+     * as a key, if the first element of the pairs is equal to the thread id of the given thread.
+     * </p>
+     *
+     * @param monitor is the monitor that some threads might be suspended for it.
+     * @param thread  is the thread that might be suspended other threads for the monitor.
+     */
     private void updateSuspendPriority(Object monitor, Thread thread) {
         if (RuntimeEnvironment.suspendPriority.containsKey(monitor)) {
             RuntimeEnvironment.suspendPriority.get(monitor).removeIf(pair -> pair.component1().equals(RuntimeEnvironment.threadIdMap.get(thread.getId())));
         }
     }
 
+    /**
+     * Finds the list of threads which are forbidden to be unsuspended
+     * <p>
+     * This method finds the list of threads which are forbidden to be unsuspended. It iterates over the pairs of the
+     * existing monitor key from the {@link RuntimeEnvironment#suspendPriority}. For each pair, it collects the second
+     * component of the pair, which is the thread id of the thread that is forbidden to be unsuspended.
+     * </p>
+     *
+     * @param monitor is the monitor that some threads might be suspended for it.
+     * @return the list of threads which are forbidden to be unsuspended.
+     */
     private List<Thread> findForbiddenThreads(Object monitor) {
         List<Thread> forbiddenThreads = new ArrayList<>();
         if (RuntimeEnvironment.suspendPriority.containsKey(monitor)) {

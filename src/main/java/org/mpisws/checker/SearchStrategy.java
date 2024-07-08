@@ -13,10 +13,10 @@ import org.mpisws.symbolic.SymbolicOperation;
  * The SearchStrategy interface defines the methods that any search strategy must implement.
  * It provides a way to manage the execution order of events in a multithreaded program.
  * The interface includes methods for handling various types of events including start, enter monitor, exit monitor,
- * join, read, write, and finish events. It also includes methods for printing the execution trace and checking if the
- * execution is done. The SearchStrategy interface is designed to be implemented by classes that provide different
- * strategies for managing the execution order of events. The strategy is used by the SchedulerThread class to control
- * the flow of a program's execution and ensure a specific execution order of operations.
+ * join, read, write, finish, and symbolic arithmetic events. It also includes methods for printing the execution trace
+ * and checking if the execution is done. The SearchStrategy interface is designed to be implemented by classes that
+ * provide different strategies for managing the execution order of events. The strategy is used by the SchedulerThread
+ * class to control the flow of a program's execution and ensure a specific execution order of operations.
  */
 public interface SearchStrategy {
     /**
@@ -65,8 +65,7 @@ public interface SearchStrategy {
      * This method records the monitor request in the {@link RuntimeEnvironment#monitorRequest} map. It also checks
      * for a deadlock between the threads in using the monitors. If a deadlock is detected, the method sets the
      * {@link RuntimeEnvironment#deadlockHappened} flag to true and the {@link RuntimeEnvironment#executionFinished}
-     * flag to true. Otherwise, it sets the {@link RuntimeEnvironment#deadlockHappened} flag to false. The method also
-     * selects the next thread to run.
+     * flag to true. Otherwise, the method selects the next thread to run.
      * </p>
      *
      * @param thread  is the thread that is requested to enter the monitor.
@@ -136,8 +135,40 @@ public interface SearchStrategy {
      */
     Thread nextFinishRequest(Thread thread);
 
+    /**
+     * Represents the required strategy for the next park request.
+     *
+     * @param thread is the thread that is going to be parked.
+     */
+    void nextParkRequest(Thread thread);
+
+    /**
+     * Represents the required strategy for the next unpark request.
+     *
+     * @param unparkerThread is the thread that is going to unpark unparkeeThread.
+     * @param unparkeeThread is the thread that is going to be unparked by unparkerThread.
+     */
+    void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread);
+
+    /**
+     * Represents the required strategy for the next symbolic operation request.
+     *
+     * @param thread            is the thread that is going to execute the symbolic operation.
+     * @param symbolicOperation is the symbolic operation that is going to be executed.
+     */
     void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation);
 
+    /**
+     * Updates the path symbolic operations.
+     * <p>
+     * If the solver result is true for the symbolic operation, the method
+     * updates the path and thread symbolic operations. Otherwise, it updates the path symbolic operations with the
+     * negated symbolic operation.
+     * </p>
+     *
+     * @param thread            is the thread that is going to execute the symbolic operation.
+     * @param symbolicOperation is the symbolic operation that is going to be executed.
+     */
     default void updatePathSymbolicOperations(SymbolicOperation symbolicOperation, Thread thread) {
         if (RuntimeEnvironment.solverResult) {
             updatePathAndThreadSymbolicOperations(symbolicOperation, thread);
@@ -146,22 +177,47 @@ public interface SearchStrategy {
         }
     }
 
+    /**
+     * Updates the path and thread symbolic operations.
+     * <p>
+     * It adds the symbolic operation to the {@link RuntimeEnvironment#pathSymbolicOperations} list and the
+     * {@link RuntimeEnvironment#threadSymbolicOperation} map.
+     * </p>
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be executed.
+     * @param thread            is the thread that is going to execute the symbolic operation.
+     */
     private void updatePathAndThreadSymbolicOperations(SymbolicOperation symbolicOperation, Thread thread) {
         RuntimeEnvironment.pathSymbolicOperations.add(symbolicOperation);
         if (RuntimeEnvironment.threadSymbolicOperation.containsKey(RuntimeEnvironment.threadIdMap.get(thread.getId()))) {
-            RuntimeEnvironment.threadSymbolicOperation.get(RuntimeEnvironment.threadIdMap.get(thread.getId())).add(symbolicOperation);
+            RuntimeEnvironment.threadSymbolicOperation.get(RuntimeEnvironment.threadIdMap.get(thread.getId())).
+                    add(symbolicOperation);
         } else {
             List<SymbolicOperation> symbolicOperations = new ArrayList<>();
             symbolicOperations.add(symbolicOperation);
-            RuntimeEnvironment.threadSymbolicOperation.put(RuntimeEnvironment.threadIdMap.get(thread.getId()), symbolicOperations);
+            RuntimeEnvironment.threadSymbolicOperation.put(RuntimeEnvironment.threadIdMap.get(thread.getId()),
+                    symbolicOperations);
         }
     }
 
+    /**
+     * Updates the path symbolic operations with the negated symbolic operation.
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be executed.
+     * @param thread            is the thread that is going to execute the symbolic operation.
+     */
     private void updatePathSymbolicOperationsWithNegate(SymbolicOperation symbolicOperation, Thread thread) {
         updatePathAndThreadSymbolicOperations(negateSymbolicOperation(symbolicOperation), thread);
     }
 
-
+    /**
+     * Negates the given symbolic operation.
+     * <p>
+     * It uses the solver to negate the formula of the symbolic operation.
+     *
+     * @param symbolicOperation is the symbolic operation that is going to be negated.
+     * @return the negated symbolic operation.
+     */
     private SymbolicOperation negateSymbolicOperation(SymbolicOperation symbolicOperation) {
         symbolicOperation.setFormula(RuntimeEnvironment.solver.negateFormula(symbolicOperation.getFormula()));
         System.out.println("[Search Strategy Message] : The negated formula is saved " + symbolicOperation.getFormula());
@@ -251,6 +307,11 @@ public interface SearchStrategy {
 
     /**
      * Handles the monitor request of the candidate thread.
+     * <p>
+     * This method checks whether the monitor is available or not. If the monitor is available, the method removes the
+     * monitor request from the {@link RuntimeEnvironment#monitorRequest} map and calls the {@link #nextEnterMonitorEvent}
+     * method. Otherwise, the method suspends the candidate thread and selects another random thread to run.
+     * </p>
      *
      * @param thread the candidate thread.
      * @return the candidate thread if it can run, otherwise selects another random thread.
@@ -283,6 +344,11 @@ public interface SearchStrategy {
 
     /**
      * Handles the join request of the candidate thread.
+     * <p>
+     * This method checks whether the join request is available or not. If the join request is available, the method
+     * removes the join request from the {@link RuntimeEnvironment#joinRequest} map and calls the {@link #nextJoinEvent}
+     * method. Otherwise, the method suspends the candidate thread and selects another random thread to run.
+     * </p>
      *
      * @param thread the candidate thread.
      * @return the candidate thread if it can run, otherwise selects another random thread.
@@ -355,6 +421,36 @@ public interface SearchStrategy {
     }
 
     /**
+     * Parks the given thread.
+     * <p>
+     * This method is used to park the selected thread and remove it from the {@link RuntimeEnvironment#readyThreadList}
+     * list and add it to the {@link RuntimeEnvironment#parkedThreadList} list.
+     * </p>
+     *
+     * @param thread the selected thread which is going to be parked.
+     */
+    default void parkThread(Thread thread) {
+        System.out.println("[Scheduler Thread Message] : " + thread.getName() + " is parked");
+        RuntimeEnvironment.readyThreadList.remove(thread);
+        RuntimeEnvironment.parkedThreadList.add(thread);
+    }
+
+    /**
+     * Unparks the given thread.
+     * <p>
+     * This method is used to unpark the selected thread and remove it from the {@link RuntimeEnvironment#parkedThreadList}
+     * list and add it to the {@link RuntimeEnvironment#readyThreadList} list.
+     * </p>
+     *
+     * @param thread the selected thread which is going to be unparked.
+     */
+    default void unparkThread(Thread thread) {
+        System.out.println("[Scheduler Thread Message] : " + thread.getName() + " is unparked");
+        RuntimeEnvironment.parkedThreadList.remove(thread);
+        RuntimeEnvironment.readyThreadList.add(thread);
+    }
+
+    /**
      * Unsuspend the given thread.
      * <p>
      * This method is used to unsuspend the selected thread and remove it from the {@link RuntimeEnvironment#suspendedThreads}
@@ -372,6 +468,11 @@ public interface SearchStrategy {
 
     /**
      * Finds the suspended threads that are waiting for the given monitor.
+     * <p>
+     * This method checks for each suspended thread in the {@link RuntimeEnvironment#suspendedThreads} list whether the
+     * monitor request of the thread is equal to the given monitor or not. If the monitor request of the thread is equal
+     * to the given monitor, the thread is added to the list of suspended threads that are waiting for the monitor.
+     * </p>
      *
      * @param monitor the monitor that the suspended threads are waiting for.
      * @return the list of suspended threads that are waiting for the monitor.
@@ -384,6 +485,11 @@ public interface SearchStrategy {
 
     /**
      * Finds the suspended threads that are waiting for the given thread.
+     * <p>
+     * This method checks for each suspended thread in the {@link RuntimeEnvironment#suspendedThreads} list whether the
+     * join request of the thread is equal to the given thread or not. If the join request of the thread is equal to the
+     * given thread, the thread is added to the list of suspended threads that are waiting for the join request.
+     * </p>
      *
      * @param joinRes the thread that the suspended threads are waiting to join.
      * @return the list of suspended threads that are waiting for the join request.
@@ -413,7 +519,6 @@ public interface SearchStrategy {
 
     /**
      * Detects potential deadlocks in the threads that are waiting to enter a monitor.
-     *
      * <p>
      * This method is used to detect potential deadlocks in the threads that are waiting to enter a monitor.
      * It computes the transitive closure of the (@monitorRequest \cup @monitorList) relation and checks whether the

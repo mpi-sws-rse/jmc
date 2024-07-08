@@ -116,6 +116,21 @@ class Trust(path: String) {
                     println(symExecutionEvent)
                 }
 
+                EventType.PARK -> {
+                    val parkEvent: ParkEvent = i as ParkEvent
+                    println(parkEvent)
+                }
+
+                EventType.UNPARK -> {
+                    val unparkEvent: UnparkEvent = i as UnparkEvent
+                    println(unparkEvent)
+                }
+
+                EventType.UNPARKING -> {
+                    val unparkingEvent: UnparkingEvent = i as UnparkingEvent
+                    println(unparkingEvent)
+                }
+
                 EventType.OTHER -> TODO()
             }
         }
@@ -507,6 +522,30 @@ class Trust(path: String) {
                         G1.addEvent(negatedSymEvent)
                         visit(G1, allEvents)
                     }
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.PARK -> {
+                    // The following is for debugging purposes only
+                    //println("[Model Checker Message] : The next event is a PARK event")
+                    //println("[Model Checker Message] : The PARK event is : $nextEvent")
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.UNPARK -> {
+                    // The following is for debugging purposes only
+                    //println("[Model Checker Message] : The next event is a UNPARK event")
+                    //println("[Model Checker Message] : The UNPARK event is : $nextEvent")
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.UNPARKING -> {
+                    // The following is for debugging purposes only
+                    //println("[Model Checker Message] : The next event is a UNPARKING event")
+                    //println("[Model Checker Message] : The UNPARKING event is : $nextEvent")
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
