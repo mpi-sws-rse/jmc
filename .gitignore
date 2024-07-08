@@ -9,6 +9,8 @@ src/main/resources/
 src/main/java/org/mpisws/runtime/*.class
 src/main/java/org/mpisws/solver/*.class
 src/main/java/org/mpisws/symbolic/*.class
+src/main/java/org/mpisws/util/concurrent/*.class
+
 src/test/java/org/mpisws/concurrent/programs/complex/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/complex/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/correct/counter/*.class
@@ -31,6 +33,7 @@ src/test/java/org/mpisws/concurrent/programs/symbolic/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/symbolic/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/random/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/random/counter/*.txt
+
 
 
 ### IntelliJ IDEA ###
