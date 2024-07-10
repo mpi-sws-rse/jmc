@@ -24,7 +24,7 @@ data class UnparkingEvent(
     /**
      * @property tid The callee thread id of the event.
      */
-    val unparkTid: Int
+    var unparkTid: Int
 
 ) : ThreadEvent(), Serializable {
 

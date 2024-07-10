@@ -502,9 +502,6 @@ class Trust(path: String) {
                 }
 
                 nextEvent.type == EventType.EXIT_MONITOR -> {
-                    // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a EXIT_MONITOR event")
-                    //println("[Model Checker Message] : The EXIT_MONITOR event is : $nextEvent")
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
@@ -527,27 +524,82 @@ class Trust(path: String) {
                 }
 
                 nextEvent.type == EventType.PARK -> {
-                    // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a PARK event")
-                    //println("[Model Checker Message] : The PARK event is : $nextEvent")
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
 
                 nextEvent.type == EventType.UNPARK -> {
-                    // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a UNPARK event")
-                    //println("[Model Checker Message] : The UNPARK event is : $nextEvent")
+                    // Forward Revisits
+                    println("[Model Checker Message] : The next event is a UNPARK event -> $nextEvent")
+                    val G1 = G.deepCopy()
                     G.addEvent(nextEvent)
-                    visit(G, allEvents)
+                    val nextUnparkEvent = (nextEvent as UnparkEvent)
+                    for (i in 0..<G.graphEvents.size) {
+                        if (G.graphEvents[i].type == EventType.UNPARKING) {
+                            var G2 = G1.deepCopy()
+                            var findUnparkingEvent = G.graphEvents[i] as UnparkingEvent
+                            val newNextEvent = nextUnparkEvent.deepCopy()
+                            val newNextUnparkEvent = newNextEvent as UnparkEvent
+                            if (findUnparkingEvent.unparkTid == nextUnparkEvent.tid) {
+                                newNextUnparkEvent.unparkerTid = findUnparkingEvent.tid
+                                G2.addPC(findUnparkingEvent, newNextUnparkEvent)
+                                G2.addEvent(newNextUnparkEvent as Event)
+                                val newAllEvents = deepCopyAllEvents(allEvents)
+                                visit(G2, newAllEvents)
+                            }
+                        }
+                    }
                 }
 
                 nextEvent.type == EventType.UNPARKING -> {
-                    // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a UNPARKING event")
-                    //println("[Model Checker Message] : The UNPARKING event is : $nextEvent")
+                    // Forward Revisits
+                    println("[Model Checker Message] : The next event is a UNPARKING event -> $nextEvent")
+                    val G1 = G.deepCopy()
+                    var nextUnparkingEvent = nextEvent.deepCopy() as UnparkingEvent
                     G.addEvent(nextEvent)
-                    visit(G, allEvents)
+                    val newAllEvents = deepCopyAllEvents(allEvents)
+                    visit(G, newAllEvents)
+
+                    // Backward Revisits
+                    val G2 = G1.deepCopy()
+                    G2.addEvent(nextEvent.deepCopy())
+                    G2.computePorf()
+                    for (i in 0..<G2.graphEvents.size) {
+                        val findUnparkEvent: UnparkEvent
+                        if (G1.graphEvents[i].type == EventType.UNPARK) {
+                            findUnparkEvent = G1.graphEvents[i] as UnparkEvent
+                            if (findUnparkEvent.tid == nextUnparkingEvent.unparkTid &&
+                                !G2.porf.contains(Pair(findUnparkEvent, nextUnparkingEvent))
+                            ) {
+                                var G3 = G2.deepCopy()
+                                var unparkEvent: UnparkEvent
+                                var unparkingEvent: UnparkingEvent
+                                if (G3.graphEvents.contains(findUnparkEvent) && G3.graphEvents.contains(
+                                        nextUnparkingEvent
+                                    )
+                                ) {
+                                    unparkEvent = G3.graphEvents.find { it.equals(findUnparkEvent) } as UnparkEvent
+                                    unparkingEvent =
+                                        G3.graphEvents.find { it.equals(nextUnparkingEvent) } as UnparkingEvent
+                                    unparkEvent.unparkerTid = nextUnparkingEvent.tid
+                                    unparkingEvent.unparkTid = findUnparkEvent.tid
+
+                                    val matchingPair = G3.PCs.find { it.second == unparkEvent }
+                                    if (matchingPair != null) {
+                                        G3.PCs.remove(matchingPair)
+                                    }
+
+                                    G3.addPC(unparkingEvent, unparkEvent)
+
+                                    G3.computeDeleted(unparkEvent, unparkingEvent)
+                                    G3.restrictingGraph()
+
+                                    val newAllEvents = deepCopyAllEvents(allEvents)
+                                    visit(G3.deepCopy(), newAllEvents)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 else -> { // TODO() : For possible future extensions

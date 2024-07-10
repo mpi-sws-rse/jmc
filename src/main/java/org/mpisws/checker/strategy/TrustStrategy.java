@@ -1107,6 +1107,7 @@ public class TrustStrategy implements SearchStrategy {
         currentGraph.setJTs(findNewJTs());
         currentGraph.setMCs(findNewMCs());
         currentGraph.setTCs(findNewTCs());
+        currentGraph.setPCs(findNewPCs());
         guidingActivate = false;
     }
 
@@ -1220,6 +1221,27 @@ public class TrustStrategy implements SearchStrategy {
             }
         }
         return newTCs;
+    }
+
+    /**
+     * Makes a new copy of the PCs.
+     * <p>
+     * This method makes a new copy of the current graph's PCs. It iterates over the {@link ExecutionGraph#getPCs()} of
+     * the {@link #guidingExecutionGraph} and finds the new PCs based on the current graph. It returns the new PCs.
+     * </p>
+     *
+     * @return the new PCs based on the current graph.
+     */
+    private Set<Pair<Event, Event>> findNewPCs() {
+        Set<Pair<Event, Event>> newPCs = new HashSet<>();
+        for (Pair<Event, Event> pc : guidingExecutionGraph.getPCs()) {
+            ThreadEvent firstThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) pc.component1());
+            ThreadEvent secondThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) pc.component2());
+            if (firstThreadEvent != null && secondThreadEvent != null) {
+                newPCs.add(new Pair<>(firstThreadEvent, secondThreadEvent));
+            }
+        }
+        return newPCs;
     }
 
     /**
