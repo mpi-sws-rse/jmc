@@ -122,12 +122,25 @@ public class ReplayStrategy implements SearchStrategy {
 
     @Override
     public void nextParkRequest(Thread thread) {
-
+        ParkEvent parkRequestEvent = RuntimeEnvironment.createParkEvent(thread);
+        RuntimeEnvironment.eventsRecord.add(parkRequestEvent);
+        long tid = RuntimeEnvironment.threadIdMap.get(thread.getId());
+        if (RuntimeEnvironment.threadParkingPermit.get(tid)) {
+            RuntimeEnvironment.threadParkingPermit.put(tid, false);
+        } else {
+            parkThread(thread);
+        }
     }
 
     @Override
     public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
-
+        UnparkingEvent unparkingRequestEvent = RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
+        RuntimeEnvironment.eventsRecord.add(unparkingRequestEvent);
+        if (RuntimeEnvironment.parkedThreadList.contains(unparkeeThread)) {
+            unparkThread(unparkeeThread);
+        } else {
+            RuntimeEnvironment.threadParkingPermit.put(RuntimeEnvironment.threadIdMap.get(unparkeeThread.getId()), true);
+        }
     }
 
     /**
@@ -243,6 +256,14 @@ public class ReplayStrategy implements SearchStrategy {
             printExecutionTrace();
             System.exit(0);
         }
+        if (guidingEvent != null && guidingEvent.getType() == EventType.UNPARKING) {
+            System.out.println("[Replay Strategy Message] : Thread-" +
+                    RuntimeEnvironment.threadObjectMap.get((long) ((UnparkingEvent) guidingEvent).getTid()).getId() +
+                    " is the next guided thread for UNPARKING");
+            Thread nextThread = RuntimeEnvironment.threadObjectMap.get((long) ((UnparkingEvent) guidingEvent).getTid());
+            guidingEvent = null;
+            return nextThread;
+        }
         guidingEvent = guidingTrace.remove(0);
         if (guidingEvent instanceof StartEvent) {
             guidingThread = ((StartEvent) guidingEvent).getCallerThread();
@@ -252,9 +273,19 @@ public class ReplayStrategy implements SearchStrategy {
         if (guidingEvent.getType() == EventType.ENTER_MONITOR) {
             removeMonitorRequest(guidingThread);
         }
+        if (guidingEvent.getType() == EventType.UNPARK) {
+            guidedUnparkEventHelper((UnparkEvent) guidingEvent);
+            return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+        }
         System.out.println("[Replay Strategy Message] : Guiding event is " + guidingEvent);
         System.out.println("[Replay Strategy Message] : Thread-" + guidingThread + " is selected to run");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+    }
+
+    private void guidedUnparkEventHelper(UnparkEvent unparkEvent) {
+        System.out.println("[Replay Strategy Message] : The next guided event is UNPARK event.");
+        Thread thread = RuntimeEnvironment.threadObjectMap.get((long) unparkEvent.getTid());
+        unparkThread(thread);
     }
 
     /**

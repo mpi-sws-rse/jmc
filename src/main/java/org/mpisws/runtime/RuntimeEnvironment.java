@@ -799,13 +799,6 @@ public class RuntimeEnvironment {
     }
 
     public static void unparkOperation(Thread callerThread, Thread calleeThread) {
-        if (parkedThreadList.contains(calleeThread)) {
-            parkedThreadList.remove(calleeThread);
-            readyThreadList.add(calleeThread);
-        } else {
-            threadParkingPermit.put(threadIdMap.get(calleeThread.getId()), true);
-        }
-
         System.out.println("[Runtime Environment Message] : " + callerThread.getName() + " requested to UNPARK " +
                 calleeThread.getName());
         unparkerThread = callerThread;
@@ -1005,6 +998,11 @@ public class RuntimeEnvironment {
         int serialNumber = getNextSerialNumber(unparkerThread);
         return new UnparkEvent(EventType.UNPARK, threadIdMap.get(unparkeeThread.getId()).intValue(), serialNumber,
                 threadIdMap.get(unparkerThread.getId()).intValue());
+    }
+
+    public static UnparkEvent createUnparkEvent(Thread thread) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new UnparkEvent(EventType.UNPARK, threadIdMap.get(thread.getId()).intValue(), serialNumber);
     }
 
     /**

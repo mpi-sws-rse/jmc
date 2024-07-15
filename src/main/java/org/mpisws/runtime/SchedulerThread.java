@@ -515,7 +515,7 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.threadWaitReq = null;
         if (unparkerThread.isPresent() && unparkeeThread.isPresent()) {
             searchStrategy.nextUnparkRequest(unparkerThread.get(), unparkeeThread.get());
-            //notifyThread(unparkerThread.get());
+            waitEventHandler();
         }
     }
 
@@ -526,7 +526,7 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.threadWaitReq = null;
         if (threadToPark.isPresent()) {
             searchStrategy.nextParkRequest(threadToPark.get());
-            //notifyThread(parkerThread.get());
+            waitEventHandler();
         }
     }
 

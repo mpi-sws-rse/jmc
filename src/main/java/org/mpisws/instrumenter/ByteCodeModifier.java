@@ -1,10 +1,9 @@
 package org.mpisws.instrumenter;
 
 import org.objectweb.asm.*;
+import org.objectweb.asm.tree.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The ByteCodeModifier class is responsible for modifying the bytecode of the user's program to integrate with the
@@ -821,27 +820,459 @@ public class ByteCodeModifier {
         }
     }
 
-    public void modifySyncMethod() {
+    public byte[] modifySyncMethod(byte[] byteCode) {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+
+            String className;
+            Boolean isInterface;
+            int monitorIndex;
+
+            @Override
+            public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                className = name;
+                isInterface = (access & Opcodes.ACC_INTERFACE) != 0;
+                cv.visit(version, access, name, signature, superName, interfaces);
+            }
+
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                             String[] exceptions) {
+//                MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+//                if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
+//                    methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+//                        @Override
+//                        public void visitCode() {
+//                            mv.visitInsn(Opcodes.RETURN);
+//                        }
+//                    };
+//                }
+//                return methodVisitor;
+                if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
+                    MethodVisitor methodVisitor = cv.visitMethod(access & ~Opcodes.ACC_SYNCHRONIZED, name, descriptor, signature, exceptions);
+                    methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+                        final Label label0 = new Label();
+                        final Label label1 = new Label();
+                        final Label label2 = new Label();
+                        final Label label3 = new Label();
+                        final Label label4 = new Label();
+                        final Label label5 = new Label();
+                        final Type[] argumentTypes = Type.getArgumentTypes(descriptor);
+                        final int nextVarIndex = calculateNextFreeIndex(argumentTypes);
+
+                        @Override
+                        public void visitCode() {
+                            mv.visitTryCatchBlock(label0, label1, label2, null);
+                            mv.visitTryCatchBlock(label2, label3, label2, null);
+                            mv.visitLabel(label4);
+                            mv.visitIntInsn(Opcodes.ALOAD, 0);
+                            mv.visitInsn(Opcodes.DUP);
+                            // Storing Monitor Object
+                            mv.visitVarInsn(Opcodes.ASTORE, nextVarIndex);
+                            monitorIndex = nextVarIndex;
+                            mv.visitInsn(Opcodes.MONITORENTER);
+                            mv.visitLabel(label0);
+                            // TODO() : This is for instance method, for static method we need to adjust the index
+                            mv.visitIntInsn(Opcodes.ALOAD, 0);
+                            int localVariableIndex = 1;
+                            for (Type type : argumentTypes) {
+                                switch (type.getSort()) {
+                                    case Type.INT:
+                                    case Type.BOOLEAN:
+                                    case Type.CHAR:
+                                    case Type.BYTE:
+                                    case Type.SHORT:
+                                        mv.visitVarInsn(Opcodes.ILOAD, localVariableIndex);
+                                        localVariableIndex += 1;
+                                        break;
+                                    case Type.LONG:
+                                        mv.visitVarInsn(Opcodes.LLOAD, localVariableIndex);
+                                        localVariableIndex += 2;
+                                        break;
+                                    case Type.FLOAT:
+                                        mv.visitVarInsn(Opcodes.FLOAD, localVariableIndex);
+                                        localVariableIndex += 1;
+                                        break;
+                                    case Type.DOUBLE:
+                                        mv.visitVarInsn(Opcodes.DLOAD, localVariableIndex);
+                                        localVariableIndex += 2;
+                                        break;
+                                    default:
+                                        mv.visitVarInsn(Opcodes.ALOAD, localVariableIndex);
+                                        localVariableIndex += 1;
+                                        break;
+                                }
+                            }
+//                            for (LocalVariableNode localVariable : localVariables) {
+//                                switch (localVariable.desc) {
+//                                    case "I":
+//                                    case "Z":
+//                                    case "C":
+//                                    case "B":
+//                                    case "S":
+//                                        mv.visitVarInsn(Opcodes.ILOAD, localVariable.index);
+//                                        break;
+//                                    case "J":
+//                                        mv.visitVarInsn(Opcodes.LLOAD, localVariable.index);
+//                                        break;
+//                                    case "F":
+//                                        mv.visitVarInsn(Opcodes.FLOAD, localVariable.index);
+//                                        break;
+//                                    case "D":
+//                                        mv.visitVarInsn(Opcodes.DLOAD, localVariable.index);
+//                                        break;
+//                                    default:
+//                                        mv.visitVarInsn(Opcodes.ALOAD, localVariable.index);
+//                                        break;
+//                                }
+//                            }
+                            // Add INVOKEVIRTUAL for the method with the same descriptor and name+$synchronized
+                            mv.visitMethodInsn(
+                                    Opcodes.INVOKEVIRTUAL,
+                                    className,
+                                    name + "$synchronized",
+                                    descriptor,
+                                    isInterface
+                            );
+                            mv.visitIntInsn(Opcodes.ALOAD, monitorIndex);
+                            mv.visitInsn(Opcodes.MONITOREXIT);
+                            mv.visitLabel(label1);
+                            // Find the return type of the method and add the corresponding return instruction
+                            String returnType = descriptor.substring(descriptor.lastIndexOf(')') + 1);
+                            switch (returnType) {
+                                case "V":
+                                    mv.visitInsn(Opcodes.RETURN); // return for void methods
+                                    break;
+                                case "D":
+                                    mv.visitInsn(Opcodes.DRETURN); // return for double
+                                    break;
+                                case "F":
+                                    mv.visitInsn(Opcodes.FRETURN); // return for float
+                                    break;
+                                case "J":
+                                    mv.visitInsn(Opcodes.LRETURN); // return for long
+                                    break;
+                                case "I":
+                                case "B":
+                                case "C":
+                                case "S":
+                                case "Z":
+                                    mv.visitInsn(Opcodes.IRETURN); // return for int, byte, char, short, boolean
+                                    break;
+                                default:
+                                    mv.visitInsn(Opcodes.ARETURN); // return for object references
+                                    break;
+                            }
+                            mv.visitLabel(label2);
+                            //
+                            Object[] localVariables = new Object[nextVarIndex];
+                            // Add the method owner as the first local variable
+                            localVariables[0] = className;
+                            localVariableIndex = (access & Opcodes.ACC_STATIC) == 0 ? 1 : 0; // Adjust for 'this' reference in non-static methods
+                            for (Type type : argumentTypes) {
+                                localVariables[localVariableIndex++] = type.getInternalName();
+                            }
+                            localVariables[nextVarIndex - 1] = "java/lang/Object";
+                            Object[] stack = new Object[]{"java/lang/Throwable"};
+                            //mv.visitFrame(Opcodes.F_FULL, localVariables.length, localVariables, stack.length, stack);
+                            mv.visitIntInsn(Opcodes.ASTORE, nextVarIndex + 1);
+                            mv.visitIntInsn(Opcodes.ALOAD, monitorIndex);
+                            mv.visitInsn(Opcodes.MONITOREXIT);
+                            mv.visitLabel(label3);
+                            mv.visitIntInsn(Opcodes.ALOAD, nextVarIndex + 1);
+                            mv.visitInsn(Opcodes.ATHROW);
+                            mv.visitLabel(label5);
+                        }
+
+                        @Override
+                        public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
+
+                        }
+
+                        @Override
+                        public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index) {
+
+                        }
+                    };
+                    return methodVisitor;
+                } else {
+                    MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+                    return methodVisitor;
+                }
+            }
+        };
+        ClassReader cr = new ClassReader(byteCode);
+        cr.accept(classVisitor, 0);
+        return cw.toByteArray();
+    }
+
+    public int calculateNextFreeIndex(Type[] argumentTypes) {
+        // TODO() : Check it for static method to start from 0
+        int nextVarIndex = 1;
+        for (Type type : argumentTypes) {
+            if (type.getSort() == Type.LONG || type.getSort() == Type.DOUBLE) {
+                nextVarIndex += 2;
+            } else {
+                nextVarIndex++;
+            }
+        }
+        return nextVarIndex;
+    }
+
+    /**
+     * mv.visitTryCatchBlock(label0, label1, label2, null); +
+     * mv.visitTryCatchBlock(label2, label3, label2, null); +
+     * mv.visitVarInsn(Opcodes.ALOAD, 0); +
+     * mv.visitInsn(Opcodes.DUP); +
+     * mv.visitVarInsn(Opcodes.ASTORE, nextVarIndex); +
+     * mv.visitInsn(Opcodes.MONITORENTER); +
+     * mv.visitLabel(label0); +
+     * METHOD$SYNCHRONIZED +
+     * mv.visitFrame(Opcodes.F_CHOP, 1, null, 0, null); ??
+     * mv.visitVarInsn(Opcodes.ALOAD, nextVarIndex); +
+     * mv.visitInsn(Opcodes.MONITOREXIT); +
+     * mv.visitLabel(label1); +
+     * mv.visitInsn(Opcodes.XRETURN); +
+     * mv.visitLabel(label2); +
+     * mv.visitFrame(Opcodes.F_CHOP, 1, null, 0, null);
+     * mv.visitVarInsn(Opcodes.ALOAD, nextVarIndex);
+     * mv.visitInsn(Opcodes.MONITOREXIT);
+     * mv.visitLabel(label3);
+     * mv.visitVarInsn(Opcodes.ALOAD, 0); // todo: change the 0
+     * mv.visitInsn(Opcodes.ATHROW);
+     */
+
+    public void douplicateSyncMethod() {
         for (String className : allByteCode.keySet()) {
             byte[] byteCode = allByteCode.get(className);
             byte[] modifiedByteCode;
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+            ClassReader cr = new ClassReader(byteCode);
+            ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);
+
+            final List<LocalVariableNode> localVariables = new ArrayList<>();
+
+            cr.accept(new ClassVisitor(Opcodes.ASM9, cw) {
+
+                // TODO() : Turn these lists to maps ( key : mehtod name , value : list)
+                final List<AbstractInsnNode> instructions = new ArrayList<>();
+                final List<AnnotationNode> insnAnnotations = new ArrayList<>();
+                final List<TryCatchBlockNode> tryCatchBlocks = new ArrayList<>();
+                final List<LineNumberNode> lineNumbers = new ArrayList<>();
+
+                // TODO() : Define list of method names
+
+                int newAccess;
+                String newName;
+                String newDescriptor;
+                String newSignature;
+                String[] newExceptions;
+
+                boolean isSyncMethod = false;
+
                 @Override
-                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
-                                                 String[] exceptions) {
-                    MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                    MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+
+
                     if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
-                        methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
-                            // TODO: ADD MODIFICATIONS FOR SYNCHRONIZED METHODS
+
+                        // TODO() : ADD Method name to the method names list
+
+                        // TODO() : Create a new list for each map with the key of method name
+                        // Example() : instructions.put(method name, new ArrayList<>());
+                        newDescriptor = descriptor;
+                        newSignature = signature;
+                        newExceptions = exceptions;
+                        newAccess = access & ~Opcodes.ACC_SYNCHRONIZED;
+                        newName = name + "$synchronized";
+                        isSyncMethod = true;
+
+                        // Capture instructions from the "test" method
+                        return new MethodVisitor(Opcodes.ASM9, mv) {
+
+                            @Override
+                            public void visitInsn(int opcode) {
+                                instructions.add(new InsnNode(opcode));
+                                super.visitInsn(opcode);
+                            }
+
+                            @Override
+                            public void visitIntInsn(int opcode, int operand) {
+                                // TODO() : instructions[mehtod name].add(new IntInsnNode(opcode, operand));
+                                instructions.add(new IntInsnNode(opcode, operand));
+                                super.visitIntInsn(opcode, operand);
+                            }
+
+                            @Override
+                            public void visitVarInsn(int opcode, int var) {
+                                instructions.add(new VarInsnNode(opcode, var));
+                                super.visitVarInsn(opcode, var);
+                            }
+
+                            @Override
+                            public void visitTypeInsn(int opcode, String type) {
+                                instructions.add(new TypeInsnNode(opcode, type));
+                                super.visitTypeInsn(opcode, type);
+                            }
+
+                            @Override
+                            public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
+                                instructions.add(new FieldInsnNode(opcode, owner, name, descriptor));
+                                super.visitFieldInsn(opcode, owner, name, descriptor);
+                            }
+
+                            @Override
+                            public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                                instructions.add(new MethodInsnNode(opcode, owner, name, descriptor, isInterface));
+                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                            }
+
+                            @Override
+                            public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
+                                instructions.add(new InvokeDynamicInsnNode(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments));
+                                super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
+                            }
+
+                            @Override
+                            public void visitJumpInsn(int opcode, Label label) {
+                                LabelNode labelNode = new LabelNode(label);
+                                instructions.add(new JumpInsnNode(opcode, labelNode));
+                                super.visitJumpInsn(opcode, label);
+                            }
+
+                            @Override
+                            public void visitLabel(Label label) {
+                                LabelNode labelNode = new LabelNode(label);
+                                instructions.add(labelNode);
+                                super.visitLabel(label);
+                            }
+
+                            @Override
+                            public void visitLdcInsn(Object value) {
+                                instructions.add(new LdcInsnNode(value));
+                                super.visitLdcInsn(value);
+                            }
+
+                            @Override
+                            public void visitIincInsn(int var, int increment) {
+                                instructions.add(new IincInsnNode(var, increment));
+                                super.visitIincInsn(var, increment);
+                            }
+
+                            @Override
+                            public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
+                                LabelNode dfltNode = new LabelNode(dflt);
+                                LabelNode[] labelNodes = Arrays.stream(labels).map(LabelNode::new).toArray(LabelNode[]::new);
+                                instructions.add(new TableSwitchInsnNode(min, max, dfltNode, labelNodes));
+                                super.visitTableSwitchInsn(min, max, dflt, labels);
+                            }
+
+                            @Override
+                            public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
+                                LabelNode dfltNode = new LabelNode(dflt);
+                                LabelNode[] labelNodes = Arrays.stream(labels).map(LabelNode::new).toArray(LabelNode[]::new);
+                                instructions.add(new LookupSwitchInsnNode(dfltNode, keys, labelNodes));
+                                super.visitLookupSwitchInsn(dflt, keys, labels);
+                            }
+
+                            @Override
+                            public void visitMultiANewArrayInsn(String descriptor, int numDimensions) {
+                                instructions.add(new MultiANewArrayInsnNode(descriptor, numDimensions));
+                                super.visitMultiANewArrayInsn(descriptor, numDimensions);
+                            }
+
+                            @Override
+                            public AnnotationVisitor visitInsnAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+                                insnAnnotations.add(new AnnotationNode(descriptor));
+                                return super.visitInsnAnnotation(typeRef, typePath, descriptor, visible);
+                            }
+
+                            @Override
+                            public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
+                                tryCatchBlocks.add(new TryCatchBlockNode(new LabelNode(start), new LabelNode(end), new LabelNode(handler), type));
+                                super.visitTryCatchBlock(start, end, handler, type);
+                            }
+
+                            @Override
+                            public AnnotationVisitor visitTryCatchAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
+                                insnAnnotations.add(new AnnotationNode(descriptor));
+                                return super.visitTryCatchAnnotation(typeRef, typePath, descriptor, visible);
+                            }
+
+                            @Override
+                            public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index) {
+                                localVariables.add(new LocalVariableNode(name, descriptor, signature, new LabelNode(start), new LabelNode(end), index));
+                                super.visitLocalVariable(name, descriptor, signature, start, end, index);
+                            }
+
+                            @Override
+                            public AnnotationVisitor visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String descriptor, boolean visible) {
+                                insnAnnotations.add(new AnnotationNode(descriptor));
+                                return super.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, descriptor, visible);
+                            }
+
+                            @Override
+                            public void visitLineNumber(int line, Label start) {
+                                lineNumbers.add(new LineNumberNode(line, new LabelNode(start)));
+                                super.visitLineNumber(line, start);
+                            }
+
+                            // TODO() : Override other visit methods to capture different types of instructions
                         };
                     }
-                    return methodVisitor;
+                    return mv;
                 }
-            };
-            ClassReader cr = new ClassReader(byteCode);
-            cr.accept(classVisitor, 0);
+
+                @Override
+                public void visitEnd() {
+//                    MethodVisitor mv = cv.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "newMethod", "()V", null, null);
+//                    mv.visitCode();
+//                    mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+//                    mv.visitLdcInsn("Hello, ASM!");
+//                    mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+//                    mv.visitInsn(Opcodes.RETURN);
+//                    mv.visitMaxs(2, 0);
+//                    mv.visitEnd();
+//                    super.visitEnd();
+                    // Create "newMethod" with the same signature as the synchronized method
+                    if (isSyncMethod) {
+                        // TODO() : loop through the method names list
+                        isSyncMethod = false;
+                        MethodVisitor newMv = cv.visitMethod(newAccess, newName, newDescriptor, newSignature, newExceptions);
+                        newMv.visitCode();
+                        // Paste captured instructions into "newMethod"
+                        InsnList insnList = new InsnList();
+
+                        for (AbstractInsnNode insn : instructions) {
+                            insnList.add(insn);
+                        }
+
+                        for (TryCatchBlockNode tryCatchBlock : tryCatchBlocks) {
+                            newMv.visitTryCatchBlock(tryCatchBlock.start.getLabel(), tryCatchBlock.end.getLabel(), tryCatchBlock.handler.getLabel(), tryCatchBlock.type);
+                        }
+
+                        for (LocalVariableNode localVariable : localVariables) {
+                            newMv.visitLocalVariable(localVariable.name, localVariable.desc, localVariable.signature, localVariable.start.getLabel(), localVariable.end.getLabel(), localVariable.index);
+                        }
+
+                        for (LineNumberNode lineNumber : lineNumbers) {
+                            newMv.visitLineNumber(lineNumber.line, lineNumber.start.getLabel());
+                        }
+
+                        insnList.accept(newMv);
+                        newMv.visitInsn(Opcodes.RETURN);
+                        newMv.visitMaxs(-1, -1); // Auto-compute stack size and locals
+                        newMv.visitEnd();
+                        super.visitEnd();
+                    } else {
+                        super.visitEnd();
+                    }
+                }
+            }, 0);
             modifiedByteCode = cw.toByteArray();
+
+            modifiedByteCode = modifySyncMethod(modifiedByteCode);
+
             allByteCode.put(className, modifiedByteCode);
         }
     }
@@ -954,6 +1385,7 @@ public class ByteCodeModifier {
                                         false
                                 );
                                 mv.visitInsn(Opcodes.NOP);
+                                mv.visitInsn(Opcodes.RETURN);
                             }
                         }
                     };
@@ -1098,8 +1530,8 @@ public class ByteCodeModifier {
                         }
 
                         @Override
-                        public void visitLineNumber(int line, Label start) {
-                            super.visitLineNumber(line, start);
+                        public void visitLabel(Label label) {
+                            super.visitLabel(label);
                             if (foundMonitorEnter) {
                                 foundMonitorEnter = false;
                                 //mv.visitVarInsn(Opcodes.ALOAD, var);
@@ -1148,6 +1580,29 @@ public class ByteCodeModifier {
                                         "(Ljava/lang/Object;Ljava/lang/Thread;)V",
                                         false
                                 );
+                            }
+                        }
+
+//                        @Override
+//                        public void visitLineNumber(int line, Label start) {
+//                            super.visitLineNumber(line, start);
+//                            if (foundMonitorEnter) {
+//                                foundMonitorEnter = false;
+//                                //mv.visitVarInsn(Opcodes.ALOAD, var);
+//                                mv.visitMethodInsn(
+//                                        Opcodes.INVOKESTATIC,
+//                                        "java/lang/Thread",
+//                                        "currentThread",
+//                                        "()Ljava/lang/Thread;",
+//                                        false
+//                                );
+//                                mv.visitMethodInsn(
+//                                        Opcodes.INVOKESTATIC,
+//                                        "org/mpisws/runtime/RuntimeEnvironment",
+//                                        "acquiredLock",
+//                                        "(Ljava/lang/Object;Ljava/lang/Thread;)V",
+//                                        false
+//                                );
 //                                mv.visitMethodInsn(
 //                                        Opcodes.INVOKESTATIC,
 //                                        "java/lang/Thread",
@@ -1162,8 +1617,39 @@ public class ByteCodeModifier {
 //                                        "(Ljava/lang/Thread;)V",
 //                                        false
 //                                );
-                            }
-                        }
+//                            } else if (foundMonitorExit) {
+//                                foundMonitorExit = false;
+//                                //mv.visitVarInsn(Opcodes.ALOAD, oldvar);
+//                                mv.visitMethodInsn(
+//                                        Opcodes.INVOKESTATIC,
+//                                        "java/lang/Thread",
+//                                        "currentThread",
+//                                        "()Ljava/lang/Thread;",
+//                                        false
+//                                );
+//                                mv.visitMethodInsn(
+//                                        Opcodes.INVOKESTATIC,
+//                                        "org/mpisws/runtime/RuntimeEnvironment",
+//                                        "releasedLock",
+//                                        "(Ljava/lang/Object;Ljava/lang/Thread;)V",
+//                                        false
+//                                );
+////                                mv.visitMethodInsn(
+////                                        Opcodes.INVOKESTATIC,
+////                                        "java/lang/Thread",
+////                                        "currentThread",
+////                                        "()Ljava/lang/Thread;",
+////                                        false
+////                                );
+////                                mv.visitMethodInsn(
+////                                        Opcodes.INVOKESTATIC,
+////                                        "org/mpisws/runtime/RuntimeEnvironment",
+////                                        "waitRequest",
+////                                        "(Ljava/lang/Thread;)V",
+////                                        false
+////                                );
+//                            }
+//                        }
                     };
                 }
             };
@@ -1172,4 +1658,5 @@ public class ByteCodeModifier {
             allByteCode.put(entry.getKey(), modifiedByteCode);
         }
     }
+
 }

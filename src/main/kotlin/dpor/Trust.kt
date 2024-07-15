@@ -540,7 +540,11 @@ class Trust(path: String) {
                             var findUnparkingEvent = G.graphEvents[i] as UnparkingEvent
                             val newNextEvent = nextUnparkEvent.deepCopy()
                             val newNextUnparkEvent = newNextEvent as UnparkEvent
-                            if (findUnparkingEvent.unparkTid == nextUnparkEvent.tid) {
+                            if (findUnparkingEvent.unparkTid == nextUnparkEvent.tid && isUnparkingFree(
+                                    G2,
+                                    findUnparkingEvent
+                                )
+                            ) {
                                 newNextUnparkEvent.unparkerTid = findUnparkingEvent.tid
                                 G2.addPC(findUnparkingEvent, newNextUnparkEvent)
                                 G2.addEvent(newNextUnparkEvent as Event)
@@ -566,8 +570,8 @@ class Trust(path: String) {
                     G2.computePorf()
                     for (i in 0..<G2.graphEvents.size) {
                         val findUnparkEvent: UnparkEvent
-                        if (G1.graphEvents[i].type == EventType.UNPARK) {
-                            findUnparkEvent = G1.graphEvents[i] as UnparkEvent
+                        if (G2.graphEvents[i].type == EventType.UNPARK) {
+                            findUnparkEvent = G2.graphEvents[i] as UnparkEvent
                             if (findUnparkEvent.tid == nextUnparkingEvent.unparkTid &&
                                 !G2.porf.contains(Pair(findUnparkEvent, nextUnparkingEvent))
                             ) {
@@ -656,6 +660,15 @@ class Trust(path: String) {
             }
             return true
         }
+    }
+
+    private fun isUnparkingFree(G: ExecutionGraph, unparkingEvent: UnparkingEvent): Boolean {
+        for (pair in G.PCs) {
+            if (pair.first.equals(unparkingEvent)) {
+                return false
+            }
+        }
+        return true
     }
 
     private fun findExitMonitorEvent(graph: ExecutionGraph, SuspendedEvent: SuspendEvent): ExitMonitorEvent? {

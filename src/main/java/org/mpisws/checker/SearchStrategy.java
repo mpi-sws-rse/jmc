@@ -258,16 +258,16 @@ public interface SearchStrategy {
                 Thread randomElement = selectRandomThread(readyThreadList.get());
                 return handleChosenThreadRequest(randomElement);
             } else if (readyThreadList.get().size() == 1) {
-                System.out.println("[Scheduler Thread Message] : Only one thread is in the ready list");
+                System.out.println("[Search Strategy Message] : Only one thread is in the ready list");
                 return handleChosenThreadRequest(readyThreadList.get().get(0));
             } else {
-                System.out.println("[Scheduler Thread Message] : There is no thread in the ready list");
-                System.out.println("[Scheduler Thread Message] : The scheduler thread is going to terminate");
+                System.out.println("[Search Strategy Message] : There is no thread in the ready list");
+                System.out.println("[Search Strategy Message] : The scheduler thread is going to terminate");
                 return null;
             }
         } else {
-            System.out.println("[Scheduler Thread Message] : There is no thread in the ready list");
-            System.out.println("[Scheduler Thread Message] : The scheduler thread is going to terminate");
+            System.out.println("[Search Strategy Message] : There is no thread in the ready list");
+            System.out.println("[Search Strategy Message] : The scheduler thread is going to terminate");
             return null;
         }
     }
@@ -283,7 +283,7 @@ public interface SearchStrategy {
         int randomIndex = random.nextInt(readyThreadList.size());
         Thread randomElement = readyThreadList.get(randomIndex);
         System.out.println(
-                "[Scheduler Thread Message] : " + randomElement.getName() + " is selected to to be a " +
+                "[Search Strategy Message] : " + randomElement.getName() + " is selected to to be a " +
                         "candidate to run"
         );
         return randomElement;
@@ -319,22 +319,22 @@ public interface SearchStrategy {
     default Thread handleMonitorRequest(Thread thread) {
         Object monitor = RuntimeEnvironment.monitorRequest.get(thread);
         System.out.println(
-                "[Scheduler Thread Message] : Thread-" + RuntimeEnvironment.threadIdMap.get(thread.getId())
+                "[Search Strategy Message] : Thread-" + RuntimeEnvironment.threadIdMap.get(thread.getId())
                         + " is requested to enter the monitor " + monitor
         );
         if (RuntimeEnvironment.monitorList.containsKey(monitor)) {
-            System.out.println("[Scheduler Thread Message] : However, the monitor " + monitor + " is not available");
+            System.out.println("[Search Strategy Message] : However, the monitor " + monitor + " is not available");
             System.out.println(
-                    "[Scheduler Thread Message] : The monitor " + monitor + " is already in use by " +
+                    "[Search Strategy Message] : The monitor " + monitor + " is already in use by " +
                             RuntimeEnvironment.threadIdMap.get(RuntimeEnvironment.monitorList.get(monitor).getId())
             );
             suspendThread(thread);
             return pickNextRandomThread();
         } else {
-            System.out.println("[Scheduler Thread Message] : The monitor " + monitor + " is available");
+            System.out.println("[Search Strategy Message] : The monitor " + monitor + " is available");
             RuntimeEnvironment.monitorRequest.remove(thread, monitor);
             System.out.println(
-                    "[Scheduler Thread Message] : The request of " + thread.getName() +
+                    "[Search Strategy Message] : The request of " + thread.getName() +
                             " to enter the monitor " + monitor + " is removed from the monitorRequest"
             );
             nextEnterMonitorEvent(thread, monitor);
@@ -356,21 +356,21 @@ public interface SearchStrategy {
     default Thread handleJoinRequest(Thread thread) {
         Thread joinRes = RuntimeEnvironment.joinRequest.get(thread);
         System.out.println(
-                "[Scheduler Thread Message] : " + thread.getName() + " is requested to join "
+                "[Search Strategy Message] : " + thread.getName() + " is requested to join "
                         + joinRes.getName()
         );
         if (!RuntimeEnvironment.createdThreadList.contains(joinRes) &&
                 !RuntimeEnvironment.readyThreadList.contains(joinRes)) {
             RuntimeEnvironment.joinRequest.remove(thread, joinRes);
             System.out.println(
-                    "[Scheduler Thread Message] : As " + joinRes.getName() + " is not in the " +
+                    "[Search Strategy Message] : As " + joinRes.getName() + " is not in the " +
                             "createdThreadList or the readyThreadList, the request of " + thread.getName() +
                             " to join " + joinRes.getName() + " is removed from the joinRequest"
             );
             nextJoinEvent(thread, joinRes);
             return thread;
         } else {
-            System.out.println("[Scheduler Thread Message] : However, " + joinRes.getName() + " is not finished yet");
+            System.out.println("[Search Strategy Message] : However, " + joinRes.getName() + " is not finished yet");
             suspendThread(thread);
             return pickNextRandomThread();
         }
@@ -415,7 +415,7 @@ public interface SearchStrategy {
      * @param thread the selected thread.
      */
     default void suspendThread(Thread thread) {
-        System.out.println("[Scheduler Thread Message] : " + thread.getName() + " is suspended");
+        System.out.println("[Search Strategy Message] : " + thread.getName() + " is suspended");
         RuntimeEnvironment.readyThreadList.remove(thread);
         RuntimeEnvironment.suspendedThreads.add(thread);
     }
@@ -430,9 +430,11 @@ public interface SearchStrategy {
      * @param thread the selected thread which is going to be parked.
      */
     default void parkThread(Thread thread) {
-        System.out.println("[Scheduler Thread Message] : " + thread.getName() + " is parked");
-        RuntimeEnvironment.readyThreadList.remove(thread);
-        RuntimeEnvironment.parkedThreadList.add(thread);
+        System.out.println("[Search Strategy Message] : " + thread.getName() + " is parked");
+        if (RuntimeEnvironment.readyThreadList.contains(thread) && !RuntimeEnvironment.parkedThreadList.contains(thread)) {
+            RuntimeEnvironment.readyThreadList.remove(thread);
+            RuntimeEnvironment.parkedThreadList.add(thread);
+        }
     }
 
     /**
@@ -445,9 +447,11 @@ public interface SearchStrategy {
      * @param thread the selected thread which is going to be unparked.
      */
     default void unparkThread(Thread thread) {
-        System.out.println("[Scheduler Thread Message] : " + thread.getName() + " is unparked");
-        RuntimeEnvironment.parkedThreadList.remove(thread);
-        RuntimeEnvironment.readyThreadList.add(thread);
+        System.out.println("[Search Strategy Message] : " + thread.getName() + " is unparked");
+        if (RuntimeEnvironment.parkedThreadList.contains(thread) && !RuntimeEnvironment.readyThreadList.contains(thread)) {
+            RuntimeEnvironment.parkedThreadList.remove(thread);
+            RuntimeEnvironment.readyThreadList.add(thread);
+        }
     }
 
     /**
@@ -461,7 +465,7 @@ public interface SearchStrategy {
      * @param thread the selected thread.
      */
     default void unsuspendThread(Thread thread) {
-        System.out.println("[Scheduler Thread Message] : " + thread.getName() + " is unsuspended");
+        System.out.println("[Search Strategy Message] : " + thread.getName() + " is unsuspended");
         RuntimeEnvironment.suspendedThreads.remove(thread);
         RuntimeEnvironment.readyThreadList.add(thread);
     }

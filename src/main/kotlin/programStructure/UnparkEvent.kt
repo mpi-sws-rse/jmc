@@ -24,9 +24,11 @@ data class UnparkEvent(
     /**
      * @property unparkerTid The caller thread id of the event.
      */
-    var unparkerTid: Int
+    var unparkerTid: Int = 0
 
 ) : ThreadEvent(), Serializable {
+
+    constructor(EventType: EventType, tid: Int, serialNumber: Int) : this(EventType, tid, serialNumber, 0)
 
     /**
      * Returns a deep copy of this object

@@ -211,6 +211,40 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                      SYNC COUNTERS
+     */
+
+    @Test
+    @DisplayName("A correct concurrent counter using synchronized methods - Random")
+    void randomTestSyncCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.sync.counter",
+                "SyncCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/sync/counter/"
+        );
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        System.out.println("SyncCounter Random Strategy Started");
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "SyncCounter Random Strategy Finished");
+    }
+
+    @Test
+    @DisplayName("A correct concurrent counter using synchronized methods - Trust")
+    void trustTestSyncCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.sync.counter",
+                "SyncCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/sync/counter/"
+        );
+        checker.configuration.strategyType = StrategyType.TRUST;
+        System.out.println("SyncCounter Trust Strategy Started");
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "SyncCounter Trust Strategy Finished");
+    }
+
+    /*
      *                             SIMPLE INCONSISTENT COUNTERS WITH THREADS SPAWNING
      * To see the beauty of our implemented model checker, run the following test with TrustStrategy.
      */
@@ -407,6 +441,55 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "SymbolicCounter Replay Strategy Finished");
+    }
+
+    /*
+     *                                  PARKING COUNTER
+     */
+
+    @Test
+    @DisplayName("Parking Counter")
+    void randomTestParkingCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.parking.counter",
+                "ParkingCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/parking/counter/"
+        );
+        System.out.println("ParkingCounter Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "ParkingCounter Random Strategy Finished");
+    }
+
+    @Test
+    @DisplayName("Parking Counter")
+    void trustTestParkingCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.parking.counter",
+                "ParkingCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/parking/counter/"
+        );
+        System.out.println("ParkingCounter Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "ParkingCounter Trust Strategy Finished");
+    }
+
+    @Test
+    @DisplayName("Parking Counter")
+    void replayTestParkingCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.parking.counter",
+                "ParkingCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/parking/counter/"
+        );
+        System.out.println("ParkingCounter Replay Strategy Started");
+        checker.configuration.strategyType = StrategyType.REPLAY;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "ParkingCounter Replay Strategy Finished");
     }
 
     /*

@@ -33,7 +33,10 @@ src/test/java/org/mpisws/concurrent/programs/symbolic/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/symbolic/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/random/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/random/counter/*.txt
-
+src/test/java/org/mpisws/concurrent/programs/parking/counter/*.class
+src/test/java/org/mpisws/concurrent/programs/parking/counter/*.txt
+src/test/java/org/mpisws/concurrent/programs/sync/counter/*.class
+src/test/java/org/mpisws/concurrent/programs/sync/counter/*.txt
 
 
 ### IntelliJ IDEA ###

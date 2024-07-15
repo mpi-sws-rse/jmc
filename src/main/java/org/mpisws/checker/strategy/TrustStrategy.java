@@ -289,6 +289,11 @@ public class TrustStrategy implements SearchStrategy {
         trust.visit(currentGraph, tempEventList);
     }
 
+    private void passEventToTrust(List<Event> events) {
+        trust.setAllGraphs(new ArrayList<>());
+        trust.visit(currentGraph, events);
+    }
+
     /**
      * Adds the given event to the current graph.
      * <p>
@@ -382,11 +387,23 @@ public class TrustStrategy implements SearchStrategy {
         RuntimeEnvironment.eventsRecord.add(parkRequestEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(parkRequestEvent);
+            long tid = RuntimeEnvironment.threadIdMap.get(thread.getId());
+            if (RuntimeEnvironment.threadParkingPermit.get(tid)) {
+                RuntimeEnvironment.threadParkingPermit.put(tid, false);
+            } else {
+                parkThread(thread);
+            }
         } else {
             long tid = RuntimeEnvironment.threadIdMap.get(thread.getId());
             if (RuntimeEnvironment.threadParkingPermit.get(tid)) {
                 RuntimeEnvironment.threadParkingPermit.put(tid, false);
-                passEventToTrust(parkRequestEvent);
+                UnparkEvent unparkRequestEvent = RuntimeEnvironment.createUnparkEvent(thread);
+                RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+                List<Event> events = new ArrayList<>();
+                events.add(parkRequestEvent);
+                events.add(unparkRequestEvent);
+                passEventToTrust(events);
+                updateCurrentGraph(unparkRequestEvent);
             } else {
                 parkThread(thread);
                 passEventToTrust(parkRequestEvent);
@@ -396,12 +413,29 @@ public class TrustStrategy implements SearchStrategy {
 
     @Override
     public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
-        UnparkingEvent unparkRequestEvent = RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
-        RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+        UnparkingEvent unparkingRequestEvent = RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
+        RuntimeEnvironment.eventsRecord.add(unparkingRequestEvent);
         if (guidingActivate) {
-            addEventToCurrentGraph(unparkRequestEvent);
+            addEventToCurrentGraph(unparkingRequestEvent);
+            if (RuntimeEnvironment.parkedThreadList.contains(unparkeeThread)) {
+                unparkThread(unparkeeThread);
+            } else {
+                RuntimeEnvironment.threadParkingPermit.put(RuntimeEnvironment.threadIdMap.get(unparkeeThread.getId()), true);
+            }
         } else {
-            passEventToTrust(unparkRequestEvent);
+            if (RuntimeEnvironment.parkedThreadList.contains(unparkeeThread)) {
+                unparkThread(unparkeeThread);
+                passEventToTrust(unparkingRequestEvent);
+                updateCurrentGraph(unparkingRequestEvent);
+                UnparkEvent unparkRequestEvent = RuntimeEnvironment.createUnparkEvent(unparkeeThread);
+                RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+                passEventToTrust(unparkRequestEvent);
+                updateCurrentGraph(unparkRequestEvent);
+            } else {
+                RuntimeEnvironment.threadParkingPermit.put(RuntimeEnvironment.threadIdMap.get(unparkeeThread.getId()), true);
+                passEventToTrust(unparkingRequestEvent);
+                updateCurrentGraph(unparkingRequestEvent);
+            }
         }
     }
 
@@ -510,13 +544,33 @@ public class TrustStrategy implements SearchStrategy {
             System.out.println("[Trust Strategy Message] : There is only one new graph");
             currentGraph = newGraphs.get(0);
         } else if (newGraphs.size() > 1) {
-            findExtendingGraph(newGraphs, threadEvent);
+            if (threadEvent.getType() == EventType.SYM_EXECUTION) {
+                SymExecutionEvent symExecutionEvent = (SymExecutionEvent) threadEvent;
+                findExtendingGraphOverSymbolicEvent(newGraphs, symExecutionEvent);
+            } else {
+                findExtendingGraph(newGraphs, threadEvent);
+            }
         } else {
             int numOfGraphs = trust.getGraphCounter() + 1;
             trust.setGraphCounter(numOfGraphs);
             currentGraph.visualizeGraph(numOfGraphs, executionGraphsPath);
             System.out.println("[Trust Strategy Message] : There is no new graph from model checker");
             System.out.println("[Trust Strategy Message] : visited full execution graph G_" + numOfGraphs);
+        }
+    }
+
+
+    private void findExtendingGraphOverSymbolicEvent(List<ExecutionGraph> newGraphs, SymExecutionEvent symExecutionEvent) {
+        for (ExecutionGraph graph : newGraphs) {
+            ThreadEvent lastEvent = (ThreadEvent) graph.getGraphEvents().get(graph.getGraphEvents().size() - 1);
+            SymExecutionEvent lastSymEvent = (SymExecutionEvent) lastEvent;
+            if (lastSymEvent.getResult() == symExecutionEvent.getResult()) {
+                currentGraph = graph;
+                newGraphs.remove(graph);
+                mcGraphs.addAll(newGraphs);
+                System.out.println("[Trust Strategy Message] : The chosen graph is : " + currentGraph.getId());
+                break;
+            }
         }
     }
 
@@ -747,6 +801,7 @@ public class TrustStrategy implements SearchStrategy {
                 symbolicOperation.getFormula().toString(), isNegatable);
         RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
         passEventToTrust(symExecutionEvent);
+        updateCurrentGraph(symExecutionEvent);
     }
 
     /**
@@ -1002,7 +1057,16 @@ public class TrustStrategy implements SearchStrategy {
             return pickNextRandomThread();
         }
 
+        if (guidingEvent != null && guidingEvent.getType() == EventType.UNPARKING) {
+            System.out.println("[Trust Strategy Message] : Thread-" +
+                    RuntimeEnvironment.threadObjectMap.get((long) ((UnparkingEvent) guidingEvent).getTid()).getId() +
+                    " is the next guided thread for UNPARKING");
+            Thread nextThread = RuntimeEnvironment.threadObjectMap.get((long) ((UnparkingEvent) guidingEvent).getTid());
+            guidingEvent = null;
+            return nextThread;
+        }
         guidingEvent = guidingEvents.remove(0);
+
         if (guidingEvent instanceof StartEvent) {
             guidingThread = findGuidingThreadFromStartEvent();
         } else {
@@ -1018,9 +1082,20 @@ public class TrustStrategy implements SearchStrategy {
             return pickNextGuidedThread();
         }
 
+        if (guidingEvent.getType() == EventType.UNPARK) {
+            guidedUnparkEventHelper((UnparkEvent) guidingEvent);
+            return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+        }
+
         System.out.println("[Trust Strategy Message] : Thread-" +
-                RuntimeEnvironment.threadObjectMap.get((long) guidingThread) + " is the next guided thread");
+                RuntimeEnvironment.threadObjectMap.get((long) guidingThread).getId() + " is the next guided thread");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+    }
+
+    private void guidedUnparkEventHelper(UnparkEvent unparkEvent) {
+        System.out.println("[Trust Strategy Message] : The next guided event is UNPARK event.");
+        Thread thread = RuntimeEnvironment.threadObjectMap.get((long) unparkEvent.getTid());
+        unparkThread(thread);
     }
 
     /**

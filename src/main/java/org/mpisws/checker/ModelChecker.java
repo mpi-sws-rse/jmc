@@ -100,7 +100,8 @@ public class ModelChecker {
      * @param byteCodeModifier The ByteCodeModifier to use for modifying the bytecode.
      */
     private void modifyByteCode(ByteCodeModifier byteCodeModifier) {
-        byteCodeModifier.modifySyncMethod();
+        //byteCodeModifier.modifySyncMethod();
+        byteCodeModifier.douplicateSyncMethod();
         byteCodeModifier.modifySymbolicEval();
         byteCodeModifier.modifyParkAndUnpark();
         byteCodeModifier.modifyThreadCreation();

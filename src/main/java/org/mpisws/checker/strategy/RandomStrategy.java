@@ -160,12 +160,30 @@ public class RandomStrategy implements SearchStrategy {
 
     @Override
     public void nextParkRequest(Thread thread) {
-
+        ParkEvent parkRequestEvent = RuntimeEnvironment.createParkEvent(thread);
+        RuntimeEnvironment.eventsRecord.add(parkRequestEvent);
+        long tid = RuntimeEnvironment.threadIdMap.get(thread.getId());
+        if (RuntimeEnvironment.threadParkingPermit.get(tid)) {
+            RuntimeEnvironment.threadParkingPermit.put(tid, false);
+            UnparkEvent unparkRequestEvent = RuntimeEnvironment.createUnparkEvent(thread);
+            RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+        } else {
+            parkThread(thread);
+        }
     }
 
     @Override
     public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
-
+        UnparkingEvent unparkingRequestEvent = RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
+        RuntimeEnvironment.eventsRecord.add(unparkingRequestEvent);
+        if (RuntimeEnvironment.parkedThreadList.contains(unparkeeThread)) {
+            unparkThread(unparkeeThread);
+            UnparkEvent unparkRequestEvent = RuntimeEnvironment.createUnparkEvent(unparkeeThread);
+            RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+        } else {
+            long tid = RuntimeEnvironment.threadIdMap.get(unparkeeThread.getId());
+            RuntimeEnvironment.threadParkingPermit.put(tid, true);
+        }
     }
 
     /**

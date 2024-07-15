@@ -3366,7 +3366,7 @@ data class ExecutionGraph(
                 val secondTid = (this.PCs.elementAt(i).second as ThreadEvent).tid
                 val secondSerial = (this.PCs.elementAt(i).second as ThreadEvent).serial
                 bufferedWriter.newLine()
-                bufferedWriter.write("${firstTid}${firstSerial} -> ${secondTid}${secondSerial}[color=red, label=\"pc\"];")
+                bufferedWriter.write("${firstTid}${firstSerial} -> ${secondTid}${secondSerial}[color=chartreuse, label=\"pc\"];")
             }
         }
 
