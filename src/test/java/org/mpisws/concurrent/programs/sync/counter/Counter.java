@@ -8,6 +8,10 @@ public class Counter {
         count = count + 1;
     }
 
+    public synchronized static int test(double y, long x, int z) {
+        return (int) (x + y + z);
+    }
+
     public int getCount() {
         return count;
     }

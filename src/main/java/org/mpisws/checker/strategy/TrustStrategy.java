@@ -289,6 +289,11 @@ public class TrustStrategy implements SearchStrategy {
         trust.visit(currentGraph, tempEventList);
     }
 
+    /**
+     * Passes the given events to the {@link #trust} model checker.
+     *
+     * @param events is the list of events that are going to be passed to the {@link #trust} model checker.
+     */
     private void passEventToTrust(List<Event> events) {
         trust.setAllGraphs(new ArrayList<>());
         trust.visit(currentGraph, events);
@@ -381,6 +386,22 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Handles the next park request of a given thread.
+     * <p>
+     * This method handles the next park request of a given thread. It creates a {@link ParkEvent} for the corresponding
+     * parking request of a thread and records it. If the scheduling is in the guided mode, it adds the event to the
+     * current graph. Also, it checks whether the thread has the parking permit or not. If the thread has the parking
+     * permit, it sets the parking permit to false. Otherwise, it parks the thread. If the scheduling is normal mode,
+     * it checks whether the thread has the parking permit or not. If the thread has the parking permit, it sets the
+     * parking permit to false. Then, it creates a {@link UnparkEvent} for the corresponding unparking request of the
+     * thread and records it. Finally, it passes the events to the trust model checker and updates the current graph.
+     * If the thread does not have the parking permit, it parks the thread. Then, it passes the park event to the trust
+     * model checker.
+     * </p>
+     *
+     * @param thread is the thread that is going to be parked.
+     */
     @Override
     public void nextParkRequest(Thread thread) {
         ParkEvent parkRequestEvent = RuntimeEnvironment.createParkEvent(thread);
@@ -411,6 +432,24 @@ public class TrustStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Handles the next unpark request of a given thread.
+     * <p>
+     * This method handles the next unpark request of a given thread. It creates a {@link UnparkingEvent} for the
+     * corresponding unparking request of a thread and records it. If the scheduling is in the guided mode, it adds the
+     * event to the current graph. Also, it checks whether the unparkee thread is parked or not. If the unparkee thread
+     * is parked, it unparks the unparkee thread. Otherwise, it sets the parking permit of the unparkee thread to true.
+     * If the scheduling is normal mode, it checks whether the unparkee thread is parked or not. If the unparkee thread
+     * is parked, it unparks the unparkee thread, creates a {@link UnparkEvent} for the corresponding unparking request
+     * of the unparkee thread and records it. Then, it passes the events to the trust model checker and updates the
+     * current graph. If the unparkee thread is not parked, it sets the parking permit of the unparkee thread to true,
+     * creates a {@link UnparkEvent} for the corresponding unparking request of the unparkee thread and records it.
+     * Finally, it passes the events to the trust model checker and updates the current graph.
+     * </p>
+     *
+     * @param unparkerThread is the thread that is going to unpark unparkeeThread.
+     * @param unparkeeThread is the thread that is going to be unparked by unparkerThread.
+     */
     @Override
     public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
         UnparkingEvent unparkingRequestEvent = RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
@@ -1041,12 +1080,16 @@ public class TrustStrategy implements SearchStrategy {
      * <p>
      * This method picks the next guided thread. It checks whether the {@link #guidingEvents} is empty or not. If it is
      * empty, it calls the {@link #handleEmptyGuidingEvents()} method and picks the next random thread. Otherwise, it
-     * picks the next guided thread based on the {@link #guidingEvents} list. If the {@link #guidingEvent} is an instance
-     * of {@link StartEvent}, it finds the guiding thread from the {@link #guidingExecutionGraph}. Otherwise, it sets the
-     * {@link #guidingThread} with the thread id of the {@link #guidingEvent}. If the {@link #guidingEvent} is an instance
-     * of {@link EnterMonitorEvent}, it calls the {@link #guidedEnterMonitorEventHelper(EnterMonitorEvent)} method. If the
-     * {@link #guidingEvent} is an instance of {@link SuspendEvent}, it calls the {@link #guidedSuspendEventHelper(SuspendEvent)}
-     * method and picks the next guided thread. Otherwise, it returns the next guided thread.
+     * picks the next guided thread based on the {@link #guidingEvents} list. If the guiding event is an instance of
+     * {@link UnparkingEvent}, it sets the {@link #guidingThread} with the thread id of the unparked thread and returns
+     * the next guided thread. If the {@link #guidingEvent} is an instance of {@link StartEvent}, it finds the guiding
+     * thread from the {@link #guidingExecutionGraph}. Otherwise, it sets the {@link #guidingThread} with the thread id
+     * of the {@link #guidingEvent}. If the {@link #guidingEvent} is an instance of {@link EnterMonitorEvent}, it calls
+     * the {@link #guidedEnterMonitorEventHelper(EnterMonitorEvent)} method. If the {@link #guidingEvent} is an instance
+     * of {@link SuspendEvent}, it calls the {@link #guidedSuspendEventHelper(SuspendEvent)} method and picks the next
+     * guided thread. If the {@link #guidingEvent} is an instance of {@link UnparkEvent}, it calls the
+     * {@link #guidedUnparkEventHelper(UnparkEvent)} method and returns the unparked thread. Otherwise, it returns the
+     * next guided thread.
      * </p>
      *
      * @return the next guided thread that is going to be executed.
@@ -1092,6 +1135,14 @@ public class TrustStrategy implements SearchStrategy {
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
     }
 
+    /**
+     * Prepare the next guided unpark event.
+     * <p>
+     * This method prepares the next guided unpark event.
+     * </p>
+     *
+     * @param unparkEvent is the unpark event that is going to be executed.
+     */
     private void guidedUnparkEventHelper(UnparkEvent unparkEvent) {
         System.out.println("[Trust Strategy Message] : The next guided event is UNPARK event.");
         Thread thread = RuntimeEnvironment.threadObjectMap.get((long) unparkEvent.getTid());

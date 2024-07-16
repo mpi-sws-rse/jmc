@@ -158,6 +158,17 @@ public class RandomStrategy implements SearchStrategy {
         RuntimeEnvironment.eventsRecord.add(joinEvent);
     }
 
+    /**
+     * Handles the next park request of a given thread.
+     * <p>
+     * This method handles the next park request of a given thread. It creates a {@link ParkEvent} for the corresponding
+     * parking request of a thread and records it. The method also checks if the thread has a parking permit. If the
+     * thread has a parking permit, it creates an {@link UnparkEvent} for the corresponding unparking request of the
+     * thread and records it. If the thread does not have a parking permit, it parks the thread.
+     * </p>
+     *
+     * @param thread is the thread that is going to be parked.
+     */
     @Override
     public void nextParkRequest(Thread thread) {
         ParkEvent parkRequestEvent = RuntimeEnvironment.createParkEvent(thread);
@@ -172,6 +183,19 @@ public class RandomStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Handles the next unpark request of a given thread.
+     * <p>
+     * This method handles the next unpark request of a given thread. It creates an {@link UnparkingEvent} for the
+     * corresponding unparking request of a thread and records it. The method also checks if the unparkee thread is
+     * parked. If the unparkee thread is parked, it unparks the thread and creates an {@link UnparkEvent} for the
+     * corresponding unparking request of the thread and records it. If the unparkee thread is not parked, it grants
+     * the thread a parking permit.
+     * </p>
+     *
+     * @param unparkerThread is the thread that is going to unpark another thread.
+     * @param unparkeeThread is the thread that is going to be unparked by another thread.
+     */
     @Override
     public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
         UnparkingEvent unparkingRequestEvent = RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);

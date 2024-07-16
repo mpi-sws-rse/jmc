@@ -9,6 +9,8 @@ import org.mpisws.manager.FinishedType;
 import org.mpisws.manager.HaltExecutionException;
 import org.mpisws.solver.SMTSolverTypes;
 import org.mpisws.solver.SymbolicSolver;
+import org.mpisws.util.concurrent.InstanceMethodMonitor;
+import org.mpisws.util.concurrent.StaticMethodMonitor;
 import programStructure.*;
 import org.mpisws.symbolic.SymbolicOperation;
 
@@ -281,7 +283,6 @@ public class RuntimeEnvironment {
      */
     public static Thread unparkeeThread = null;
 
-
     /**
      * @property {@link #symbolicOperation} is used to store the symbolic operation that is executed by the threads
      * in the program under test.
@@ -317,6 +318,19 @@ public class RuntimeEnvironment {
      * @property {@link #solverType} is used to store the solver type that IS used by the {@link #solver}
      */
     public static SMTSolverTypes solverType;
+
+    /**
+     * @property {@link #staticMethodMonitorList} is used to store the static method monitors that are executed by the
+     * threads in the program under test.
+     */
+    public static List<StaticMethodMonitor> staticMethodMonitorList = new ArrayList<>();
+
+    /**
+     * @property {@link #instanceMethodMonitorList} is used to store the instance-based method monitors that are
+     * executed by the threads in the program under test.
+     */
+    public static List<InstanceMethodMonitor> instanceMethodMonitorList = new ArrayList<>();
+
 
     /**
      * The constructor is private to prevent the instantiation of the class
@@ -792,12 +806,37 @@ public class RuntimeEnvironment {
         }
     }
 
+    /**
+     * Handles a park operation request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test is about to execute a park operation. The thread
+     * is requesting to park itself. The method assigns the thread to the {@link #threadToPark} to inform the
+     * {@link SchedulerThread} that the thread is going to park. It then makes the thread wait by calling the
+     * {@link #waitRequest(Thread)} method. This hands over control to the {@link SchedulerThread} for deciding which
+     * thread to run next.
+     * </p>
+     *
+     * @param thread The thread that requested to park.
+     */
     public static void parkOperation(Thread thread) {
         System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to PARK");
         threadToPark = thread;
         waitRequest(thread);
     }
 
+    /**
+     * Handles an unpark operation request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test is about to execute an unpark operation. The thread
+     * is requesting to unpark another thread. The method assigns the caller thread to the {@link #unparkerThread} and
+     * the callee thread to the {@link #unparkeeThread} to inform the {@link SchedulerThread} that the caller thread is
+     * going to unpark the callee thread. It then makes the caller thread wait by calling the {@link #waitRequest(Thread)}
+     * method. This hands over control to the {@link SchedulerThread} for deciding which thread to run next.
+     * </p>
+     *
+     * @param callerThread the thread that requested to unpark another thread.
+     * @param calleeThread the thread that is going to be unparked.
+     */
     public static void unparkOperation(Thread callerThread, Thread calleeThread) {
         System.out.println("[Runtime Environment Message] : " + callerThread.getName() + " requested to UNPARK " +
                 calleeThread.getName());
@@ -806,6 +845,20 @@ public class RuntimeEnvironment {
         waitRequest(callerThread);
     }
 
+    /**
+     * Handles a symbolic operation request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test is about to execute a symbolic operation. The
+     * thread is requesting to execute a symbolic arithmetic operation. The method assigns the thread to the
+     * {@link #symbolicOperation} to inform the {@link SchedulerThread} that the thread is going to execute a symbolic
+     * arithmetic operation. It then makes the thread wait by calling the {@link #waitRequest(Thread)} method. This hands
+     * over control to the {@link SchedulerThread} for deciding which thread to run next.
+     * </p>
+     *
+     * @param thread            The thread that requested to execute a symbolic arithmetic operation.
+     * @param symbolicOperation The symbolic arithmetic operation that the thread is going to execute.
+     * @return The result of the symbolic arithmetic operation.
+     */
     public static boolean symbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to execute a symbolic " +
                 "arithmetic operation");
@@ -1267,6 +1320,61 @@ public class RuntimeEnvironment {
     }
 
     /**
+     * Retrieves the {@link StaticMethodMonitor} for a synchronized static method that is about to be executed.
+     * <p>
+     * This method is invoked by the {@link RuntimeEnvironment} when a thread in the program under test is about to
+     * execute a synchronized static method. The method retrieves the {@link StaticMethodMonitor} for the method from
+     * the {@link #staticMethodMonitorList} based on the class name, method name, and method descriptor.
+     * If the {@link StaticMethodMonitor} for the method is not found in the list, a new {@link StaticMethodMonitor} is
+     * created and added to the list.
+     * </p>
+     *
+     * @param className  the fully qualified name of the class that contains the method.
+     * @param methodName the name of the method.
+     * @param descriptor the descriptor of the method.
+     * @return the {@link StaticMethodMonitor} for the method.
+     */
+
+    public static StaticMethodMonitor getStaticMethodMonitor(String className, String methodName, String descriptor) {
+        System.out.println("[Runtime Environment Message] : Getting StaticMethodMonitor for " + className + "." + methodName + descriptor);
+        for (StaticMethodMonitor stm : staticMethodMonitorList) {
+            if (stm.getClassName().equals(className) && stm.getMethodName().equals(methodName) && stm.getMethodDescriptor().equals(descriptor)) {
+                return stm;
+            }
+        }
+        StaticMethodMonitor staticMethodMonitor = new StaticMethodMonitor(className, methodName, descriptor);
+        staticMethodMonitorList.add(staticMethodMonitor);
+        return staticMethodMonitor;
+    }
+
+    /**
+     * Retrieves the {@link InstanceMethodMonitor} for a synchronized instance method that is about to be executed.
+     * <p>
+     * This method is invoked by the {@link RuntimeEnvironment} when a thread in the program under test is about to
+     * execute a synchronized instance method. The method retrieves the {@link InstanceMethodMonitor} for the method
+     * from the {@link #instanceMethodMonitorList} based on the object(this), method name, and method descriptor.
+     * If the {@link InstanceMethodMonitor} for the method is not found in the list, a new {@link InstanceMethodMonitor}
+     * is created and added to the list.
+     * </p>
+     *
+     * @param obj        the object that contains the method.
+     * @param methodName the name of the method.
+     * @param descriptor the descriptor of the method.
+     * @return the {@link InstanceMethodMonitor} for the method.
+     */
+    public static InstanceMethodMonitor getInstanceMethodMonitor(Object obj, String methodName, String descriptor) {
+        System.out.println("[Runtime Environment Message] : Getting InstanceMethodMonitor for " + obj + "." + methodName + descriptor);
+        for (InstanceMethodMonitor imm : instanceMethodMonitorList) {
+            if (imm.getObject().equals(obj) && imm.getMethodName().equals(methodName) && imm.getMethodDescriptor().equals(descriptor)) {
+                return imm;
+            }
+        }
+        InstanceMethodMonitor instanceMethodMonitor = new InstanceMethodMonitor(obj, methodName, descriptor);
+        instanceMethodMonitorList.add(instanceMethodMonitor);
+        return instanceMethodMonitor;
+    }
+
+    /**
      * Creates a {@link Location} object for a thread that is about to perform a read or write operation on a field.
      * <p>
      * This method is invoked by the {@link RuntimeEnvironment} when a thread in the program under test is about to
@@ -1397,5 +1505,10 @@ public class RuntimeEnvironment {
         symbolicOperation = null;
         solverResult = false;
         threadParkingPermit = new HashMap<>();
+        threadToPark = null;
+        unparkerThread = null;
+        staticMethodMonitorList = new ArrayList<>();
+        instanceMethodMonitorList = new ArrayList<>();
+        parkedThreadList = new ArrayList<>();
     }
 }

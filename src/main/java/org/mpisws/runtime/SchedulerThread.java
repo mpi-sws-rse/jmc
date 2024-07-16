@@ -15,9 +15,10 @@ import programStructure.WriteEvent;
  * The SchedulerThread class extends the Thread class and is responsible for managing the execution of threads in a
  * multithreaded program. It uses a {@link SearchStrategy} to determine the next thread to be executed based on a selected
  * strategy type. The SchedulerThread class handles various types of requests including start, enter monitor,
- * exit monitor, join, read, write, finish, and symbolic arithmetic requests. It also includes functionality for deadlock
- * detection among threads waiting to enter a monitor. The SchedulerThread class is designed to control the flow of a
- * program's execution and ensure sequential execution of operations.
+ * exit monitor, synchronized methods, join, read, write, finish, thread park, thread unpark, and symbolic arithmetic
+ * requests. It also includes functionality for deadlock detection among threads waiting to enter a monitor.
+ * The SchedulerThread class is designed to control the flow of a program's execution and ensure sequential execution
+ * of operations.
  */
 public class SchedulerThread extends Thread {
 
@@ -506,6 +507,15 @@ public class SchedulerThread extends Thread {
         }
     }
 
+    /**
+     * Handles the unpark request of a thread.
+     * <p>
+     * This method is used to handle the unpark request of a thread. It retrieves the unparker thread and the unparkee
+     * thread, sets the unparker thread and the unparkee thread to null, sets the thread wait request to null, and then
+     * calls the next unpark request method of the search strategy. Finally, it calls the wait event handler to select
+     * the next thread to run.
+     * </p>
+     */
     public void unparkRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Unpark request handler is called");
         Optional<Thread> unparkerThread = Optional.ofNullable(RuntimeEnvironment.unparkerThread);
@@ -519,6 +529,14 @@ public class SchedulerThread extends Thread {
         }
     }
 
+    /**
+     * Handles the park request of a thread.
+     * <p>
+     * This method is used to handle the park request of a thread. It retrieves the thread that requested to park, sets
+     * the thread to park to null, sets the thread wait request to null, and then calls the next park request method of
+     * the search strategy. Finally, it calls the wait event handler to select the next thread to run.
+     * </p>
+     */
     public void parkRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Park request handler is called");
         Optional<Thread> threadToPark = Optional.ofNullable(RuntimeEnvironment.threadToPark);

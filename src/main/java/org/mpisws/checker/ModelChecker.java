@@ -95,13 +95,13 @@ public class ModelChecker {
      * Modifies the bytecode for the program under test.
      * <br>
      * The modifications include adding runtime environment, modifying thread creation, start, run, join, and monitor
-     * instructions, and adding read and write operations.
+     * instructions, modifying assert statements, modifying symbolic evaluation, modifying park and unpark operations,
+     * modifying synchronization, and modifying read and write operations.
      *
      * @param byteCodeModifier The ByteCodeModifier to use for modifying the bytecode.
      */
     private void modifyByteCode(ByteCodeModifier byteCodeModifier) {
-        //byteCodeModifier.modifySyncMethod();
-        byteCodeModifier.douplicateSyncMethod();
+        byteCodeModifier.modifySyncMethod();
         byteCodeModifier.modifySymbolicEval();
         byteCodeModifier.modifyParkAndUnpark();
         byteCodeModifier.modifyThreadCreation();

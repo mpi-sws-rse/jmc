@@ -1,21 +1,23 @@
 package org.mpisws.util.concurrent;
 
-public class MethodMonitor {
+/**
+ * The MethodMonitor is an abstract class that is used to monitor a method.
+ */
+public abstract class MethodMonitor {
 
-    public Object object;
-
+    /**
+     * @property {@link #methodName} is the name of the method.
+     */
     public String methodName;
 
+    /**
+     * @property {@link #methodDescriptor} is the descriptor of the method.
+     */
     public String methodDescriptor;
 
-    MethodMonitor(Object object, String methodName, String methodDescriptor) {
-        this.object = object;
+    MethodMonitor(String methodName, String methodDescriptor) {
         this.methodName = methodName;
         this.methodDescriptor = methodDescriptor;
-    }
-
-    public Object getObject() {
-        return object;
     }
 
     public String getMethodName() {
@@ -24,10 +26,6 @@ public class MethodMonitor {
 
     public String getMethodDescriptor() {
         return methodDescriptor;
-    }
-
-    public void setObject(Object object) {
-        this.object = object;
     }
 
     public void setMethodName(String methodName) {

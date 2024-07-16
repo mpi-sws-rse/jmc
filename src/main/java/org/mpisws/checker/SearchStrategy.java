@@ -2,12 +2,13 @@ package org.mpisws.checker;
 
 import java.util.*;
 
-import org.mpisws.runtime.RuntimeEnvironment;
 import programStructure.Event;
 import programStructure.MonitorRequestEvent;
 import programStructure.ReadEvent;
 import programStructure.WriteEvent;
+
 import org.mpisws.symbolic.SymbolicOperation;
+import org.mpisws.runtime.RuntimeEnvironment;
 
 /**
  * The SearchStrategy interface defines the methods that any search strategy must implement.

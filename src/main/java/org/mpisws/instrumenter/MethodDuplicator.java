@@ -1,6 +1,5 @@
 package org.mpisws.instrumenter;
 
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 

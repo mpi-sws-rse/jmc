@@ -120,6 +120,15 @@ public class ReplayStrategy implements SearchStrategy {
         return joinReq;
     }
 
+    /**
+     * Represents the required strategy for the next park event.
+     * <p>
+     * This method creates a park event and adds it to the execution trace. It also checks if the thread has a parking
+     * permit or not. If the thread has a parking permit, it sets the permit to false. Otherwise, it parks the thread.
+     * </p>
+     *
+     * @param thread is the thread that is going to be parked.
+     */
     @Override
     public void nextParkRequest(Thread thread) {
         ParkEvent parkRequestEvent = RuntimeEnvironment.createParkEvent(thread);
@@ -132,6 +141,17 @@ public class ReplayStrategy implements SearchStrategy {
         }
     }
 
+    /**
+     * Represents the required strategy for the next unpark event.
+     * <p>
+     * This method creates an unpark event and adds it to the execution trace. It also checks if the unparkee thread is
+     * parked or not. If the unparkee thread is parked, it unparks the thread. Otherwise, it sets the parking permit of
+     * the unparkee thread to true.
+     * </p>
+     *
+     * @param unparkerThread is the thread that is going to unpark another thread.
+     * @param unparkeeThread is the thread that is going to be unparked by another thread.
+     */
     @Override
     public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
         UnparkingEvent unparkingRequestEvent = RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
@@ -242,7 +262,14 @@ public class ReplayStrategy implements SearchStrategy {
      * Picks the next thread to run.
      * <p>
      * This method picks the next thread to run based on the guiding trace and the guiding event. It removes the guiding
-     * event from the guiding trace and returns the thread that is going to run.
+     * event from the guiding trace and returns the thread that is going to run. If the guiding trace is empty, it prints
+     * an error message and exits the program. If the guiding event is an unparking event, it unparks the thread and
+     * returns the thread. If the guiding event is a start event, it sets the guiding thread to the caller thread of the
+     * start event. Otherwise, it sets the guiding thread to the thread of the guiding event. If the guiding event is an
+     * enter monitor event, it removes the monitor request from the monitor request list and calls the
+     * {@link #nextEnterMonitorEvent(Thread, Object)} method to add the enter monitor event to the execution trace.
+     * If the guiding event is an unpark event, it calls the {@link #guidedUnparkEventHelper(UnparkEvent)} method to
+     * handle the unpark event. Otherwise, it prints a message and returns the thread of the guiding event.
      * </p>
      *
      * @return the next thread to run.
@@ -256,6 +283,7 @@ public class ReplayStrategy implements SearchStrategy {
             printExecutionTrace();
             System.exit(0);
         }
+
         if (guidingEvent != null && guidingEvent.getType() == EventType.UNPARKING) {
             System.out.println("[Replay Strategy Message] : Thread-" +
                     RuntimeEnvironment.threadObjectMap.get((long) ((UnparkingEvent) guidingEvent).getTid()).getId() +
@@ -265,11 +293,13 @@ public class ReplayStrategy implements SearchStrategy {
             return nextThread;
         }
         guidingEvent = guidingTrace.remove(0);
+
         if (guidingEvent instanceof StartEvent) {
             guidingThread = ((StartEvent) guidingEvent).getCallerThread();
         } else {
             guidingThread = ((ThreadEvent) guidingEvent).getTid();
         }
+
         if (guidingEvent.getType() == EventType.ENTER_MONITOR) {
             removeMonitorRequest(guidingThread);
         }
@@ -282,6 +312,11 @@ public class ReplayStrategy implements SearchStrategy {
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
     }
 
+    /**
+     * Handles the next guided unpark event.
+     *
+     * @param unparkEvent is the unpark event that is going to be executed.
+     */
     private void guidedUnparkEventHelper(UnparkEvent unparkEvent) {
         System.out.println("[Replay Strategy Message] : The next guided event is UNPARK event.");
         Thread thread = RuntimeEnvironment.threadObjectMap.get((long) unparkEvent.getTid());
@@ -340,6 +375,6 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void saveBuggyExecutionTrace() {
-
+        // DO NOTHING
     }
 }

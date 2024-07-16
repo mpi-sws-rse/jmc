@@ -21,6 +21,8 @@ src/test/java/org/mpisws/concurrent/programs/simple/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/simple/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/wrong/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/wrong/counter/*.txt
+src/test/java/org/mpisws/concurrent/programs/shared/counter/*.class
+src/test/java/org/mpisws/concurrent/programs/shared/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/thread_dependency/*.class
 src/test/java/org/mpisws/concurrent/programs/thread_dependency/*.txt
 src/test/java/org/mpisws/concurrent/programs/dining/*.class
