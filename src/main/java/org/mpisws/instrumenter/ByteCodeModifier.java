@@ -508,11 +508,17 @@ public class ByteCodeModifier {
 
                         @Override
                         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
-                            if (isPrimitiveType(descriptor) && (opcode == Opcodes.GETFIELD ||
-                                    opcode == Opcodes.PUTFIELD)) {
-                                if (opcode == Opcodes.GETFIELD) {
+                            if (isPrimitiveType(descriptor, name) && (opcode == Opcodes.GETFIELD ||
+                                    opcode == Opcodes.PUTFIELD || opcode == Opcodes.GETSTATIC || opcode == Opcodes.PUTSTATIC)) {
+                                if (opcode == Opcodes.GETFIELD || opcode == Opcodes.GETSTATIC) {
                                     // Duplicate the top operand stack value which should be the value of the field
-                                    mv.visitInsn(Opcodes.DUP);
+                                    // if it is a GETFIELD operation. Otherwise, push null onto the operand stack.
+                                    if (opcode == Opcodes.GETFIELD) {
+                                        mv.visitInsn(Opcodes.DUP);
+                                    } else {
+                                        mv.visitInsn(Opcodes.ACONST_NULL);
+                                    }
+                                    //mv.visitInsn(Opcodes.DUP);
                                     // Load the current thread onto the operand stack
                                     mv.visitMethodInsn(
                                             Opcodes.INVOKESTATIC,
@@ -648,6 +654,111 @@ public class ByteCodeModifier {
                                         mv.visitInsn(Opcodes.DUP_X2);
                                         mv.visitInsn(Opcodes.POP);
                                     }
+                                } else if (opcode == Opcodes.PUTSTATIC) {
+                                    if (descriptor.equals("J") || descriptor.equals("D")) {
+                                        mv.visitInsn(Opcodes.DUP2);
+                                    } else {
+                                        mv.visitInsn(Opcodes.DUP);
+                                    }
+                                    switch (descriptor) {
+                                        case "I":
+                                            mv.visitMethodInsn(
+                                                    Opcodes.INVOKESTATIC,
+                                                    "java/lang/Integer",
+                                                    "valueOf",
+                                                    "(I)Ljava/lang/Integer;",
+                                                    false
+                                            );
+                                            break;
+                                        case "J":
+                                            mv.visitMethodInsn(
+                                                    Opcodes.INVOKESTATIC,
+                                                    "java/lang/Long",
+                                                    "valueOf",
+                                                    "(J)Ljava/lang/Long;",
+                                                    false
+                                            );
+                                            break;
+                                        case "F":
+                                            mv.visitMethodInsn(
+                                                    Opcodes.INVOKESTATIC,
+                                                    "java/lang/Float",
+                                                    "valueOf",
+                                                    "(F)Ljava/lang/Float;",
+                                                    false
+                                            );
+                                            break;
+                                        case "D":
+                                            mv.visitMethodInsn(
+                                                    Opcodes.INVOKESTATIC,
+                                                    "java/lang/Double",
+                                                    "valueOf",
+                                                    "(D)Ljava/lang/Double;",
+                                                    false
+                                            );
+                                            break;
+                                        case "Z":
+                                            mv.visitMethodInsn(
+                                                    Opcodes.INVOKESTATIC,
+                                                    "java/lang/Boolean",
+                                                    "valueOf",
+                                                    "(Z)Ljava/lang/Boolean;",
+                                                    false
+                                            );
+                                            break;
+                                        case "C":
+                                            mv.visitMethodInsn(
+                                                    Opcodes.INVOKESTATIC,
+                                                    "java/lang/Character",
+                                                    "valueOf",
+                                                    "(C)Ljava/lang/Character;",
+                                                    false
+                                            );
+                                            break;
+                                        case "B":
+                                            mv.visitMethodInsn(
+                                                    Opcodes.INVOKESTATIC,
+                                                    "java/lang/Byte",
+                                                    "valueOf",
+                                                    "(B)Ljava/lang/Byte;",
+                                                    false
+                                            );
+                                            break;
+                                        case "S":
+                                            mv.visitMethodInsn(
+                                                    Opcodes.INVOKESTATIC,
+                                                    "java/lang/Short",
+                                                    "valueOf",
+                                                    "(S)Ljava/lang/Short;",
+                                                    false
+                                            );
+                                            break;
+                                    }
+                                    mv.visitInsn(Opcodes.ACONST_NULL);
+                                    mv.visitInsn(Opcodes.SWAP);
+                                    // Load the current thread onto the operand stack
+                                    mv.visitMethodInsn(
+                                            Opcodes.INVOKESTATIC,
+                                            "java/lang/Thread",
+                                            "currentThread",
+                                            "()Ljava/lang/Thread;",
+                                            false
+                                    );
+                                    // Load the owner of the field onto the operand stack
+                                    mv.visitLdcInsn(owner.replace("/", "."));
+                                    // Load the name of the field onto the operand stack
+                                    mv.visitLdcInsn(name);
+                                    // Load the descriptor of the field onto the operand stack
+                                    mv.visitLdcInsn(descriptor);
+                                    // Invoke the RuntimeEnvironment.newReadOperation method
+                                    mv.visitMethodInsn(
+                                            Opcodes.INVOKESTATIC,
+                                            "org/mpisws/runtime/RuntimeEnvironment",
+                                            "writeOperation",
+                                            "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;" +
+                                                    "Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+                                            false
+                                    );
                                 }
                                 super.visitFieldInsn(opcode, owner, name, descriptor);
                                 mv.visitMethodInsn(
@@ -686,9 +797,11 @@ public class ByteCodeModifier {
      * @param type The type to check.
      * @return {@code true} if the type is a primitive type, {@code false} otherwise.
      */
-    public boolean isPrimitiveType(String type) {
-        return type.equals("I") || type.equals("J") || type.equals("F") || type.equals("D") || type.equals("Z") ||
-                type.equals("C") || type.equals("B") || type.equals("S");
+    public boolean isPrimitiveType(String type, String name) {
+        // Check if the name starts with $ to avoid adding read and write operations for synthetic fields
+        // Like : $assertionsDisabled
+        return (type.equals("I") || type.equals("J") || type.equals("F") || type.equals("D") || type.equals("Z") ||
+                type.equals("C") || type.equals("B") || type.equals("S")) && !name.startsWith("$");
     }
 
     /**

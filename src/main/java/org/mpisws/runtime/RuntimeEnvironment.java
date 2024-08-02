@@ -753,6 +753,7 @@ public class RuntimeEnvironment {
                         "read the value of " + owner + "." + name + "(" + descriptor + ") = " +
                         Objects.requireNonNull(location).getValue()
         );
+        System.out.println("[Debug] : obj is " + obj);
         if (location.isPrimitive()) {
             readEventReq = createReadEvent(thread, location);
             waitRequest(thread);
@@ -1401,6 +1402,7 @@ public class RuntimeEnvironment {
      */
     private static Location createLocation(Object obj, String owner, String name, String descriptor) {
         try {
+            System.out.println("[Runtime Environment Message] : Creating Location for " + owner + " $ " + name + " $ " + descriptor);
             Class<?> clazz = Class.forName(owner.replace("/", "."));
             Object instance = clazz.cast(obj);
             Field field = clazz.getDeclaredField(name);

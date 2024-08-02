@@ -245,6 +245,40 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                      STATIC COUNTERS
+     */
+
+    @Test
+    @DisplayName("A correct concurrent counter using synchronized static methods - Random")
+    void randomTestStaticCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.shared.counter",
+                "StaticCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/shared/counter/"
+        );
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        System.out.println("StaticCounter Random Strategy Started");
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "StaticCounter Random Strategy Finished");
+    }
+
+    @Test
+    @DisplayName("A correct concurrent counter using synchronized static methods - Trust")
+    void trustTestStaticCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.shared.counter",
+                "StaticCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/shared/counter/"
+        );
+        checker.configuration.strategyType = StrategyType.TRUST;
+        System.out.println("StaticCounter Trust Strategy Started");
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "StaticCounter Trust Strategy Finished");
+    }
+
+    /*
      *                             SIMPLE INCONSISTENT COUNTERS WITH THREADS SPAWNING
      * To see the beauty of our implemented model checker, run the following test with TrustStrategy.
      */

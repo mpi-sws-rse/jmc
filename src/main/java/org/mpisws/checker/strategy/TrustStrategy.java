@@ -1131,7 +1131,7 @@ public class TrustStrategy implements SearchStrategy {
         }
 
         System.out.println("[Trust Strategy Message] : Thread-" +
-                RuntimeEnvironment.threadObjectMap.get((long) guidingThread).getId() + " is the next guided thread");
+                RuntimeEnvironment.threadObjectMap.get((long) guidingThread) + " is the next guided thread");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
     }
 

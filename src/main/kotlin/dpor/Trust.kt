@@ -1019,7 +1019,8 @@ class Trust(path: String) {
 
     fun locEquals(loc1: Location, loc2: Location): Boolean {
         if (loc1.isPrimitive() && loc2.isPrimitive()) {
-            return loc1.instance == loc2.instance && loc1.field == loc2.field && loc1.type == loc2.type
+            return loc1.instance == loc2.instance && loc1.field == loc2.field && loc1.type == loc2.type &&
+                    loc1.clazz == loc2.clazz
         } else if (!loc1.isPrimitive() && !loc2.isPrimitive()) {
             // TODO() : Right now, we assume that it is not needed to cover the case of non-primitive types for model checking
             return false
