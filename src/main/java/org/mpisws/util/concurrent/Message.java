@@ -1,6 +1,10 @@
 package org.mpisws.util.concurrent;
 
 public abstract class Message {
+
+    /**
+     * Thread Id
+     */
     public long threadId;
     public Object value;
 
