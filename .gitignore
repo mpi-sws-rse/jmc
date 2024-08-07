@@ -41,6 +41,8 @@ src/test/java/org/mpisws/concurrent/programs/sync/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/sync/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/simple/message/*.txt
 src/test/java/org/mpisws/concurrent/programs/simple/message/*.class
+src/test/java/org/mpisws/concurrent/programs/tagged/message/*.txt
+src/test/java/org/mpisws/concurrent/programs/tagged/message/*.class
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
