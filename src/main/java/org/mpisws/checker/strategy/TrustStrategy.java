@@ -524,6 +524,14 @@ public class TrustStrategy implements SearchStrategy {
     }
 
     /**
+     * @param receiveEvent is the read event that is going to be executed.
+     */
+    @Override
+    public void nextReceiveEvent(ReceiveEvent receiveEvent) {
+        //TODO(): COMPLETE
+    }
+
+    /**
      * Adds the reads-from edge to the current graph.
      * <p>
      * This method adds the reads-from edge to the {@link #currentGraph}. It sets the reads-from edge of the read event
@@ -677,6 +685,14 @@ public class TrustStrategy implements SearchStrategy {
             passEventToTrust(writeEvent);
             updateCurrentGraph(writeEvent);
         }
+    }
+
+    /**
+     * @param sendEvent is the write event that is going to be executed.
+     */
+    @Override
+    public void nextSendEvent(SendEvent sendEvent) {
+        //TODO(): complete
     }
 
     /**

@@ -493,6 +493,46 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                    SIMPLE MESSAGE
+     */
+
+    @Test
+    @DisplayName("SimpleMessage")
+    void randomTestSimpleMessage() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.simple.message",
+                "SimpleMessage",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/simple/message/"
+        );
+        System.out.println("SimpleMessage Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        checker.configuration.programType = ProgramType.MESSAGE_PASS;
+        assertTrue(checker.check(t), "SimpleMessage Random Strategy Finished");
+    }
+
+    /*
+     *                                    SIMPLE MESSAGE
+     */
+
+    @Test
+    @DisplayName("TaggedMessage")
+    void randomTestTaggedMessage() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.tagged.message",
+                "TaggedMessage",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/tagged/message/"
+        );
+        System.out.println("TaggedMessage Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        checker.configuration.programType = ProgramType.MESSAGE_PASS;
+        assertTrue(checker.check(t), "TaggedMessage Random Strategy Finished");
+    }
+
+    /*
      *                                    DISABLED TESTS - DO NOT RUN
      */
 

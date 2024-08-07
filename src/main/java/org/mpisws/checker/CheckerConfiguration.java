@@ -73,6 +73,11 @@ public final class CheckerConfiguration implements Serializable {
     public SMTSolverTypes solverType;
 
     /**
+     * @property {@link #programType} determines whether the program uses shared memory or message passing.
+     */
+    public ProgramType programType;
+
+    /**
      * The following constructor is used to initialize the configuration with default values.
      * <br>
      * This constructor is private and only accessible through the builder.
@@ -90,6 +95,7 @@ public final class CheckerConfiguration implements Serializable {
         executionGraphsPath = builder.executionGraphsPath;
         buggyTraceFile = builder.buggyTraceFile;
         solverType = builder.solverType;
+        programType = builder.programType;
     }
 
     /**
@@ -142,6 +148,7 @@ public final class CheckerConfiguration implements Serializable {
         public String buggyTraceFile = "buggyTrace.obj";
         public String executionGraphsPath = "src/main/resources/Visualized_Graphs/";
         public SMTSolverTypes solverType = SMTSolverTypes.SMTINTERPOL;
+        public ProgramType programType = ProgramType.SHARED_MEM;
 
         public ConfigurationBuilder() {
         }
@@ -197,6 +204,11 @@ public final class CheckerConfiguration implements Serializable {
 
         public ConfigurationBuilder withSolverType(SMTSolverTypes solverType) {
             this.solverType = solverType;
+            return this;
+        }
+
+        public ConfigurationBuilder withProgramType(ProgramType programType) {
+            this.programType = programType;
             return this;
         }
     }

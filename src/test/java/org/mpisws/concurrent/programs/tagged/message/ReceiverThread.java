@@ -1,0 +1,16 @@
+package org.mpisws.concurrent.programs.tagged.message;
+
+import org.mpisws.util.concurrent.JMCThread;
+import org.mpisws.util.concurrent.MessageServer;
+
+public class ReceiverThread extends JMCThread {
+    long knownThread;
+    long knownTag = 100;
+
+    @Override
+    public void run() {
+        Object value = MessageServer.recv_tagged_msg_unblock((tid, tag) -> tag == knownTag && tid == Thread.currentThread().getId());
+        System.out.println("Value of the message is : " + value);
+        System.out.println(Thread.currentThread().getId());
+    }
+}

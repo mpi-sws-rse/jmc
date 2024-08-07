@@ -14,6 +14,7 @@ import org.mpisws.runtime.RuntimeEnvironment;
 import org.mpisws.solver.SymbolicSolver;
 import org.mpisws.symbolic.SymbolicOperation;
 
+import org.mpisws.util.concurrent.JMCThread;
 import programStructure.*;
 
 
@@ -253,6 +254,48 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void nextWriteEvent(WriteEvent writeEvent) {
         RuntimeEnvironment.eventsRecord.add(writeEvent);
+    }
+
+    @Override
+    public void nextSendEvent(SendEvent sendEvent) {
+        RuntimeEnvironment.eventsRecord.add(sendEvent);
+        executeSendEvent(sendEvent);
+    }
+
+    @Override
+    public void nextReceiveEvent(ReceiveEvent receiveEvent) {
+        if (receiveEvent.getPredicate() == null) {
+            System.out.println("[Debugging Message] : no predicate.");
+            handleFreeMessage(receiveEvent);
+        } else {
+            System.out.println("[Debugging Message] : predicate exists " + receiveEvent.getPredicate());
+            handleConditionalMessage(receiveEvent);
+        }
+        RuntimeEnvironment.eventsRecord.add(receiveEvent);
+    }
+
+    private void handleConditionalMessage(ReceiveEvent receiveEvent) {
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+        List<Message> matchedMessages = jmcThread.computePredicateMessage(receiveEvent.getPredicate());
+        if (matchedMessages.isEmpty()) {
+            jmcThread.noMessageExists();
+        } else {
+            int randomMessageIndex = random.nextInt(matchedMessages.size());
+            jmcThread.findNextMessageIndex(matchedMessages.get(randomMessageIndex));
+            receiveEvent.setValue(matchedMessages.get(randomMessageIndex));
+        }
+    }
+
+    private void handleFreeMessage(ReceiveEvent receiveEvent) {
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+        Message message = jmcThread.findRandomMessage(random);
+        if (message == null) {
+            jmcThread.noMessageExists();
+        } else {
+            // No need to execute the following.
+            //jmcThread.findNextMessageIndex(message);
+            receiveEvent.setValue(message);
+        }
     }
 
     /**

@@ -9,6 +9,8 @@ import org.mpisws.checker.strategy.ReplayStrategy;
 import org.mpisws.checker.strategy.TrustStrategy;
 import org.mpisws.symbolic.SymbolicOperation;
 import programStructure.ReadEvent;
+import programStructure.ReceiveEvent;
+import programStructure.SendEvent;
 import programStructure.WriteEvent;
 
 /**
@@ -280,6 +282,13 @@ public class SchedulerThread extends Thread {
             case WRITE_REQUEST:
                 writeRequestHandler();
                 break;
+            // TODO() : Add send, recv handlres
+            case SEND_REQUEST:
+                sendRequestHandler();
+                break;
+            case RECV_REQUEST:
+                receiveRequestHandler();
+                break;
             case FINISH_REQUEST:
                 finishRequestHandler();
                 break;
@@ -321,6 +330,10 @@ public class SchedulerThread extends Thread {
             return RequestType.WRITE_REQUEST;
         } else if (RuntimeEnvironment.readEventReq != null) {
             return RequestType.READ_REQUEST;
+        } else if (RuntimeEnvironment.sendEventReq != null) {
+            return RequestType.SEND_REQUEST;
+        } else if (RuntimeEnvironment.receiveEventReq != null) {
+            return RequestType.RECV_REQUEST;
         } else if (RuntimeEnvironment.isFinished) {
             return RequestType.FINISH_REQUEST;
         } else if (RuntimeEnvironment.symbolicOperation != null) {
@@ -468,6 +481,19 @@ public class SchedulerThread extends Thread {
         }
     }
 
+    public void receiveRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : receive request handler is called");
+        Optional<ReceiveEvent> receiveRequestEvent = Optional.ofNullable(RuntimeEnvironment.receiveEventReq);
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        RuntimeEnvironment.receiveEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (receiveRequestEvent.isPresent() && thread.isPresent()) {
+            searchStrategy.nextReceiveEvent(receiveRequestEvent.get());
+            notifyThread(thread.get());
+        }
+
+    }
+
     /**
      * Handles the write request of a thread.
      * <p>
@@ -484,6 +510,18 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.threadWaitReq = null;
         if (writeRequestEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextWriteEvent(writeRequestEvent.get());
+            notifyThread(thread.get());
+        }
+    }
+
+    public void sendRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : send request handler is called");
+        Optional<SendEvent> sendRequestEvent = Optional.ofNullable(RuntimeEnvironment.sendEventReq);
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        RuntimeEnvironment.sendEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (sendRequestEvent.isPresent() && thread.isPresent()) {
+            searchStrategy.nextSendEvent(sendRequestEvent.get());
             notifyThread(thread.get());
         }
     }

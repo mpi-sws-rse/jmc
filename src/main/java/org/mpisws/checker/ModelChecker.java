@@ -82,7 +82,14 @@ public class ModelChecker {
         byteCodeManager.generateByteCode();
         Map<String, byte[]> allBytecode = byteCodeManager.readByteCode();
         ByteCodeModifier byteCodeModifier = new ByteCodeModifier(allBytecode, classPath);
-        modifyByteCode(byteCodeModifier);
+        if (configuration.programType == ProgramType.SHARED_MEM) {
+            modifyByteCodeSharedMem(byteCodeModifier);
+        } else if (configuration.programType == ProgramType.MESSAGE_PASS) {
+            modifyByteCodeMessagePass(byteCodeModifier);
+        } else {
+            System.out.println("[Model Checker Messsage] : The program type is not supported");
+            System.exit(-1);
+        }
         byteCodeManager.generateClassFile(byteCodeModifier.allByteCode);
         if (this.configuration.verbose) {
             byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode);
@@ -100,7 +107,7 @@ public class ModelChecker {
      *
      * @param byteCodeModifier The ByteCodeModifier to use for modifying the bytecode.
      */
-    private void modifyByteCode(ByteCodeModifier byteCodeModifier) {
+    private void modifyByteCodeSharedMem(ByteCodeModifier byteCodeModifier) {
         byteCodeModifier.modifySyncMethod();
         byteCodeModifier.modifySymbolicEval();
         byteCodeModifier.modifyParkAndUnpark();
@@ -109,6 +116,16 @@ public class ModelChecker {
         byteCodeModifier.modifyThreadRun();
         byteCodeModifier.modifyReadWriteOperation();
         byteCodeModifier.modifyMonitorInstructions();
+        byteCodeModifier.modifyAssert();
+        byteCodeModifier.modifyThreadJoin();
+        byteCodeModifier.addRuntimeEnvironment();
+    }
+
+    private void modifyByteCodeMessagePass(ByteCodeModifier byteCodeModifier) {
+        // TODO() : Complete
+        byteCodeModifier.modifyParkAndUnpark();
+        byteCodeModifier.modifyThreadStart();
+        byteCodeModifier.modifyThreadRun();
         byteCodeModifier.modifyAssert();
         byteCodeModifier.modifyThreadJoin();
         byteCodeModifier.addRuntimeEnvironment();

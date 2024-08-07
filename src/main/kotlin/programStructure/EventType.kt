@@ -9,6 +9,8 @@ enum class EventType : Serializable {
     INITIAL,
     WRITE,
     READ,
+    RECEIVE,
+    SEND,
     START,
     JOIN,
     FINISH,

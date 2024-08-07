@@ -21,7 +21,7 @@ data class InitializationEvent(
      * @property serial The serial number of the event.
      */
     override val serial: Int = 0
-): ThreadEvent(), ReadsFrom, Serializable {
+) : ThreadEvent(), ReadsFrom, ReceivesFrom, Serializable {
 
     /**
      * Returns a deep copy of this object

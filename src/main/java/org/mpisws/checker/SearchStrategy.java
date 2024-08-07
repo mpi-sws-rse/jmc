@@ -2,10 +2,8 @@ package org.mpisws.checker;
 
 import java.util.*;
 
-import programStructure.Event;
-import programStructure.MonitorRequestEvent;
-import programStructure.ReadEvent;
-import programStructure.WriteEvent;
+import org.mpisws.util.concurrent.JMCThread;
+import programStructure.*;
 
 import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.runtime.RuntimeEnvironment;
@@ -102,11 +100,27 @@ public interface SearchStrategy {
     void nextReadEvent(ReadEvent readEvent);
 
     /**
+     * Represents the required strategy for the next read event.
+     *
+     * @param receiveEvent is the read event that is going to be executed.
+     */
+
+    void nextReceiveEvent(ReceiveEvent receiveEvent);
+
+    /**
      * Represents the required strategy for the next write event.
      *
      * @param writeEvent is the write event that is going to be executed.
      */
     void nextWriteEvent(WriteEvent writeEvent);
+
+    /**
+     * Represents the required strategy for the next write event.
+     *
+     * @param sendEvent is the write event that is going to be executed.
+     */
+
+    void nextSendEvent(SendEvent sendEvent);
 
     /**
      * Represents the required strategy for the next finish event.
@@ -234,6 +248,15 @@ public interface SearchStrategy {
             int index = RuntimeEnvironment.eventsRecord.indexOf(event) + 1;
             System.out.println("[Search Strategy Message] : " + index + "." + event);
         }
+    }
+
+    default void executeSendEvent(SendEvent sendEvent) {
+//        JMCThread receiverThread = (JMCThread) RuntimeEnvironment.threadObjectMap.get(RuntimeEnvironment.threadIdMap.get(sendEvent.getReceiverId()));
+        JMCThread receiverThread = (JMCThread) RuntimeEnvironment.findThreadObject(sendEvent.getReceiverId());
+        System.out.println("[Debugging Message] : Receiver Id = " + sendEvent.getReceiverId());
+        System.out.println("[Debugging Message] : " + RuntimeEnvironment.threadObjectMap);
+        System.out.println("[Debugging Message] : " + RuntimeEnvironment.threadIdMap);
+        receiverThread.pushMessage(sendEvent.getValue());
     }
 
     /**

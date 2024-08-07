@@ -15,7 +15,7 @@ import programStructure.*
 
 class Trust(path: String) {
     private var graph: ExecutionGraph = ExecutionGraph()
-    var allJMCThread: MutableMap<Int, JMCThread>? = mutableMapOf()
+    var allAbstractThread: MutableMap<Int, AbstractThread>? = mutableMapOf()
     var allEvents: MutableList<Event> = mutableListOf()
     var graphCounter: Int = 0
     var allGraphs: MutableList<ExecutionGraph> = mutableListOf()
@@ -31,15 +31,15 @@ class Trust(path: String) {
      * TODO() : This function is not needed in the final version of the Trust algorithm
      */
     private fun makeAllEvents() {
-        for (i in this.allJMCThread!!.keys)
-            for (e in this.allJMCThread?.get(i)?.instructions!!) {
+        for (i in this.allAbstractThread!!.keys)
+            for (e in this.allAbstractThread?.get(i)?.instructions!!) {
                 this.allEvents.add(e)
                 println("[MC Message] : the event : $e")
             }
     }
 
-    fun setThreads(trds: MutableMap<Int, JMCThread>?) {
-        this.allJMCThread = trds
+    fun setThreads(trds: MutableMap<Int, AbstractThread>?) {
+        this.allAbstractThread = trds
         makeAllEvents()
     }
 
@@ -51,9 +51,19 @@ class Trust(path: String) {
                     println(read)
                 }
 
+                EventType.RECEIVE -> {
+                    val receive: ReceiveEvent? = i as ReceiveEvent?
+                    println(receive)
+                }
+
                 EventType.WRITE -> {
                     val write: WriteEvent = i as WriteEvent
                     println(write)
+                }
+
+                EventType.SEND -> {
+                    val send: SendEvent = i as SendEvent
+                    println(send)
                 }
 
                 EventType.INITIAL -> {

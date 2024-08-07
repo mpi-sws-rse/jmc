@@ -662,6 +662,16 @@ data class ExecutionGraph(
                     println(write)
                 }
 
+                EventType.RECEIVE -> {
+                    val receive: ReceiveEvent? = e as ReceiveEvent?
+                    println(receive)
+                }
+
+                EventType.SEND -> {
+                    val send: SendEvent? = e as SendEvent?
+                    println(send)
+                }
+
                 EventType.INITIAL -> {
                     val init: InitializationEvent = e as InitializationEvent
                     println(init)

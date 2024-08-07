@@ -174,6 +174,14 @@ public class ReplayStrategy implements SearchStrategy {
     }
 
     /**
+     * @param receiveEvent is the read event that is going to be executed.
+     */
+    @Override
+    public void nextReceiveEvent(ReceiveEvent receiveEvent) {
+        //TODO(): complete
+    }
+
+    /**
      * Represents the required strategy for the next write event.
      *
      * @param writeEvent is the write event that is going to be executed.
@@ -181,6 +189,14 @@ public class ReplayStrategy implements SearchStrategy {
     @Override
     public void nextWriteEvent(WriteEvent writeEvent) {
         RuntimeEnvironment.eventsRecord.add(writeEvent);
+    }
+
+    /**
+     * @param sendEvent is the write event that is going to be executed.
+     */
+    @Override
+    public void nextSendEvent(SendEvent sendEvent) {
+        //TODO(): Complete
     }
 
     /**
