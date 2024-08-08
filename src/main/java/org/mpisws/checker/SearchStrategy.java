@@ -253,9 +253,6 @@ public interface SearchStrategy {
     default void executeSendEvent(SendEvent sendEvent) {
 //        JMCThread receiverThread = (JMCThread) RuntimeEnvironment.threadObjectMap.get(RuntimeEnvironment.threadIdMap.get(sendEvent.getReceiverId()));
         JMCThread receiverThread = (JMCThread) RuntimeEnvironment.findThreadObject(sendEvent.getReceiverId());
-        System.out.println("[Debugging Message] : Receiver Id = " + sendEvent.getReceiverId());
-        System.out.println("[Debugging Message] : " + RuntimeEnvironment.threadObjectMap);
-        System.out.println("[Debugging Message] : " + RuntimeEnvironment.threadIdMap);
         receiverThread.pushMessage(sendEvent.getValue());
     }
 

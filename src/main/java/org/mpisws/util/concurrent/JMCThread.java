@@ -46,9 +46,7 @@ public abstract class JMCThread extends Thread {
         List<Message> collectedMessages = new ArrayList<>();
         for (Message message : queue) {
             if (message instanceof TaggedMessage taggedMessage) {
-                System.out.println("xxxx : " + taggedMessage.getReceiverThreadId());
                 boolean result = function.apply(taggedMessage.getReceiverThreadId(), taggedMessage.getTag());
-                System.out.println("The result of predicate checking is :" + result);
                 if (result) {
                     collectedMessages.add(taggedMessage);
                 }

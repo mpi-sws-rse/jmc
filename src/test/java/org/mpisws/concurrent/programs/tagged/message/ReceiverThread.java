@@ -9,8 +9,8 @@ public class ReceiverThread extends JMCThread {
 
     @Override
     public void run() {
-        Object value = MessageServer.recv_tagged_msg_unblock((tid, tag) -> tag == knownTag && tid == Thread.currentThread().getId());
+        long myTid = Thread.currentThread().getId();
+        Object value = MessageServer.recv_tagged_msg_unblock((tid, tag) -> tag == knownTag && tid == myTid);
         System.out.println("Value of the message is : " + value);
-        System.out.println(Thread.currentThread().getId());
     }
 }

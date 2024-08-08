@@ -265,10 +265,8 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void nextReceiveEvent(ReceiveEvent receiveEvent) {
         if (receiveEvent.getPredicate() == null) {
-            System.out.println("[Debugging Message] : no predicate.");
             handleFreeMessage(receiveEvent);
         } else {
-            System.out.println("[Debugging Message] : predicate exists " + receiveEvent.getPredicate());
             handleConditionalMessage(receiveEvent);
         }
         RuntimeEnvironment.eventsRecord.add(receiveEvent);

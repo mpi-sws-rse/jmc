@@ -513,7 +513,7 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                    SIMPLE MESSAGE
+     *                                    TAGGED MESSAGE
      */
 
     @Test
