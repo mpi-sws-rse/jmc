@@ -1,6 +1,8 @@
 package org.mpisws.runtime;
 
 import kotlin.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.mpisws.checker.CheckerConfiguration;
 import executionGraph.ExecutionGraph;
 import org.mpisws.checker.StrategyType;
@@ -9,6 +11,7 @@ import org.mpisws.manager.FinishedType;
 import org.mpisws.manager.HaltExecutionException;
 import org.mpisws.solver.SMTSolverTypes;
 import org.mpisws.solver.SymbolicSolver;
+import org.mpisws.util.concurrent.JMCThread;
 import org.mpisws.util.concurrent.StaticMethodMonitor;
 import org.mpisws.util.concurrent.InstanceMethodMonitor;
 import programStructure.*;
@@ -111,6 +114,72 @@ public class RuntimeEnvironment {
      * @property {@link #readyThreadList} is used to store the threads that are ready to run in the program under test.
      */
     public static List<Thread> readyThreadList = new ArrayList<>();
+
+    public static Map<Long, ReceiveEvent> blockedRecvThreadMap = new HashMap<>() {
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return false;
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return false;
+        }
+
+        @Override
+        public ReceiveEvent get(Object key) {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public ReceiveEvent put(Long key, ReceiveEvent value) {
+            return null;
+        }
+
+        @Override
+        public ReceiveEvent remove(Object key) {
+            return null;
+        }
+
+        @Override
+        public void putAll(@NotNull Map<? extends Long, ? extends ReceiveEvent> m) {
+
+        }
+
+        @Override
+        public void clear() {
+
+        }
+
+        @NotNull
+        @Override
+        public Set<Long> keySet() {
+            return Set.of();
+        }
+
+        @NotNull
+        @Override
+        public Collection<ReceiveEvent> values() {
+            return List.of();
+        }
+
+        @NotNull
+        @Override
+        public Set<Entry<Long, ReceiveEvent>> entrySet() {
+            return Set.of();
+        }
+    };
 
     /**
      * @property {@link #monitorList} is used to store the monitor objects which are acquired by the threads.
@@ -1582,6 +1651,16 @@ public class RuntimeEnvironment {
 
     public static Thread findJVMThreadObject(long jvmTid) {
         return findThreadObject(threadIdMap.get(jvmTid));
+    }
+
+    public static void removeBlockedThreadFromReadyQueue(JMCThread jmcThread, ReceiveEvent receiveEvent) {
+        readyThreadList.remove(jmcThread);  //TODO(): CHECK
+        blockedRecvThreadMap.put(threadIdMap.get(jmcThread.getId()), receiveEvent);
+    }
+
+    public static void addUnblockedThreadToReadyQueue(JMCThread jmcThread) {
+        readyThreadList.add(jmcThread);  //TODO(): CHECK
+        blockedRecvThreadMap.remove(threadIdMap.get(jmcThread.getId()));
     }
 
     /**

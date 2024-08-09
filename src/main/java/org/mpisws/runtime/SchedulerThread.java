@@ -289,6 +289,9 @@ public class SchedulerThread extends Thread {
             case RECV_REQUEST:
                 receiveRequestHandler();
                 break;
+            case RECV_BLOCKING_REQUEST:
+                blockingReceiveRequestHandler();
+                break;
             case FINISH_REQUEST:
                 finishRequestHandler();
                 break;
@@ -333,7 +336,11 @@ public class SchedulerThread extends Thread {
         } else if (RuntimeEnvironment.sendEventReq != null) {
             return RequestType.SEND_REQUEST;
         } else if (RuntimeEnvironment.receiveEventReq != null) {
-            return RequestType.RECV_REQUEST;
+            if (RuntimeEnvironment.receiveEventReq.getBlocking()) {
+                return RequestType.RECV_BLOCKING_REQUEST;
+            } else {
+                return RequestType.RECV_REQUEST;
+            }
         } else if (RuntimeEnvironment.isFinished) {
             return RequestType.FINISH_REQUEST;
         } else if (RuntimeEnvironment.symbolicOperation != null) {
@@ -491,7 +498,21 @@ public class SchedulerThread extends Thread {
             searchStrategy.nextReceiveEvent(receiveRequestEvent.get());
             notifyThread(thread.get());
         }
+    }
 
+    public void blockingReceiveRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : receive request handler is called");
+        Optional<ReceiveEvent> receiveRequestEvent = Optional.ofNullable(RuntimeEnvironment.receiveEventReq);
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        RuntimeEnvironment.receiveEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (receiveRequestEvent.isPresent() && thread.isPresent()) {
+            if (searchStrategy.nextBlockingReceiveEvent(receiveRequestEvent.get())) {
+                notifyThread(thread.get());
+            } else {
+                waitEventHandler();
+            }
+        }
     }
 
     /**

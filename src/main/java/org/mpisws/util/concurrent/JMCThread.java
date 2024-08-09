@@ -9,6 +9,7 @@ import java.util.Random;
 import java.util.function.BiFunction;
 
 import programStructure.Message;
+import programStructure.ReceiveEvent;
 import programStructure.TaggedMessage;
 
 public abstract class JMCThread extends Thread {
@@ -55,7 +56,12 @@ public abstract class JMCThread extends Thread {
         return collectedMessages;
     }
 
-    public void noMessageExists() {
+    public void noMessageExistsUnblocking() {
+        nextMessageIndex = -1;
+    }
+
+    public void noMessageExistsBlocking(JMCThread jmcThread, ReceiveEvent receiveEvent) {
+        RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
         nextMessageIndex = -1;
     }
 

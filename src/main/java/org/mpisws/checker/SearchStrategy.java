@@ -122,6 +122,8 @@ public interface SearchStrategy {
 
     void nextSendEvent(SendEvent sendEvent);
 
+    boolean nextBlockingReceiveEvent(ReceiveEvent receiveEvent);
+
     /**
      * Represents the required strategy for the next finish event.
      *

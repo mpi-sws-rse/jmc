@@ -52,6 +52,8 @@ src/test/java/org/mpisws/concurrent/programs/tagged/message/*.class
 .idea/compiler.xml
 .idea/libraries/
 .idea/copilot
+.idea/vcs.xml
+.idea/workspace.xml
 *.iws
 *.iml
 *.ipr
