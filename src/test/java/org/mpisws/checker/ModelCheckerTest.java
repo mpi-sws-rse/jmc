@@ -533,6 +533,45 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                    SYNC MESSAGE
+     */
+
+    @Test
+    @DisplayName("SyncMessage")
+    void randomTestSyncMessage() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.sync.message",
+                "SyncMessage",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/sync/message/"
+        );
+        System.out.println("SyncMessage Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        checker.configuration.programType = ProgramType.MESSAGE_PASS;
+        assertTrue(checker.check(t), "SyncMessage Random Strategy Finished");
+    }
+
+    /*
+     *                                    MESSAGE COUNTER
+     */
+    @Test
+    @DisplayName("MessageCounter")
+    void randomTestMessageCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.message.counter",
+                "MessageCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/message/counter/"
+        );
+        System.out.println("MessageCounter Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        checker.configuration.programType = ProgramType.MESSAGE_PASS;
+        assertTrue(checker.check(t), "MessageCounter Random Strategy Finished");
+    }
+
+    /*
      *                                    DISABLED TESTS - DO NOT RUN
      */
 

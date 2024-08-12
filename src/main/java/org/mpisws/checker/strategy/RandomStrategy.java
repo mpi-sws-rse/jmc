@@ -258,9 +258,6 @@ public class RandomStrategy implements SearchStrategy {
 
     @Override
     public void nextSendEvent(SendEvent sendEvent) {
-        if (RuntimeEnvironment.blockedRecvThreadMap.containsKey(sendEvent.getReceiverId())) {
-            RuntimeEnvironment.addUnblockedThreadToReadyQueue((JMCThread) RuntimeEnvironment.findThreadObject(sendEvent.getReceiverId()));
-        }
         RuntimeEnvironment.eventsRecord.add(sendEvent);
         executeSendEvent(sendEvent);
     }
@@ -276,73 +273,60 @@ public class RandomStrategy implements SearchStrategy {
     }
 
     @Override
-    public boolean nextBlockingReceiveEvent(ReceiveEvent receiveEvent) {
-        boolean successful;
+    public boolean nextBlockingReceiveRequest(ReceiveEvent receiveEvent) {
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+        BlockingRecvReq blockingRecvReq = RuntimeEnvironment.createBlockingRecvReq(jmcThread, receiveEvent);
+        RuntimeEnvironment.eventsRecord.add(blockingRecvReq);
         if (receiveEvent.getPredicate() == null) {
-            successful = handleFreeBlockingMessage(receiveEvent);
+            return handleFreeBlockingRecvReq(receiveEvent, jmcThread);
         } else {
-            successful = handleConditionalBlockingMessage(receiveEvent);
+            return handleConditionalBlockingRecvReq(receiveEvent, jmcThread);
         }
-        if (successful) {
-            RuntimeEnvironment.eventsRecord.add(receiveEvent);
-        }
+    }
 
-        return successful;
+    private boolean handleFreeBlockingRecvReq(ReceiveEvent receiveEvent, JMCThread jmcThread) {
+        Message message = jmcThread.findRandomMessage(random);
+        if (message == null) {
+            RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean handleConditionalBlockingRecvReq(ReceiveEvent receiveEvent, JMCThread jmcThread) {
+        List<Message> matchedMessages = jmcThread.computePredicateMessage(receiveEvent.getPredicate());
+        if (matchedMessages.isEmpty()) {
+            RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
+            return false;
+        } else {
+            int randomMessageIndex = random.nextInt(matchedMessages.size());
+            jmcThread.findNextMessageIndex(matchedMessages.get(randomMessageIndex));
+            return true;
+        }
     }
 
     private void handleConditionalMessage(ReceiveEvent receiveEvent) {
         JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
         List<Message> matchedMessages = jmcThread.computePredicateMessage(receiveEvent.getPredicate());
         if (matchedMessages.isEmpty()) {
-            jmcThread.noMessageExistsUnblocking();
+            jmcThread.noMessageExists();
         } else {
             int randomMessageIndex = random.nextInt(matchedMessages.size());
             jmcThread.findNextMessageIndex(matchedMessages.get(randomMessageIndex));
             receiveEvent.setValue(matchedMessages.get(randomMessageIndex));
         }
-    }
-
-    private boolean handleConditionalBlockingMessage(ReceiveEvent receiveEvent) {
-        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
-        List<Message> matchedMessages = jmcThread.computePredicateMessage(receiveEvent.getPredicate());
-        if (matchedMessages.isEmpty()) {
-//            jmcThread.noMessageExistsBlocking(jmcThread, receiveEvent);
-            RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
-        } else {
-            int randomMessageIndex = random.nextInt(matchedMessages.size());
-            jmcThread.findNextMessageIndex(matchedMessages.get(randomMessageIndex));
-            receiveEvent.setValue(matchedMessages.get(randomMessageIndex));
-        }
-        // TODO() : RETURN
-        return true;
     }
 
     private void handleFreeMessage(ReceiveEvent receiveEvent) {
         JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
         Message message = jmcThread.findRandomMessage(random);
         if (message == null) {
-            jmcThread.noMessageExistsUnblocking();
+            jmcThread.noMessageExists();
         } else {
             // No need to execute the following.
             //jmcThread.findNextMessageIndex(message);
             receiveEvent.setValue(message);
         }
-    }
-
-    private boolean handleFreeBlockingMessage(ReceiveEvent receiveEvent) {
-        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
-        Message message = jmcThread.findRandomMessage(random);
-        if (message == null) {
-//            jmcThread.noMessageExistsBlocking(jmcThread, receiveEvent);
-            RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
-        } else {
-            // No need to execute the following.
-            //jmcThread.findNextMessageIndex(message);
-            receiveEvent.setValue(message);
-        }
-
-        // TODO() : RETURN
-        return true;
     }
 
     /**

@@ -43,6 +43,10 @@ src/test/java/org/mpisws/concurrent/programs/simple/message/*.txt
 src/test/java/org/mpisws/concurrent/programs/simple/message/*.class
 src/test/java/org/mpisws/concurrent/programs/tagged/message/*.txt
 src/test/java/org/mpisws/concurrent/programs/tagged/message/*.class
+src/test/java/org/mpisws/concurrent/programs/sync/message/*.txt
+src/test/java/org/mpisws/concurrent/programs/sync/message/*.class
+src/test/java/org/mpisws/concurrent/programs/message/counter/*.txt
+src/test/java/org/mpisws/concurrent/programs/message/counter/*.class
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

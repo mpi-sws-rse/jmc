@@ -3,11 +3,12 @@ package org.mpisws.util.concurrent;
 import org.mpisws.runtime.RuntimeEnvironment;
 
 import programStructure.Message;
+import programStructure.ReceiveEvent;
 
 import java.util.function.BiFunction;
 
 public class MessageServer {
-    public static void send_tagged_msg(long receiverThreadId, int tag, Object message) {
+    public static void send_tagged_msg(long receiverThreadId, long tag, Object message) {
         Message taggedMessage = RuntimeEnvironment.sendTaggedMessageOperation(Thread.currentThread(), receiverThreadId, tag, message);
         JMCThread recvThread = (JMCThread) RuntimeEnvironment.findJVMThreadObject(receiverThreadId);
         recvThread.pushMessage(taggedMessage);
@@ -22,28 +23,30 @@ public class MessageServer {
     }
 
     public static Object recv_tagged_msg_block(BiFunction<Long, Long, Boolean> function) {
-        RuntimeEnvironment.receiveTaggedBlockOperation(Thread.currentThread().getId(), function);
+        ReceiveEvent receiveEvent = RuntimeEnvironment.blockingReceiveRequestOperation(Thread.currentThread(), function);
+        RuntimeEnvironment.blockingReceiveOperation(receiveEvent);
         Object messageValue = findMessageValue();
         RuntimeEnvironment.waitRequest(Thread.currentThread());
         return messageValue;
     }
 
-    public static Object recv_tagged_msg_unblock(BiFunction<Long, Long, Boolean> function) {
-        RuntimeEnvironment.receiveTaggedUnblockOperation(Thread.currentThread().getId(), function);
+    public static Object recv_tagged_msg(BiFunction<Long, Long, Boolean> function) {
+        RuntimeEnvironment.receiveTaggedOperation(Thread.currentThread(), function);
         Object messageValue = findMessageValue();
         RuntimeEnvironment.waitRequest(Thread.currentThread());
         return messageValue;
     }
 
     public static Object recv_msg_block() {
-        RuntimeEnvironment.receiveBlockOperation(Thread.currentThread().getId());
+        ReceiveEvent receiveEvent = RuntimeEnvironment.blockingReceiveRequestOperation(Thread.currentThread());
+        RuntimeEnvironment.blockingReceiveOperation(receiveEvent);
         Object messageValue = findMessageValue();
         RuntimeEnvironment.waitRequest(Thread.currentThread());
         return messageValue;
     }
 
     public static Object recv_msg() {
-        RuntimeEnvironment.receiveOperation(Thread.currentThread().getId());
+        RuntimeEnvironment.receiveOperation(Thread.currentThread());
         Object messageValue = findMessageValue();
         RuntimeEnvironment.waitRequest(Thread.currentThread());
         return messageValue;

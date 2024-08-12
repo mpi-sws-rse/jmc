@@ -199,6 +199,12 @@ public class ReplayStrategy implements SearchStrategy {
         //TODO(): Complete
     }
 
+    @Override
+    public boolean nextBlockingReceiveRequest(ReceiveEvent receiveEvent) {
+        //TODO(): complete
+        return false;
+    }
+
     /**
      * Represents the required strategy for the next finish event.
      *

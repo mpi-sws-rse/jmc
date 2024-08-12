@@ -122,7 +122,7 @@ public interface SearchStrategy {
 
     void nextSendEvent(SendEvent sendEvent);
 
-    boolean nextBlockingReceiveEvent(ReceiveEvent receiveEvent);
+    boolean nextBlockingReceiveRequest(ReceiveEvent receiveEvent);
 
     /**
      * Represents the required strategy for the next finish event.
@@ -276,22 +276,66 @@ public interface SearchStrategy {
      */
     default Thread pickNextRandomThread() {
         Optional<List<Thread>> readyThreadList = Optional.ofNullable(RuntimeEnvironment.readyThreadList);
-        if (readyThreadList.isPresent()) {
+        if (!readyThreadList.get().isEmpty()) {
             if (readyThreadList.get().size() > 1) {
+                System.out.println("[Search Strategy Message] : There are more than one thread in the ready list");
                 Thread randomElement = selectRandomThread(readyThreadList.get());
                 return handleChosenThreadRequest(randomElement);
-            } else if (readyThreadList.get().size() == 1) {
+            } else { // readyThreadList.get().size() == 1
                 System.out.println("[Search Strategy Message] : Only one thread is in the ready list");
                 return handleChosenThreadRequest(readyThreadList.get().get(0));
+            }
+        } else if (!RuntimeEnvironment.blockedRecvThreadMap.isEmpty()) {
+            System.out.println("[Search Strategy Message] : Ready list is empty, but there are blocked receive threads");
+            if (computeUnblockedRecvThread()) {
+                return pickNextRandomThread();
             } else {
-                System.out.println("[Search Strategy Message] : There is no thread in the ready list");
-                System.out.println("[Search Strategy Message] : The scheduler thread is going to terminate");
+                System.out.println(
+                        "[Search Strategy Message] : There is a deadlock between the threads in executing " +
+                                "blocking receive operations"
+                );
+                printExecutionTrace();
+                saveBuggyExecutionTrace();
+                System.exit(0);
                 return null;
             }
+        } else if (RuntimeEnvironment.suspendedThreads.size() > 0) {
+            System.out.println(
+                    "[Search Strategy Message] : There is a deadlock between the threads in using monitors "
+            );
+            printExecutionTrace();
+            saveBuggyExecutionTrace();
+            System.exit(0);
+            return null;
         } else {
             System.out.println("[Search Strategy Message] : There is no thread in the ready list");
             System.out.println("[Search Strategy Message] : The scheduler thread is going to terminate");
             return null;
+        }
+    }
+
+    private boolean computeUnblockedRecvThread() {
+        boolean result = false;
+        for (Map.Entry<Long, ReceiveEvent> entry : RuntimeEnvironment.blockedRecvThreadMap.entrySet()) {
+            if (isMessageAvailable(entry.getValue())) {
+                JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(entry.getValue().getTid());
+                RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, entry.getValue());
+                result = true;
+                System.out.println(
+                        "[Search Strategy Message] : The thread " + jmcThread.getName() + " is unblocked" + ", since " +
+                                "the message is available"
+                );
+            }
+        }
+        return result;
+    }
+
+    private boolean isMessageAvailable(ReceiveEvent receiveEvent) {
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+        if (receiveEvent.getPredicate() == null) {
+            return !jmcThread.isMessageQueueEmpty();
+        } else {
+            return jmcThread.isPerdicateSatisfiable(receiveEvent.getPredicate());
         }
     }
 

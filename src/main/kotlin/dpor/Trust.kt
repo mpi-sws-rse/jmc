@@ -141,6 +141,21 @@ class Trust(path: String) {
                     println(unparkingEvent)
                 }
 
+                EventType.UNBLOCKED_RECV -> {
+                    val unblockedRecvEvent: UnblockedRecvEvent = i as UnblockedRecvEvent
+                    println(unblockedRecvEvent)
+                }
+
+                EventType.BLOCKED_RECV -> {
+                    val blockedRecvEvent: BlockedRecvEvent = i as BlockedRecvEvent
+                    println(blockedRecvEvent)
+                }
+
+                EventType.BLOCK_RECV_REQ -> {
+                    val blockRecvReqEvent: BlockingRecvReq = i as BlockingRecvReq
+                    println(blockRecvReqEvent)
+                }
+
                 EventType.OTHER -> TODO()
             }
         }

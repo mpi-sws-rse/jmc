@@ -667,6 +667,21 @@ data class ExecutionGraph(
                     println(receive)
                 }
 
+                EventType.BLOCKED_RECV -> {
+                    val blockedReceive: BlockedRecvEvent? = e as BlockedRecvEvent?
+                    println(blockedReceive)
+                }
+
+                EventType.UNBLOCKED_RECV -> {
+                    val unblockedReceive: UnblockedRecvEvent? = e as UnblockedRecvEvent?
+                    println(unblockedReceive)
+                }
+
+                EventType.BLOCK_RECV_REQ -> {
+                    val blockReceiveRequest: BlockingRecvReq? = e as BlockingRecvReq?
+                    println(blockReceiveRequest)
+                }
+
                 EventType.SEND -> {
                     val send: SendEvent? = e as SendEvent?
                     println(send)

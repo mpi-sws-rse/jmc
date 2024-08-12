@@ -695,6 +695,12 @@ public class TrustStrategy implements SearchStrategy {
         //TODO(): complete
     }
 
+    @Override
+    public boolean nextBlockingReceiveRequest(ReceiveEvent receiveEvent) {
+        //TODO(): complete
+        return false;
+    }
+
     /**
      * Represents the required strategy for the next finish event.
      * <p>
