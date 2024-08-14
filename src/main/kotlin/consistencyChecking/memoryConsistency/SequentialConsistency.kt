@@ -1,4 +1,4 @@
-package consistencyChecking
+package consistencyChecking.memoryConsistency
 
 import executionGraph.ExecutionGraph
 import programStructure.Event

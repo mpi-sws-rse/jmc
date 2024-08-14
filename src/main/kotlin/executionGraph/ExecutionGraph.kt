@@ -64,6 +64,8 @@ data class ExecutionGraph(
      */
     var sc: MutableSet<Pair<Event, Event>> = mutableSetOf(),
 
+    var recvfrom: MutableSet<Pair<Event, Event>> = mutableSetOf(),
+
     /**
      * @property deleted The list of deleted events in the graph (Represents Deleted set in Trust algorithm)
      */
@@ -126,6 +128,10 @@ data class ExecutionGraph(
      */
     fun addST(firstEvent: Event, secondEvent: Event) {
         STs.add(Pair(firstEvent, secondEvent))
+    }
+
+    fun addRecvFrom(firstEvent: Event, secondEvent: Event) {
+        recvfrom.add(Pair(firstEvent, secondEvent))
     }
 
     /**

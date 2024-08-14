@@ -29,7 +29,9 @@ data class SendEvent(
 
     var receiverId: Long = 0,
 
-    var tag: Long? = null
+    var tag: Long? = null,
+
+    var fr: ReceiveEvent? = null
 
 ) : ThreadEvent(), ReceivesFrom, Serializable {
 
@@ -45,7 +47,8 @@ data class SendEvent(
             serial = copy().serial,
             value = copy().value,
             receiverId = copy().receiverId,
-            tag = copy().tag
+            tag = copy().tag,
+            fr = copy().fr
         )
     }
 }

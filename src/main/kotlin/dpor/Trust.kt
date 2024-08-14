@@ -1,7 +1,7 @@
 package dpor
 
 
-import consistencyChecking.SequentialConsistency
+import consistencyChecking.memoryConsistency.SequentialConsistency
 import executionGraph.CO
 import executionGraph.EventNode
 import executionGraph.ExecutionGraph
@@ -182,6 +182,7 @@ class Trust(path: String) {
          To use consistency checking of Trust's Algorithm use the following
          */
         // val graphConsistency = SequentialConsistency.porfAcyclicity(G)
+
         //println("[Model Checker Message] : Model checking started")
         if (graphConsistency) {
             //println("[Model Checker Message] : The graph G_${G.id} is consistent")

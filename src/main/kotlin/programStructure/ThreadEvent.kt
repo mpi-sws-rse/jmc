@@ -5,7 +5,7 @@ import java.io.Serializable
 /**
  * An abstract class subclass of [Event] that represents a thread event in a program.
  */
-abstract class ThreadEvent: Event, Serializable {
+abstract class ThreadEvent : Event, Serializable {
 
     /**
      * @property tid The thread id of the thread that the event belongs to.
