@@ -8,19 +8,18 @@ class FullyAsynchronousConsistency {
 
         fun porfConsistency(graph: ExecutionGraph): Boolean {
 
-            // First, computing the sc of graph
-            graph.computeSc()
+            // First, computing the porf of graph
+            graph.computeProgramOrderReceiveFrom()
 
             // Finally, finding a cycle within it
             var cycleFound = false
 
 
-            for (pair in graph.sc.toList()) {
+            for (pair in graph.porf.toList()) {
                 val (a, b) = pair
                 if (a.equals(b)) {
                     cycleFound = true
-                    println("[Sequential Consistency Checker Message] : Cycle found in SC relation and the cycle is: $a -> $b")
-                    //graph.printSc()
+                    println("[Fully Asynchronous Consistency Checker Message] : Cycle found in porf relation and the cycle is: $a -> $b")
                     break
                 }
             }

@@ -245,7 +245,7 @@ class Trust(path: String) {
                     val newAllEvents = deepCopyAllEvents(allEvents)
                     visitCOs(G3.deepCopy(), nextEvent.deepCopy() as WriteEvent, newAllEvents)
                     G3.addEvent(nextEvent.deepCopy())
-                    G3.computePorf()
+                    G3.computeProgramOrderReadFrom()
                     for (i in 0..<G3.graphEvents.size) {
                         //println("[Model Checker Message] : Inside Backward Revisit(W -> R) : " + G3.graphEvents[i])
                         if (G3.graphEvents[i].type == EventType.READ) {
@@ -444,7 +444,7 @@ class Trust(path: String) {
 
                         // BACKWARD REVISITS
                         G1.addEvent(nextEvent.deepCopy())
-                        G1.computePorf()
+                        G1.computeProgramOrderReadFrom()
                         for (i in 0..<G1.graphEvents.size) {
                             val findEnterMonitorEvent: EnterMonitorEvent
                             if (G1.graphEvents[i].type == EventType.ENTER_MONITOR) {
@@ -593,7 +593,7 @@ class Trust(path: String) {
                     // Backward Revisits
                     val G2 = G1.deepCopy()
                     G2.addEvent(nextEvent.deepCopy())
-                    G2.computePorf()
+                    G2.computeProgramOrderReadFrom()
                     for (i in 0..<G2.graphEvents.size) {
                         val findUnparkEvent: UnparkEvent
                         if (G2.graphEvents[i].type == EventType.UNPARK) {
@@ -859,18 +859,29 @@ class Trust(path: String) {
 
     private fun isMaximallyAdded(graph: ExecutionGraph, firstEvent: Event, secondEvent: Event): Boolean {
         graph.computePrevious(firstEvent, secondEvent)
+//        if (firstEvent is ReadsFrom) {
+//            var isReadVisited = false
+//            for (i in 0..<graph.previous.size) {
+//                if (graph.previous[i].type == EventType.READ) {
+//                    val read = graph.previous[i] as ReadEvent
+//                    if (read.rf!!.equals(firstEvent)) {
+//                        isReadVisited = true
+//                    }
+//                }
+//                if (isReadVisited) break
+//            }
+//            if (isReadVisited) return false
+//        }
+
         if (firstEvent is ReadsFrom) {
-            var isReadVisited = false
             for (i in 0..<graph.previous.size) {
                 if (graph.previous[i].type == EventType.READ) {
                     val read = graph.previous[i] as ReadEvent
                     if (read.rf!!.equals(firstEvent)) {
-                        isReadVisited = true
+                        return false
                     }
                 }
-                if (isReadVisited) break
             }
-            if (isReadVisited) return false
         }
 
 //        if (firstEvent is ExitMonitorEvent) {

@@ -6,7 +6,8 @@ data class BlockingRecvReq(
     override val tid: Int,
     override val type: EventType = EventType.BLOCK_RECV_REQ,
     override val serial: Int,
-    var receiveEvent: ReceiveEvent
+    var receiveEvent: ReceiveEvent,
+    var isBlocked: Boolean = false
 ) : ThreadEvent(), Serializable {
 
     override fun deepCopy(): Event {
@@ -14,7 +15,8 @@ data class BlockingRecvReq(
             type = EventType.BLOCK_RECV_REQ,
             tid = copy().tid,
             serial = copy().serial,
-            receiveEvent = receiveEvent.deepCopy() as ReceiveEvent
+            receiveEvent = receiveEvent.deepCopy() as ReceiveEvent,
+            isBlocked = copy().isBlocked
         )
     }
 }

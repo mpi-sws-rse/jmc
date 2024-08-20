@@ -31,7 +31,7 @@ class SequentialConsistency {
         fun porfAcyclicity(graph: ExecutionGraph): Boolean {
 
             // First, computing the porf of graph
-            graph.computePorf()
+            graph.computeProgramOrderReadFrom()
 
             // Next, finding a cycle within it
             var cycleFound = false

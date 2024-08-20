@@ -385,7 +385,57 @@ data class ExecutionGraph(
         }
     }
 
-    fun computePorf() {
+    fun computeProgramOrderReceiveFrom() {
+
+        // To make sure that a new porf is constructed
+        this.porf = mutableSetOf()
+
+        // This parts adds all the pairs of the initialization event and each graph event to the porf
+        for (i in 1..<this.graphEvents.size) {
+            this.porf.add(Pair(this.graphEvents[0], this.graphEvents[i]))
+        }
+
+        // This part computes the primitives porf elements ( adding program order + receive from )
+        for (i in this.root?.children!!.keys) {
+            var node = this.root?.children!![i]!!
+            if (node.value is ReceiveEvent) {
+                val recv = node.value as ReceiveEvent
+                if (recv.rf != null) {
+                    this.porf.add(Pair(recv.rf as Event, recv as Event))
+                }
+            }
+            var next = node.child
+            while (next != null) {
+                this.porf.add(Pair(node.value, next.value))
+                node = next
+                next = node.child
+                if (node.value is ReceiveEvent) {
+                    val recv = node.value as ReceiveEvent
+                    if (recv.rf != null) {
+                        this.porf.add(Pair(recv.rf as Event, recv as Event))
+                    }
+                }
+            }
+        }
+
+        // this part computes the complete transitive closure of porf
+        var addedNewPairs = true
+        while (addedNewPairs) {
+            addedNewPairs = false
+            for (pair in this.porf.toList()) {
+                val (a, b) = pair
+                for (otherPair in this.porf.toList()) {
+                    val (c, d) = otherPair
+                    if (b.equals(c) && !this.porf.contains(Pair(a, d))) {
+                        this.porf.add(Pair(a, d))
+                        addedNewPairs = true
+                    }
+                }
+            }
+        }
+    }
+
+    fun computeProgramOrderReadFrom() {
 
         // To make sure that a new porf is constructed
         this.porf = mutableSetOf()
@@ -450,7 +500,7 @@ data class ExecutionGraph(
     }
 
     fun computeDeleted(pivotEvent: Event, newAddedEvent: Event) {
-        // To make sure that a new Porf is constructed
+        // To make sure that a new deleted is constructed
         this.deleted = mutableListOf()
 
         val index = this.eventsOrder.indexOf(pivotEvent)
