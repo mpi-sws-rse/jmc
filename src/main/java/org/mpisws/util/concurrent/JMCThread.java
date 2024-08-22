@@ -9,7 +9,6 @@ import java.util.Random;
 import java.util.function.BiFunction;
 
 import programStructure.Message;
-import programStructure.ReceiveEvent;
 import programStructure.TaggedMessage;
 
 public abstract class JMCThread extends Thread {
@@ -34,6 +33,7 @@ public abstract class JMCThread extends Thread {
     public final Message findMessage() {
         if (nextMessageIndex >= 0) {
             Message message = this.queue.get(nextMessageIndex);
+            queue.remove(nextMessageIndex);
             nextMessageIndex = -1;
             return message;
         } else {
@@ -62,7 +62,7 @@ public abstract class JMCThread extends Thread {
         return collectedMessages;
     }
 
-    public final boolean isPerdicateSatisfiable(BiFunction<Long, Long, Boolean> function) {
+    public final boolean isPredicateSatisfiable(BiFunction<Long, Long, Boolean> function) {
         for (Message message : queue) {
             if (message instanceof TaggedMessage taggedMessage) {
                 boolean result = function.apply(taggedMessage.getReceiverThreadId(), taggedMessage.getTag());

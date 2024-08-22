@@ -9,4 +9,6 @@ abstract class Message : Serializable {
     abstract var senderThreadId: Long
 
     abstract var value: Any
+
+    abstract var sendEvent: SendEvent
 }

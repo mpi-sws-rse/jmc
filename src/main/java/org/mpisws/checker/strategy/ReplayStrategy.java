@@ -9,6 +9,7 @@ import java.util.List;
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.runtime.RuntimeEnvironment;
 import org.mpisws.symbolic.SymbolicOperation;
+import org.mpisws.util.concurrent.JMCThread;
 import programStructure.*;
 
 
@@ -178,7 +179,46 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextReceiveEvent(ReceiveEvent receiveEvent) {
-        //TODO(): complete
+        RuntimeEnvironment.eventsRecord.add(receiveEvent);
+        ReceiveEvent guidingRecvEvent = (ReceiveEvent) guidingEvent;
+        if (guidingRecvEvent.getRf() == null) {
+            handleGuidedNullRecvEvent(receiveEvent, guidingRecvEvent);
+        } else {
+            handleGuidedRecvEvent(receiveEvent, guidingRecvEvent);
+        }
+    }
+
+    private void handleGuidedNullRecvEvent(ReceiveEvent receiveEvent, ReceiveEvent guidingRecvEvent) {
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+        jmcThread.noMessageExists();
+        receiveEvent.setRf(guidingRecvEvent.getRf());
+        receiveEvent.setValue(null);
+    }
+
+    private void handleGuidedRecvEvent(ReceiveEvent receiveEvent, ReceiveEvent guidingRecvEvent) {
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+        SendEvent guidedReceiveFrom = (SendEvent) guidingRecvEvent.getRf();
+
+        // Assign receiveFrom with the send event in the RuntimeEnvironment.eventsRecord that has the same tid and serial number as the guidedReceiveFrom
+        SendEvent receiveFrom = null;
+        for (Event event : RuntimeEnvironment.eventsRecord) {
+            if (event instanceof SendEvent sendEvent) {
+                if (sendEvent.getTid() == guidedReceiveFrom.getTid() && sendEvent.getSerial() == guidedReceiveFrom.getSerial()) {
+                    receiveFrom = sendEvent;
+                    break;
+                }
+            }
+        }
+
+        if (receiveFrom == null) {
+            System.out.println("[Replay Strategy Message] : The receive event does not have a corresponding send event");
+            System.exit(0);
+        }
+
+        Message message = receiveFrom.getValue();
+        jmcThread.findNextMessageIndex(message);
+        receiveEvent.setRf(receiveFrom);
+        receiveEvent.setValue(message);
     }
 
     /**
@@ -196,12 +236,17 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextSendEvent(SendEvent sendEvent) {
-        //TODO(): Complete
+        RuntimeEnvironment.eventsRecord.add(sendEvent);
+        executeSendEvent(sendEvent);
     }
 
     @Override
     public boolean nextBlockingReceiveRequest(ReceiveEvent receiveEvent) {
-        //TODO(): complete
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+        BlockingRecvReq blockingRecvReq = RuntimeEnvironment.createBlockingRecvReq(jmcThread, receiveEvent);
+        BlockingRecvReq guidingBlockingRecvReq = (BlockingRecvReq) guidingEvent;
+        blockingRecvReq.setBlocked(guidingBlockingRecvReq.isBlocked());
+        RuntimeEnvironment.eventsRecord.add(blockingRecvReq);
         return false;
     }
 
@@ -329,9 +374,62 @@ public class ReplayStrategy implements SearchStrategy {
             guidedUnparkEventHelper((UnparkEvent) guidingEvent);
             return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
         }
+        if (guidingEvent.getType() == EventType.BLOCKED_RECV) {
+            BlockedRecvEvent guidedBlockedRecvEvent = (BlockedRecvEvent) guidingEvent;
+            handleNextGuidedBlockedRecvEvent(guidedBlockedRecvEvent);
+            return pickNextThread();
+        }
+        if (guidingEvent.getType() == EventType.UNBLOCKED_RECV) {
+            UnblockedRecvEvent guidedUnblockedRecvEvent = (UnblockedRecvEvent) guidingEvent;
+            handleNextGuidedUnblockedRecvEvent(guidedUnblockedRecvEvent);
+            return pickNextThread();
+        }
         System.out.println("[Replay Strategy Message] : Guiding event is " + guidingEvent);
         System.out.println("[Replay Strategy Message] : Thread-" + guidingThread + " is selected to run");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+    }
+
+    private void handleNextGuidedBlockedRecvEvent(BlockedRecvEvent guidedBlockedRecvEvent) {
+        System.out.println("[Replay Strategy Message] : The recv event is: " + guidedBlockedRecvEvent.getReceiveEvent());
+        ReceiveEvent guidedReceiveEvent = guidedBlockedRecvEvent.getReceiveEvent();
+        ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
+        System.out.println("[Replay Strategy Message] : The recv event in the record is: " + receiveEventInRecord);
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEventInRecord.getTid());
+        RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEventInRecord);
+    }
+
+    private void handleNextGuidedUnblockedRecvEvent(UnblockedRecvEvent guidedUnblockedRecvEvent) {
+        ReceiveEvent guidedReceiveEvent = guidedUnblockedRecvEvent.getReceiveEvent();
+        ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEventInRecord.getTid());
+        RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, receiveEventInRecord);
+    }
+
+    private ReceiveEvent findReceiveEventInRecord(ReceiveEvent guidedReceiveEvent) {
+        ReceiveEvent receiveEventInRecord = null;
+        for (Event event : RuntimeEnvironment.eventsRecord) {
+            if (event instanceof ReceiveEvent recvEvent) {
+                if (recvEvent.getTid() == guidedReceiveEvent.getTid() && recvEvent.getSerial() == guidedReceiveEvent.getSerial()) {
+                    receiveEventInRecord = recvEvent;
+                    break;
+                }
+            }
+        }
+        return receiveEventInRecord;
+    }
+
+    private ReceiveEvent findReceiveEventFromBlockingRecvReq(ReceiveEvent guidedReceiveEvent) {
+        ReceiveEvent receiveEvent = null;
+        for (Event event : RuntimeEnvironment.eventsRecord) {
+            if (event instanceof BlockingRecvReq blockingRecvReq) {
+                ReceiveEvent recvEvent = blockingRecvReq.getReceiveEvent();
+                if (recvEvent.getTid() == guidedReceiveEvent.getTid() && recvEvent.getSerial() == guidedReceiveEvent.getSerial()) {
+                    receiveEvent = recvEvent;
+                    break;
+                }
+            }
+        }
+        return receiveEvent;
     }
 
     /**

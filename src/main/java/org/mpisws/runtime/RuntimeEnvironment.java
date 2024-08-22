@@ -847,6 +847,7 @@ public class RuntimeEnvironment {
                         "receive a message"
         );
         JMCThread jmcThread = (JMCThread) findThreadObject(receiveEvent.getTid());
+        receiveEvent.setSerial(getNextSerialNumber(jmcThread));
         if (jmcThread.getNextMessageIndex() < 0) {
             receiveEventReq = receiveEvent;
             waitRequest(jmcThread);
@@ -886,6 +887,7 @@ public class RuntimeEnvironment {
                         "send an untagged message to Thread-" + threadIdMap.get(receiverId)
         );
         sendEventReq = createSimpleSendEvent(thread, message, receiverId);
+        message.setSendEvent(sendEventReq);
         waitRequest(thread);
         return message;
     }
@@ -897,6 +899,7 @@ public class RuntimeEnvironment {
                         "send a tagged message to Thread-" + threadIdMap.get(receiverId)
         );
         sendEventReq = createTaggedSendEvent(thread, message, receiverId, tag);
+        message.setSendEvent(sendEventReq);
         waitRequest(thread);
         return message;
     }
@@ -1257,13 +1260,13 @@ public class RuntimeEnvironment {
     public static SendEvent createSimpleSendEvent(Thread thread, Message message, long receiverId) {
         int serialNumber = getNextSerialNumber(thread);
         return new SendEvent(threadIdMap.get(thread.getId()).intValue(), EventType.SEND, serialNumber,
-                message, threadIdMap.get(receiverId), null);
+                message, threadIdMap.get(receiverId), null, null);
     }
 
     public static SendEvent createTaggedSendEvent(Thread thread, Message message, long receiverId, long tag) {
         int serialNumber = getNextSerialNumber(thread);
         return new SendEvent(threadIdMap.get(thread.getId()).intValue(), EventType.SEND, serialNumber,
-                message, threadIdMap.get(receiverId), tag);
+                message, threadIdMap.get(receiverId), tag, null);
     }
 
     public static ReceiveEvent createReceiveEvent(Thread thread) {
@@ -1272,12 +1275,12 @@ public class RuntimeEnvironment {
     }
 
     public static ReceiveEvent createReceiveBlockEvent(Thread thread) {
-        int serialNumber = getNextSerialNumber(thread);
+        int serialNumber = -1;
         return new ReceiveEvent(threadIdMap.get(thread.getId()).intValue(), EventType.RECEIVE, serialNumber, null, null, 0, null, true, null);
     }
 
     public static ReceiveEvent createReceiveTaggedBlockEvent(Thread thread, BiFunction<Long, Long, Boolean> function) {
-        int serialNumber = getNextSerialNumber(thread);
+        int serialNumber = -1;
         return new ReceiveEvent(threadIdMap.get(thread.getId()).intValue(), EventType.RECEIVE, serialNumber, null, null, 0, null, true, function);
     }
 
@@ -1288,7 +1291,7 @@ public class RuntimeEnvironment {
 
     public static BlockingRecvReq createBlockingRecvReq(Thread thread, ReceiveEvent receiveEvent) {
         int serialNumber = getNextSerialNumber(thread);
-        return new BlockingRecvReq(threadIdMap.get(thread.getId()).intValue(), EventType.BLOCK_RECV_REQ, serialNumber, receiveEvent);
+        return new BlockingRecvReq(threadIdMap.get(thread.getId()).intValue(), EventType.BLOCK_RECV_REQ, serialNumber, receiveEvent, false);
     }
 
     public static BlockedRecvEvent createBlockedRecvEvent(Thread thread, ReceiveEvent receiveEvent) {

@@ -5,13 +5,9 @@ import executionGraph.CO
 import executionGraph.ExecutionGraph
 import programStructure.*
 
-class Must(path: String) {
+class Must(path: String) : DPOR(path) {
 
-    var graphCounter: Int = 0
-    var allGraphs: MutableList<ExecutionGraph> = mutableListOf()
-    var graphsPath: String = path
-
-    fun visit(G: ExecutionGraph, allEvents: MutableList<Event>) {
+    override fun visit(G: ExecutionGraph, allEvents: MutableList<Event>) {
 
         val graphConsistency = FullyAsynchronousConsistency.porfConsistency(G)
 
@@ -145,6 +141,48 @@ class Must(path: String) {
                             }
                         }
                     }
+                }
+
+                nextEvent.type == EventType.START -> {
+                    val threadId = (nextEvent as StartEvent).callerThread
+                    val threadEvent = findLastEvent(G, threadId)
+                    if (threadEvent != null) {
+                        // From the list of G.graphEvents, find the last inserted START event where its callerThread is equal to the threadId of the nextEvent and store it in threadEvent
+                        val prevStart =
+                            G.graphEvents.filter { it.type == EventType.START && (it as StartEvent).callerThread == nextEvent.callerThread }
+                                .lastOrNull()
+                        G.addEvent(nextEvent)
+                        if (prevStart != null) {
+                            G.addTC(prevStart, nextEvent)
+                        }
+                        G.addST(threadEvent, nextEvent)
+                        visit(G, allEvents)
+                    }
+                }
+
+                nextEvent.type == EventType.JOIN -> {
+                    val threadId = (nextEvent as JoinEvent).joinTid
+                    val finishEvent = findFinishEvent(G, threadId)
+                    if (finishEvent != null) {
+                        G.addEvent(nextEvent)
+                        G.addJT(finishEvent, nextEvent)
+                        visit(G, allEvents)
+                    }
+                }
+
+                nextEvent.type == EventType.FINISH -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.FAILURE -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.DEADLOCK -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
                 }
 
                 else -> { // TODO() : For possible future extensions

@@ -571,6 +571,22 @@ class ModelCheckerTest {
         assertTrue(checker.check(t), "MessageCounter Random Strategy Finished");
     }
 
+    @Test
+    @DisplayName("MessageCounter")
+    void replayTestMessageCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.message.counter",
+                "MessageCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/message/counter/"
+        );
+        System.out.println("MessageCounter Replay Strategy Started");
+        checker.configuration.strategyType = StrategyType.REPLAY;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        checker.configuration.programType = ProgramType.MESSAGE_PASS;
+        assertTrue(checker.check(t), "MessageCounter Replay Strategy Finished");
+    }
+
     /*
      *                                    DISABLED TESTS - DO NOT RUN
      */

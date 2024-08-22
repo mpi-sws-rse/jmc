@@ -40,8 +40,11 @@ data class ReceiveEvent(
 
     var blocking: Boolean = false,
 
+    @Transient
     var predicate: BiFunction<Long, Long, Boolean>? = null
 ) : ThreadEvent(), Serializable {
+
+    var predicateString: String? = predicate?.toString()
 
     /**
      * Returns a deep copy of this object
@@ -49,7 +52,7 @@ data class ReceiveEvent(
      * @return A deep copy of this object
      */
     override fun deepCopy(): Event {
-        return ReceiveEvent(
+        var newReceiveEvent = ReceiveEvent(
             tid = copy().tid,
             type = EventType.RECEIVE,
             serial = copy().serial,
@@ -58,8 +61,10 @@ data class ReceiveEvent(
             tag = copy().tag,
             senderId = copy().senderId,
             blocking = copy().blocking,
-            predicate = copy().predicate
+            predicate = copy().predicate,
         )
+        newReceiveEvent.predicateString = predicateString
+        return newReceiveEvent
     }
 
     /**

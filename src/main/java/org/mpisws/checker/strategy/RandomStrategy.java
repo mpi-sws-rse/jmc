@@ -278,29 +278,37 @@ public class RandomStrategy implements SearchStrategy {
         BlockingRecvReq blockingRecvReq = RuntimeEnvironment.createBlockingRecvReq(jmcThread, receiveEvent);
         RuntimeEnvironment.eventsRecord.add(blockingRecvReq);
         if (receiveEvent.getPredicate() == null) {
-            return handleFreeBlockingRecvReq(receiveEvent, jmcThread);
+            return handleFreeBlockingRecvReq(receiveEvent, jmcThread, blockingRecvReq);
         } else {
-            return handleConditionalBlockingRecvReq(receiveEvent, jmcThread);
+            return handleConditionalBlockingRecvReq(receiveEvent, jmcThread, blockingRecvReq);
         }
     }
 
-    private boolean handleFreeBlockingRecvReq(ReceiveEvent receiveEvent, JMCThread jmcThread) {
+    private boolean handleFreeBlockingRecvReq(ReceiveEvent receiveEvent, JMCThread jmcThread, BlockingRecvReq blockingRecvReq) {
         Message message = jmcThread.findRandomMessage(random);
         if (message == null) {
             RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
+            blockingRecvReq.setBlocked(true);
             return false;
         }
+        receiveEvent.setRf(message.getSendEvent());
+        receiveEvent.setValue(message);
+        blockingRecvReq.setBlocked(false);
         return true;
     }
 
-    private boolean handleConditionalBlockingRecvReq(ReceiveEvent receiveEvent, JMCThread jmcThread) {
+    private boolean handleConditionalBlockingRecvReq(ReceiveEvent receiveEvent, JMCThread jmcThread, BlockingRecvReq blockingRecvReq) {
         List<Message> matchedMessages = jmcThread.computePredicateMessage(receiveEvent.getPredicate());
         if (matchedMessages.isEmpty()) {
             RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
+            blockingRecvReq.setBlocked(true);
             return false;
         } else {
             int randomMessageIndex = random.nextInt(matchedMessages.size());
             jmcThread.findNextMessageIndex(matchedMessages.get(randomMessageIndex));
+            receiveEvent.setRf(matchedMessages.get(randomMessageIndex).getSendEvent());
+            receiveEvent.setValue(matchedMessages.get(randomMessageIndex));
+            blockingRecvReq.setBlocked(false);
             return true;
         }
     }
@@ -310,9 +318,12 @@ public class RandomStrategy implements SearchStrategy {
         List<Message> matchedMessages = jmcThread.computePredicateMessage(receiveEvent.getPredicate());
         if (matchedMessages.isEmpty()) {
             jmcThread.noMessageExists();
+            receiveEvent.setRf(null);
+            receiveEvent.setValue(null);
         } else {
             int randomMessageIndex = random.nextInt(matchedMessages.size());
             jmcThread.findNextMessageIndex(matchedMessages.get(randomMessageIndex));
+            receiveEvent.setRf(matchedMessages.get(randomMessageIndex).getSendEvent());
             receiveEvent.setValue(matchedMessages.get(randomMessageIndex));
         }
     }
@@ -322,9 +333,12 @@ public class RandomStrategy implements SearchStrategy {
         Message message = jmcThread.findRandomMessage(random);
         if (message == null) {
             jmcThread.noMessageExists();
+            receiveEvent.setRf(null);
+            receiveEvent.setValue(null);
         } else {
             // No need to execute the following.
             //jmcThread.findNextMessageIndex(message);
+            receiveEvent.setRf(message.getSendEvent());
             receiveEvent.setValue(message);
         }
     }

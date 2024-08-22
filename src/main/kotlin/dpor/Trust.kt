@@ -13,166 +13,163 @@ import programStructure.*
  TODO() : Extends this algorithm by discharging the above-mentioned assumptions
  */
 
-class Trust(path: String) {
-    private var graph: ExecutionGraph = ExecutionGraph()
-    var allAbstractThread: MutableMap<Int, AbstractThread>? = mutableMapOf()
-    var allEvents: MutableList<Event> = mutableListOf()
-    var graphCounter: Int = 0
-    var allGraphs: MutableList<ExecutionGraph> = mutableListOf()
-    var graphsPath: String = path
-
-
-    init {
-        val init: Event = InitializationEvent()
-        this.allEvents.add(init)
-    }
-
-    /*
-     * TODO() : This function is not needed in the final version of the Trust algorithm
-     */
-    private fun makeAllEvents() {
-        for (i in this.allAbstractThread!!.keys)
-            for (e in this.allAbstractThread?.get(i)?.instructions!!) {
-                this.allEvents.add(e)
-                println("[MC Message] : the event : $e")
-            }
-    }
-
-    fun setThreads(trds: MutableMap<Int, AbstractThread>?) {
-        this.allAbstractThread = trds
-        makeAllEvents()
-    }
-
-    fun printEvents() {
-        for (i in this.allEvents) {
-            when (i.type) {
-                EventType.READ -> {
-                    val read: ReadEvent? = i as ReadEvent?
-                    println(read)
-                }
-
-                EventType.RECEIVE -> {
-                    val receive: ReceiveEvent? = i as ReceiveEvent?
-                    println(receive)
-                }
-
-                EventType.WRITE -> {
-                    val write: WriteEvent = i as WriteEvent
-                    println(write)
-                }
-
-                EventType.SEND -> {
-                    val send: SendEvent = i as SendEvent
-                    println(send)
-                }
-
-                EventType.INITIAL -> {
-                    val init: InitializationEvent = i as InitializationEvent
-                    println(init)
-                }
-
-                EventType.START -> {
-                    val start: StartEvent = i as StartEvent
-                    println(start)
-                }
-
-                EventType.JOIN -> {
-                    val join: JoinEvent = i as JoinEvent
-                    println(join)
-                }
-
-                EventType.FINISH -> {
-                    val finish: FinishEvent = i as FinishEvent
-                    println(finish)
-                }
-
-                EventType.ENTER_MONITOR -> {
-                    val enterMonitor: EnterMonitorEvent = i as EnterMonitorEvent
-                    println(enterMonitor)
-                }
-
-                EventType.EXIT_MONITOR -> {
-                    val exitMonitor: ExitMonitorEvent = i as ExitMonitorEvent
-                    println(exitMonitor)
-                }
-
-                EventType.DEADLOCK -> {
-                    val deadlock: DeadlockEvent = i as DeadlockEvent
-                    println(deadlock)
-                }
-
-                EventType.MONITOR_REQUEST -> {
-                    val monitorRequestEvent: MonitorRequestEvent = i as MonitorRequestEvent
-                    println(monitorRequestEvent)
-                }
-
-                EventType.FAILURE -> {
-                    val failureEvent: FailureEvent = i as FailureEvent
-                    println(failureEvent)
-                }
-
-                EventType.SUSPEND -> {
-                    val suspendEvent: SuspendEvent = i as SuspendEvent
-                    println(suspendEvent)
-                }
-
-                EventType.UNSUSPEND -> {
-                    val unsuspendEvent: UnsuspendEvent = i as UnsuspendEvent
-                    println(unsuspendEvent)
-                }
-
-                EventType.SYM_EXECUTION -> {
-                    val symExecutionEvent: SymExecutionEvent = i as SymExecutionEvent
-                    println(symExecutionEvent)
-                }
-
-                EventType.PARK -> {
-                    val parkEvent: ParkEvent = i as ParkEvent
-                    println(parkEvent)
-                }
-
-                EventType.UNPARK -> {
-                    val unparkEvent: UnparkEvent = i as UnparkEvent
-                    println(unparkEvent)
-                }
-
-                EventType.UNPARKING -> {
-                    val unparkingEvent: UnparkingEvent = i as UnparkingEvent
-                    println(unparkingEvent)
-                }
-
-                EventType.UNBLOCKED_RECV -> {
-                    val unblockedRecvEvent: UnblockedRecvEvent = i as UnblockedRecvEvent
-                    println(unblockedRecvEvent)
-                }
-
-                EventType.BLOCKED_RECV -> {
-                    val blockedRecvEvent: BlockedRecvEvent = i as BlockedRecvEvent
-                    println(blockedRecvEvent)
-                }
-
-                EventType.BLOCK_RECV_REQ -> {
-                    val blockRecvReqEvent: BlockingRecvReq = i as BlockingRecvReq
-                    println(blockRecvReqEvent)
-                }
-
-                EventType.OTHER -> TODO()
-            }
-        }
-
-    }
-
-    // This is the 'procedure VERIFY(P) in Algorithm 1'
-    fun verify() {
-        graph.addRoot(this.findNext(allEvents)!!)
-        visit(graph, allEvents)
-    }
+class Trust(path: String) : DPOR(path) {
+//    private var graph: ExecutionGraph = ExecutionGraph()
+//    var allAbstractThread: MutableMap<Int, AbstractThread>? = mutableMapOf()
+//    var allEvents: MutableList<Event> = mutableListOf()
+//
+//
+//    init {
+//        val init: Event = InitializationEvent()
+//        this.allEvents.add(init)
+//    }
+//
+//    /*
+//     * TODO() : This function is not needed in the final version of the Trust algorithm
+//     */
+//    private fun makeAllEvents() {
+//        for (i in this.allAbstractThread!!.keys)
+//            for (e in this.allAbstractThread?.get(i)?.instructions!!) {
+//                this.allEvents.add(e)
+//                println("[MC Message] : the event : $e")
+//            }
+//    }
+//
+//    fun setThreads(trds: MutableMap<Int, AbstractThread>?) {
+//        this.allAbstractThread = trds
+//        makeAllEvents()
+//    }
+//
+//    fun printEvents() {
+//        for (i in this.allEvents) {
+//            when (i.type) {
+//                EventType.READ -> {
+//                    val read: ReadEvent? = i as ReadEvent?
+//                    println(read)
+//                }
+//
+//                EventType.RECEIVE -> {
+//                    val receive: ReceiveEvent? = i as ReceiveEvent?
+//                    println(receive)
+//                }
+//
+//                EventType.WRITE -> {
+//                    val write: WriteEvent = i as WriteEvent
+//                    println(write)
+//                }
+//
+//                EventType.SEND -> {
+//                    val send: SendEvent = i as SendEvent
+//                    println(send)
+//                }
+//
+//                EventType.INITIAL -> {
+//                    val init: InitializationEvent = i as InitializationEvent
+//                    println(init)
+//                }
+//
+//                EventType.START -> {
+//                    val start: StartEvent = i as StartEvent
+//                    println(start)
+//                }
+//
+//                EventType.JOIN -> {
+//                    val join: JoinEvent = i as JoinEvent
+//                    println(join)
+//                }
+//
+//                EventType.FINISH -> {
+//                    val finish: FinishEvent = i as FinishEvent
+//                    println(finish)
+//                }
+//
+//                EventType.ENTER_MONITOR -> {
+//                    val enterMonitor: EnterMonitorEvent = i as EnterMonitorEvent
+//                    println(enterMonitor)
+//                }
+//
+//                EventType.EXIT_MONITOR -> {
+//                    val exitMonitor: ExitMonitorEvent = i as ExitMonitorEvent
+//                    println(exitMonitor)
+//                }
+//
+//                EventType.DEADLOCK -> {
+//                    val deadlock: DeadlockEvent = i as DeadlockEvent
+//                    println(deadlock)
+//                }
+//
+//                EventType.MONITOR_REQUEST -> {
+//                    val monitorRequestEvent: MonitorRequestEvent = i as MonitorRequestEvent
+//                    println(monitorRequestEvent)
+//                }
+//
+//                EventType.FAILURE -> {
+//                    val failureEvent: FailureEvent = i as FailureEvent
+//                    println(failureEvent)
+//                }
+//
+//                EventType.SUSPEND -> {
+//                    val suspendEvent: SuspendEvent = i as SuspendEvent
+//                    println(suspendEvent)
+//                }
+//
+//                EventType.UNSUSPEND -> {
+//                    val unsuspendEvent: UnsuspendEvent = i as UnsuspendEvent
+//                    println(unsuspendEvent)
+//                }
+//
+//                EventType.SYM_EXECUTION -> {
+//                    val symExecutionEvent: SymExecutionEvent = i as SymExecutionEvent
+//                    println(symExecutionEvent)
+//                }
+//
+//                EventType.PARK -> {
+//                    val parkEvent: ParkEvent = i as ParkEvent
+//                    println(parkEvent)
+//                }
+//
+//                EventType.UNPARK -> {
+//                    val unparkEvent: UnparkEvent = i as UnparkEvent
+//                    println(unparkEvent)
+//                }
+//
+//                EventType.UNPARKING -> {
+//                    val unparkingEvent: UnparkingEvent = i as UnparkingEvent
+//                    println(unparkingEvent)
+//                }
+//
+//                EventType.UNBLOCKED_RECV -> {
+//                    val unblockedRecvEvent: UnblockedRecvEvent = i as UnblockedRecvEvent
+//                    println(unblockedRecvEvent)
+//                }
+//
+//                EventType.BLOCKED_RECV -> {
+//                    val blockedRecvEvent: BlockedRecvEvent = i as BlockedRecvEvent
+//                    println(blockedRecvEvent)
+//                }
+//
+//                EventType.BLOCK_RECV_REQ -> {
+//                    val blockRecvReqEvent: BlockingRecvReq = i as BlockingRecvReq
+//                    println(blockRecvReqEvent)
+//                }
+//
+//                EventType.OTHER -> TODO()
+//            }
+//        }
+//
+//    }
+//
+//    // This is the 'procedure VERIFY(P) in Algorithm 1'
+//    fun verify() {
+//        graph.addRoot(this.findNext(allEvents)!!)
+//        visit(graph, allEvents)
+//    }
 
     /*
      This is the 'procedure VISIT(P,G) in Algorithm 1
      Where 'P' is "allEvents"
      */
-    fun visit(G: ExecutionGraph, allEvents: MutableList<Event>) {
+    override fun visit(G: ExecutionGraph, allEvents: MutableList<Event>) {
         /*
          To use consistency checking of Kater's Algorithm use the following
          */
@@ -643,18 +640,6 @@ class Trust(path: String) {
         }
     }
 
-    private fun findFinishEvent(graph: ExecutionGraph, threadId: Int): FinishEvent? {
-        var EventNode = graph.root?.children?.get(threadId)
-        while (EventNode != null) {
-            if (EventNode.value.type == EventType.FINISH) {
-                return EventNode.value as FinishEvent
-            } else {
-                EventNode = EventNode.child
-            }
-        }
-        return null
-    }
-
     private fun isExitMonitorEventFree(graph: ExecutionGraph, exitMonitorEvent: ExitMonitorEvent): Boolean {
         // In graph.MCS, check if there exists a pair which its first element is exitMonitorEvent, if exists return false, if not
         // check if the corresponding exitmonitor node in the root.childern has an enter monitor node in follows which its monitor is equal to the monitor of the exitMonitorEvent
@@ -831,25 +816,11 @@ class Trust(path: String) {
         }
     }
 
-
     private fun isLastEventSusspende(graph: ExecutionGraph, threadId: Int): SuspendEvent? {
         var EventNode = graph.root?.children?.get(threadId)
         while (EventNode != null) {
             if (EventNode.value.type == EventType.SUSPEND) {
                 return EventNode.value as SuspendEvent
-            } else {
-                EventNode = EventNode.child
-            }
-        }
-        return null
-    }
-
-
-    private fun findLastEvent(graph: ExecutionGraph, threadId: Int): Event? {
-        var EventNode = graph.root?.children?.get(threadId)
-        while (EventNode != null) {
-            if (EventNode.child == null) {
-                return EventNode.value
             } else {
                 EventNode = EventNode.child
             }

@@ -335,7 +335,7 @@ public interface SearchStrategy {
         if (receiveEvent.getPredicate() == null) {
             return !jmcThread.isMessageQueueEmpty();
         } else {
-            return jmcThread.isPerdicateSatisfiable(receiveEvent.getPredicate());
+            return jmcThread.isPredicateSatisfiable(receiveEvent.getPredicate());
         }
     }
 
