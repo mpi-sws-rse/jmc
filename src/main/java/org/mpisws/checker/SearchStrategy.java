@@ -314,7 +314,7 @@ public interface SearchStrategy {
         }
     }
 
-    private boolean computeUnblockedRecvThread() {
+    default boolean computeUnblockedRecvThread() {
         boolean result = false;
         for (Map.Entry<Long, ReceiveEvent> entry : RuntimeEnvironment.blockedRecvThreadMap.entrySet()) {
             if (isMessageAvailable(entry.getValue())) {
@@ -330,7 +330,7 @@ public interface SearchStrategy {
         return result;
     }
 
-    private boolean isMessageAvailable(ReceiveEvent receiveEvent) {
+    default boolean isMessageAvailable(ReceiveEvent receiveEvent) {
         JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
         if (receiveEvent.getPredicate() == null) {
             return !jmcThread.isMessageQueueEmpty();

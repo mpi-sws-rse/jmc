@@ -7,6 +7,7 @@ import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCThread;
 import programStructure.*;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -76,17 +77,20 @@ public class MustStrategy extends DPORStrategy {
             passEventToDPOR(receiveEvent);
             updateCurrentGraph(receiveEvent);
         }
-        executeReceiveEvent();
+        executeReceiveEvent(receiveEvent);
     }
 
-    private void executeReceiveEvent() {
+    private void executeReceiveEvent(ReceiveEvent receiveEvent) {
         ReceiveEvent tempReceive = (ReceiveEvent) currentGraph.getGraphEvents().get(currentGraph.getGraphEvents().size() - 1);
+        System.out.println("[Debugging Message] : Receive Event - " + tempReceive);
         JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(tempReceive.getTid());
         if (tempReceive.getRf() instanceof InitializationEvent) {
             jmcThread.noMessageExists();
+            receiveEvent.setValue(null);
         } else {
             Message message = ((SendEvent) tempReceive.getRf()).getValue();
             jmcThread.findNextMessageIndex(message);
+            receiveEvent.setValue(message);
         }
     }
 
@@ -171,17 +175,34 @@ public class MustStrategy extends DPORStrategy {
         RuntimeEnvironment.eventsRecord.add(blockingRecvReq);
         if (guidingActivate) {
             addEventToCurrentGraph(blockingRecvReq);
+            return handleGuidedBlockingRecvReq(blockingRecvReq);
         } else {
             passEventToDPOR(blockingRecvReq);
             updateCurrentGraph(blockingRecvReq);
+            return handleBlockingRecvReq(blockingRecvReq, jmcThread);
         }
-        return handleBlockingRecvReq(jmcThread, blockingRecvReq);
     }
 
-    private boolean handleBlockingRecvReq(JMCThread jmcThread, BlockingRecvReq blockingRecvReq) {
+    private boolean handleGuidedBlockingRecvReq(BlockingRecvReq blockingRecvReq) {
+        BlockingRecvReq guidingBlockingRecvReq = (BlockingRecvReq) guidingEvent;
+        blockingRecvReq.setBlocked(guidingBlockingRecvReq.isBlocked());
+        //return guidingBlockingRecvReq.isBlocked();
+        return false;
+    }
+
+    private boolean handleBlockingRecvReq(BlockingRecvReq blockingRecvReq, JMCThread jmcThread) {
         BlockingRecvReq tempEvent = (BlockingRecvReq) currentGraph.getGraphEvents().get(currentGraph.getGraphEvents().size() - 1);
         blockingRecvReq.setBlocked(tempEvent.isBlocked());
-        return tempEvent.isBlocked();
+        if (tempEvent.isBlocked()) {
+            BlockedRecvEvent blockedRecvEvent = RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, blockingRecvReq.getReceiveEvent());
+            nextBlockedReceiveEvent(blockedRecvEvent);
+        }
+        return !tempEvent.isBlocked();
+    }
+
+    private void nextBlockedReceiveEvent(BlockedRecvEvent blockedRecvEvent) {
+        passEventToDPOR(blockedRecvEvent);
+        updateCurrentGraph(blockedRecvEvent);
     }
 
     /**
@@ -221,7 +242,79 @@ public class MustStrategy extends DPORStrategy {
      */
     @Override
     public Thread pickNextGuidedThread() {
-        return null;
+        if (guidingEvents.isEmpty()) {
+            handleEmptyGuidingEvents();
+            return pickNextRandomThread();
+        }
+        guidingEvent = guidingEvents.remove(0);
+
+        if (guidingEvent instanceof StartEvent) {
+            guidingThread = findGuidingThreadFromStartEvent();
+        } else {
+            guidingThread = ((ThreadEvent) guidingEvent).getTid();
+        }
+
+        if (guidingEvent.getType() == EventType.BLOCKED_RECV) {
+            BlockedRecvEvent guidedBlockedRecvEvent = (BlockedRecvEvent) guidingEvent;
+            handleNextGuidedBlockedRecvEvent(guidedBlockedRecvEvent);
+            return pickNextGuidedThread();
+        }
+        if (guidingEvent.getType() == EventType.UNBLOCKED_RECV) {
+            UnblockedRecvEvent guidedUnblockedRecvEvent = (UnblockedRecvEvent) guidingEvent;
+            handleNextGuidedUnblockedRecvEvent(guidedUnblockedRecvEvent);
+            return pickNextGuidedThread();
+        }
+
+        System.out.println("[Trust Strategy Message] : Thread-" +
+                RuntimeEnvironment.threadObjectMap.get((long) guidingThread) + " is the next guided thread");
+        return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+    }
+
+    private void handleNextGuidedBlockedRecvEvent(BlockedRecvEvent guidedBlockedRecvEvent) {
+        ReceiveEvent guidedReceiveEvent = guidedBlockedRecvEvent.getReceiveEvent();
+        ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEventInRecord.getTid());
+        RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEventInRecord);
+        addEventToCurrentGraph(guidedBlockedRecvEvent);
+    }
+
+    private void handleNextGuidedUnblockedRecvEvent(UnblockedRecvEvent guidedUnblockedRecvEvent) {
+        ReceiveEvent guidedReceiveEvent = guidedUnblockedRecvEvent.getReceiveEvent();
+        ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEventInRecord.getTid());
+        RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, receiveEventInRecord);
+        addEventToCurrentGraph(guidedUnblockedRecvEvent);
+    }
+
+    private ReceiveEvent findReceiveEventFromBlockingRecvReq(ReceiveEvent guidedReceiveEvent) {
+        ReceiveEvent receiveEvent = null;
+        for (Event event : RuntimeEnvironment.eventsRecord) {
+            if (event instanceof BlockingRecvReq blockingRecvReq) {
+                ReceiveEvent recvEvent = blockingRecvReq.getReceiveEvent();
+                if (recvEvent.getTid() == guidedReceiveEvent.getTid() && recvEvent.getSerial() == guidedReceiveEvent.getSerial()) {
+                    receiveEvent = recvEvent;
+                    break;
+                }
+            }
+        }
+        return receiveEvent;
+    }
+
+    /**
+     * Handles the empty guiding events.
+     * <p>
+     * This method handles the empty guiding events. It prints a message that the guiding events is empty and finds the
+     * new RecvFrom, STs, JTs, and TCs based on the current graph. Then, it sets the {@link #guidingActivate} to false.
+     * </p>
+     */
+    @Override
+    public void handleEmptyGuidingEvents() {
+        System.out.println("[Must Strategy Message] : The guidingEvents is empty");
+        currentGraph.setRecvFrom(findNewRecvfrom());
+        currentGraph.setSTs(findNewSTs());
+        currentGraph.setJTs(findNewJTs());
+        currentGraph.setTCs(findNewTCs());
+        guidingActivate = false;
     }
 
     /**
@@ -235,5 +328,24 @@ public class MustStrategy extends DPORStrategy {
                 .noneMatch(pair -> pair.component1().getType() == threadEvent.getType() &&
                         ((ThreadEvent) pair.component1()).getTid() == threadEvent.getTid() &&
                         ((ThreadEvent) pair.component1()).getSerial() == threadEvent.getSerial());
+    }
+
+    @Override
+    public boolean computeUnblockedRecvThread() {
+        boolean result = false;
+        for (Map.Entry<Long, ReceiveEvent> entry : RuntimeEnvironment.blockedRecvThreadMap.entrySet()) {
+            if (isMessageAvailable(entry.getValue())) {
+                JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(entry.getValue().getTid());
+                UnblockedRecvEvent unblockedRecvEvent = RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, entry.getValue());
+                passEventToDPOR(unblockedRecvEvent);
+                updateCurrentGraph(unblockedRecvEvent);
+                result = true;
+                System.out.println(
+                        "[Must Strategy Message] : The thread " + jmcThread.getName() + " is unblocked" + ", since " +
+                                "the message is available"
+                );
+            }
+        }
+        return result;
     }
 }

@@ -191,7 +191,7 @@ class Trust(path: String) : DPOR(path) {
                     println("[Model Checker Message] : Visited full execution graph G_$graphCounter")
                     G.visualizeGraph(this.graphCounter, this.graphsPath)
                     allGraphs.add(G)
-                    //G.printEvents()
+                    G.printEvents()
                     //G.printPorf()
                     //G.printSc()
                     /*

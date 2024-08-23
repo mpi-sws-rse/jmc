@@ -634,6 +634,7 @@ public class TrustStrategy extends DPORStrategy {
      */
     private void nextSuspendEvent(Thread thread, Object monitor) {
         SuspendEvent suspendEvent = RuntimeEnvironment.createSuspendEvent(thread, monitor);
+        RuntimeEnvironment.eventsRecord.add(suspendEvent);
         addEventToCurrentGraph(suspendEvent);
     }
 
@@ -696,6 +697,25 @@ public class TrustStrategy extends DPORStrategy {
         System.out.println("[Trust Strategy Message] : Thread-" +
                 RuntimeEnvironment.threadObjectMap.get((long) guidingThread) + " is the next guided thread");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+    }
+
+    /**
+     * Handles the empty guiding events.
+     * <p>
+     * This method handles the empty guiding events. It prints a message that the guiding events is empty and finds the
+     * new COs, STs, JTs, MCs, and TCs based on the current graph. Then, it sets the {@link #guidingActivate} to false.
+     * </p>
+     */
+    @Override
+    public void handleEmptyGuidingEvents() {
+        System.out.println("[Trust Strategy Message] : The guidingEvents is empty");
+        currentGraph.setCOs(findNewCOs());
+        currentGraph.setSTs(findNewSTs());
+        currentGraph.setJTs(findNewJTs());
+        currentGraph.setMCs(findNewMCs());
+        currentGraph.setTCs(findNewTCs());
+        currentGraph.setPCs(findNewPCs());
+        guidingActivate = false;
     }
 
     /**
@@ -763,216 +783,6 @@ public class TrustStrategy extends DPORStrategy {
 
         RuntimeEnvironment.suspendPriority.get(monitor).add(new Pair<>((long) firstThreadEvent.getTid(), (long) suspendEvent.getTid()));
         nextSuspendEvent(suspendThread, monitor);
-    }
-
-    /**
-     * Finds the guiding thread from the start event.
-     * <p>
-     * This method finds the guiding thread from the start event. It returns the thread id of the start event that is
-     * available in the {@link #guidingExecutionGraph}.
-     * </p>
-     *
-     * @return the thread id of the start event.
-     */
-    private int findGuidingThreadFromStartEvent() {
-        return guidingExecutionGraph.getSTs().stream()
-                .filter(pair -> pair.component2().equals(guidingEvent))
-                .map(pair -> ((ThreadEvent) pair.component1()).getTid())
-                .findFirst()
-                .orElse(0);
-    }
-
-    /**
-     * Handles the empty guiding events.
-     * <p>
-     * This method handles the empty guiding events. It prints a message that the guiding events is empty and finds the
-     * new COs, STs, JTs, MCs, and TCs based on the current graph. Then, it sets the {@link #guidingActivate} to false.
-     * </p>
-     */
-    private void handleEmptyGuidingEvents() {
-        System.out.println("[Trust Strategy Message] : The guidingEvents is empty");
-        currentGraph.setCOs(findNewCOs());
-        currentGraph.setSTs(findNewSTs());
-        currentGraph.setJTs(findNewJTs());
-        currentGraph.setMCs(findNewMCs());
-        currentGraph.setTCs(findNewTCs());
-        currentGraph.setPCs(findNewPCs());
-        guidingActivate = false;
-    }
-
-    /**
-     * Makes a new copy of the COs.
-     * <p>
-     * This method makes a new copy of the current graph's COs. It iterates over the {@link ExecutionGraph#getCOs()} of
-     * the {@link #guidingExecutionGraph} and finds the new COs based on the current graph. It returns the new COs.
-     * </p>
-     *
-     * @return the new COs based on the current graph.
-     */
-    private List<CO> findNewCOs() {
-        List<CO> newCOs = new ArrayList<>();
-        for (CO co : guidingExecutionGraph.getCOs()) {
-            ReadsFrom firstWrite;
-            WriteEvent secondWrite;
-
-            if (co.getFirstWrite() instanceof InitializationEvent) {
-                firstWrite = (ReadsFrom) currentGraph.getGraphEvents().get(0);
-            } else {
-                firstWrite = findWriteEvent((WriteEvent) co.getFirstWrite());
-            }
-            secondWrite = findWriteEvent(co.getSecondWrite());
-
-            if (firstWrite != null && secondWrite != null) {
-                newCOs.add(new CO(firstWrite, secondWrite));
-            }
-        }
-        return newCOs;
-    }
-
-    /**
-     * Finds the write event based on the current graph.
-     * <p>
-     * This method finds the write event based on the current graph. It returns the write event that is available in the
-     * {@link #currentGraph}.
-     * </p>
-     *
-     * @param tempWrite is the write event that is going to be found.
-     * @return the write event that is available in the current graph.
-     */
-    private WriteEvent findWriteEvent(WriteEvent tempWrite) {
-        return currentGraph.getGraphEvents().stream()
-                .filter(event -> event instanceof WriteEvent)
-                .map(event -> (WriteEvent) event)
-                .filter(writeEvent -> writeEvent.getTid() == tempWrite.getTid() &&
-                        writeEvent.getSerial() == tempWrite.getSerial())
-                .findFirst()
-                .orElse(null);
-    }
-
-    /**
-     * Makes a new copy of the STs.
-     * <p>
-     * This method makes a new copy of the current graph's STs. It iterates over the {@link ExecutionGraph#getSTs()} of
-     * the {@link #guidingExecutionGraph} and finds the new STs based on the current graph. It returns the new STs.
-     * </p>
-     *
-     * @return the new STs based on the current graph.
-     */
-    private Set<Pair<Event, Event>> findNewSTs() {
-        Set<Pair<Event, Event>> newSTs = new HashSet<>();
-        for (Pair<Event, Event> st : guidingExecutionGraph.getSTs()) {
-            ThreadEvent firstThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) st.component1());
-            ThreadEvent secondThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) st.component2());
-            if (firstThreadEvent != null && secondThreadEvent != null) {
-                newSTs.add(new Pair<>(firstThreadEvent, secondThreadEvent));
-            }
-        }
-        return newSTs;
-    }
-
-    /**
-     * Makes a new copy of the MCs.
-     * <p>
-     * This method makes a new copy of the current graph's MCs. It iterates over the {@link ExecutionGraph#getMCs()} of
-     * the {@link #guidingExecutionGraph} and finds the new MCs based on the current graph. It returns the new MCs.
-     * </p>
-     *
-     * @return the new MCs based on the current graph.
-     */
-    private Set<Pair<Event, Event>> findNewMCs() {
-        Set<Pair<Event, Event>> newMCs = new HashSet<>();
-        for (Pair<Event, Event> mc : guidingExecutionGraph.getMCs()) {
-            ThreadEvent firstThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) mc.component1());
-            ThreadEvent secondThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) mc.component2());
-            if (firstThreadEvent != null && secondThreadEvent != null) {
-                newMCs.add(new Pair<>(firstThreadEvent, secondThreadEvent));
-            }
-        }
-        return newMCs;
-    }
-
-    /**
-     * Makes a new copy of the TCs.
-     * <p>
-     * This method makes a new copy of the current graph's TCs. It iterates over the {@link ExecutionGraph#getTCs()} of
-     * the {@link #guidingExecutionGraph} and finds the new TCs based on the current graph. It returns the new TCs.
-     * </p>
-     *
-     * @return the new TCs based on the current graph.
-     */
-    private Set<Pair<Event, Event>> findNewTCs() {
-        Set<Pair<Event, Event>> newTCs = new HashSet<>();
-        for (Pair<Event, Event> tc : guidingExecutionGraph.getTCs()) {
-            ThreadEvent firstThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) tc.component1());
-            ThreadEvent secondThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) tc.component2());
-            if (firstThreadEvent != null && secondThreadEvent != null) {
-                newTCs.add(new Pair<>(firstThreadEvent, secondThreadEvent));
-            }
-        }
-        return newTCs;
-    }
-
-    /**
-     * Makes a new copy of the PCs.
-     * <p>
-     * This method makes a new copy of the current graph's PCs. It iterates over the {@link ExecutionGraph#getPCs()} of
-     * the {@link #guidingExecutionGraph} and finds the new PCs based on the current graph. It returns the new PCs.
-     * </p>
-     *
-     * @return the new PCs based on the current graph.
-     */
-    private Set<Pair<Event, Event>> findNewPCs() {
-        Set<Pair<Event, Event>> newPCs = new HashSet<>();
-        for (Pair<Event, Event> pc : guidingExecutionGraph.getPCs()) {
-            ThreadEvent firstThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) pc.component1());
-            ThreadEvent secondThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) pc.component2());
-            if (firstThreadEvent != null && secondThreadEvent != null) {
-                newPCs.add(new Pair<>(firstThreadEvent, secondThreadEvent));
-            }
-        }
-        return newPCs;
-    }
-
-    /**
-     * Finds the thread event based on the current graph.
-     * <p>
-     * This method finds the thread event based on the current graph. It returns the thread event that is available in the
-     * {@link #currentGraph}.
-     * </p>
-     *
-     * @param tempThreadEvent is the thread event that is going to be found.
-     * @return the thread event that is available in the current graph.
-     */
-    private ThreadEvent findThreadEventInCurrentGraph(ThreadEvent tempThreadEvent) {
-        return currentGraph.getGraphEvents().stream()
-                .filter(event -> event instanceof ThreadEvent)
-                .map(event -> (ThreadEvent) event)
-                .filter(threadEvent -> threadEvent.getTid() == tempThreadEvent.getTid() &&
-                        threadEvent.getSerial() == tempThreadEvent.getSerial() &&
-                        threadEvent.getType() == tempThreadEvent.getType())
-                .findFirst()
-                .orElse(null);
-    }
-
-    /**
-     * Makes a new copy of the JTs.
-     * <p>
-     * This method makes a new copy of the current graph's JTs. It iterates over the {@link ExecutionGraph#getJTs()} of
-     * the {@link #guidingExecutionGraph} and finds the new JTs based on the current graph. It returns the new JTs.
-     * </p>
-     *
-     * @return the new JTs based on the current graph.
-     */
-    private Set<Pair<Event, Event>> findNewJTs() {
-        Set<Pair<Event, Event>> newJTs = new HashSet<>();
-        for (Pair<Event, Event> jt : guidingExecutionGraph.getJTs()) {
-            ThreadEvent firstThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) jt.component1());
-            ThreadEvent secondThreadEvent = findThreadEventInCurrentGraph((ThreadEvent) jt.component2());
-            if (firstThreadEvent != null && secondThreadEvent != null) {
-                newJTs.add(new Pair<>(firstThreadEvent, secondThreadEvent));
-            }
-        }
-        return newJTs;
     }
 
     /**

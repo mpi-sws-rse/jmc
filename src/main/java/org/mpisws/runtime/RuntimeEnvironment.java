@@ -545,6 +545,10 @@ public class RuntimeEnvironment {
         }
     }
 
+    public static void mainThreadStart(Thread thread) {
+        // TODO(): Implement the mainThreadStart method
+    }
+
     /**
      * Handles a join request from one thread to another.
      * <p>
@@ -1629,18 +1633,20 @@ public class RuntimeEnvironment {
         return findThreadObject(threadIdMap.get(jvmTid));
     }
 
-    public static void removeBlockedThreadFromReadyQueue(JMCThread jmcThread, ReceiveEvent receiveEvent) {
+    public static BlockedRecvEvent removeBlockedThreadFromReadyQueue(JMCThread jmcThread, ReceiveEvent receiveEvent) {
         readyThreadList.remove(jmcThread);
         blockedRecvThreadMap.put(threadIdMap.get(jmcThread.getId()), receiveEvent);
         BlockedRecvEvent blockedRecvEvent = createBlockedRecvEvent(jmcThread, receiveEvent);
         eventsRecord.add(blockedRecvEvent);
+        return blockedRecvEvent;
     }
 
-    public static void addUnblockedThreadToReadyQueue(JMCThread jmcThread, ReceiveEvent receiveEvent) {
+    public static UnblockedRecvEvent addUnblockedThreadToReadyQueue(JMCThread jmcThread, ReceiveEvent receiveEvent) {
         readyThreadList.add(jmcThread);
         blockedRecvThreadMap.remove(threadIdMap.get(jmcThread.getId()), receiveEvent);
         UnblockedRecvEvent unblockedRecvEvent = createUnblockedRecvEvent(jmcThread, receiveEvent);
         eventsRecord.add(unblockedRecvEvent);
+        return unblockedRecvEvent;
     }
 
     /**

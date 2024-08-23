@@ -19,6 +19,9 @@ class Must(path: String) : DPOR(path) {
                     G.id = this.graphCounter
                     println("[Must Message] : Visited full execution graph G_$graphCounter")
                     G.visualizeGraph(this.graphCounter, this.graphsPath)
+                    G.printGraph()
+                    G.printEvents()
+                    println(G.recvFrom)
                     allGraphs.add(G)
                 }
 
@@ -30,6 +33,7 @@ class Must(path: String) : DPOR(path) {
                     for (i in 0..<G.graphEvents.size) {
                         if (G.graphEvents[i].type == EventType.SEND) {
                             var findSendEvent = G.graphEvents[i] as SendEvent
+                            println("[DEBUG] : The send event is -> $findSendEvent")
                             if (isSendRecvPair(findSendEvent, nextReceiveEvent) &&
                                 isSendSatisfiesPredicate(findSendEvent, nextReceiveEvent) &&
                                 isSendFree(findSendEvent, G)
@@ -44,7 +48,7 @@ class Must(path: String) : DPOR(path) {
                                 visit(G2, newAllEvents)
                             }
                         } else if (G.graphEvents[i].type == EventType.INITIAL) {
-                            if (nextReceiveEvent.predicate == null) {
+                            if (!nextReceiveEvent.blocking) {
                                 var G3 = G1.deepCopy()
                                 val newNextEvent = nextReceiveEvent.deepCopy()
                                 val newNextReceiveEvent = newNextEvent as ReceiveEvent
@@ -80,6 +84,7 @@ class Must(path: String) : DPOR(path) {
                     if (!sendFound) {
                         nextBlockingReceiveEvent.isBlocked = true
                     }
+                    println("[DEBUG] : The next blocking receive event is -> ${nextBlockingReceiveEvent.isBlocked}")
                     val newAllEvents = deepCopyAllEvents(allEvents)
                     G1.addEvent(nextBlockingReceiveEvent)
                     visit(G1, newAllEvents)
@@ -96,6 +101,7 @@ class Must(path: String) : DPOR(path) {
                 }
 
                 nextEvent.type == EventType.SEND -> {
+                    println("[Must Message] : The next event is a SEND event -> $nextEvent")
                     // Forward Revisit
                     val G1 = G.deepCopy()
                     G1.addEvent(nextEvent.deepCopy())
@@ -135,6 +141,7 @@ class Must(path: String) : DPOR(path) {
                                 if (G3.graphEvents.contains(newRecv)) {
                                     recv = G3.graphEvents.find { it.equals(newRecv) } as ReceiveEvent
                                     recv.rf = nextSendEvent.deepCopy() as SendEvent
+                                    G3.removeRecvFrom(recv)
                                     G3.addRecvFrom(recv.rf as Event, recv)
                                 }
                                 visit(G3, deepCopyAllEvents(allEvents))
@@ -145,7 +152,7 @@ class Must(path: String) : DPOR(path) {
 
                 nextEvent.type == EventType.START -> {
                     val threadId = (nextEvent as StartEvent).callerThread
-                    val threadEvent = findLastEvent(G, threadId)
+                    var threadEvent = findLastEvent(G, threadId)
                     if (threadEvent != null) {
                         // From the list of G.graphEvents, find the last inserted START event where its callerThread is equal to the threadId of the nextEvent and store it in threadEvent
                         val prevStart =
@@ -202,8 +209,8 @@ class Must(path: String) : DPOR(path) {
 
     fun satisfiesCondition(sendEvent: SendEvent, receiveEvent: ReceiveEvent, executionGraph: ExecutionGraph): Boolean {
         if (sendEvent.receiverId == receiveEvent.tid.toLong()) {
-            for (i in executionGraph.recvfrom.indices) {
-                val firstElement = executionGraph.recvfrom.elementAt(i).first as SendEvent
+            for (i in executionGraph.recvFrom.indices) {
+                val firstElement = executionGraph.recvFrom.elementAt(i).first as SendEvent
                 if ((firstElement.tid == sendEvent.tid) && (firstElement.serial == sendEvent.serial)) {
                     return false
                 }
@@ -218,6 +225,7 @@ class Must(path: String) : DPOR(path) {
     }
 
     private fun isSendRecvPair(sendEvent: SendEvent, receiveEvent: ReceiveEvent): Boolean {
+        System.out.println("[DEBUG] : SendEvent ReceiverId -> ${sendEvent.receiverId} ReceiveEvent Tid -> ${receiveEvent.tid}")
         return sendEvent.receiverId == receiveEvent.tid.toLong()
     }
 
@@ -230,20 +238,24 @@ class Must(path: String) : DPOR(path) {
     }
 
     private fun isSendFree(sendEvent: SendEvent, executionGraph: ExecutionGraph): Boolean {
-        for (i in executionGraph.recvfrom.indices) {
-            val firstElement = executionGraph.recvfrom.elementAt(i).first as SendEvent
-            if ((firstElement.tid == sendEvent.tid) && (firstElement.serial == sendEvent.serial)) {
-                return false
+        for (i in executionGraph.recvFrom.indices) {
+            if (executionGraph.recvFrom.elementAt(i).first is SendEvent) {
+                val firstElement = executionGraph.recvFrom.elementAt(i).first as SendEvent
+                if ((firstElement.tid == sendEvent.tid) && (firstElement.serial == sendEvent.serial)) {
+                    return false
+                }
             }
         }
         return true
     }
 
     private fun getRecvOfSend(sendEvent: SendEvent, executionGraph: ExecutionGraph): ReceiveEvent? {
-        for (i in executionGraph.recvfrom.indices) {
-            val firstElement = executionGraph.recvfrom.elementAt(i).first as SendEvent
-            if ((firstElement.tid == sendEvent.tid) && (firstElement.serial == sendEvent.serial)) {
-                return executionGraph.recvfrom.elementAt(i).second as ReceiveEvent
+        for (i in executionGraph.recvFrom.indices) {
+            if (executionGraph.recvFrom.elementAt(i).first is SendEvent) {
+                val firstElement = executionGraph.recvFrom.elementAt(i).first as SendEvent
+                if ((firstElement.tid == sendEvent.tid) && (firstElement.serial == sendEvent.serial)) {
+                    return executionGraph.recvFrom.elementAt(i).second as ReceiveEvent
+                }
             }
         }
         return null
@@ -320,14 +332,14 @@ class Must(path: String) : DPOR(path) {
                             continue
                         }
                     }
-                    minimalSendEvent = updateMinimalSendEvent(minimalSendEvent!!, send)
+                    minimalSendEvent = updateMinimalSendEvent(minimalSendEvent, send)
                 }
             }
         }
         return minimalSendEvent!!
     }
 
-    private fun updateMinimalSendEvent(currentMinimalSendEvent: SendEvent, newSendEvent: SendEvent): SendEvent {
+    private fun updateMinimalSendEvent(currentMinimalSendEvent: SendEvent?, newSendEvent: SendEvent): SendEvent {
         if (currentMinimalSendEvent == null) {
             return newSendEvent
         } else if (newSendEvent.tid < currentMinimalSendEvent.tid) {

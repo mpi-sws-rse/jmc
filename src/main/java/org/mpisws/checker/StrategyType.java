@@ -9,5 +9,6 @@ import java.io.Serializable;
 public enum StrategyType implements Serializable {
     RANDOM,
     TRUST,
-    REPLAY
+    REPLAY,
+    MUST
 }

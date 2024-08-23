@@ -43,7 +43,7 @@ data class SendEvent(
     override fun deepCopy(): Event {
         return SendEvent(
             tid = copy().tid,
-            type = EventType.WRITE,
+            type = EventType.SEND,
             serial = copy().serial,
             value = copy().value,
             receiverId = copy().receiverId,

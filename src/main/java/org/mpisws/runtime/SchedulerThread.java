@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.checker.StrategyType;
+import org.mpisws.checker.strategy.MustStrategy;
 import org.mpisws.checker.strategy.RandomStrategy;
 import org.mpisws.checker.strategy.ReplayStrategy;
 import org.mpisws.checker.strategy.TrustStrategy;
@@ -53,6 +54,8 @@ public class SchedulerThread extends Thread {
             searchStrategy = new TrustStrategy();
         } else if (strategyType == StrategyType.REPLAY) {
             searchStrategy = new ReplayStrategy();
+        } else if (strategyType == StrategyType.MUST) {
+            searchStrategy = new MustStrategy();
         } else {
             // TODO() : Fix it
             System.out.println("[Scheduler Thread Message] : Unsupported strategy type: " + strategyType);
