@@ -72,6 +72,11 @@ public class ReplayStrategy implements SearchStrategy {
         RuntimeEnvironment.eventsRecord.add(startEvent);
     }
 
+    @Override
+    public void nextMainStartEvent(MainStartEvent mainStartEvent) {
+        RuntimeEnvironment.eventsRecord.add(mainStartEvent);
+    }
+
     /**
      * Represents the required strategy for the next enter monitor event.
      *

@@ -351,6 +351,18 @@ public abstract class DPORStrategy implements SearchStrategy {
         }
     }
 
+    @Override
+    public void nextMainStartEvent(MainStartEvent mainStartEvent) {
+        RuntimeEnvironment.eventsRecord.add(mainStartEvent);
+        if (guidingActivate) {
+            addEventToCurrentGraph(mainStartEvent);
+        } else {
+            System.out.println("[DPOR Strategy Message] : The main start event is passed to the model checker");
+            passEventToDPOR(mainStartEvent);
+            updateCurrentGraph(mainStartEvent);
+        }
+    }
+
     /**
      * Represents the required strategy for the next join event.
      * <p>

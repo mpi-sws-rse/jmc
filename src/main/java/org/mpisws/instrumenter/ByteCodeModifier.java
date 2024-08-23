@@ -148,6 +148,20 @@ public class ByteCodeModifier {
                                     "(Ljava/lang/Thread;Ljava/lang/Thread;)V",
                                     false
                             );
+                            mv.visitMethodInsn(
+                                    Opcodes.INVOKESTATIC,
+                                    "java/lang/Thread",
+                                    "currentThread",
+                                    "()Ljava/lang/Thread;",
+                                    false
+                            );
+                            mv.visitMethodInsn(
+                                    Opcodes.INVOKESTATIC,
+                                    "org/mpisws/runtime/RuntimeEnvironment",
+                                    "mainThreadStart",
+                                    "(Ljava/lang/Thread;)V",
+                                    false
+                            );
                             super.visitCode();
                         }
 

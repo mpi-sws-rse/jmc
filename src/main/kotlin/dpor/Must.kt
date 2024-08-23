@@ -192,6 +192,11 @@ class Must(path: String) : DPOR(path) {
                     visit(G, allEvents)
                 }
 
+                nextEvent.type == EventType.MAIN_START -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
                 else -> { // TODO() : For possible future extensions
                     G.addEvent(nextEvent)
                     visit(G, allEvents)

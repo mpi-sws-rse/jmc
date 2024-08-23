@@ -838,6 +838,11 @@ data class ExecutionGraph(
                     println(unparkingEvent)
                 }
 
+                EventType.MAIN_START -> {
+                    val mainStartEvent: MainStartEvent = e as MainStartEvent
+                    println(mainStartEvent)
+                }
+
                 EventType.OTHER -> TODO()
             }
         }
@@ -1010,6 +1015,10 @@ data class ExecutionGraph(
                 visUnparkingEvent(event as UnparkingEvent, bufferedWriter)
             }
 
+            EventType.MAIN_START -> {
+                visMainStartEvent(event as MainStartEvent, bufferedWriter)
+            }
+
             EventType.OTHER -> TODO()
             EventType.INITIAL -> TODO()
         }
@@ -1033,6 +1042,11 @@ data class ExecutionGraph(
     private fun visStartEvent(start: StartEvent, bufferedWriter: BufferedWriter) {
         bufferedWriter.newLine()
         bufferedWriter.write("${start.tid}${start.serial} [label=\"${start.tid}:${start.serial}.Thread Started\"]")
+    }
+
+    private fun visMainStartEvent(mainStart: MainStartEvent, bufferedWriter: BufferedWriter) {
+        bufferedWriter.newLine()
+        bufferedWriter.write("${mainStart.tid}${mainStart.serial} [label=\"${mainStart.tid}:${mainStart.serial}.Main Thread Started\"]")
     }
 
     private fun visJoinEvent(join: JoinEvent, bufferedWriter: BufferedWriter) {

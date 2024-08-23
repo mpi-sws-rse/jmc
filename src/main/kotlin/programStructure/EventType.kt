@@ -28,5 +28,6 @@ enum class EventType : Serializable {
     PARK,
     UNPARK,
     UNPARKING,
+    MAIN_START,
     OTHER
 }

@@ -109,6 +109,11 @@ public class RandomStrategy implements SearchStrategy {
         RuntimeEnvironment.eventsRecord.add(startEvent);
     }
 
+    @Override
+    public void nextMainStartEvent(MainStartEvent mainStartEvent) {
+        RuntimeEnvironment.eventsRecord.add(mainStartEvent);
+    }
+
     /**
      * Creates an {@link EnterMonitorEvent} for the corresponding entering a monitor request of a thread
      * <p>

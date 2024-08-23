@@ -26,6 +26,8 @@ public interface SearchStrategy {
      */
     void nextStartEvent(Thread calleeThread, Thread callerThread);
 
+    void nextMainStartEvent(MainStartEvent mainStartEvent);
+
     /**
      * Represents the required strategy for the next enter monitor event.
      *

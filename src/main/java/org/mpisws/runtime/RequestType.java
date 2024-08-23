@@ -17,5 +17,6 @@ public enum RequestType {
     WAIT_REQUEST,
     SYMB_ARTH_REQUEST,
     PARK_REQUEST,
-    UNPARK_REQUEST
+    UNPARK_REQUEST,
+    MAIN_START_REQUEST
 }

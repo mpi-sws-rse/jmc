@@ -9,10 +9,7 @@ import org.mpisws.checker.strategy.RandomStrategy;
 import org.mpisws.checker.strategy.ReplayStrategy;
 import org.mpisws.checker.strategy.TrustStrategy;
 import org.mpisws.symbolic.SymbolicOperation;
-import programStructure.ReadEvent;
-import programStructure.ReceiveEvent;
-import programStructure.SendEvent;
-import programStructure.WriteEvent;
+import programStructure.*;
 
 /**
  * The SchedulerThread class extends the Thread class and is responsible for managing the execution of threads in a
@@ -285,7 +282,6 @@ public class SchedulerThread extends Thread {
             case WRITE_REQUEST:
                 writeRequestHandler();
                 break;
-            // TODO() : Add send, recv handlres
             case SEND_REQUEST:
                 sendRequestHandler();
                 break;
@@ -306,6 +302,9 @@ public class SchedulerThread extends Thread {
                 break;
             case UNPARK_REQUEST:
                 unparkRequestHandler();
+                break;
+            case MAIN_START_REQUEST:
+                mainStartEventHandler();
                 break;
             default:
                 RuntimeEnvironment.threadWaitReq = null;
@@ -350,8 +349,22 @@ public class SchedulerThread extends Thread {
             return RequestType.UNPARK_REQUEST;
         } else if (RuntimeEnvironment.threadToPark != null) {
             return RequestType.PARK_REQUEST;
+        } else if (RuntimeEnvironment.mainStartEventReq != null) {
+            return RequestType.MAIN_START_REQUEST;
         } else {
             return RequestType.WAIT_REQUEST;
+        }
+    }
+
+    private void mainStartEventHandler() {
+        System.out.println("[Scheduler Thread Message] : Main Start event handler is called");
+        Optional<MainStartEvent> mainStartEvent = Optional.ofNullable(RuntimeEnvironment.mainStartEventReq);
+        Optional<Thread> callerThread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        RuntimeEnvironment.mainStartEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (mainStartEvent.isPresent() && callerThread.isPresent()) {
+            searchStrategy.nextMainStartEvent(mainStartEvent.get());
+            notifyThread(callerThread.get());
         }
     }
 

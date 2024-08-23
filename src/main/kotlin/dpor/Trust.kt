@@ -529,6 +529,11 @@ class Trust(path: String) : DPOR(path) {
                     visit(G, allEvents)
                 }
 
+                nextEvent.type == EventType.MAIN_START -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
                 nextEvent.type == EventType.SYM_EXECUTION -> {
                     // The following is for debugging purposes only
                     println("[Model Checker Message] : The next event is a SYM_EXECUTION event")
