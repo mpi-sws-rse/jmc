@@ -1,8 +1,6 @@
 package org.mpisws.runtime;
 
 import kotlin.Pair;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.mpisws.checker.CheckerConfiguration;
 import executionGraph.ExecutionGraph;
 import org.mpisws.checker.StrategyType;
@@ -116,6 +114,11 @@ public class RuntimeEnvironment {
     public static List<Thread> readyThreadList = new ArrayList<>();
 
     public static Map<Long, ReceiveEvent> blockedRecvThreadMap = new HashMap<>();
+
+    /**
+     * * @property {@link #threadBlockingRecvList} is used to store the last blocking receive request for each thread
+     */
+    public static Map<Long, BlockingRecvReq> threadBlockingRecvList = new HashMap<>();
 
     /**
      * @property {@link #monitorList} is used to store the monitor objects which are acquired by the threads.
@@ -1580,11 +1583,17 @@ public class RuntimeEnvironment {
 
 
     private static Message createSimpleMessage(long threadId, Object value) {
-        return new SimpleMessage(threadId, Thread.currentThread().getId(), value);
+        SimpleMessage simpleMessage = new SimpleMessage(threadId, Thread.currentThread().getId(), value);
+        simpleMessage.setJmcRecvTid(threadIdMap.get(threadId));
+        simpleMessage.setJmcSendTid(threadIdMap.get(Thread.currentThread().getId()));
+        return simpleMessage;
     }
 
     private static Message createTaggedMessage(long receiverTid, long senderTid, Object value, long tag) {
-        return new TaggedMessage(receiverTid, senderTid, value, tag);
+        TaggedMessage taggedMessage = new TaggedMessage(receiverTid, senderTid, value, tag);
+        taggedMessage.setJmcRecvTid(threadIdMap.get(receiverTid));
+        taggedMessage.setJmcSendTid(threadIdMap.get(senderTid));
+        return taggedMessage;
     }
 
     /**
@@ -1709,5 +1718,6 @@ public class RuntimeEnvironment {
         receiveEventReq = null;
         unparkeeThread = null;
         mainStartEventReq = null;
+        threadBlockingRecvList = new HashMap<>();
     }
 }

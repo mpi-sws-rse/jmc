@@ -182,6 +182,8 @@ public class SchedulerThread extends Thread {
      * <p>This method is used to print the end message.</p>
      */
     private void printEndMessage() {
+        System.out.println("[Scheduler Thread Message] : The last execution trace is :");
+        searchStrategy.printExecutionTrace();
         System.out.println("******************************************************************************************");
         System.out.println("[*** The SchedulerThread requested to FINISH***]");
         System.out.println("******************************************************************************************");
@@ -364,7 +366,7 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.threadWaitReq = null;
         if (mainStartEvent.isPresent() && callerThread.isPresent()) {
             searchStrategy.nextMainStartEvent(mainStartEvent.get());
-            notifyThread(callerThread.get());
+            waitEventHandler();
         }
     }
 

@@ -7,9 +7,7 @@ import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCThread;
 import programStructure.*;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public class MustStrategy extends DPORStrategy {
 
@@ -173,6 +171,7 @@ public class MustStrategy extends DPORStrategy {
         JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
         BlockingRecvReq blockingRecvReq = RuntimeEnvironment.createBlockingRecvReq(jmcThread, receiveEvent);
         RuntimeEnvironment.eventsRecord.add(blockingRecvReq);
+        RuntimeEnvironment.threadBlockingRecvList.put(Long.valueOf(receiveEvent.getTid()), blockingRecvReq);
         if (guidingActivate) {
             addEventToCurrentGraph(blockingRecvReq);
             return handleGuidedBlockingRecvReq(blockingRecvReq);
@@ -248,6 +247,8 @@ public class MustStrategy extends DPORStrategy {
         }
         guidingEvent = guidingEvents.remove(0);
 
+        System.out.println("[Debugging Message in Must] : Guiding Event - " + guidingEvent);
+
         if (guidingEvent instanceof StartEvent) {
             guidingThread = findGuidingThreadFromStartEvent();
         } else {
@@ -265,31 +266,35 @@ public class MustStrategy extends DPORStrategy {
             return pickNextGuidedThread();
         }
 
-        System.out.println("[Trust Strategy Message] : Thread-" +
-                RuntimeEnvironment.threadObjectMap.get((long) guidingThread) + " is the next guided thread");
+        System.out.println("[Must Strategy Message] : Thread-" + guidingThread + " is the next guided thread");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
     }
 
     private void handleNextGuidedBlockedRecvEvent(BlockedRecvEvent guidedBlockedRecvEvent) {
-        ReceiveEvent guidedReceiveEvent = guidedBlockedRecvEvent.getReceiveEvent();
-        ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
-        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEventInRecord.getTid());
-        RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEventInRecord);
-        addEventToCurrentGraph(guidedBlockedRecvEvent);
+        //ReceiveEvent guidedReceiveEvent = guidedBlockedRecvEvent.getReceiveEvent();
+        //ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
+        Long jmcTid = Long.valueOf(guidedBlockedRecvEvent.getTid());
+        ReceiveEvent receiveEventInRecord = RuntimeEnvironment.threadBlockingRecvList.get(jmcTid).getReceiveEvent();
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(jmcTid);
+        BlockedRecvEvent blockedRecvEvent = RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEventInRecord);
+        addEventToCurrentGraph(blockedRecvEvent);
     }
 
     private void handleNextGuidedUnblockedRecvEvent(UnblockedRecvEvent guidedUnblockedRecvEvent) {
-        ReceiveEvent guidedReceiveEvent = guidedUnblockedRecvEvent.getReceiveEvent();
-        ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
-        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(receiveEventInRecord.getTid());
-        RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, receiveEventInRecord);
-        addEventToCurrentGraph(guidedUnblockedRecvEvent);
+        //ReceiveEvent guidedReceiveEvent = guidedUnblockedRecvEvent.getReceiveEvent();
+        //ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
+        Long jmcTid = Long.valueOf(guidedUnblockedRecvEvent.getTid());
+        ReceiveEvent receiveEventInRecord = RuntimeEnvironment.threadBlockingRecvList.get(jmcTid).getReceiveEvent();
+        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(jmcTid);
+        UnblockedRecvEvent unblockedRecvEvent = RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, receiveEventInRecord);
+        addEventToCurrentGraph(unblockedRecvEvent);
     }
 
     private ReceiveEvent findReceiveEventFromBlockingRecvReq(ReceiveEvent guidedReceiveEvent) {
         ReceiveEvent receiveEvent = null;
         for (Event event : RuntimeEnvironment.eventsRecord) {
             if (event instanceof BlockingRecvReq blockingRecvReq) {
+                System.out.println("[Debugging Message in Must] : Blocking Receive Request - " + blockingRecvReq);
                 ReceiveEvent recvEvent = blockingRecvReq.getReceiveEvent();
                 if (recvEvent.getTid() == guidedReceiveEvent.getTid() && recvEvent.getSerial() == guidedReceiveEvent.getSerial()) {
                     receiveEvent = recvEvent;
@@ -347,5 +352,31 @@ public class MustStrategy extends DPORStrategy {
             }
         }
         return result;
+    }
+
+    /**
+     * Computes the ordered list of the guiding events based on the guiding execution graph.
+     */
+    @Override
+    public void findGuidingEvents() {
+        List<Event> freeEvents = new ArrayList<>();
+        freeEvents.add(guidingNode.getValue());
+
+        List<Event> remainingEvents = new ArrayList<>(guidingExecutionGraph.getGraphEvents());
+        remainingEvents.remove(guidingNode.getValue()); // remove the initialization event
+        guidingExecutionGraph.computeSc();
+        while (!remainingEvents.isEmpty()) {
+            remainingEvents.removeIf(event -> {
+                boolean isEventFree = guidingExecutionGraph.getPorf().stream()
+                        .noneMatch(pair -> pair.getSecond().equals(event) && !freeEvents.contains(pair.getFirst()));
+                if (isEventFree) {
+                    freeEvents.add(event);
+                }
+                return isEventFree;
+            });
+        }
+
+        guidingEvents.addAll(freeEvents);
+        guidingEvents.remove(0);
     }
 }

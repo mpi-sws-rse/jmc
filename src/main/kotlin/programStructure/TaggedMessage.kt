@@ -11,4 +11,11 @@ data class TaggedMessage(
 ) : Message(), Serializable {
     var valueString: String = value.toString()
     override lateinit var sendEvent: SendEvent
+
+    var jmcRecvTid: Long? = null
+    var jmcSendTid: Long? = null
+
+    override fun toString(): String {
+        return "m(s=$jmcSendTid, r=$jmcRecvTid, tag=$tag, v=$valueString)"
+    }
 }

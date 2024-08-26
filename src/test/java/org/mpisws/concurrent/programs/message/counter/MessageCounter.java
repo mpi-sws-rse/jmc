@@ -10,9 +10,9 @@ public class MessageCounter {
         adder2.counter_tid = counter.getId();
         adder1.counter_tid = counter.getId();
 
+        counter.start();
         adder1.start();
         adder2.start();
-        counter.start();
 
         adder1.joinThread();
         adder2.joinThread();

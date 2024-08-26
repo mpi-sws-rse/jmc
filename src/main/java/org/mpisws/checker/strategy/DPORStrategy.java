@@ -178,39 +178,8 @@ public abstract class DPORStrategy implements SearchStrategy {
 
     /**
      * Computes the ordered list of the guiding events based on the guiding execution graph.
-     * <p>
-     * The following method is used to compute the ordered list of the guiding events from the
-     * {@link #guidingExecutionGraph}. Base on the {@link ExecutionGraph#getSc()} of the {@link #guidingExecutionGraph},
-     * it finds the order of the events that if it picks the first event, the second event does not have any left hand
-     * side in the {@link ExecutionGraph#getSc()} of the {@link #guidingExecutionGraph} except the first event.
-     * <br>
-     * Note that the {@link ExecutionGraph#getGraphEvents()} (G.E in the dpor paper) and
-     * {@link ExecutionGraph#getEventsOrder()} (\geq_{G} in the dpor paper) of the {@link #guidingExecutionGraph} are
-     * not reliable to find the guiding events. Since a forward revisit can violate the happens-before relation between
-     * the events of these two list.
-     * </p>
      */
-    private void findGuidingEvents() {
-        List<Event> freeEvents = new ArrayList<>();
-        freeEvents.add(guidingNode.getValue());
-
-        List<Event> remainingEvents = new ArrayList<>(guidingExecutionGraph.getGraphEvents());
-        remainingEvents.remove(guidingNode.getValue()); // remove the initialization event
-        guidingExecutionGraph.computeSc();
-        while (!remainingEvents.isEmpty()) {
-            remainingEvents.removeIf(event -> {
-                boolean isEventFree = guidingExecutionGraph.getSc().stream()
-                        .noneMatch(pair -> pair.getSecond().equals(event) && !freeEvents.contains(pair.getFirst()));
-                if (isEventFree) {
-                    freeEvents.add(event);
-                }
-                return isEventFree;
-            });
-        }
-
-        guidingEvents.addAll(freeEvents);
-        guidingEvents.remove(0);
-    }
+    abstract void findGuidingEvents();
 
     /**
      * Adds the given event to the current graph.

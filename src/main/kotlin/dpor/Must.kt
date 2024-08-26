@@ -19,9 +19,9 @@ class Must(path: String) : DPOR(path) {
                     G.id = this.graphCounter
                     println("[Must Message] : Visited full execution graph G_$graphCounter")
                     G.visualizeGraph(this.graphCounter, this.graphsPath)
-                    G.printGraph()
-                    G.printEvents()
-                    println(G.recvFrom)
+                    //G.printGraph()
+                    //G.printEvents()
+                    //println(G.recvFrom)
                     allGraphs.add(G)
                 }
 
