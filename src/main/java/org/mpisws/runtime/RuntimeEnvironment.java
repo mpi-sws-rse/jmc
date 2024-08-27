@@ -379,29 +379,24 @@ public class RuntimeEnvironment {
         threadIdMap.put(thread.getId(), (long) threadCount);
         threadObjectMap.put(threadIdMap.get(thread.getId()), thread);
         thread.setName("Thread-" + threadCount++);
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) +
-                        " added to the createdThreadList of the Runtime Environment"
-        );
         Object lock = new Object();
         locks.put(threadIdMap.get(thread.getId()), lock);
         createdThreadList.add(thread);
-        readyThreadList.add(thread);
-        mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
-        threadParkingPermit.put(threadIdMap.get(thread.getId()), false);
         System.out.println(
                 "[Runtime Environment Message] : " + thread.getName() + " added to the createdThreadList of" +
                         " the Runtime Environment"
         );
+        readyThreadList.add(thread);
         System.out.println(
                 "[Runtime Environment Message] : " + thread.getName() + " added to the readyThreadList of" +
                         " the Runtime Environment"
         );
+        mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
+        threadParkingPermit.put(threadIdMap.get(thread.getId()), false);
         System.out.println(
                 "[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() +
                         " state"
         );
-        printState();
     }
 
     public static void printState() {
@@ -439,6 +434,9 @@ public class RuntimeEnvironment {
                             " , the maximum events per execution is " + config.maxEventsPerExecution +
                             " , and the maximum iteration is : " + config.maxIterations
             );
+            System.out.println(
+                    "[Runtime Environment Message] : The strategy type is " + config.strategyType +
+                            " and the program type is " + config.programType);
             in.close();
             fileIn.close();
             readConfig();
@@ -532,8 +530,8 @@ public class RuntimeEnvironment {
     public static void threadStart(Thread thread, Thread currentThread) {
         if (createdThreadList.contains(thread) && !readyThreadList.contains(thread)) {
             System.out.println(
-                    "[Runtime Environment Message] : " + thread.getName() + " requested to run the start()" +
-                            " inside the " + currentThread.getName()
+                    "[Runtime Environment Message] : " + thread.getName() + " requested to run by the command of" +
+                            " the " + currentThread.getName()
             );
             readyThreadList.add(thread);
             System.out.println(
@@ -549,7 +547,7 @@ public class RuntimeEnvironment {
     }
 
     public static void mainThreadStart(Thread thread) {
-        System.out.println("[Runtime Environment Message] : The main thread is starting");
+        System.out.println("[Runtime Environment Message] : The main thread requested to start running the program");
         MainStartEvent mainStartEvent = createMainStartEvent(thread);
         mainStartEventReq = mainStartEvent;
         waitRequest(thread);

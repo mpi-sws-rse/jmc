@@ -226,17 +226,6 @@ public class MustStrategy extends DPORStrategy {
     }
 
     /**
-     * Represents the required strategy for the next symbolic operation request.
-     *
-     * @param thread            is the thread that is going to execute the symbolic operation.
-     * @param symbolicOperation is the symbolic operation that is going to be executed.
-     */
-    @Override
-    public void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
-        // Must does not need to handle symbolic operation requests.
-    }
-
-    /**
      * @return
      */
     @Override

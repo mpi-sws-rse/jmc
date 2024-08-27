@@ -188,7 +188,7 @@ class Trust(path: String) : DPOR(path) {
                 nextEvent == null -> {
                     this.graphCounter++
                     G.id = this.graphCounter
-                    println("[Model Checker Message] : Visited full execution graph G_$graphCounter")
+                    println("[Trust Message] : Visited full execution graph G_$graphCounter")
                     G.visualizeGraph(this.graphCounter, this.graphsPath)
                     allGraphs.add(G)
                     G.printEvents()
@@ -536,8 +536,8 @@ class Trust(path: String) : DPOR(path) {
 
                 nextEvent.type == EventType.SYM_EXECUTION -> {
                     // The following is for debugging purposes only
-                    println("[Model Checker Message] : The next event is a SYM_EXECUTION event")
-                    println("[Model Checker Message] : The SYM_EXECUTION event is : $nextEvent")
+                    println("[Trust Message] : The next event is a SYM_EXECUTION event")
+                    println("[Trust Message] : The SYM_EXECUTION event is : $nextEvent")
                     var nextSymEvent = nextEvent as SymExecutionEvent
                     if (nextSymEvent.isNegatable) {
                         val G1 = G.deepCopy()

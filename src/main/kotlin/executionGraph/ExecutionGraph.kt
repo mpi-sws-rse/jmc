@@ -1142,12 +1142,12 @@ data class ExecutionGraph(
 
     private fun visBlockedReceiveEvent(blockedReceive: BlockedRecvEvent, bufferedWriter: BufferedWriter) {
         bufferedWriter.newLine()
-        bufferedWriter.write("${blockedReceive.tid}${blockedReceive.serial} [label=\"${blockedReceive.tid}:${blockedReceive.serial}.BlockedRecv()\"]")
+        bufferedWriter.write("${blockedReceive.tid}${blockedReceive.serial} [label=\"${blockedReceive.tid}:${blockedReceive.serial}.Blocked_Recv()\"]")
     }
 
     private fun visUnblockedReceiveEvent(unblockedReceive: UnblockedRecvEvent, bufferedWriter: BufferedWriter) {
         bufferedWriter.newLine()
-        bufferedWriter.write("${unblockedReceive.tid}${unblockedReceive.serial} [label=\"${unblockedReceive.tid}:${unblockedReceive.serial}.UnblkRcv()\"]")
+        bufferedWriter.write("${unblockedReceive.tid}${unblockedReceive.serial} [label=\"${unblockedReceive.tid}:${unblockedReceive.serial}.Unblocked_Recv()\"]")
     }
 
     private fun visBlockingReceiveRequestEvent(
@@ -1155,7 +1155,7 @@ data class ExecutionGraph(
         bufferedWriter: BufferedWriter
     ) {
         bufferedWriter.newLine()
-        bufferedWriter.write("${blockingReceiveRequest.tid}${blockingReceiveRequest.serial} [label=\"${blockingReceiveRequest.tid}:${blockingReceiveRequest.serial}.BlkRcvReq()\"]")
+        bufferedWriter.write("${blockingReceiveRequest.tid}${blockingReceiveRequest.serial} [label=\"${blockingReceiveRequest.tid}:${blockingReceiveRequest.serial}.Bloking_Recv_Req()\"]")
     }
 
     private fun visSendEvent(send: SendEvent, bufferedWriter: BufferedWriter) {
@@ -1196,10 +1196,10 @@ data class ExecutionGraph(
         if (read.rf is WriteEvent) {
             val readFrom = read.rf as WriteEvent
             bufferedWriter.newLine()
-            bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+            bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rdf\"];")
         } else if (read.rf is InitializationEvent) {
             bufferedWriter.newLine()
-            bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rf\"];")
+            bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rdf\"];")
         }
     }
 
@@ -1282,7 +1282,7 @@ data class ExecutionGraph(
                 val secondTid = (this.recvFrom.elementAt(i).second as ThreadEvent).tid
                 val secondSerial = (this.recvFrom.elementAt(i).second as ThreadEvent).serial
                 bufferedWriter.newLine()
-                bufferedWriter.write("root -> ${secondTid}${secondSerial}[color=red, label=\"rf\"];")
+                bufferedWriter.write("root -> ${secondTid}${secondSerial}[color=blueviolet, label=\"rvf\"];")
                 continue
             }
             val firstTid = (this.recvFrom.elementAt(i).first as ThreadEvent).tid
@@ -1290,7 +1290,7 @@ data class ExecutionGraph(
             val secondTid = (this.recvFrom.elementAt(i).second as ThreadEvent).tid
             val secondSerial = (this.recvFrom.elementAt(i).second as ThreadEvent).serial
             bufferedWriter.newLine()
-            bufferedWriter.write("${firstTid}${firstSerial} -> ${secondTid}${secondSerial}[color=red, label=\"rf\"];")
+            bufferedWriter.write("${firstTid}${firstSerial} -> ${secondTid}${secondSerial}[color=blueviolet, label=\"rvf\"];")
         }
     }
 
