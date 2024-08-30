@@ -9,6 +9,7 @@ import org.mpisws.checker.strategy.RandomStrategy;
 import org.mpisws.checker.strategy.ReplayStrategy;
 import org.mpisws.checker.strategy.TrustStrategy;
 import org.mpisws.symbolic.SymbolicOperation;
+import org.mpisws.util.concurrent.JMCStarterThread;
 import programStructure.*;
 
 /**
@@ -404,7 +405,11 @@ public class SchedulerThread extends Thread {
                 "[Scheduler Thread Message] : Thread-" + getThreadId(thread) +
                         " is permitted to run for loading in the runtime environment"
         );
-        thread.start();
+        if (thread instanceof JMCStarterThread jmcStarterThread) {
+            jmcStarterThread.startByScheduler();
+        } else {
+            thread.start();
+        }
     }
 
     /**

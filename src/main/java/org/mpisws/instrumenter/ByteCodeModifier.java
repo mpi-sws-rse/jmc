@@ -963,6 +963,54 @@ public class ByteCodeModifier {
         }
     }
 
+
+    public void modifyExecutors() {
+        for (String className : allByteCode.keySet()) {
+            byte[] byteCode = allByteCode.get(className);
+            byte[] modifiedByteCode;
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+                @Override
+                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                                 String[] exceptions) {
+                    MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+                    methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+                        @Override
+                        public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
+                                                    boolean isInterface) {
+                            if (opcode == Opcodes.INVOKESTATIC && owner.equals("java/util/concurrent/Executors")
+                                    && name.equals("newFixedThreadPool") && descriptor.equals("(ILjava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;")) {
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/util/concurrent/Executors",
+                                        "newFixedThreadPool",
+                                        "(ILjava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;",
+                                        false
+                                );
+                            } else if (opcode == Opcodes.INVOKESTATIC && owner.equals("java/util/concurrent/Executors") &&
+                                    name.equals("newFixedThreadPool") && descriptor.equals("(I)Ljava/util/concurrent/ExecutorService;")) {
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/util/concurrent/Executors",
+                                        "newFixedThreadPool",
+                                        "(I)Ljava/util/concurrent/ExecutorService;",
+                                        false
+                                );
+                            } else {
+                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                            }
+                        }
+                    };
+                    return methodVisitor;
+                }
+            };
+            ClassReader cr = new ClassReader(byteCode);
+            cr.accept(classVisitor, 0);
+            modifiedByteCode = cw.toByteArray();
+            allByteCode.put(className, modifiedByteCode);
+        }
+    }
+
     /**
      * Modifies the bytecode of the synchronized methods in the given class.
      * <p>
