@@ -1,9 +1,9 @@
 package org.mpisws.util.concurrent;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.mpisws.runtime.RuntimeEnvironment;
 
-public class JMCDependantStarterThread extends java.lang.Thread {
+public class JMCDependantStarterThread extends Thread {
 
     Thread userThread;
 
@@ -15,11 +15,6 @@ public class JMCDependantStarterThread extends java.lang.Thread {
     @Override
     public void run() {
         userThread.run();
-    }
-
-    @NotNull
-    public static Thread currentThread() {
-        return Thread.currentThread();
     }
 
     @Override
@@ -72,5 +67,14 @@ public class JMCDependantStarterThread extends java.lang.Thread {
     @Override
     public void setUncaughtExceptionHandler(UncaughtExceptionHandler eh) {
         userThread.setUncaughtExceptionHandler(eh);
+    }
+
+    @Override
+    public void start() {
+        RuntimeEnvironment.threadStart(this, Thread.currentThread());
+    }
+
+    public void startByScheduler() {
+        super.start();
     }
 }

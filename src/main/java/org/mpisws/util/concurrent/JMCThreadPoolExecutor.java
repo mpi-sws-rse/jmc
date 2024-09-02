@@ -26,7 +26,7 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
 
     @Override
     protected void beforeExecute(Thread t, Runnable r) {
-        RuntimeEnvironment.threadStart(t, Thread.currentThread());
+        //RuntimeEnvironment.threadStart(t, Thread.currentThread());
         super.beforeExecute(t, r);
     }
 
@@ -42,10 +42,23 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
 
     @Override
     public void execute(Runnable command) {
+
+        if (!(command instanceof RunnableFuture<?>)) {
+            System.out.println("[JMCThreadPoolExecutor Message] : The next command is not a FutureRunnable");
+            System.exit(0);
+        }
+        Future future = (Future) command;
         Runnable wrappedCommand = () -> {
+            RuntimeEnvironment.addFuture(future, Thread.currentThread());
             RuntimeEnvironment.waitRequest(Thread.currentThread());
             command.run();
         };
         super.execute(wrappedCommand);
+    }
+
+    @NotNull
+    @Override
+    public <T> Future<T> submit(@NotNull Callable<T> task) {
+        return super.submit(task);
     }
 }

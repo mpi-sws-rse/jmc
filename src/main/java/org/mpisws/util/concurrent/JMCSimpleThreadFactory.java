@@ -5,6 +5,7 @@ import org.mpisws.runtime.RuntimeEnvironment;
 import java.util.concurrent.ThreadFactory;
 
 public class JMCSimpleThreadFactory implements ThreadFactory {
+
     public JMCSimpleThreadFactory() {
         super();
     }

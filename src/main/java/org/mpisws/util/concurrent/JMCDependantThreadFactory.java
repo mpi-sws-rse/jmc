@@ -5,6 +5,7 @@ import org.mpisws.runtime.RuntimeEnvironment;
 import java.util.concurrent.ThreadFactory;
 
 public class JMCDependantThreadFactory implements ThreadFactory {
+
     public ThreadFactory userDefinedThreadFactory;
 
     public JMCDependantThreadFactory(ThreadFactory userDefinedThreadFactory) {
@@ -15,7 +16,8 @@ public class JMCDependantThreadFactory implements ThreadFactory {
     @Override
     public Thread newThread(Runnable r) {
         Thread newThread = userDefinedThreadFactory.newThread(r);
-        RuntimeEnvironment.addThread(newThread);
-        return newThread;
+        JMCDependantStarterThread jmcDependantStarterThread = new JMCDependantStarterThread(newThread);
+        RuntimeEnvironment.addThread(jmcDependantStarterThread);
+        return jmcDependantStarterThread;
     }
 }

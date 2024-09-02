@@ -18,6 +18,7 @@ import org.mpisws.symbolic.SymbolicOperation;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 
 /**
@@ -347,6 +348,8 @@ public class RuntimeEnvironment {
      * executed by the threads in the program under test.
      */
     public static List<InstanceMethodMonitor> instanceMethodMonitorList = new ArrayList<>();
+
+    public static Map<Long, Future> futureThreadMap = new HashMap<>();
 
 
     /**
@@ -1080,6 +1083,11 @@ public class RuntimeEnvironment {
         waitRequest(thread);
     }
 
+    public static void addFuture(Future future, Thread thread) {
+        System.out.println("[Runtime Environment Message] : Future (" + future + ") has been created for thread-" + threadIdMap.get(thread.getId()));
+        futureThreadMap.put(threadIdMap.get(thread.getId()), future);
+    }
+
     /**
      * Handles an assertion failure from a thread.
      * <p>
@@ -1717,5 +1725,6 @@ public class RuntimeEnvironment {
         unparkeeThread = null;
         mainStartEventReq = null;
         threadBlockingRecvList = new HashMap<>();
+        futureThreadMap = new HashMap<>();
     }
 }
