@@ -5,12 +5,16 @@ import org.mpisws.runtime.RuntimeEnvironment;
 
 public class JMCStarterThread extends Thread {
 
-    public JMCStarterThread() {
+    public int threadPoolExecutorId;
+
+    public JMCStarterThread(int threadPoolExecutorId) {
         super();
+        this.threadPoolExecutorId = threadPoolExecutorId;
     }
 
-    public JMCStarterThread(Runnable r) {
+    public JMCStarterThread(Runnable r, int threadPoolExecutorId) {
         super(r);
+        this.threadPoolExecutorId = threadPoolExecutorId;
     }
 
     @Override

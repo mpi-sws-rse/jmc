@@ -1,16 +1,20 @@
 package org.mpisws.util.concurrent;
 
+import org.mpisws.runtime.RuntimeEnvironment;
+
 import java.util.concurrent.*;
 
 public class Executors {
 
     public static ExecutorService newFixedThreadPool(int nThreads) {
-        JMCSimpleThreadFactory jmcSimpleThreadFactory = new JMCSimpleThreadFactory();
-        return new JMCThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new JMCLinkedBlockingQueue<Runnable>(), jmcSimpleThreadFactory);
+        int id = RuntimeEnvironment.nextThreadPoolExecutorId();
+        JMCSimpleThreadFactory jmcSimpleThreadFactory = new JMCSimpleThreadFactory(id);
+        return new JMCThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new JMCLinkedBlockingQueue<Runnable>(), jmcSimpleThreadFactory, id);
     }
 
     public static ExecutorService newFixedThreadPool(int nThreads, ThreadFactory userDefinedThreadFactory) {
-        JMCDependantThreadFactory jmcDependantThreadFactory = new JMCDependantThreadFactory(userDefinedThreadFactory);
-        return new JMCThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new JMCLinkedBlockingQueue<Runnable>(), jmcDependantThreadFactory);
+        int id = RuntimeEnvironment.nextThreadPoolExecutorId();
+        JMCDependantThreadFactory jmcDependantThreadFactory = new JMCDependantThreadFactory(userDefinedThreadFactory, id);
+        return new JMCThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new JMCLinkedBlockingQueue<Runnable>(), jmcDependantThreadFactory, id);
     }
 }

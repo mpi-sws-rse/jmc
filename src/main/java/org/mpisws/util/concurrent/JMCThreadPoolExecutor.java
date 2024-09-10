@@ -8,24 +8,30 @@ import java.util.concurrent.*;
 
 public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
 
-    public JMCThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, @NotNull TimeUnit unit, @NotNull BlockingQueue<Runnable> workQueue, @NotNull ThreadFactory threadFactory) {
+    public int id;
+
+    public JMCThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, @NotNull TimeUnit unit, @NotNull BlockingQueue<Runnable> workQueue, @NotNull ThreadFactory threadFactory, int id) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
-        RuntimeEnvironment.setWorkQueue(workQueue);
+        this.id = id;
+        RuntimeEnvironment.setWorkQueue(id, workQueue);
     }
 
     public JMCThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, @NotNull TimeUnit unit, @NotNull BlockingQueue<Runnable> workQueue) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-        RuntimeEnvironment.setWorkQueue(workQueue);
+        id = RuntimeEnvironment.nextThreadPoolExecutorId();
+        RuntimeEnvironment.setWorkQueue(id, workQueue);
     }
 
     public JMCThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, @NotNull TimeUnit unit, @NotNull BlockingQueue<Runnable> workQueue, @NotNull RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
-        RuntimeEnvironment.setWorkQueue(workQueue);
+        id = RuntimeEnvironment.nextThreadPoolExecutorId();
+        RuntimeEnvironment.setWorkQueue(id, workQueue);
     }
 
     public JMCThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, @NotNull TimeUnit unit, @NotNull BlockingQueue<Runnable> workQueue, @NotNull ThreadFactory threadFactory, @NotNull RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory, handler);
-        RuntimeEnvironment.setWorkQueue(workQueue);
+        id = RuntimeEnvironment.nextThreadPoolExecutorId();
+        RuntimeEnvironment.setWorkQueue(id, workQueue);
     }
 
     @Override

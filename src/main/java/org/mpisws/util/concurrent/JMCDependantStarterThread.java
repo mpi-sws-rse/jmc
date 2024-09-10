@@ -8,8 +8,8 @@ public class JMCDependantStarterThread extends JMCStarterThread {
 
     Thread userThread;
 
-    public JMCDependantStarterThread(Thread userThread) {
-        super();
+    public JMCDependantStarterThread(Thread userThread, int threadPoolExecutorId) {
+        super(threadPoolExecutorId);
         this.userThread = userThread;
     }
 

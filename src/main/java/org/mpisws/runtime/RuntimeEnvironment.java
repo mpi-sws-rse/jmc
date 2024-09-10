@@ -356,7 +356,9 @@ public class RuntimeEnvironment {
 
     public static List<Thread> untaskedThreadList = new ArrayList<>();
 
-    public static BlockingQueue<Runnable> workQueue;
+    public static Map<Integer, BlockingQueue<Runnable>> workQueue = new HashMap<>();
+
+    public static int numOfThreadPoolExecutors = 0;
 
 
     /**
@@ -478,12 +480,17 @@ public class RuntimeEnvironment {
         solverType = config.solverType;
     }
 
-    public static void setWorkQueue(BlockingQueue<Runnable> workQueue) {
-        RuntimeEnvironment.workQueue = workQueue;
+    public static void setWorkQueue(int threadPoolExecutorId, BlockingQueue<Runnable> workQueue) {
+        RuntimeEnvironment.workQueue.put(threadPoolExecutorId, workQueue);
     }
 
     public static boolean isWorkQueueEmpty() {
         return workQueue == null || workQueue.isEmpty();
+    }
+
+    public synchronized static int nextThreadPoolExecutorId() {
+        numOfThreadPoolExecutors++;
+        return numOfThreadPoolExecutors;
     }
 
     /**
@@ -1765,6 +1772,7 @@ public class RuntimeEnvironment {
         futureThreadMap = new HashMap<>();
         getFutureReq = null;
         untaskedThreadList = new ArrayList<>();
-        workQueue = null;
+        workQueue = new HashMap<>();
+        numOfThreadPoolExecutors = 0;
     }
 }
