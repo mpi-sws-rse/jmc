@@ -1,6 +1,7 @@
 package org.mpisws.runtime;
 
 import java.util.Optional;
+import java.util.concurrent.Future;
 
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.checker.StrategyType;
@@ -309,6 +310,9 @@ public class SchedulerThread extends Thread {
             case MAIN_START_REQUEST:
                 mainStartEventHandler();
                 break;
+            case GET_FUTURE_REQUEST:
+                getFutureRequestHandler();
+                break;
             default:
                 RuntimeEnvironment.threadWaitReq = null;
                 waitEventHandler();
@@ -354,6 +358,8 @@ public class SchedulerThread extends Thread {
             return RequestType.PARK_REQUEST;
         } else if (RuntimeEnvironment.mainStartEventReq != null) {
             return RequestType.MAIN_START_REQUEST;
+        } else if (RuntimeEnvironment.getFutureReq != null) {
+            return RequestType.GET_FUTURE_REQUEST;
         } else {
             return RequestType.WAIT_REQUEST;
         }
@@ -644,6 +650,18 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.symbolicOperation = null;
         if (thread.isPresent() && symbolicOperation.isPresent()) {
             searchStrategy.nextSymbolicOperationRequest(thread.get(), symbolicOperation.get());
+            notifyThread(thread.get());
+        }
+    }
+
+    public void getFutureRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : Get future request handler is called");
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<Future> getFutureRequest = Optional.ofNullable(RuntimeEnvironment.getFutureReq);
+        RuntimeEnvironment.threadWaitReq = null;
+        RuntimeEnvironment.getFutureReq = null;
+        if (thread.isPresent() && getFutureRequest.isPresent()) {
+            searchStrategy.nextGetFutureRequest(thread.get(), getFutureRequest.get());
             notifyThread(thread.get());
         }
     }

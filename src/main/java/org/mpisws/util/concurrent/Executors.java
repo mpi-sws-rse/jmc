@@ -6,13 +6,11 @@ public class Executors {
 
     public static ExecutorService newFixedThreadPool(int nThreads) {
         JMCSimpleThreadFactory jmcSimpleThreadFactory = new JMCSimpleThreadFactory();
-        return new JMCThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue(), jmcSimpleThreadFactory);
+        return new JMCThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new JMCLinkedBlockingQueue<Runnable>(), jmcSimpleThreadFactory);
     }
 
     public static ExecutorService newFixedThreadPool(int nThreads, ThreadFactory userDefinedThreadFactory) {
         JMCDependantThreadFactory jmcDependantThreadFactory = new JMCDependantThreadFactory(userDefinedThreadFactory);
-        jmcDependantThreadFactory.userDefinedThreadFactory = userDefinedThreadFactory;
-        return new JMCThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue(), jmcDependantThreadFactory);
+        return new JMCThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new JMCLinkedBlockingQueue<Runnable>(), jmcDependantThreadFactory);
     }
-    
 }

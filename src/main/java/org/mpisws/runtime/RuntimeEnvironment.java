@@ -18,6 +18,7 @@ import org.mpisws.symbolic.SymbolicOperation;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 
@@ -351,6 +352,12 @@ public class RuntimeEnvironment {
 
     public static Map<Long, Future> futureThreadMap = new HashMap<>();
 
+    public static Future getFutureReq;
+
+    public static List<Thread> untaskedThreadList = new ArrayList<>();
+
+    public static BlockingQueue<Runnable> workQueue;
+
 
     /**
      * The constructor is private to prevent the instantiation of the class
@@ -469,6 +476,14 @@ public class RuntimeEnvironment {
         executionGraphsPath = config.executionGraphsPath;
         buggyTraceFile = config.buggyTraceFile;
         solverType = config.solverType;
+    }
+
+    public static void setWorkQueue(BlockingQueue<Runnable> workQueue) {
+        RuntimeEnvironment.workQueue = workQueue;
+    }
+
+    public static boolean isWorkQueueEmpty() {
+        return workQueue == null || workQueue.isEmpty();
     }
 
     /**
@@ -1086,6 +1101,28 @@ public class RuntimeEnvironment {
     public static void addFuture(Future future, Thread thread) {
         System.out.println("[Runtime Environment Message] : Future (" + future + ") has been created for thread-" + threadIdMap.get(thread.getId()));
         futureThreadMap.put(threadIdMap.get(thread.getId()), future);
+    }
+
+    public static void getFuture(Thread thread, Future future) {
+        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to get the value of the future (" + future + ")");
+        getFutureReq = future;
+        waitRequest(thread);
+    }
+
+    public static void taskAssignToThread(Thread thread, Runnable task) {
+        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been assigned to the task (" + task + ")");
+        if (!readyThreadList.contains(thread) && untaskedThreadList.contains(thread)) {
+            readyThreadList.add(thread);
+            untaskedThreadList.remove(thread);
+        }
+    }
+
+    public static void taskDissociateFromThread(Thread thread, Runnable task) {
+        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been dissociated from the task");
+        if (readyThreadList.contains(thread) && !untaskedThreadList.contains(thread)) {
+            readyThreadList.remove(thread);
+            untaskedThreadList.add(thread);
+        }
     }
 
     /**
@@ -1726,5 +1763,8 @@ public class RuntimeEnvironment {
         mainStartEventReq = null;
         threadBlockingRecvList = new HashMap<>();
         futureThreadMap = new HashMap<>();
+        getFutureReq = null;
+        untaskedThreadList = new ArrayList<>();
+        workQueue = null;
     }
 }

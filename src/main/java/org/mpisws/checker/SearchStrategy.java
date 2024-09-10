@@ -1,6 +1,7 @@
 package org.mpisws.checker;
 
 import java.util.*;
+import java.util.concurrent.Future;
 
 import org.mpisws.util.concurrent.JMCThread;
 import programStructure.*;
@@ -571,6 +572,10 @@ public interface SearchStrategy {
         return RuntimeEnvironment.suspendedThreads.stream()
                 .filter(thread -> RuntimeEnvironment.joinRequest.get(thread) == joinRes)
                 .toList();
+    }
+
+    default Thread nextGetFutureRequest(Thread thread, Future future) {
+        return pickNextThread();
     }
 
     /**
