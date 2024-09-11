@@ -1,5 +1,6 @@
 package org.mpisws.util.concurrent;
 
+import org.jetbrains.annotations.NotNull;
 import org.mpisws.runtime.RuntimeEnvironment;
 
 import java.util.concurrent.LinkedBlockingQueue;
@@ -21,6 +22,21 @@ public class JMCLinkedBlockingQueue<E> extends LinkedBlockingQueue<E> {
             RuntimeEnvironment.taskAssignToThread(Thread.currentThread(), r);
         }
         return e;
+    }
+
+    /**
+     * @param e the element to add
+     * @return
+     */
+    @Override
+    public boolean offer(@NotNull E e) {
+        boolean result = super.offer(e);
+        if (result) {
+
+        } else {
+
+        }
+        return result;
     }
 
     /**

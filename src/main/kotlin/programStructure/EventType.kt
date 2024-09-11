@@ -29,5 +29,9 @@ enum class EventType : Serializable {
     UNPARK,
     UNPARKING,
     MAIN_START,
+    NEW_TASK,
+    ASSIGNED_TASK,
+    NEW_RUN,
+    AWAIT_TASK,
     OTHER
 }

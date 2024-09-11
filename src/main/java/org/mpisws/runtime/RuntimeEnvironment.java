@@ -9,6 +9,7 @@ import org.mpisws.manager.FinishedType;
 import org.mpisws.manager.HaltExecutionException;
 import org.mpisws.solver.SMTSolverTypes;
 import org.mpisws.solver.SymbolicSolver;
+import org.mpisws.util.concurrent.JMCStarterThread;
 import org.mpisws.util.concurrent.JMCThread;
 import org.mpisws.util.concurrent.StaticMethodMonitor;
 import org.mpisws.util.concurrent.InstanceMethodMonitor;
@@ -490,6 +491,14 @@ public class RuntimeEnvironment {
         return workQueue == null || workQueue.isEmpty();
     }
 
+    public static void newTaskOffered(Thread thread, Runnable task, int threadPoolId) {
+        // TODO()
+    }
+
+    public static void queueLengthIsMax(Thread thread, int threadPoolId) {
+        // TODO()
+    }
+
     public synchronized static int nextThreadPoolExecutorId() {
         numOfThreadPoolExecutors++;
         return numOfThreadPoolExecutors;
@@ -659,6 +668,18 @@ public class RuntimeEnvironment {
                 assert (false) : "InterruptedException in waitRequest method";
             }
         }
+    }
+
+    public static void takeFromQueueRequest(Thread thread) {
+        if (thread instanceof JMCStarterThread jmcStarterThread) {
+            int id = jmcStarterThread.threadPoolExecutorId;
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has requested to take from " + workQueue.get(id));
+        } else {
+            System.out.println("[Runtime Environment Message] : " + thread.getName() + " is not a JMC Starter Thread");
+            System.exit(0);
+        }
+        takeFromBlockingQueueReq = thread;
+        waitRequest(thread);
     }
 
     /**

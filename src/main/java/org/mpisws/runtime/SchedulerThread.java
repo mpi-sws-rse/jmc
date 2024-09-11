@@ -313,6 +313,8 @@ public class SchedulerThread extends Thread {
             case GET_FUTURE_REQUEST:
                 getFutureRequestHandler();
                 break;
+            case TAKE_WORK_QUEUE:
+                takeFromWorkQueueHandler();
             default:
                 RuntimeEnvironment.threadWaitReq = null;
                 waitEventHandler();
@@ -360,6 +362,8 @@ public class SchedulerThread extends Thread {
             return RequestType.MAIN_START_REQUEST;
         } else if (RuntimeEnvironment.getFutureReq != null) {
             return RequestType.GET_FUTURE_REQUEST;
+        } else if (RuntimeEnvironment.takeFromBlockingQueueReq != null) {
+            return RequestType.TAKE_WORK_QUEUE;
         } else {
             return RequestType.WAIT_REQUEST;
         }
@@ -375,6 +379,10 @@ public class SchedulerThread extends Thread {
             searchStrategy.nextMainStartEvent(mainStartEvent.get());
             waitEventHandler();
         }
+    }
+
+    private void takeFromWorkQueueHandler() {
+        // TODO()
     }
 
     /**
