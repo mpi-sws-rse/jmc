@@ -14,7 +14,13 @@ public class JMCLinkedBlockingQueue<E> extends LinkedBlockingQueue<E> {
     @Override
     public E take() throws InterruptedException {
         RuntimeEnvironment.waitRequest(Thread.currentThread());
-        return super.take();
+        // store the super.take() in a variable
+        // return the variable
+        E e = super.take();
+        if (e instanceof Runnable r) {
+            RuntimeEnvironment.taskAssignToThread(Thread.currentThread(), r);
+        }
+        return e;
     }
 
     /**

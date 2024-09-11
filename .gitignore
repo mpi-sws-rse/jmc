@@ -64,7 +64,6 @@ src/test/java/org/mpisws/concurrent/programs/message/counter/*.class
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-.idea/workspace.xml
 
 ### Eclipse ###
 .apt_generated

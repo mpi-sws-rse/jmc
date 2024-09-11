@@ -36,9 +36,8 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
 
     @Override
     protected void beforeExecute(Thread t, Runnable r) {
-        //RuntimeEnvironment.threadStart(t, Thread.currentThread());
         super.beforeExecute(t, r);
-        RuntimeEnvironment.taskAssignToThread(t, r);
+        //RuntimeEnvironment.taskAssignToThread(t, r);
     }
 
     @Override

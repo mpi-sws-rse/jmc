@@ -360,6 +360,8 @@ public class RuntimeEnvironment {
 
     public static int numOfThreadPoolExecutors = 0;
 
+    public static Thread takeFromBlockingQueueReq = null;
+
 
     /**
      * The constructor is private to prevent the instantiation of the class
@@ -1774,5 +1776,6 @@ public class RuntimeEnvironment {
         untaskedThreadList = new ArrayList<>();
         workQueue = new HashMap<>();
         numOfThreadPoolExecutors = 0;
+        takeFromBlockingQueueReq = null;
     }
 }
