@@ -100,4 +100,14 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
         RuntimeEnvironment.newTaskCreated(Thread.currentThread(), jmcFutureTask, id);
         return jmcFutureTask;
     }
+
+    /**
+     *
+     */
+    @Override
+    public void shutdown() {
+        System.out.println("[JMCThreadPoolExecutor Message] : The thread pool is shutting down.");
+        // TODO() : Add support for handling the shutdown
+        //super.shutdown();
+    }
 }

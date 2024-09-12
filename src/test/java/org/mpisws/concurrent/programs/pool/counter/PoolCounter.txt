@@ -1,0 +1,255 @@
+// class version 61.0 (61)
+// access flags 0x21
+public class org/mpisws/concurrent/programs/pool/counter/PoolCounter {
+
+  // compiled from: PoolCounter.java
+  // access flags 0x19
+  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
+
+  // access flags 0x1018
+  final static synthetic Z $assertionsDisabled
+
+  // access flags 0x1
+  public <init>()V
+   L0
+    LINENUMBER 7 L0
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 1
+
+  // access flags 0x9
+  public static main([Ljava/lang/String;)V
+    TRYCATCHBLOCK L0 L1 L2 java/lang/InterruptedException
+    TRYCATCHBLOCK L0 L1 L2 java/util/concurrent/ExecutionException
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.init (Ljava/lang/Thread;)V
+    NEW org/mpisws/runtime/SchedulerThread
+    DUP
+    INVOKESPECIAL org/mpisws/runtime/SchedulerThread.<init> ()V
+    ASTORE 7
+    ALOAD 7
+    LDC "SchedulerThread"
+    INVOKEVIRTUAL org/mpisws/runtime/SchedulerThread.setName (Ljava/lang/String;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    ALOAD 7
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.initSchedulerThread (Ljava/lang/Thread;Ljava/lang/Thread;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.mainThreadStart (Ljava/lang/Thread;)V
+   L3
+    LINENUMBER 10 L3
+    ICONST_2
+    INVOKESTATIC org/mpisws/util/concurrent/Executors.newFixedThreadPool (I)Ljava/util/concurrent/ExecutorService;
+    ASTORE 1
+   L4
+    LINENUMBER 12 L4
+    NEW java/util/ArrayList
+    DUP
+    INVOKESPECIAL java/util/ArrayList.<init> ()V
+    ASTORE 2
+   L5
+    LINENUMBER 14 L5
+    NEW org/mpisws/concurrent/programs/pool/counter/Counter
+    DUP
+    INVOKESPECIAL org/mpisws/concurrent/programs/pool/counter/Counter.<init> ()V
+    ASTORE 3
+   L6
+    LINENUMBER 16 L6
+    ICONST_0
+    ISTORE 4
+   L7
+   FRAME FULL [[Ljava/lang/String; java/util/concurrent/ExecutorService java/util/ArrayList org/mpisws/concurrent/programs/pool/counter/Counter I T T org/mpisws/runtime/SchedulerThread] []
+    ILOAD 4
+    ICONST_4
+    IF_ICMPGE L8
+   L9
+    LINENUMBER 17 L9
+    ALOAD 3
+    INVOKEDYNAMIC call(Lorg/mpisws/concurrent/programs/pool/counter/Counter;)Ljava/util/concurrent/Callable; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      ()Ljava/lang/Object;, 
+      // handle kind 0x6 : INVOKESTATIC
+      org/mpisws/concurrent/programs/pool/counter/PoolCounter.lambda$main$0(Lorg/mpisws/concurrent/programs/pool/counter/Counter;)Ljava/lang/Integer;, 
+      ()Ljava/lang/Integer;
+    ]
+    ASTORE 5
+   L10
+    LINENUMBER 21 L10
+    ALOAD 2
+    ALOAD 1
+    ALOAD 5
+    INVOKEINTERFACE java/util/concurrent/ExecutorService.submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future; (itf)
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L11
+    LINENUMBER 16 L11
+    IINC 4 1
+    GOTO L7
+   L8
+    LINENUMBER 24 L8
+   FRAME SAME
+    ALOAD 2
+    INVOKEINTERFACE java/util/List.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 4
+   L12
+   FRAME FULL [[Ljava/lang/String; java/util/concurrent/ExecutorService java/util/ArrayList org/mpisws/concurrent/programs/pool/counter/Counter java/util/Iterator T T org/mpisws/runtime/SchedulerThread] []
+    ALOAD 4
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L13
+    ALOAD 4
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    CHECKCAST java/util/concurrent/Future
+    ASTORE 5
+   L0
+    LINENUMBER 26 L0
+    ALOAD 5
+    INVOKEINTERFACE java/util/concurrent/Future.get ()Ljava/lang/Object; (itf)
+    CHECKCAST java/lang/Integer
+    ASTORE 6
+   L14
+    LINENUMBER 27 L14
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    ALOAD 6
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/Integer;)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "Counter value is: \u0001"
+    ]
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L1
+    LINENUMBER 30 L1
+    GOTO L15
+   L2
+    LINENUMBER 28 L2
+   FRAME FULL [[Ljava/lang/String; java/util/concurrent/ExecutorService java/util/ArrayList org/mpisws/concurrent/programs/pool/counter/Counter java/util/Iterator java/util/concurrent/Future T org/mpisws/runtime/SchedulerThread] [java/lang/Exception]
+    ASTORE 6
+   L16
+    LINENUMBER 29 L16
+    ALOAD 6
+    INVOKEVIRTUAL java/lang/Exception.printStackTrace ()V
+   L15
+    LINENUMBER 31 L15
+   FRAME FULL [[Ljava/lang/String; java/util/concurrent/ExecutorService java/util/ArrayList org/mpisws/concurrent/programs/pool/counter/Counter java/util/Iterator java/util/concurrent/Future java/lang/Object org/mpisws/runtime/SchedulerThread] []
+    GOTO L12
+   L13
+    LINENUMBER 33 L13
+   FRAME FULL [[Ljava/lang/String; java/util/concurrent/ExecutorService java/util/ArrayList org/mpisws/concurrent/programs/pool/counter/Counter java/util/Iterator T T org/mpisws/runtime/SchedulerThread] []
+    ALOAD 1
+    INVOKEINTERFACE java/util/concurrent/ExecutorService.shutdown ()V (itf)
+   L17
+    LINENUMBER 35 L17
+    GETSTATIC org/mpisws/concurrent/programs/pool/counter/PoolCounter.$assertionsDisabled : Z
+    IFNE L18
+    ALOAD 3
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.pool.counter.Counter"
+    LDC "value"
+    LDC "I"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/mpisws/concurrent/programs/pool/counter/Counter.value : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+    ICONST_4
+    IF_ICMPEQ L18
+    NEW java/lang/AssertionError
+    DUP
+    ALOAD 3
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.pool.counter.Counter"
+    LDC "value"
+    LDC "I"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/mpisws/concurrent/programs/pool/counter/Counter.value : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+    INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      " ***The assert did not pass, the counter value is \u0001***"
+    ]
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.assertOperation (Ljava/lang/String;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+   L18
+    LINENUMBER 36 L18
+   FRAME SAME
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    ALOAD 3
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.pool.counter.Counter"
+    LDC "value"
+    LDC "I"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/mpisws/concurrent/programs/pool/counter/Counter.value : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+    INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "If you see this message, the assert passed. The counter value is \u0001"
+    ]
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L19
+    LINENUMBER 37 L19
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+    MAXSTACK = 8
+    MAXLOCALS = 8
+
+  // access flags 0x100A
+  private static synthetic lambda$main$0(Lorg/mpisws/concurrent/programs/pool/counter/Counter;)Ljava/lang/Integer; throws java/lang/Exception
+   L0
+    LINENUMBER 18 L0
+    ALOAD 0
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/pool/counter/Counter.inc ()V
+   L1
+    LINENUMBER 19 L1
+    ALOAD 0
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.pool.counter.Counter"
+    LDC "value"
+    LDC "I"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/mpisws/concurrent/programs/pool/counter/Counter.value : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+    INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;
+    ARETURN
+    MAXSTACK = 6
+    MAXLOCALS = 1
+
+  // access flags 0x8
+  static <clinit>()V
+   L0
+    LINENUMBER 7 L0
+    LDC Lorg/mpisws/concurrent/programs/pool/counter/PoolCounter;.class
+    INVOKEVIRTUAL java/lang/Class.desiredAssertionStatus ()Z
+    IFNE L1
+    ICONST_1
+    GOTO L2
+   L1
+   FRAME SAME
+    ICONST_0
+   L2
+   FRAME SAME1 I
+    PUTSTATIC org/mpisws/concurrent/programs/pool/counter/PoolCounter.$assertionsDisabled : Z
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 0
+}

@@ -843,6 +843,26 @@ data class ExecutionGraph(
                     println(mainStartEvent)
                 }
 
+                EventType.NEW_TASK -> {
+                    val newTaskEvent: NewTaskEvent = e as NewTaskEvent
+                    println(newTaskEvent)
+                }
+
+                EventType.NEW_RUN -> {
+                    val newRunEvent: NewRunEvent = e as NewRunEvent
+                    println(newRunEvent)
+                }
+
+                EventType.AWAIT_TASK -> {
+                    val awaitTaskEvent: AwaitTaskEvent = e as AwaitTaskEvent
+                    println(awaitTaskEvent)
+                }
+
+                EventType.ASSIGNED_TASK -> {
+                    val assignedTaskEvent: AssignedTaskEvent = e as AssignedTaskEvent
+                    println(assignedTaskEvent)
+                }
+
                 EventType.OTHER -> TODO()
             }
         }
@@ -1019,9 +1039,45 @@ data class ExecutionGraph(
                 visMainStartEvent(event as MainStartEvent, bufferedWriter)
             }
 
+            EventType.ASSIGNED_TASK -> {
+                visAssignedTaskEvent(event as AssignedTaskEvent, bufferedWriter)
+            }
+
+            EventType.AWAIT_TASK -> {
+                visAwaitTaskEvent(event as AwaitTaskEvent, bufferedWriter)
+            }
+
+            EventType.NEW_RUN -> {
+                visNewRunEvent(event as NewRunEvent, bufferedWriter)
+            }
+
+            EventType.NEW_TASK -> {
+                visNewTaskEvent(event as NewTaskEvent, bufferedWriter)
+            }
+
             EventType.OTHER -> TODO()
             EventType.INITIAL -> TODO()
         }
+    }
+
+    private fun visNewTaskEvent(newTaskEvent: NewTaskEvent, bufferedWriter: BufferedWriter) {
+        bufferedWriter.newLine()
+        bufferedWriter.write("${newTaskEvent.tid}${newTaskEvent.serial} [label=\"${newTaskEvent.tid}:${newTaskEvent.serial}.New Task\"]")
+    }
+
+    private fun visNewRunEvent(newRunEvent: NewRunEvent, bufferedWriter: BufferedWriter) {
+        bufferedWriter.newLine()
+        bufferedWriter.write("${newRunEvent.tid}${newRunEvent.serial} [label=\"${newRunEvent.tid}:${newRunEvent.serial}.New Run\"]")
+    }
+
+    private fun visAwaitTaskEvent(awaitTaskEvent: AwaitTaskEvent, bufferedWriter: BufferedWriter) {
+        bufferedWriter.newLine()
+        bufferedWriter.write("${awaitTaskEvent.tid}${awaitTaskEvent.serial} [label=\"${awaitTaskEvent.tid}:${awaitTaskEvent.serial}.Await Task\"]")
+    }
+
+    private fun visAssignedTaskEvent(assignedTaskEvent: AssignedTaskEvent, bufferedWriter: BufferedWriter) {
+        bufferedWriter.newLine()
+        bufferedWriter.write("${assignedTaskEvent.tid}${assignedTaskEvent.serial} [label=\"${assignedTaskEvent.tid}:${assignedTaskEvent.serial}.Assigned Task\"]")
     }
 
     private fun visWriteEvent(write: WriteEvent, bufferedWriter: BufferedWriter) {
