@@ -10,7 +10,7 @@ data class AwaitTaskEvent(
     override val serial: Int
 ) : ThreadEvent(), Serializable {
     override fun deepCopy(): Event {
-        return FailureEvent(
+        return AwaitTaskEvent(
             type = EventType.AWAIT_TASK,
             tid = copy().tid,
             serial = copy().serial

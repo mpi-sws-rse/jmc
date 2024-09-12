@@ -1,8 +1,12 @@
 package org.mpisws.checker;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
+import org.mpisws.util.concurrent.JMCFutureTask;
+import org.mpisws.util.concurrent.JMCStarterThread;
 import org.mpisws.util.concurrent.JMCThread;
 import programStructure.*;
 
@@ -370,8 +374,29 @@ public interface SearchStrategy {
             return handleMonitorRequest(thread);
         } else if (RuntimeEnvironment.joinRequest.containsKey(thread)) {
             return handleJoinRequest(thread);
+        } else if (thread instanceof JMCStarterThread jmcStarterThread) {
+            return handleStarterThread(jmcStarterThread);
         } else {
             return thread;
+        }
+    }
+
+    default Thread handleStarterThread(JMCStarterThread jmcStarterThread) {
+        if (jmcStarterThread.hasTask) {
+            return jmcStarterThread;
+        } else {
+            return handleIdleStarterThread(jmcStarterThread);
+        }
+    }
+
+    default Thread handleIdleStarterThread(JMCStarterThread jmcStarterThread) {
+        BlockingQueue<Runnable> queue = RuntimeEnvironment.workQueue.get(jmcStarterThread.threadPoolExecutorId);
+        if (queue.isEmpty()) {
+            RuntimeEnvironment.readyThreadList.remove(jmcStarterThread);
+            RuntimeEnvironment.idleThreadsInPool.get(jmcStarterThread.threadPoolExecutorId).add(jmcStarterThread);
+            return pickNextRandomThread();
+        } else {
+            return jmcStarterThread;
         }
     }
 
@@ -574,7 +599,16 @@ public interface SearchStrategy {
                 .toList();
     }
 
-    default Thread nextGetFutureRequest(Thread thread, Future future) {
+    default Thread nextGetFutureRequest(Thread thread, FutureTask future) {
+        if (future instanceof JMCFutureTask jmcFutureTask) {
+            if (!jmcFutureTask.isFinished) {
+                RuntimeEnvironment.readyThreadList.remove(thread);
+                RuntimeEnvironment.waitingThreadForFuture.put(future, thread);
+            }
+        } else {
+            System.out.println("[Search Strategy Message] : The FutureTask is not an instance of JMCFutureTask");
+            System.exit(0);
+        }
         return pickNextThread();
     }
 

@@ -9,18 +9,19 @@ import org.mpisws.manager.FinishedType;
 import org.mpisws.manager.HaltExecutionException;
 import org.mpisws.solver.SMTSolverTypes;
 import org.mpisws.solver.SymbolicSolver;
-import org.mpisws.util.concurrent.JMCStarterThread;
-import org.mpisws.util.concurrent.JMCThread;
-import org.mpisws.util.concurrent.StaticMethodMonitor;
-import org.mpisws.util.concurrent.InstanceMethodMonitor;
+import org.mpisws.util.concurrent.*;
 import programStructure.*;
 import org.mpisws.symbolic.SymbolicOperation;
+import programStructure.Message;
+import programStructure.SimpleMessage;
+import programStructure.TaggedMessage;
 
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.function.BiFunction;
 
 /**
@@ -353,7 +354,7 @@ public class RuntimeEnvironment {
 
     public static Map<Long, Future> futureThreadMap = new HashMap<>();
 
-    public static Future getFutureReq;
+    public static FutureTask getFutureReq;
 
     public static List<Thread> untaskedThreadList = new ArrayList<>();
 
@@ -362,6 +363,10 @@ public class RuntimeEnvironment {
     public static int numOfThreadPoolExecutors = 0;
 
     public static Thread takeFromBlockingQueueReq = null;
+
+    public static Map<Integer, List<Thread>> idleThreadsInPool = new HashMap<>();
+
+    public static Map<FutureTask, Thread> waitingThreadForFuture = new HashMap<>();
 
 
     /**
@@ -483,16 +488,62 @@ public class RuntimeEnvironment {
         solverType = config.solverType;
     }
 
-    public static void setWorkQueue(int threadPoolExecutorId, BlockingQueue<Runnable> workQueue) {
-        RuntimeEnvironment.workQueue.put(threadPoolExecutorId, workQueue);
+    public static void setWorkQueue(int threadPoolExecutorId, BlockingQueue<Runnable> queue) {
+        workQueue.put(threadPoolExecutorId, queue);
+        idleThreadsInPool.put(threadPoolExecutorId, new ArrayList<>());
     }
 
-    public static boolean isWorkQueueEmpty() {
-        return workQueue == null || workQueue.isEmpty();
+    public static void releaseIdleThreadsInPool(int threadPoolId) {
+        List<Thread> toRelease = idleThreadsInPool.get(threadPoolId);
+        if (!toRelease.isEmpty()) {
+            readyThreadList.addAll(toRelease);
+            toRelease.clear();
+        }
     }
 
-    public static void newTaskOffered(Thread thread, Runnable task, int threadPoolId) {
-        // TODO()
+    public static void newTaskCreated(Thread thread, Runnable task, int threadPoolId) {
+        System.out.println("[Runtime Environment Message] : " + thread.getName() +
+                " added " + task + " to the thread pool " + threadPoolId);
+        NewTaskEvent newTaskEvent = createNewTaskEvent(thread, task, threadPoolId);
+        eventsRecord.add(newTaskEvent);
+    }
+
+    public static void threadAwaitForTask(Thread thread) {
+        System.out.println("[RuntimeEnvironmentMessage]: " + thread.getName() + " awaits for the next task");
+        AwaitTaskEvent awaitTaskEvent = createAwaitTaskEvent(thread);
+        eventsRecord.add(awaitTaskEvent);
+    }
+
+    public static AwaitTaskEvent createAwaitTaskEvent(Thread thread) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new AwaitTaskEvent(EventType.AWAIT_TASK, threadIdMap.get(thread.getId()).intValue(), serialNumber);
+    }
+
+    public static void taskAssignToThread(Thread thread, Runnable task) {
+        System.out.println("[RuntimeEnvironmentMessage]: " + thread.getName() + " is assigned to task " + task);
+        AssignedTaskEvent assignedTaskEvent = createAssignedTaskEvent(thread, task);
+        eventsRecord.add(assignedTaskEvent);
+    }
+
+    public static AssignedTaskEvent createAssignedTaskEvent(Thread thread, Runnable task) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new AssignedTaskEvent(EventType.ASSIGNED_TASK, threadIdMap.get(thread.getId()).intValue(), serialNumber, task);
+    }
+
+    public static void threadRunningNewTask(Thread thread, Runnable task) {
+        System.out.println("[RuntimeEnvironmentMessage]: " + thread.getName() + " is going to execute " + task);
+        NewRunEvent newRunEvent = createNewRunEvent(thread, task);
+        eventsRecord.add(newRunEvent);
+    }
+
+    public static NewRunEvent createNewRunEvent(Thread thread, Runnable task) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new NewRunEvent(EventType.NEW_RUN, threadIdMap.get(thread.getId()).intValue(), serialNumber, task);
+    }
+
+    public static NewTaskEvent createNewTaskEvent(Thread thread, Runnable task, int threadPoolId) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new NewTaskEvent(EventType.NEW_TASK, threadIdMap.get(thread.getId()).intValue(), serialNumber, threadPoolId, task);
     }
 
     public static void queueLengthIsMax(Thread thread, int threadPoolId) {
@@ -1133,27 +1184,37 @@ public class RuntimeEnvironment {
         futureThreadMap.put(threadIdMap.get(thread.getId()), future);
     }
 
-    public static void getFuture(Thread thread, Future future) {
+    public static void releaseWaitingThreadForFuture(FutureTask futureTask) {
+        if (waitingThreadForFuture.containsKey(futureTask)) {
+            Thread releasedThread = waitingThreadForFuture.get(futureTask);
+            readyThreadList.add(releasedThread);
+            waitingThreadForFuture.remove(futureTask, releasedThread);
+        }
+    }
+
+    public static void getFuture(Thread thread, FutureTask future) {
         System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to get the value of the future (" + future + ")");
         getFutureReq = future;
         waitRequest(thread);
     }
 
-    public static void taskAssignToThread(Thread thread, Runnable task) {
-        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been assigned to the task (" + task + ")");
-        if (!readyThreadList.contains(thread) && untaskedThreadList.contains(thread)) {
-            readyThreadList.add(thread);
-            untaskedThreadList.remove(thread);
-        }
-    }
+//    public static void taskAssignToThread(Thread thread, Runnable task) {
+//        // TODO(): check the body of this method
+//        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been assigned to the task (" + task + ")");
+//        if (!readyThreadList.contains(thread) && untaskedThreadList.contains(thread)) {
+//            readyThreadList.add(thread);
+//            untaskedThreadList.remove(thread);
+//        }
+//    }
 
-    public static void taskDissociateFromThread(Thread thread, Runnable task) {
-        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been dissociated from the task");
-        if (readyThreadList.contains(thread) && !untaskedThreadList.contains(thread)) {
-            readyThreadList.remove(thread);
-            untaskedThreadList.add(thread);
-        }
-    }
+//    public static void taskDissociateFromThread(Thread thread, Runnable task) {
+//        // TODO(): check the body of this method
+//        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been dissociated from the task");
+//        if (readyThreadList.contains(thread) && !untaskedThreadList.contains(thread)) {
+//            readyThreadList.remove(thread);
+//            untaskedThreadList.add(thread);
+//        }
+//    }
 
     /**
      * Handles an assertion failure from a thread.
@@ -1798,5 +1859,7 @@ public class RuntimeEnvironment {
         workQueue = new HashMap<>();
         numOfThreadPoolExecutors = 0;
         takeFromBlockingQueueReq = null;
+        idleThreadsInPool = new HashMap<>();
+        waitingThreadForFuture = new HashMap<>();
     }
 }

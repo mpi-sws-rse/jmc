@@ -36,19 +36,28 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
 
     @Override
     protected void beforeExecute(Thread t, Runnable r) {
+        RuntimeEnvironment.threadRunningNewTask(t, r);
         super.beforeExecute(t, r);
-        //RuntimeEnvironment.taskAssignToThread(t, r);
     }
 
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
+        if (Thread.currentThread() instanceof JMCStarterThread jmcStarterThread) {
+            jmcStarterThread.hasTask = false;
+        } else {
+            System.out.println("[JMCThreadPoolExecutor Message] : The current thread is not a JMC starter thread");
+            System.exit(0);
+        }
+        //RuntimeEnvironment.taskDissociateFromThread(Thread.currentThread(), r);
         super.afterExecute(r, t);
-        RuntimeEnvironment.taskDissociateFromThread(Thread.currentThread(), r);
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
     }
 
     @Override
     public void execute(Runnable command) {
+        super.execute(command);
+    }
+
+    private void oldExecute(Runnable command) {
         if (!(command instanceof RunnableFuture<?>)) {
             System.out.println("[JMCThreadPoolExecutor Message] : The next command is not a FutureRunnable");
             System.exit(0);
@@ -74,7 +83,9 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
      */
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
-        return new JMCFutureTask(callable);
+        JMCFutureTask jmcFutureTask = new JMCFutureTask(callable);
+        RuntimeEnvironment.newTaskCreated(Thread.currentThread(), jmcFutureTask, id);
+        return jmcFutureTask;
     }
 
     /**
@@ -85,6 +96,8 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
      */
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
-        return new JMCFutureTask(runnable, value);
+        JMCFutureTask jmcFutureTask = new JMCFutureTask(runnable, value);
+        RuntimeEnvironment.newTaskCreated(Thread.currentThread(), jmcFutureTask, id);
+        return jmcFutureTask;
     }
 }

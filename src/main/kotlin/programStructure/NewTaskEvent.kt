@@ -7,13 +7,23 @@ data class NewTaskEvent(
 
     override val tid: Int,
 
-    override val serial: Int
+    override val serial: Int,
+
+    val threadPoolId: Int,
+
+    @Transient
+    val task: Runnable
 ) : ThreadEvent(), Serializable {
+
+    var taskString: String = task.toString()
+
     override fun deepCopy(): Event {
-        return FailureEvent(
+        return NewTaskEvent(
             type = EventType.NEW_TASK,
             tid = copy().tid,
-            serial = copy().serial
+            serial = copy().serial,
+            threadPoolId = copy().threadPoolId,
+            task = copy().task
         )
     }
 }

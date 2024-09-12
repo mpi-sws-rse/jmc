@@ -2,6 +2,7 @@ package org.mpisws.runtime;
 
 import java.util.Optional;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.checker.StrategyType;
@@ -665,12 +666,11 @@ public class SchedulerThread extends Thread {
     public void getFutureRequestHandler() {
         System.out.println("[Scheduler Thread Message] : Get future request handler is called");
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        Optional<Future> getFutureRequest = Optional.ofNullable(RuntimeEnvironment.getFutureReq);
+        Optional<FutureTask> getFutureRequest = Optional.ofNullable(RuntimeEnvironment.getFutureReq);
         RuntimeEnvironment.threadWaitReq = null;
         RuntimeEnvironment.getFutureReq = null;
         if (thread.isPresent() && getFutureRequest.isPresent()) {
-            searchStrategy.nextGetFutureRequest(thread.get(), getFutureRequest.get());
-            notifyThread(thread.get());
+            notifyThread(searchStrategy.nextGetFutureRequest(thread.get(), getFutureRequest.get()));
         }
     }
 

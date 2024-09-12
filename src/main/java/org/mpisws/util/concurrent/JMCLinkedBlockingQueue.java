@@ -8,18 +8,35 @@ import java.util.concurrent.TimeUnit;
 
 public class JMCLinkedBlockingQueue<E> extends LinkedBlockingQueue<E> {
 
+    public int threadPoolId;
+
+    /**
+     *
+     */
+    public JMCLinkedBlockingQueue(int threadPoolId) {
+        super();
+        this.threadPoolId = threadPoolId;
+    }
+
     /**
      * @return
      * @throws InterruptedException
      */
     @Override
     public E take() throws InterruptedException {
+        RuntimeEnvironment.threadAwaitForTask(Thread.currentThread());
         RuntimeEnvironment.waitRequest(Thread.currentThread());
         // store the super.take() in a variable
         // return the variable
         E e = super.take();
         if (e instanceof Runnable r) {
             RuntimeEnvironment.taskAssignToThread(Thread.currentThread(), r);
+        }
+        if (Thread.currentThread() instanceof JMCStarterThread jmcStarterThread) {
+            jmcStarterThread.hasTask = true;
+        } else {
+            System.out.println("[JMCLinkedBlockingQueue Message] : The current thread is not a JMC starter thread");
+            System.exit(0);
         }
         return e;
     }
@@ -32,9 +49,9 @@ public class JMCLinkedBlockingQueue<E> extends LinkedBlockingQueue<E> {
     public boolean offer(@NotNull E e) {
         boolean result = super.offer(e);
         if (result) {
-
+            RuntimeEnvironment.releaseIdleThreadsInPool(threadPoolId);
         } else {
-
+            // TODO()
         }
         return result;
     }

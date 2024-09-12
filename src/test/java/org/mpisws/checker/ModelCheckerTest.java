@@ -493,6 +493,25 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  THREAD POOL COUNTER
+     */
+    @Test
+    @DisplayName("Pool Counter")
+    void randomTestPoolCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.pool.counter",
+                "PoolCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/pool/counter/"
+        );
+        System.out.println("PoolCounter Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "PoolCounter Random Strategy Finished");
+    }
+
+
+    /*
      *                                    SIMPLE MESSAGE
      */
 

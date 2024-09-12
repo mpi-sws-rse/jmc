@@ -7,6 +7,8 @@ public class JMCStarterThread extends Thread {
 
     public int threadPoolExecutorId;
 
+    public boolean hasTask = false;
+
     public JMCStarterThread(int threadPoolExecutorId) {
         super();
         this.threadPoolExecutorId = threadPoolExecutorId;
@@ -19,6 +21,7 @@ public class JMCStarterThread extends Thread {
 
     @Override
     public void run() {
+        this.hasTask = true;
         RuntimeEnvironment.waitRequest(Thread.currentThread());
         super.run();
         try {

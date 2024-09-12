@@ -9,6 +9,8 @@ import java.util.concurrent.FutureTask;
 
 public class JMCFutureTask extends FutureTask {
 
+    public boolean isFinished = false;
+
     public JMCFutureTask(@NotNull Callable callable) {
         super(callable);
     }
@@ -27,4 +29,16 @@ public class JMCFutureTask extends FutureTask {
         RuntimeEnvironment.getFuture(Thread.currentThread(), this);
         return super.get();
     }
+
+    /**
+     *
+     */
+    @Override
+    protected void done() {
+        this.isFinished = true;
+        RuntimeEnvironment.releaseWaitingThreadForFuture(this);
+        super.done();
+    }
+
+
 }
