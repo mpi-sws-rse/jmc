@@ -652,7 +652,7 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public void saveExecutionState() {
-        printExecutionTrace();
+        //printExecutionTrace();
     }
 
     /**

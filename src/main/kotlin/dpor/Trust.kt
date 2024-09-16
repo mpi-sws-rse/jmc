@@ -189,9 +189,9 @@ class Trust(path: String) : DPOR(path) {
                     this.graphCounter++
                     G.id = this.graphCounter
                     println("[Trust Message] : Visited full execution graph G_$graphCounter")
-                    G.visualizeGraph(this.graphCounter, this.graphsPath)
+                    //G.visualizeGraph(this.graphCounter, this.graphsPath)
                     allGraphs.add(G)
-                    G.printEvents()
+                    //G.printEvents()
                     //G.printPorf()
                     //G.printSc()
                     /*

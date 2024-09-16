@@ -77,6 +77,8 @@ public final class CheckerConfiguration implements Serializable {
      */
     public ProgramType programType;
 
+    public GraphExploration graphExploration;
+
     /**
      * The following constructor is used to initialize the configuration with default values.
      * <br>
@@ -96,6 +98,7 @@ public final class CheckerConfiguration implements Serializable {
         buggyTraceFile = builder.buggyTraceFile;
         solverType = builder.solverType;
         programType = builder.programType;
+        graphExploration = builder.graphExploration;
     }
 
     /**
@@ -149,6 +152,7 @@ public final class CheckerConfiguration implements Serializable {
         public String executionGraphsPath = "src/main/resources/Visualized_Graphs/";
         public SMTSolverTypes solverType = SMTSolverTypes.SMTINTERPOL;
         public ProgramType programType = ProgramType.SHARED_MEM;
+        public GraphExploration graphExploration = GraphExploration.DFS;
 
         public ConfigurationBuilder() {
         }
@@ -209,6 +213,11 @@ public final class CheckerConfiguration implements Serializable {
 
         public ConfigurationBuilder withProgramType(ProgramType programType) {
             this.programType = programType;
+            return this;
+        }
+
+        public ConfigurationBuilder withGraphExploration(GraphExploration graphExploration) {
+            this.graphExploration = graphExploration;
             return this;
         }
     }
