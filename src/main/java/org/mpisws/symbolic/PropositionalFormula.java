@@ -33,10 +33,36 @@ public class PropositionalFormula {
         imgr = RuntimeEnvironment.solver.getImgr();
     }
 
+    public SymbolicOperation atomicLiteral(SymbolicBoolean var) {
+        if (var.getEval() != null) {
+            SymbolicBoolean symbol = (SymbolicBoolean) var.read();
+            return atomicLiteral(symbol.getEval());
+        } else {
+            booleanVariableMap.clear();
+            SymbolicOperation symbolicOperation = new SymbolicOperation();
+            SymbolicBoolean symbol = (SymbolicBoolean) var.read();
+            BooleanFormula formula = makeBooleanFormula(symbol);
+            symbolicOperation.setFormula(formula);
+            symbolicOperation.setJmcFormula(symbol, null, InstructionType.ATOM);
+            symbolicOperation.setBooleanVariableMap(booleanVariableMap);
+            return symbolicOperation;
+        }
+    }
+
+    public SymbolicOperation atomicLiteral(SymbolicOperation op) {
+        SymbolicOperation symbolicOperation = new SymbolicOperation();
+        symbolicOperation.setFormula(op.getFormula());
+        symbolicOperation.setJmcFormula(op, null, InstructionType.ATOM);
+        symbolicOperation.setIntegerVariableMap(op.getIntegerVariableMap());
+        symbolicOperation.setBooleanVariableMap(op.getBooleanVariableMap());
+        return symbolicOperation;
+    }
+
     public SymbolicOperation and(SymbolicOperation op1, SymbolicOperation op2) {
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         BooleanFormula formula = bmgr.and(op1.getFormula(), op2.getFormula());
         symbolicOperation.setFormula(formula);
+        symbolicOperation.setJmcFormula(op1, op2, InstructionType.AND);
         symbolicOperation.setIntegerVariableMap(unionIntegerVariableMap(op1.getIntegerVariableMap(), op2.getIntegerVariableMap()));
         symbolicOperation.setBooleanVariableMap(unionBooleanVariableMap(op1.getBooleanVariableMap(), op2.getBooleanVariableMap()));
         return symbolicOperation;
@@ -62,14 +88,16 @@ public class PropositionalFormula {
             BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.and(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
+            symbolicOperation.setJmcFormula(symbol1, symbol2, InstructionType.AND);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
             return symbolicOperation;
         }
     }
 
     public SymbolicOperation and(SymbolicOperation op1, SymbolicBoolean var) {
-        SymbolicBoolean symbolicBoolean = (SymbolicBoolean) var.read();
-        SymbolicOperation op2 = makeSymbolicOperation(symbolicBoolean);
+        //SymbolicBoolean symbolicBoolean = (SymbolicBoolean) var.read();
+        //SymbolicOperation op2 = makeSymbolicOperation(symbolicBoolean);
+        SymbolicOperation op2 = atomicLiteral(var);
         return and(op1, op2);
     }
 
@@ -81,6 +109,7 @@ public class PropositionalFormula {
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         BooleanFormula formula = bmgr.or(op1.getFormula(), op2.getFormula());
         symbolicOperation.setFormula(formula);
+        symbolicOperation.setJmcFormula(op1, op2, InstructionType.OR);
         symbolicOperation.setIntegerVariableMap(unionIntegerVariableMap(op1.getIntegerVariableMap(), op2.getIntegerVariableMap()));
         symbolicOperation.setBooleanVariableMap(unionBooleanVariableMap(op1.getBooleanVariableMap(), op2.getBooleanVariableMap()));
         return symbolicOperation;
@@ -106,14 +135,16 @@ public class PropositionalFormula {
             BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.or(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
+            symbolicOperation.setJmcFormula(symbol1, symbol2, InstructionType.OR);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
             return symbolicOperation;
         }
     }
 
     public SymbolicOperation or(SymbolicOperation op1, SymbolicBoolean var) {
-        SymbolicBoolean symbolicBoolean = (SymbolicBoolean) var.read();
-        SymbolicOperation op2 = makeSymbolicOperation(symbolicBoolean);
+        //SymbolicBoolean symbolicBoolean = (SymbolicBoolean) var.read();
+        //SymbolicOperation op2 = makeSymbolicOperation(symbolicBoolean);
+        SymbolicOperation op2 = atomicLiteral(var);
         return or(op1, op2);
     }
 
@@ -125,6 +156,7 @@ public class PropositionalFormula {
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         BooleanFormula formula = bmgr.not(op.getFormula());
         symbolicOperation.setFormula(formula);
+        symbolicOperation.setJmcFormula(op, null, InstructionType.NOT);
         symbolicOperation.setIntegerVariableMap(op.getIntegerVariableMap());
         symbolicOperation.setBooleanVariableMap(op.getBooleanVariableMap());
         return symbolicOperation;
@@ -139,6 +171,7 @@ public class PropositionalFormula {
             SymbolicOperation symbolicOperation = new SymbolicOperation();
             BooleanFormula formula = bmgr.not(makeBooleanFormula(symbol));
             symbolicOperation.setFormula(formula);
+            symbolicOperation.setJmcFormula(symbol, null, InstructionType.NOT);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
             return symbolicOperation;
         }
@@ -148,6 +181,7 @@ public class PropositionalFormula {
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         BooleanFormula formula = bmgr.implication(op1.getFormula(), op2.getFormula());
         symbolicOperation.setFormula(formula);
+        symbolicOperation.setJmcFormula(op1, op2, InstructionType.IMPLIES);
         symbolicOperation.setIntegerVariableMap(unionIntegerVariableMap(op1.getIntegerVariableMap(), op2.getIntegerVariableMap()));
         symbolicOperation.setBooleanVariableMap(unionBooleanVariableMap(op1.getBooleanVariableMap(), op2.getBooleanVariableMap()));
         return symbolicOperation;
@@ -173,14 +207,16 @@ public class PropositionalFormula {
             BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.implication(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
+            symbolicOperation.setJmcFormula(symbol1, symbol2, InstructionType.IMPLIES);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
             return symbolicOperation;
         }
     }
 
     public SymbolicOperation implies(SymbolicOperation op, SymbolicBoolean var) {
-        SymbolicBoolean symbol = (SymbolicBoolean) var.read();
-        SymbolicOperation op2 = makeSymbolicOperation(symbol);
+        //SymbolicBoolean symbol = (SymbolicBoolean) var.read();
+        //SymbolicOperation op2 = makeSymbolicOperation(symbol);
+        SymbolicOperation op2 = atomicLiteral(var);
         return implies(op, op2);
     }
 
@@ -192,6 +228,7 @@ public class PropositionalFormula {
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         BooleanFormula formula = bmgr.equivalence(op1.getFormula(), op2.getFormula());
         symbolicOperation.setFormula(formula);
+        symbolicOperation.setJmcFormula(op1, op2, InstructionType.IFF);
         symbolicOperation.setIntegerVariableMap(unionIntegerVariableMap(op1.getIntegerVariableMap(), op2.getIntegerVariableMap()));
         symbolicOperation.setBooleanVariableMap(unionBooleanVariableMap(op1.getBooleanVariableMap(), op2.getBooleanVariableMap()));
         return symbolicOperation;
@@ -217,14 +254,16 @@ public class PropositionalFormula {
             BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.equivalence(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
+            symbolicOperation.setJmcFormula(symbol1, symbol2, InstructionType.IFF);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
             return symbolicOperation;
         }
     }
 
     public SymbolicOperation iff(SymbolicOperation op, SymbolicBoolean var) {
-        SymbolicBoolean symbol = (SymbolicBoolean) var.read();
-        SymbolicOperation op2 = makeSymbolicOperation(symbol);
+        //SymbolicBoolean symbol = (SymbolicBoolean) var.read();
+        //SymbolicOperation op2 = makeSymbolicOperation(symbol);
+        SymbolicOperation op2 = atomicLiteral(var);
         return iff(op, op2);
     }
 
@@ -236,6 +275,7 @@ public class PropositionalFormula {
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         BooleanFormula formula = bmgr.xor(op1.getFormula(), op2.getFormula());
         symbolicOperation.setFormula(formula);
+        symbolicOperation.setJmcFormula(op1, op2, InstructionType.XOR);
         symbolicOperation.setIntegerVariableMap(unionIntegerVariableMap(op1.getIntegerVariableMap(), op2.getIntegerVariableMap()));
         symbolicOperation.setBooleanVariableMap(unionBooleanVariableMap(op1.getBooleanVariableMap(), op2.getBooleanVariableMap()));
         return symbolicOperation;
@@ -261,14 +301,16 @@ public class PropositionalFormula {
             BooleanFormula rightOperand = makeBooleanFormula(symbol2);
             BooleanFormula formula = bmgr.xor(leftOperand, rightOperand);
             symbolicOperation.setFormula(formula);
+            symbolicOperation.setJmcFormula(symbol1, symbol2, InstructionType.XOR);
             symbolicOperation.setBooleanVariableMap(booleanVariableMap);
             return symbolicOperation;
         }
     }
 
     public SymbolicOperation xor(SymbolicOperation op, SymbolicBoolean var) {
-        SymbolicBoolean symbol = (SymbolicBoolean) var.read();
-        SymbolicOperation op2 = makeSymbolicOperation(symbol);
+        //SymbolicBoolean symbol = (SymbolicBoolean) var.read();
+        //SymbolicOperation op2 = makeSymbolicOperation(symbol);
+        SymbolicOperation op2 = atomicLiteral(var);
         return xor(op, op2);
     }
 

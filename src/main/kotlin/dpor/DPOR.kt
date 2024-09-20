@@ -4,12 +4,14 @@ import executionGraph.ExecutionGraph
 import programStructure.Event
 import programStructure.EventType
 import programStructure.FinishEvent
+import programStructure.SymExecutionEvent
 
-abstract class DPOR(path: String) {
+abstract class DPOR(path: String, Verbose: Boolean) {
 
     var graphCounter: Int = 0
     var allGraphs: MutableList<ExecutionGraph> = mutableListOf()
     var graphsPath: String = path
+    var verbose: Boolean = Verbose
 
     abstract fun visit(G: ExecutionGraph, allEvents: MutableList<Event>)
 
@@ -35,5 +37,9 @@ abstract class DPOR(path: String) {
             }
         }
         return null
+    }
+
+    fun isSatMaximal(symbolicEvent: SymExecutionEvent): Boolean {
+        return symbolicEvent.result || !symbolicEvent.isNegatable
     }
 }

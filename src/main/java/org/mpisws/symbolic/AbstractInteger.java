@@ -5,12 +5,12 @@ import java.io.Serializable;
 /**
  * The {@link AbstractInteger} class is used to represent an integer value that can be either symbolic or concrete.
  */
-public abstract class AbstractInteger implements Serializable {
+public abstract class AbstractInteger implements Serializable, SymbolicOperand {
 
     /**
      * @property {@link #value} is used to store the value of the integer.
      */
-    private int value;
+    public int value;
 
     /**
      * Makes a deep copy of the integer.

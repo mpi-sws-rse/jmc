@@ -33,5 +33,8 @@ enum class EventType : Serializable {
     ASSIGNED_TASK,
     NEW_RUN,
     AWAIT_TASK,
+    CON_ASSUME,
+    SYM_ASSUME,
+    ASSUME_BLOCKED,
     OTHER
 }

@@ -121,6 +121,7 @@ public class ArithmeticFormula {
             System.out.println("[Symbolic Execution] Unsupported type");
             System.exit(0);
         }
+        symbolicOperation.setJmcFormula(var1, var2, InstructionType.EQ);
         return symbolicOperation;
     }
 
@@ -205,6 +206,7 @@ public class ArithmeticFormula {
             System.out.println("[Symbolic Execution] Unsupported type");
             System.exit(0);
         }
+        symbolicOperation.setJmcFormula(var1, var2, InstructionType.NEQ);
         return symbolicOperation;
     }
 
@@ -289,6 +291,7 @@ public class ArithmeticFormula {
             System.out.println("[Symbolic Execution] Unsupported type");
             System.exit(0);
         }
+        symbolicOperation.setJmcFormula(var1, var2, InstructionType.GEQ);
         return symbolicOperation;
     }
 
@@ -355,6 +358,7 @@ public class ArithmeticFormula {
             System.out.println("[Symbolic Execution] Unsupported type");
             System.exit(0);
         }
+        symbolicOperation.setJmcFormula(var1, var2, InstructionType.LEQ);
         return symbolicOperation;
     }
 
@@ -398,6 +402,7 @@ public class ArithmeticFormula {
             System.out.println("[Symbolic Execution] Unsupported type");
             System.exit(0);
         }
+        symbolicOperation.setJmcFormula(var1, var2, InstructionType.GT);
         return symbolicOperation;
     }
 
@@ -441,6 +446,7 @@ public class ArithmeticFormula {
             System.out.println("[Symbolic Execution] Unsupported type");
             System.exit(0);
         }
+        symbolicOperation.setJmcFormula(var1, var2, InstructionType.LT);
         return symbolicOperation;
     }
 
@@ -473,6 +479,8 @@ public class ArithmeticFormula {
                 return imgr.multiply(leftOperand, rightOperand);
             case DIV:
                 return imgr.divide(leftOperand, rightOperand);
+            case MOD:
+                return imgr.modulo(leftOperand, rightOperand);
             default:
                 System.out.println("[Symbolic Execution] Unsupported operator [" +
                         symbolicInteger.getEval().getOperator() + "]");

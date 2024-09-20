@@ -1,6 +1,7 @@
 package org.mpisws.checker;
 
 import org.mpisws.solver.SMTSolverTypes;
+import org.mpisws.solver.SolverApproach;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
@@ -79,6 +80,10 @@ public final class CheckerConfiguration implements Serializable {
 
     public GraphExploration graphExploration;
 
+    public SolverApproach solverApproach;
+
+    public SchedulingPolicy schedulingPolicy;
+
     /**
      * The following constructor is used to initialize the configuration with default values.
      * <br>
@@ -99,6 +104,8 @@ public final class CheckerConfiguration implements Serializable {
         solverType = builder.solverType;
         programType = builder.programType;
         graphExploration = builder.graphExploration;
+        solverApproach = builder.solverApproach;
+        schedulingPolicy = builder.schedulingPolicy;
     }
 
     /**
@@ -153,6 +160,8 @@ public final class CheckerConfiguration implements Serializable {
         public SMTSolverTypes solverType = SMTSolverTypes.SMTINTERPOL;
         public ProgramType programType = ProgramType.SHARED_MEM;
         public GraphExploration graphExploration = GraphExploration.DFS;
+        public SolverApproach solverApproach = SolverApproach.INCREMENTAL;
+        public SchedulingPolicy schedulingPolicy = SchedulingPolicy.FIFO;
 
         public ConfigurationBuilder() {
         }
@@ -218,6 +227,16 @@ public final class CheckerConfiguration implements Serializable {
 
         public ConfigurationBuilder withGraphExploration(GraphExploration graphExploration) {
             this.graphExploration = graphExploration;
+            return this;
+        }
+
+        public ConfigurationBuilder withSolverApproach(SolverApproach solverApproach) {
+            this.solverApproach = solverApproach;
+            return this;
+        }
+
+        public ConfigurationBuilder withSchedulingPolicy(SchedulingPolicy schedulingPolicy) {
+            this.schedulingPolicy = schedulingPolicy;
             return this;
         }
     }

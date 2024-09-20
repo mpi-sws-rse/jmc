@@ -5,7 +5,7 @@ import executionGraph.CO
 import executionGraph.ExecutionGraph
 import programStructure.*
 
-class Must(path: String) : DPOR(path) {
+class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
     override fun visit(G: ExecutionGraph, allEvents: MutableList<Event>) {
 
@@ -18,7 +18,9 @@ class Must(path: String) : DPOR(path) {
                     this.graphCounter++
                     G.id = this.graphCounter
                     println("[Must Message] : Visited full execution graph G_$graphCounter")
-                    G.visualizeGraph(this.graphCounter, this.graphsPath)
+                    if (verbose) {
+                        G.visualizeGraph(this.graphCounter, this.graphsPath)
+                    }
                     allGraphs.add(G)
                 }
 
@@ -212,6 +214,21 @@ class Must(path: String) : DPOR(path) {
                     visit(G, allEvents)
                 }
 
+                nextEvent.type == EventType.CON_ASSUME -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.SYM_ASSUME -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.ASSUME_BLOCKED -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
                 nextEvent.type == EventType.SYM_EXECUTION -> {
                     // The following is for debugging purposes only
                     println("[Must Message] : The next event is a SYM_EXECUTION event -> $nextEvent")
@@ -220,7 +237,7 @@ class Must(path: String) : DPOR(path) {
                         val G1 = G.deepCopy()
                         val negatedSymEvent = nextSymEvent.deepCopy() as SymExecutionEvent
                         negatedSymEvent.result = !negatedSymEvent.result
-                        negatedSymEvent.formula = "(not (${negatedSymEvent.formula}))"
+                        //negatedSymEvent.formula = "(not (${negatedSymEvent.formula}))"
                         G1.addEvent(negatedSymEvent)
                         visit(G1, allEvents)
                     }
@@ -318,6 +335,10 @@ class Must(path: String) : DPOR(path) {
     }
 
     private fun allowsRevisit(graph: ExecutionGraph, firstEvent: Event, secondEvent: Event): Boolean {
+
+        if (firstEvent.type == EventType.SYM_EXECUTION) {
+            return isSatMaximal(firstEvent as SymExecutionEvent)
+        }
 
         if (firstEvent is ReceiveEvent) {
             val recvEvent = firstEvent

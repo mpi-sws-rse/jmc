@@ -1,14 +1,17 @@
 package org.mpisws.symbolic;
 
+import org.mpisws.runtime.RuntimeEnvironment;
 import org.sosy_lab.java_smt.api.BooleanFormula;
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class SymbolicOperation {
+public class SymbolicOperation implements SymbolicOperand {
 
     private BooleanFormula contextFormula;
+
+    private final JMCFormula jmcFormula = new JMCFormula();
 
     private Map<String, IntegerFormula> integerVariableMap = new HashMap<>();
 
@@ -73,4 +76,27 @@ public class SymbolicOperation {
         }
         return false;
     }
+
+    public void setJmcFormula(SymbolicOperand left, SymbolicOperand right, InstructionType operator) {
+        jmcFormula.setLeftOperand(left);
+        jmcFormula.setRightOperand(right);
+        jmcFormula.setOperator(operator);
+
+    }
+
+    public boolean concreteEvaluation() {
+        boolean result = jmcFormula.evaluate();
+        System.out.println("[Debugging] : The JMC formula is: " + jmcFormula);
+        System.out.println("[Debugging] : The result of the symbolic operation is: " + result);
+        System.out.println("[Debugging] : The value of the symbolic variables are: ");
+        for (Map.Entry<String, SymBoolVariable> entry : RuntimeEnvironment.solver.symBoolVariableMap.entrySet()) {
+            System.out.println("[Debugging] : " + entry.getKey() + " : " + entry.getValue().getValue());
+        }
+        for (Map.Entry<String, SymIntVariable> entry : RuntimeEnvironment.solver.symIntVariableMap.entrySet()) {
+            System.out.println("[Debugging] : " + entry.getKey() + " : " + entry.getValue().getValue());
+        }
+        return result;
+    }
+
+
 }

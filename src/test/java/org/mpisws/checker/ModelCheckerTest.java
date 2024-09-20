@@ -3,6 +3,7 @@ package org.mpisws.checker;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.*;
+import org.mpisws.solver.SolverApproach;
 
 
 class ModelCheckerTest {
@@ -408,6 +409,8 @@ class ModelCheckerTest {
         );
         System.out.println("SymbolicCounter Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "SymbolicCounter Random Strategy Finished");
@@ -423,6 +426,10 @@ class ModelCheckerTest {
         );
         System.out.println("SymbolicCounter Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = true;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "SymbolicCounter Trust Strategy Finished");
@@ -441,6 +448,30 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "SymbolicCounter Replay Strategy Finished");
+    }
+
+    /*
+     *                                 SYMBOLIC GCD
+     */
+
+    @Test
+    @Disabled("This test is disabled due to an issue in symbolic execution")
+    @DisplayName("Symbolic GCD")
+    void trustTestSymbolicGCD() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.gcd",
+                "ParallelGCD",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/gcd/"
+        );
+        System.out.println("Symbolic GCD Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = true;
+        checker.configuration.solverApproach = SolverApproach.NON_INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Symbolic GCD Trust Strategy Finished");
     }
 
     /*

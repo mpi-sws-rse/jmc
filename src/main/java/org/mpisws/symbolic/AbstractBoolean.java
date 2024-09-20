@@ -5,12 +5,12 @@ import java.io.Serializable;
 /**
  * The {@link AbstractBoolean} class is used to represent a boolean value that can be either symbolic or concrete.
  */
-public abstract class AbstractBoolean implements Serializable {
+public abstract class AbstractBoolean implements Serializable, SymbolicOperand {
 
     /**
      * @property {@link #value} is used to store the value of the boolean.
      */
-    private boolean value;
+    public boolean value;
 
     /**
      * Makes a deep copy of the boolean.

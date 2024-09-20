@@ -78,6 +78,22 @@ public class ReplayStrategy implements SearchStrategy {
     }
 
     /**
+     * @param conAssumeEvent
+     */
+    @Override
+    public void nextConAssumeRequest(ConAssumeEvent conAssumeEvent) {
+        RuntimeEnvironment.eventsRecord.add(conAssumeEvent);
+    }
+
+    /**
+     * @param assumeBlockedEvent
+     */
+    @Override
+    public void nextAssumeBlockedRequest(AssumeBlockedEvent assumeBlockedEvent) {
+        RuntimeEnvironment.eventsRecord.add(assumeBlockedEvent);
+    }
+
+    /**
      * Represents the required strategy for the next enter monitor event.
      *
      * @param thread  is the thread that is going to enter the monitor.
@@ -318,6 +334,23 @@ public class ReplayStrategy implements SearchStrategy {
         SymExecutionEvent symbolicOperationEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
                 symbolicOperation.getFormula().toString(), symEvent.isNegatable());
         RuntimeEnvironment.eventsRecord.add(symbolicOperationEvent);
+    }
+
+    /**
+     * @param thread
+     * @param symbolicOperation
+     */
+    @Override
+    public void nextSymAssumeRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        if (guidingEvent.getType() != EventType.SYM_ASSUME) {
+            System.out.println("[Replay Strategy Message] : The next event is not a symbolic operation");
+            System.exit(0);
+        }
+        SymAssumeEvent symAssumeEvent = (SymAssumeEvent) this.guidingEvent;
+        RuntimeEnvironment.solverResult = symAssumeEvent.getResult();
+        SymAssumeEvent symAssumeRequest = RuntimeEnvironment.createSymAssumeEvent(thread,
+                symbolicOperation);
+        RuntimeEnvironment.eventsRecord.add(symAssumeRequest);
     }
 
     /**

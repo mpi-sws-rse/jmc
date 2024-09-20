@@ -2,14 +2,14 @@ package org.mpisws.runtime;
 
 import kotlin.Pair;
 import org.mpisws.checker.CheckerConfiguration;
-import executionGraph.ExecutionGraph;
 import org.mpisws.checker.GraphExploration;
+import org.mpisws.checker.SchedulingPolicy;
+import org.mpisws.solver.*;
 import org.mpisws.checker.StrategyType;
 import org.mpisws.manager.Finished;
 import org.mpisws.manager.FinishedType;
 import org.mpisws.manager.HaltExecutionException;
-import org.mpisws.solver.SMTSolverTypes;
-import org.mpisws.solver.SymbolicSolver;
+import org.mpisws.symbolic.SymbolicBoolean;
 import org.mpisws.util.concurrent.*;
 import programStructure.*;
 import org.mpisws.symbolic.SymbolicOperation;
@@ -124,9 +124,9 @@ public class RuntimeEnvironment {
     public static List<Thread> createdThreadList = new ArrayList<>();
 
     /**
-     * @property {@link #readyThreadList} is used to store the threads that are ready to run in the program under test.
+     * @property {@link #readyThread} is used to store the threads that are ready to run in the program under test.
      */
-    public static List<Thread> readyThreadList = new ArrayList<>();
+    public static ThreadCollection readyThread;
 
     public static Map<Long, ReceiveEvent> blockedRecvThreadMap = new HashMap<>();
 
@@ -383,6 +383,15 @@ public class RuntimeEnvironment {
 
     public static GraphExploration graphExploration = GraphExploration.DFS;
 
+    public static SolverApproach solverApproach = SolverApproach.INCREMENTAL;
+
+    public static SchedulingPolicy schedulingPolicy;
+
+    public static ConAssumeEvent conAssumeEventReq;
+
+    public static SymbolicOperation symAssumeEventReq;
+
+    public static AssumeBlockedEvent assumeBlockedEventReq;
 
     /**
      * The constructor is private to prevent the instantiation of the class
@@ -395,7 +404,7 @@ public class RuntimeEnvironment {
      * <p>
      * This method is invoked by the main method of the program under test. As it is called in a single-threaded
      * environment, there is no need to synchronize the access to the {@link #createdThreadList},
-     * {@link #readyThreadList}, and {@link #locks}.
+     * {@link #readyThread}, and {@link #locks}.
      * </p>
      *
      * @param thread The main thread of the program under test.
@@ -407,11 +416,22 @@ public class RuntimeEnvironment {
         numOfExecutions++;
         System.out.println("[Runtime Environment Message] : The number of executions is " + numOfExecutions);
         loadConfig();
-        if (solverType == null) {
-            solver = new SymbolicSolver();
+        if (solverApproach == SolverApproach.INCREMENTAL) {
+            if (solverType == null) {
+                solver = new IncrementalSolver();
+            } else {
+                solver = new IncrementalSolver(solverType);
+            }
         } else {
-            solver = new SymbolicSolver(solverType);
+            if (solverType == null) {
+                solver = new SimpleSolver();
+            } else {
+                solver = new SimpleSolver(solverType);
+            }
         }
+
+        initReadyThreadCollection();
+
         System.out.println("[Runtime Environment Message] : The CheckerConfiguration has been loaded");
         threadIdMap.put(thread.getId(), (long) threadCount);
         threadObjectMap.put(threadIdMap.get(thread.getId()), thread);
@@ -423,9 +443,9 @@ public class RuntimeEnvironment {
                 "[Runtime Environment Message] : " + thread.getName() + " added to the createdThreadList of" +
                         " the Runtime Environment"
         );
-        readyThreadList.add(thread);
+        readyThread.add(thread);
         System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " added to the readyThreadList of" +
+                "[Runtime Environment Message] : " + thread.getName() + " added to the readyThread list of" +
                         " the Runtime Environment"
         );
         mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
@@ -466,11 +486,8 @@ public class RuntimeEnvironment {
             System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() +
                     " state");
         }
-        System.out.println("[Runtime Environment Message] : The state of the threads in the readyThreadList");
-        for (Thread thread : readyThreadList) {
-            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() +
-                    " state");
-        }
+        System.out.println("[Runtime Environment Message] : The state of the threads in the readyThread List");
+        readyThread.printThreadStatus();
     }
 
     /**
@@ -529,6 +546,21 @@ public class RuntimeEnvironment {
         solverType = config.solverType;
         verbose = config.verbose;
         graphExploration = config.graphExploration;
+        solverApproach = config.solverApproach;
+        schedulingPolicy = config.schedulingPolicy;
+    }
+
+    private static void initReadyThreadCollection() {
+        if (schedulingPolicy == SchedulingPolicy.FIFO) {
+            readyThread = new FIFOThreadCollection();
+        } else if (schedulingPolicy == SchedulingPolicy.LIFO) {
+            readyThread = new LIFOThreadCollection();
+        } else if (schedulingPolicy == SchedulingPolicy.NON_DET) {
+            readyThread = new NonDetThreadCollection(seed);
+        } else {
+            System.out.println("[Runtime Environment Message] : The scheduling policy is not supported");
+            System.exit(0);
+        }
     }
 
     public static void initGraphCollection() {
@@ -550,7 +582,7 @@ public class RuntimeEnvironment {
     public static void releaseIdleThreadsInPool(int threadPoolId) {
         List<Thread> toRelease = idleThreadsInPool.get(threadPoolId);
         if (!toRelease.isEmpty()) {
-            readyThreadList.addAll(toRelease);
+            readyThread.addAll(toRelease);
             toRelease.clear();
         }
     }
@@ -652,31 +684,31 @@ public class RuntimeEnvironment {
     }
 
     /**
-     * Adds a new thread to the {@link #readyThreadList} of the {@link RuntimeEnvironment}.
+     * Adds a new thread to the {@link #readyThread} of the {@link RuntimeEnvironment}.
      * <p>
      * This method is invoked when a thread in the program under test calls the start() method. The thread is then added
-     * to the {@link #readyThreadList}.
+     * to the {@link #readyThread}.
      * The method assigns the thread to the {@link #threadStartReq} to inform the {@link SchedulerThread} that the thread
      * is ready to run. It then calls the {@link #waitRequest(Thread)} method to make the current thread wait and hand
      * over control to the {@link SchedulerThread} for deciding which thread to run next.
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
-     * no need to synchronize access to the {@link #readyThreadList}.
-     * If the thread is not in the {@link #createdThreadList} or is already in the {@link #readyThreadList}, a message
+     * no need to synchronize access to the {@link #readyThread}.
+     * If the thread is not in the {@link #createdThreadList} or is already in the {@link #readyThread}, a message
      * is printed to the console and no further action is taken.
      * </p>
      *
-     * @param thread        The thread to be added to the {@link #readyThreadList}.
+     * @param thread        The thread to be added to the {@link #readyThread}.
      * @param currentThread The current thread that is running.
      */
     public static void threadStart(Thread thread, Thread currentThread) {
-        if (createdThreadList.contains(thread) && !readyThreadList.contains(thread)) {
+        if (createdThreadList.contains(thread) && !readyThread.contains(thread)) {
             System.out.println(
                     "[Runtime Environment Message] : " + thread.getName() + " requested to run by the command of" +
                             " the " + currentThread.getName()
             );
-            readyThreadList.add(thread);
+            readyThread.add(thread);
             System.out.println(
-                    "[Runtime Environment Message] : " + thread.getName() + " added to the readyThreadList " +
+                    "[Runtime Environment Message] : " + thread.getName() + " added to the readyThread list " +
                             "of the Runtime Environment"
             );
             threadStartReq = thread;
@@ -829,14 +861,14 @@ public class RuntimeEnvironment {
      * <p>
      * This method is invoked when a thread in the program under test has completed its execution and needs to be
      * removed from the active threads list. The thread is then removed from both the {@link #createdThreadList} and
-     * {@link #readyThreadList}.
+     * {@link #readyThread}.
      * The method checks if the thread is the main thread. If it is, it sets the {@link #isFinished} flag to true, makes
      * the main thread wait by calling the {@link #waitRequest(Thread)} method, and then calls the
      * {@link #terminateExecution()} method to end the program execution.
      * If the thread is not the main thread, it sets the {@link #isFinished} flag to true and assigns the thread to
      * the {@link #threadWaitReq} to inform the {@link SchedulerThread} that the thread has finished its execution.
      * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
-     * no need to synchronize access to the {@link #createdThreadList}, {@link #readyThreadList}, and
+     * no need to synchronize access to the {@link #createdThreadList}, {@link #readyThread}, and
      * {@link #threadWaitReq}.
      * </p>
      *
@@ -846,7 +878,7 @@ public class RuntimeEnvironment {
         synchronized (locks.get(threadIdMap.get(thread.getId()))) {
             System.out.println("[Runtime Environment Message] : " + thread.getName() + " has requested to FINISH");
             createdThreadList.remove(thread);
-            readyThreadList.remove(thread);
+            readyThread.remove(thread);
             isFinished = true;
             if (threadIdMap.get(thread.getId()) == 1) {
                 waitRequest(thread);
@@ -857,7 +889,7 @@ public class RuntimeEnvironment {
                   the thread is changing the value of {@link #threadWaitReq}, {@link SchedulerThread} can read the value
                   of {@link #threadWaitReq}. To avoid from this situation, we used the {@link #threadWaitReqLock} object
                   to synchronize the access to {@link #threadWaitReq}. Since the {@link SchedulerThread} will wait on the
-                  {@link #threadWaitReqLock}, the {@link #createdThreadList} and {@link #readyThreadList} will be race-free.
+                  {@link #threadWaitReqLock}, the {@link #createdThreadList} and {@link #readyThread} will be race-free.
                  */
                 synchronized (threadWaitReqLock) {
                     threadWaitReq = thread;
@@ -928,7 +960,6 @@ public class RuntimeEnvironment {
                         "read the value of " + owner + "." + name + "(" + descriptor + ") = " +
                         Objects.requireNonNull(location).getValue()
         );
-        System.out.println("[Debug] : obj is " + obj);
         if (location.isPrimitive()) {
             readEventReq = createReadEvent(thread, location);
             waitRequest(thread);
@@ -1241,7 +1272,7 @@ public class RuntimeEnvironment {
     public static void releaseWaitingThreadForFuture(FutureTask futureTask) {
         if (waitingThreadForFuture.containsKey(futureTask)) {
             Thread releasedThread = waitingThreadForFuture.get(futureTask);
-            readyThreadList.add(releasedThread);
+            readyThread.add(releasedThread);
             waitingThreadForFuture.remove(futureTask, releasedThread);
         }
     }
@@ -1255,8 +1286,8 @@ public class RuntimeEnvironment {
 //    public static void taskAssignToThread(Thread thread, Runnable task) {
 //        // TODO(): check the body of this method
 //        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been assigned to the task (" + task + ")");
-//        if (!readyThreadList.contains(thread) && untaskedThreadList.contains(thread)) {
-//            readyThreadList.add(thread);
+//        if (!readyThread.contains(thread) && untaskedThreadList.contains(thread)) {
+//            readyThread.add(thread);
 //            untaskedThreadList.remove(thread);
 //        }
 //    }
@@ -1264,8 +1295,8 @@ public class RuntimeEnvironment {
 //    public static void taskDissociateFromThread(Thread thread, Runnable task) {
 //        // TODO(): check the body of this method
 //        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been dissociated from the task");
-//        if (readyThreadList.contains(thread) && !untaskedThreadList.contains(thread)) {
-//            readyThreadList.remove(thread);
+//        if (readyThread.contains(thread) && !untaskedThreadList.contains(thread)) {
+//            readyThread.remove(thread);
 //            untaskedThreadList.add(thread);
 //        }
 //    }
@@ -1289,6 +1320,63 @@ public class RuntimeEnvironment {
         System.out.println("[Runtime Environment Message] : " + message);
         assertFlag = true;
         waitRequest(Thread.currentThread());
+    }
+
+    public static void symAssertOperation(String meesage, SymbolicOperation sym, Thread thread) {
+        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
+                "execute a symbolic assert operation with the formula of " + sym.getFormula());
+        solver.computeSymbolicAssertOperationRequest(sym);
+        if (solverResult) {
+            System.out.println("[Runtime Environment Message] : The symbolic assert operation is SAT");
+        } else {
+            System.out.println("[Runtime Environment Message] : The symbolic assert operation is UNSAT");
+            assertOperation(meesage);
+        }
+    }
+
+    public static void concreteAssume(Thread thread, boolean result) {
+        System.out.println("[Runtime Environment Message] : " + Thread.currentThread().getName() + " requested to " +
+                "execute a concrete assume operation with the result of " + result);
+        ConAssumeEvent conAssumeEvent = createConAssumeEvent(thread, result);
+        conAssumeEventReq = conAssumeEvent;
+        waitRequest(thread);
+    }
+
+    public static boolean symbolicAssume(Thread thread, SymbolicOperation op) {
+        System.out.println("[Runtime Environment Message] : " + Thread.currentThread().getName() + " requested to " +
+                "execute a symbolic assume operation with the formula of " + op.getFormula());
+        symAssumeEventReq = op;
+        waitRequest(thread);
+        return solverResult;
+    }
+
+    public static boolean symbolicAssume(Thread thread, SymbolicBoolean symBool) {
+        // TODO() :
+        return false;
+    }
+
+    public static void AssumeBlocked(Thread thread) {
+        System.out.println("[Runtime Environment Message] : " + Thread.currentThread().getName() + " requested to " +
+                "execute a symbolic assume operation");
+        AssumeBlockedEvent assumeBlockedEvent = createAssumeBlockedEvent(thread);
+        assumeBlockedEventReq = assumeBlockedEvent;
+        waitRequest(thread);
+    }
+
+    public static AssumeBlockedEvent createAssumeBlockedEvent(Thread thread) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new AssumeBlockedEvent(EventType.ASSUME_BLOCKED, threadIdMap.get(thread.getId()).intValue(), serialNumber);
+    }
+
+    public static ConAssumeEvent createConAssumeEvent(Thread thread, boolean result) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new ConAssumeEvent(threadIdMap.get(thread.getId()).intValue(), EventType.CON_ASSUME, serialNumber, result);
+    }
+
+    public static SymAssumeEvent createSymAssumeEvent(Thread thread, SymbolicOperation sym) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new SymAssumeEvent(EventType.SYM_ASSUME, threadIdMap.get(thread.getId()).intValue(), serialNumber,
+                RuntimeEnvironment.solverResult, sym.getFormula().toString());
     }
 
     /**
@@ -1769,7 +1857,6 @@ public class RuntimeEnvironment {
         return null;
     }
 
-
     private static Message createSimpleMessage(long threadId, Object value) {
         SimpleMessage simpleMessage = new SimpleMessage(threadId, Thread.currentThread().getId(), value);
         simpleMessage.setJmcRecvTid(threadIdMap.get(threadId));
@@ -1839,7 +1926,7 @@ public class RuntimeEnvironment {
     }
 
     public static BlockedRecvEvent removeBlockedThreadFromReadyQueue(JMCThread jmcThread, ReceiveEvent receiveEvent) {
-        readyThreadList.remove(jmcThread);
+        readyThread.remove(jmcThread);
         blockedRecvThreadMap.put(threadIdMap.get(jmcThread.getId()), receiveEvent);
         BlockedRecvEvent blockedRecvEvent = createBlockedRecvEvent(jmcThread, receiveEvent);
         eventsRecord.add(blockedRecvEvent);
@@ -1847,7 +1934,7 @@ public class RuntimeEnvironment {
     }
 
     public static UnblockedRecvEvent addUnblockedThreadToReadyQueue(JMCThread jmcThread, ReceiveEvent receiveEvent) {
-        readyThreadList.add(jmcThread);
+        readyThread.add(jmcThread);
         blockedRecvThreadMap.remove(threadIdMap.get(jmcThread.getId()), receiveEvent);
         UnblockedRecvEvent unblockedRecvEvent = createUnblockedRecvEvent(jmcThread, receiveEvent);
         eventsRecord.add(unblockedRecvEvent);
@@ -1873,7 +1960,7 @@ public class RuntimeEnvironment {
         assertFlag = false;
         locks = new HashMap<>();
         createdThreadList = new ArrayList<>();
-        readyThreadList = new ArrayList<>();
+        initReadyThreadCollection();
         monitorList = new HashMap<>();
         monitorRequest = new HashMap<>();
         joinRequest = new HashMap<>();
@@ -1885,10 +1972,18 @@ public class RuntimeEnvironment {
         suspendedThreads = new ArrayList<>();
         threadObjectMap = new HashMap<>();
         suspendPriority = new HashMap<>();
-        if (solverType == null) {
-            solver = new SymbolicSolver();
+        if (solverApproach == SolverApproach.INCREMENTAL) {
+            if (solverType == null) {
+                solver = new IncrementalSolver();
+            } else {
+                solver = new IncrementalSolver(solverType);
+            }
         } else {
-            solver = new SymbolicSolver(solverType);
+            if (solverType == null) {
+                solver = new SimpleSolver();
+            } else {
+                solver = new SimpleSolver(solverType);
+            }
         }
         symbolicOperation = null;
         solverResult = false;
@@ -1920,7 +2015,8 @@ public class RuntimeEnvironment {
         memoryAfter = 0;
         startTime = 0;
         endTime = 0;
-        verbose = false;
-        graphExploration = GraphExploration.DFS;
+        conAssumeEventReq = null;
+        assumeBlockedEventReq = null;
+        symAssumeEventReq = null;
     }
 }

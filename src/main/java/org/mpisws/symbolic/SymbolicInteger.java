@@ -3,21 +3,28 @@ package org.mpisws.symbolic;
 import org.mpisws.runtime.RuntimeEnvironment;
 
 import java.io.Serializable;
+import java.util.Map;
+import java.util.Random;
 
 public class SymbolicInteger extends AbstractInteger implements Serializable {
     private String name;
     private ArithmeticStatement eval;
-    private boolean isShared = false;
-    private final int value = 0;
+    private final boolean isShared;
+    private int value;
 
-    public SymbolicInteger(String name, int value, boolean isShared) {
+    public SymbolicInteger(boolean isShared) {
+        String[] parts = this.toString().split("@");
+        this.name = "SymbolicInteger@" + parts[parts.length - 1];
+        this.isShared = isShared;
+    }
+
+    private SymbolicInteger(String name, int value, boolean isShared) {
         this.name = name;
         this.setValue(value);
         this.isShared = isShared;
     }
 
-    public SymbolicInteger(String name, boolean isShared) {
-        this.setValue(0);
+    private SymbolicInteger(String name, boolean isShared) {
         this.name = name;
         this.isShared = isShared;
     }
@@ -80,7 +87,8 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
     @Override
     public AbstractInteger read() {
         if (isShared) {
-            RuntimeEnvironment.readOperation(this, Thread.currentThread(), "org.mpisws.symbolic.SymbolicInteger", "value", "SI");
+            RuntimeEnvironment.readOperation(this, Thread.currentThread(),
+                    "org.mpisws.symbolic.SymbolicInteger", "value", "SI");
             AbstractInteger copy = this.deepCopy();
             RuntimeEnvironment.waitRequest(Thread.currentThread());
             return copy;

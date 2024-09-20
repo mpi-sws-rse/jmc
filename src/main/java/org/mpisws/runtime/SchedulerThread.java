@@ -339,6 +339,16 @@ public class SchedulerThread extends Thread {
                 break;
             case TAKE_WORK_QUEUE:
                 takeFromWorkQueueHandler();
+                break;
+            case CON_ASSUME_REQUEST:
+                conAssumeRequestHandler();
+                break;
+            case ASSUME_BLOCKED_REQUEST:
+                assumeBlockedRequestHandler();
+                break;
+            case SYM_ASSUME_REQUEST:
+                symAssumeRequestHandler();
+                break;
             default:
                 RuntimeEnvironment.threadWaitReq = null;
                 waitEventHandler();
@@ -388,8 +398,50 @@ public class SchedulerThread extends Thread {
             return RequestType.GET_FUTURE_REQUEST;
         } else if (RuntimeEnvironment.takeFromBlockingQueueReq != null) {
             return RequestType.TAKE_WORK_QUEUE;
+        } else if (RuntimeEnvironment.conAssumeEventReq != null) {
+            return RequestType.CON_ASSUME_REQUEST;
+        } else if (RuntimeEnvironment.assumeBlockedEventReq != null) {
+            return RequestType.ASSUME_BLOCKED_REQUEST;
+        } else if (RuntimeEnvironment.symAssumeEventReq != null) {
+            return RequestType.SYM_ASSUME_REQUEST;
         } else {
             return RequestType.WAIT_REQUEST;
+        }
+    }
+
+    private void symAssumeRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : Symbolic assume request handler is called");
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<SymbolicOperation> symAssumeEvent = Optional.ofNullable(RuntimeEnvironment.symAssumeEventReq);
+        RuntimeEnvironment.symAssumeEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (symAssumeEvent.isPresent() && thread.isPresent()) {
+            searchStrategy.nextSymAssumeRequest(thread.get(), symAssumeEvent.get());
+            waitEventHandler();
+        }
+    }
+
+    private void conAssumeRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : Concrete assume request handler is called");
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<ConAssumeEvent> conAssumeEvent = Optional.ofNullable(RuntimeEnvironment.conAssumeEventReq);
+        RuntimeEnvironment.conAssumeEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (conAssumeEvent.isPresent() && thread.isPresent()) {
+            searchStrategy.nextConAssumeRequest(conAssumeEvent.get());
+            waitEventHandler();
+        }
+    }
+
+    private void assumeBlockedRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : Assume blocked request handler is called");
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<AssumeBlockedEvent> assumeBlockedEvent = Optional.ofNullable(RuntimeEnvironment.assumeBlockedEventReq);
+        RuntimeEnvironment.assumeBlockedEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (assumeBlockedEvent.isPresent() && thread.isPresent()) {
+            searchStrategy.nextAssumeBlockedRequest(assumeBlockedEvent.get());
+            waitEventHandler();
         }
     }
 

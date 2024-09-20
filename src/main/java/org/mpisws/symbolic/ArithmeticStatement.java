@@ -79,6 +79,24 @@ public class ArithmeticStatement implements Serializable {
         this.operator = InstructionType.DIV;
     }
 
+    public void mod(AbstractInteger var1, AbstractInteger var2) {
+        this.left = var1.read();
+        this.right = var2.read();
+        this.operator = InstructionType.MOD;
+    }
+
+    public void mod(AbstractInteger var1, int var2) {
+        this.left = var1.read();
+        this.right = new ConcreteInteger(var2);
+        this.operator = InstructionType.MOD;
+    }
+
+    public void mod(int var1, AbstractInteger var2) {
+        this.left = new ConcreteInteger(var1);
+        this.right = var2.read();
+        this.operator = InstructionType.MOD;
+    }
+
     public ArithmeticStatement deepCopy() {
         ArithmeticStatement copy = new ArithmeticStatement();
         copy.left = left.deepCopy();

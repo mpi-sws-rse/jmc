@@ -54,11 +54,6 @@ public class RandomStrategy implements SearchStrategy {
     private final SymbolicSolver solver;
 
     /**
-     * @property {@link #isNegatable} is a boolean value to check if the symbolic arithmetic operation is negatable.
-     */
-    private boolean isNegatable = false;
-
-    /**
      * The following constructor initializes {@link #buggyTraceFile} with the value from
      * {@link RuntimeEnvironment#buggyTraceFile}, {@link #buggyTracePath} with the value from
      * {@link RuntimeEnvironment#buggyTracePath}, and {@link #random} with a new random number generator with the seed
@@ -77,23 +72,6 @@ public class RandomStrategy implements SearchStrategy {
     }
 
     /**
-     * Selects a random thread from the ready thread list based on the {@link #random} object.
-     *
-     * @param readyThreadList is the list of threads that are ready to run.
-     * @return the selected random thread.
-     */
-    @Override
-    public Thread selectRandomThread(List<Thread> readyThreadList) {
-        int randomIndex = random.nextInt(readyThreadList.size());
-        Thread randomElement = readyThreadList.get(randomIndex);
-        System.out.println(
-                "[Random Strategy Message] : " + randomElement.getName() + " is selected to to be a " +
-                        "candidate to run"
-        );
-        return randomElement;
-    }
-
-    /**
      * Creates a {@link StartEvent} for the corresponding starting a thread request of a thread
      * <p>
      * This method creates a {@link StartEvent} for the corresponding starting a thread request of a thread.
@@ -107,6 +85,65 @@ public class RandomStrategy implements SearchStrategy {
     public void nextStartEvent(Thread calleeThread, Thread callerThread) {
         StartEvent startEvent = RuntimeEnvironment.createStartEvent(calleeThread, callerThread);
         RuntimeEnvironment.eventsRecord.add(startEvent);
+    }
+
+    /**
+     * @param conAssumeEvent
+     */
+    @Override
+    public void nextConAssumeRequest(ConAssumeEvent conAssumeEvent) {
+        RuntimeEnvironment.eventsRecord.add(conAssumeEvent);
+    }
+
+    /**
+     * @param thread
+     * @param symbolicOperation
+     */
+    @Override
+    public void nextSymAssumeRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        solver.computeNewSymAssumeOperationRequest(symbolicOperation);
+        System.out.println("[Random Strategy Message] : The result of the symbolic assume operation is " +
+                RuntimeEnvironment.solverResult);
+
+        if (RuntimeEnvironment.solverResult) {
+            solver.updatePathSymbolicOperations(symbolicOperation);
+        }
+
+        SymAssumeEvent symAssumeEvent = RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
+        RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
+    }
+
+    /**
+     * Handles the next symbolic operation request of a given thread.
+     * <p>
+     * This method handles the next symbolic operation request of a given thread. It checks if the symbolic operation
+     * is dependent on other formulas. If the symbolic operation is dependent, it creates a dependency operation and
+     * solves the dependent formulas. If the symbolic operation is free from dependencies, it solves the formula. The
+     * method updates the path symbolic operations and creates a {@link SymExecutionEvent} for the symbolic operation.
+     * </p>
+     *
+     * @param thread            is the thread that is going to execute the symbolic operation.
+     * @param symbolicOperation is the symbolic operation that is going to be executed.
+     */
+    @Override
+    public void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        solver.computeNewSymbolicOperationRequest(symbolicOperation);
+
+        System.out.println("[Random Strategy Message] : The result of the symbolic arithmetic operation is " +
+                RuntimeEnvironment.solverResult);
+        //updatePathSymbolicOperations(symbolicOperation, thread);
+        solver.updatePathSymbolicOperations(symbolicOperation);
+        SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
+                symbolicOperation.getFormula().toString(), solver.bothSatUnsat);
+        RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
+    }
+
+    /**
+     * @param assumeBlockedEvent
+     */
+    @Override
+    public void nextAssumeBlockedRequest(AssumeBlockedEvent assumeBlockedEvent) {
+        RuntimeEnvironment.eventsRecord.add(assumeBlockedEvent);
     }
 
     @Override
@@ -231,7 +268,7 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public Thread nextJoinRequest(Thread joinReq, Thread joinRes) {
         RuntimeEnvironment.joinRequest.put(joinReq, joinRes);
-        return pickNextRandomThread();
+        return pickNextReadyThread();
     }
 
     /**
@@ -378,7 +415,7 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public Thread nextFinishRequest(Thread thread) {
         nextFinishEvent(thread);
-        return pickNextRandomThread();
+        return pickNextReadyThread();
     }
 
     /**
@@ -394,208 +431,6 @@ public class RandomStrategy implements SearchStrategy {
     public void nextFailureEvent(Thread thread) {
         FailureEvent failureEvent = RuntimeEnvironment.createFailureEvent(thread);
         RuntimeEnvironment.eventsRecord.add(failureEvent);
-    }
-
-    /**
-     * Handles the next symbolic operation request of a given thread.
-     * <p>
-     * This method handles the next symbolic operation request of a given thread. It checks if the symbolic operation
-     * is dependent on other formulas. If the symbolic operation is dependent, it creates a dependency operation and
-     * solves the dependent formulas. If the symbolic operation is free from dependencies, it solves the formula. The
-     * method updates the path symbolic operations and creates a {@link SymExecutionEvent} for the symbolic operation.
-     * </p>
-     *
-     * @param thread            is the thread that is going to execute the symbolic operation.
-     * @param symbolicOperation is the symbolic operation that is going to be executed.
-     */
-    @Override
-    public void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
-        List<SymbolicOperation> dependentOperations = findDependentFormulas(symbolicOperation);
-        if (dependentOperations == null) {
-            handleFreeFormulas(symbolicOperation);
-            System.out.println("[Random Strategy Message] : The result of the symbolic arithmetic operation is " +
-                    RuntimeEnvironment.solverResult);
-        } else {
-            handleDependentFormulas(symbolicOperation, dependentOperations);
-            System.out.println("[Random Strategy Message] : The result of the symbolic arithmetic operation is " +
-                    RuntimeEnvironment.solverResult);
-        }
-        updatePathSymbolicOperations(symbolicOperation, thread);
-        SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
-                symbolicOperation.getFormula().toString(), isNegatable);
-        RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
-    }
-
-    /**
-     * Finds dependent formulas for a given symbolic operation.
-     * <p>
-     * This method finds dependent formulas for a given symbolic operation. It iterates over the path symbolic
-     * operations and checks if the symbolic operation is dependent on other formulas. If the symbolic operation is
-     * dependent, it adds the dependent operation to the list of dependent operations.
-     * </p>
-     *
-     * @param symbolicOperation is the symbolic operation for which dependent formulas are going to be found.
-     * @return the list of dependent formulas.
-     */
-    private List<SymbolicOperation> findDependentFormulas(SymbolicOperation symbolicOperation) {
-        List<SymbolicOperation> dependencyOperations = new ArrayList<>();
-        List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.pathSymbolicOperations;
-        for (SymbolicOperation symOp : symbolicOperations) {
-            if (symOp.isFormulaDependent(symbolicOperation)) {
-                dependencyOperations.add(symOp);
-            }
-        }
-        if (dependencyOperations.isEmpty()) {
-            return null;
-        } else {
-            return dependencyOperations;
-        }
-    }
-
-    /**
-     * Finds dependent formulas for a given symbolic operation in a given thread.
-     * <p>
-     * This method finds dependent formulas for a given symbolic operation in a given thread execution path. It
-     * iterates over the thread symbolic operations and checks if the symbolic operation is dependent on other formulas.
-     * If the symbolic operation is dependent, it adds the dependent operation to the list of dependent operations.
-     * </p>
-     *
-     * @param symbolicOperation is the symbolic operation for which dependent formulas are going to be found.
-     * @param thread            is the thread key for the thread symbolic operations.
-     * @return the list of dependent formulas.
-     */
-    private List<SymbolicOperation> findDependentThreadFormulas(Thread thread, SymbolicOperation symbolicOperation) {
-        List<SymbolicOperation> dependencyOperations = new ArrayList<>();
-        List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.threadSymbolicOperation.get(
-                RuntimeEnvironment.threadIdMap.get(thread.getId())
-        );
-        for (SymbolicOperation symOp : symbolicOperations) {
-            if (symOp.isFormulaDependent(symbolicOperation)) {
-                dependencyOperations.add(symOp);
-            }
-        }
-        if (dependencyOperations.isEmpty()) {
-            return null;
-        } else {
-            return dependencyOperations;
-        }
-    }
-
-    /**
-     * Handles the free symbolic arithmetic operation for solving SAT and UNSAT.
-     * <p>
-     * This method handles the free symbolic arithmetic operation for solving SAT and UNSAT. It calls the solver to
-     * solve the symbolic formula and dis-solve the symbolic formula. The method also checks if the symbolic arithmetic
-     * operation is negatable. Finally, the method picks SAT or UNSAT based on the solver results. The method updates
-     * the {@link RuntimeEnvironment#solverResult} with the picked result.
-     * </p>
-     *
-     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
-     */
-    private void handleFreeFormulas(SymbolicOperation symbolicOperation) {
-        System.out.println("[Random Strategy Message] : The symbolic arithmetic operation is free from dependencies");
-        boolean sat = solveSat(symbolicOperation);
-        boolean unSat = solveUnsat(symbolicOperation);
-        isNegatable = sat && unSat;
-        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
-    }
-
-    /**
-     * Handles the dependent symbolic arithmetic operation for solving SAT and UNSAT.
-     * <p>
-     * This method handles the dependent symbolic arithmetic operation for solving SAT and UNSAT. It creates a
-     * dependency operation by conjuncting the dependent operations. The method calls the solver to solve the dependent
-     * symbolic formula with the dependency operation and dis-solve the dependent symbolic formula with the dependency
-     * operation. The method also checks if the symbolic arithmetic operation is negatable. Finally, the method picks
-     * SAT or UNSAT based on the solver results. The method updates the {@link RuntimeEnvironment#solverResult} with
-     * the picked result.
-     * </p>
-     *
-     * @param symbolicOperation   is the symbolic arithmetic operation that is going to be solved.
-     * @param dependentOperations is the list of dependent symbolic operations.
-     */
-    private void handleDependentFormulas(SymbolicOperation symbolicOperation, List<SymbolicOperation> dependentOperations) {
-        System.out.println("[Random Strategy Message] : The symbolic arithmetic operation has dependencies");
-        SymbolicOperation dependency = solver.makeDependencyOperation(dependentOperations);
-        boolean sat = solveDependentSat(symbolicOperation, dependency);
-        boolean unSat = solveDependentUnsat(symbolicOperation, dependency);
-        isNegatable = sat && unSat;
-        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
-    }
-
-    /**
-     * Solves the SAT for a given symbolic arithmetic operation.
-     *
-     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
-     * @return true if the symbolic arithmetic operation is satisfiable, otherwise false.
-     */
-    private boolean solveSat(SymbolicOperation symbolicOperation) {
-        return solver.solveSymbolicFormula(symbolicOperation);
-    }
-
-    /**
-     * Solves the dependent SAT for a given symbolic arithmetic operation.
-     *
-     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
-     * @param dependency        is the dependency operation for the symbolic arithmetic operation.
-     * @return true if the symbolic arithmetic operation is satisfiable, otherwise false.
-     */
-    private boolean solveDependentSat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
-        return solver.solveDependentSymbolicFormulas(symbolicOperation, dependency);
-    }
-
-    /**
-     * Solves the UNSAT for a given symbolic arithmetic operation.
-     *
-     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
-     * @return true if the symbolic arithmetic operation is unsatisfiable, otherwise false.
-     */
-    private boolean solveUnsat(SymbolicOperation symbolicOperation) {
-        return solver.disSolveSymbolicFormula(symbolicOperation);
-    }
-
-    /**
-     * Solves the dependent UNSAT for a given symbolic arithmetic operation.
-     *
-     * @param symbolicOperation is the symbolic arithmetic operation that is going to be solved.
-     * @param dependency        is the dependency operation for the symbolic arithmetic operation.
-     * @return true if the symbolic arithmetic operation is unsatisfiable, otherwise false.
-     */
-    private boolean solveDependentUnsat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
-        return solver.disSolveDependentSymbolicFormulas(symbolicOperation, dependency);
-    }
-
-    /**
-     * Picks SAT or UNSAT based on the solver results.
-     * <p>
-     * This method picks SAT or UNSAT based on the solver results. If both SAT and UNSAT are possible for the symbolic
-     * arithmetic operation, the method randomly picks SAT or UNSAT. If only SAT is possible, the method picks SAT. If
-     * only UNSAT is possible, the method picks UNSAT. If no solution is found, the method exits the program.
-     * </p>
-     *
-     * @param sat   the result of the SAT solver.
-     * @param unSat the result of the UNSAT solver.
-     * @return true if SAT is picked, otherwise false.
-     */
-    private boolean pickSatOrUnsat(boolean sat, boolean unSat) {
-        if (sat && unSat) {
-            System.out.println("[Random Strategy Message] : Both SAT and UNSAT are possible for the symbolic " +
-                    "arithmetic operation");
-            return random.nextBoolean();
-        } else if (sat) {
-            System.out.println("[Random Strategy Message] : Only SAT is possible for the symbolic arithmetic " +
-                    "operation");
-            return true;
-        } else if (unSat) {
-            System.out.println("[Random Strategy Message] : Only UNSAT is possible for the symbolic arithmetic " +
-                    "operation");
-            return false;
-        } else {
-            System.out.println("[Random Strategy Message] : No solution is found for the symbolic arithmetic " +
-                    "operation");
-            System.exit(0);
-            return false;
-        }
     }
 
     /**
@@ -644,7 +479,7 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public Thread pickNextThread() {
-        return pickNextRandomThread();
+        return pickNextReadyThread();
     }
 
     /**

@@ -2,20 +2,27 @@ package org.mpisws.symbolic;
 
 import org.mpisws.runtime.RuntimeEnvironment;
 
+import java.util.Random;
+
 public class SymbolicBoolean extends AbstractBoolean {
     private String name;
     private SymbolicOperation eval;
     private boolean isShared = false;
-    private final boolean value = false;
+    private boolean value;
 
-    public SymbolicBoolean(String name, boolean value, boolean isShared) {
+    public SymbolicBoolean(boolean isShared) {
+        String[] parts = this.toString().split("@");
+        this.name = "SymbolicBoolean@" + parts[parts.length - 1];
+        this.isShared = isShared;
+    }
+
+    private SymbolicBoolean(String name, boolean value, boolean isShared) {
         this.name = name;
         this.setValue(value);
         this.isShared = isShared;
     }
 
-    public SymbolicBoolean(String name, boolean isShared) {
-        this.setValue(false);
+    private SymbolicBoolean(String name, boolean isShared) {
         this.name = name;
         this.isShared = isShared;
     }

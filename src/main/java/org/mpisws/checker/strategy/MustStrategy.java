@@ -3,7 +3,6 @@ package org.mpisws.checker.strategy;
 import dpor.Must;
 import executionGraph.ExecutionGraph;
 import org.mpisws.runtime.RuntimeEnvironment;
-import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCThread;
 import programStructure.*;
 
@@ -24,7 +23,7 @@ public class MustStrategy extends DPORStrategy {
      * </p>
      */
     private void initMust() {
-        dpor = new Must(executionGraphsPath);
+        dpor = new Must(executionGraphsPath, RuntimeEnvironment.verbose);
         dpor.setGraphCounter(RuntimeEnvironment.numOfGraphs);
     }
 
@@ -232,7 +231,8 @@ public class MustStrategy extends DPORStrategy {
     public Thread pickNextGuidedThread() {
         if (guidingEvents.isEmpty()) {
             handleEmptyGuidingEvents();
-            return pickNextRandomThread();
+            solver.solveAndUpdateModelSymbolicVariables();
+            return pickNextReadyThread();
         }
         guidingEvent = guidingEvents.remove(0);
 

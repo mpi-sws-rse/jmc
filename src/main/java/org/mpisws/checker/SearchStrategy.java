@@ -2,9 +2,9 @@ package org.mpisws.checker;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
+import org.mpisws.runtime.ThreadCollection;
 import org.mpisws.util.concurrent.JMCFutureTask;
 import org.mpisws.util.concurrent.JMCStarterThread;
 import org.mpisws.util.concurrent.JMCThread;
@@ -166,6 +166,12 @@ public interface SearchStrategy {
      */
     void nextParkRequest(Thread thread);
 
+    void nextConAssumeRequest(ConAssumeEvent conAssumeEvent);
+
+    void nextSymAssumeRequest(Thread thread, SymbolicOperation symbolicOperation);
+
+    void nextAssumeBlockedRequest(AssumeBlockedEvent assumeBlockedEvent);
+
     /**
      * Represents the required strategy for the next unpark request.
      *
@@ -281,21 +287,21 @@ public interface SearchStrategy {
      *
      * @return the next random thread to run.
      */
-    default Thread pickNextRandomThread() {
-        Optional<List<Thread>> readyThreadList = Optional.ofNullable(RuntimeEnvironment.readyThreadList);
-        if (!readyThreadList.get().isEmpty()) {
-            if (readyThreadList.get().size() > 1) {
-                System.out.println("[Search Strategy Message] : There are more than one thread in the ready list");
-                Thread randomElement = selectRandomThread(readyThreadList.get());
+    default Thread pickNextReadyThread() {
+        Optional<ThreadCollection> readyThread = Optional.ofNullable(RuntimeEnvironment.readyThread);
+        if (!readyThread.get().isEmpty()) {
+            if (readyThread.get().size() > 1) {
+                System.out.println("[Search Strategy Message] : There are more than one thread in the ready thread list");
+                Thread randomElement = readyThread.get().getNext();
                 return handleChosenThreadRequest(randomElement);
-            } else { // readyThreadList.get().size() == 1
-                System.out.println("[Search Strategy Message] : Only one thread is in the ready list");
-                return handleChosenThreadRequest(readyThreadList.get().get(0));
+            } else { // readyThread.get().size() == 1
+                System.out.println("[Search Strategy Message] : Only one thread is in the ready thread list");
+                return handleChosenThreadRequest(readyThread.get().getNext());
             }
         } else if (!RuntimeEnvironment.blockedRecvThreadMap.isEmpty()) {
             System.out.println("[Search Strategy Message] : Ready list is empty, but there are blocked receive threads");
             if (computeUnblockedRecvThread()) {
-                return pickNextRandomThread();
+                return pickNextReadyThread();
             } else {
                 System.out.println(
                         "[Search Strategy Message] : There is a deadlock between the threads in executing " +
@@ -347,23 +353,6 @@ public interface SearchStrategy {
     }
 
     /**
-     * Selects a random thread from the {@link RuntimeEnvironment#readyThreadList} list.
-     *
-     * @param readyThreadList the ready thread list.
-     * @return the selected random thread.
-     */
-    default Thread selectRandomThread(List<Thread> readyThreadList) {
-        Random random = new Random();
-        int randomIndex = random.nextInt(readyThreadList.size());
-        Thread randomElement = readyThreadList.get(randomIndex);
-        System.out.println(
-                "[Search Strategy Message] : " + randomElement.getName() + " is selected to to be a " +
-                        "candidate to run"
-        );
-        return randomElement;
-    }
-
-    /**
      * Handles the monitor request and join request of the candidate thread.
      *
      * @param thread the candidate thread.
@@ -392,9 +381,9 @@ public interface SearchStrategy {
     default Thread handleIdleStarterThread(JMCStarterThread jmcStarterThread) {
         BlockingQueue<Runnable> queue = RuntimeEnvironment.workQueue.get(jmcStarterThread.threadPoolExecutorId);
         if (queue.isEmpty()) {
-            RuntimeEnvironment.readyThreadList.remove(jmcStarterThread);
+            RuntimeEnvironment.readyThread.remove(jmcStarterThread);
             RuntimeEnvironment.idleThreadsInPool.get(jmcStarterThread.threadPoolExecutorId).add(jmcStarterThread);
-            return pickNextRandomThread();
+            return pickNextReadyThread();
         } else {
             return jmcStarterThread;
         }
@@ -424,7 +413,7 @@ public interface SearchStrategy {
                             RuntimeEnvironment.threadIdMap.get(RuntimeEnvironment.monitorList.get(monitor).getId())
             );
             suspendThread(thread);
-            return pickNextRandomThread();
+            return pickNextReadyThread();
         } else {
             System.out.println("[Search Strategy Message] : The monitor " + monitor + " is available");
             RuntimeEnvironment.monitorRequest.remove(thread, monitor);
@@ -455,11 +444,11 @@ public interface SearchStrategy {
                         + joinRes.getName()
         );
         if (!RuntimeEnvironment.createdThreadList.contains(joinRes) &&
-                !RuntimeEnvironment.readyThreadList.contains(joinRes)) {
+                !RuntimeEnvironment.readyThread.contains(joinRes)) {
             RuntimeEnvironment.joinRequest.remove(thread, joinRes);
             System.out.println(
                     "[Search Strategy Message] : As " + joinRes.getName() + " is not in the " +
-                            "createdThreadList or the readyThreadList, the request of " + thread.getName() +
+                            "createdThreadList or the readyThread list, the request of " + thread.getName() +
                             " to join " + joinRes.getName() + " is removed from the joinRequest"
             );
             nextJoinEvent(thread, joinRes);
@@ -467,7 +456,7 @@ public interface SearchStrategy {
         } else {
             System.out.println("[Search Strategy Message] : However, " + joinRes.getName() + " is not finished yet");
             suspendThread(thread);
-            return pickNextRandomThread();
+            return pickNextReadyThread();
         }
     }
 
@@ -502,7 +491,7 @@ public interface SearchStrategy {
     /**
      * Suspends the given thread.
      * <p>
-     * This method is used to suspend the selected thread and remove it from the {@link RuntimeEnvironment#readyThreadList}
+     * This method is used to suspend the selected thread and remove it from the {@link RuntimeEnvironment#readyThread}
      * list and add it to the {@link RuntimeEnvironment#suspendedThreads} list. This action is required when the selected
      * thread is waiting for a monitor or a join request.
      * </p>
@@ -511,14 +500,14 @@ public interface SearchStrategy {
      */
     default void suspendThread(Thread thread) {
         System.out.println("[Search Strategy Message] : " + thread.getName() + " is suspended");
-        RuntimeEnvironment.readyThreadList.remove(thread);
+        RuntimeEnvironment.readyThread.remove(thread);
         RuntimeEnvironment.suspendedThreads.add(thread);
     }
 
     /**
      * Parks the given thread.
      * <p>
-     * This method is used to park the selected thread and remove it from the {@link RuntimeEnvironment#readyThreadList}
+     * This method is used to park the selected thread and remove it from the {@link RuntimeEnvironment#readyThread}
      * list and add it to the {@link RuntimeEnvironment#parkedThreadList} list.
      * </p>
      *
@@ -526,8 +515,8 @@ public interface SearchStrategy {
      */
     default void parkThread(Thread thread) {
         System.out.println("[Search Strategy Message] : " + thread.getName() + " is parked");
-        if (RuntimeEnvironment.readyThreadList.contains(thread) && !RuntimeEnvironment.parkedThreadList.contains(thread)) {
-            RuntimeEnvironment.readyThreadList.remove(thread);
+        if (RuntimeEnvironment.readyThread.contains(thread) && !RuntimeEnvironment.parkedThreadList.contains(thread)) {
+            RuntimeEnvironment.readyThread.remove(thread);
             RuntimeEnvironment.parkedThreadList.add(thread);
         }
     }
@@ -536,16 +525,16 @@ public interface SearchStrategy {
      * Unparks the given thread.
      * <p>
      * This method is used to unpark the selected thread and remove it from the {@link RuntimeEnvironment#parkedThreadList}
-     * list and add it to the {@link RuntimeEnvironment#readyThreadList} list.
+     * list and add it to the {@link RuntimeEnvironment#readyThread} list.
      * </p>
      *
      * @param thread the selected thread which is going to be unparked.
      */
     default void unparkThread(Thread thread) {
         System.out.println("[Search Strategy Message] : " + thread.getName() + " is unparked");
-        if (RuntimeEnvironment.parkedThreadList.contains(thread) && !RuntimeEnvironment.readyThreadList.contains(thread)) {
+        if (RuntimeEnvironment.parkedThreadList.contains(thread) && !RuntimeEnvironment.readyThread.contains(thread)) {
             RuntimeEnvironment.parkedThreadList.remove(thread);
-            RuntimeEnvironment.readyThreadList.add(thread);
+            RuntimeEnvironment.readyThread.add(thread);
         }
     }
 
@@ -553,7 +542,7 @@ public interface SearchStrategy {
      * Unsuspend the given thread.
      * <p>
      * This method is used to unsuspend the selected thread and remove it from the {@link RuntimeEnvironment#suspendedThreads}
-     * list and add it to the {@link RuntimeEnvironment#readyThreadList} list. This action is required when the monitor or
+     * list and add it to the {@link RuntimeEnvironment#readyThread} list. This action is required when the monitor or
      * join request of the selected thread is available.
      * </p>
      *
@@ -562,7 +551,7 @@ public interface SearchStrategy {
     default void unsuspendThread(Thread thread) {
         System.out.println("[Search Strategy Message] : " + thread.getName() + " is unsuspended");
         RuntimeEnvironment.suspendedThreads.remove(thread);
-        RuntimeEnvironment.readyThreadList.add(thread);
+        RuntimeEnvironment.readyThread.add(thread);
     }
 
     /**
@@ -602,7 +591,7 @@ public interface SearchStrategy {
     default Thread nextGetFutureRequest(Thread thread, FutureTask future) {
         if (future instanceof JMCFutureTask jmcFutureTask) {
             if (!jmcFutureTask.isFinished) {
-                RuntimeEnvironment.readyThreadList.remove(thread);
+                RuntimeEnvironment.readyThread.remove(thread);
                 RuntimeEnvironment.waitingThreadForFuture.put(future, thread);
             }
         } else {

@@ -80,11 +80,6 @@ public abstract class DPORStrategy implements SearchStrategy {
     protected SymbolicSolver solver;
 
     /**
-     * @property {@link #isNegatable} is a boolean value to check if the symbolic arithmetic operation is negatable.
-     */
-    protected boolean isNegatable = false;
-
-    /**
      * @property {@link #dpor} is used to store the dpor-based model checker object.
      */
     protected DPOR dpor;
@@ -330,6 +325,36 @@ public abstract class DPORStrategy implements SearchStrategy {
     }
 
     /**
+     * @param conAssumeEvent
+     */
+    @Override
+    public void nextConAssumeRequest(ConAssumeEvent conAssumeEvent) {
+        RuntimeEnvironment.eventsRecord.add(conAssumeEvent);
+        if (guidingActivate) {
+            addEventToCurrentGraph(conAssumeEvent);
+        } else {
+            System.out.println("[DPOR Strategy Message] : The concrete assume event is passed to the model checker");
+            passEventToDPOR(conAssumeEvent);
+            updateCurrentGraph(conAssumeEvent);
+        }
+    }
+
+    /**
+     * @param assumeBlockedEvent
+     */
+    @Override
+    public void nextAssumeBlockedRequest(AssumeBlockedEvent assumeBlockedEvent) {
+        RuntimeEnvironment.eventsRecord.add(assumeBlockedEvent);
+        if (guidingActivate) {
+            addEventToCurrentGraph(assumeBlockedEvent);
+        } else {
+            System.out.println("[DPOR Strategy Message] : The assume blocked event is passed to the model checker");
+            passEventToDPOR(assumeBlockedEvent);
+            updateCurrentGraph(assumeBlockedEvent);
+        }
+    }
+
+    /**
      * Represents the required strategy for the next join event.
      * <p>
      * This method represents the required strategy for the next join event. It creates a {@link JoinEvent} for the
@@ -371,7 +396,7 @@ public abstract class DPORStrategy implements SearchStrategy {
             return joinReq;
         } else {
             RuntimeEnvironment.joinRequest.put(joinReq, joinRes);
-            return pickNextRandomThread();
+            return pickNextReadyThread();
         }
     }
 
@@ -416,7 +441,7 @@ public abstract class DPORStrategy implements SearchStrategy {
         if (guidingActivate) {
             return pickNextGuidedThread();
         } else {
-            return pickNextRandomThread();
+            return pickNextReadyThread();
         }
     }
 
@@ -487,9 +512,7 @@ public abstract class DPORStrategy implements SearchStrategy {
      * Handles the new symbolic operation request.
      * <p>
      * This method handles the new symbolic operation request. It finds the dependent formulas of the given symbolic
-     * operation. If there is no dependent formula, it calls the {@link #handleFreeFormulas(SymbolicOperation)}
-     * method. Otherwise, it calls the {@link #handleDependentFormulas(SymbolicOperation, List)} method. Then, it
-     * updates the path symbolic operations with the given symbolic operation and thread. It creates a new
+     * operation. It updates the path symbolic operations with the given symbolic operation and thread. It creates a new
      * {@link SymExecutionEvent} with the given thread, the formula of the symbolic operation, and the negatable value.
      * Finally, it adds the created event to the {@link RuntimeEnvironment#eventsRecord} and passes the event to the dpor.
      * </p>
@@ -498,52 +521,57 @@ public abstract class DPORStrategy implements SearchStrategy {
      * @param thread            is the thread that is going to execute the symbolic operation.
      */
     public void handleNewSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
-        List<SymbolicOperation> dependentOperations = findDependentFormulas(symbolicOperation);
-        if (dependentOperations == null) {
-            handleFreeFormulas(symbolicOperation);
-            System.out.println("[DPOR Strategy Message] : The result of the symbolic arithmetic operation is " +
-                    RuntimeEnvironment.solverResult);
-        } else {
-            handleDependentFormulas(symbolicOperation, dependentOperations);
-            System.out.println("[DPOR Strategy Message] : The result of the symbolic arithmetic operation is " +
-                    RuntimeEnvironment.solverResult);
-        }
-        updatePathSymbolicOperations(symbolicOperation, thread);
+        solver.computeNewSymbolicOperationRequest(symbolicOperation);
+
+        System.out.println("[DPOR Strategy Message] : The result of the symbolic arithmetic operation is " +
+                RuntimeEnvironment.solverResult);
+        //updatePathSymbolicOperations(symbolicOperation, thread);
+        solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
-                symbolicOperation.getFormula().toString(), isNegatable);
+                symbolicOperation.getFormula().toString(), solver.bothSatUnsat);
         RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
         passEventToDPOR(symExecutionEvent);
         updateCurrentGraph(symExecutionEvent);
     }
 
     /**
-     * Finds the dependent formulas of the given symbolic operation.
-     * <p>
-     * This method finds the dependent formulas of the given symbolic operation. It iterates over the path symbolic
-     * operations and checks whether the given symbolic operation is dependent on another symbolic operation. If it is
-     * dependent, it adds the dependent symbolic operation to the list of dependent formulas. Otherwise, it returns null.
-     * </p>
-     *
-     * @param symbolicOperation is the symbolic operation that is going to be checked.
-     * @return the list of dependent formulas of the given symbolic operation.
+     * @param thread
+     * @param symbolicOperation
      */
-    private List<SymbolicOperation> findDependentFormulas(SymbolicOperation symbolicOperation) {
-        List<SymbolicOperation> dependencyOperations = new ArrayList<>();
-        List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.pathSymbolicOperations;
-        for (SymbolicOperation symOp : symbolicOperations) {
-            if (symOp.isFormulaDependent(symbolicOperation)) {
-                System.out.println("[DPOR Strategy Message] : The symbolic arithmetic operation is dependent on " +
-                        "another symbolic arithmetic operation");
-                System.out.println("[DPOR Strategy Message] : The dependent symbolic arithmetic operations are : " +
-                        symOp.getFormula().toString() + " and " + symbolicOperation.getFormula().toString());
-                dependencyOperations.add(symOp);
-            }
-        }
-        if (dependencyOperations.isEmpty()) {
-            return null;
+    @Override
+    public void nextSymAssumeRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        if (guidingActivate) {
+            handleGuidingSymAssumeOperationRequest(thread, symbolicOperation);
         } else {
-            return dependencyOperations;
+            handleNewSymAssumeOperationRequest(thread, symbolicOperation);
         }
+    }
+
+    private void handleNewSymAssumeOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        solver.computeNewSymAssumeOperationRequest(symbolicOperation);
+        System.out.println("[DPOR Strategy Message] : The result of the symbolic assume operation is " +
+                RuntimeEnvironment.solverResult);
+
+        if (RuntimeEnvironment.solverResult) {
+            solver.updatePathSymbolicOperations(symbolicOperation);
+        }
+
+        SymAssumeEvent symAssumeEvent = RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
+        RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
+        passEventToDPOR(symAssumeEvent);
+        updateCurrentGraph(symAssumeEvent);
+    }
+
+    private void handleGuidingSymAssumeOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        SymAssumeEvent guidingSymAssumeEvent = (SymAssumeEvent) guidingEvent;
+        RuntimeEnvironment.solverResult = guidingSymAssumeEvent.getResult();
+        if (RuntimeEnvironment.solverResult) {
+            solver.updatePathSymbolicOperations(symbolicOperation);
+            solver.push(symbolicOperation);
+        }
+        SymAssumeEvent symAssumeEvent = RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
+        RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
+        addEventToCurrentGraph(symAssumeEvent);
     }
 
     /**
@@ -563,153 +591,17 @@ public abstract class DPORStrategy implements SearchStrategy {
     public void handleGuidingSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         SymExecutionEvent guidingSymExecutionEvent = (SymExecutionEvent) guidingEvent;
         RuntimeEnvironment.solverResult = guidingSymExecutionEvent.getResult();
-        updatePathSymbolicOperations(symbolicOperation, thread);
+        solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
                 symbolicOperation.getFormula().toString(), guidingSymExecutionEvent.isNegatable());
+        if (symExecutionEvent.getResult()) {
+            solver.push(symbolicOperation);
+        } else {
+            solver.push(solver.negateFormula(symbolicOperation.getFormula()));
+        }
+        //solver.push(symbolicOperation);
         RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
         addEventToCurrentGraph(symExecutionEvent);
-    }
-
-    /**
-     * Handles the free formulas.
-     * <p>
-     * This method handles the free formulas. It calls the {@link #solveSat(SymbolicOperation)} and
-     * {@link #solveUnsat(SymbolicOperation)} methods to solve the symbolic operation. Then, it calls the
-     * {@link #pickSatOrUnsat(boolean, boolean)} method to pick the result of the symbolic operation. Finally, it sets
-     * the {@link RuntimeEnvironment#solverResult} with the result of the symbolic operation.
-     * </p>
-     *
-     * @param symbolicOperation is the symbolic operation that is going to be solved.
-     */
-    private void handleFreeFormulas(SymbolicOperation symbolicOperation) {
-        System.out.println("[DPOR Strategy Message] : The symbolic arithmetic operation is free from dependencies");
-        boolean sat = solveSat(symbolicOperation);
-        boolean unSat = solveUnsat(symbolicOperation);
-        isNegatable = sat && unSat;
-        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
-    }
-
-    /**
-     * Handles the dependent formulas.
-     * <p>
-     * This method handles the dependent formulas. First, it creates a dependency operation from the list of dependent
-     * formulas. Then, it calls the {@link #solveDependentSat(SymbolicOperation, SymbolicOperation)}
-     * and {@link #solveDependentUnsat(SymbolicOperation, SymbolicOperation)} methods to solve the symbolic operation. Then,
-     * it calls the {@link #pickSatOrUnsat(boolean, boolean)} method to pick the result of the symbolic operation. Finally,
-     * it sets the {@link RuntimeEnvironment#solverResult} with the result of the symbolic operation.
-     * </p>
-     *
-     * @param symbolicOperation   is the symbolic operation that is going to be solved.
-     * @param dependentOperations is the list of dependent formulas of the symbolic operation.
-     */
-    private void handleDependentFormulas(SymbolicOperation symbolicOperation, List<SymbolicOperation> dependentOperations) {
-        System.out.println("[DPOR Strategy Message] : The symbolic arithmetic operation has dependencies");
-        SymbolicOperation dependency = solver.makeDependencyOperation(dependentOperations);
-        boolean sat = solveDependentSat(symbolicOperation, dependency);
-        boolean unSat = solveDependentUnsat(symbolicOperation, dependency);
-        isNegatable = sat && unSat;
-        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
-    }
-
-    /**
-     * Solves the symbolic operation.
-     *
-     * @param symbolicOperation is the symbolic operation that is going to be solved.
-     * @return true if the symbolic operation is satisfiable, otherwise false.
-     */
-    private boolean solveSat(SymbolicOperation symbolicOperation) {
-        return solver.solveSymbolicFormula(symbolicOperation);
-    }
-
-    /**
-     * Solves the unsatisfiable symbolic operation.
-     *
-     * @param symbolicOperation is the symbolic operation that is going to be solved.
-     * @return true if the symbolic operation is unsatisfiable, otherwise false.
-     */
-    private boolean solveUnsat(SymbolicOperation symbolicOperation) {
-        return solver.disSolveSymbolicFormula(symbolicOperation);
-    }
-
-    /**
-     * Picks the result of the symbolic operation.
-     *
-     * @param sat   is the satisfiability of the symbolic operation.
-     * @param unSat is the unsatisfiability of the symbolic operation.
-     * @return true if the symbolic operation is satisfiable, otherwise false.
-     */
-    private boolean pickSatOrUnsat(boolean sat, boolean unSat) {
-        if (sat && unSat) {
-            System.out.println("[DPOR Strategy Message] : Both SAT and UNSAT are possible for the symbolic " +
-                    "arithmetic operation");
-            return new Random().nextBoolean();
-        } else if (sat) {
-            System.out.println("[DPOR Strategy Message] : Only SAT is possible for the symbolic arithmetic " +
-                    "operation");
-            return true;
-        } else if (unSat) {
-            System.out.println("[DPOR Strategy Message] : Only UNSAT is possible for the symbolic arithmetic " +
-                    "operation");
-            return false;
-        } else {
-            System.out.println("[DPOR Strategy Message] : No solution is found for the symbolic arithmetic " +
-                    "operation");
-            System.exit(0);
-            return false;
-        }
-    }
-
-    /**
-     * Solves the dependent symbolic operation.
-     *
-     * @param symbolicOperation is the symbolic operation that is going to be solved.
-     * @param dependency        is the dependent symbolic operation.
-     * @return true if the symbolic operation is satisfiable, otherwise false.
-     */
-    private boolean solveDependentSat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
-        return solver.solveDependentSymbolicFormulas(symbolicOperation, dependency);
-    }
-
-    /**
-     * Solves the dependent unsatisfiable symbolic operation.
-     *
-     * @param symbolicOperation is the symbolic operation that is going to be solved.
-     * @param dependency        is the dependent symbolic operation.
-     * @return true if the symbolic operation is unsatisfiable, otherwise false.
-     */
-    private boolean solveDependentUnsat(SymbolicOperation symbolicOperation, SymbolicOperation dependency) {
-        return solver.disSolveDependentSymbolicFormulas(symbolicOperation, dependency);
-    }
-
-    /**
-     * Finds the dependent formulas of the given symbolic operation based on the thread.
-     * <p>
-     * This method finds the dependent formulas of the given symbolic operation based on the thread. It iterates over the
-     * symbolic operations of the thread and checks whether the given symbolic operation is dependent on another symbolic
-     * operation. If it is dependent, it adds the dependent symbolic operation to the list of dependent formulas. Otherwise,
-     * it returns null.
-     * </p>
-     *
-     * @param thread            is the thread that is going to be checked.
-     * @param symbolicOperation is the symbolic operation that is going to be checked.
-     * @return the list of dependent formulas of the given symbolic operation.
-     */
-    private List<SymbolicOperation> findDependentThreadFormulas(Thread thread, SymbolicOperation symbolicOperation) {
-        List<SymbolicOperation> dependencyOperations = new ArrayList<>();
-        List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.threadSymbolicOperation.get(
-                RuntimeEnvironment.threadIdMap.get(thread.getId())
-        );
-        for (SymbolicOperation symOp : symbolicOperations) {
-            if (symOp.isFormulaDependent(symbolicOperation)) {
-                dependencyOperations.add(symOp);
-            }
-        }
-        if (dependencyOperations.isEmpty()) {
-            return null;
-        } else {
-            return dependencyOperations;
-        }
-
     }
 
     /**
@@ -726,7 +618,7 @@ public abstract class DPORStrategy implements SearchStrategy {
         if (guidingActivate) {
             return pickNextGuidedThread();
         } else {
-            return pickNextRandomThread();
+            return pickNextReadyThread();
         }
     }
 

@@ -13,7 +13,7 @@ import programStructure.*
  TODO() : Extends this algorithm by discharging the above-mentioned assumptions
  */
 
-class Trust(path: String) : DPOR(path) {
+class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 //    private var graph: ExecutionGraph = ExecutionGraph()
 //    var allAbstractThread: MutableMap<Int, AbstractThread>? = mutableMapOf()
 //    var allEvents: MutableList<Event> = mutableListOf()
@@ -189,7 +189,9 @@ class Trust(path: String) : DPOR(path) {
                     this.graphCounter++
                     G.id = this.graphCounter
                     println("[Trust Message] : Visited full execution graph G_$graphCounter")
-                    //G.visualizeGraph(this.graphCounter, this.graphsPath)
+                    if (verbose) {
+                        G.visualizeGraph(this.graphCounter, this.graphsPath)
+                    }
                     allGraphs.add(G)
                     //G.printEvents()
                     //G.printPorf()
@@ -534,6 +536,21 @@ class Trust(path: String) : DPOR(path) {
                     visit(G, allEvents)
                 }
 
+                nextEvent.type == EventType.CON_ASSUME -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.SYM_ASSUME -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
+                nextEvent.type == EventType.ASSUME_BLOCKED -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
                 nextEvent.type == EventType.SYM_EXECUTION -> {
                     // The following is for debugging purposes only
                     println("[Trust Message] : The next event is a SYM_EXECUTION event")
@@ -543,7 +560,7 @@ class Trust(path: String) : DPOR(path) {
                         val G1 = G.deepCopy()
                         val negatedSymEvent = nextSymEvent.deepCopy() as SymExecutionEvent
                         negatedSymEvent.result = !negatedSymEvent.result
-                        negatedSymEvent.formula = "(not (${negatedSymEvent.formula}))"
+                        //negatedSymEvent.formula = "(not (${negatedSymEvent.formula}))"
                         G1.addEvent(negatedSymEvent)
                         visit(G1, allEvents)
                     }
@@ -834,6 +851,10 @@ class Trust(path: String) : DPOR(path) {
     }
 
     private fun isMaximallyAdded(graph: ExecutionGraph, firstEvent: Event, secondEvent: Event): Boolean {
+        if (firstEvent.type == EventType.SYM_EXECUTION) {
+            return isSatMaximal(firstEvent as SymExecutionEvent)
+        }
+        
         graph.computePrevious(firstEvent, secondEvent)
 //        if (firstEvent is ReadsFrom) {
 //            var isReadVisited = false

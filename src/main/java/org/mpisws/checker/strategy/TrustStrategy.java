@@ -40,7 +40,7 @@ public class TrustStrategy extends DPORStrategy {
      * </p>
      */
     private void initTrust() {
-        dpor = new Trust(executionGraphsPath);
+        dpor = new Trust(executionGraphsPath, RuntimeEnvironment.verbose);
         dpor.setGraphCounter(RuntimeEnvironment.numOfGraphs);
     }
 
@@ -410,7 +410,8 @@ public class TrustStrategy extends DPORStrategy {
     public Thread pickNextGuidedThread() {
         if (guidingEvents.isEmpty()) {
             handleEmptyGuidingEvents();
-            return pickNextRandomThread();
+            solver.solveAndUpdateModelSymbolicVariables();
+            return pickNextReadyThread();
         }
 
         if (guidingEvent != null && guidingEvent.getType() == EventType.UNPARKING) {
@@ -443,8 +444,8 @@ public class TrustStrategy extends DPORStrategy {
             return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
         }
 
-        System.out.println("[Trust Strategy Message] : Thread-" +
-                RuntimeEnvironment.threadObjectMap.get((long) guidingThread) + " is the next guided thread");
+        System.out.println("[Trust Strategy Message] : " +
+                RuntimeEnvironment.threadObjectMap.get((long) guidingThread).getName() + " is the next guided thread");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
     }
 

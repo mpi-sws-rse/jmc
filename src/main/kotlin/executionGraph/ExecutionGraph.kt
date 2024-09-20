@@ -863,6 +863,21 @@ data class ExecutionGraph(
                     println(assignedTaskEvent)
                 }
 
+                EventType.CON_ASSUME -> {
+                    val conAssumeEvent: ConAssumeEvent = e as ConAssumeEvent
+                    println(conAssumeEvent)
+                }
+
+                EventType.SYM_ASSUME -> {
+                    val symAssumeEvent: SymAssumeEvent = e as SymAssumeEvent
+                    println(symAssumeEvent)
+                }
+
+                EventType.ASSUME_BLOCKED -> {
+                    val assumeBlockedEvent: AssumeBlockedEvent = e as AssumeBlockedEvent
+                    println(assumeBlockedEvent)
+                }
+
                 EventType.OTHER -> TODO()
             }
         }
@@ -1043,6 +1058,18 @@ data class ExecutionGraph(
                 visAssignedTaskEvent(event as AssignedTaskEvent, bufferedWriter)
             }
 
+            EventType.CON_ASSUME -> {
+                visConAssumeEvent(event as ConAssumeEvent, bufferedWriter)
+            }
+
+            EventType.SYM_ASSUME -> {
+                visSymAssumeEvent(event as SymAssumeEvent, bufferedWriter)
+            }
+
+            EventType.ASSUME_BLOCKED -> {
+                visAssumeBlockedEvent(event as AssumeBlockedEvent, bufferedWriter)
+            }
+
             EventType.AWAIT_TASK -> {
                 visAwaitTaskEvent(event as AwaitTaskEvent, bufferedWriter)
             }
@@ -1058,6 +1085,21 @@ data class ExecutionGraph(
             EventType.OTHER -> TODO()
             EventType.INITIAL -> TODO()
         }
+    }
+
+    private fun visConAssumeEvent(conAssume: ConAssumeEvent, bufferedWriter: BufferedWriter) {
+        bufferedWriter.newLine()
+        bufferedWriter.write("${conAssume.tid}${conAssume.serial} [label=\"${conAssume.tid}:${conAssume.serial}.Assume(${conAssume.result})\"]")
+    }
+
+    private fun visSymAssumeEvent(symAssume: SymAssumeEvent, bufferedWriter: BufferedWriter) {
+        bufferedWriter.newLine()
+        bufferedWriter.write("${symAssume.tid}${symAssume.serial} [label=\"${symAssume.tid}:${symAssume.serial}.Assume(${symAssume.formula},${symAssume.result})\"]")
+    }
+
+    private fun visAssumeBlockedEvent(assumeBlocked: AssumeBlockedEvent, bufferedWriter: BufferedWriter) {
+        bufferedWriter.newLine()
+        bufferedWriter.write("${assumeBlocked.tid}${assumeBlocked.serial} [label=\"${assumeBlocked.tid}:${assumeBlocked.serial}.AssumeBlocked()\"]")
     }
 
     private fun visNewTaskEvent(newTaskEvent: NewTaskEvent, bufferedWriter: BufferedWriter) {
@@ -1171,7 +1213,7 @@ data class ExecutionGraph(
         bufferedWriter.newLine()
         bufferedWriter.write(
             "${symExecution.tid}${symExecution.serial} [label=\"${symExecution.tid}:${symExecution.serial}" +
-                    ".Sym Execution:${symExecution.formula}\"]"
+                    ".Sym Exe:(${symExecution.formula}, ${symExecution.result})\"]"
         )
     }
 
