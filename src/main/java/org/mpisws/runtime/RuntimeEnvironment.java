@@ -394,6 +394,13 @@ public class RuntimeEnvironment {
     public static AssumeBlockedEvent assumeBlockedEventReq;
 
     /**
+     * @property {@link #lockAvailMap} is used to store the availability status of the locks in the program under test.
+     * The key is the lock object and the value is the availability of the lock. The value 0 indicates that the lock
+     * is available, and the value 1 indicates that the lock is not available.
+     */
+    public static Map<Object, Integer> lockAvailMap = new HashMap<>();
+
+    /**
      * The constructor is private to prevent the instantiation of the class
      */
     private RuntimeEnvironment() {
@@ -557,6 +564,8 @@ public class RuntimeEnvironment {
             readyThread = new LIFOThreadCollection();
         } else if (schedulingPolicy == SchedulingPolicy.NON_DET) {
             readyThread = new NonDetThreadCollection(seed);
+        } else if (schedulingPolicy == SchedulingPolicy.RR) {
+            readyThread = new RRThreadCollection();
         } else {
             System.out.println("[Runtime Environment Message] : The scheduling policy is not supported");
             System.exit(0);
@@ -1183,6 +1192,82 @@ public class RuntimeEnvironment {
         waitRequest(thread);
     }
 
+    /**
+     * Handles a lock acquisition request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test is about to acquire a lock. The thread is requesting
+     * to acquire the lock.
+     *
+     * @param lock
+     * @param thread
+     * @throws JMCInterruptException
+     */
+    public static void acquireLockReq(Object lock, Thread thread) throws JMCInterruptException {
+        System.out.println(
+                "[Runtime Environment Message] : " + thread.getName() + " requested to acquire the " +
+                        lock.toString() + " lock");
+        if (!lockAvailMap.containsKey(lock)) {
+            lockAvailMap.put(lock, 0);
+        }
+        throw new JMCInterruptException();
+    }
+
+    public static boolean compareAndSetOperation(Object obj, Thread thread) {
+        if (exclusiveReadOperation(obj, thread, "AtomicInteger", "value", "I")) {
+            return exclusiveWriteOperation(obj, 1, thread, "AtomicInteger", "value", "I");
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean exclusiveReadOperation(Object obj, Thread thread, String owner, String name, String descriptor) {
+        Location location = createLocation(obj, owner, name, descriptor);
+        System.out.println(
+                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
+                        "read the value of " + owner + "." + name + "(" + descriptor + ") = " +
+                        Objects.requireNonNull(location).getValue()
+        );
+        if (location.isPrimitive()) {
+            readEventReq = createReadEvent(thread, location);
+            return true;
+        } else {
+            System.out.println(
+                    "[Runtime Environment Message] : Since the value is not a primitive type, the Model Checker " +
+                            "will not care about it"
+            );
+            return false;
+        }
+    }
+
+    public static boolean exclusiveWriteOperation(Object obj, Object newVal, Thread thread, String owner, String name,
+                                                  String descriptor) {
+        Location location = createLocation(obj, owner, name, descriptor);
+        System.out.println(
+                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
+                        "write the [" + newVal + "] value to " + owner + "." + name + "(" + descriptor + ") " +
+                        "with old value of [" + Objects.requireNonNull(location).getValue() + "]"
+        );
+        if (location.isPrimitive()) {
+            writeEventReq = createWriteEvent(thread, location, newVal);
+            return true;
+        } else {
+            System.out.println(
+                    "[Runtime Environment Message] : Since the value is not a primitive type, the Model Checker " +
+                            "will not care about it"
+            );
+            return false;
+        }
+    }
+
+    public static void releaseLockReq(Object lock, Thread thread) {
+        System.out.println(
+                "[Runtime Environment Message] : " + thread.getName() + " requested to release the " +
+                        lock.toString() + " lock"
+        );
+        System.exit(0);
+        //exclusiveWriteOperation(lock, 0, thread, "AtomicInteger", "value", "I");
+    }
+
     // TODO() :  It is called by the @thread to request to exit the monitor of the @lock.
     // TODO() : After this request, the @thread will request to wait to hand over the control to the SchedulerThread
     //  for deciding which thread to run.
@@ -1707,6 +1792,16 @@ public class RuntimeEnvironment {
         return new FailureEvent(EventType.FAILURE, threadIdMap.get(thread.getId()).intValue(), serialNumber);
     }
 
+    public static ReadExEvent createReadExEvent(Thread thread, Location location) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new ReadExEvent(EventType.READ_EX, threadIdMap.get(thread.getId()).intValue(), serialNumber, 0, null);
+    }
+
+    public static WriteExEvent createWriteExEvent(Thread thread, Location location, Object newVal) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new WriteExEvent(EventType.WRITE_EX, threadIdMap.get(thread.getId()).intValue(), serialNumber, 0, location);
+    }
+
     /**
      * Creates a {@link MonitorRequestEvent} for a thread that is about to request a monitor.
      * <p>
@@ -2018,5 +2113,6 @@ public class RuntimeEnvironment {
         conAssumeEventReq = null;
         assumeBlockedEventReq = null;
         symAssumeEventReq = null;
+        lockAvailMap = new HashMap<>();
     }
 }

@@ -58,6 +58,26 @@ public class SymbolicOperation implements SymbolicOperand {
     }
 
     public boolean isFormulaDependent(SymbolicOperation operation) {
+        // For debugging purposes
+        System.out.println("[Dbugging] : The first formula is: " + this.getFormula());
+        System.out.println("[Debugging] : The second formula is: " + operation.getFormula());
+        System.out.println("[Debugging] : Checking if the formula is dependent on the other formula");
+        System.out.println("[Debugging] : The symbolic variabels of the first formula are: ");
+        for (Map.Entry<String, IntegerFormula> entry : this.getIntegerVariableMap().entrySet()) {
+            System.out.println("[Debugging] : " + entry.getKey() + " : " + entry.getValue());
+        }
+        for (Map.Entry<String, BooleanFormula> entry : this.getBooleanVariableMap().entrySet()) {
+            System.out.println("[Debugging] : " + entry.getKey() + " : " + entry.getValue());
+        }
+        System.out.println("[Debugging] : The symbolic variabels of the second formula are: ");
+        for (Map.Entry<String, IntegerFormula> entry : operation.getIntegerVariableMap().entrySet()) {
+            System.out.println("[Debugging] : " + entry.getKey() + " : " + entry.getValue());
+        }
+        for (Map.Entry<String, BooleanFormula> entry : operation.getBooleanVariableMap().entrySet()) {
+            System.out.println("[Debugging] : " + entry.getKey() + " : " + entry.getValue());
+        }
+
+
         for (Map.Entry<String, IntegerFormula> entry : this.getIntegerVariableMap().entrySet()) {
             String key = entry.getKey();
             IntegerFormula value = entry.getValue();
@@ -86,7 +106,7 @@ public class SymbolicOperation implements SymbolicOperand {
 
     public boolean concreteEvaluation() {
         boolean result = jmcFormula.evaluate();
-        System.out.println("[Debugging] : The JMC formula is: " + jmcFormula);
+        System.out.println("[Debugging] : The JMC formula is: " + getFormula());
         System.out.println("[Debugging] : The result of the symbolic operation is: " + result);
         System.out.println("[Debugging] : The value of the symbolic variables are: ");
         for (Map.Entry<String, SymBoolVariable> entry : RuntimeEnvironment.solver.symBoolVariableMap.entrySet()) {
@@ -97,6 +117,5 @@ public class SymbolicOperation implements SymbolicOperand {
         }
         return result;
     }
-
 
 }

@@ -49,8 +49,22 @@ src/test/java/org/mpisws/concurrent/programs/message/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/message/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/pool/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/pool/counter/*.txt
-src/test/java/org/mpisws/concurrent/programs/gcd/*.class
-src/test/java/org/mpisws/concurrent/programs/gcd/*.txt
+src/test/java/org/mpisws/concurrent/programs/symbolic/gcd/*.class
+src/test/java/org/mpisws/concurrent/programs/symbolic/gcd/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/array/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/array/*.txt
+src/test/java/org/mpisws/concurrent/programs/concrete/gcd/*.class
+src/test/java/org/mpisws/concurrent/programs/concrete/gcd/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/loop/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/loop/*.txt
+src/test/java/org/mpisws/concurrent/programs/lists/*.class
+src/test/java/org/mpisws/concurrent/programs/lists/*.txt
+src/test/java/org/mpisws/concurrent/programs/lists/list/*.class
+src/test/java/org/mpisws/concurrent/programs/lists/list/*.txt
+src/test/java/org/mpisws/concurrent/programs/lists/list/coarse/*.class
+src/test/java/org/mpisws/concurrent/programs/lists/list/coarse/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

@@ -31,7 +31,7 @@ public class ArithmeticFormula {
     /**
      * @property {@link #integerVariableMap} is used to store the symbolic integer variable map.
      */
-    private final Map<String, IntegerFormula> integerVariableMap = new HashMap<>();
+    private Map<String, IntegerFormula> integerVariableMap = new HashMap<>();
 
     /**
      * @property {@link #context} is used to store the solver context of the symbolic solver.
@@ -91,7 +91,7 @@ public class ArithmeticFormula {
      * @return the symbolic equality operation.
      */
     public SymbolicOperation eq(AbstractInteger var1, AbstractInteger var2) {
-        integerVariableMap.clear();
+        integerVariableMap = new HashMap<>();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
@@ -176,7 +176,7 @@ public class ArithmeticFormula {
      * @return the symbolic inequality operation.
      */
     public SymbolicOperation neq(AbstractInteger var1, AbstractInteger var2) {
-        integerVariableMap.clear();
+        integerVariableMap = new HashMap<>();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
@@ -261,7 +261,7 @@ public class ArithmeticFormula {
      * @return the symbolic greater than or equal operation.
      */
     public SymbolicOperation geq(AbstractInteger var1, AbstractInteger var2) {
-        integerVariableMap.clear();
+        integerVariableMap = new HashMap<>();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
@@ -328,7 +328,7 @@ public class ArithmeticFormula {
     }
 
     public SymbolicOperation leq(AbstractInteger var1, AbstractInteger var2) {
-        integerVariableMap.clear();
+        integerVariableMap = new HashMap<>();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
@@ -372,7 +372,7 @@ public class ArithmeticFormula {
     }
 
     public SymbolicOperation gt(AbstractInteger var1, AbstractInteger var2) {
-        integerVariableMap.clear();
+        integerVariableMap = new HashMap<>();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());
@@ -416,7 +416,7 @@ public class ArithmeticFormula {
     }
 
     public SymbolicOperation lt(AbstractInteger var1, AbstractInteger var2) {
-        integerVariableMap.clear();
+        integerVariableMap = new HashMap<>();
         SymbolicOperation symbolicOperation = new SymbolicOperation();
         if (var1 instanceof SymbolicInteger && var2 instanceof SymbolicInteger) {
             IntegerFormula leftOperand = makeIntegerFormula((SymbolicInteger) var1.read());

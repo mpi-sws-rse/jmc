@@ -519,7 +519,12 @@ public class TrustStrategy extends DPORStrategy {
 
         Set<Pair<Event, Event>> mcs = guidingExecutionGraph.getMCs();
         ThreadEvent firstThreadEvent = null;
+        System.out.println("[Trust Debugging] : The suspend event is : " + suspendEvent);
+        System.out.println("[Trust Debugging] : The events record are : ");
+        RuntimeEnvironment.eventsRecord.forEach(e -> System.out.println(e.toString()));
+        System.out.println("[Trust Debugging] : The mc events are : ");
         for (Pair<Event, Event> mc : mcs) {
+            System.out.println(mc.component1().toString() + " " + mc.component2().toString());
             if (mc.component2().equals(suspendEvent)) {
                 firstThreadEvent = (ThreadEvent) mc.component1();
                 break;

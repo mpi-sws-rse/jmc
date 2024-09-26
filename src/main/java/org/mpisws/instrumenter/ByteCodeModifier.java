@@ -1895,4 +1895,144 @@ public class ByteCodeModifier {
             allByteCode.put(entry.getKey(), modifiedByteCode);
         }
     }
+
+    public void modifyMonitorStatements() {
+        for (Map.Entry<String, byte[]> entry : allByteCode.entrySet()) {
+            byte[] byteCode = entry.getValue();
+            byte[] modifiedByteCode;
+
+            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+            ClassReader cr = new ClassReader(byteCode);
+            ClassVisitor cv = new ClassVisitor(Opcodes.ASM9, cw) {
+                @Override
+                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                                 String[] exceptions) {
+                    MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+                    return new MethodVisitor(Opcodes.ASM9, mv) {
+                        private boolean isASTORE = false;
+                        private boolean isALOAD = false;
+                        private boolean foundMonitorEnter = false;
+                        private boolean foundMonitorExit = false;
+                        private int var;
+                        private int oldvar;
+
+                        @Override
+                        public void visitVarInsn(int opcode, int var) {
+                            if (opcode == Opcodes.ASTORE) {
+                                isASTORE = true;
+                                this.var = var;
+                            } else if (opcode == Opcodes.ALOAD) {
+                                isALOAD = true;
+                                this.var = var;
+                            }
+                            super.visitVarInsn(opcode, var);
+                        }
+
+                        @Override
+                        public void visitInsn(int opcode) {
+                            if (opcode == Opcodes.MONITORENTER) {
+                                mv.visitInsn(Opcodes.DUP);
+                                mv.visitInsn(Opcodes.DUP);
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "java/lang/Thread",
+                                        "currentThread",
+                                        "()Ljava/lang/Thread;",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/runtime/RuntimeEnvironment",
+                                        "acquireLockReq",
+                                        "(Ljava/lang/Object;Ljava/lang/Thread;)V",
+                                        false
+                                );
+                                super.visitInsn(opcode);
+                                isASTORE = false;
+                                foundMonitorEnter = true;
+                            } else if (opcode == Opcodes.MONITOREXIT) {
+                                mv.visitInsn(Opcodes.DUP);
+                                mv.visitInsn(Opcodes.DUP);
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "java/lang/Thread",
+                                        "currentThread",
+                                        "()Ljava/lang/Thread;",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/runtime/RuntimeEnvironment",
+                                        "releaseLockReq",
+                                        "(Ljava/lang/Object;Ljava/lang/Thread;)V",
+                                        false
+                                );
+                                super.visitInsn(opcode);
+                                isALOAD = false;
+                                foundMonitorExit = true;
+                                oldvar = var;
+                            } else {
+                                super.visitInsn(opcode);
+                            }
+                        }
+
+                        @Override
+                        public void visitLabel(Label label) {
+                            super.visitLabel(label);
+                            if (foundMonitorEnter) {
+                                foundMonitorEnter = false;
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "java/lang/Thread",
+                                        "currentThread",
+                                        "()Ljava/lang/Thread;",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/runtime/RuntimeEnvironment",
+                                        "acquiredLock",
+                                        "(Ljava/lang/Object;Ljava/lang/Thread;)V",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "java/lang/Thread",
+                                        "currentThread",
+                                        "()Ljava/lang/Thread;",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/runtime/RuntimeEnvironment",
+                                        "waitRequest",
+                                        "(Ljava/lang/Thread;)V",
+                                        false
+                                );
+                            } else if (foundMonitorExit) {
+                                foundMonitorExit = false;
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "java/lang/Thread",
+                                        "currentThread",
+                                        "()Ljava/lang/Thread;",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/runtime/RuntimeEnvironment",
+                                        "releasedLock",
+                                        "(Ljava/lang/Object;Ljava/lang/Thread;)V",
+                                        false
+                                );
+                            }
+                        }
+                    };
+                }
+            };
+            cr.accept(cv, 0);
+            modifiedByteCode = cw.toByteArray();
+            allByteCode.put(entry.getKey(), modifiedByteCode);
+        }
+    }
 }

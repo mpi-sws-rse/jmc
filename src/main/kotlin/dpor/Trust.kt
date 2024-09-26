@@ -403,6 +403,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                     //println("[Model Checker Message] : The ENTER_MONITOR event is : $nextEvent")
                     val suspendEvent = isLastEventSusspende(G, (nextEvent as ThreadEvent).tid)
                     // For the given ENTER_MONITOR event, find the last SUSPEND event in the same thread if exists
+                    println("[Trust debugging] : The suspend event is found : $suspendEvent")
                     if (suspendEvent != null) {
                         //println("[Model Checker Message] : The suspend event is found")
                         //println("[Model Checker Message] : The suspend event is : $suspendEvent")
@@ -454,6 +455,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 ) {
                                     var G2 = G1.deepCopy()
                                     G2.computeDeleted(findEnterMonitorEvent, nextEnterMonitorEvent)
+                                    println("[Trust Kt Debugging] : The deleted set 1 is : ")
+                                    G2.printDeleted()
                                     // Check if in the G2.MCs there is a pair with the second element equal to the findEnterMonitorEvent
                                     // if exists, finds its first element and add the pair of the first element and the nextEnterMonitorEvent to the G2.MCs.
                                     val matchingPair = G2.MCs.find { it.second == findEnterMonitorEvent }
@@ -487,27 +490,48 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                     }
                                     G2.addMC(nextEnterMonitorEvent, findEnterMonitorEvent)
                                     G2.turnEnterMonitorToSuspend(findEnterMonitorEvent)
-                                    // For each event in the deleted set, check if it is an EnterMonitorEvent, if its, call the turnEnterMonitorToSuspend
+                                    // For each event in the deleted set, check if it is an EnterMonitorEvent, if it is, call the turnEnterMonitorToSuspend
+
+                                    var notDeleted: MutableList<Event> = mutableListOf()
                                     for (j in 0..<G2.deleted.size) {
                                         if (G2.deleted[j].type == EventType.ENTER_MONITOR) {
                                             val enterMonitor = G2.deleted[j] as EnterMonitorEvent
                                             if (enterMonitor.monitor!!.equals(findEnterMonitorEvent.monitor) &&
                                                 enterMonitor.tid != findEnterMonitorEvent.tid
-                                            )
+                                            ) {
+                                                // Removing enter monitor (suspend) event and all PO-before events from the deleted set
+                                                notDeleted.add(enterMonitor)
+                                                for (k in 0..<G2.deleted.size) {
+                                                    val threadEvent = G2.deleted[k] as ThreadEvent
+                                                    if (threadEvent.tid == enterMonitor.tid && threadEvent.serial < enterMonitor.serial) {
+                                                        notDeleted.add(threadEvent)
+                                                    }
+                                                }
                                                 G2.turnEnterMonitorToSuspend(enterMonitor)
+                                            }
                                         }
                                     }
+
+                                    if (notDeleted.isNotEmpty()) {
+                                        for (event in notDeleted) {
+                                            G2.deleted.remove(event)
+                                        }
+                                    }
+
                                     // For each pair in G2.MCs where the second element is a suspendEvent and first element is an ExitMonitorEvent
                                     // find the suspendEvent in the root.children[exitMonitorEvent.tid] and add the pair of the founded suspendEvent and the given suspendEvent to the G2.MCs
                                     var newMC: MutableSet<Pair<Event, Event>> = mutableSetOf()
                                     for (pair in G2.MCs) {
                                         if (pair.second.type == EventType.SUSPEND && pair.first.type == EventType.EXIT_MONITOR) {
+                                            println("[Trust Kt Debugging] : The pair is : $pair")
                                             val exitMonitor = pair.first as ExitMonitorEvent
                                             val suspend = pair.second as SuspendEvent
                                             var eventNode = G2.root?.children?.get(exitMonitor.tid)
                                             while (eventNode != null) {
-                                                if (eventNode.value.equals(suspend)) {
+                                                //if (eventNode.value.equals(suspend)) {
+                                                if (eventNode.value.type == EventType.SUSPEND) {
                                                     newMC.add(Pair(eventNode.value, suspend))
+                                                    break
                                                 } else {
                                                     eventNode = eventNode.child
                                                 }
@@ -515,8 +539,11 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                         }
                                     }
                                     if (newMC.isNotEmpty()) {
+                                        println("[Trust Kt Debugging] : The newMC is : $newMC")
                                         G2.MCs.addAll(newMC)
                                     }
+                                    println("[Trust Kt Debugging] : The deleted set 2 is : ")
+                                    G2.printDeleted()
                                     G2 = G2.restrictingGraph()
                                     val newAllEvents = deepCopyAllEvents(allEvents)
                                     visit(G2.deepCopy(), newAllEvents)
@@ -727,7 +754,11 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
         while (exitMonitorNode != null) {
             if (exitMonitorNode.value.type == EventType.EXIT_MONITOR) {
                 var exitMonitorEvent = exitMonitorNode.value as ExitMonitorEvent
-                if (monitorEquals(exitMonitorEvent.monitor!!, enterMonitor.monitor!!)) {
+                if (monitorEquals(exitMonitorEvent.monitor!!, enterMonitor.monitor!!) && isExitMonitorEventFree(
+                        graph,
+                        exitMonitorEvent
+                    )
+                ) {
                     return exitMonitorEvent
                 } else {
                     exitMonitorNode = exitMonitorNode.child
@@ -764,8 +795,15 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
     ) {
         //println("Entering the turnSuspendToEnterMonitor function")
         // In graph.MCS, find the pair with its second element equal to the suspendEvent and remove it
-        val matchingPair = graph.MCs.find { it.second == suspendEvent }
+        var matchingPair = graph.MCs.find { it.second == suspendEvent }
         graph.MCs.remove(matchingPair)
+
+        matchingPair = graph.MCs.find { it.first == suspendEvent }
+        var second = matchingPair?.second
+        if (second != null) {
+            graph.MCs.remove(matchingPair)
+            graph.MCs.add(Pair(enterMonitorEvent, second))
+        }
 
         // In G.graphEvents, find the suspendEvent and remove it from the graphEvents.
         //println("Before removing the suspend event,")
@@ -854,7 +892,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
         if (firstEvent.type == EventType.SYM_EXECUTION) {
             return isSatMaximal(firstEvent as SymExecutionEvent)
         }
-        
+
         graph.computePrevious(firstEvent, secondEvent)
 //        if (firstEvent is ReadsFrom) {
 //            var isReadVisited = false

@@ -36,5 +36,7 @@ enum class EventType : Serializable {
     CON_ASSUME,
     SYM_ASSUME,
     ASSUME_BLOCKED,
+    READ_EX,
+    WRITE_EX,
     OTHER
 }

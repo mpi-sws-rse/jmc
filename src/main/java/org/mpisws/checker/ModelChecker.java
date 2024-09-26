@@ -116,7 +116,8 @@ public class ModelChecker {
         byteCodeModifier.modifyThreadStart();
         byteCodeModifier.modifyThreadRun();
         byteCodeModifier.modifyReadWriteOperation();
-        byteCodeModifier.modifyMonitorInstructions();
+        //byteCodeModifier.modifyMonitorInstructions();
+        byteCodeModifier.modifyMonitorStatements();
         byteCodeModifier.modifyAssert();
         byteCodeModifier.modifyThreadJoin();
         byteCodeModifier.addRuntimeEnvironment();

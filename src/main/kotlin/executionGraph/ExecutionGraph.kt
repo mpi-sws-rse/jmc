@@ -878,6 +878,16 @@ data class ExecutionGraph(
                     println(assumeBlockedEvent)
                 }
 
+                EventType.READ_EX -> {
+                    val readExEvent: ReadExEvent = e as ReadExEvent
+                    println(readExEvent)
+                }
+
+                EventType.WRITE_EX -> {
+                    val writeExEvent: WriteExEvent = e as WriteExEvent
+                    println(writeExEvent)
+                }
+
                 EventType.OTHER -> TODO()
             }
         }
@@ -1070,6 +1080,14 @@ data class ExecutionGraph(
                 visAssumeBlockedEvent(event as AssumeBlockedEvent, bufferedWriter)
             }
 
+            EventType.READ_EX -> {
+                visReadExEvent(event as ReadExEvent, bufferedWriter)
+            }
+
+            EventType.WRITE_EX -> {
+                visWriteExEvent(event as WriteExEvent, bufferedWriter)
+            }
+
             EventType.AWAIT_TASK -> {
                 visAwaitTaskEvent(event as AwaitTaskEvent, bufferedWriter)
             }
@@ -1085,6 +1103,18 @@ data class ExecutionGraph(
             EventType.OTHER -> TODO()
             EventType.INITIAL -> TODO()
         }
+    }
+
+    private fun visReadExEvent(readEx: ReadExEvent, bufferedWriter: BufferedWriter) {
+        var param = locOfEvent(readEx.loc!!)
+        bufferedWriter.newLine()
+        bufferedWriter.write("${readEx.tid}${readEx.serial} [label=\"${readEx.tid}:${readEx.serial}.RdEx(${param})\"]")
+    }
+
+    private fun visWriteExEvent(writeEx: WriteExEvent, bufferedWriter: BufferedWriter) {
+        var param = locOfEvent(writeEx.loc!!)
+        bufferedWriter.newLine()
+        bufferedWriter.write("${writeEx.tid}${writeEx.serial} [label=\"${writeEx.tid}:${writeEx.serial}.WEx(${param})\"]")
     }
 
     private fun visConAssumeEvent(conAssume: ConAssumeEvent, bufferedWriter: BufferedWriter) {
@@ -4445,8 +4475,10 @@ data class ExecutionGraph(
             )
         }
 
+        //println("[Execution Graph Debugging] MCs: ${this.MCs}")
+        //println("[Execution Graph Debugging] the graph events are")
         for (i in this.MCs.indices) {
-            //println("MCs: ${this.MCs.elementAt(i).first} ${this.MCs.elementAt(i).second}")
+            //println("[Execution Graph Debugging] MCs: ${this.MCs.elementAt(i).first} ${this.MCs.elementAt(i).second}")
             //this.printEvents()
             newExecutionGraph.MCs.add(
                 Pair(

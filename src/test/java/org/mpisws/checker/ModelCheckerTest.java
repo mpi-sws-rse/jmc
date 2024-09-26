@@ -3,6 +3,7 @@ package org.mpisws.checker;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.*;
+import org.mpisws.solver.SMTSolverTypes;
 import org.mpisws.solver.SolverApproach;
 
 
@@ -325,6 +326,7 @@ class ModelCheckerTest {
         );
         System.out.println("DiningPhilosophers Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
@@ -455,24 +457,145 @@ class ModelCheckerTest {
      */
 
     @Test
-    @Disabled("This test is disabled due to an issue in symbolic execution")
     @DisplayName("Symbolic GCD")
     void trustTestSymbolicGCD() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.gcd",
+        var t = new TestTarget("org.mpisws.concurrent.programs.symbolic.gcd",
                 "ParallelGCD",
                 "main",
-                "src/test/java/org/mpisws/concurrent/programs/gcd/"
+                "src/test/java/org/mpisws/concurrent/programs/symbolic/gcd/"
         );
         System.out.println("Symbolic GCD Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = true;
-        checker.configuration.solverApproach = SolverApproach.NON_INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Symbolic GCD Trust Strategy Finished");
     }
+
+    /*
+     *                                 NONDET ARRAY
+     */
+
+    @Test
+    @DisplayName("Nondet Array")
+    void trustTestNondetArray() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.array",
+                "NondetArray",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/array"
+        );
+        System.out.println("Nondet Array Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Nondet Array Trust Strategy Finished");
+    }
+
+    /*
+     *                                 NONDET LOOP VARIANT
+     */
+
+    @Test
+    @DisplayName("Nondet Loop Variant")
+    void trustTestNondetLoopVariant() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.loopVariant",
+                "NondetLoop",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant"
+        );
+        System.out.println("Nondet Array Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Nondet Loop Variant Trust Strategy Finished");
+    }
+
+    /*
+     *                                 NONDET LOOP
+     */
+
+    @Test
+    @DisplayName("Nondet Loop")
+    void trustTestNondetLoop() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.loop",
+                "NondetLoop",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/loop"
+        );
+        System.out.println("Nondet Array Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Nondet Loop Trust Strategy Finished");
+    }
+
+    /*
+     *                                  CONCRETE GCD
+     */
+
+    @Test
+    @DisplayName("Concrete GCD")
+    void trustTestConcreteGCD() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.concrete.gcd",
+                "ParallelGCD",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/concrete/gcd/"
+        );
+        System.out.println("Concrete GCD Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = true;
+        //checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        //checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Symbolic GCD Trust Strategy Finished");
+    }
+
+    /*
+     *                                  COARSE LIST I
+     */
+
+    @Test
+    @DisplayName("Coarse List I")
+    void trustTestCoarseListI() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.lists",
+                "Client1",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/lists/"
+        );
+        System.out.println("Coarse List I Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = true;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Coarse List I Trust Strategy Finished");
+    }
+
 
     /*
      *                                  PARKING COUNTER
