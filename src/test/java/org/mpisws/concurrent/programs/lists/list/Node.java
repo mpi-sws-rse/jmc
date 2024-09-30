@@ -2,6 +2,8 @@ package org.mpisws.concurrent.programs.lists.list;
 
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.symbolic.ConcreteInteger;
+import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.ReentrantLock;
 
 public class Node {
 
@@ -10,6 +12,8 @@ public class Node {
     public int key;
 
     public Node next;
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     public Node(AbstractInteger i) {
         item = i;
@@ -29,5 +33,13 @@ public class Node {
     public Node(AbstractInteger item, int key) {
         this.item = item;
         this.key = key;
+    }
+
+    public void lock() throws JMCInterruptException {
+        lock.lock();
+    }
+
+    public void unlock() {
+        lock.unlock();
     }
 }

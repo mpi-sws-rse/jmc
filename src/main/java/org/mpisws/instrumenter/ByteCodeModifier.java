@@ -1896,6 +1896,10 @@ public class ByteCodeModifier {
         }
     }
 
+    public void modifyReentrantLockStatements() {
+
+    }
+
     public void modifyMonitorStatements() {
         for (Map.Entry<String, byte[]> entry : allByteCode.entrySet()) {
             byte[] byteCode = entry.getValue();

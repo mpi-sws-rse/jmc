@@ -65,6 +65,8 @@ src/test/java/org/mpisws/concurrent/programs/lists/list/*.class
 src/test/java/org/mpisws/concurrent/programs/lists/list/*.txt
 src/test/java/org/mpisws/concurrent/programs/lists/list/coarse/*.class
 src/test/java/org/mpisws/concurrent/programs/lists/list/coarse/*.txt
+src/test/java/org/mpisws/concurrent/programs/lists/list/fine/*.class
+src/test/java/org/mpisws/concurrent/programs/lists/list/fine/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

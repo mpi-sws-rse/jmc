@@ -34,6 +34,7 @@ public class CoarseList implements Set {
             if (key == curr.key) {
                 return false;
             } else {
+                i.setHash(key);
                 Node node = new Node(i, key);
                 key++;
                 node.next = curr;
@@ -50,7 +51,7 @@ public class CoarseList implements Set {
     @Override
     public boolean remove(AbstractInteger i) {
         Node pred, curr;
-        int key = i.hashCode();
+        int key = i.getHash();
         synchronized (lock) {
             pred = head;
             curr = pred.next;
@@ -74,7 +75,7 @@ public class CoarseList implements Set {
     @Override
     public boolean contains(AbstractInteger i) {
         Node pred, curr;
-        int key = i.hashCode();
+        int key = i.getHash();
         synchronized (lock) {
             pred = head;
             curr = pred.next;

@@ -12,6 +12,8 @@ public abstract class AbstractInteger implements Serializable, SymbolicOperand {
      */
     public int value;
 
+    public int hash;
+
     /**
      * Makes a deep copy of the integer.
      *
@@ -46,5 +48,13 @@ public abstract class AbstractInteger implements Serializable, SymbolicOperand {
 
     public void setValue(int value) {
         this.value = value;
+    }
+
+    public void setHash(int hash) {
+        this.hash = hash;
+    }
+
+    public int getHash() {
+        return hash;
     }
 }

@@ -602,6 +602,30 @@ class ModelCheckerTest {
         assertTrue(checker.check(t), "Coarse List I Trust Strategy Finished");
     }
 
+    /*
+     *                                  FINE LIST I
+     */
+    @Test
+    @DisplayName("Coarse List I")
+    void trustTestFineListI() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.lists",
+                "Client3",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/lists/"
+        );
+        System.out.println("Fine List I Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fine List I Trust Strategy Finished");
+    }
+
+
 
     /*
      *                                  PARKING COUNTER
