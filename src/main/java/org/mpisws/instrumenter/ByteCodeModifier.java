@@ -1670,11 +1670,11 @@ public class ByteCodeModifier {
      * <br>
      * For {@code MONITORENTER} operations, the method adds the following instructions: <br>
      * 1. {@link org.mpisws.runtime.RuntimeEnvironment#enterMonitor(Object, Thread)} <br>
-     * 2. {@link org.mpisws.runtime.RuntimeEnvironment#acquiredLock(Object, Thread)}
+     * 2. {@link org.mpisws.runtime.RuntimeEnvironment#acquiredMonitor(Object, Thread)}
      * <br>
      * For `MONITOREXIT` operations, the method adds the following instructions: <br>
      * 1. {@link org.mpisws.runtime.RuntimeEnvironment#exitMonitor(Object, Thread)} <br>
-     * 2. {@link org.mpisws.runtime.RuntimeEnvironment#releasedLock(Object, Thread)}
+     * 2. {@link org.mpisws.runtime.RuntimeEnvironment#releasedMonitor(Object, Thread)}
      * <br>
      * The method analyzes all methods of all classes in the {@link #allByteCode} map and adds the instructions to the
      * corresponding methods.
@@ -1782,7 +1782,7 @@ public class ByteCodeModifier {
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "org/mpisws/runtime/RuntimeEnvironment",
-                                        "acquiredLock",
+                                        "acquiredMonitor",
                                         "(Ljava/lang/Object;Ljava/lang/Thread;)V",
                                         false
                                 );
@@ -1813,7 +1813,7 @@ public class ByteCodeModifier {
                                 mv.visitMethodInsn(
                                         Opcodes.INVOKESTATIC,
                                         "org/mpisws/runtime/RuntimeEnvironment",
-                                        "releasedLock",
+                                        "releasedMonitor",
                                         "(Ljava/lang/Object;Ljava/lang/Thread;)V",
                                         false
                                 );
@@ -1995,20 +1995,20 @@ public class ByteCodeModifier {
                                         "(Ljava/lang/Object;Ljava/lang/Thread;)V",
                                         false
                                 );
-                                mv.visitMethodInsn(
-                                        Opcodes.INVOKESTATIC,
-                                        "java/lang/Thread",
-                                        "currentThread",
-                                        "()Ljava/lang/Thread;",
-                                        false
-                                );
-                                mv.visitMethodInsn(
-                                        Opcodes.INVOKESTATIC,
-                                        "org/mpisws/runtime/RuntimeEnvironment",
-                                        "waitRequest",
-                                        "(Ljava/lang/Thread;)V",
-                                        false
-                                );
+//                                mv.visitMethodInsn(
+//                                        Opcodes.INVOKESTATIC,
+//                                        "java/lang/Thread",
+//                                        "currentThread",
+//                                        "()Ljava/lang/Thread;",
+//                                        false
+//                                );
+//                                mv.visitMethodInsn(
+//                                        Opcodes.INVOKESTATIC,
+//                                        "org/mpisws/runtime/RuntimeEnvironment",
+//                                        "waitRequest",
+//                                        "(Ljava/lang/Thread;)V",
+//                                        false
+//                                );
                             } else if (foundMonitorExit) {
                                 foundMonitorExit = false;
                                 mv.visitMethodInsn(
@@ -2023,6 +2023,20 @@ public class ByteCodeModifier {
                                         "org/mpisws/runtime/RuntimeEnvironment",
                                         "releasedLock",
                                         "(Ljava/lang/Object;Ljava/lang/Thread;)V",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "java/lang/Thread",
+                                        "currentThread",
+                                        "()Ljava/lang/Thread;",
+                                        false
+                                );
+                                mv.visitMethodInsn(
+                                        Opcodes.INVOKESTATIC,
+                                        "org/mpisws/runtime/RuntimeEnvironment",
+                                        "waitRequest",
+                                        "(Ljava/lang/Thread;)V",
                                         false
                                 );
                             }

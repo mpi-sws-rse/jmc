@@ -202,6 +202,17 @@ public class RandomStrategy implements SearchStrategy {
     }
 
     /**
+     * @param thread
+     * @param readExEvent
+     * @param writeExEvent
+     */
+    @Override
+    public Thread nextCasRequest(Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
+        // TODO: Implement this method
+        return pickNextThread();
+    }
+
+    /**
      * Handles the next park request of a given thread.
      * <p>
      * This method handles the next park request of a given thread. It creates a {@link ParkEvent} for the corresponding

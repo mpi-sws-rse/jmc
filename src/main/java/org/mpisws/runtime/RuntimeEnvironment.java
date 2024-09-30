@@ -37,11 +37,11 @@ import java.util.function.BiFunction;
  */
 public class RuntimeEnvironment {
 
-    private static Runtime runtime;
+    private static Runtime runtime = Runtime.getRuntime();
 
-    private static long memoryBefore;
+    private static long memoryBefore = runtime.totalMemory() - runtime.freeMemory();
 
-    private static long startTime;
+    private static long startTime = System.nanoTime();
 
     private static long endTime;
 
@@ -239,6 +239,10 @@ public class RuntimeEnvironment {
      */
     public static int numOfExecutions = 0;
 
+    public static int numOfBlockedExecutions = 0;
+
+    public static boolean isExecutionBlocked = false;
+
     /**
      * @property {@link #executionFinished} is used to indicate that the current execution iteration is finished.
      */
@@ -393,12 +397,16 @@ public class RuntimeEnvironment {
 
     public static AssumeBlockedEvent assumeBlockedEventReq;
 
+    public static ReadExEvent exclusiveReadEventReq;
+
+    public static WriteExEvent exclusiveWriteEventReq;
+
     /**
      * @property {@link #lockAvailMap} is used to store the availability status of the locks in the program under test.
      * The key is the lock object and the value is the availability of the lock. The value 0 indicates that the lock
      * is available, and the value 1 indicates that the lock is not available.
      */
-    public static Map<Object, Integer> lockAvailMap = new HashMap<>();
+    public static Map<Object, JMCLock> lockAvailMap = new HashMap<>();
 
     /**
      * The constructor is private to prevent the instantiation of the class
@@ -417,7 +425,7 @@ public class RuntimeEnvironment {
      * @param thread The main thread of the program under test.
      */
     public static void init(Thread thread) {
-        initProfiler();
+        //initProfiler();
 
         System.out.println("[Runtime Environment Message] : The RuntimeEnvironment has been deployed");
         numOfExecutions++;
@@ -925,17 +933,27 @@ public class RuntimeEnvironment {
      * </p>
      */
     private static void terminateExecution() throws HaltExecutionException {
+        if (isExecutionBlocked) {
+            System.out.println("[Runtime Environment Message] : The execution is blocked");
+            numOfBlockedExecutions++;
+        }
+
         if (deadlockHappened) {
             System.out.println("[Runtime Environment Message] : The deadlock happened");
             createFinishObject(FinishedType.DEADLOCK);
             throw new HaltExecutionException();
         } else if (allExecutionsFinished) {
             System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
+            System.out.println("[Runtime Environment Message] : The " + numOfBlockedExecutions + " execution is blocked");
             System.out.println("[Runtime Environment Message] : The maximum number of the executions is reached");
+            System.out.println("[Runtime Environment Message] : Resource Usage:");
+            System.out.println("[Runtime Environment Message] : Memory Usage: " + currentMemoryUsageInMegaBytes() + " MB");
+            System.out.println("[Runtime Environment Message] : Elapsed Time: " + elapsedTimeInSeconds() + " seconds");
             createFinishObject(FinishedType.SUCCESS);
             throw new HaltExecutionException();
         } else {
             System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
+            System.out.println("[Runtime Environment Message] : The " + numOfBlockedExecutions + " execution is blocked");
             resetRuntimeEnvironment();
         }
     }
@@ -1192,6 +1210,87 @@ public class RuntimeEnvironment {
         waitRequest(thread);
     }
 
+    // TODO() :  It is called by the @thread to request to exit the monitor of the @lock.
+    // TODO() : After this request, the @thread will request to wait to hand over the control to the SchedulerThread
+    //  for deciding which thread to run.
+
+    /**
+     * Handles a monitor exit request from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test is about to execute a {@code MONITOREXIT}
+     * operation. The thread is requesting to exit the monitor of a lock.
+     * The method logs the request of the thread to exit the monitor of the lock. However, it does not perform any
+     * action or change any state in the {@link RuntimeEnvironment}. The actual exit operation is handled by the JVM.
+     * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
+     * no need to synchronize access to any shared resources.
+     * </p>
+     *
+     * @param lock   The lock that the thread wishes to exit.
+     * @param thread The thread that wishes to exit the lock.
+     */
+    public static void exitMonitor(Object lock, Thread thread) {
+        System.out.println(
+                "[Runtime Environment Message] : " + thread.getName() + " requested to MONITOREXIT over " +
+                        "the " + lock.toString()
+        );
+    }
+
+    /**
+     * Handles a lock acquisition event from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test has successfully acquired a lock. The thread and
+     * the lock it acquired are then recorded in the {@link #monitorList}.
+     * The method logs the lock acquisition event and adds the lock and thread to the {@link #monitorList}. This allows
+     * the {@link RuntimeEnvironment} to keep track of which threads hold which locks, which is essential for handling
+     * synchronization and preventing deadlocks.
+     * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
+     * no need to synchronize access to the {@link #monitorList}.
+     * </p>
+     *
+     * @param lock   The lock that the thread has acquired.
+     * @param thread The thread that has acquired the lock.
+     */
+    public static void acquiredMonitor(Object lock, Thread thread) {
+        System.out.println(
+                "[Runtime Environment Message] : " + thread.getName() + " acquired the " + lock.toString() + " lock"
+        );
+        monitorList.put(lock, thread);
+        System.out.println(
+                "[Runtime Environment Message] : The monitor (" + lock + ", " + thread.getName() + ") added to the " +
+                        "monitorList of the RuntimeEnvironment"
+        );
+    }
+
+    /**
+     * Handles a lock release event from a thread.
+     * <p>
+     * This method is invoked when a thread in the program under test has successfully released a lock. The thread and
+     * the lock it released are then removed from the {@link #monitorList}.
+     * The method logs the lock release event and removes the lock and thread from the {@link #monitorList}. This allows
+     * the {@link RuntimeEnvironment} to keep track of which threads hold which locks, which is essential for handling
+     * synchronization and preventing deadlocks.
+     * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
+     * no need to synchronize access to the {@link #monitorList}.
+     * </p>
+     *
+     * @param lock   The lock that the thread has released.
+     * @param thread The thread that has released the lock.
+     */
+    public static void releasedMonitor(Object lock, Thread thread) {
+        System.out.println(
+                "[Runtime Environment Message] : " + thread.getName() + " released the " + lock.toString() +
+                        " lock"
+        );
+        monitorList.remove(lock, thread);
+        threadExitMonitorReq = thread;
+        objectExitMonitorReq = lock;
+        System.out.println(
+                "[Runtime Environment Message] : Monitor (" + lock + ", " + thread.getName() + ") removed from the " +
+                        "monitorList of the RuntimeEnvironment"
+        );
+        waitRequest(thread);
+    }
+
     /**
      * Handles a lock acquisition request from a thread.
      * <p>
@@ -1207,17 +1306,25 @@ public class RuntimeEnvironment {
                 "[Runtime Environment Message] : " + thread.getName() + " requested to acquire the " +
                         lock.toString() + " lock");
         if (!lockAvailMap.containsKey(lock)) {
-            lockAvailMap.put(lock, 0);
+            lockAvailMap.put(lock, new JMCLock(lock, 0));
         }
-        throw new JMCInterruptException();
+        compareAndSetOperation(lock, thread);
     }
 
-    public static boolean compareAndSetOperation(Object obj, Thread thread) {
-        if (exclusiveReadOperation(obj, thread, "AtomicInteger", "value", "I")) {
-            return exclusiveWriteOperation(obj, 1, thread, "AtomicInteger", "value", "I");
-        } else {
-            return false;
-        }
+    public static void acquiredLock(Object lock, Thread thread) {
+        System.out.println(
+                "[Runtime Environment Message] : " + thread.getName() + " acquired the " + lock.toString() + " lock"
+        );
+        lockAvailMap.get(lock).acquire();
+    }
+
+    public static void compareAndSetOperation(Object lock, Thread thread) throws JMCInterruptException {
+        Location location = createLocation(lockAvailMap.get(lock), "org/mpisws/util/concurrent/JMCLock", "permits", "I");
+        exclusiveReadEventReq = createReadExEvent(thread, location);
+        WriteExEvent writeExEvent = createWriteExEvent(thread, location, 1, 0);
+        exclusiveWriteEventReq = writeExEvent;
+        waitRequest(thread);
+        Utils.assume(writeExEvent.getOperationSuccess());
     }
 
     public static boolean exclusiveReadOperation(Object obj, Thread thread, String owner, String name, String descriptor) {
@@ -1264,88 +1371,17 @@ public class RuntimeEnvironment {
                 "[Runtime Environment Message] : " + thread.getName() + " requested to release the " +
                         lock.toString() + " lock"
         );
-        System.exit(0);
-        //exclusiveWriteOperation(lock, 0, thread, "AtomicInteger", "value", "I");
+        lockAvailMap.get(lock).release();
     }
 
-    // TODO() :  It is called by the @thread to request to exit the monitor of the @lock.
-    // TODO() : After this request, the @thread will request to wait to hand over the control to the SchedulerThread
-    //  for deciding which thread to run.
-
-    /**
-     * Handles a monitor exit request from a thread.
-     * <p>
-     * This method is invoked when a thread in the program under test is about to execute a {@code MONITOREXIT}
-     * operation. The thread is requesting to exit the monitor of a lock.
-     * The method logs the request of the thread to exit the monitor of the lock. However, it does not perform any
-     * action or change any state in the {@link RuntimeEnvironment}. The actual exit operation is handled by the JVM.
-     * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
-     * no need to synchronize access to any shared resources.
-     * </p>
-     *
-     * @param lock   The lock that the thread wishes to exit.
-     * @param thread The thread that wishes to exit the lock.
-     */
-    public static void exitMonitor(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " requested to MONITOREXIT over " +
-                        "the " + lock.toString()
-        );
-    }
-
-    /**
-     * Handles a lock acquisition event from a thread.
-     * <p>
-     * This method is invoked when a thread in the program under test has successfully acquired a lock. The thread and
-     * the lock it acquired are then recorded in the {@link #monitorList}.
-     * The method logs the lock acquisition event and adds the lock and thread to the {@link #monitorList}. This allows
-     * the {@link RuntimeEnvironment} to keep track of which threads hold which locks, which is essential for handling
-     * synchronization and preventing deadlocks.
-     * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
-     * no need to synchronize access to the {@link #monitorList}.
-     * </p>
-     *
-     * @param lock   The lock that the thread has acquired.
-     * @param thread The thread that has acquired the lock.
-     */
-    public static void acquiredLock(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " acquired the " + lock.toString() + " lock"
-        );
-        monitorList.put(lock, thread);
-        System.out.println(
-                "[Runtime Environment Message] : The monitor (" + lock + ", " + thread.getName() + ") added to the " +
-                        "monitorList of the RuntimeEnvironment"
-        );
-    }
-
-    /**
-     * Handles a lock release event from a thread.
-     * <p>
-     * This method is invoked when a thread in the program under test has successfully released a lock. The thread and
-     * the lock it released are then removed from the {@link #monitorList}.
-     * The method logs the lock release event and removes the lock and thread from the {@link #monitorList}. This allows
-     * the {@link RuntimeEnvironment} to keep track of which threads hold which locks, which is essential for handling
-     * synchronization and preventing deadlocks.
-     * As this method is invoked in a single-threaded environment (guaranteed by the {@link SchedulerThread}), there is
-     * no need to synchronize access to the {@link #monitorList}.
-     * </p>
-     *
-     * @param lock   The lock that the thread has released.
-     * @param thread The thread that has released the lock.
-     */
     public static void releasedLock(Object lock, Thread thread) {
         System.out.println(
                 "[Runtime Environment Message] : " + thread.getName() + " released the " + lock.toString() +
                         " lock"
         );
-        monitorList.remove(lock, thread);
-        threadExitMonitorReq = thread;
-        objectExitMonitorReq = lock;
-        System.out.println(
-                "[Runtime Environment Message] : Monitor (" + lock + ", " + thread.getName() + ") removed from the " +
-                        "monitorList of the RuntimeEnvironment"
-        );
+        Location location = createLocation(lockAvailMap.get(lock), "org/mpisws/util/concurrent/JMCLock", "permits", "I");
+        WriteEvent writeEvent = createWriteEvent(thread, location, 0);
+        writeEventReq = writeEvent;
         waitRequest(thread);
     }
 
@@ -1794,12 +1830,12 @@ public class RuntimeEnvironment {
 
     public static ReadExEvent createReadExEvent(Thread thread, Location location) {
         int serialNumber = getNextSerialNumber(thread);
-        return new ReadExEvent(EventType.READ_EX, threadIdMap.get(thread.getId()).intValue(), serialNumber, 0, null);
+        return new ReadExEvent(EventType.READ_EX, threadIdMap.get(thread.getId()).intValue(), serialNumber, 0, null, location);
     }
 
-    public static WriteExEvent createWriteExEvent(Thread thread, Location location, Object newVal) {
+    public static WriteExEvent createWriteExEvent(Thread thread, Location location, int value, int condition) {
         int serialNumber = getNextSerialNumber(thread);
-        return new WriteExEvent(EventType.WRITE_EX, threadIdMap.get(thread.getId()).intValue(), serialNumber, 0, location);
+        return new WriteExEvent(EventType.WRITE_EX, threadIdMap.get(thread.getId()).intValue(), serialNumber, value, condition, location, false);
     }
 
     /**
@@ -2105,14 +2141,17 @@ public class RuntimeEnvironment {
         takeFromBlockingQueueReq = null;
         idleThreadsInPool = new HashMap<>();
         waitingThreadForFuture = new HashMap<>();
-        runtime = null;
-        memoryBefore = 0;
-        memoryAfter = 0;
-        startTime = 0;
-        endTime = 0;
+        //runtime = null;
+        //memoryBefore = 0;
+        //memoryAfter = 0;
+        //startTime = 0;
+        //endTime = 0;
         conAssumeEventReq = null;
         assumeBlockedEventReq = null;
         symAssumeEventReq = null;
         lockAvailMap = new HashMap<>();
+        exclusiveReadEventReq = null;
+        exclusiveWriteEventReq = null;
+        isExecutionBlocked = false;
     }
 }

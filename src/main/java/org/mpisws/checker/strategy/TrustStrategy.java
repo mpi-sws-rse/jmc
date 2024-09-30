@@ -244,6 +244,11 @@ public class TrustStrategy extends DPORStrategy {
         readsFrom.ifPresent(readEvent::setRf);
     }
 
+    private void addRfEdgeToCurrentGraph(ReadExEvent readExEvent) {
+        Optional<ReadsFrom> readsFrom = Optional.ofNullable(findRfEdge((ReadExEvent) guidingEvent));
+        readsFrom.ifPresent(readExEvent::setRf);
+    }
+
     /**
      * Finds the reads-from edge of the read event.
      * <p>
@@ -273,6 +278,34 @@ public class TrustStrategy extends DPORStrategy {
         return readsFrom;
     }
 
+    private ReadsFrom findRfEdge(ReadExEvent readExEvent) {
+        ReadsFrom readsFrom;
+
+        if (readExEvent.getRf() instanceof InitializationEvent) {
+            readsFrom = (ReadsFrom) currentGraph.getGraphEvents().get(0);
+        } else if (readExEvent.getRf() instanceof WriteEvent tempWrite) {
+
+            readsFrom = currentGraph.getGraphEvents().stream()
+                    .filter(event -> event instanceof WriteEvent)
+                    .map(event -> (WriteEvent) event)
+                    .filter(writeEvent -> writeEvent.getTid() == Objects.requireNonNull(tempWrite).getTid() &&
+                            writeEvent.getSerial() == tempWrite.getSerial())
+                    .findFirst()
+                    .orElse(null);
+        } else {
+            WriteExEvent tempWriteEx = (WriteExEvent) readExEvent.getRf();
+
+            readsFrom = currentGraph.getGraphEvents().stream()
+                    .filter(event -> event instanceof WriteExEvent)
+                    .map(event -> (WriteExEvent) event)
+                    .filter(writeExEvent -> writeExEvent.getTid() == Objects.requireNonNull(tempWriteEx).getTid() &&
+                            writeExEvent.getSerial() == tempWriteEx.getSerial())
+                    .findFirst()
+                    .orElse(null);
+        }
+        return readsFrom;
+    }
+
     /**
      * Checks whether the graph is valid or not.
      * <p>
@@ -290,6 +323,51 @@ public class TrustStrategy extends DPORStrategy {
                 .noneMatch(pair -> pair.component1().getType() == threadEvent.getType() &&
                         ((ThreadEvent) pair.component1()).getTid() == threadEvent.getTid() &&
                         ((ThreadEvent) pair.component1()).getSerial() == threadEvent.getSerial());
+    }
+
+    private void updateCurrentGraph(ReadExEvent readExEvent, WriteExEvent writeExEvent) {
+        List<ExecutionGraph> newGraphs = dpor.getAllGraphs();
+        if (newGraphs.size() == 1) {
+            System.out.println("[Trust Strategy Message] : There is only one new graph");
+            currentGraph = newGraphs.get(0);
+        } else if (newGraphs.size() > 1) {
+            findExtendingGraph(newGraphs, readExEvent, writeExEvent);
+        } else {
+            int numOfGraphs = dpor.getGraphCounter() + 1;
+            dpor.setGraphCounter(numOfGraphs);
+            currentGraph.visualizeGraph(numOfGraphs, executionGraphsPath);
+            System.out.println("[Trust Strategy Message] : There is no new graph from model checker");
+            System.out.println("[Trust Strategy Message] : visited full execution graph G_" + numOfGraphs);
+        }
+
+        WriteExEvent lastWriteExEvent = (WriteExEvent) currentGraph.getGraphEvents().get(currentGraph.getGraphEvents().size() - 1);
+        writeExEvent.setOperationSuccess(lastWriteExEvent.getOperationSuccess());
+    }
+
+    private void findExtendingGraph(List<ExecutionGraph> newGraphs, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
+        newGraphs.stream()
+                .filter(graph -> isValidGraph(graph, readExEvent, writeExEvent))
+                .findFirst()
+                .ifPresent(graph -> {
+                    currentGraph = graph;
+                    newGraphs.remove(graph);
+                });
+
+        mcGraphs.addAll(newGraphs);
+
+        System.out.println("[Trust Strategy Message] : The chosen graph is : " + currentGraph.getId());
+    }
+
+    private boolean isValidGraph(ExecutionGraph graph, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
+        // Stream the SC of the graph and check there is no pair where the first component is the readExEvent unless
+        // the second component is the writeExEvent. To do this, we need to check the type, tid, and serial of the events.
+        return graph.getSc().stream()
+                .noneMatch(pair -> pair.component1().getType() == readExEvent.getType() &&
+                        ((ReadExEvent) pair.component1()).getTid() == readExEvent.getTid() &&
+                        ((ReadExEvent) pair.component1()).getSerial() == readExEvent.getSerial() &&
+                        !(pair.component2().getType() == writeExEvent.getType() &&
+                                ((WriteExEvent) pair.component2()).getTid() == writeExEvent.getTid() &&
+                                ((WriteExEvent) pair.component2()).getSerial() == writeExEvent.getSerial()));
     }
 
     /**
@@ -310,6 +388,37 @@ public class TrustStrategy extends DPORStrategy {
         } else {
             passEventToDPOR(writeEvent);
             updateCurrentGraph(writeEvent);
+        }
+    }
+
+    /**
+     * @param thread
+     * @param readExEvent
+     * @param writeExEvent
+     */
+    @Override
+    public Thread nextCasRequest(Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
+        RuntimeEnvironment.eventsRecord.add(readExEvent);
+        RuntimeEnvironment.eventsRecord.add(writeExEvent);
+        if (guidingActivate) {
+            ReadExEvent readEx = (ReadExEvent) guidingEvent;
+            readExEvent.setIntValue(readEx.getIntValue());
+            addEventToCurrentGraph(readExEvent);
+            addRfEdgeToCurrentGraph(readExEvent);
+
+            guidingEvent = guidingEvents.remove(0);
+            WriteExEvent writeEx = (WriteExEvent) guidingEvent;
+            writeExEvent.setIntValue(writeEx.getIntValue());
+            writeExEvent.setOperationSuccess(writeEx.getOperationSuccess());
+            addEventToCurrentGraph(writeExEvent);
+            return pickNextThread();
+        } else {
+            List<Event> events = new ArrayList<>();
+            events.add(readExEvent);
+            events.add(writeExEvent);
+            passEventToDPOR(events);
+            updateCurrentGraph(readExEvent, writeExEvent);
+            return thread;
         }
     }
 
@@ -465,6 +574,7 @@ public class TrustStrategy extends DPORStrategy {
         currentGraph.setMCs(findNewMCs());
         currentGraph.setTCs(findNewTCs());
         currentGraph.setPCs(findNewPCs());
+        currentGraph.setEventsOrder(findNewEventsOrder());
         guidingActivate = false;
     }
 
@@ -519,12 +629,7 @@ public class TrustStrategy extends DPORStrategy {
 
         Set<Pair<Event, Event>> mcs = guidingExecutionGraph.getMCs();
         ThreadEvent firstThreadEvent = null;
-        System.out.println("[Trust Debugging] : The suspend event is : " + suspendEvent);
-        System.out.println("[Trust Debugging] : The events record are : ");
-        RuntimeEnvironment.eventsRecord.forEach(e -> System.out.println(e.toString()));
-        System.out.println("[Trust Debugging] : The mc events are : ");
         for (Pair<Event, Event> mc : mcs) {
-            System.out.println(mc.component1().toString() + " " + mc.component2().toString());
             if (mc.component2().equals(suspendEvent)) {
                 firstThreadEvent = (ThreadEvent) mc.component1();
                 break;
@@ -556,16 +661,10 @@ public class TrustStrategy extends DPORStrategy {
     private void analyzeSuspendedThreadsForMonitor(Object monitor, Thread thread) {
         updateSuspendPriority(monitor, thread);
         List<Thread> candidateThreads = findSuspendedThreads(monitor);
-        //System.out.println("[Debugging Message] : The candidate threads for resuming are : ");
-        //candidateThreads.forEach(t -> System.out.println("Thread-" + RuntimeEnvironment.threadIdMap.get(t.getId())));
         List<Thread> forbiddenThreads = findForbiddenThreads(monitor);
-        //System.out.println("[Debugging Message] : The forbidden threads for resuming are : ");
-        //forbiddenThreads.forEach(t -> System.out.println("Thread-" + RuntimeEnvironment.threadIdMap.get(t.getId())));
         if (!candidateThreads.isEmpty()) {
             for (Thread t : candidateThreads) {
                 if (!forbiddenThreads.contains(t)) {
-                    //System.out.println("[Debugging Message] : Thread-" + RuntimeEnvironment.threadIdMap.get(t.getId()) +
-                    //        " is going to be unsuspended");
                     unsuspendThread(t);
                 }
             }

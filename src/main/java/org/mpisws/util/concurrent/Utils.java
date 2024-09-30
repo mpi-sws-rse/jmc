@@ -14,6 +14,7 @@ public class Utils {
         RuntimeEnvironment.concreteAssume(Thread.currentThread(), b);
         if (!b) {
             RuntimeEnvironment.AssumeBlocked(Thread.currentThread());
+            RuntimeEnvironment.isExecutionBlocked = true;
             throw new JMCInterruptException();
         }
     }
@@ -22,6 +23,7 @@ public class Utils {
         boolean b = RuntimeEnvironment.symbolicAssume(Thread.currentThread(), op);
         if (!b) {
             RuntimeEnvironment.AssumeBlocked(Thread.currentThread());
+            RuntimeEnvironment.isExecutionBlocked = true;
             throw new JMCInterruptException();
         }
     }

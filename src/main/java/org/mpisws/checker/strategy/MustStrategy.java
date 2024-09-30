@@ -28,6 +28,17 @@ public class MustStrategy extends DPORStrategy {
     }
 
     /**
+     * @param thread
+     * @param readExEvent
+     * @param writeExEvent
+     */
+    @Override
+    public Thread nextCasRequest(Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
+        // Must does not need to handle compare and set requests.
+        return pickNextThread();
+    }
+
+    /**
      * Represents the required strategy for the next enter monitor event.
      *
      * @param thread  is the thread that is going to enter the monitor.

@@ -182,7 +182,7 @@ public abstract class DPORStrategy implements SearchStrategy {
      * @param event is the event that is going to be added to the current graph.
      */
     protected void addEventToCurrentGraph(Event event) {
-        currentGraph.addEvent(event);
+        currentGraph.insertEvent(event);
     }
 
     /**
@@ -771,6 +771,21 @@ public abstract class DPORStrategy implements SearchStrategy {
             }
         }
         return newCOs;
+    }
+
+    protected List<Event> findNewEventsOrder() {
+        List<Event> newEventsOrder = new ArrayList<>();
+        for (Event event : guidingExecutionGraph.getEventsOrder()) {
+            if (event instanceof ThreadEvent) {
+                ThreadEvent threadEvent = findThreadEventInCurrentGraph((ThreadEvent) event);
+                if (threadEvent != null) {
+                    newEventsOrder.add(threadEvent);
+                }
+            } else if (event instanceof InitializationEvent) {
+                newEventsOrder.add(currentGraph.getGraphEvents().get(0));
+            }
+        }
+        return newEventsOrder;
     }
 
     /**

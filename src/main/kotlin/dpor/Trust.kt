@@ -6,6 +6,7 @@ import executionGraph.CO
 import executionGraph.EventNode
 import executionGraph.ExecutionGraph
 import programStructure.*
+import kotlin.system.exitProcess
 
 /*
  In This Version of the Trust, we assume that there is no any error in threads execution
@@ -180,9 +181,9 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
          */
         // val graphConsistency = SequentialConsistency.porfAcyclicity(G)
 
-        //println("[Model Checker Message] : Model checking started")
+        //println("[Trust Message] : Model checking started")
         if (graphConsistency) {
-            //println("[Model Checker Message] : The graph G_${G.id} is consistent")
+            //println("[Trust Message] : The graph G_${G.id} is consistent")
             val nextEvent = findNext(allEvents)
             when {
                 nextEvent == null -> {
@@ -207,7 +208,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
 
                 nextEvent.type == EventType.READ -> {
-                    println("[Model Checker Message] : The next event is a READ event -> $nextEvent")
+                    println("[Trust Message] : The next event is a READ event -> $nextEvent")
                     val G1 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val nextReadEvent = (nextEvent as ReadEvent)
@@ -221,7 +222,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 newNextReadEvent.rf = (findWriteEvent.deepCopy()) as WriteEvent
                                 G2.addEvent(newNextReadEvent as Event)
                                 val newAllEvents = deepCopyAllEvents(allEvents)
-                                //println("[Model Checker Message] : Forward Revisit(R -> W) : ($newNextReadEvent, $findWriteEvent)")
+                                //println("[Trust Message] : Forward Revisit(R -> W) : ($newNextReadEvent, $findWriteEvent)")
                                 visit(G2, newAllEvents)
                             }
                         } else if (G.graphEvents[i].type == EventType.INITIAL) {
@@ -231,14 +232,167 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                             newNextReadEvent.rf = (G.graphEvents[i].deepCopy()) as InitializationEvent
                             G3.addEvent(newNextReadEvent as Event)
                             val newAllEvents = deepCopyAllEvents(allEvents)
-                            println("[Model Checker Message] : Forward Revisit(R -> I) : ($newNextReadEvent, ${G.graphEvents[i]})")
+                            println("[Trust Message] : Forward Revisit(R -> I) : ($newNextReadEvent, ${G.graphEvents[i]})")
                             visit(G3, newAllEvents)
                         }
                     }
                 }
 
+                nextEvent.type == EventType.READ_EX -> {
+                    println("[Trust Message] : The next event is a READ_EX event -> $nextEvent")
+                    val G1 = G.deepCopy()
+                    G.addEvent(nextEvent)
+                    val nextReadExEvent = (nextEvent as ReadExEvent)
+                    for (i in 0..<G.graphEvents.size) {
+                        if (G.graphEvents[i].type == EventType.WRITE_EX) {
+                            var G2 = G1.deepCopy()
+                            var findWriteExEvent = G.graphEvents[i] as WriteExEvent
+                            val newNextEvent = nextReadExEvent.deepCopy()
+                            val newNextReadExEvent = newNextEvent as ReadExEvent
+                            if (findWriteExEvent.operationSuccess && locEquals(
+                                    findWriteExEvent.loc!!,
+                                    nextReadExEvent.loc!!
+                                )
+                            ) {
+                                newNextReadExEvent.rf = (findWriteExEvent.deepCopy()) as WriteExEvent
+                                newNextReadExEvent.intValue = findWriteExEvent.intValue
+                                G2.addEvent(newNextReadExEvent as Event)
+                                val newAllEvents = deepCopyAllEvents(allEvents)
+                                println("[Trust Message] : Forward Revisit(R -> W) : ($newNextReadExEvent, $findWriteExEvent)")
+                                visit(G2, newAllEvents)
+                            }
+                        } else if (G.graphEvents[i].type == EventType.WRITE) {
+                            var G2 = G1.deepCopy()
+                            var findWriteEvent = G.graphEvents[i] as WriteEvent
+                            val newNextEvent = nextReadExEvent.deepCopy()
+                            val newNextReadExEvent = newNextEvent as ReadExEvent
+                            if (locEquals(findWriteEvent.loc!!, nextReadExEvent.loc!!)) {
+                                newNextReadExEvent.rf = (findWriteEvent.deepCopy()) as WriteEvent
+                                newNextReadExEvent.intValue = findWriteEvent.value as Int
+                                G2.addEvent(newNextReadExEvent as Event)
+                                val newAllEvents = deepCopyAllEvents(allEvents)
+                                println("[Trust Message] : Forward Revisit(R -> W) : ($newNextReadExEvent, $findWriteEvent)")
+                                visit(G2, newAllEvents)
+                            }
+                        } else if (G.graphEvents[i].type == EventType.INITIAL) {
+                            var G3 = G1.deepCopy()
+                            val newNextEvent = nextReadExEvent.deepCopy()
+                            val newNextReadExEvent = newNextEvent as ReadExEvent
+                            newNextReadExEvent.rf = (G.graphEvents[i].deepCopy()) as InitializationEvent
+                            newNextReadExEvent.intValue = 0
+                            G3.addEvent(newNextReadExEvent as Event)
+                            val newAllEvents = deepCopyAllEvents(allEvents)
+                            println("[Trust Message] : Forward Revisit(R -> I) : ($newNextReadExEvent, ${G.graphEvents[i]})")
+                            visit(G3, newAllEvents)
+                        }
+                    }
+                }
+
+                nextEvent.type == EventType.WRITE_EX -> {
+                    println("[Trust Message] : The next event is a WRITE_EX event -> $nextEvent")
+                    val G1 = G.deepCopy()
+                    val nextWriteExEvent = (nextEvent as WriteExEvent)
+                    val readExEvent = findLastEvent(G1, nextWriteExEvent.tid) as ReadExEvent
+                    if (readExEvent == null) {
+                        println("[Trust Message] : The readExEvent is null")
+                        // Terminate the program
+                        exitProcess(0)
+                    }
+
+                    if (readExEvent.intValue == nextWriteExEvent.conditionValue) {
+                        nextWriteExEvent.operationSuccess = true
+                        //println("[Trust Debugging Message] : The operation is successful")
+                        // Forward Revisits
+                        if (G1.areExReadsConsistent(nextWriteExEvent.loc!!)) {
+                            //println("[Trust Debugging Message] : The ExReads are consistent")
+                            val G2 = G1.deepCopy()
+                            val newAllEvents = deepCopyAllEvents(allEvents)
+                            visitCOs(G2, nextWriteExEvent.deepCopy() as WriteExEvent, newAllEvents)
+                        } else {
+                            println("[Trust Message] : The ExReads are not consistent. The graph is discarded")
+                        }
+
+                        // Backward Revisits
+                        val G3 = G.deepCopy()
+                        G3.addEvent(nextWriteExEvent.deepCopy())
+                        G3.computeProgramOrderReadFrom()
+                        for (i in 0..<G3.graphEvents.size) {
+                            if (G3.graphEvents[i] is ReadEvent) {
+                                val findReadExEvent = G3.graphEvents[i] as ReadEvent
+                                if (locEquals(findReadExEvent.loc!!, nextWriteExEvent.loc!!) && !G3.porf.contains(
+                                        Pair(
+                                            findReadExEvent,
+                                            nextWriteExEvent
+                                        )
+                                    )
+                                ) {
+                                    G3.computeDeleted(findReadExEvent, nextWriteExEvent)
+                                    var allIsMaximal = true
+                                    G3.deleted.add(findReadExEvent)
+                                    for (j in 0..<G3.deleted.size) {
+                                        if (!isMaximallyAdded(
+                                                G3.deepCopy(),
+                                                G3.deleted[j].deepCopy(),
+                                                nextWriteExEvent.deepCopy()
+                                            )
+                                        ) {
+                                            allIsMaximal = false
+                                            break
+                                        }
+                                    }
+                                    if (allIsMaximal) {
+                                        G3.deleted.remove(findReadExEvent)
+                                        var newNewAllEvents = deepCopyAllEvents(allEvents)
+
+                                        if (findReadExEvent is ReadExEvent) {
+                                            // In the G3.deleted set, find the event which its type is WRITE_EX and its tid is equal to the tid of the findReadExEvent and its serial number is exactly one more than the serial number of the findReadExEvent
+                                            // if exists, store it in candidateWriteExEvent
+                                            var candidateWriteExEvent: WriteExEvent? = null
+                                            for (j in 0..<G3.deleted.size) {
+                                                if (G3.deleted[j].type == EventType.WRITE_EX) {
+                                                    val writeEx = G3.deleted[j] as WriteExEvent
+                                                    if (writeEx.tid == findReadExEvent.tid && writeEx.serial == findReadExEvent.serial + 1) {
+                                                        candidateWriteExEvent = writeEx
+                                                        break
+                                                    }
+                                                }
+                                            }
+                                            newNewAllEvents.add(candidateWriteExEvent!!.deepCopy())
+                                        }
+
+                                        var G4 = G3.deepCopy()
+                                        G4 = G4.restrictingGraph()
+                                        val readEx: ReadExEvent
+                                        if (G4.graphEvents.contains(findReadExEvent)) {
+                                            readEx = G4.graphEvents.find { it.equals(findReadExEvent) } as ReadExEvent
+                                            readEx.rf = nextWriteExEvent.deepCopy() as WriteExEvent
+                                            readEx.intValue = nextWriteExEvent.intValue
+                                        }
+                                        if (G4.areExReadsConsistent(nextWriteExEvent.loc!!)) {
+                                            visitCOs(
+                                                G4.deepCopy(),
+                                                nextWriteExEvent.deepCopy() as WriteExEvent,
+                                                newNewAllEvents
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        //println("[Trust Debugging Message] : The condition of the writeExEvent is not satisfied")
+                        nextWriteExEvent.operationSuccess = false
+//                        if (G1.areExReadsConsistent(nextWriteExEvent.loc!!)) {
+//                            G1.addEvent(nextWriteExEvent)
+//                            visit(G1, allEvents)
+//                        }
+                        G1.addEvent(nextWriteExEvent)
+                        visit(G1, allEvents)
+                    }
+                }
+
                 nextEvent.type == EventType.WRITE -> {
-                    //println("[Model Checker Message] : The next event is a WRITE event -> $nextEvent")
+                    println("[Trust Message] : The next event is a WRITE event -> $nextEvent")
                     val G3 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val newAllEvents = deepCopyAllEvents(allEvents)
@@ -246,26 +400,9 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                     G3.addEvent(nextEvent.deepCopy())
                     G3.computeProgramOrderReadFrom()
                     for (i in 0..<G3.graphEvents.size) {
-                        //println("[Model Checker Message] : Inside Backward Revisit(W -> R) : " + G3.graphEvents[i])
-                        if (G3.graphEvents[i].type == EventType.READ) {
+                        if (G3.graphEvents[i] is ReadEvent) {
                             val findReadEvent = G3.graphEvents[i] as ReadEvent
                             val nextWriteEvent = nextEvent as WriteEvent
-//                            println("Inside Backward Revisit : Type is read")
-//                            println(
-//                                "Inside Backward Revisit : The location is equal? : " + locEquals(
-//                                    findReadEvent.loc!!,
-//                                    nextWriteEvent.loc!!
-//                                )
-//                            )
-//                            println(
-//                                "Inside Backward Revisit : The pair is in PORF? : " + G3.porf.contains(
-//                                    Pair(
-//                                        findReadEvent,
-//                                        nextEvent
-//                                    )
-//                                )
-//                            )
-                            //G3.printPorf()
                             if (locEquals(findReadEvent.loc!!, nextWriteEvent.loc!!) && !G3.porf.contains(
                                     Pair(
                                         findReadEvent,
@@ -273,19 +410,10 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                     )
                                 )
                             ) {
-                                //println("Inside Backward Revisit : The location is equal and the pair is not in PORF")
-                                //println("Inside Backward Revisit : The pair is : " + Pair(findReadEvent, nextEvent))
                                 G3.computeDeleted(findReadEvent, nextEvent)
-                                /*
-                                 For debugging
 
-                                  G3.printPorf()
-                                  G3.printDeleted()
-                                  G3.printEventsOrder()
-                                 */
                                 var allIsMaximal = true
                                 G3.deleted.add(findReadEvent)
-                                //G3.printDeletedEvents()
                                 for (j in 0..<G3.deleted.size) {
                                     if (!isMaximallyAdded(
                                             G3.deepCopy(),
@@ -298,24 +426,34 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                     }
                                 }
                                 if (allIsMaximal) {
-                                    //println("The deleted set is maximally added")
                                     G3.deleted.remove(findReadEvent)
+                                    var newNewAllEvents = deepCopyAllEvents(allEvents)
+
+                                    if (findReadEvent is ReadExEvent) {
+                                        var findReadExEvent = findReadEvent
+                                        var candidateWriteExEvent: WriteExEvent? = null
+                                        for (j in 0..<G3.deleted.size) {
+                                            if (G3.deleted[j].type == EventType.WRITE_EX) {
+                                                val writeEx = G3.deleted[j] as WriteExEvent
+                                                if (writeEx.tid == findReadExEvent.tid && writeEx.serial == findReadExEvent.serial + 1) {
+                                                    candidateWriteExEvent = writeEx
+                                                    break
+                                                }
+                                            }
+                                        }
+                                        newNewAllEvents.add(candidateWriteExEvent!!.deepCopy())
+                                    }
                                     var G4 = G3.deepCopy()
-                                    //println("The graph before restriction is :")
-                                    //G4.printGraph()
                                     G4 = G4.restrictingGraph()
-                                    //println("The graph after restriction is :")
-                                    //G4.printGraph()
                                     val read: ReadEvent
                                     if (G4.graphEvents.contains(findReadEvent)) {
                                         read = G4.graphEvents.find { it.equals(findReadEvent) } as ReadEvent
                                         read.rf = nextEvent.deepCopy() as WriteEvent
-                                        //println("The rf has been set to the $read")
+                                        if (read is ReadExEvent) {
+                                            read.intValue = nextEvent.value as Int
+                                        }
                                     }
-                                    //val newnewAllEvents = (deepCopyAllEvents(G3.deleted) + newAllEvents) as MutableList<Event>
-                                    //println("The new All event is : ")
-                                    //println(newAllEvents)
-                                    visitCOs(G4.deepCopy(), nextEvent.deepCopy() as WriteEvent, newAllEvents)
+                                    visitCOs(G4.deepCopy(), nextEvent.deepCopy() as WriteEvent, newNewAllEvents)
                                 }
                             }
                         }
@@ -325,14 +463,14 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 nextEvent.type == EventType.JOIN -> {
 
                     // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a JOIN event")
-                    //println("[Model Checker Message] : The JOIN event is : $nextEvent")
+                    //println("[Trust Message] : The next event is a JOIN event")
+                    //println("[Trust Message] : The JOIN event is : $nextEvent")
 
                     val threadId = (nextEvent as JoinEvent).joinTid
                     val finishEvent = findFinishEvent(G, threadId)
                     if (finishEvent != null) {
-                        //println("[Model Checker Message] : The finish event is found")
-                        //println("[Model Checker Message] : The finish event is : $finishEvent")
+                        //println("[Trust Message] : The finish event is found")
+                        //println("[Trust Message] : The finish event is : $finishEvent")
                         G.addEvent(nextEvent)
                         G.addJT(finishEvent, nextEvent)
                         visit(G, allEvents)
@@ -341,14 +479,14 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.START -> {
                     // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a START event")
-                    //println("[Model Checker Message] : The START event is : $nextEvent")
+                    //println("[Trust Message] : The next event is a START event")
+                    //println("[Trust Message] : The START event is : $nextEvent")
 
                     val threadId = (nextEvent as StartEvent).callerThread
                     val threadEvent = findLastEvent(G, threadId)
                     if (threadEvent != null) {
-                        //println("[Model Checker Message] : The thread event is found")
-                        //println("[Model Checker Message] : The thread event is : $threadEvent")
+                        //println("[Trust Message] : The thread event is found")
+                        //println("[Trust Message] : The thread event is : $threadEvent")
                         // From the list of G.graphEvents, find the last inserted START event where its callerThread is equal to the threadId of the nextEvent and store it in threadEvent
                         val prevStart =
                             G.graphEvents.filter { it.type == EventType.START && (it as StartEvent).callerThread == nextEvent.callerThread }
@@ -364,8 +502,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.FINISH -> {
                     // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a FINISH event")
-                    //println("[Model Checker Message] : The FINISH event is : $nextEvent")
+                    //println("[Trust Message] : The next event is a FINISH event")
+                    //println("[Trust Message] : The FINISH event is : $nextEvent")
 
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
@@ -373,8 +511,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.FAILURE -> {
                     // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a FAILURE event")
-                    //println("[Model Checker Message] : The FAILURE event is : $nextEvent")
+                    //println("[Trust Message] : The next event is a FAILURE event")
+                    //println("[Trust Message] : The FAILURE event is : $nextEvent")
 
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
@@ -382,8 +520,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.DEADLOCK -> {
                     // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a DEADLOCK event")
-                    //println("[Model Checker Message] : The DEADLOCK event is : $nextEvent")
+                    //println("[Trust Message] : The next event is a DEADLOCK event")
+                    //println("[Trust Message] : The DEADLOCK event is : $nextEvent")
 
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
@@ -391,27 +529,27 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.MONITOR_REQUEST -> {
                     // The following is for debugging purposes only
-                    //println("[Model Checker Message] : The next event is a MONITOR_REQUEST event")
-                    //println("[Model Checker Message] : The MONITOR_REQUEST event is : $nextEvent")
+                    //println("[Trust Message] : The next event is a MONITOR_REQUEST event")
+                    //println("[Trust Message] : The MONITOR_REQUEST event is : $nextEvent")
 
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
 
                 nextEvent.type == EventType.ENTER_MONITOR -> {
-                    //println("[Model Checker Message] : The next event is a ENTER_MONITOR event")
-                    //println("[Model Checker Message] : The ENTER_MONITOR event is : $nextEvent")
+                    //println("[Trust Message] : The next event is a ENTER_MONITOR event")
+                    //println("[Trust Message] : The ENTER_MONITOR event is : $nextEvent")
                     val suspendEvent = isLastEventSusspende(G, (nextEvent as ThreadEvent).tid)
                     // For the given ENTER_MONITOR event, find the last SUSPEND event in the same thread if exists
-                    println("[Trust debugging] : The suspend event is found : $suspendEvent")
+                    //println("[Trust debugging] : The suspend event is found : $suspendEvent")
                     if (suspendEvent != null) {
-                        //println("[Model Checker Message] : The suspend event is found")
-                        //println("[Model Checker Message] : The suspend event is : $suspendEvent")
+                        //println("[Trust Message] : The suspend event is found")
+                        //println("[Trust Message] : The suspend event is : $suspendEvent")
                         var nextExitMonitorEvent = findExitMonitorEvent(G, suspendEvent)
-                        //println("[Model Checker Message] : The next exit monitor event is : $nextExitMonitorEvent")
+                        //println("[Trust Message] : The next exit monitor event is : $nextExitMonitorEvent")
                         if (nextExitMonitorEvent != null) {
-                            //println("[Model Checker Message] : The next exit monitor event is found")
-                            //println("[Model Checker Message] : The next exit monitor event is : $nextExitMonitorEvent")
+                            //println("[Trust Message] : The next exit monitor event is found")
+                            //println("[Trust Message] : The next exit monitor event is : $nextExitMonitorEvent")
                             //removeSuspend(G, suspendEvent)
                             turnSuspendToEnterMonitor(G, suspendEvent, nextEvent as EnterMonitorEvent)
                             //G.addEvent(nextEvent)
@@ -425,7 +563,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                         val nextEnterMonitorEvent = (nextEvent as EnterMonitorEvent)
 
                         // FORWARD REVISITS
-                        //System.out.println("[Model Checker Message] : Forward Revisit(EnM -> ExM) : $nextEnterMonitorEvent")
+                        //System.out.println("[Trust Message] : Forward Revisit(EnM -> ExM) : $nextEnterMonitorEvent")
                         for (i in 0..<G.graphEvents.size) {
                             if (G.graphEvents[i].type == EventType.EXIT_MONITOR) {
                                 val findExitMonitorEvent = G.graphEvents[i] as ExitMonitorEvent
@@ -455,8 +593,6 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 ) {
                                     var G2 = G1.deepCopy()
                                     G2.computeDeleted(findEnterMonitorEvent, nextEnterMonitorEvent)
-                                    println("[Trust Kt Debugging] : The deleted set 1 is : ")
-                                    G2.printDeleted()
                                     // Check if in the G2.MCs there is a pair with the second element equal to the findEnterMonitorEvent
                                     // if exists, finds its first element and add the pair of the first element and the nextEnterMonitorEvent to the G2.MCs.
                                     val matchingPair = G2.MCs.find { it.second == findEnterMonitorEvent }
@@ -523,7 +659,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                     var newMC: MutableSet<Pair<Event, Event>> = mutableSetOf()
                                     for (pair in G2.MCs) {
                                         if (pair.second.type == EventType.SUSPEND && pair.first.type == EventType.EXIT_MONITOR) {
-                                            println("[Trust Kt Debugging] : The pair is : $pair")
+                                            //println("[Trust Kt Debugging] : The pair is : $pair")
                                             val exitMonitor = pair.first as ExitMonitorEvent
                                             val suspend = pair.second as SuspendEvent
                                             var eventNode = G2.root?.children?.get(exitMonitor.tid)
@@ -539,10 +675,10 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                         }
                                     }
                                     if (newMC.isNotEmpty()) {
-                                        println("[Trust Kt Debugging] : The newMC is : $newMC")
+                                        //println("[Trust Kt Debugging] : The newMC is : $newMC")
                                         G2.MCs.addAll(newMC)
                                     }
-                                    println("[Trust Kt Debugging] : The deleted set 2 is : ")
+                                    //println("[Trust Kt Debugging] : The deleted set 2 is : ")
                                     G2.printDeleted()
                                     G2 = G2.restrictingGraph()
                                     val newAllEvents = deepCopyAllEvents(allEvents)
@@ -602,7 +738,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.UNPARK -> {
                     // Forward Revisits
-                    println("[Model Checker Message] : The next event is a UNPARK event -> $nextEvent")
+                    println("[Trust Message] : The next event is a UNPARK event -> $nextEvent")
                     val G1 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val nextUnparkEvent = (nextEvent as UnparkEvent)
@@ -629,7 +765,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.UNPARKING -> {
                     // Forward Revisits
-                    println("[Model Checker Message] : The next event is a UNPARKING event -> $nextEvent")
+                    println("[Trust Message] : The next event is a UNPARKING event -> $nextEvent")
                     val G1 = G.deepCopy()
                     var nextUnparkingEvent = nextEvent.deepCopy() as UnparkingEvent
                     G.addEvent(nextEvent)
@@ -670,8 +806,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                     G3.computeDeleted(unparkEvent, unparkingEvent)
                                     G3.restrictingGraph()
 
-                                    val newAllEvents = deepCopyAllEvents(allEvents)
-                                    visit(G3.deepCopy(), newAllEvents)
+                                    val newnewAllEvents = deepCopyAllEvents(allEvents)
+                                    visit(G3.deepCopy(), newnewAllEvents)
                                 }
                             }
                         }
@@ -684,7 +820,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
             }
         } else {
-            println("[Model Checker Message] : The graph is not consistent")
+            println("[Trust Message] : The graph is not consistent")
             //G.printSc()
         }
     }
@@ -893,6 +1029,13 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
             return isSatMaximal(firstEvent as SymExecutionEvent)
         }
 
+        if (firstEvent.type == EventType.WRITE_EX) {
+            val writeEx = firstEvent as WriteExEvent
+            if (!writeEx.operationSuccess) {
+                return true
+            }
+        }
+
         graph.computePrevious(firstEvent, secondEvent)
 //        if (firstEvent is ReadsFrom) {
 //            var isReadVisited = false
@@ -913,6 +1056,11 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 if (graph.previous[i].type == EventType.READ) {
                     val read = graph.previous[i] as ReadEvent
                     if (read.rf!!.equals(firstEvent)) {
+                        return false
+                    }
+                } else if (graph.previous[i].type == EventType.READ_EX) {
+                    val readEx = graph.previous[i] as ReadExEvent
+                    if (readEx.rf!!.equals(firstEvent)) {
                         return false
                     }
                 }
@@ -939,6 +1087,10 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 ((firstEvent as ReadEvent).rf as Event).deepCopy()
             }
 
+            EventType.READ_EX -> {
+                ((firstEvent as ReadExEvent).rf as Event).deepCopy()
+            }
+
 //            EventType.ENTER_MONITOR -> {
 //                val matchingPair = graph.MCs.find { it.second == firstEvent }
 //                matchingPair?.first?.deepCopy() ?: firstEvent.deepCopy() // handle the case where no match is found
@@ -955,6 +1107,27 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 for (i in 0..<graph.previous.size) {
                     if (graph.previous[i].type == EventType.WRITE) {
                         if (graph.COs.contains(CO(eventPrime as WriteEvent, graph.previous[i] as WriteEvent))) {
+                            isCoVisited = true
+                        }
+                    } else if (graph.previous[i].type == EventType.WRITE_EX) {
+                        if (graph.COs.contains(CO(eventPrime as WriteEvent, graph.previous[i] as WriteExEvent))) {
+                            isCoVisited = true
+                        }
+                    }
+                    if (isCoVisited) {
+                        break
+                    }
+                }
+                return !isCoVisited
+            } else if (eventPrime.type == EventType.WRITE_EX) {
+                var isCoVisited = false
+                for (i in 0..<graph.previous.size) {
+                    if (graph.previous[i].type == EventType.WRITE) {
+                        if (graph.COs.contains(CO(eventPrime as WriteExEvent, graph.previous[i] as WriteEvent))) {
+                            isCoVisited = true
+                        }
+                    } else if (graph.previous[i].type == EventType.WRITE_EX) {
+                        if (graph.COs.contains(CO(eventPrime as WriteExEvent, graph.previous[i] as WriteExEvent))) {
                             isCoVisited = true
                         }
                     }
@@ -977,15 +1150,120 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
      The SetCO(G,w_{p},a) has been implemented within the following function
      */
 
-    private fun visitCOs(G: ExecutionGraph, writeEvent: WriteEvent, allEvents: MutableList<Event>) {
-        //System.out.println("[Model Checking Message] : Visiting COs started for the write event -> $writeEvent")
+    private fun visitCOs(G: ExecutionGraph, exWrite: WriteExEvent, allEvents: MutableList<Event>) {
+        //System.out.println("[Trust Message] : Visiting COs started for the write event -> $exWrite")
         for (i in 0..<G.graphEvents.size) {
             if (G.graphEvents[i].type == EventType.WRITE) {
                 val findWriteEvent = G.graphEvents[i] as WriteEvent
-                //printLocationReferences(findWriteEvent.loc!!)
-                //println("is value of the location " + findWriteEvent.loc!!.value + " primitive? -> ${findWriteEvent.loc!!.isPrimitive()}")
-                //printLocationReferences(writeEvent.loc!!)
-                //println("is value of the location " + findWriteEvent.loc!!.value + " primitive? -> ${writeEvent.loc!!.isPrimitive()}")
+                if (locEquals(findWriteEvent.loc!!, exWrite.loc!!)) {
+                    val newWriteEvent = exWrite.deepCopy() as WriteExEvent
+                    val newG = G.deepCopy()
+                    for (j in 0..<G.COs.size) {
+                        if (G.COs[j].secondWrite.equals(findWriteEvent)) {
+                            val newCo = CO(firstWrite = G.COs[j].firstWrite, secondWrite = newWriteEvent)
+                            newG.COs.add(newCo)
+                        }
+                    }
+
+                    newG.COs.add(CO(firstWrite = findWriteEvent, secondWrite = newWriteEvent))
+
+                    for (j in 0..<G.COs.size) {
+                        if (G.COs[j].firstWrite.equals(findWriteEvent)) {
+                            val newCo = CO(firstWrite = newWriteEvent, secondWrite = G.COs[j].secondWrite)
+                            newG.COs.add(newCo)
+                        }
+                    }
+
+                    newG.addEvent(newWriteEvent as Event)
+                    visit(newG, deepCopyAllEvents(allEvents))
+                }
+            } else if (G.graphEvents[i].type == EventType.WRITE_EX) {
+                val findWriteExEvent = G.graphEvents[i] as WriteExEvent
+                if (findWriteExEvent.operationSuccess && locEquals(findWriteExEvent.loc!!, exWrite.loc!!)) {
+                    val newWriteEvent = exWrite.deepCopy() as WriteExEvent
+                    val newG = G.deepCopy()
+                    for (j in 0..<G.COs.size) {
+                        if (G.COs[j].secondWrite.equals(findWriteExEvent)) {
+                            val newCo = CO(firstWrite = G.COs[j].firstWrite, secondWrite = newWriteEvent)
+                            newG.COs.add(newCo)
+                        }
+                    }
+
+                    newG.COs.add(CO(firstWrite = findWriteExEvent, secondWrite = newWriteEvent))
+
+                    for (j in 0..<G.COs.size) {
+                        if (G.COs[j].firstWrite.equals(findWriteExEvent)) {
+                            val newCo = CO(firstWrite = newWriteEvent, secondWrite = G.COs[j].secondWrite)
+                            newG.COs.add(newCo)
+                        }
+                    }
+
+                    newG.addEvent(newWriteEvent as Event)
+                    visit(newG, deepCopyAllEvents(allEvents))
+                } else if (G.graphEvents[i].type == EventType.INITIAL) {
+                    val findInitEvent = G.graphEvents[i] as InitializationEvent
+                    val newWriteEvent = exWrite.deepCopy() as WriteExEvent
+                    val newG = G.deepCopy()
+
+                    newG.COs.add(CO(firstWrite = findInitEvent, secondWrite = newWriteEvent))
+
+                    for (j in 0..<G.COs.size) {
+                        if (G.COs[j].firstWrite.equals(findInitEvent)) {
+                            if (G.COs[j].secondWrite is WriteEvent) {
+                                val secondHandWrite = G.COs[j].secondWrite
+                                if (locEquals(newWriteEvent.loc!!, secondHandWrite.loc!!)) {
+                                    val newCo = CO(firstWrite = newWriteEvent, secondWrite = secondHandWrite)
+                                    newG.COs.add(newCo)
+                                }
+                            } else if (G.COs[j].secondWrite is WriteExEvent) {
+                                val secondHandWrite = G.COs[j].secondWrite as WriteExEvent
+                                if (locEquals(newWriteEvent.loc!!, secondHandWrite.loc!!)) {
+                                    val newCo = CO(firstWrite = newWriteEvent, secondWrite = secondHandWrite)
+                                    newG.COs.add(newCo)
+                                }
+                            }
+                        }
+                    }
+
+                    newG.addEvent(newWriteEvent as Event)
+                    visit(newG, deepCopyAllEvents(allEvents))
+                }
+            } else if (G.graphEvents[i].type == EventType.INITIAL) {
+                val findInitEvent = G.graphEvents[i] as InitializationEvent
+                val newWriteEvent = exWrite.deepCopy() as WriteExEvent
+                val newG = G.deepCopy()
+
+                newG.COs.add(CO(firstWrite = findInitEvent, secondWrite = newWriteEvent))
+
+                for (j in 0..<G.COs.size) {
+                    if (G.COs[j].firstWrite.equals(findInitEvent)) {
+                        if (G.COs[j].secondWrite is WriteEvent) {
+                            val secondHandWrite = G.COs[j].secondWrite
+                            if (locEquals(newWriteEvent.loc!!, secondHandWrite.loc!!)) {
+                                val newCo = CO(firstWrite = newWriteEvent, secondWrite = secondHandWrite)
+                                newG.COs.add(newCo)
+                            }
+                        } else if (G.COs[j].secondWrite is WriteExEvent) {
+                            val secondHandWrite = G.COs[j].secondWrite as WriteExEvent
+                            if (locEquals(newWriteEvent.loc!!, secondHandWrite.loc!!)) {
+                                val newCo = CO(firstWrite = newWriteEvent, secondWrite = secondHandWrite)
+                                newG.COs.add(newCo)
+                            }
+                        }
+                    }
+                }
+
+                newG.addEvent(newWriteEvent as Event)
+                visit(newG, deepCopyAllEvents(allEvents))
+            }
+        }
+    }
+
+    private fun visitCOs(G: ExecutionGraph, writeEvent: WriteEvent, allEvents: MutableList<Event>) {
+        //System.out.println("[Trust Message] : Visiting COs started for the write event -> $writeEvent")
+        for (i in 0..<G.graphEvents.size) {
+            if (G.graphEvents[i].type == EventType.WRITE) {
+                val findWriteEvent = G.graphEvents[i] as WriteEvent
 
                 if (locEquals(findWriteEvent.loc!!, writeEvent.loc!!)) {
                     val newWriteEvent = writeEvent.deepCopy() as WriteEvent
@@ -994,42 +1272,39 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                         if (G.COs[j].secondWrite.equals(findWriteEvent)) {
                             val newCo = CO(firstWrite = G.COs[j].firstWrite, secondWrite = newWriteEvent)
                             newG.COs.add(newCo)
-//                            println(
-//                                "[Model Checking Message] : new CO added -> ${
-//                                    CO(
-//                                        firstWrite = G.COs[j].firstWrite,
-//                                        secondWrite = newWriteEvent
-//                                    )
-//                                }"
-//                            )
-//                            println("[Model Checking Message] : COs are -> ${newG.COs}")
                         }
                     }
 
                     newG.COs.add(CO(firstWrite = findWriteEvent, secondWrite = newWriteEvent))
-//                    println(
-//                        "[Model Checking Message] : new CO added -> ${
-//                            CO(
-//                                firstWrite = findWriteEvent,
-//                                secondWrite = newWriteEvent
-//                            )
-//                        }"
-//                    )
-//                    println("[Model Checking Message] : COs are -> ${newG.COs}")
 
                     for (j in 0..<G.COs.size) {
                         if (G.COs[j].firstWrite.equals(findWriteEvent)) {
                             val newCo = CO(firstWrite = newWriteEvent, secondWrite = G.COs[j].secondWrite)
                             newG.COs.add(newCo)
-//                            println(
-//                                "[Model Checking Message] : new CO added -> ${
-//                                    CO(
-//                                        firstWrite = newWriteEvent,
-//                                        secondWrite = G.COs[j].secondWrite
-//                                    )
-//                                }"
-//                            )
-//                            println("[Model Checking Message] : COs are -> ${newG.COs}")
+                        }
+                    }
+
+                    newG.addEvent(newWriteEvent as Event)
+                    visit(newG, deepCopyAllEvents(allEvents))
+                }
+            } else if (G.graphEvents[i].type == EventType.WRITE_EX) {
+                val findWriteExEvent = G.graphEvents[i] as WriteExEvent
+                if (findWriteExEvent.operationSuccess && locEquals(findWriteExEvent.loc!!, writeEvent.loc!!)) {
+                    val newWriteEvent = writeEvent.deepCopy() as WriteEvent
+                    val newG = G.deepCopy()
+                    for (j in 0..<G.COs.size) {
+                        if (G.COs[j].secondWrite.equals(findWriteExEvent)) {
+                            val newCo = CO(firstWrite = G.COs[j].firstWrite, secondWrite = newWriteEvent)
+                            newG.COs.add(newCo)
+                        }
+                    }
+
+                    newG.COs.add(CO(firstWrite = findWriteExEvent, secondWrite = newWriteEvent))
+
+                    for (j in 0..<G.COs.size) {
+                        if (G.COs[j].firstWrite.equals(findWriteExEvent)) {
+                            val newCo = CO(firstWrite = newWriteEvent, secondWrite = G.COs[j].secondWrite)
+                            newG.COs.add(newCo)
                         }
                     }
 
@@ -1042,30 +1317,21 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 val newG = G.deepCopy()
 
                 newG.COs.add(CO(firstWrite = findInitEvent, secondWrite = newWriteEvent))
-//                println(
-//                    "[Model Checking Message] : new CO added : ${
-//                        CO(
-//                            firstWrite = findInitEvent,
-//                            secondWrite = newWriteEvent
-//                        )
-//                    }"
-//                )
-//                println("[Model Checking Message] : COs are -> ${newG.COs}")
+
                 for (j in 0..<G.COs.size) {
                     if (G.COs[j].firstWrite.equals(findInitEvent)) {
-                        val secondHandWrite = G.COs[j].secondWrite
-                        if (locEquals(newWriteEvent.loc!!, secondHandWrite.loc!!)) {
-                            val newCo = CO(firstWrite = newWriteEvent, secondWrite = secondHandWrite)
-                            newG.COs.add(newCo)
-                            //                        println(
-//                            "[Model Checking Message] : new CO added -> ${
-//                                CO(
-//                                    firstWrite = newWriteEvent,
-//                                    secondWrite = G.COs[j].secondWrite
-//                                )
-//                            }"
-//                        )
-//                        println("[Model Checking Message] : COs are -> ${newG.COs}")
+                        if (G.COs[j].secondWrite is WriteEvent) {
+                            val secondHandWrite = G.COs[j].secondWrite
+                            if (locEquals(newWriteEvent.loc!!, secondHandWrite.loc!!)) {
+                                val newCo = CO(firstWrite = newWriteEvent, secondWrite = secondHandWrite)
+                                newG.COs.add(newCo)
+                            }
+                        } else if (G.COs[j].secondWrite is WriteExEvent) {
+                            val secondHandWrite = G.COs[j].secondWrite as WriteExEvent
+                            if (locEquals(newWriteEvent.loc!!, secondHandWrite.loc!!)) {
+                                val newCo = CO(firstWrite = newWriteEvent, secondWrite = secondHandWrite)
+                                newG.COs.add(newCo)
+                            }
                         }
                     }
                 }

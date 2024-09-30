@@ -8,6 +8,7 @@ public class CoarseList implements Set {
 
     private final Node head;
     private final Object lock;
+    private int key = Integer.MIN_VALUE + 1;
 
     public CoarseList() {
         head = new Node(Integer.MIN_VALUE);
@@ -22,7 +23,7 @@ public class CoarseList implements Set {
     @Override
     public boolean add(AbstractInteger i) {
         Node pred, curr;
-        int key = i.hashCode();
+        //int key = i.hashCode();
         synchronized (lock) {
             pred = head;
             curr = pred.next;
@@ -33,7 +34,8 @@ public class CoarseList implements Set {
             if (key == curr.key) {
                 return false;
             } else {
-                Node node = new Node(i);
+                Node node = new Node(i, key);
+                key++;
                 node.next = curr;
                 pred.next = node;
                 return true;

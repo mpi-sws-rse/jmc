@@ -20,4 +20,14 @@ public class Node {
         item = new ConcreteInteger(i);
         key = i;
     }
+
+    public Node(int item, int key) {
+        this.item = new ConcreteInteger(item);
+        this.key = key;
+    }
+
+    public Node(AbstractInteger item, int key) {
+        this.item = item;
+        this.key = key;
+    }
 }

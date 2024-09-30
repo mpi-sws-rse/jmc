@@ -101,6 +101,15 @@ data class ExecutionGraph(
         }
     }
 
+    fun insertEvent(event: Event) {
+        if (event !in graphEvents) {
+            graphEvents.add(event)
+            if (event.type != EventType.INITIAL) {
+                updateRootChildren(event)
+            }
+        }
+    }
+
     /**
      * Updates the children of the [root] node with respect to the given event.
      *
@@ -372,6 +381,28 @@ data class ExecutionGraph(
         }
     }
 
+    fun areExReadsConsistent(loc: Location): Boolean {
+        var readsFrom = mutableListOf<ReadsFrom>()
+        for (i in 0 until this.graphEvents.size) {
+            if (this.graphEvents[i] is ReadExEvent) {
+                val read = this.graphEvents[i] as ReadExEvent
+                if (areLocsEqual(read.loc!!, loc)) {
+                    val rf = read.rf
+                    if (readsFrom.contains(rf)) {
+                        return false
+                    } else {
+                        readsFrom.add(rf!!)
+                    }
+                }
+            }
+        }
+        return true
+    }
+
+    private fun areLocsEqual(loc1: Location, loc2: Location): Boolean {
+        return loc1.clazz == loc2.clazz && loc1.instance == loc2.instance && loc1.field == loc2.field && loc1.type == loc2.type
+    }
+
     /**
      * Computes the transitive closure of the [sc] relation.
      */
@@ -459,6 +490,11 @@ data class ExecutionGraph(
                 if (read.rf != null) {
                     this.porf.add(Pair(read.rf as Event, read as Event))
                 }
+            } else if (node.value is ReadExEvent) {
+                val read = node.value as ReadExEvent
+                if (read.rf != null) {
+                    this.porf.add(Pair(read.rf as Event, read as Event))
+                }
             }
             var next = node.child
             while (next != null) {
@@ -467,6 +503,11 @@ data class ExecutionGraph(
                 next = node.child
                 if (node.value is ReadEvent) {
                     val read = node.value as ReadEvent
+                    if (read.rf != null) {
+                        this.porf.add(Pair(read.rf as Event, read as Event))
+                    }
+                } else if (node.value is ReadExEvent) {
+                    val read = node.value as ReadExEvent
                     if (read.rf != null) {
                         this.porf.add(Pair(read.rf as Event, read as Event))
                     }
@@ -567,9 +608,6 @@ data class ExecutionGraph(
 
     fun restrictingGraph(): ExecutionGraph {
         val newGraph = ExecutionGraph()
-
-        //println("Debugging Graph-" + this.id)
-        //this.printDeleted()
 
         for (i in 0 until this.graphEvents.size) {
             if (!this.deleted.contains(this.graphEvents[i]))
@@ -1082,6 +1120,9 @@ data class ExecutionGraph(
 
             EventType.READ_EX -> {
                 visReadExEvent(event as ReadExEvent, bufferedWriter)
+                if (event.rf != null) {
+                    visReadFromEdge(event, bufferedWriter)
+                }
             }
 
             EventType.WRITE_EX -> {
@@ -1108,13 +1149,13 @@ data class ExecutionGraph(
     private fun visReadExEvent(readEx: ReadExEvent, bufferedWriter: BufferedWriter) {
         var param = locOfEvent(readEx.loc!!)
         bufferedWriter.newLine()
-        bufferedWriter.write("${readEx.tid}${readEx.serial} [label=\"${readEx.tid}:${readEx.serial}.RdEx(${param})\"]")
+        bufferedWriter.write("${readEx.tid}${readEx.serial} [label=\"${readEx.tid}:${readEx.serial}.RdEx(${param},v=${readEx.intValue})\"]")
     }
 
     private fun visWriteExEvent(writeEx: WriteExEvent, bufferedWriter: BufferedWriter) {
         var param = locOfEvent(writeEx.loc!!)
         bufferedWriter.newLine()
-        bufferedWriter.write("${writeEx.tid}${writeEx.serial} [label=\"${writeEx.tid}:${writeEx.serial}.WEx(${param})\"]")
+        bufferedWriter.write("${writeEx.tid}${writeEx.serial} [label=\"${writeEx.tid}:${writeEx.serial}.WEx(${param},r=${writeEx.operationSuccess})\"]")
     }
 
     private fun visConAssumeEvent(conAssume: ConAssumeEvent, bufferedWriter: BufferedWriter) {
@@ -1323,6 +1364,25 @@ data class ExecutionGraph(
     private fun visReadFromEdge(read: ReadEvent, bufferedWriter: BufferedWriter) {
         if (read.rf is WriteEvent) {
             val readFrom = read.rf as WriteEvent
+            bufferedWriter.newLine()
+            bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rdf\"];")
+        } else if (read.rf is WriteExEvent) {
+            val readFrom = read.rf as WriteExEvent
+            bufferedWriter.newLine()
+            bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rdf\"];")
+        } else if (read.rf is InitializationEvent) {
+            bufferedWriter.newLine()
+            bufferedWriter.write("root -> ${read.tid}${read.serial}[color=red, label=\"rdf\"];")
+        }
+    }
+
+    private fun visReadFromEdge(read: ReadExEvent, bufferedWriter: BufferedWriter) {
+        if (read.rf is WriteEvent) {
+            val readFrom = read.rf as WriteEvent
+            bufferedWriter.newLine()
+            bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rdf\"];")
+        } else if (read.rf is WriteExEvent) {
+            val readFrom = read.rf as WriteExEvent
             bufferedWriter.newLine()
             bufferedWriter.write("${readFrom.tid}${readFrom.serial} -> ${read.tid}${read.serial}[color=red, label=\"rdf\"];")
         } else if (read.rf is InitializationEvent) {
@@ -4475,11 +4535,7 @@ data class ExecutionGraph(
             )
         }
 
-        //println("[Execution Graph Debugging] MCs: ${this.MCs}")
-        //println("[Execution Graph Debugging] the graph events are")
         for (i in this.MCs.indices) {
-            //println("[Execution Graph Debugging] MCs: ${this.MCs.elementAt(i).first} ${this.MCs.elementAt(i).second}")
-            //this.printEvents()
             newExecutionGraph.MCs.add(
                 Pair(
                     newExecutionGraph.graphEvents.find { it.equals(this.MCs.elementAt(i).first) }!!,

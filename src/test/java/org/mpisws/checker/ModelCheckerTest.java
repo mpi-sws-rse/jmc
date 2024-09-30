@@ -123,6 +123,9 @@ class ModelCheckerTest {
         );
         System.out.println("InconsistentCounter Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = true;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
@@ -206,6 +209,9 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/correct/counter/"
         );
         checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = true;
         System.out.println("CorrectCounter Trust Strategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -326,7 +332,7 @@ class ModelCheckerTest {
         );
         System.out.println("DiningPhilosophers Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.TRUST;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
@@ -587,9 +593,9 @@ class ModelCheckerTest {
         System.out.println("Coarse List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
-        checker.configuration.verbose = true;
+        checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";

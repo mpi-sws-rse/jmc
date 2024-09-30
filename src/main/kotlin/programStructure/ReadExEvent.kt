@@ -5,10 +5,11 @@ import java.io.Serializable
 data class ReadExEvent(
     override val type: EventType = EventType.READ_EX,
     override val tid: Int,
-    override val serial: Int,
-    val value: Int,
-    var loc: Location? = null
-) : ThreadEvent(), Serializable {
+    override var serial: Int,
+    var intValue: Int,
+    override var rf: ReadsFrom? = null,
+    override var loc: Location? = null
+) : ReadEvent(tid, type, serial, intValue, rf, loc), Serializable {
 
     /**
      * Returns a deep copy of this object
@@ -20,8 +21,18 @@ data class ReadExEvent(
             type = type,
             tid = tid,
             serial = serial,
-            value = value,
+            intValue = intValue,
+            rf = deepCopyRf(),
             loc = loc?.deepCopy()
         )
+    }
+
+    override fun deepCopyRf(): ReadsFrom? {
+        return when (this.rf) {
+            is WriteEvent -> (this.rf as WriteEvent).deepCopy() as ReadsFrom
+            is WriteExEvent -> (this.rf as WriteExEvent).deepCopy() as ReadsFrom
+            is InitializationEvent -> (this.rf as InitializationEvent).deepCopy() as ReadsFrom
+            else -> null
+        }
     }
 }

@@ -131,6 +131,17 @@ public class ReplayStrategy implements SearchStrategy {
     }
 
     /**
+     * @param thread
+     * @param readExEvent
+     * @param writeExEvent
+     */
+    @Override
+    public Thread nextCasRequest(Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
+        // TODO: Implement this method
+        return pickNextThread();
+    }
+
+    /**
      * Represents the required strategy for the next join request.
      *
      * @param joinReq is the thread that is going to join another thread.

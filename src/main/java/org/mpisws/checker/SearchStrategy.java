@@ -57,6 +57,8 @@ public interface SearchStrategy {
      */
     void nextJoinEvent(Thread joinReq, Thread joinRes);
 
+    Thread nextCasRequest(Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent);
+
     /**
      * Represents the required strategy for the next join request.
      *

@@ -349,6 +349,9 @@ public class SchedulerThread extends Thread {
             case SYM_ASSUME_REQUEST:
                 symAssumeRequestHandler();
                 break;
+            case CAS_REQUEST:
+                casRequestHandler();
+                break;
             default:
                 RuntimeEnvironment.threadWaitReq = null;
                 waitEventHandler();
@@ -404,8 +407,24 @@ public class SchedulerThread extends Thread {
             return RequestType.ASSUME_BLOCKED_REQUEST;
         } else if (RuntimeEnvironment.symAssumeEventReq != null) {
             return RequestType.SYM_ASSUME_REQUEST;
+        } else if (RuntimeEnvironment.exclusiveReadEventReq != null && RuntimeEnvironment.exclusiveWriteEventReq != null) {
+            return RequestType.CAS_REQUEST;
         } else {
             return RequestType.WAIT_REQUEST;
+        }
+    }
+
+    private void casRequestHandler() {
+        System.out.println("[Scheduler Thread Message] : CAS request handler is called");
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<ReadExEvent> exclusiveReadEvent = Optional.ofNullable(RuntimeEnvironment.exclusiveReadEventReq);
+        Optional<WriteExEvent> exclusiveWriteEvent = Optional.ofNullable(RuntimeEnvironment.exclusiveWriteEventReq);
+        RuntimeEnvironment.exclusiveReadEventReq = null;
+        RuntimeEnvironment.exclusiveWriteEventReq = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (exclusiveReadEvent.isPresent() && exclusiveWriteEvent.isPresent() && thread.isPresent()) {
+            Thread nextThread = searchStrategy.nextCasRequest(thread.get(), exclusiveReadEvent.get(), exclusiveWriteEvent.get());
+            notifyThread(nextThread);
         }
     }
 
