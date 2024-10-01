@@ -67,6 +67,10 @@ src/test/java/org/mpisws/concurrent/programs/lists/list/coarse/*.class
 src/test/java/org/mpisws/concurrent/programs/lists/list/coarse/*.txt
 src/test/java/org/mpisws/concurrent/programs/lists/list/fine/*.class
 src/test/java/org/mpisws/concurrent/programs/lists/list/fine/*.txt
+src/test/java/org/mpisws/concurrent/programs/lists/list/optimistic/*.class
+src/test/java/org/mpisws/concurrent/programs/lists/list/optimistic/*.txt
+src/test/java/org/mpisws/concurrent/programs/lists/list/lazy/*.class
+src/test/java/org/mpisws/concurrent/programs/lists/list/lazy/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

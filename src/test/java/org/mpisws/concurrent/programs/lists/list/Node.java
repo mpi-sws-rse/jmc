@@ -15,6 +15,8 @@ public class Node {
 
     private final ReentrantLock lock = new ReentrantLock();
 
+    public boolean marked = false;
+
     public Node(AbstractInteger i) {
         item = i;
         key = i.hashCode();

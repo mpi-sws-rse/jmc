@@ -1,19 +1,18 @@
 package org.mpisws.concurrent.programs.lists;
 
 import org.mpisws.concurrent.programs.lists.list.Set;
-import org.mpisws.concurrent.programs.lists.list.coarse.CoarseList;
+import org.mpisws.concurrent.programs.lists.list.lazy.LazyList;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.symbolic.SymbolicInteger;
-
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Client1 {
+public class Client7 {
 
     public static void main(String[] args) {
-        Set set = new CoarseList();
-        int NUM_OPERATIONS = 1;
+        Set set = new LazyList();
+        int NUM_OPERATIONS = 3;
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
