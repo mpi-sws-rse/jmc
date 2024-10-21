@@ -521,13 +521,22 @@ data class ExecutionGraph(
         }
 
         // This part computes the tc relation
-        for (i in 0 until this.TCs.size) {
-            this.porf.add(Pair(this.TCs.elementAt(i).first, this.TCs.elementAt(i).second))
-        }
+//        for (i in 0 until this.TCs.size) {
+//            this.porf.add(Pair(this.TCs.elementAt(i).first, this.TCs.elementAt(i).second))
+//        }
+
 
         // This part computes the pc relation
         for (i in 0 until this.PCs.size) {
             this.porf.add(Pair(this.PCs.elementAt(i).first, this.PCs.elementAt(i).second))
+        }
+
+        for (i in 0 until this.STs.size) {
+            this.porf.add(Pair(this.STs.elementAt(i).first, this.STs.elementAt(i).second))
+        }
+
+        for (i in 0 until this.JTs.size) {
+            this.porf.add(Pair(this.JTs.elementAt(i).first, this.JTs.elementAt(i).second))
         }
 
         // this part computes the complete transitive closure of porf

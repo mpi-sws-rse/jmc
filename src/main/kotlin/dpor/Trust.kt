@@ -185,6 +185,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
         if (graphConsistency) {
             //println("[Trust Message] : The graph G_${G.id} is consistent")
             val nextEvent = findNext(allEvents)
+            println("[Trust Debugging Message] : The next event is : $nextEvent")
+            println("[Trust Debugging Message] : The next event type is : ${nextEvent?.type}")
             when {
                 nextEvent == null -> {
                     this.graphCounter++
@@ -225,16 +227,17 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 //println("[Trust Message] : Forward Revisit(R -> W) : ($newNextReadEvent, $findWriteEvent)")
                                 visit(G2, newAllEvents)
                             }
-                        } else if (G.graphEvents[i].type == EventType.INITIAL) {
-                            var G3 = G1.deepCopy()
-                            val newNextEvent = nextReadEvent.deepCopy()
-                            val newNextReadEvent = newNextEvent as ReadEvent
-                            newNextReadEvent.rf = (G.graphEvents[i].deepCopy()) as InitializationEvent
-                            G3.addEvent(newNextReadEvent as Event)
-                            val newAllEvents = deepCopyAllEvents(allEvents)
-                            println("[Trust Message] : Forward Revisit(R -> I) : ($newNextReadEvent, ${G.graphEvents[i]})")
-                            visit(G3, newAllEvents)
                         }
+//                        else if (G.graphEvents[i].type == EventType.INITIAL) {
+//                            var G3 = G1.deepCopy()
+//                            val newNextEvent = nextReadEvent.deepCopy()
+//                            val newNextReadEvent = newNextEvent as ReadEvent
+//                            newNextReadEvent.rf = (G.graphEvents[i].deepCopy()) as InitializationEvent
+//                            G3.addEvent(newNextReadEvent as Event)
+//                            val newAllEvents = deepCopyAllEvents(allEvents)
+//                            println("[Trust Message] : Forward Revisit(R -> I) : ($newNextReadEvent, ${G.graphEvents[i]})")
+//                            visit(G3, newAllEvents)
+//                        }
                     }
                 }
 
@@ -479,12 +482,13 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.START -> {
                     // The following is for debugging purposes only
-                    //println("[Trust Message] : The next event is a START event")
-                    //println("[Trust Message] : The START event is : $nextEvent")
+                    println("[Trust Message] : The next event is a START event")
+                    println("[Trust Message] : The START event is : $nextEvent")
 
                     val threadId = (nextEvent as StartEvent).callerThread
                     val threadEvent = findLastEvent(G, threadId)
                     if (threadEvent != null) {
+                        //println("[Trust Debugging] : The starter thread event is found : $threadEvent")
                         //println("[Trust Message] : The thread event is found")
                         //println("[Trust Message] : The thread event is : $threadEvent")
                         // From the list of G.graphEvents, find the last inserted START event where its callerThread is equal to the threadId of the nextEvent and store it in threadEvent
@@ -496,6 +500,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                             G.addTC(prevStart, nextEvent)
                         }
                         G.addST(threadEvent, nextEvent)
+                        println("[Trust Debugging] : The graph ST is : ")
+                        println(G.STs)
                         visit(G, allEvents)
                     }
                 }

@@ -522,8 +522,9 @@ public class ByteCodeModifier {
 
                         @Override
                         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
-                            if (isPrimitiveType(descriptor, name) && (opcode == Opcodes.GETFIELD ||
-                                    opcode == Opcodes.PUTFIELD || opcode == Opcodes.GETSTATIC || opcode == Opcodes.PUTSTATIC)) {
+                            if (/*isPrimitiveType(descriptor, name) &&*/ (opcode == Opcodes.GETFIELD ||
+                                    opcode == Opcodes.PUTFIELD || opcode == Opcodes.GETSTATIC || opcode == Opcodes.PUTSTATIC)
+                                    && isOwnerAllowed(owner)) {
                                 if (opcode == Opcodes.GETFIELD || opcode == Opcodes.GETSTATIC) {
                                     // Duplicate the top operand stack value which should be the value of the field
                                     // if it is a GETFIELD operation. Otherwise, push null onto the operand stack.
@@ -803,6 +804,10 @@ public class ByteCodeModifier {
             modifiedByteCode = cw.toByteArray();
             allByteCode.put(newClass, modifiedByteCode);
         }
+    }
+
+    private boolean isOwnerAllowed(String owner) {
+        return !owner.startsWith("java/") && !owner.startsWith("sun/") && !owner.startsWith("jdk/");
     }
 
     /**

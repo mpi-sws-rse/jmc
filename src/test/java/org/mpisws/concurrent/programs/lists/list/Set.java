@@ -7,7 +7,7 @@ public interface Set {
 
     boolean add(AbstractInteger i) throws JMCInterruptException;
 
-    boolean remove(AbstractInteger i);
+    boolean remove(AbstractInteger i) throws JMCInterruptException;
 
-    boolean contains(AbstractInteger i);
+    boolean contains(AbstractInteger i) throws JMCInterruptException;
 }

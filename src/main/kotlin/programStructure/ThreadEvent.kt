@@ -16,4 +16,9 @@ abstract class ThreadEvent : Event, Serializable {
      * @property serial The serial number of the event.
      */
     abstract val serial: Int
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is ThreadEvent) return false
+        return this.tid == other.tid && this.serial == other.serial && this.type == other.type
+    }
 }

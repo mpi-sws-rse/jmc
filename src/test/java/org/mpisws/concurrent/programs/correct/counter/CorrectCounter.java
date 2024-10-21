@@ -1,6 +1,7 @@
 package org.mpisws.concurrent.programs.correct.counter;
 
 import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.ReentrantLock;
 
 public class CorrectCounter extends Thread {
     Object lock;
@@ -28,7 +29,7 @@ public class CorrectCounter extends Thread {
 
     public static void main(String[] args) throws InterruptedException {
         Counter counter = new Counter();
-        Object lock = new Object();
+        ReentrantLock lock = new ReentrantLock();
         CorrectCounter thread1 = new CorrectCounter(counter, lock);
         CorrectCounter thread2 = new CorrectCounter(counter, lock);
         CorrectCounter thread3 = new CorrectCounter(counter, lock);

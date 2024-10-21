@@ -3,17 +3,18 @@ package org.mpisws.concurrent.programs.lists.list.coarse;
 import org.mpisws.concurrent.programs.lists.list.Node;
 import org.mpisws.concurrent.programs.lists.list.Set;
 import org.mpisws.symbolic.AbstractInteger;
+import org.mpisws.util.concurrent.ReentrantLock;
 
 public class CoarseList implements Set {
 
     private final Node head;
-    private final Object lock;
+    private final ReentrantLock lock;
     private int key = Integer.MIN_VALUE + 1;
 
     public CoarseList() {
         head = new Node(Integer.MIN_VALUE);
         head.next = new Node(Integer.MAX_VALUE);
-        lock = new Object();
+        lock = new ReentrantLock();
     }
 
     /**
@@ -36,9 +37,9 @@ public class CoarseList implements Set {
             } else {
                 i.setHash(key);
                 Node node = new Node(i, key);
-                key++;
                 node.next = curr;
                 pred.next = node;
+                key++;
                 return true;
             }
         }
@@ -61,6 +62,7 @@ public class CoarseList implements Set {
             }
             if (key == curr.key) {
                 pred.next = curr.next;
+                int x = key;
                 return true;
             } else {
                 return false;

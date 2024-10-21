@@ -10,5 +10,6 @@ public enum StrategyType implements Serializable {
     RANDOM,
     TRUST,
     REPLAY,
-    MUST
+    MUST,
+    OPT_TRUST,
 }

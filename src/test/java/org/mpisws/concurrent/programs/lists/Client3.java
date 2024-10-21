@@ -12,7 +12,7 @@ public class Client3 {
 
     public static void main(String[] args) {
         Set set = new FineList();
-        int NUM_OPERATIONS = 3;
+        int NUM_OPERATIONS = 5;
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {

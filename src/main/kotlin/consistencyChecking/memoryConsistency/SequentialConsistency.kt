@@ -1,8 +1,12 @@
 package consistencyChecking.memoryConsistency
 
+import executionGraph.ClosureGraph
 import executionGraph.ExecutionGraph
+import executionGraph.OptExecutionGraph
 import programStructure.Event
 import programStructure.ReadEvent
+import programStructure.ThreadEvent
+import programStructure.WriteEvent
 
 /*
 
@@ -17,6 +21,8 @@ similar to first, but in contrast, it is complete.
 class SequentialConsistency {
 
     companion object {
+
+        var tSort: ArrayList<ThreadEvent>? = null
 
         /*
 
@@ -66,12 +72,57 @@ class SequentialConsistency {
                 val (a, b) = pair
                 if (a.equals(b)) {
                     cycleFound = true
-                    println("[Sequential Consistency Checker Message] : Cycle found in SC relation and the cycle is: $a -> $b")
+                    //println("[Sequential Consistency Checker Message] : Cycle found in SC relation and the cycle is: $a -> $b")
                     //graph.printSc()
                     break
                 }
             }
             return !cycleFound
+        }
+
+        fun scAcyclicity(g: OptExecutionGraph): ArrayList<ThreadEvent> {
+            val closureGraph = ClosureGraph()
+
+            for (e in g.eventOrder) {
+                closureGraph.addVertex(e)
+            }
+
+            // PO
+            for (value in g.programOrder.values) {
+                for (i in 0 until value.size - 1) {
+                    closureGraph.addEdge(value[i], value[i + 1])
+                }
+            }
+
+            // CO
+            for (value in g.writes.values) {
+                for (i in 0 until value.size - 1) {
+                    closureGraph.addEdge(value[i], value[i + 1])
+                }
+            }
+            // RF + FR
+            for (entry in g.rf) {
+                closureGraph.addEdge(entry.value, entry.key)
+                val index = g.writes[entry.value.loc]!!.indexOf(entry.value)
+                if (index < g.writes[entry.value.loc]!!.size - 1) {
+                    closureGraph.addEdge(entry.key, g.writes[entry.value.loc]!![index + 1])
+                }
+            }
+
+            // ST
+            for (pair in g.st) {
+                closureGraph.addEdge(pair.first, pair.second)
+            }
+            // TC
+            for (i in 0 until g.tc.size - 1) {
+                closureGraph.addEdge(g.tc[i], g.tc[i + 1])
+            }
+            // JT
+            for (pair in g.jt) {
+                closureGraph.addEdge(pair.first, pair.second)
+            }
+
+            return closureGraph.topologicalSort()
         }
 
         @JvmStatic

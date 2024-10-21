@@ -1,5 +1,7 @@
 package org.mpisws.util.concurrent;
 
+import org.mpisws.runtime.RuntimeEnvironment;
+
 public class JMCLock {
 
     Object lock;

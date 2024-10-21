@@ -532,9 +532,12 @@ public class TrustStrategy extends DPORStrategy {
             return nextThread;
         }
         guidingEvent = guidingEvents.remove(0);
+        System.out.println("[Trust Strategy Debugging] The next Guided Event is :" + guidingEvent);
 
         if (guidingEvent instanceof StartEvent) {
             guidingThread = findGuidingThreadFromStartEvent();
+            System.out.println("[Trust Strategy Debugging] The STs of graph is:" + guidingExecutionGraph.getSTs());
+            System.out.println("[Trust Strategy Debugging] The guiding starter thread is:" + guidingThread);
         } else {
             guidingThread = ((ThreadEvent) guidingEvent).getTid();
         }
@@ -552,6 +555,8 @@ public class TrustStrategy extends DPORStrategy {
             guidedUnparkEventHelper((UnparkEvent) guidingEvent);
             return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
         }
+
+        System.out.println("[Trust Strategy Debugging Message] : The threadObjectMap is : " + RuntimeEnvironment.threadObjectMap);
 
         System.out.println("[Trust Strategy Message] : " +
                 RuntimeEnvironment.threadObjectMap.get((long) guidingThread).getName() + " is the next guided thread");

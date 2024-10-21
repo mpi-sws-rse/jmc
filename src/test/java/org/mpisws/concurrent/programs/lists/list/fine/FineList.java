@@ -38,6 +38,7 @@ public class FineList implements Set {
                     if (key == curr.key) {
                         return false;
                     } else {
+                        i.setHash(key);
                         Node node = new Node(i, key);
                         key++;
                         node.next = curr;
@@ -77,6 +78,7 @@ public class FineList implements Set {
                     }
                     if (key == curr.key) {
                         pred.next = curr.next;
+                        int x = key;
                         return true;
                     } else {
                         return false;

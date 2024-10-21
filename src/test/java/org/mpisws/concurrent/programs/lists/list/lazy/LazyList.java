@@ -40,9 +40,9 @@ public class LazyList implements Set {
                             } else {
                                 i.setHash(key);
                                 Node node = new Node(i, key);
-                                key++;
                                 node.next = curr;
                                 pred.next = node;
+                                key++;
                                 return true;
                             }
                         }

@@ -242,6 +242,18 @@ public abstract class DPORStrategy implements SearchStrategy {
             currentGraph.visualizeGraph(numOfGraphs, executionGraphsPath);
             System.out.println("[DPOR Strategy Message] : There is no new graph from model checker");
             System.out.println("[DPOR Strategy Message] : visited full execution graph G_" + numOfGraphs);
+//            System.out.println("[DPOR Strategy Debugging Message] : The events of the visited graph are : ");
+//            currentGraph.getGraphEvents().forEach(System.out::println);
+//            System.out.println("[DPOR Strategy Debugging Message] : The COs of the visited graph are : ");
+//            currentGraph.getCOs().forEach();
+//            System.out.println("[DPOR Strategy Debugging Message] : The STs of the visited graph are : ");
+//            currentGraph.getSTs().forEach(System.out::println);
+//            System.out.println("[DPOR Strategy Debugging Message] : The JTs of the visited graph are : ");
+//            currentGraph.getJTs().forEach(System.out::println);
+//            System.out.println("[DPOR Strategy Debugging Message] : The TCs of the visited graph are : ");
+//            currentGraph.getTCs().forEach(System.out::println);
+//            System.out.println("[DPOR Strategy Debugging Message] : The events order of the visited graph are : ");
+//            currentGraph.getEventsOrder().forEach(System.out::println);
         }
     }
 

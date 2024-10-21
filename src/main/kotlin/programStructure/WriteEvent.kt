@@ -44,33 +44,24 @@ open class WriteEvent(
             type = EventType.WRITE,
             serial = this.serial,
             value = this.value,
-            loc = loc?.deepCopy()
+            //loc = loc?.deepCopy()
+            loc = this.loc
         )
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is WriteEvent) return false
-
-        if (tid != other.tid) return false
-        if (type != other.type) return false
-        if (serial != other.serial) return false
-        if (value != other.value) return false
-        if (loc != other.loc) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = tid
-        result = 31 * result + type.hashCode()
-        result = 31 * result + serial
-        result = 31 * result + value.hashCode()
-        result = 31 * result + (loc?.hashCode() ?: 0)
-        return result
     }
 
     override fun toString(): String {
         return "WriteEvent(tid=$tid, type=$type, serial=$serial, value=$value, loc=$loc)"
+    }
+
+    override fun hashCode(): Int {
+        var result = tid
+        result = 31 * result + type.hashCode() * type.hashCode()
+        result = 31 * result + serial
+        return result
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is WriteEvent) return false
+        return this.tid == other.tid && this.serial == other.serial && this.type == other.type
     }
 }

@@ -1,6 +1,7 @@
 package dpor
 
 import executionGraph.ExecutionGraph
+import executionGraph.operations.GraphOp
 import programStructure.Event
 import programStructure.EventType
 import programStructure.FinishEvent

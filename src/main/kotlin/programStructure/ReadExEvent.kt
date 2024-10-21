@@ -23,7 +23,7 @@ data class ReadExEvent(
             serial = serial,
             intValue = intValue,
             rf = deepCopyRf(),
-            loc = loc?.deepCopy()
+            loc = this.loc
         )
     }
 
@@ -34,5 +34,17 @@ data class ReadExEvent(
             is InitializationEvent -> (this.rf as InitializationEvent).deepCopy() as ReadsFrom
             else -> null
         }
+    }
+
+    override fun hashCode(): Int {
+        var result = tid
+        result = 31 * result + type.hashCode() * type.hashCode()
+        result = 31 * result + serial
+        return result
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is ReadExEvent) return false
+        return tid == other.tid && type == other.type && serial == other.serial
     }
 }

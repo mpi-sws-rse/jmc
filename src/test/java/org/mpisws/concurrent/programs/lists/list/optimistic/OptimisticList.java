@@ -8,10 +8,10 @@ import org.mpisws.util.concurrent.JMCInterruptException;
 public class OptimisticList implements Set {
 
     public Node head;
-    public int key = Integer.MIN_VALUE + 1;
+    public int key = 1;
 
     public OptimisticList() {
-        head = new Node(Integer.MIN_VALUE);
+        head = new Node(0);
         head.next = new Node(Integer.MAX_VALUE);
     }
 
@@ -40,9 +40,9 @@ public class OptimisticList implements Set {
                             } else {
                                 i.setHash(key);
                                 Node node = new Node(i, key);
-                                key++;
                                 node.next = curr;
                                 pred.next = node;
+                                key++;
                                 return true;
                             }
                         }

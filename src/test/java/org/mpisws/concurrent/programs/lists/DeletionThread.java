@@ -2,6 +2,7 @@ package org.mpisws.concurrent.programs.lists;
 
 import org.mpisws.concurrent.programs.lists.list.Set;
 import org.mpisws.symbolic.AbstractInteger;
+import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class DeletionThread extends Thread {
 
@@ -15,6 +16,10 @@ public class DeletionThread extends Thread {
 
     @Override
     public void run() {
-        set.remove(item);
+        try {
+            set.remove(item);
+        } catch (JMCInterruptException e) {
+            System.out.println("Deletion Interrupted");
+        }
     }
 }

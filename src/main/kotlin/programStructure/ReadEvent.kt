@@ -51,7 +51,8 @@ open class ReadEvent(
             serial = this.serial,
             value = this.value,
             rf = deepCopyRf(),
-            loc = loc?.deepCopy()
+            //loc = loc?.deepCopy()
+            loc = this.loc
         )
     }
 
@@ -68,31 +69,19 @@ open class ReadEvent(
         }
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is ReadEvent) return false
-
-        if (tid != other.tid) return false
-        if (type != other.type) return false
-        if (serial != other.serial) return false
-        if (value != other.value) return false
-        if (rf != other.rf) return false
-        if (loc != other.loc) return false
-
-        return true
+    override fun toString(): String {
+        return "ReadEvent(tid=$tid, type=$type, serial=$serial, value=$value, rf=$rf, loc=$loc)"
     }
 
     override fun hashCode(): Int {
         var result = tid
-        result = 31 * result + type.hashCode()
+        result = 31 * result + type.hashCode() * type.hashCode()
         result = 31 * result + serial
-        result = 31 * result + value.hashCode()
-        result = 31 * result + (rf?.hashCode() ?: 0)
-        result = 31 * result + (loc?.hashCode() ?: 0)
         return result
     }
 
-    override fun toString(): String {
-        return "ReadEvent(tid=$tid, type=$type, serial=$serial, value=$value, rf=$rf, loc=$loc)"
+    override fun equals(other: Any?): Boolean {
+        if (other !is ReadEvent) return false
+        return this.tid == other.tid && this.type == other.type && this.serial == other.serial
     }
 }

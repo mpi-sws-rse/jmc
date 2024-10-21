@@ -33,14 +33,6 @@ data class Location(
     var field: Field?,
 
     /**
-     * @property value The value of the field
-     * <p>
-     * This field is transient and is not serialized
-     */
-    @Transient
-    var value: Any?,
-
-    /**
      * @property type The type of the field
      */
     var type: String?
@@ -68,13 +60,6 @@ data class Location(
     var fieldString: String? = field?.let { "${it.name}@${it.hashCode().toString(16)}" }
 
     /**
-     * @property valueString The value of the field as a string
-     * <p>
-     * This field is used to avoid serialization issues when the value is serialized and deserialized.
-     */
-    var valueString: String? = value?.let { "${it}@${it.hashCode().toString(16)}" }
-
-    /**
      * Returns a deep copy of this object
      *
      * @return a deep copy of this object
@@ -84,7 +69,6 @@ data class Location(
             clazz = copy().clazz,
             instance = copy().instance,
             field = copy().field,
-            value = copy().value,
             type = copy().type
         )
     }
@@ -97,7 +81,7 @@ data class Location(
      *
      * @return true if the field is a primitive type, false otherwise
      */
-    fun isPrimitive(): Boolean {
+    fun oldIsPrimitive(): Boolean {
         return when (type) {
             "I",  // int(I)
             "Z",  // boolean(Z)
@@ -111,5 +95,14 @@ data class Location(
             "SI" -> true // symbolic int(SI)
             else -> false
         }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is Location) return false
+        return clazz == other.clazz && instance == other.instance && field == other.field && type == other.type
+    }
+
+    fun isPrimitive(): Boolean {
+        return true
     }
 }

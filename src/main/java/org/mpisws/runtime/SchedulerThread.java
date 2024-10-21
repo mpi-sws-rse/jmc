@@ -6,10 +6,7 @@ import java.util.concurrent.FutureTask;
 
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.checker.StrategyType;
-import org.mpisws.checker.strategy.MustStrategy;
-import org.mpisws.checker.strategy.RandomStrategy;
-import org.mpisws.checker.strategy.ReplayStrategy;
-import org.mpisws.checker.strategy.TrustStrategy;
+import org.mpisws.checker.strategy.*;
 import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCStarterThread;
 import programStructure.*;
@@ -56,6 +53,8 @@ public class SchedulerThread extends Thread {
             searchStrategy = new ReplayStrategy();
         } else if (strategyType == StrategyType.MUST) {
             searchStrategy = new MustStrategy();
+        } else if (strategyType == StrategyType.OPT_TRUST) {
+            searchStrategy = new OptTrustStrategy();
         } else {
             // TODO() : Fix it
             System.out.println("[Scheduler Thread Message] : Unsupported strategy type: " + strategyType);
@@ -206,8 +205,8 @@ public class SchedulerThread extends Thread {
      * <p>This method is used to print the end message.</p>
      */
     private void printEndMessage() {
-        System.out.println("[Scheduler Thread Message] : The last execution trace is :");
-        searchStrategy.printExecutionTrace();
+        //System.out.println("[Scheduler Thread Message] : The last execution trace is :");
+        //searchStrategy.printExecutionTrace();
         System.out.println("******************************************************************************************");
         System.out.println("[*** The SchedulerThread requested to FINISH***]");
         System.out.println("******************************************************************************************");
