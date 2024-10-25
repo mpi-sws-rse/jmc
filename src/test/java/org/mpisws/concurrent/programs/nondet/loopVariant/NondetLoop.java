@@ -2,6 +2,7 @@ package org.mpisws.concurrent.programs.nondet.loopVariant;
 
 import org.mpisws.symbolic.*;
 import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.ReentrantLock;
 import org.mpisws.util.concurrent.Utils;
 
 import java.util.ArrayList;
@@ -11,7 +12,7 @@ public class NondetLoop {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 10;
+            int SIZE = 4;
             Numbers numbers = new Numbers(0, new SymbolicInteger(true));
 
             ArithmeticFormula f = new ArithmeticFormula();
@@ -24,7 +25,7 @@ public class NondetLoop {
             AssertThread assertThread1 = new AssertThread(numbers);
             assertThread1.start();
 
-            Object lock = new Object();
+            ReentrantLock lock = new ReentrantLock();
             List<IncThread> threads = new ArrayList<>(SIZE);
             for (int i = 0; i < SIZE; i++) {
                 threads.add(new IncThread(lock, numbers, SIZE));

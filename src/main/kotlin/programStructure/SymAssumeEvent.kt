@@ -24,4 +24,9 @@ data class SymAssumeEvent(
             formula = formula
         )
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is SymAssumeEvent) return false
+        return this.type == other.type && this.tid == other.tid && this.serial == other.serial
+    }
 }

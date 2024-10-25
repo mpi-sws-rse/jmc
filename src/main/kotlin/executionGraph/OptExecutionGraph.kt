@@ -115,6 +115,9 @@ data class OptExecutionGraph(
 
         for ((tid, events) in eventsToRemoveByTid) {
             programOrder[tid]?.removeAll(events)
+            if (programOrder[tid]!!.isEmpty()) {
+                programOrder.remove(tid)
+            }
         }
     }
 

@@ -1,18 +1,17 @@
 package org.mpisws.concurrent.programs.lists.list.optimistic;
 
-import org.mpisws.concurrent.programs.lists.list.Node;
+import org.mpisws.concurrent.programs.lists.list.node.FNode;
 import org.mpisws.concurrent.programs.lists.list.Set;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class OptimisticList implements Set {
 
-    public Node head;
-    public int key = 1;
+    public FNode head;
 
     public OptimisticList() {
-        head = new Node(0);
-        head.next = new Node(Integer.MAX_VALUE);
+        head = new FNode(Integer.MIN_VALUE);
+        head.next = new FNode(Integer.MAX_VALUE);
     }
 
     /**
@@ -23,9 +22,10 @@ public class OptimisticList implements Set {
     @Override
     public boolean add(AbstractInteger i) throws JMCInterruptException {
         try {
+            int key = i.getHash();
             while (true) {
-                Node pred = head;
-                Node curr = pred.next;
+                FNode pred = head;
+                FNode curr = pred.next;
                 while (curr.key < key) {
                     pred = curr;
                     curr = curr.next;
@@ -38,11 +38,9 @@ public class OptimisticList implements Set {
                             if (key == curr.key) {
                                 return false;
                             } else {
-                                i.setHash(key);
-                                Node node = new Node(i, key);
+                                FNode node = new FNode(i, key);
                                 node.next = curr;
                                 pred.next = node;
-                                key++;
                                 return true;
                             }
                         }
@@ -65,9 +63,9 @@ public class OptimisticList implements Set {
     @Override
     public boolean remove(AbstractInteger i) {
         try {
-            key = i.getHash();
-            Node pred = head;
-            Node curr = pred.next;
+            int key = i.getHash();
+            FNode pred = head;
+            FNode curr = pred.next;
             while (curr.key < key) {
                 pred = curr;
                 curr = curr.next;
@@ -103,9 +101,9 @@ public class OptimisticList implements Set {
     @Override
     public boolean contains(AbstractInteger i) {
         try {
-            key = i.getHash();
-            Node pred = head;
-            Node curr = pred.next;
+            int key = i.getHash();
+            FNode pred = head;
+            FNode curr = pred.next;
             while (curr.key < key) {
                 pred = curr;
                 curr = curr.next;
@@ -129,8 +127,8 @@ public class OptimisticList implements Set {
         return false;
     }
 
-    private boolean validate(Node pred, Node curr) {
-        Node node = head;
+    private boolean validate(FNode pred, FNode curr) {
+        FNode node = head;
         while (node.key <= pred.key) {
             if (node == pred) {
                 return pred.next == curr;

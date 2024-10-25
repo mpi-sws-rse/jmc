@@ -12,11 +12,11 @@ public class Client5 {
 
     public static void main(String[] args) {
         Set set = new OptimisticList();
-        int NUM_OPERATIONS = 2;
+        int NUM_OPERATIONS = 3;
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            items.add(new SymbolicInteger(false));
+            items.add(new SymbolicInteger(false, i));
         }
 
         List<InsertionThread> threads = new ArrayList<>(NUM_OPERATIONS);

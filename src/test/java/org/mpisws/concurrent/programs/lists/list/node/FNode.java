@@ -1,38 +1,33 @@
-package org.mpisws.concurrent.programs.lists.list;
+package org.mpisws.concurrent.programs.lists.list.node;
 
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.symbolic.ConcreteInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.ReentrantLock;
 
-public class Node {
+public class FNode {
 
     public AbstractInteger item;
-
     public int key;
-
-    public Node next;
-
+    public FNode next;
     private final ReentrantLock lock = new ReentrantLock();
 
-    public boolean marked = false;
-
-    public Node(AbstractInteger i) {
+    public FNode(AbstractInteger i) {
         item = i;
-        key = i.hashCode();
+        key = i.getHash();
     }
 
-    public Node(int i) {
+    public FNode(int i) {
         item = new ConcreteInteger(i);
         key = i;
     }
 
-    public Node(int item, int key) {
+    public FNode(int item, int key) {
         this.item = new ConcreteInteger(item);
         this.key = key;
     }
 
-    public Node(AbstractInteger item, int key) {
+    public FNode(AbstractInteger item, int key) {
         this.item = item;
         this.key = key;
     }

@@ -22,7 +22,7 @@ class OptTrust(path: String, verbose: Boolean) {
 
         when {
             nextEvent == null -> {
-                println("[Trust Message] : No more events to explore")
+                println("[OPT-Trust Message] : No more events to explore")
                 this.graphCounter++
                 g.id = this.graphCounter
                 println("[Trust Message] : Graph ${g.id} with size of ${g.eventOrder.size} is visited")
@@ -33,7 +33,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.READ -> {
-                println("[Trust Message] : Next event is a read event - $nextEvent")
+                println("[OPT-Trust Message] : Next event is a read event - $nextEvent")
                 var nextRead = nextEvent as ReadEvent
                 if (g.existsSameLocationWriteEvent(nextRead.loc!!)) {
                     batching_fR_read_write(g, nextRead)
@@ -45,7 +45,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.READ_EX -> {
-                println("[Trust Message] : Next event is a read ex event - $nextEvent")
+                println("[OPT-Trust Message] : Next event is a read ex event - $nextEvent")
                 var nextReadEx = nextEvent as ReadExEvent
                 if (g.existsSameLocationWriteEvent(nextReadEx.loc!!)) {
                     val newAllEvents = ArrayList<ThreadEvent>()
@@ -59,7 +59,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.WRITE -> {
-                println("[Trust Message] : Next event is a write event - $nextEvent")
+                println("[OPT-Trust Message] : Next event is a write event - $nextEvent")
                 val nextWrite = nextEvent as WriteEvent
                 g.addEvent(nextWrite)
                 g.addProgramOrder(nextWrite)
@@ -790,7 +790,12 @@ class OptTrust(path: String, verbose: Boolean) {
         println("symbolicEvent: $event")
         g.restrictStrictAfterEvent(event)
         event.result = !event.result
-        visit(g, ArrayList())
+        topoSort = SequentialConsistency.scAcyclicity(g)
+        if (topoSort!!.isNotEmpty()) {
+            visit(g, ArrayList())
+        } else {
+            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+        }
     }
 
     private fun isMaximal(

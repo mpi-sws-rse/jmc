@@ -25,8 +25,8 @@ data class StartEvent(
     /**
      * @property callerThread The thread id of the thread that is starting the new thread.
      */
-    val callerThread : Int,
-): ThreadEvent() , Serializable {
+    val callerThread: Int,
+) : ThreadEvent(), Serializable {
 
     /**
      * Returns a deep copy of this object
@@ -40,5 +40,17 @@ data class StartEvent(
             serial = copy().serial,
             callerThread = copy().callerThread
         )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is StartEvent) return false
+        return this.tid == other.tid && this.serial == other.serial && this.type == other.type
+    }
+
+    override fun hashCode(): Int {
+        var result = tid
+        result = 31 * result + type.hashCode()
+        result = 31 * result + serial
+        return result
     }
 }

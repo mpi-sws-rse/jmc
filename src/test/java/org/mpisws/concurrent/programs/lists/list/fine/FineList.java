@@ -1,18 +1,18 @@
 package org.mpisws.concurrent.programs.lists.list.fine;
 
-import org.mpisws.concurrent.programs.lists.list.Node;
+import org.mpisws.concurrent.programs.lists.list.node.FNode;
+import org.mpisws.concurrent.programs.lists.list.node.Node;
 import org.mpisws.concurrent.programs.lists.list.Set;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class FineList implements Set {
 
-    private final Node head;
-    private int key = Integer.MIN_VALUE + 1;
+    private final FNode head;
 
     public FineList() {
-        head = new Node(Integer.MIN_VALUE);
-        head.next = new Node(Integer.MAX_VALUE);
+        head = new FNode(Integer.MIN_VALUE);
+        head.next = new FNode(Integer.MAX_VALUE);
     }
 
     /**
@@ -23,10 +23,11 @@ public class FineList implements Set {
     @Override
     public boolean add(AbstractInteger i) throws JMCInterruptException {
         try {
+            int key = i.getHash();
             head.lock();
-            Node pred = head;
+            FNode pred = head;
             try {
-                Node curr = pred.next;
+                FNode curr = pred.next;
                 curr.lock();
                 try {
                     while (curr.key < key) {
@@ -38,9 +39,7 @@ public class FineList implements Set {
                     if (key == curr.key) {
                         return false;
                     } else {
-                        i.setHash(key);
-                        Node node = new Node(i, key);
-                        key++;
+                        FNode node = new FNode(i, key);
                         node.next = curr;
                         pred.next = node;
                         return true;
@@ -63,11 +62,11 @@ public class FineList implements Set {
     @Override
     public boolean remove(AbstractInteger i) {
         try {
-            key = i.getHash();
+            int key = i.getHash();
             head.lock();
-            Node pred = head;
+            FNode pred = head;
             try {
-                Node curr = pred.next;
+                FNode curr = pred.next;
                 curr.lock();
                 try {
                     while (curr.key < key) {
@@ -78,7 +77,6 @@ public class FineList implements Set {
                     }
                     if (key == curr.key) {
                         pred.next = curr.next;
-                        int x = key;
                         return true;
                     } else {
                         return false;
@@ -101,11 +99,11 @@ public class FineList implements Set {
     @Override
     public boolean contains(AbstractInteger i) {
         try {
-            key = i.getHash();
+            int key = i.getHash();
             head.lock();
-            Node pred = head;
+            FNode pred = head;
             try {
-                Node curr = pred.next;
+                FNode curr = pred.next;
                 curr.lock();
                 try {
                     while (curr.key < key) {

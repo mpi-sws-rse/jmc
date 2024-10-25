@@ -21,4 +21,16 @@ data class SymExecutionEvent(
             isNegatable = copy().isNegatable
         )
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is SymExecutionEvent) return false
+        return this.tid == other.tid && this.serial == other.serial && this.type == other.type
+    }
+
+    override fun hashCode(): Int {
+        var result = tid
+        result = 31 * result + type.hashCode()
+        result = 31 * result + serial
+        return result
+    }
 }

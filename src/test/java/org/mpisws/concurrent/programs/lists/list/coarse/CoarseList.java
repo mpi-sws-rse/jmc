@@ -1,6 +1,6 @@
 package org.mpisws.concurrent.programs.lists.list.coarse;
 
-import org.mpisws.concurrent.programs.lists.list.Node;
+import org.mpisws.concurrent.programs.lists.list.node.Node;
 import org.mpisws.concurrent.programs.lists.list.Set;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.util.concurrent.ReentrantLock;
@@ -9,7 +9,6 @@ public class CoarseList implements Set {
 
     private final Node head;
     private final ReentrantLock lock;
-    private int key = Integer.MIN_VALUE + 1;
 
     public CoarseList() {
         head = new Node(Integer.MIN_VALUE);
@@ -24,7 +23,7 @@ public class CoarseList implements Set {
     @Override
     public boolean add(AbstractInteger i) {
         Node pred, curr;
-        //int key = i.hashCode();
+        int key = i.getHash();
         synchronized (lock) {
             pred = head;
             curr = pred.next;
@@ -35,11 +34,9 @@ public class CoarseList implements Set {
             if (key == curr.key) {
                 return false;
             } else {
-                i.setHash(key);
                 Node node = new Node(i, key);
                 node.next = curr;
                 pred.next = node;
-                key++;
                 return true;
             }
         }
@@ -62,7 +59,6 @@ public class CoarseList implements Set {
             }
             if (key == curr.key) {
                 pred.next = curr.next;
-                int x = key;
                 return true;
             } else {
                 return false;

@@ -71,7 +71,6 @@ public class IncrementalSolver extends SymbolicSolver {
         boolean concreteEval = symbolicOperation.concreteEvaluation();
         if (concreteEval) {
             RuntimeEnvironment.solverResult = true;
-            pop();
         } else {
             boolean sat = solveSymbolicFormula(symbolicOperation);
             if (sat) {

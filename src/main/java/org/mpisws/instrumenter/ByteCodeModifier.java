@@ -522,7 +522,7 @@ public class ByteCodeModifier {
 
                         @Override
                         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
-                            if (/*isPrimitiveType(descriptor, name) &&*/ (opcode == Opcodes.GETFIELD ||
+                            if (isPrimitiveType(descriptor, name) && (opcode == Opcodes.GETFIELD ||
                                     opcode == Opcodes.PUTFIELD || opcode == Opcodes.GETSTATIC || opcode == Opcodes.PUTSTATIC)
                                     && isOwnerAllowed(owner)) {
                                 if (opcode == Opcodes.GETFIELD || opcode == Opcodes.GETSTATIC) {
@@ -819,8 +819,8 @@ public class ByteCodeModifier {
     public boolean isPrimitiveType(String type, String name) {
         // Check if the name starts with $ to avoid adding read and write operations for synthetic fields
         // Like : $assertionsDisabled
-        return (type.equals("I") || type.equals("J") || type.equals("F") || type.equals("D") || type.equals("Z") ||
-                type.equals("C") || type.equals("B") || type.equals("S")) && !name.startsWith("$");
+        return /*(type.equals("I") || type.equals("J") || type.equals("F") || type.equals("D") || type.equals("Z") ||
+                type.equals("C") || type.equals("B") || type.equals("S")) &&*/ !name.startsWith("$");
     }
 
     /**

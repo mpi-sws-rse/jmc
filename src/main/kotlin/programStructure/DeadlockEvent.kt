@@ -21,7 +21,7 @@ data class DeadlockEvent(
      * The serial number of the event.
      */
     override val serial: Int
-): ThreadEvent(), Serializable {
+) : ThreadEvent(), Serializable {
 
     /**
      * Returns a deep copy of this object
@@ -34,5 +34,10 @@ data class DeadlockEvent(
             tid = copy().tid,
             serial = copy().serial
         )
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is DeadlockEvent) return false
+        return this.tid == other.tid && this.serial == other.serial && this.type == other.type
     }
 }

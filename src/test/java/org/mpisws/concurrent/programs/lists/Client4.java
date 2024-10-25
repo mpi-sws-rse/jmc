@@ -12,13 +12,13 @@ public class Client4 {
 
     public static void main(String[] args) {
         Set set = new FineList();
-        int NUM_OPERATIONS = 5;
+        int NUM_OPERATIONS = 6;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_INSERTIONS);
         for (int i = 0; i < NUM_INSERTIONS; i++) {
-            items.add(new SymbolicInteger(false));
+            items.add(new SymbolicInteger(false, i));
         }
 
         List<InsertionThread> threads = new ArrayList<>(NUM_INSERTIONS);

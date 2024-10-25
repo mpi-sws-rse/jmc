@@ -12,10 +12,25 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
     private final boolean isShared;
     private int value;
 
+    private SymbolicInteger() {
+        String[] parts = this.toString().split("@");
+        this.name = "SymbolicInteger@" + parts[parts.length - 1];
+        this.isShared = false;
+    }
+
     public SymbolicInteger(boolean isShared) {
         String[] parts = this.toString().split("@");
         this.name = "SymbolicInteger@" + parts[parts.length - 1];
         this.isShared = isShared;
+        write();
+    }
+
+    public SymbolicInteger(boolean isShared, int hash) {
+        String[] parts = this.toString().split("@");
+        this.name = "SymbolicInteger@" + parts[parts.length - 1];
+        this.isShared = isShared;
+        this.setHash(hash);
+        write();
     }
 
     private SymbolicInteger(String name, int value, boolean isShared) {
@@ -27,6 +42,7 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
     private SymbolicInteger(String name, boolean isShared) {
         this.name = name;
         this.isShared = isShared;
+        write();
     }
 
     public void assign(ArithmeticStatement expression) {
@@ -125,6 +141,13 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
         this.eval = value.deepCopy();
 
         if (isShared) {
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+        }
+    }
+
+    private void write() {
+        if (isShared) {
+            RuntimeEnvironment.writeOperation(this, this.value, Thread.currentThread(), "org.mpisws.symbolic.SymbolicInteger", "value", "SI");
             RuntimeEnvironment.waitRequest(Thread.currentThread());
         }
     }

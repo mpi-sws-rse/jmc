@@ -13,11 +13,11 @@ public class Client1 {
 
     public static void main(String[] args) {
         Set set = new CoarseList();
-        int NUM_OPERATIONS = 5;
+        int NUM_OPERATIONS = 6;
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            items.add(new SymbolicInteger(false));
+            items.add(new SymbolicInteger(false, i));
         }
 
         List<InsertionThread> threads = new ArrayList<>(NUM_OPERATIONS);

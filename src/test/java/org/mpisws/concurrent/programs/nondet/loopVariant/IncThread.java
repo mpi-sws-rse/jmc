@@ -2,15 +2,16 @@ package org.mpisws.concurrent.programs.nondet.loopVariant;
 
 import org.mpisws.symbolic.*;
 import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.ReentrantLock;
 import org.mpisws.util.concurrent.Utils;
 
 public class IncThread extends Thread {
 
-    public Object lock;
+    public ReentrantLock lock;
     public Numbers numbers;
     public int SIZE;
 
-    public IncThread(Object lock, Numbers numbers, int SIZE) {
+    public IncThread(ReentrantLock lock, Numbers numbers, int SIZE) {
         this.lock = lock;
         this.numbers = numbers;
         this.SIZE = SIZE;

@@ -156,6 +156,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     @Override
     public void nextJoinEvent(Thread joinReq, Thread joinRes) {
         if (guidingActivate) {
+            RuntimeEnvironment.getNextSerialNumber(joinReq); // To update the serial number of the joinRq thread
             JoinEvent je = (JoinEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(je);
         } else {
@@ -239,6 +240,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     @Override
     public void nextFinishEvent(Thread thread) {
         if (guidingActivate) {
+            RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
             FinishEvent fe = (FinishEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(fe);
             analyzeSuspendedThreadsForJoin(thread);
@@ -259,6 +261,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     @Override
     public void nextFailureEvent(Thread thread) {
         if (guidingActivate) {
+            RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
             FailureEvent fe = (FailureEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(fe);
         } else {
@@ -277,6 +280,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     @Override
     public void nextDeadlockEvent(Thread thread) {
         if (guidingActivate) {
+            RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
             DeadlockEvent de = (DeadlockEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(de);
         } else {
@@ -347,6 +351,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             solver.updatePathSymbolicOperations(symbolicOperation);
             solver.push(symbolicOperation);
         }
+        RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
         RuntimeEnvironment.eventsRecord.add(guidingSymAssumeEvent);
     }
 
@@ -409,6 +414,8 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         SymExecutionEvent guidingSymExecutionEvent = (SymExecutionEvent) guidingEvent;
         RuntimeEnvironment.solverResult = guidingSymExecutionEvent.getResult();
         solver.updatePathSymbolicOperations(symbolicOperation);
+        RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
+        guidingSymExecutionEvent.setFormula(symbolicOperation.getFormula().toString());
         if (guidingSymExecutionEvent.getResult()) {
             solver.push(symbolicOperation);
         } else {
@@ -478,11 +485,11 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                         RuntimeEnvironment.mcGraphOp.push(g);
                     }
                 }
-//                System.out.println("[DPOR Message] : The guiding events are :");
-//                for (int i = 0; i < RuntimeEnvironment.guidingEvents.size(); i++) {
-//                    ThreadEvent e = RuntimeEnvironment.guidingEvents.get(i);
-//                    System.out.println(i + "-" + e.getType() + "(" + e.getTid() + ":" + e.getSerial() + ")");
-//                }
+                System.out.println("[DPOR Message] : The guiding events are :");
+                for (int i = 0; i < RuntimeEnvironment.guidingEvents.size(); i++) {
+                    ThreadEvent e = RuntimeEnvironment.guidingEvents.get(i);
+                    System.out.println(i + "-" + e.getType() + "(" + e.getTid() + ":" + e.getSerial() + ")");
+                }
                 return false;
             }
         }

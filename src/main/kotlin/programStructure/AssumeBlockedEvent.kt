@@ -20,4 +20,16 @@ data class AssumeBlockedEvent(
             serial = copy().serial
         )
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is AssumeBlockedEvent) return false
+        return this.tid == other.tid && this.serial == other.serial && this.type == other.type
+    }
+
+    override fun hashCode(): Int {
+        var result = tid
+        result = 31 * result + type.hashCode()
+        result = 31 * result + serial
+        return result
+    }
 }

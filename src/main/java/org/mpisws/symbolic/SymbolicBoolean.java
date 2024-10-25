@@ -14,6 +14,7 @@ public class SymbolicBoolean extends AbstractBoolean {
         String[] parts = this.toString().split("@");
         this.name = "SymbolicBoolean@" + parts[parts.length - 1];
         this.isShared = isShared;
+        write();
     }
 
     private SymbolicBoolean(String name, boolean value, boolean isShared) {
@@ -25,6 +26,7 @@ public class SymbolicBoolean extends AbstractBoolean {
     private SymbolicBoolean(String name, boolean isShared) {
         this.name = name;
         this.isShared = isShared;
+        this.write();
     }
 
     public void assign(SymbolicOperation expression) {
@@ -118,6 +120,13 @@ public class SymbolicBoolean extends AbstractBoolean {
         this.eval = expressionCopy;
 
         if (isShared) {
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+        }
+    }
+
+    private void write() {
+        if (isShared) {
+            RuntimeEnvironment.writeOperation(this, value, Thread.currentThread(), "org.mpisws.symbolic.SymbolicBoolean", "value", "SZ");
             RuntimeEnvironment.waitRequest(Thread.currentThread());
         }
     }

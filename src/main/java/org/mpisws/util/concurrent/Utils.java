@@ -21,6 +21,7 @@ public class Utils {
 
     public static void assume(SymbolicOperation op) throws JMCInterruptException {
         boolean b = RuntimeEnvironment.symbolicAssume(Thread.currentThread(), op);
+        RuntimeEnvironment.waitRequest(Thread.currentThread());
         if (!b) {
             RuntimeEnvironment.AssumeBlocked(Thread.currentThread());
             RuntimeEnvironment.isExecutionBlocked = true;

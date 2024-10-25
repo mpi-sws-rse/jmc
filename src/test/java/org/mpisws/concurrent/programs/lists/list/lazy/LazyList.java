@@ -1,18 +1,17 @@
 package org.mpisws.concurrent.programs.lists.list.lazy;
 
-import org.mpisws.concurrent.programs.lists.list.Node;
+import org.mpisws.concurrent.programs.lists.list.node.LNode;
 import org.mpisws.concurrent.programs.lists.list.Set;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class LazyList implements Set {
 
-    private final Node head;
-    private int key = Integer.MIN_VALUE + 1;
+    private final LNode head;
 
     public LazyList() {
-        head = new Node(Integer.MIN_VALUE);
-        head.next = new Node(Integer.MAX_VALUE);
+        head = new LNode(Integer.MIN_VALUE);
+        head.next = new LNode(Integer.MAX_VALUE);
     }
 
     /**
@@ -23,9 +22,10 @@ public class LazyList implements Set {
     @Override
     public boolean add(AbstractInteger i) throws JMCInterruptException {
         try {
+            int key = i.getHash();
             while (true) {
-                Node pred = head;
-                Node curr = pred.next;
+                LNode pred = head;
+                LNode curr = pred.next;
                 while (curr.key < key) {
                     pred = curr;
                     curr = curr.next;
@@ -38,11 +38,9 @@ public class LazyList implements Set {
                             if (key == curr.key) {
                                 return false;
                             } else {
-                                i.setHash(key);
-                                Node node = new Node(i, key);
+                                LNode node = new LNode(i, key);
                                 node.next = curr;
                                 pred.next = node;
-                                key++;
                                 return true;
                             }
                         }
@@ -65,10 +63,10 @@ public class LazyList implements Set {
     @Override
     public boolean remove(AbstractInteger i) {
         try {
-            key = i.getHash();
+            int key = i.getHash();
             while (true) {
-                Node pred = head;
-                Node curr = pred.next;
+                LNode pred = head;
+                LNode curr = pred.next;
                 while (curr.key < key) {
                     pred = curr;
                     curr = curr.next;
@@ -104,15 +102,15 @@ public class LazyList implements Set {
      */
     @Override
     public boolean contains(AbstractInteger i) {
-        key = i.getHash();
-        Node curr = head;
+        int key = i.getHash();
+        LNode curr = head;
         while (curr.key < key) {
             curr = curr.next;
         }
         return key == curr.key && !curr.marked;
     }
 
-    private boolean validate(Node pred, Node curr) {
+    private boolean validate(LNode pred, LNode curr) {
         return !pred.marked && !curr.marked && pred.next == curr;
     }
 }

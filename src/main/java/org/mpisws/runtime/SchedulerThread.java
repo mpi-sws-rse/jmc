@@ -435,7 +435,7 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.threadWaitReq = null;
         if (symAssumeEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextSymAssumeRequest(thread.get(), symAssumeEvent.get());
-            waitEventHandler();
+            notifyThread(thread.get());
         }
     }
 
