@@ -961,12 +961,7 @@ public class RuntimeEnvironment {
             createFinishObject(FinishedType.DEADLOCK);
             throw new HaltExecutionException();
         } else if (allExecutionsFinished) {
-            System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
-            System.out.println("[Runtime Environment Message] : The " + numOfBlockedExecutions + " execution is blocked");
-            System.out.println("[Runtime Environment Message] : The maximum number of the executions is reached");
-            System.out.println("[Runtime Environment Message] : Resource Usage:");
-            System.out.println("[Runtime Environment Message] : Memory Usage: " + currentMemoryUsageInMegaBytes() + " MB");
-            System.out.println("[Runtime Environment Message] : Elapsed Time: " + elapsedTimeInSeconds() + " seconds");
+            printFinalMessage();
             createFinishObject(FinishedType.SUCCESS);
             throw new HaltExecutionException();
         } else {
@@ -974,6 +969,15 @@ public class RuntimeEnvironment {
             System.out.println("[Runtime Environment Message] : The " + numOfBlockedExecutions + " execution is blocked");
             resetRuntimeEnvironment();
         }
+    }
+
+    public static void printFinalMessage() {
+        System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
+        System.out.println("[Runtime Environment Message] : The " + numOfBlockedExecutions + " execution is blocked");
+        System.out.println("[Runtime Environment Message] : The maximum number of the executions is reached");
+        System.out.println("[Runtime Environment Message] : Resource Usage:");
+        System.out.println("[Runtime Environment Message] : Memory Usage: " + currentMemoryUsageInMegaBytes() + " MB");
+        System.out.println("[Runtime Environment Message] : Elapsed Time: " + elapsedTimeInSeconds() + " seconds");
     }
 
     /**

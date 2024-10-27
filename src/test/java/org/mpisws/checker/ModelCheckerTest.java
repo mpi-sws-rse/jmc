@@ -483,6 +483,78 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                 DET ARRAY
+     */
+
+    @Test
+    @DisplayName("Det Array")
+    void trustTestDetArray() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.array",
+                "DetArray",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/array"
+        );
+        System.out.println("Det Array Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Array Trust Strategy Finished");
+    }
+
+    /*
+     *                                 DET LOOP
+     */
+
+    @Test
+    @DisplayName("Det Loop")
+    void trustTestDetLoop() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.loop",
+                "DetLoop",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/loop"
+        );
+        System.out.println("Det Array Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Loop Trust Strategy Finished");
+    }
+
+    /*
+     *                                 Det LOOP VARIANT
+     */
+
+    @Test
+    @DisplayName("Det Loop Variant")
+    void trustTestDetLoopVariant() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.loopVariant",
+                "DetLoop",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/loopVariant"
+        );
+        System.out.println("Det Array Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Loop Variant Trust Strategy Finished");
+    }
+
+    /*
      *                                 NONDET ARRAY
      */
 
@@ -499,35 +571,11 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Nondet Array Trust Strategy Finished");
-    }
-
-    /*
-     *                                 NONDET LOOP VARIANT
-     */
-
-    @Test
-    @DisplayName("Nondet Loop Variant")
-    void trustTestNondetLoopVariant() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.loopVariant",
-                "NondetLoop",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant"
-        );
-        System.out.println("Nondet Array Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
-        checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "Nondet Loop Variant Trust Strategy Finished");
     }
 
     /*
@@ -552,6 +600,30 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Nondet Loop Trust Strategy Finished");
+    }
+
+    /*
+     *                                 NONDET LOOP VARIANT
+     */
+
+    @Test
+    @DisplayName("Nondet Loop Variant")
+    void trustTestNondetLoopVariant() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.loopVariant",
+                "NondetLoop",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant"
+        );
+        System.out.println("Nondet Array Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Nondet Loop Variant Trust Strategy Finished");
     }
 
     /*
@@ -595,7 +667,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -619,7 +691,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -642,7 +714,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -665,7 +737,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -688,7 +760,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -711,7 +783,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -734,7 +806,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -757,7 +829,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";

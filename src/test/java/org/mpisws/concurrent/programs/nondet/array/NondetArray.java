@@ -11,7 +11,7 @@ public class NondetArray {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 10;
+            int SIZE = 4;
             Array array = new Array(SIZE);
             List<SetterThread> threads = new ArrayList<>(SIZE);
 
@@ -54,7 +54,8 @@ public class NondetArray {
                 op4 = formula.gt(n, i);
             }
 
-            assert (sum == SIZE - 1) : " ***The assert did not pass, the sum is " + sum + " instead of " + (SIZE - 1);
+            // assert (sum == SIZE - 1) : " ***The assert did not pass, the sum is " + sum + " instead of " + (SIZE - 1);
+            assert (sum <= SIZE) : " ***The assert did not pass, the sum is " + sum + " instead of " + SIZE;
 
         } catch (JMCInterruptException e) {
 

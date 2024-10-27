@@ -26,7 +26,7 @@ class OptTrust(path: String, verbose: Boolean) {
                 this.graphCounter++
                 g.id = this.graphCounter
                 println("[Trust Message] : Graph ${g.id} with size of ${g.eventOrder.size} is visited")
-                if (verbose) {
+                if (verbose /*|| (g.id >= 0 && g.id <= 100)*/) {
                     g.visualizeGraph(this.graphCounter, this.graphsPath)
                 }
                 extendedGraph = g
@@ -725,6 +725,7 @@ class OptTrust(path: String, verbose: Boolean) {
 
     fun processFR_L_W(g: OptExecutionGraph, writeEvent: WriteEvent, toBeAddedEvents: ArrayList<ThreadEvent>) {
         println("[OPT-Trust] processing frw last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
+        println("[DEBUGGING] The graph id is: ${g.id}")
 //        println("writeEvent: $writeEvent")
 //        println("[debugging] The Graph before restricting is: ")
 //        println("[debugging] The Graph number is: ${g.id}")
@@ -744,6 +745,29 @@ class OptTrust(path: String, verbose: Boolean) {
 //        g.printTC()
 //        println("[debugging] reads:")
 //        g.printReads()
+        // For Debugging
+//        if (writeEvent.type == EventType.WRITE && writeEvent.tid == 7 && writeEvent.serial == 16) {
+//            if (toBeAddedEvents[0].type == EventType.WRITE_EX && toBeAddedEvents[0].tid == 5 && toBeAddedEvents[0].serial == 6) {
+//                g.visualizeGraph(100001, graphsPath)
+//                println("[DEBUGGING] The graph before restricting is: ")
+//                println("[DEBUGGING] eventOrder:")
+//                g.printEventOrder()
+//                println("[DEBUGGING] po:")
+//                g.printPO()
+//                println("[DEBUGGING] rf:")
+//                g.printRf()
+//                println("[DEBUGGING] co:")
+//                g.printCO()
+//                println("[DEBUGGING] jt:")
+//                g.printJT()
+//                println("[DEBUGGING] st:")
+//                g.printST()
+//                println("[DEBUGGING] tc:")
+//                g.printTC()
+//                println("[DEBUGGING] reads:")
+//                g.printReads()
+//            }
+//        }
         g.restrictStrictAfterEvent(writeEvent)
         g.removeWrite(writeEvent)
         g.addWrite(writeEvent)
@@ -772,6 +796,29 @@ class OptTrust(path: String, verbose: Boolean) {
 //            g.programOrder[toBeAddedEvents[0].tid]!!.removeLast()
 //        } else {
 //            topoSort = SequentialConsistency.scAcyclicity(g)
+//        }
+        // For Debugging
+//        if (writeEvent.type == EventType.WRITE && writeEvent.tid == 7 && writeEvent.serial == 16) {
+//            if (toBeAddedEvents[0].type == EventType.WRITE_EX && toBeAddedEvents[0].tid == 5 && toBeAddedEvents[0].serial == 6) {
+//                g.visualizeGraph(100002, graphsPath)
+//                println("[DEBUGGING] The graph after restricting is: ")
+//                println("[DEBUGGING] eventOrder:")
+//                g.printEventOrder()
+//                println("[DEBUGGING] po:")
+//                g.printPO()
+//                println("[DEBUGGING] rf:")
+//                g.printRf()
+//                println("[DEBUGGING] co:")
+//                g.printCO()
+//                println("[DEBUGGING] jt:")
+//                g.printJT()
+//                println("[DEBUGGING] st:")
+//                g.printST()
+//                println("[DEBUGGING] tc:")
+//                g.printTC()
+//                println("[DEBUGGING] reads:")
+//                g.printReads()
+//            }
 //        }
         topoSort = SequentialConsistency.scAcyclicity(g)
         if (topoSort!!.isNotEmpty()) {

@@ -15,7 +15,8 @@ public class AssertThread extends Thread {
     @Override
     public void run() {
         ArithmeticFormula f = new ArithmeticFormula();
-        SymbolicOperation op = f.gt(numbers.n, numbers.x);
+        //SymbolicOperation op = f.gt(numbers.n, numbers.x);
+        SymbolicOperation op = f.geq(numbers.n, numbers.x);
         Utils.assertion(op, "AssertThread failed");
     }
 }

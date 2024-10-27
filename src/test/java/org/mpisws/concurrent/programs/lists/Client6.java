@@ -12,7 +12,7 @@ public class Client6 {
 
     public static void main(String[] args) {
         Set set = new OptimisticList();
-        int NUM_OPERATIONS = 5;
+        int NUM_OPERATIONS = 6;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
 
