@@ -1,18 +1,18 @@
-package org.mpisws.concurrent.programs.lists;
+package org.mpisws.concurrent.programs.det.lists;
 
-import org.mpisws.concurrent.programs.lists.list.Set;
-import org.mpisws.concurrent.programs.lists.list.fine.FineList;
+import org.mpisws.concurrent.programs.det.lists.list.Set;
+import org.mpisws.concurrent.programs.det.lists.list.lazy.LazyList;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.symbolic.SymbolicInteger;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Client4 {
+public class Client8 {
 
     public static void main(String[] args) {
-        Set set = new FineList();
-        int NUM_OPERATIONS = 6;
+        Set set = new LazyList();
+        int NUM_OPERATIONS = 5;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
 

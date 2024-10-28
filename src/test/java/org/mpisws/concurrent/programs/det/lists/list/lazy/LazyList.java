@@ -1,7 +1,7 @@
-package org.mpisws.concurrent.programs.lists.list.lazy;
+package org.mpisws.concurrent.programs.det.lists.list.lazy;
 
-import org.mpisws.concurrent.programs.lists.list.node.LNode;
-import org.mpisws.concurrent.programs.lists.list.Set;
+import org.mpisws.concurrent.programs.det.lists.list.node.LNode;
+import org.mpisws.concurrent.programs.det.lists.list.Set;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 

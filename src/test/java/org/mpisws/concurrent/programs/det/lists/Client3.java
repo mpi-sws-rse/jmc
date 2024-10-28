@@ -1,18 +1,18 @@
-package org.mpisws.concurrent.programs.lists;
+package org.mpisws.concurrent.programs.det.lists;
 
-import org.mpisws.concurrent.programs.lists.list.Set;
-import org.mpisws.concurrent.programs.lists.list.optimistic.OptimisticList;
+import org.mpisws.concurrent.programs.det.lists.list.Set;
+import org.mpisws.concurrent.programs.det.lists.list.fine.FineList;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.symbolic.SymbolicInteger;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Client5 {
+public class Client3 {
 
     public static void main(String[] args) {
-        Set set = new OptimisticList();
-        int NUM_OPERATIONS = 4;
+        Set set = new FineList();
+        int NUM_OPERATIONS = 2;
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {

@@ -1,15 +1,15 @@
-package org.mpisws.concurrent.programs.lists;
+package org.mpisws.concurrent.programs.nondet.lists;
 
-import org.mpisws.concurrent.programs.lists.list.Set;
-import org.mpisws.symbolic.AbstractInteger;
+import org.mpisws.concurrent.programs.nondet.lists.list.Element;
+import org.mpisws.concurrent.programs.nondet.lists.list.Set;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class InsertionThread extends Thread {
 
     private final Set set;
-    public AbstractInteger item;
+    public Element item;
 
-    public InsertionThread(Set set, AbstractInteger item) {
+    public InsertionThread(Set set, Element item) {
         this.set = set;
         this.item = item;
     }

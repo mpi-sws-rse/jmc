@@ -1,8 +1,7 @@
-package org.mpisws.concurrent.programs.lists.list.fine;
+package org.mpisws.concurrent.programs.det.lists.list.fine;
 
-import org.mpisws.concurrent.programs.lists.list.node.FNode;
-import org.mpisws.concurrent.programs.lists.list.node.Node;
-import org.mpisws.concurrent.programs.lists.list.Set;
+import org.mpisws.concurrent.programs.det.lists.list.node.FNode;
+import org.mpisws.concurrent.programs.det.lists.list.Set;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 

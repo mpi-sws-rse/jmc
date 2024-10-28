@@ -1,7 +1,7 @@
-package org.mpisws.concurrent.programs.lists;
+package org.mpisws.concurrent.programs.det.lists;
 
-import org.mpisws.concurrent.programs.lists.list.Set;
-import org.mpisws.concurrent.programs.lists.list.lazy.LazyList;
+import org.mpisws.concurrent.programs.det.lists.list.Set;
+import org.mpisws.concurrent.programs.det.lists.list.lazy.LazyList;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.symbolic.SymbolicInteger;
 

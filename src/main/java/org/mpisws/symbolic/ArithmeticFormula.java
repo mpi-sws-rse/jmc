@@ -8,8 +8,11 @@ import org.sosy_lab.common.log.LogManager;
 import org.sosy_lab.java_smt.api.*;
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ArithmeticFormula {
 
@@ -457,6 +460,40 @@ public class ArithmeticFormula {
 
     public SymbolicOperation lt(int var1, AbstractInteger var2) {
         return lt(var2, var1);
+    }
+
+    public SymbolicOperation distinct(List<AbstractInteger> vars) {
+        integerVariableMap = new HashMap<>();
+        SymbolicOperation symbolicOperation = new SymbolicOperation();
+        ArrayList<IntegerFormula> formulas = new ArrayList<>();
+        for (AbstractInteger var : vars) {
+            if (var instanceof SymbolicInteger) {
+                formulas.add(makeIntegerFormula((SymbolicInteger) var.read()));
+            } else if (var instanceof ConcreteInteger) {
+                formulas.add(imgr.makeNumber(var.getValue()));
+            } else {
+                System.out.println("[Symbolic Execution] Unsupported type");
+                System.exit(0);
+            }
+        }
+        BooleanFormula formula = imgr.distinct(formulas);
+//        BooleanFormula formula = bmgr.and(vars.stream().map(var -> {
+//            if (var instanceof SymbolicInteger) {
+//                return makeIntegerFormula((SymbolicInteger) var.read());
+//            } else {
+//                return imgr.makeNumber(var.getValue());
+//            }
+//        }).map(imgr::equal).toArray(BooleanFormula[]::new));
+//        symbolicOperation.setFormula(bmgr.not(formula));
+        symbolicOperation.setFormula(formula);
+        symbolicOperation.setIntegerVariableMap(integerVariableMap);
+
+        // Explicitly upcast List<AbstractInteger> to List<SymbolicOperand>
+        List<SymbolicOperand> operandList = vars.stream()
+                .map(var -> (SymbolicOperand) var)
+                .collect(Collectors.toList());
+        symbolicOperation.setJmcFormula(operandList, InstructionType.DISTINCT);
+        return symbolicOperation;
     }
 
     private IntegerFormula makeIntegerFormula(SymbolicInteger symbolicInteger) {

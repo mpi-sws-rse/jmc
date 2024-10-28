@@ -486,13 +486,13 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                     }
                 }
                 // For debugging
-//                if (RuntimeEnvironment.guidingGraph.getId() == 21898) {
-//                    System.out.println("[DPOR Message] : The guiding events are :");
-//                    for (int i = 0; i < RuntimeEnvironment.guidingEvents.size(); i++) {
-//                        ThreadEvent e = RuntimeEnvironment.guidingEvents.get(i);
-//                        System.out.println(i + "-" + e.getType() + "(" + e.getTid() + ":" + e.getSerial() + ")");
-//                    }
-//                }
+                if (RuntimeEnvironment.verbose) {
+                    System.out.println("[DPOR Message] : The guiding events are :");
+                    for (int i = 0; i < RuntimeEnvironment.guidingEvents.size(); i++) {
+                        ThreadEvent e = RuntimeEnvironment.guidingEvents.get(i);
+                        System.out.println(i + "-" + e.getType() + "(" + e.getTid() + ":" + e.getSerial() + ")");
+                    }
+                }
                 return false;
             }
         }

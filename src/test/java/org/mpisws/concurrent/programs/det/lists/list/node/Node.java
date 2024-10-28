@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.lists.list.node;
+package org.mpisws.concurrent.programs.det.lists.list.node;
 
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.symbolic.ConcreteInteger;

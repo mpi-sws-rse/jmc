@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.lists.list;
+package org.mpisws.concurrent.programs.det.lists.list;
 
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;

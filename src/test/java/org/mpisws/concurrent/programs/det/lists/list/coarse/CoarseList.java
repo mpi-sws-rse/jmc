@@ -1,7 +1,7 @@
-package org.mpisws.concurrent.programs.lists.list.coarse;
+package org.mpisws.concurrent.programs.det.lists.list.coarse;
 
-import org.mpisws.concurrent.programs.lists.list.node.Node;
-import org.mpisws.concurrent.programs.lists.list.Set;
+import org.mpisws.concurrent.programs.det.lists.list.node.Node;
+import org.mpisws.concurrent.programs.det.lists.list.Set;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.util.concurrent.ReentrantLock;
 

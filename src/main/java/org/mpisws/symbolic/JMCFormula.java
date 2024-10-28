@@ -2,11 +2,17 @@ package org.mpisws.symbolic;
 
 import org.mpisws.runtime.RuntimeEnvironment;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 public class JMCFormula {
 
     public SymbolicOperand leftOperand;
 
     public SymbolicOperand rightOperand;
+
+    public List<SymbolicOperand> operands;
 
     public InstructionType operator;
 
@@ -20,6 +26,10 @@ public class JMCFormula {
 
     public void setOperator(InstructionType operator) {
         this.operator = operator;
+    }
+
+    public void setOperands(List<SymbolicOperand> operands) {
+        this.operands = operands;
     }
 
     public boolean evaluate() {
@@ -51,10 +61,31 @@ public class JMCFormula {
             return evalNot();
         } else if (operator == InstructionType.ATOM) {
             return evalAtom();
+        } else if (operator == InstructionType.DISTINCT) {
+            return evalDistinct();
         } else {
             throw new IllegalArgumentException("[JMC Formula Message] Unsupported operator");
         }
 
+    }
+
+    private boolean evalDistinct() {
+        if (operands == null || operands.size() < 2) {
+            throw new IllegalArgumentException("[JMC Formula Message] Distinct operator must have at least two operands");
+        }
+
+        HashSet<Integer> seenValues = new HashSet<>();
+        for (SymbolicOperand operand : operands) {
+            if (operand instanceof AbstractInteger intOp) {
+                int value = getIntValue(intOp);
+                if (!seenValues.add(value)) {
+                    return false; // Duplicate found
+                }
+            } else {
+                throw new IllegalArgumentException("[JMC Formula Message] Invalid operand for operator DISTINCT");
+            }
+        }
+        return true; // All elements are distinct
     }
 
     private boolean evalAtom() {

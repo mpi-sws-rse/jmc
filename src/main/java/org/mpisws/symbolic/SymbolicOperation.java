@@ -5,6 +5,7 @@ import org.sosy_lab.java_smt.api.BooleanFormula;
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SymbolicOperation implements SymbolicOperand {
@@ -102,6 +103,11 @@ public class SymbolicOperation implements SymbolicOperand {
         jmcFormula.setRightOperand(right);
         jmcFormula.setOperator(operator);
 
+    }
+
+    public void setJmcFormula(List<SymbolicOperand> operands, InstructionType operator) {
+        jmcFormula.setOperands(operands);
+        jmcFormula.setOperator(operator);
     }
 
     public boolean concreteEvaluation() {

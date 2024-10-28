@@ -20,5 +20,6 @@ public enum InstructionType implements Serializable {
     GT,
     LEQ,
     GEQ,
+    DISTINCT,
     ATOM,
 }
