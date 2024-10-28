@@ -70,8 +70,12 @@ public class JMCFormula {
     }
 
     private boolean evalDistinct() {
-        if (operands == null || operands.size() < 2) {
+        if (operands == null || operands.size() == 0) {
             throw new IllegalArgumentException("[JMC Formula Message] Distinct operator must have at least two operands");
+        }
+
+        if (operands.size() == 1) {
+            return true; // Single element is always distinct
         }
 
         HashSet<Integer> seenValues = new HashSet<>();

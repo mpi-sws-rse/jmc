@@ -665,7 +665,7 @@ class ModelCheckerTest {
         System.out.println("NonDet Coarse List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
-        checker.configuration.verbose = true;
+        checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
