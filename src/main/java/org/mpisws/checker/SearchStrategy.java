@@ -423,7 +423,7 @@ public interface SearchStrategy {
                     "[Search Strategy Message] : The request of " + thread.getName() +
                             " to enter the monitor " + monitor + " is removed from the monitorRequest"
             );
-            nextEnterMonitorEvent(thread, monitor);
+            handleCachedCASEvent(RuntimeEnvironment.threadIdMap.get(thread.getId()).intValue());
             return thread;
         }
     }
@@ -682,5 +682,9 @@ public interface SearchStrategy {
             }
         }
         return false;
+    }
+
+    default void handleCachedCASEvent(int tid) {
+
     }
 }

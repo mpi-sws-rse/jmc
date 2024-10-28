@@ -39,11 +39,11 @@ public class CorrectCounter extends Thread {
         thread1.join();
         thread2.join();
         thread3.join();
-//        try {
-//            assert (counter.count == 2) : " ***The assert did not pass, the counter value is " + counter.count + "***";
-//        } catch (AssertionError e) {
-//            System.out.println(e.getMessage());
-//        }
+        try {
+            assert (counter.count == 3) : " ***The assert did not pass, the counter value is " + counter.count + "***";
+        } catch (AssertionError e) {
+            System.out.println(e.getMessage());
+        }
 
         System.out.println("[Correct Counter message] : If you see this message, the assert passed. The counter value is " + counter.count);
     }

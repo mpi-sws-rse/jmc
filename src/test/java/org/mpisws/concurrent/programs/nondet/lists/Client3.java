@@ -2,7 +2,7 @@ package org.mpisws.concurrent.programs.nondet.lists;
 
 import org.mpisws.concurrent.programs.nondet.lists.list.Element;
 import org.mpisws.concurrent.programs.nondet.lists.list.Set;
-import org.mpisws.concurrent.programs.nondet.lists.list.coarse.CoarseList;
+import org.mpisws.concurrent.programs.nondet.lists.list.fine.FineList;
 import org.mpisws.symbolic.*;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.Utils;
@@ -10,12 +10,12 @@ import org.mpisws.util.concurrent.Utils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Client1 {
+public class Client3 {
 
     public static void main(String[] args) {
         try {
-            Set set = new CoarseList();
-            int NUM_OPERATIONS = 5;
+            Set set = new FineList();
+            int NUM_OPERATIONS = 4;
 
             List<Element> items = new ArrayList<>(NUM_OPERATIONS);
             List<AbstractInteger> keys = new ArrayList<>(NUM_OPERATIONS);

@@ -61,7 +61,28 @@ public class CoarseList implements Set {
      */
     @Override
     public boolean remove(Element i) throws JMCInterruptException {
-        return false;
+        Node pred, curr;
+        AbstractInteger key = i.key;
+        synchronized (lock) {
+            pred = head;
+            curr = pred.next;
+            ArithmeticFormula formula = new ArithmeticFormula();
+            SymbolicOperation op1 = formula.lt(curr.getKey(), key);
+            SymbolicFormula condition = new SymbolicFormula();
+            while (condition.evaluate(op1)) {
+                pred = curr;
+                curr = curr.next;
+                op1 = formula.lt(curr.getKey(), key);
+            }
+
+            SymbolicOperation op2 = formula.eq(key, curr.getKey());
+            if (condition.evaluate(op2)) {
+                pred.next = curr.next;
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     /**
@@ -71,6 +92,20 @@ public class CoarseList implements Set {
      */
     @Override
     public boolean contains(Element i) throws JMCInterruptException {
-        return false;
+        Node pred, curr;
+        AbstractInteger key = i.key;
+        synchronized (lock) {
+            pred = head;
+            curr = pred.next;
+            ArithmeticFormula formula = new ArithmeticFormula();
+            SymbolicOperation op1 = formula.lt(curr.getKey(), key);
+            SymbolicFormula condition = new SymbolicFormula();
+            while (condition.evaluate(op1)) {
+                curr = curr.next;
+                op1 = formula.lt(curr.getKey(), key);
+            }
+            SymbolicOperation op2 = formula.eq(key, curr.getKey());
+            return condition.evaluate(op2);
+        }
     }
 }

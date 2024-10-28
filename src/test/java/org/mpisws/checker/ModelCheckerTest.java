@@ -675,6 +675,76 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  NONDET COARSE LIST II
+     */
+
+    @Test
+    @DisplayName("NonDet Coarse List II")
+    void trustTestNonDetCoarseListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.lists",
+                "Client2",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/lists/"
+        );
+        System.out.println("NonDet Coarse List II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Coarse List II Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET FINE LIST I
+     */
+    @Test
+    @DisplayName("NonDet Fine List I")
+    void trustTestNonDetFineListI() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.lists",
+                "Client3",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/lists/"
+        );
+        System.out.println("NonDet Fine List I Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Fine List I Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET FINE LIST II
+     */
+    @Test
+    @DisplayName("NonDet Fine List II")
+    void trustTestNonDetFineListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.lists",
+                "Client4",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/lists/"
+        );
+        System.out.println("NonDet Fine List II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Fine List II Trust Strategy Finished");
+    }
+
+    /*
      *                                  DET COARSE LIST I
      */
 

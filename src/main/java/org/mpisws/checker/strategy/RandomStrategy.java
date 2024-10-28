@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
@@ -14,6 +15,7 @@ import org.mpisws.runtime.RuntimeEnvironment;
 import org.mpisws.solver.SymbolicSolver;
 import org.mpisws.symbolic.SymbolicOperation;
 
+import org.mpisws.util.concurrent.JMCLock;
 import org.mpisws.util.concurrent.JMCThread;
 import programStructure.*;
 
@@ -52,6 +54,8 @@ public class RandomStrategy implements SearchStrategy {
      * @property {@link #solver} is keeping the reference to {@link RuntimeEnvironment#solver}
      */
     private final SymbolicSolver solver;
+
+    private final HashMap<Integer, ArrayList<ThreadEvent>> cachedEvents = new HashMap<>();
 
     /**
      * The following constructor initializes {@link #buggyTraceFile} with the value from
@@ -208,9 +212,45 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public Thread nextCasRequest(Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
-        // TODO: Implement this method
+        Object monitor = readExEvent.getLoc().getInstance();
+        if (RuntimeEnvironment.monitorList.containsKey(monitor)) {
+            RuntimeEnvironment.monitorRequest.put(thread, monitor);
+            if (monitorsDeadlockDetection()) {
+                System.out.println(
+                        "[Random Strategy Message] : There is a deadlock between the threads in using " +
+                                "the monitors"
+                );
+                RuntimeEnvironment.deadlockHappened = true;
+                RuntimeEnvironment.executionFinished = true;
+                return null;
+            } else {
+                System.out.println(
+                        "[Random Strategy Message] : There is no deadlock between the threads in using " +
+                                "the monitors"
+                );
+                ArrayList<ThreadEvent> threadEvents = new ArrayList<>();
+                threadEvents.add(readExEvent);
+                threadEvents.add(writeExEvent);
+                cachedEvents.put(readExEvent.getTid(), threadEvents);
+            }
+        } else {
+            RuntimeEnvironment.monitorList.put(monitor, thread);
+            RuntimeEnvironment.eventsRecord.add(readExEvent);
+            RuntimeEnvironment.eventsRecord.add(writeExEvent);
+        }
         return pickNextThread();
     }
+
+    /**
+     * @param tid
+     */
+    @Override
+    public void handleCachedCASEvent(int tid) {
+        RuntimeEnvironment.eventsRecord.add(cachedEvents.get(tid).get(0));
+        RuntimeEnvironment.eventsRecord.add(cachedEvents.get(tid).get(1));
+        cachedEvents.remove(tid);
+    }
+
 
     /**
      * Handles the next park request of a given thread.
@@ -307,6 +347,10 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void nextWriteEvent(WriteEvent writeEvent) {
         RuntimeEnvironment.eventsRecord.add(writeEvent);
+        if (writeEvent.getLoc().getInstance() instanceof JMCLock lock) {
+            RuntimeEnvironment.monitorList.remove(lock);
+            analyzeSuspendedThreadsForMonitor(lock);
+        }
     }
 
     @Override

@@ -64,34 +64,35 @@ public class OptimisticList implements Set {
     public boolean remove(AbstractInteger i) {
         try {
             int key = i.getHash();
-            FNode pred = head;
-            FNode curr = pred.next;
-            while (curr.key < key) {
-                pred = curr;
-                curr = curr.next;
-            }
-            pred.lock();
-            try {
-                curr.lock();
+            while (true) {
+                FNode pred = head;
+                FNode curr = pred.next;
+                while (curr.key < key) {
+                    pred = curr;
+                    curr = curr.next;
+                }
+                pred.lock();
                 try {
-                    if (validate(pred, curr)) {
-                        if (key == curr.key) {
-                            pred.next = curr.next;
-                            return true;
-                        } else {
-                            return false;
+                    curr.lock();
+                    try {
+                        if (validate(pred, curr)) {
+                            if (key == curr.key) {
+                                pred.next = curr.next;
+                                return true;
+                            } else {
+                                return false;
+                            }
                         }
+                    } finally {
+                        curr.unlock();
                     }
                 } finally {
-                    curr.unlock();
+                    pred.unlock();
                 }
-            } finally {
-                pred.unlock();
             }
         } catch (JMCInterruptException e) {
             return false;
         }
-        return false;
     }
 
     /**
@@ -102,29 +103,30 @@ public class OptimisticList implements Set {
     public boolean contains(AbstractInteger i) {
         try {
             int key = i.getHash();
-            FNode pred = head;
-            FNode curr = pred.next;
-            while (curr.key < key) {
-                pred = curr;
-                curr = curr.next;
-            }
-            pred.lock();
-            try {
-                curr.lock();
+            while (true) {
+                FNode pred = head;
+                FNode curr = pred.next;
+                while (curr.key < key) {
+                    pred = curr;
+                    curr = curr.next;
+                }
+                pred.lock();
                 try {
-                    if (validate(pred, curr)) {
-                        return key == curr.key;
+                    curr.lock();
+                    try {
+                        if (validate(pred, curr)) {
+                            return key == curr.key;
+                        }
+                    } finally {
+                        curr.unlock();
                     }
                 } finally {
-                    curr.unlock();
+                    pred.unlock();
                 }
-            } finally {
-                pred.unlock();
             }
         } catch (JMCInterruptException e) {
             return false;
         }
-        return false;
     }
 
     private boolean validate(FNode pred, FNode curr) {
