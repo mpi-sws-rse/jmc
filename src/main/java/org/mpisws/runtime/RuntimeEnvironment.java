@@ -1468,6 +1468,9 @@ public class RuntimeEnvironment {
      */
     public static void assertOperation(String message) {
         System.out.println("[Runtime Environment Message] : " + message);
+        if (isExecutionBlocked) {
+            System.out.println("[Runtime Environment Message] : However, the execution is blocked. So, the assertion is ignored");
+        }
         assertFlag = true;
         waitRequest(Thread.currentThread());
     }

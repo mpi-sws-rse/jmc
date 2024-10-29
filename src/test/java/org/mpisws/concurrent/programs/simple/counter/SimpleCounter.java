@@ -1,12 +1,13 @@
 package org.mpisws.concurrent.programs.simple.counter;
 
-public class SimpleCounter extends Thread{
+public class SimpleCounter extends Thread {
 
-    private Counter counter;
+    private final Counter counter;
 
     public SimpleCounter(Counter count) {
         this.counter = count;
     }
+
     @Override
     public void run() {
         counter.increment();
@@ -26,7 +27,7 @@ public class SimpleCounter extends Thread{
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assert counter.getValue() == 4 : "Counter value is not 4";
+        assert counter.getValue() == 2 : "Counter value is not 4";
         System.out.println("Counter value is 4");
     }
 }

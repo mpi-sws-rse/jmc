@@ -313,6 +313,10 @@ public interface SearchStrategy {
                 );
                 printExecutionTrace();
                 saveBuggyExecutionTrace();
+                System.out.println("******************************************************************************************");
+                System.out.println("[*** Resource Usage ***]");
+                RuntimeEnvironment.printFinalMessage();
+                System.out.println("******************************************************************************************");
                 System.exit(0);
                 return null;
             }

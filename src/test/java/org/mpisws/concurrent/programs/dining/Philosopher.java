@@ -1,13 +1,14 @@
 package org.mpisws.concurrent.programs.dining;
 
 import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.ReentrantLock;
 
 public class Philosopher extends Thread {
     private final int id;
-    private final Object leftStick;
-    private final Object rightStick;
+    private final ReentrantLock leftStick;
+    private final ReentrantLock rightStick;
 
-    public Philosopher(int id, Object leftFork, Object rightFork) {
+    public Philosopher(int id, ReentrantLock leftFork, ReentrantLock rightFork) {
         this.id = id;
         this.leftStick = leftFork;
         this.rightStick = rightFork;

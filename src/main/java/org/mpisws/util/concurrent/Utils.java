@@ -36,4 +36,11 @@ public class Utils {
     public static void assertion(SymbolicOperation op, String message) {
         RuntimeEnvironment.symAssertOperation(message, op, Thread.currentThread());
     }
+
+    public static void assertion(boolean b, String message) throws JMCInterruptException {
+        if (!b) {
+            RuntimeEnvironment.assertOperation(message);
+            throw new JMCInterruptException();
+        }
+    }
 }

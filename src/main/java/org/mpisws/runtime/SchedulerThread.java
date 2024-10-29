@@ -153,18 +153,20 @@ public class SchedulerThread extends Thread {
      * that the SchedulerThread requested to finish, and then prints the executed events.
      */
     private void handleAssertFail() {
-        RuntimeEnvironment.executionFinished = true;
-        // TODO() : Create FailureEvent and replace the following line with the nextFailureEvent method
-        searchStrategy.nextFailureEvent(RuntimeEnvironment.threadWaitReq);
-        searchStrategy.printExecutionTrace();
-        System.out.println("******************************************************************************************");
-        System.out.println("[*** Assertion Fail ***]");
-        System.out.println("[*** Number of execution iteration : " + RuntimeEnvironment.numOfExecutions + " ***]");
-        System.out.println("[*** The SchedulerThread requested to FINISH***]");
-        RuntimeEnvironment.printFinalMessage();
-        System.out.println("******************************************************************************************");
-        searchStrategy.saveBuggyExecutionTrace();
-        System.exit(0);
+        if (!RuntimeEnvironment.isExecutionBlocked) {
+            RuntimeEnvironment.executionFinished = true;
+            // TODO() : Create FailureEvent and replace the following line with the nextFailureEvent method
+            searchStrategy.nextFailureEvent(RuntimeEnvironment.threadWaitReq);
+            searchStrategy.printExecutionTrace();
+            System.out.println("******************************************************************************************");
+            System.out.println("[*** Assertion Fail ***]");
+            System.out.println("[*** Number of execution iteration : " + RuntimeEnvironment.numOfExecutions + " ***]");
+            System.out.println("[*** The SchedulerThread requested to FINISH***]");
+            RuntimeEnvironment.printFinalMessage();
+            System.out.println("******************************************************************************************");
+            searchStrategy.saveBuggyExecutionTrace();
+            System.exit(0);
+        }
     }
 
     private void printResourceUsage() {
@@ -210,7 +212,7 @@ public class SchedulerThread extends Thread {
         System.out.println("******************************************************************************************");
         System.out.println("[*** The SchedulerThread requested to FINISH***]");
         System.out.println("******************************************************************************************");
-        printResourceUsage();
+        //printResourceUsage();
     }
 
     /**
@@ -220,8 +222,8 @@ public class SchedulerThread extends Thread {
      */
     private void notifyMainThread() {
         if (RuntimeEnvironment.deadlockHappened) {
-            //searchStrategy.printExecutionTrace();
-            //printResourceUsage();
+            searchStrategy.printExecutionTrace();
+            printResourceUsage();
             searchStrategy.saveBuggyExecutionTrace();
             System.exit(0);
         }

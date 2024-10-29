@@ -8,6 +8,7 @@ import executionGraph.ExecutionGraph;
 import kotlin.Pair;
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.util.concurrent.JMCLock;
 import programStructure.*;
 
 /**
@@ -389,6 +390,10 @@ public class TrustStrategy extends DPORStrategy {
             passEventToDPOR(writeEvent);
             updateCurrentGraph(writeEvent);
         }
+        if (writeEvent.getLoc().getInstance() instanceof JMCLock lock) {
+            RuntimeEnvironment.monitorList.remove(lock);
+            analyzeSuspendedThreadsForMonitor(lock);
+        }
     }
 
     /**
@@ -400,6 +405,24 @@ public class TrustStrategy extends DPORStrategy {
     public Thread nextCasRequest(Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
         RuntimeEnvironment.eventsRecord.add(readExEvent);
         RuntimeEnvironment.eventsRecord.add(writeExEvent);
+        Object monitor = readExEvent.getLoc().getInstance();
+
+        if (RuntimeEnvironment.monitorList.containsKey(monitor)) {
+            RuntimeEnvironment.monitorRequest.put(thread, monitor);
+            if (monitorsDeadlockDetection()) {
+                System.out.println(
+                        "[Trust Strategy Message] : There is a deadlock between the threads in using " +
+                                "the monitors"
+                );
+                RuntimeEnvironment.deadlockHappened = true;
+                RuntimeEnvironment.executionFinished = true;
+                nextDeadlockEvent(thread);
+                return null;
+            }
+        } else {
+            RuntimeEnvironment.monitorList.put(monitor, thread);
+        }
+
         if (guidingActivate) {
             ReadExEvent readEx = (ReadExEvent) guidingEvent;
             readExEvent.setIntValue(readEx.getIntValue());

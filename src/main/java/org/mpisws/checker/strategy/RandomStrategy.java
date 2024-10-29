@@ -222,6 +222,7 @@ public class RandomStrategy implements SearchStrategy {
                 );
                 RuntimeEnvironment.deadlockHappened = true;
                 RuntimeEnvironment.executionFinished = true;
+                nextDeadlockEvent(thread);
                 return null;
             } else {
                 System.out.println(
@@ -235,9 +236,7 @@ public class RandomStrategy implements SearchStrategy {
             }
         } else {
             RuntimeEnvironment.monitorList.put(monitor, thread);
-            if (readExEvent.getIntValue() == writeExEvent.getConditionValue()) {
-                writeExEvent.setOperationSuccess(true);
-            }
+            writeExEvent.setOperationSuccess(true);
             RuntimeEnvironment.eventsRecord.add(readExEvent);
             RuntimeEnvironment.eventsRecord.add(writeExEvent);
         }
@@ -251,6 +250,8 @@ public class RandomStrategy implements SearchStrategy {
     public void handleCachedCASEvent(int tid) {
         RuntimeEnvironment.eventsRecord.add(cachedEvents.get(tid).get(0));
         RuntimeEnvironment.eventsRecord.add(cachedEvents.get(tid).get(1));
+        WriteExEvent writeExEvent = (WriteExEvent) cachedEvents.get(tid).get(1);
+        writeExEvent.setOperationSuccess(true);
         cachedEvents.remove(tid);
     }
 

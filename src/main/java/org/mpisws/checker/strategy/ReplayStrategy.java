@@ -438,6 +438,17 @@ public class ReplayStrategy implements SearchStrategy {
             handleNextGuidedUnblockedRecvEvent(guidedUnblockedRecvEvent);
             return pickNextThread();
         }
+        if (guidingEvent.getType() == EventType.DEADLOCK) {
+            nextDeadlockEvent(RuntimeEnvironment.threadObjectMap.get((long) guidingThread));
+            printExecutionTrace();
+            saveBuggyExecutionTrace();
+            System.out.println("******************************************************************************************");
+            System.out.println("[*** Resource Usage ***]");
+            RuntimeEnvironment.printFinalMessage();
+            System.out.println("******************************************************************************************");
+            System.exit(0);
+        }
+
         System.out.println("[Replay Strategy Message] : Guiding event is " + guidingEvent);
         System.out.println("[Replay Strategy Message] : Thread-" + guidingThread + " is selected to run");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);

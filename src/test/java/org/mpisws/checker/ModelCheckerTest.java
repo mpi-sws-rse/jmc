@@ -59,6 +59,8 @@ class ModelCheckerTest {
         );
         System.out.println("BuggyCounter Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.verbose = true;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "BuggyCounter Random Strategy Finished");
@@ -73,7 +75,10 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/wrong/counter/"
         );
         System.out.println("BuggyCounter Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.strategyType = StrategyType.TRUST; // The StrategyType.OP_TRUST is not supported for this test
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "BuggyCounter Trust Strategy Finished");
@@ -89,6 +94,7 @@ class ModelCheckerTest {
         );
         System.out.println("BuggyCounter ReplayStrategy Started");
         checker.configuration.strategyType = StrategyType.REPLAY;
+        checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "BuggyCounter ReplayStrategy Finished");
@@ -108,6 +114,8 @@ class ModelCheckerTest {
         );
         System.out.println("InconsistentCounter Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.verbose = true;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "InconsistentCounter Random Strategy Finished");
@@ -123,7 +131,7 @@ class ModelCheckerTest {
         );
         System.out.println("InconsistentCounter Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
@@ -160,6 +168,7 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/complex/counter/"
         );
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         System.out.println("ComplexCounter Random Strategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -174,7 +183,10 @@ class ModelCheckerTest {
                 "main",
                 "src/test/java/org/mpisws/concurrent/programs/complex/counter/"
         );
-        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
         System.out.println("ComplexCounter Trust Strategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -194,6 +206,9 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/correct/counter/"
         );
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
         System.out.println("CorrectCounter Random Strategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -219,42 +234,7 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                      SYNC COUNTERS
-     */
-
-    @Test
-    @DisplayName("A correct concurrent counter using synchronized methods - Random")
-    void randomTestSyncCounter() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.sync.counter",
-                "SyncCounter",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/sync/counter/"
-        );
-        checker.configuration.strategyType = StrategyType.RANDOM;
-        System.out.println("SyncCounter Random Strategy Started");
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "SyncCounter Random Strategy Finished");
-    }
-
-    @Test
-    @DisplayName("A correct concurrent counter using synchronized methods - Trust")
-    void trustTestSyncCounter() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.sync.counter",
-                "SyncCounter",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/sync/counter/"
-        );
-        checker.configuration.strategyType = StrategyType.TRUST;
-        System.out.println("SyncCounter Trust Strategy Started");
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "SyncCounter Trust Strategy Finished");
-    }
-
-    /*
      *                             SIMPLE INCONSISTENT COUNTERS WITH THREADS SPAWNING
-     * To see the beauty of our implemented model checker, run the following test with TrustStrategy.
      */
 
     @Test
@@ -267,6 +247,8 @@ class ModelCheckerTest {
         );
         System.out.println("SimpleCounter Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.verbose = true;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "SimpleCounter Random Strategy Finished");
@@ -281,7 +263,10 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/simple/counter/"
         );
         System.out.println("SimpleCounter Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
@@ -298,6 +283,7 @@ class ModelCheckerTest {
         );
         System.out.println("SimpleCounter Replay Strategy Started");
         checker.configuration.strategyType = StrategyType.REPLAY;
+        checker.configuration.verbose = true;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "SimpleCounter Replay Strategy Finished");
@@ -317,6 +303,7 @@ class ModelCheckerTest {
         );
         System.out.println("DiningPhilosophers Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "DiningPhilosophers Random Strategy Finished");
@@ -331,8 +318,10 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/dining/"
         );
         System.out.println("DiningPhilosophers Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.TRUST;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.strategyType = StrategyType.TRUST; // The StrategyType.OP_TRUST is not supported for this test
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.executionGraphsPath = "src/main/resources/Visualized_Graphs/";
@@ -352,55 +341,6 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "DiningPhilosophers Replay Strategy Finished");
-    }
-
-    /*
-     *                                  RANDOM COUNTER
-     */
-
-    @Test
-    @DisplayName("Random Counter")
-    void randomTestRandomCounter() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.random.counter",
-                "RandomCounter",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/random/counter/"
-        );
-        System.out.println("RandomCounter Random Strategy Started");
-        checker.configuration.strategyType = StrategyType.RANDOM;
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "RandomCounter Random Strategy Finished");
-    }
-
-    @Test
-    @DisplayName("Random Counter")
-    void trustTestRandomCounter() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.random.counter",
-                "RandomCounter",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/random/counter/"
-        );
-        System.out.println("RandomCounter Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.TRUST;
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "RandomCounter Trust Strategy Finished");
-    }
-
-    @Test
-    @DisplayName("Random Counter")
-    void replayTestRandomCounter() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.random.counter",
-                "RandomCounter",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/random/counter/"
-        );
-        System.out.println("RandomCounter Replay Strategy Started");
-        checker.configuration.strategyType = StrategyType.REPLAY;
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "RandomCounter Replay Strategy Finished");
     }
 
     /*
@@ -433,9 +373,9 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/symbolic/counter/"
         );
         System.out.println("SymbolicCounter Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
-        checker.configuration.verbose = true;
+        checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
@@ -456,30 +396,6 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "SymbolicCounter Replay Strategy Finished");
-    }
-
-    /*
-     *                                 SYMBOLIC GCD
-     */
-
-    @Test
-    @DisplayName("Symbolic GCD")
-    void trustTestSymbolicGCD() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.symbolic.gcd",
-                "ParallelGCD",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/symbolic/gcd/"
-        );
-        System.out.println("Symbolic GCD Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
-        checker.configuration.verbose = true;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "Symbolic GCD Trust Strategy Finished");
     }
 
     /*
@@ -624,30 +540,6 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Nondet Loop Variant Trust Strategy Finished");
-    }
-
-    /*
-     *                                  CONCRETE GCD
-     */
-
-    @Test
-    @DisplayName("Concrete GCD")
-    void trustTestConcreteGCD() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.concrete.gcd",
-                "ParallelGCD",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/concrete/gcd/"
-        );
-        System.out.println("Concrete GCD Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
-        checker.configuration.verbose = true;
-        //checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
-        //checker.configuration.solverType = SMTSolverTypes.PRINCESS;
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "Symbolic GCD Trust Strategy Finished");
     }
 
     /*
@@ -1038,6 +930,8 @@ class ModelCheckerTest {
         );
         System.out.println("ParkingCounter Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "ParkingCounter Random Strategy Finished");
@@ -1052,7 +946,10 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/parking/counter/"
         );
         System.out.println("ParkingCounter Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.strategyType = StrategyType.TRUST; // The StrategyType.OP_TRUST is not supported for this test
+        checker.configuration.verbose = false;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "ParkingCounter Trust Strategy Finished");
@@ -1112,6 +1009,25 @@ class ModelCheckerTest {
         assertTrue(checker.check(t), "SimpleMessage Random Strategy Finished");
     }
 
+    @Test
+    @DisplayName("SimpleMessage")
+    void mustTestSimpleMessage() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.simple.message",
+                "SimpleMessage",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/simple/message/"
+        );
+        System.out.println("SimpleMessage Must Strategy Started");
+        checker.configuration.strategyType = StrategyType.MUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        checker.configuration.programType = ProgramType.MESSAGE_PASS;
+        assertTrue(checker.check(t), "SimpleMessage Must Strategy Finished");
+    }
+
     /*
      *                                    TAGGED MESSAGE
      */
@@ -1130,6 +1046,25 @@ class ModelCheckerTest {
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.programType = ProgramType.MESSAGE_PASS;
         assertTrue(checker.check(t), "TaggedMessage Random Strategy Finished");
+    }
+
+    @Test
+    @DisplayName("TaggedMessage")
+    void mustTestTaggedMessage() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.tagged.message",
+                "TaggedMessage",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/tagged/message/"
+        );
+        System.out.println("TaggedMessage Must Strategy Started");
+        checker.configuration.strategyType = StrategyType.MUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        checker.configuration.programType = ProgramType.MESSAGE_PASS;
+        assertTrue(checker.check(t), "TaggedMessage Must Strategy Finished");
     }
 
     /*
@@ -1152,6 +1087,25 @@ class ModelCheckerTest {
         assertTrue(checker.check(t), "SyncMessage Random Strategy Finished");
     }
 
+    @Test
+    @DisplayName("SyncMessage")
+    void mustTestSyncMessage() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.sync.message",
+                "SyncMessage",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/sync/message/"
+        );
+        System.out.println("SyncMessage Must Strategy Started");
+        checker.configuration.strategyType = StrategyType.MUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        checker.configuration.programType = ProgramType.MESSAGE_PASS;
+        assertTrue(checker.check(t), "SyncMessage Must Strategy Finished");
+    }
+
     /*
      *                                    MESSAGE COUNTER
      */
@@ -1165,26 +1119,11 @@ class ModelCheckerTest {
         );
         System.out.println("MessageCounter Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.programType = ProgramType.MESSAGE_PASS;
         assertTrue(checker.check(t), "MessageCounter Random Strategy Finished");
-    }
-
-    @Test
-    @DisplayName("MessageCounter")
-    void replayTestMessageCounter() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.message.counter",
-                "MessageCounter",
-                "main",
-                "src/test/java/org/mpisws/concurrent/programs/message/counter/"
-        );
-        System.out.println("MessageCounter Replay Strategy Started");
-        checker.configuration.strategyType = StrategyType.REPLAY;
-        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
-        checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        checker.configuration.programType = ProgramType.MESSAGE_PASS;
-        assertTrue(checker.check(t), "MessageCounter Replay Strategy Finished");
     }
 
     @Test
@@ -1197,15 +1136,112 @@ class ModelCheckerTest {
         );
         System.out.println("MessageCounter Must Strategy Started");
         checker.configuration.strategyType = StrategyType.MUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         checker.configuration.programType = ProgramType.MESSAGE_PASS;
         assertTrue(checker.check(t), "MessageCounter Must Strategy Finished");
     }
 
-    /*
-     *                                    DISABLED TESTS - DO NOT RUN
+    /**********************************************************************************
+     /*
+     *                             DISABLED TESTS - DO NOT RUN
+     *
+     **********************************************************************************
      */
+
+    /*
+     *                                  RANDOM COUNTER
+     */
+    @Test
+    @Disabled("This test is disabled due to using symbolic assignment")
+    @DisplayName("Random Counter")
+    void randomTestRandomCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.random.counter",
+                "RandomCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/random/counter/"
+        );
+        System.out.println("RandomCounter Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "RandomCounter Random Strategy Finished");
+    }
+
+    @Test
+    @Disabled("This test is disabled due to using symbolic assignment")
+    @DisplayName("Random Counter")
+    void trustTestRandomCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.random.counter",
+                "RandomCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/random/counter/"
+        );
+        System.out.println("RandomCounter Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "RandomCounter Trust Strategy Finished");
+    }
+
+    @Test
+    @Disabled("This test is disabled due to using symbolic assignment")
+    @DisplayName("Random Counter")
+    void replayTestRandomCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.random.counter",
+                "RandomCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/random/counter/"
+        );
+        System.out.println("RandomCounter Replay Strategy Started");
+        checker.configuration.strategyType = StrategyType.REPLAY;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "RandomCounter Replay Strategy Finished");
+    }
+
+    /*
+     *                                      SYNC COUNTERS
+     */
+
+    @Test
+    @Disabled("This test is disabled due to using synchronized methods")
+    @DisplayName("A correct concurrent counter using synchronized methods - Random")
+    void randomTestSyncCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.sync.counter",
+                "SyncCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/sync/counter/"
+        );
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        System.out.println("SyncCounter Random Strategy Started");
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "SyncCounter Random Strategy Finished");
+    }
+
+    @Test
+    @Disabled("This test is disabled due to using synchronized methods")
+    @DisplayName("A correct concurrent counter using synchronized methods - Trust")
+    void trustTestSyncCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.sync.counter",
+                "SyncCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/sync/counter/"
+        );
+        checker.configuration.strategyType = StrategyType.TRUST;
+        System.out.println("SyncCounter Trust Strategy Started");
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "SyncCounter Trust Strategy Finished");
+    }
 
     @Disabled("This test is disabled due to using lambda functions")
     @Test
@@ -1265,5 +1301,55 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "StaticCounter Trust Strategy Finished");
+    }
+
+    /*
+     *                                 SYMBOLIC GCD
+     */
+
+    @Test
+    @Disabled("This test is disabled due to using symbolic while loop")
+    @DisplayName("Symbolic GCD")
+    void trustTestSymbolicGCD() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.symbolic.gcd",
+                "ParallelGCD",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/symbolic/gcd/"
+        );
+        System.out.println("Symbolic GCD Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = true;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Symbolic GCD Trust Strategy Finished");
+    }
+
+    /*
+     *                                  CONCRETE GCD
+     */
+
+    @Test
+    @Disabled("This test is disabled due to using symbolic while loop")
+    @DisplayName("Concrete GCD")
+    void trustTestConcreteGCD() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.concrete.gcd",
+                "ParallelGCD",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/concrete/gcd/"
+        );
+        System.out.println("Concrete GCD Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Symbolic GCD Trust Strategy Finished");
     }
 }
