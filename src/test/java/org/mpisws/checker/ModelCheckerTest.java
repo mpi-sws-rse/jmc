@@ -745,6 +745,98 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  NONDET OPTIMIST LIST I
+     */
+    @Test
+    @DisplayName("NonDet Optimist List I")
+    void trustTestNonDetOptimistListI() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.lists",
+                "Client5",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/lists/"
+        );
+        System.out.println("NonDet Optimist List I Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Optimist List I Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET OPTIMIST LIST II
+     */
+    @Test
+    @DisplayName("NonDet Optimist List II")
+    void trustTestNonDetOptimistListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.lists",
+                "Client6",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/lists/"
+        );
+        System.out.println("NonDet Optimist List II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Optimist List II Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET LAZY LIST I
+     */
+    @Test
+    @DisplayName("NonDet Lazy List I")
+    void trustTestNonDetLazyListI() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.lists",
+                "Client7",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/lists/"
+        );
+        System.out.println("NonDet Lazy List I Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Lazy List I Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET LAZY LIST II
+     */
+    @Test
+    @DisplayName("NonDet Lazy List II")
+    void trustTestNonDetLazyListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.lists",
+                "Client8",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/lists/"
+        );
+        System.out.println("NonDet Lazy List II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Lazy List II Trust Strategy Finished");
+    }
+
+    /*
      *                                  DET COARSE LIST I
      */
 
@@ -773,7 +865,7 @@ class ModelCheckerTest {
      */
 
     @Test
-    @DisplayName("DET Coarse List II")
+    @DisplayName("Det Coarse List II")
     void trustTestDetCoarseListII() {
         var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
                 "Client2",
@@ -842,7 +934,7 @@ class ModelCheckerTest {
      *                                  DET OPTIMIST LIST I
      */
     @Test
-    @DisplayName("DET Optimist List I")
+    @DisplayName("Det Optimist List I")
     void trustTestDetOptimistListI() {
         var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
                 "Client5",
@@ -888,14 +980,14 @@ class ModelCheckerTest {
      *                                  DET LAZY LIST I
      */
     @Test
-    @DisplayName("DET Lazy List I")
+    @DisplayName("Det Lazy List I")
     void trustTestDetLazyListI() {
         var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
                 "Client7",
                 "main",
-                "src/test/java/org/mpisws/concurrent/programs/nondet/lists/"
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
         );
-        System.out.println("Lazy List I Trust Strategy Started");
+        System.out.println("Det Lazy List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
@@ -904,7 +996,7 @@ class ModelCheckerTest {
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "Lazy List I Trust Strategy Finished");
+        assertTrue(checker.check(t), "Det Lazy List I Trust Strategy Finished");
     }
 
     /*

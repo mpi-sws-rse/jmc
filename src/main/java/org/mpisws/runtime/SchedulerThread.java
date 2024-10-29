@@ -156,7 +156,7 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.executionFinished = true;
         // TODO() : Create FailureEvent and replace the following line with the nextFailureEvent method
         searchStrategy.nextFailureEvent(RuntimeEnvironment.threadWaitReq);
-        //searchStrategy.printExecutionTrace();
+        searchStrategy.printExecutionTrace();
         System.out.println("******************************************************************************************");
         System.out.println("[*** Assertion Fail ***]");
         System.out.println("[*** Number of execution iteration : " + RuntimeEnvironment.numOfExecutions + " ***]");

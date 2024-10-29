@@ -1,21 +1,21 @@
-package org.mpisws.concurrent.programs.nondet.lists.list.optimisitc;
+package org.mpisws.concurrent.programs.nondet.lists.list.lazy;
 
 import org.mpisws.concurrent.programs.nondet.lists.list.Element;
 import org.mpisws.concurrent.programs.nondet.lists.list.Set;
-import org.mpisws.concurrent.programs.nondet.lists.list.node.FNode;
+import org.mpisws.concurrent.programs.nondet.lists.list.node.LNode;
 import org.mpisws.symbolic.AbstractInteger;
 import org.mpisws.symbolic.ArithmeticFormula;
 import org.mpisws.symbolic.SymbolicFormula;
 import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
-public class OptimisticList implements Set {
+public class LazyList implements Set {
 
-    FNode head;
+    LNode head;
 
-    public OptimisticList() {
-        head = new FNode(Integer.MIN_VALUE);
-        head.next = new FNode(Integer.MAX_VALUE);
+    public LazyList() {
+        head = new LNode(Integer.MIN_VALUE);
+        head.next = new LNode(Integer.MAX_VALUE);
     }
 
     /**
@@ -28,8 +28,8 @@ public class OptimisticList implements Set {
         try {
             AbstractInteger key = i.key;
             while (true) {
-                FNode pred = head;
-                FNode curr = pred.next;
+                LNode pred = head;
+                LNode curr = pred.next;
                 ArithmeticFormula formula = new ArithmeticFormula();
                 SymbolicOperation op1 = formula.lt(curr.getKey(), key);
                 SymbolicFormula condition = new SymbolicFormula();
@@ -47,7 +47,7 @@ public class OptimisticList implements Set {
                             if (condition.evaluate(op2)) {
                                 return false;
                             } else {
-                                FNode node = new FNode(i);
+                                LNode node = new LNode(i);
                                 node.next = curr;
                                 pred.next = node;
                                 return true;
@@ -75,8 +75,8 @@ public class OptimisticList implements Set {
         try {
             AbstractInteger key = i.key;
             while (true) {
-                FNode pred = head;
-                FNode curr = pred.next;
+                LNode pred = head;
+                LNode curr = pred.next;
                 ArithmeticFormula formula = new ArithmeticFormula();
                 SymbolicOperation op1 = formula.lt(curr.getKey(), key);
                 SymbolicFormula condition = new SymbolicFormula();
@@ -92,6 +92,7 @@ public class OptimisticList implements Set {
                         if (validate(pred, curr)) {
                             SymbolicOperation op2 = formula.eq(key, curr.getKey());
                             if (condition.evaluate(op2)) {
+                                curr.marked = true;
                                 pred.next = curr.next;
                                 return true;
                             } else {
@@ -117,51 +118,20 @@ public class OptimisticList implements Set {
      */
     @Override
     public boolean contains(Element i) throws JMCInterruptException {
-        try {
-            AbstractInteger key = i.key;
-            while (true) {
-                FNode pred = head;
-                FNode curr = pred.next;
-                ArithmeticFormula formula = new ArithmeticFormula();
-                SymbolicOperation op1 = formula.lt(curr.getKey(), key);
-                SymbolicFormula condition = new SymbolicFormula();
-                while (condition.evaluate(op1)) {
-                    pred = curr;
-                    curr = curr.next;
-                    op1 = formula.lt(curr.getKey(), key);
-                }
-                pred.lock();
-                try {
-                    curr.lock();
-                    try {
-                        if (validate(pred, curr)) {
-                            SymbolicOperation op2 = formula.eq(key, curr.getKey());
-                            return condition.evaluate(op2);
-                        }
-                    } finally {
-                        curr.unlock();
-                    }
-                } finally {
-                    pred.unlock();
-                }
-            }
-        } catch (JMCInterruptException e) {
-            return false;
-        }
-    }
-
-    private boolean validate(FNode pred, FNode curr) {
-        FNode node = head;
+        AbstractInteger key = i.key;
+        LNode curr = head;
         ArithmeticFormula formula = new ArithmeticFormula();
-        SymbolicOperation op1 = formula.leq(node.getKey(), pred.getKey());
+        SymbolicOperation op1 = formula.lt(curr.getKey(), key);
         SymbolicFormula condition = new SymbolicFormula();
         while (condition.evaluate(op1)) {
-            if (node == pred) {
-                return pred.next == curr;
-            }
-            node = node.next;
-            op1 = formula.leq(node.getKey(), pred.getKey());
+            curr = curr.next;
+            op1 = formula.lt(curr.getKey(), key);
         }
-        return false;
+        SymbolicOperation op2 = formula.eq(key, curr.getKey());
+        return condition.evaluate(op2) && !curr.marked;
+    }
+
+    private boolean validate(LNode pred, LNode curr) {
+        return !pred.marked && !curr.marked && pred.next == curr;
     }
 }

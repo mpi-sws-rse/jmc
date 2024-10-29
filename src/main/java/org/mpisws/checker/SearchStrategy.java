@@ -260,10 +260,12 @@ public interface SearchStrategy {
      * Prints the current execution trace.
      */
     default void printExecutionTrace() {
-        System.out.println("[Search Strategy Message] : Execution trace:");
-        for (Event event : RuntimeEnvironment.eventsRecord) {
-            int index = RuntimeEnvironment.eventsRecord.indexOf(event) + 1;
-            System.out.println("[Search Strategy Message] : " + index + "." + event);
+        if (RuntimeEnvironment.verbose) {
+            System.out.println("[Search Strategy Message] : Execution trace:");
+            for (Event event : RuntimeEnvironment.eventsRecord) {
+                int index = RuntimeEnvironment.eventsRecord.indexOf(event) + 1;
+                System.out.println("[Search Strategy Message] : " + index + "." + event);
+            }
         }
     }
 

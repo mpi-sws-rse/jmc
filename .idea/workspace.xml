@@ -9,36 +9,34 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client2.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client3.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client4.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/DeletionThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/fine/FineList.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/node/FNode.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/optimisitc/OptimisticList.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client2.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client3.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client4.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/DeletionThread.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/fine/FineList.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/node/FNode.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/optimisitc/OptimisticList.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client5.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client6.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client7.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client8.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/lazy/LazyList.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/node/LNode.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/optimisitc/OptimisticList.class" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client5.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client6.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client7.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client8.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/lazy/LazyList.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/node/LNode.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/optimisitc/OptimisticList.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/SearchStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/SearchStrategy.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/SchedulerThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/SchedulerThread.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/correct/counter/CorrectCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/correct/counter/CorrectCounter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client1.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/coarse/CoarseList.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/coarse/CoarseList.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/optimisitc/OptimisticList.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/optimisitc/OptimisticList.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/SearchStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/SearchStrategy.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/RandomStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/SchedulerThread.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/SchedulerThread.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/correct/counter/CorrectCounter.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/correct/counter/CorrectCounter.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/lists/Client5.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/lists/Client5.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/lists/list/optimistic/OptimisticList.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/lists/list/optimistic/OptimisticList.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client1.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/Client1.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/coarse/CoarseList.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/coarse/CoarseList.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/optimisitc/OptimisticList.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/optimisitc/OptimisticList.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -195,6 +193,7 @@
     "Gradle.ModelCheckerTest.trustTestDetLoop.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetLoopVariant.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetOptimistListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetOptimistListII.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDiningPhilosophers.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestFineListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestFineListII.executor": "Run",
@@ -205,6 +204,10 @@
     "Gradle.ModelCheckerTest.trustTestNonDetCoarseListII.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetFineListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetFineListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetLazyListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetLazyListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetOptimistListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetOptimistListII.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNondetArray.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNondetLoop.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNondetLoopVariant.executor": "Run",
@@ -275,17 +278,17 @@
       <recent name="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/example/concurrent/programs/kotlin/counter" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="org.mpisws.concurrent.programs.nondet.lists" />
       <recent name="org.mpisws.concurrent.programs.det.lists" />
       <recent name="org.mpisws.concurrent.programs.lists.list.nod" />
       <recent name="org.mpisws.concurrent.programs.lists" />
       <recent name="org.mpisws.concurrent.programs.lists.list" />
-      <recent name="org.mpisws.concurrent.programs.lists.list.coarse" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.trustTestDetOptimistListII">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.trustTestNonDetLazyListII">
     <configuration name="ModelCheckerTest.mustTestMessageCounter" type="GradleRunConfiguration" factoryName="Gradle">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -334,7 +337,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.randomTestCorrectCounter" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -347,7 +350,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.randomTestCorrectCounter&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -646,7 +649,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestDetOptimistListI" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestNonDetLazyListI" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -659,7 +662,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetOptimistListI&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetLazyListI&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -670,7 +673,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestDetOptimistListII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestNonDetLazyListII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -683,7 +686,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetOptimistListII&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetLazyListII&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -694,7 +697,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestNonDetFineListI" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestNonDetOptimistListI" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -707,7 +710,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetFineListI&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetOptimistListI&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -718,7 +721,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestNonDetFineListII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestNonDetOptimistListII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -731,7 +734,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetFineListII&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetOptimistListII&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -924,19 +927,19 @@
       <item itemvalue="Gradle.ModelCheckerTest.trustTestParkingCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestStaticCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestSyncCounter" />
-      <item itemvalue="Gradle.ModelCheckerTest.randomTestCorrectCounter" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestDetOptimistListI" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestDetOptimistListII" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetFineListII" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetFineListI" />
+      <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListI" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListII" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetOptimistListI" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetOptimistListII" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestDetOptimistListII" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestDetOptimistListI" />
-        <item itemvalue="Gradle.ModelCheckerTest.randomTestCorrectCounter" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetFineListII" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetFineListI" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListII" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListI" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetOptimistListII" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetOptimistListI" />
+        <item itemvalue="Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks" />
       </list>
     </recent_temporary>
   </component>
@@ -1171,7 +1174,7 @@
       <workItem from="1730139817040" duration="6315000" />
       <workItem from="1730149814514" duration="557000" />
       <workItem from="1730150421876" duration="606000" />
-      <workItem from="1730151035796" duration="2086000" />
+      <workItem from="1730151035796" duration="8396000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />

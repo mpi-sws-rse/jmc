@@ -235,6 +235,9 @@ public class RandomStrategy implements SearchStrategy {
             }
         } else {
             RuntimeEnvironment.monitorList.put(monitor, thread);
+            if (readExEvent.getIntValue() == writeExEvent.getConditionValue()) {
+                writeExEvent.setOperationSuccess(true);
+            }
             RuntimeEnvironment.eventsRecord.add(readExEvent);
             RuntimeEnvironment.eventsRecord.add(writeExEvent);
         }
