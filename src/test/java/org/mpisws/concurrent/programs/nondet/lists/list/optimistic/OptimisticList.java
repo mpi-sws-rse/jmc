@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.nondet.lists.list.optimisitc;
+package org.mpisws.concurrent.programs.nondet.lists.list.optimistic;
 
 import org.mpisws.concurrent.programs.nondet.lists.list.Element;
 import org.mpisws.concurrent.programs.nondet.lists.list.Set;

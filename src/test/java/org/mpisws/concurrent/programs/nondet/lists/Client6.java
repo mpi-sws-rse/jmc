@@ -2,8 +2,7 @@ package org.mpisws.concurrent.programs.nondet.lists;
 
 import org.mpisws.concurrent.programs.nondet.lists.list.Element;
 import org.mpisws.concurrent.programs.nondet.lists.list.Set;
-import org.mpisws.concurrent.programs.nondet.lists.list.fine.FineList;
-import org.mpisws.concurrent.programs.nondet.lists.list.optimisitc.OptimisticList;
+import org.mpisws.concurrent.programs.nondet.lists.list.optimistic.OptimisticList;
 import org.mpisws.symbolic.*;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.Utils;
