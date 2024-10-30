@@ -1323,7 +1323,7 @@ public class RuntimeEnvironment {
         System.out.println(
                 "[Runtime Environment Message] : " + thread.getName() + " requested to acquire the " +
                         lock.toString() + " lock");
-        compareAndSetOperation(lock, thread);
+        casWithAssume(lock, thread);
     }
 
     public static void acquiredLock(Object lock, Thread thread) {
@@ -1333,7 +1333,7 @@ public class RuntimeEnvironment {
         lockAvailMap.get(lock).acquire();
     }
 
-    public static void compareAndSetOperation(Object lock, Thread thread) throws JMCInterruptException {
+    public static void casWithAssume(Object lock, Thread thread) throws JMCInterruptException {
         Location location = createLocation(lockAvailMap.get(lock), "org/mpisws/util/concurrent/JMCLock", "permits", "I");
         ReadExEvent readExEvent = createReadExEvent(thread, location);
         exclusiveReadEventReq = readExEvent;
@@ -1341,9 +1341,23 @@ public class RuntimeEnvironment {
         exclusiveWriteEventReq = writeExEvent;
         waitRequest(thread);
         if (strategyType == StrategyType.OPT_TRUST) {
-            Utils.assume(readExEvent.getIntValue() == writeExEvent.getConditionValue());
+            Utils.assume(readExEvent.getInternalValue() == writeExEvent.getConditionValue());
         } else {
             Utils.assume(writeExEvent.getOperationSuccess());
+        }
+    }
+
+    public static boolean compareAndSetOperation(Object currentValue, Object expectedValue, Object newValue, Object obj, Thread thread, String owner, String name, String descriptor) {
+        Location location = createLocation(obj, owner, name, descriptor);
+        ReadExEvent readExEvent = createReadExEvent(thread, location, currentValue);
+        exclusiveReadEventReq = readExEvent;
+        WriteExEvent writeExEvent = createWriteExEvent(thread, location, newValue, expectedValue);
+        exclusiveWriteEventReq = writeExEvent;
+        waitRequest(thread);
+        if (strategyType == StrategyType.OPT_TRUST) {
+            return readExEvent.getInternalValue() == writeExEvent.getConditionValue();
+        } else {
+            return writeExEvent.getOperationSuccess();
         }
     }
 
@@ -1875,7 +1889,12 @@ public class RuntimeEnvironment {
         return new ReadExEvent(EventType.READ_EX, threadIdMap.get(thread.getId()).intValue(), serialNumber, 0, null, location);
     }
 
-    public static WriteExEvent createWriteExEvent(Thread thread, Location location, int value, int condition) {
+    public static ReadExEvent createReadExEvent(Thread thread, Location location, Object internalValue) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new ReadExEvent(EventType.READ_EX, threadIdMap.get(thread.getId()).intValue(), serialNumber, internalValue, null, location);
+    }
+
+    public static WriteExEvent createWriteExEvent(Thread thread, Location location, Object value, Object condition) {
         int serialNumber = getNextSerialNumber(thread);
         return new WriteExEvent(EventType.WRITE_EX, threadIdMap.get(thread.getId()).intValue(), serialNumber, value, condition, location, false);
     }

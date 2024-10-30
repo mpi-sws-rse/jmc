@@ -425,13 +425,13 @@ public class TrustStrategy extends DPORStrategy {
 
         if (guidingActivate) {
             ReadExEvent readEx = (ReadExEvent) guidingEvent;
-            readExEvent.setIntValue(readEx.getIntValue());
+            readExEvent.setInternalValue(readEx.getInternalValue());
             addEventToCurrentGraph(readExEvent);
             addRfEdgeToCurrentGraph(readExEvent);
 
             guidingEvent = guidingEvents.remove(0);
             WriteExEvent writeEx = (WriteExEvent) guidingEvent;
-            writeExEvent.setIntValue(writeEx.getIntValue());
+            writeExEvent.setInternalValue(writeEx.getInternalValue());
             writeExEvent.setOperationSuccess(writeEx.getOperationSuccess());
             addEventToCurrentGraph(writeExEvent);
             return pickNextThread();

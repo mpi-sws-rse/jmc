@@ -137,7 +137,7 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public Thread nextCasRequest(Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
-        if (readExEvent.getIntValue() == writeExEvent.getConditionValue()) {
+        if (readExEvent.getInternalValue() == writeExEvent.getConditionValue()) {
             writeExEvent.setOperationSuccess(true);
         }
         RuntimeEnvironment.eventsRecord.add(readExEvent);

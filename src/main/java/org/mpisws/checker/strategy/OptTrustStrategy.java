@@ -119,7 +119,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
     public Thread nextCasRequest(Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
         if (guidingActivate) {
             ReadExEvent readEx = (ReadExEvent) guidingEvent;
-            readExEvent.setIntValue(readEx.getIntValue());
+            readExEvent.setInternalValue(readEx.getInternalValue());
             System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + readEx);
             WriteEvent wr = currentGraph.getRf().get(readEx);
             currentGraph.removeRf(readEx);

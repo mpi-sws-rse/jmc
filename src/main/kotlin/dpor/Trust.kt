@@ -258,7 +258,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 )
                             ) {
                                 newNextReadExEvent.rf = (findWriteExEvent.deepCopy()) as WriteExEvent
-                                newNextReadExEvent.intValue = findWriteExEvent.intValue
+                                newNextReadExEvent.internalValue = findWriteExEvent.internalValue
                                 G2.addEvent(newNextReadExEvent as Event)
                                 val newAllEvents = deepCopyAllEvents(allEvents)
                                 println("[Trust Message] : Forward Revisit(R -> W) : ($newNextReadExEvent, $findWriteExEvent)")
@@ -271,7 +271,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                             val newNextReadExEvent = newNextEvent as ReadExEvent
                             if (locEquals(findWriteEvent.loc!!, nextReadExEvent.loc!!)) {
                                 newNextReadExEvent.rf = (findWriteEvent.deepCopy()) as WriteEvent
-                                newNextReadExEvent.intValue = findWriteEvent.value as Int
+                                newNextReadExEvent.internalValue = findWriteEvent.value as Int
                                 G2.addEvent(newNextReadExEvent as Event)
                                 val newAllEvents = deepCopyAllEvents(allEvents)
                                 println("[Trust Message] : Forward Revisit(R -> W) : ($newNextReadExEvent, $findWriteEvent)")
@@ -282,7 +282,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                             val newNextEvent = nextReadExEvent.deepCopy()
                             val newNextReadExEvent = newNextEvent as ReadExEvent
                             newNextReadExEvent.rf = (G.graphEvents[i].deepCopy()) as InitializationEvent
-                            newNextReadExEvent.intValue = 0
+                            newNextReadExEvent.internalValue = 0
                             G3.addEvent(newNextReadExEvent as Event)
                             val newAllEvents = deepCopyAllEvents(allEvents)
                             println("[Trust Message] : Forward Revisit(R -> I) : ($newNextReadExEvent, ${G.graphEvents[i]})")
@@ -302,7 +302,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                         exitProcess(0)
                     }
 
-                    if (readExEvent.intValue == nextWriteExEvent.conditionValue) {
+                    if (readExEvent.internalValue == nextWriteExEvent.conditionValue) {
                         nextWriteExEvent.operationSuccess = true
                         //println("[Trust Debugging Message] : The operation is successful")
                         // Forward Revisits
@@ -369,7 +369,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                         if (G4.graphEvents.contains(findReadExEvent)) {
                                             readEx = G4.graphEvents.find { it.equals(findReadExEvent) } as ReadExEvent
                                             readEx.rf = nextWriteExEvent.deepCopy() as WriteExEvent
-                                            readEx.intValue = nextWriteExEvent.intValue
+                                            readEx.internalValue = nextWriteExEvent.internalValue
                                         }
                                         if (G4.areExReadsConsistent(nextWriteExEvent.loc!!)) {
                                             visitCOs(
@@ -453,7 +453,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                         read = G4.graphEvents.find { it.equals(findReadEvent) } as ReadEvent
                                         read.rf = nextEvent.deepCopy() as WriteEvent
                                         if (read is ReadExEvent) {
-                                            read.intValue = nextEvent.value as Int
+                                            read.internalValue = nextEvent.value as Int
                                         }
                                     }
                                     visitCOs(G4.deepCopy(), nextEvent.deepCopy() as WriteEvent, newNewAllEvents)

@@ -6,10 +6,10 @@ data class ReadExEvent(
     override val type: EventType = EventType.READ_EX,
     override val tid: Int,
     override var serial: Int,
-    var intValue: Int,
+    @Transient var internalValue: Any,
     override var rf: ReadsFrom? = null,
     override var loc: Location? = null
-) : ReadEvent(tid, type, serial, intValue, rf, loc), Serializable {
+) : ReadEvent(tid, type, serial, internalValue, rf, loc), Serializable {
 
     /**
      * Returns a deep copy of this object
@@ -21,7 +21,7 @@ data class ReadExEvent(
             type = type,
             tid = tid,
             serial = serial,
-            intValue = intValue,
+            internalValue = internalValue,
             rf = deepCopyRf(),
             loc = this.loc
         )

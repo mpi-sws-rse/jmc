@@ -1,0 +1,120 @@
+// class version 61.0 (61)
+// access flags 0x21
+public class org/mpisws/concurrent/programs/atomic/counter/AtomicCounter {
+
+  // compiled from: AtomicCounter.java
+  // access flags 0x19
+  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
+
+  // access flags 0x1
+  public <init>()V
+   L0
+    LINENUMBER 5 L0
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 1
+
+  // access flags 0x9
+  public static main([Ljava/lang/String;)V
+    TRYCATCHBLOCK L0 L1 L2 java/lang/InterruptedException
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.init (Ljava/lang/Thread;)V
+    NEW org/mpisws/runtime/SchedulerThread
+    DUP
+    INVOKESPECIAL org/mpisws/runtime/SchedulerThread.<init> ()V
+    ASTORE 5
+    ALOAD 5
+    LDC "SchedulerThread"
+    INVOKEVIRTUAL org/mpisws/runtime/SchedulerThread.setName (Ljava/lang/String;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    ALOAD 5
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.initSchedulerThread (Ljava/lang/Thread;Ljava/lang/Thread;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.mainThreadStart (Ljava/lang/Thread;)V
+   L3
+    LINENUMBER 8 L3
+    NEW org/mpisws/util/concurrent/AtomicInteger
+    DUP
+    INVOKESPECIAL org/mpisws/util/concurrent/AtomicInteger.<init> ()V
+    ASTORE 1
+   L4
+    LINENUMBER 9 L4
+    NEW org/mpisws/concurrent/programs/atomic/counter/AdderThread
+    DUP
+    DUP
+    ALOAD 1
+    INVOKESPECIAL org/mpisws/concurrent/programs/atomic/counter/AdderThread.<init> (Lorg/mpisws/util/concurrent/AtomicInteger;)V
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
+    ASTORE 2
+   L5
+    LINENUMBER 10 L5
+    NEW org/mpisws/concurrent/programs/atomic/counter/AdderThread
+    DUP
+    DUP
+    ALOAD 1
+    INVOKESPECIAL org/mpisws/concurrent/programs/atomic/counter/AdderThread.<init> (Lorg/mpisws/util/concurrent/AtomicInteger;)V
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
+    ASTORE 3
+   L6
+    LINENUMBER 11 L6
+    ALOAD 2
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L7
+    LINENUMBER 12 L7
+    ALOAD 3
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L0
+    LINENUMBER 14 L0
+    ALOAD 2
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/atomic/counter/AdderThread.join ()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L8
+    LINENUMBER 15 L8
+    ALOAD 3
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/atomic/counter/AdderThread.join ()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L1
+    LINENUMBER 18 L1
+    GOTO L9
+   L2
+    LINENUMBER 16 L2
+   FRAME FULL [[Ljava/lang/String; org/mpisws/util/concurrent/AtomicInteger org/mpisws/concurrent/programs/atomic/counter/AdderThread org/mpisws/concurrent/programs/atomic/counter/AdderThread T org/mpisws/runtime/SchedulerThread] [java/lang/InterruptedException]
+    ASTORE 4
+   L10
+    LINENUMBER 17 L10
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    LDC "Interrupted"
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L9
+    LINENUMBER 19 L9
+   FRAME SAME
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    ALOAD 1
+    INVOKEVIRTUAL org/mpisws/util/concurrent/AtomicInteger.get ()I
+    INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
+      // handle kind 0x6 : INVOKESTATIC
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      // arguments:
+      "Counter value: \u0001"
+    ]
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L11
+    LINENUMBER 20 L11
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+    MAXSTACK = 4
+    MAXLOCALS = 6
+}

@@ -1,0 +1,78 @@
+// class version 61.0 (61)
+// access flags 0x21
+public class org/mpisws/concurrent/programs/atomic/counter/AdderThread extends java/lang/Thread {
+
+  // compiled from: AdderThread.java
+
+  // access flags 0x12
+  private final Lorg/mpisws/util/concurrent/AtomicInteger; counter
+
+  // access flags 0x1
+  public <init>(Lorg/mpisws/util/concurrent/AtomicInteger;)V
+   L0
+    LINENUMBER 9 L0
+    ALOAD 0
+    INVOKESPECIAL java/lang/Thread.<init> ()V
+   L1
+    LINENUMBER 10 L1
+    ALOAD 0
+    ALOAD 1
+    DUP2
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.atomic.counter.AdderThread"
+    LDC "counter"
+    LDC "Lorg/mpisws/util/concurrent/AtomicInteger;"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.writeOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    PUTFIELD org/mpisws/concurrent/programs/atomic/counter/AdderThread.counter : Lorg/mpisws/util/concurrent/AtomicInteger;
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+   L2
+    LINENUMBER 11 L2
+    RETURN
+    MAXSTACK = 8
+    MAXLOCALS = 2
+
+  // access flags 0x1
+  public run()V
+    TRYCATCHBLOCK L0 L1 L2 org/mpisws/util/concurrent/JMCInterruptException
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L0
+    LINENUMBER 15 L0
+    ALOAD 0
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.atomic.counter.AdderThread"
+    LDC "counter"
+    LDC "Lorg/mpisws/util/concurrent/AtomicInteger;"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/mpisws/concurrent/programs/atomic/counter/AdderThread.counter : Lorg/mpisws/util/concurrent/AtomicInteger;
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+    ICONST_0
+    ICONST_1
+    INVOKEVIRTUAL org/mpisws/util/concurrent/AtomicInteger.compareAndSet (II)Z
+    POP
+   L1
+    LINENUMBER 18 L1
+    GOTO L3
+   L2
+    LINENUMBER 16 L2
+   FRAME SAME1 org/mpisws/util/concurrent/JMCInterruptException
+    ASTORE 1
+   L4
+    LINENUMBER 17 L4
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    LDC "Interrupted"
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L3
+    LINENUMBER 19 L3
+   FRAME SAME
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+    MAXSTACK = 6
+    MAXLOCALS = 2
+}

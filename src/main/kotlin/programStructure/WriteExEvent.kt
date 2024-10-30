@@ -6,11 +6,11 @@ data class WriteExEvent(
     override val type: EventType = EventType.WRITE_EX,
     override val tid: Int,
     override var serial: Int,
-    var intValue: Int,
-    var conditionValue: Int,
+    @Transient var internalValue: Any,
+    @Transient var conditionValue: Any,
     override var loc: Location? = null,
     var operationSuccess: Boolean = false
-) : WriteEvent(tid, EventType.WRITE_EX, serial, intValue, loc), ReadsFrom, Serializable {
+) : WriteEvent(tid, EventType.WRITE_EX, serial, internalValue, loc), ReadsFrom, Serializable {
 
     /**
      * Returns a deep copy of this object
@@ -22,7 +22,7 @@ data class WriteExEvent(
             type = copy().type,
             tid = copy().tid,
             serial = copy().serial,
-            intValue = copy().intValue,
+            internalValue = copy().internalValue,
             conditionValue = copy().conditionValue,
             operationSuccess = copy().operationSuccess,
             //loc = loc?.deepCopy()

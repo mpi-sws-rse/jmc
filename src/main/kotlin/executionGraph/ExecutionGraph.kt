@@ -1158,7 +1158,7 @@ data class ExecutionGraph(
     private fun visReadExEvent(readEx: ReadExEvent, bufferedWriter: BufferedWriter) {
         var param = locOfEvent(readEx.loc!!)
         bufferedWriter.newLine()
-        bufferedWriter.write("${readEx.tid}${readEx.serial} [label=\"${readEx.tid}:${readEx.serial}.RdEx(${param},v=${readEx.intValue})\"]")
+        bufferedWriter.write("${readEx.tid}${readEx.serial} [label=\"${readEx.tid}:${readEx.serial}.RdEx(${param},v=${readEx.internalValue})\"]")
     }
 
     private fun visWriteExEvent(writeEx: WriteExEvent, bufferedWriter: BufferedWriter) {

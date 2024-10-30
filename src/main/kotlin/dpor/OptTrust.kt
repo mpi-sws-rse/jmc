@@ -91,7 +91,7 @@ class OptTrust(path: String, verbose: Boolean) {
 
                 val readEx = last as ReadExEvent
                 nextWriteEx.loc = readEx.loc
-                if (readEx.intValue != nextWriteEx.conditionValue) {
+                if (readEx.internalValue != nextWriteEx.conditionValue) {
                     nextWriteEx.operationSuccess = false
                     g.addEvent(nextWriteEx)
                     g.addProgramOrder(nextWriteEx)
@@ -268,7 +268,7 @@ class OptTrust(path: String, verbose: Boolean) {
 
         //g.removeRf(nextRead)
         //rd.rf = writeEvent
-        nextRead.intValue = writeEvent.value as Int
+        nextRead.internalValue = writeEvent.value as Int
         g.addRF(nextRead, writeEvent)
         visit(g, allEvents)
     }
@@ -449,7 +449,7 @@ class OptTrust(path: String, verbose: Boolean) {
             g_copy.removeRf(rd!!)
             //rd.rf = wr
             if (rd is ReadExEvent) {
-                rd.intValue = wr.value as Int
+                rd.internalValue = wr.value as Int
             }
             g_copy.addRF(rd, wr)
 //            batching_fR_write_write(g_copy, wr, toBeAdded)
@@ -605,7 +605,7 @@ class OptTrust(path: String, verbose: Boolean) {
         g.restrictStrictAfterEvent(rd)
         g.removeRf(rd)
         //rd.rf = wr
-        rd.intValue = wr.value as Int
+        rd.internalValue = wr.value as Int
         g.addRF(rd, wr)
 //        println("[debugging] The Graph after restricting is: ")
 //        println("[debugging] eventOrder:")
@@ -878,7 +878,7 @@ class OptTrust(path: String, verbose: Boolean) {
             val rdEx =
                 g.programOrder[writeEx.tid]!!.find { it.type == EventType.READ_EX && it.tid == writeEx.tid && it.serial + 1 == writeEx.serial } as ReadExEvent
             writeEx.loc = rdEx.loc
-            if (rdEx.intValue != writeEx.conditionValue) {
+            if (rdEx.internalValue != writeEx.conditionValue) {
                 return true
             }
         }

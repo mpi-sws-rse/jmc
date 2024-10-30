@@ -290,6 +290,27 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  ATOMIC COUNTER
+     */
+
+    @Test
+    @DisplayName("Atomic Counter")
+    void randomTestAtomicCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.atomic.counter",
+                "AtomicCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/atomic/counter/"
+        );
+        System.out.println("AtomicCounter Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.verbose = true;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "AtomicCounter Trust Strategy Finished");
+    }
+
+    /*
      *                                  DINING PHILOSOPHERS WITH DEADLOCK
      */
 
