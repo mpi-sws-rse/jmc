@@ -93,6 +93,8 @@ src/test/java/org/mpisws/concurrent/programs/det/lists/list/lazy/*.class
 src/test/java/org/mpisws/concurrent/programs/det/lists/list/lazy/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/lists/list/node/*.class
 src/test/java/org/mpisws/concurrent/programs/det/lists/list/node/*.txt
+src/test/java/org/mpisws/concurrent/programs/atomic/counter/*.class
+src/test/java/org/mpisws/concurrent/programs/atomic/counter/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
