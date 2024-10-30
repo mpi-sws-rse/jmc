@@ -26,7 +26,7 @@ open class WriteEvent(
      * @property value The value that is written.
      */
     @Transient
-    open var value: Any = Any(),
+    open var value: Any? = Any(),
 
     /**
      * @property loc The location that is written to.

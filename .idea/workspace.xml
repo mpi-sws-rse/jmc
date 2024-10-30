@@ -9,43 +9,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/util/concurrent/AtomicInteger.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/util/concurrent/AtomicReference.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/util/concurrent/AtomicStampedReference.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/atomic/counter/AdderThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/atomic/counter/AtomicCounter.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicInteger.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicReference.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicStampedReference.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/atomic/counter/AdderThread.class" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/atomic/counter/AdderThread.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/atomic/counter/AdderThread.txt" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/atomic/counter/AtomicCounter.class" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/atomic/counter/AtomicCounter.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/atomic/counter/AtomicCounter.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Backoff.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client1.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/InsersionThread.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Stack.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/LockFreeStack.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/Node.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/hs_err_pid464457.log" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Backoff.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client1.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/InsersionThread.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Stack.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/LockFreeStack.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/Node.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/OptTrustStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/OptTrustStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/dpor/OptTrust.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/dpor/OptTrust.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/executionGraph/OptExecutionGraph.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/executionGraph/OptExecutionGraph.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/ReadExEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/ReadExEvent.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/WriteExEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/WriteExEvent.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/kotlin/programStructure/WriteEvent.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/programStructure/WriteEvent.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.gitignore" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.gitignore" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/OptTrustStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/OptTrustStrategy.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/ReplayStrategy.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/checker/strategy/TrustStrategy.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/OptTrust.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/OptTrust.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/dpor/Trust.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/ExecutionGraph.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/ExecutionGraph.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/OptExecutionGraph.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/executionGraph/OptExecutionGraph.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/ReadExEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/ReadExEvent.kt" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/WriteExEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/WriteExEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicReference.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicReference.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicStampedReference.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicStampedReference.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/ReadEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/ReadEvent.kt" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/WriteEvent.kt" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/programStructure/WriteEvent.kt" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -105,8 +91,8 @@
         <option value="Kotlin Class" />
         <option value="Kotlin Enum" />
         <option value="Kotlin Data Class" />
-        <option value="Interface" />
         <option value="Class" />
+        <option value="Interface" />
       </list>
     </option>
   </component>
@@ -206,6 +192,7 @@
     "Gradle.ModelCheckerTest.trustTestDetArray.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetCoarseListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetFineListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetLockFreeStack.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetLoop.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetLoopVariant.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetOptimistListI.executor": "Run",
@@ -294,17 +281,17 @@
       <recent name="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/example/concurrent/programs/kotlin/counter" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="org.mpisws.concurrent.programs.det.stack" />
       <recent name="org.mpisws.concurrent.programs.nondet.lists" />
       <recent name="org.mpisws.concurrent.programs.det.lists" />
       <recent name="org.mpisws.concurrent.programs.lists.list.nod" />
       <recent name="org.mpisws.concurrent.programs.lists" />
-      <recent name="org.mpisws.concurrent.programs.lists.list" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.randomTestAtomicCounter">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.trustTestDetLockFreeStack">
     <configuration name="ModelCheckerTest.mustTestMessageCounter" type="GradleRunConfiguration" factoryName="Gradle">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -473,30 +460,6 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.randomTestSyncMessage" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.randomTestSyncMessage&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <method v="2" />
-    </configuration>
     <configuration name="ModelCheckerTest.replayTestMessageCounter" type="GradleRunConfiguration" factoryName="Gradle">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -655,6 +618,30 @@
             <option value=":test" />
             <option value="--tests" />
             <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetFineListI&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="ModelCheckerTest.trustTestDetLockFreeStack" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetLockFreeStack&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -944,18 +931,18 @@
       <item itemvalue="Gradle.ModelCheckerTest.trustTestStaticCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestSyncCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.randomTestAtomicCounter" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestDetLockFreeStack" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListI" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListII" />
-      <item itemvalue="Gradle.ModelCheckerTest.randomTestSyncMessage" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestDetFineListI" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestDetLockFreeStack" />
         <item itemvalue="Gradle.ModelCheckerTest.randomTestAtomicCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListI" />
         <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListII" />
         <item itemvalue="Gradle.ModelCheckerTest.trustTestDetFineListI" />
-        <item itemvalue="Gradle.ModelCheckerTest.randomTestSyncMessage" />
       </list>
     </recent_temporary>
   </component>
@@ -1192,7 +1179,7 @@
       <workItem from="1730150421876" duration="606000" />
       <workItem from="1730151035796" duration="21168000" />
       <workItem from="1730216053818" duration="6943000" />
-      <workItem from="1730238778428" duration="16020000" />
+      <workItem from="1730238778428" duration="27724000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />

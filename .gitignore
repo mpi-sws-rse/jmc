@@ -95,6 +95,10 @@ src/test/java/org/mpisws/concurrent/programs/det/lists/list/node/*.class
 src/test/java/org/mpisws/concurrent/programs/det/lists/list/node/*.txt
 src/test/java/org/mpisws/concurrent/programs/atomic/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/atomic/counter/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/stack/*.class
+src/test/java/org/mpisws/concurrent/programs/det/stack/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/*.class
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

@@ -27,7 +27,7 @@ open class ReadEvent(
      * @property value The value that was read.
      */
     @Transient
-    open var value: Any = Any(),
+    open var value: Any? = Any(),
 
     /**
      * @property rf The event that this event reads from.
