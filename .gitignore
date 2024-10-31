@@ -99,6 +99,8 @@ src/test/java/org/mpisws/concurrent/programs/det/stack/*.class
 src/test/java/org/mpisws/concurrent/programs/det/stack/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/*.class
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/*.class
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

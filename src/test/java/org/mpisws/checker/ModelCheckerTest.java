@@ -444,6 +444,29 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  DET ELIMINATION BACKOFF STACK
+     */
+    @Test
+    @DisplayName("Det Elimination Backoff Stack")
+    void trustTestDetEliminationBackoffStack() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.stack",
+                "Client3",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/stack/"
+        );
+        System.out.println("Det Elimination Backoff Stack Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Elimination Backoff Stack Trust Strategy Finished");
+    }
+
+    /*
      *                                 DET ARRAY
      */
 
