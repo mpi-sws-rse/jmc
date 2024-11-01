@@ -446,6 +446,7 @@ class ModelCheckerTest {
     /*
      *                                  DET ELIMINATION BACKOFF STACK
      */
+
     @Test
     @DisplayName("Det Elimination Backoff Stack")
     void trustTestDetEliminationBackoffStack() {
@@ -465,6 +466,31 @@ class ModelCheckerTest {
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Elimination Backoff Stack Trust Strategy Finished");
     }
+
+    /*
+     *                                  DET TIME STAMPED STACK
+     */
+
+    @Test
+    @DisplayName("Det Time Stamped Stack")
+    void trustTestDetTimeStampedStack() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.stack",
+                "Client5",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/stack/"
+        );
+        System.out.println("Det Time Stamped Stack Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Time Stamped Stack Trust Strategy Finished");
+    }
+
 
     /*
      *                                 DET ARRAY

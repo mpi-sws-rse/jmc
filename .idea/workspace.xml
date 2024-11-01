@@ -9,25 +9,33 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client2.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client3.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/DeletionThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationArray.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationBackoffStack.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/LockFreeExchanger.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client2.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client3.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/DeletionThread.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationArray.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationBackoffStack.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/LockFreeExchanger.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/util/concurrent/AtomicBoolean.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client4.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client5.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/PusherThread.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/Result.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/SPPool.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TNode.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TSCAS.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TSStack.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TimeStamp.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicBoolean.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client4.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client5.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/PusherThread.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/Result.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/SPPool.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TNode.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TSCAS.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TSStack.java" afterDir="false" />
+      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TimeStamp.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/util/concurrent/AtomicStampedReference.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/util/concurrent/AtomicStampedReference.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/util/concurrent/AtomicInteger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/util/concurrent/AtomicInteger.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.gitignore" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.gitignore" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicStampedReference.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicStampedReference.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicInteger.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/main/java/org/mpisws/util/concurrent/AtomicInteger.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -194,6 +202,7 @@
     &quot;Gradle.ModelCheckerTest.trustTestDetLoopVariant.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.trustTestDetOptimistListI.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.trustTestDetOptimistListII.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.ModelCheckerTest.trustTestDetTimeStampedStack.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.trustTestDiningPhilosophers.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.trustTestFineListI.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.ModelCheckerTest.trustTestFineListII.executor&quot;: &quot;Run&quot;,
@@ -697,6 +706,30 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
+    <configuration name="ModelCheckerTest.trustTestDetTimeStampedStack" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetTimeStampedStack&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <method v="2" />
+    </configuration>
     <configuration name="ModelCheckerTest.trustTestNonDetLazyListI" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -711,30 +744,6 @@
             <option value=":test" />
             <option value="--tests" />
             <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetLazyListI&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <method v="2" />
-    </configuration>
-    <configuration name="ModelCheckerTest.trustTestNonDetLazyListII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":test" />
-            <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetLazyListII&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -927,19 +936,19 @@
       <item itemvalue="Gradle.ModelCheckerTest.trustTestParkingCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestStaticCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestSyncCounter" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestDetTimeStampedStack" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStack" />
       <item itemvalue="Gradle.ModelCheckerTest.randomTestAtomicCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestDetLockFreeStack" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListI" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListII" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStack" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestDetTimeStampedStack" />
         <item itemvalue="Gradle.ModelCheckerTest.trustTestDetLockFreeStack" />
         <item itemvalue="Gradle.ModelCheckerTest.randomTestAtomicCounter" />
         <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListI" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListII" />
       </list>
     </recent_temporary>
   </component>
@@ -1179,7 +1188,9 @@
       <workItem from="1730238778428" duration="31040000" />
       <workItem from="1730333833790" duration="8243000" />
       <workItem from="1730369604098" duration="379000" />
-      <workItem from="1730370014429" duration="1368000" />
+      <workItem from="1730370014429" duration="7990000" />
+      <workItem from="1730459780882" duration="18653000" />
+      <workItem from="1730490972850" duration="724000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />
