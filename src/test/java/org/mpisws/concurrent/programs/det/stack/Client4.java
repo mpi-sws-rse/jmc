@@ -18,10 +18,10 @@ public class Client4 {
             items.add(i);
         }
 
-        List<InsersionThread> threads = new ArrayList<>(NUM_PUSHES);
+        List<InsertionThread> threads = new ArrayList<>(NUM_PUSHES);
         for (int i = 0; i < NUM_PUSHES; i++) {
             Integer item = items.get(i);
-            InsersionThread thread = new InsersionThread();
+            InsertionThread thread = new InsertionThread();
             thread.stack = stack;
             thread.item = item;
             threads.add(thread);

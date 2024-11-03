@@ -1,14 +1,15 @@
-package org.mpisws.concurrent.programs.det.stack;
+package org.mpisws.concurrent.programs.nondet.stack;
 
-import org.mpisws.concurrent.programs.det.stack.lockFree.elimination.EliminationBackoffStack;
+import org.mpisws.concurrent.programs.nondet.stack.lockFree.LockFreeStack;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Client3 {
+public class Client1 {
 
     public static void main(String[] args) {
-        Stack stack = new EliminationBackoffStack<Integer>();
+
+        Stack stack = new LockFreeStack<Integer>();
         int NUM_OPERATIONS = 3;
 
         List<Integer> items = new ArrayList<>(NUM_OPERATIONS);

@@ -1,14 +1,15 @@
-package org.mpisws.concurrent.programs.det.stack.lockFree;
+package org.mpisws.concurrent.programs.nondet.stack.lockFree;
 
-import org.mpisws.concurrent.programs.det.stack.Backoff;
-import org.mpisws.concurrent.programs.det.stack.Stack;
+import org.mpisws.concurrent.programs.nondet.stack.Backoff;
+import org.mpisws.concurrent.programs.nondet.stack.Stack;
+import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.AtomicReference;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class LockFreeStack<V> implements Stack<V> {
 
-    public final int MIN_DELAY = 1;
-    public final int MAX_DELAY = 2;
+    public final SymbolicInteger MIN_DELAY = new SymbolicInteger(false);
+    public final SymbolicInteger MAX_DELAY = new SymbolicInteger(false);
     public AtomicReference<Node<V>> top = new AtomicReference<>(null);
     public Backoff backoff = new Backoff(MIN_DELAY, MAX_DELAY);
 
@@ -18,9 +19,13 @@ public class LockFreeStack<V> implements Stack<V> {
         return top.compareAndSet(oldTop, node);
     }
 
+    /**
+     * @param item
+     * @throws JMCInterruptException
+     */
     @Override
-    public void push(V value) throws JMCInterruptException {
-        Node<V> node = new Node<>(value);
+    public void push(V item) throws JMCInterruptException {
+        Node<V> node = new Node<>(item);
         while (!tryPush(node)) {
             backoff.backoff();
         }
@@ -39,6 +44,10 @@ public class LockFreeStack<V> implements Stack<V> {
         }
     }
 
+    /**
+     * @return
+     * @throws JMCInterruptException
+     */
     @Override
     public V pop() throws JMCInterruptException {
         while (true) {
@@ -50,5 +59,4 @@ public class LockFreeStack<V> implements Stack<V> {
             }
         }
     }
-
 }

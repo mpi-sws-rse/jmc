@@ -10,17 +10,17 @@ public class Client1 {
     public static void main(String[] args) {
 
         Stack stack = new LockFreeStack<Integer>();
-        int NUM_OPERATIONS = 4;
+        int NUM_OPERATIONS = 3;
 
         List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
             items.add(i);
         }
 
-        List<InsersionThread> threads = new ArrayList<>(NUM_OPERATIONS);
+        List<InsertionThread> threads = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
             Integer item = items.get(i);
-            InsersionThread thread = new InsersionThread();
+            InsertionThread thread = new InsertionThread();
             thread.stack = stack;
             thread.item = item;
             threads.add(thread);

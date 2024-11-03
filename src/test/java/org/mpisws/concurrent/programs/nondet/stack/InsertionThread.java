@@ -1,18 +1,18 @@
-package org.mpisws.concurrent.programs.det.stack;
+package org.mpisws.concurrent.programs.nondet.stack;
 
 import org.mpisws.util.concurrent.JMCInterruptException;
 
-public class InsersionThread extends Thread {
+public class InsertionThread extends Thread {
 
     public Stack<Integer> stack;
     public int item;
 
-    public InsersionThread(Stack<Integer> stack, int item) {
+    public InsertionThread(Stack<Integer> stack, int item) {
         this.stack = stack;
         this.item = item;
     }
 
-    public InsersionThread() {
+    public InsertionThread() {
     }
 
     @Override
@@ -23,6 +23,4 @@ public class InsersionThread extends Thread {
             System.out.println("Interrupted");
         }
     }
-
-
 }

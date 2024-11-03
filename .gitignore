@@ -73,6 +73,14 @@ src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/lazy/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/lazy/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/node/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/lists/list/node/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/array/*.class
 src/test/java/org/mpisws/concurrent/programs/det/array/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/loop/*.class
