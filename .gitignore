@@ -81,6 +81,8 @@ src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/*
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/array/*.class
 src/test/java/org/mpisws/concurrent/programs/det/array/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/loop/*.class
