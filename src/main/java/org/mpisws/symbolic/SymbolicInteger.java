@@ -151,4 +151,43 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
             RuntimeEnvironment.waitRequest(Thread.currentThread());
         }
     }
+
+    public int getIntValue() {
+        if (this.getEval() != null) {
+            int leftValue;
+            if (this.getEval().getLeft() instanceof SymbolicInteger left) {
+                leftValue = left.getIntValue();
+            } else {
+                leftValue = this.getEval().getLeft().getValue();
+            }
+            int rightValue;
+            if (this.getEval().getRight() instanceof SymbolicInteger right) {
+                rightValue = right.getIntValue();
+            } else {
+                rightValue = this.getEval().getRight().getValue();
+            }
+            switch (this.getEval().getOperator()) {
+                case ADD:
+                    return leftValue + rightValue;
+                case SUB:
+                    return leftValue - rightValue;
+                case MUL:
+                    return leftValue * rightValue;
+                case DIV:
+                    if (rightValue == 0) {
+                        throw new ArithmeticException("[JMC Formula Message] Division by zero");
+                    }
+                    return leftValue / rightValue;
+                case MOD:
+                    if (rightValue == 0) {
+                        throw new ArithmeticException("[JMC Formula Message] Modulo by zero");
+                    }
+                    return leftValue % rightValue;
+                default:
+                    throw new IllegalArgumentException("[JMC Formula Message] Unsupported operator");
+            }
+        } else {
+            return RuntimeEnvironment.solver.getSymIntVarValue(this.getName());
+        }
+    }
 }

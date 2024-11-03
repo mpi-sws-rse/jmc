@@ -492,6 +492,30 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  NONDET ELIMINATION BACKOFF STACK
+     */
+
+    @Test
+    @DisplayName("NonDet Elimination Backoff Stack")
+    void trustTestNonDetEliminationBackoffStack() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.stack",
+                "Client3",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/stack/"
+        );
+        System.out.println("NonDet Elimination Backoff Stack Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Elimination Backoff Stack Trust Strategy Finished");
+    }
+
+    /*
      *                                  DET TIME STAMPED STACK
      */
 

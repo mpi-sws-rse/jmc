@@ -238,32 +238,33 @@ public class JMCFormula {
         if (abstractInteger instanceof ConcreteInteger) {
             return abstractInteger.getValue();
         } else if (abstractInteger instanceof SymbolicInteger symbolicInteger) {
-            if (symbolicInteger.getEval() != null) {
-                int leftValue = getIntValue(symbolicInteger.getEval().getLeft());
-                int rightValue = getIntValue(symbolicInteger.getEval().getRight());
-                switch (symbolicInteger.getEval().getOperator()) {
-                    case ADD:
-                        return leftValue + rightValue;
-                    case SUB:
-                        return leftValue - rightValue;
-                    case MUL:
-                        return leftValue * rightValue;
-                    case DIV:
-                        if (rightValue == 0) {
-                            throw new ArithmeticException("[JMC Formula Message] Division by zero");
-                        }
-                        return leftValue / rightValue;
-                    case MOD:
-                        if (rightValue == 0) {
-                            throw new ArithmeticException("[JMC Formula Message] Modulo by zero");
-                        }
-                        return leftValue % rightValue;
-                    default:
-                        throw new IllegalArgumentException("[JMC Formula Message] Unsupported operator");
-                }
-            } else {
-                return RuntimeEnvironment.solver.getSymIntVarValue(symbolicInteger.getName());
-            }
+            return symbolicInteger.getIntValue();
+//            if (symbolicInteger.getEval() != null) {
+//                int leftValue = getIntValue(symbolicInteger.getEval().getLeft());
+//                int rightValue = getIntValue(symbolicInteger.getEval().getRight());
+//                switch (symbolicInteger.getEval().getOperator()) {
+//                    case ADD:
+//                        return leftValue + rightValue;
+//                    case SUB:
+//                        return leftValue - rightValue;
+//                    case MUL:
+//                        return leftValue * rightValue;
+//                    case DIV:
+//                        if (rightValue == 0) {
+//                            throw new ArithmeticException("[JMC Formula Message] Division by zero");
+//                        }
+//                        return leftValue / rightValue;
+//                    case MOD:
+//                        if (rightValue == 0) {
+//                            throw new ArithmeticException("[JMC Formula Message] Modulo by zero");
+//                        }
+//                        return leftValue % rightValue;
+//                    default:
+//                        throw new IllegalArgumentException("[JMC Formula Message] Unsupported operator");
+//                }
+//            } else {
+//                return RuntimeEnvironment.solver.getSymIntVarValue(symbolicInteger.getName());
+//            }
         } else {
             throw new IllegalArgumentException("[JMC Formula Message] Unsupported type of AbstractInteger");
         }
