@@ -1,9 +1,10 @@
-package org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped;
+package org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped;
 
 import org.mpisws.util.concurrent.AtomicReference;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class SPPool<V> {
+
     public final long id;
     public final AtomicReference<TNode<V>> head;
 
@@ -11,7 +12,6 @@ public class SPPool<V> {
         this.id = id;
         TNode<V> sentinel = new TNode<>(null, true);
         sentinel.next = sentinel;
-        sentinel.timeStamp = new TimeStamp(-1);
         this.head = new AtomicReference<>(sentinel);
     }
 

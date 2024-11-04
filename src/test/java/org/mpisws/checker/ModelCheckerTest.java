@@ -420,7 +420,7 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                  DET LOCK FREE STACK
+     *                                  DET LOCK FREE STACK I
      */
 
     @Test
@@ -444,7 +444,7 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                  NONDET LOCK FREE STACK
+     *                                  NONDET LOCK FREE STACK I
      */
 
     @Test
@@ -468,7 +468,57 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                  DET ELIMINATION BACKOFF STACK
+     *                                  DET LOCK FREE STACK II
+     */
+
+    @Test
+    @DisplayName("Det Lock Free Stack II")
+    void trustTestDetLockFreeStackII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.stack",
+                "Client2",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/stack/"
+        );
+        System.out.println("Det Lock Free Stack II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Lock Free Stack II Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET LOCK FREE STACK II
+     */
+
+    @Test
+    @DisplayName("NonDet Lock Free Stack II")
+    void trustTestNonDetLockFreeStackII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.stack",
+                "Client2",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/stack/"
+        );
+        System.out.println("NonDet Lock Free Stack II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Lock Free Stack II Trust Strategy Finished");
+    }
+
+
+
+    /*
+     *                                  DET ELIMINATION BACKOFF STACK I
      */
 
     @Test
@@ -492,7 +542,7 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                  NONDET ELIMINATION BACKOFF STACK
+     *                                  NONDET ELIMINATION BACKOFF STACK I
      */
 
     @Test
@@ -516,7 +566,55 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                  DET TIME STAMPED STACK
+     *                                  DET ELIMINATION BACKOFF STACK II
+     */
+
+    @Test
+    @DisplayName("Det Elimination Backoff Stack II")
+    void trustTestDetEliminationBackoffStackII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.stack",
+                "Client4",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/stack/"
+        );
+        System.out.println("Det Elimination Backoff Stack II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Elimination Backoff Stack II Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET ELIMINATION BACKOFF STACK II
+     */
+
+    @Test
+    @DisplayName("NonDet Elimination Backoff Stack II")
+    void trustTestNonDetEliminationBackoffStackII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.stack",
+                "Client4",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/stack/"
+        );
+        System.out.println("NonDet Elimination Backoff Stack II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Elimination Backoff Stack II Trust Strategy Finished");
+    }
+
+    /*
+     *                                  DET TIME STAMPED STACK I
      */
 
     @Test
@@ -537,6 +635,78 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Time Stamped Stack Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET TIME STAMPED STACK I
+     */
+
+    @Test
+    @DisplayName("NonDet Time Stamped Stack")
+    void trustTestNonDetTimeStampedStack() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.stack",
+                "Client5",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/stack/"
+        );
+        System.out.println("NonDet Time Stamped Stack Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Time Stamped Stack Trust Strategy Finished");
+    }
+
+    /*
+     *                                  DET TIME STAMPED STACK II
+     */
+
+    @Test
+    @DisplayName("Det Time Stamped Stack II")
+    void trustTestDetTimeStampedStackII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.stack",
+                "Client6",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/stack/"
+        );
+        System.out.println("Det Time Stamped Stack II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Time Stamped Stack II Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET TIME STAMPED STACK II
+     */
+
+    @Test
+    @DisplayName("NonDet Time Stamped Stack II")
+    void trustTestNonDetTimeStampedStackII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.stack",
+                "Client6",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/stack/"
+        );
+        System.out.println("NonDet Time Stamped Stack II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Time Stamped Stack II Trust Strategy Finished");
     }
 
 

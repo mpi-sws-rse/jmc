@@ -1,7 +1,7 @@
-package org.mpisws.concurrent.programs.det.stack;
+package org.mpisws.concurrent.programs.nondet.stack;
 
-import org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped.PusherThread;
-import org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped.TSStack;
+import org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped.PusherThread;
+import org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped.TSStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,5 +45,6 @@ public class Client5 {
         }
 
         System.out.println("Insertion Finished");
+
     }
 }

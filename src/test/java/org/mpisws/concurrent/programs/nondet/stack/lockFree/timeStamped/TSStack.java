@@ -1,13 +1,17 @@
-package org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped;
+package org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped;
 
-import org.mpisws.concurrent.programs.det.stack.Stack;
+import org.mpisws.concurrent.programs.nondet.stack.Stack;
+import org.mpisws.symbolic.ArithmeticFormula;
+import org.mpisws.symbolic.SymbolicFormula;
+import org.mpisws.symbolic.SymbolicInteger;
+import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.Utils;
 
 public class TSStack<V> implements Stack<V> {
 
     public final int maxThreads;
     public final SPPool[] spPools;
-    public final TSCAS ts_cas;
 
     public TSStack(int maxThreads, long[] threadIds) {
         this.maxThreads = maxThreads;
@@ -15,7 +19,6 @@ public class TSStack<V> implements Stack<V> {
         for (int i = 0; i < maxThreads; i++) {
             spPools[i] = new SPPool<V>(threadIds[i]);
         }
-        this.ts_cas = new TSCAS();
     }
 
     /**
@@ -28,7 +31,11 @@ public class TSStack<V> implements Stack<V> {
         int threadID = thread.id;
         SPPool pool = spPools[threadID];
         TNode<V> node = pool.insert(item);
-        node.timeStamp = ts_cas.newStamp();
+        SymbolicInteger ts = new SymbolicInteger(false);
+        ArithmeticFormula f = new ArithmeticFormula();
+        SymbolicOperation op1 = f.gt(ts, 0);
+        Utils.assume(op1); // assume ts > 0
+        node.timeStamp = ts;
     }
 
     /**
@@ -37,7 +44,11 @@ public class TSStack<V> implements Stack<V> {
      */
     @Override
     public V pop() throws JMCInterruptException {
-        TimeStamp startTime = ts_cas.newStamp();
+        SymbolicInteger startTime = new SymbolicInteger(false);
+        ArithmeticFormula f = new ArithmeticFormula();
+        SymbolicOperation op1 = f.gt(startTime, 0);
+        Utils.assume(op1); // assume startTime > 0
+
         boolean success;
         V element;
         do {
@@ -48,15 +59,18 @@ public class TSStack<V> implements Stack<V> {
         return element;
     }
 
-    private Result tryRem(TimeStamp startTime) throws JMCInterruptException {
+    private Result tryRem(SymbolicInteger startTime) throws JMCInterruptException {
         TNode<V> youngest = null;
-        TimeStamp timeStamp = new TimeStamp(-1);
+        SymbolicInteger timeStamp = new SymbolicInteger(false);
+        ArithmeticFormula f = new ArithmeticFormula();
+        SymbolicOperation op1 = f.eq(timeStamp, -1);
+        Utils.assume(op1); // assume timeStamp == -1
+
         SPPool<V> pool = null;
         TNode<V> top = null;
         TNode<V>[] empty = new TNode[maxThreads];
+
         for (SPPool<V> current : spPools) {
-
-
             Result<V> nodeResult = current.getYoungest();
             TNode<V> node = nodeResult.node;
             TNode<V> poolTop = nodeResult.poolTop;
@@ -66,20 +80,22 @@ public class TSStack<V> implements Stack<V> {
                 continue;
             }
 
-            TimeStamp nodeTimeStamp = node.timeStamp;
+            SymbolicInteger nodeTimeStamp = node.timeStamp;
 
-            if (startTime.compareTo(nodeTimeStamp) < 0) {
+            SymbolicOperation op2 = f.lt(startTime, nodeTimeStamp);
+            SymbolicFormula sf = new SymbolicFormula();
+            if (sf.evaluate(op2)) {
                 return current.remove(poolTop, node);
             }
 
-            if (timeStamp.compareTo(nodeTimeStamp) < 0) {
+            SymbolicOperation op3 = f.lt(timeStamp, nodeTimeStamp);
+            if (sf.evaluate(op3)) {
                 youngest = node;
-                timeStamp = nodeTimeStamp;
+                timeStamp.assign(nodeTimeStamp);
                 pool = current;
                 top = poolTop;
             }
         }
-
         if (youngest == null) {
             for (SPPool<V> current : spPools) {
                 if (current.head.get() != empty[(int) current.id]) {

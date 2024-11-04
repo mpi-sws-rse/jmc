@@ -16,5 +16,6 @@ public class TNode<T> {
         this.value = value;
         this.taken = new AtomicBoolean(taken);
         this.next = null;
+        this.timeStamp = new TimeStamp(-1);
     }
 }

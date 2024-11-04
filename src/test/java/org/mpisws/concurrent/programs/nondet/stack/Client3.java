@@ -1,6 +1,6 @@
 package org.mpisws.concurrent.programs.nondet.stack;
 
-import org.mpisws.concurrent.programs.nondet.stack.elimination.EliminationBackoffStack;
+import org.mpisws.concurrent.programs.nondet.stack.lockFree.elimination.EliminationBackoffStack;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 import java.util.ArrayList;

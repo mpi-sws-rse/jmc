@@ -8,7 +8,7 @@ import java.util.concurrent.TimeoutException;
 
 public class EliminationBackoffStack<V> extends LockFreeStack<V> {
 
-    public final int capacity = 1;
+    public final int capacity = 2;
     public EliminationArray<V> eliminationArray = new EliminationArray<V>(capacity);
 
     @Override

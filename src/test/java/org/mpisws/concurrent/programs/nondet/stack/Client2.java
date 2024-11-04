@@ -1,6 +1,6 @@
-package org.mpisws.concurrent.programs.det.stack;
+package org.mpisws.concurrent.programs.nondet.stack;
 
-import org.mpisws.concurrent.programs.det.stack.lockFree.LockFreeStack;
+import org.mpisws.concurrent.programs.nondet.stack.lockFree.LockFreeStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,12 +8,12 @@ import java.util.List;
 public class Client2 {
 
     public static void main(String[] args) {
-        Stack stack = new LockFreeStack<Integer>();
-        int NUM_OPERATIONS = 3;
+        Stack<Integer> stack = new LockFreeStack<Integer>();
+        int NUM_OPERATIONS = 4;
         int NUM_PUSHES = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_POPS = (int) Math.floor(NUM_OPERATIONS / 2.0);
 
-        List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
+        List<Integer> items = new ArrayList<>(NUM_PUSHES);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
             items.add(i);
         }
@@ -46,7 +46,6 @@ public class Client2 {
             Integer item = items.get(i);
             DeletionThread thread = new DeletionThread();
             thread.stack = stack;
-            thread.item = item;
             popThreads.add(thread);
         }
 

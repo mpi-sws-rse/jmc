@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.nondet.stack.elimination;
+package org.mpisws.concurrent.programs.nondet.stack.lockFree.elimination;
 
 import org.mpisws.concurrent.programs.nondet.stack.lockFree.LockFreeStack;
 import org.mpisws.concurrent.programs.nondet.stack.lockFree.Node;

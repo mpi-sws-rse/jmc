@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.nondet.stack.elimination;
+package org.mpisws.concurrent.programs.nondet.stack.lockFree.elimination;
 
 import org.mpisws.symbolic.*;
 import org.mpisws.util.concurrent.AtomicStampedReference;

@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.nondet.stack.elimination;
+package org.mpisws.concurrent.programs.nondet.stack.lockFree.elimination;
 
 import org.mpisws.symbolic.ArithmeticFormula;
 import org.mpisws.symbolic.SymbolicFormula;
