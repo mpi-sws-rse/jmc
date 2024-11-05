@@ -441,19 +441,7 @@ public class RuntimeEnvironment {
         numOfExecutions++;
         System.out.println("[Runtime Environment Message] : The number of executions is " + numOfExecutions);
         loadConfig();
-        if (solverApproach == SolverApproach.INCREMENTAL) {
-            if (solverType == null) {
-                solver = new IncrementalSolver();
-            } else {
-                solver = new IncrementalSolver(solverType);
-            }
-        } else {
-            if (solverType == null) {
-                solver = new SimpleSolver();
-            } else {
-                solver = new SimpleSolver(solverType);
-            }
-        }
+        solver = SymbolicSolverSingletonFactory.getSolver(solverApproach, solverType);
 
         initReadyThreadCollection();
 
@@ -2167,19 +2155,7 @@ public class RuntimeEnvironment {
         suspendedThreads = new ArrayList<>();
         threadObjectMap = new HashMap<>();
         suspendPriority = new HashMap<>();
-        if (solverApproach == SolverApproach.INCREMENTAL) {
-            if (solverType == null) {
-                solver = new IncrementalSolver();
-            } else {
-                solver = new IncrementalSolver(solverType);
-            }
-        } else {
-            if (solverType == null) {
-                solver = new SimpleSolver();
-            } else {
-                solver = new SimpleSolver(solverType);
-            }
-        }
+        solver = SymbolicSolverSingletonFactory.getSolver(solverApproach, solverType);
         symbolicOperation = null;
         solverResult = false;
         threadParkingPermit = new HashMap<>();

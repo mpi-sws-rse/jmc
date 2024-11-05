@@ -9,6 +9,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
+<<<<<<< Updated upstream
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/array/DetArray.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/array/DetArray.java" afterDir="false" />
@@ -36,6 +37,12 @@
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client2.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client2.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client3.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client3.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/LockFreeStack.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/LockFreeStack.java" afterDir="false" />
+=======
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/solver/SymbolicSolverSingletonFactory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/resources/log4j2-test.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/mpisws/runtime/RuntimeEnvironment.java" afterDir="false" />
+>>>>>>> Stashed changes
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -155,7 +162,11 @@
     "Gradle.ModelCheckerTest.randomTestAtomicCounter.executor": "Run",
     "Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks (1).executor": "Run",
     "Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks.executor": "Run",
+<<<<<<< Updated upstream
     "Gradle.ModelCheckerTest.randomTestComplexCounter.executor": "Run",
+=======
+    "Gradle.ModelCheckerTest.randomTestComplexCounter.executor": "Profiler#1",
+>>>>>>> Stashed changes
     "Gradle.ModelCheckerTest.randomTestCorrectCounter.executor": "Run",
     "Gradle.ModelCheckerTest.randomTestDiningPhilosophers.executor": "Run",
     "Gradle.ModelCheckerTest.randomTestInconsistentCounter.executor": "Run",
@@ -163,8 +174,13 @@
     "Gradle.ModelCheckerTest.randomTestParkingCounter.executor": "Run",
     "Gradle.ModelCheckerTest.randomTestPoolCounter.executor": "Run",
     "Gradle.ModelCheckerTest.randomTestRandomCounter.executor": "Run",
+<<<<<<< Updated upstream
     "Gradle.ModelCheckerTest.randomTestSimpleCounter.executor": "Run",
     "Gradle.ModelCheckerTest.randomTestSimpleMessage.executor": "Run",
+=======
+    "Gradle.ModelCheckerTest.randomTestSimpleCounter.executor": "Debug",
+    "Gradle.ModelCheckerTest.randomTestSimpleMessage.executor": "Debug",
+>>>>>>> Stashed changes
     "Gradle.ModelCheckerTest.randomTestStaticCounter.executor": "Run",
     "Gradle.ModelCheckerTest.randomTestSymbolicCounter.executor": "Run",
     "Gradle.ModelCheckerTest.randomTestSyncCounter.executor": "Run",
@@ -195,17 +211,25 @@
     "Gradle.ModelCheckerTest.trustTestDetArray.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetCoarseListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStack.executor": "Run",
+<<<<<<< Updated upstream
     "Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStackII.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetFineListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetLazyListII.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetLockFreeStack.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetLockFreeStackII.executor": "Run",
+=======
+    "Gradle.ModelCheckerTest.trustTestDetFineListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetLockFreeStack.executor": "Run",
+>>>>>>> Stashed changes
     "Gradle.ModelCheckerTest.trustTestDetLoop.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetLoopVariant.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetOptimistListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetOptimistListII.executor": "Run",
+<<<<<<< Updated upstream
     "Gradle.ModelCheckerTest.trustTestDetTimeStampedStack.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestDetTimeStampedStackII.executor": "Run",
+=======
+>>>>>>> Stashed changes
     "Gradle.ModelCheckerTest.trustTestDiningPhilosophers.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestFineListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestFineListII.executor": "Run",
@@ -214,18 +238,26 @@
     "Gradle.ModelCheckerTest.trustTestLazyListII.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetCoarseListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetCoarseListII.executor": "Run",
+<<<<<<< Updated upstream
     "Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStack.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStackII.executor": "Run",
+=======
+>>>>>>> Stashed changes
     "Gradle.ModelCheckerTest.trustTestNonDetFineListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetFineListII.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetLazyListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetLazyListII.executor": "Run",
+<<<<<<< Updated upstream
     "Gradle.ModelCheckerTest.trustTestNonDetLockFreeStack.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetLockFreeStackII.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetOptimistListI.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetOptimistListII.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetTimeStampedStack.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNonDetTimeStampedStackII.executor": "Run",
+=======
+    "Gradle.ModelCheckerTest.trustTestNonDetOptimistListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetOptimistListII.executor": "Run",
+>>>>>>> Stashed changes
     "Gradle.ModelCheckerTest.trustTestNondetArray.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNondetLoop.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestNondetLoopVariant.executor": "Run",
@@ -234,11 +266,20 @@
     "Gradle.ModelCheckerTest.trustTestParkingCounter.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestRandomCounter.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestSimpleCounter (1).executor": "Run",
+<<<<<<< Updated upstream
     "Gradle.ModelCheckerTest.trustTestSimpleCounter.executor": "Run",
+=======
+    "Gradle.ModelCheckerTest.trustTestSimpleCounter.executor": "Debug",
+>>>>>>> Stashed changes
     "Gradle.ModelCheckerTest.trustTestStaticCounter.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestSymbolicCounter.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestSymbolicGCD.executor": "Run",
     "Gradle.ModelCheckerTest.trustTestSyncCounter.executor": "Run",
+<<<<<<< Updated upstream
+=======
+    "Gradle.MultiThreadingTest.testMultiThreading.executor": "Profiler#1",
+    "Gradle.MultiThreadingTest.testMultiThreadingNonBlocking.executor": "Profiler#1",
+>>>>>>> Stashed changes
     "Gradle.jmc [build].executor": "Run",
     "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:BuggyCounter.main()].executor": "Run",
     "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:CorrectCounter.main()].executor": "Run",
@@ -256,6 +297,10 @@
     "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestKotlinCounter.main()].executor": "Run",
     "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestSimpleCounter.main()].executor": "Run",
     "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestSymbolic.main()].executor": "Run",
+<<<<<<< Updated upstream
+=======
+    "JUnit.ModelCheckerTest.randomTestSimpleCounter.executor": "Debug",
+>>>>>>> Stashed changes
     "Kotlin script (Beta).build.gradle.kts.executor": "Run",
     "Kotlin.CounterKt.executor": "Run",
     "Kotlin.MainKt.executor": "Run",
@@ -267,20 +312,34 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "code.cleanup.on.save": "true",
+<<<<<<< Updated upstream
     "git-widget-placeholder": "kianadev",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/KIANA/jmc/src/main/java/org/mpisws/util/concurrent",
+=======
+    "git-widget-placeholder": "feature/logger",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/local/downloads",
+>>>>>>> Stashed changes
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "onboarding.tips.debug.path": "/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/Main.kt",
+<<<<<<< Updated upstream
     "project.structure.last.edited": "Problems",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
     "run.code.analysis.last.selected.profile": "pProject Default",
     "settings.editor.selected.configurable": "preferences.pluginManager",
+=======
+    "project.structure.last.edited": "SDKs",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.5126437",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "reference.settingsdialog.project.gradle",
+>>>>>>> Stashed changes
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
