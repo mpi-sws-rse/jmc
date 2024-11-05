@@ -60,7 +60,7 @@ public class ModelChecker {
     public boolean check(TestTarget target) {
         logger.trace("Starting checker");
         this.target = target;
-        System.out.println("Checking " + target.getTestClass());
+        logger.debug("Checking {}", target.getTestClass());
         this.run(target);
         return true;
     }
@@ -87,14 +87,14 @@ public class ModelChecker {
         } else if (configuration.programType == ProgramType.MESSAGE_PASS) {
             modifyByteCodeMessagePass(byteCodeModifier);
         } else {
-            System.out.println("[Model Checker Messsage] : The program type is not supported");
+            logger.error("The program type is not supported");
             System.exit(-1);
         }
         byteCodeManager.generateClassFile(byteCodeModifier.allByteCode);
         if (this.configuration.verbose) {
             byteCodeManager.generateReadableByteCode(byteCodeModifier.allByteCode);
         }
-        System.out.println("[JMC Message] : Running the modified bytecode");
+        logger.debug("Running the modified bytecode");
         byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage());
     }
 

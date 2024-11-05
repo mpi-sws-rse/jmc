@@ -3,6 +3,8 @@ package org.mpisws.runtime;
 import executionGraph.OptExecutionGraph;
 import executionGraph.operations.GraphOp;
 import kotlin.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.checker.CheckerConfiguration;
 import org.mpisws.checker.GraphExploration;
 import org.mpisws.checker.SchedulingPolicy;
@@ -38,6 +40,8 @@ import java.util.function.BiFunction;
  * environment, where the {@link SchedulerThread} guarantees the sequential execution of operations.
  */
 public class RuntimeEnvironment {
+
+    private static final Logger LOGGER = LogManager.getLogger(RuntimeEnvironment.class);
 
     private static Runtime runtime = Runtime.getRuntime();
 
@@ -437,9 +441,8 @@ public class RuntimeEnvironment {
     public static void init(Thread thread) {
         //initProfiler();
 
-        System.out.println("[Runtime Environment Message] : The RuntimeEnvironment has been deployed");
         numOfExecutions++;
-        System.out.println("[Runtime Environment Message] : The number of executions is " + numOfExecutions);
+        LOGGER.info("Initializing Runtime, iteration: {}", numOfExecutions);
         loadConfig();
         if (solverApproach == SolverApproach.INCREMENTAL) {
             if (solverType == null) {
@@ -457,28 +460,18 @@ public class RuntimeEnvironment {
 
         initReadyThreadCollection();
 
-        System.out.println("[Runtime Environment Message] : The CheckerConfiguration has been loaded");
+        LOGGER.debug("Loaded CheckerConfiguration");
         threadIdMap.put(thread.getId(), (long) threadCount);
         threadObjectMap.put(threadIdMap.get(thread.getId()), thread);
         thread.setName("Thread-" + threadCount++);
         Object lock = new Object();
         locks.put(threadIdMap.get(thread.getId()), lock);
         createdThreadList.add(thread);
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " added to the createdThreadList of" +
-                        " the Runtime Environment"
-        );
+        LOGGER.debug("Thread {} added to the createdThreadList", thread.getName());
         readyThread.add(thread);
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " added to the readyThread list of" +
-                        " the Runtime Environment"
-        );
+        LOGGER.debug("Thread {} with state {} marked ready", thread.getName(), thread.getState());
         mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
         threadParkingPermit.put(threadIdMap.get(thread.getId()), false);
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() +
-                        " state"
-        );
     }
 
     private static void initProfiler() {
@@ -506,12 +499,11 @@ public class RuntimeEnvironment {
     }
 
     public static void printState() {
-        System.out.println("[Runtime Environment Message] : The state of the threads in the createdThreadList");
+        LOGGER.debug("Created Thread statuses");
         for (Thread thread : createdThreadList) {
-            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() +
-                    " state");
+            LOGGER.debug("{}: {}", thread.getName(), thread.getState());
         }
-        System.out.println("[Runtime Environment Message] : The state of the threads in the readyThread List");
+        LOGGER.debug("Ready Thread statuses");
         readyThread.printThreadStatus();
     }
 
@@ -531,15 +523,8 @@ public class RuntimeEnvironment {
             ObjectInputStream in = new ObjectInputStream(fileIn);
             config = (CheckerConfiguration) in.readObject();
             assert (config != null) : "The CheckerConfiguration is null";
-            System.out.println(
-                    "[Runtime Environment Message] : The verbose mode is " + config.verbose +
-                            " , the random seed is " + config.seed +
-                            " , the maximum events per execution is " + config.maxEventsPerExecution +
-                            " , and the maximum iteration is : " + config.maxIterations
-            );
-            System.out.println(
-                    "[Runtime Environment Message] : The strategy type is " + config.strategyType +
-                            " and the program type is " + config.programType);
+            LOGGER.debug("Config: The verbose mode is {}, the random seed is {} , the maximum events per execution is {} , and the maximum iteration is : {}", config.verbose, config.seed, config.maxEventsPerExecution, config.maxIterations);
+            LOGGER.debug("The strategy type is {} and the program type is {}", config.strategyType, config.programType);
             in.close();
             fileIn.close();
             readConfig();
@@ -585,7 +570,7 @@ public class RuntimeEnvironment {
         } else if (schedulingPolicy == SchedulingPolicy.RR) {
             readyThread = new RRThreadCollection();
         } else {
-            System.out.println("[Runtime Environment Message] : The scheduling policy is not supported");
+            LOGGER.error("Unsupported scheduling policy");
             System.exit(0);
         }
     }
@@ -600,7 +585,7 @@ public class RuntimeEnvironment {
         } else if (graphExploration == GraphExploration.DFS) {
             mcGraphs = new GraphStack();
         } else {
-            System.out.println("[Runtime Environment Message] : The graph exploration type is not supported");
+            LOGGER.error("Unsupported graph exploration type");
             System.exit(0);
         }
     }
@@ -623,14 +608,13 @@ public class RuntimeEnvironment {
     }
 
     public static void newTaskCreated(Thread thread, Runnable task, int threadPoolId) {
-        System.out.println("[Runtime Environment Message] : " + thread.getName() +
-                " added " + task + " to the thread pool " + threadPoolId);
+        LOGGER.debug("{} added task {} to the thread pool {}", thread.getName(), task, threadPoolId);
         NewTaskEvent newTaskEvent = createNewTaskEvent(thread, task, threadPoolId);
         eventsRecord.add(newTaskEvent);
     }
 
     public static void threadAwaitForTask(Thread thread) {
-        System.out.println("[RuntimeEnvironmentMessage]: " + thread.getName() + " awaits for the next task");
+        LOGGER.debug("{} awaiting next task", thread.getName());
         AwaitTaskEvent awaitTaskEvent = createAwaitTaskEvent(thread);
         eventsRecord.add(awaitTaskEvent);
     }
@@ -641,7 +625,7 @@ public class RuntimeEnvironment {
     }
 
     public static void taskAssignToThread(Thread thread, Runnable task) {
-        System.out.println("[RuntimeEnvironmentMessage]: " + thread.getName() + " is assigned to task " + task);
+        LOGGER.debug("{} assigned task {}", thread.getName(), task);
         AssignedTaskEvent assignedTaskEvent = createAssignedTaskEvent(thread, task);
         eventsRecord.add(assignedTaskEvent);
     }
@@ -652,7 +636,7 @@ public class RuntimeEnvironment {
     }
 
     public static void threadRunningNewTask(Thread thread, Runnable task) {
-        System.out.println("[RuntimeEnvironmentMessage]: " + thread.getName() + " is going to execute " + task);
+        LOGGER.debug("{} will execute task {}", thread.getName(), task);
         NewRunEvent newRunEvent = createNewRunEvent(thread, task);
         eventsRecord.add(newRunEvent);
     }
@@ -703,18 +687,10 @@ public class RuntimeEnvironment {
             createdThreadList.add(thread);
             mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
             threadParkingPermit.put(threadIdMap.get(thread.getId()), false);
-            System.out.println(
-                    "[Runtime Environment Message] : " + thread.getName() + " added to the createdThreadList " +
-                            "of the Runtime Environment"
-            );
-            System.out.println(
-                    "[Runtime Environment Message] : " + thread.getName() + " has the " + thread.getState() + " state"
-            );
+            LOGGER.debug("{} added to the createdThreadList", thread.getName());
+            LOGGER.debug("{} has the {} state", thread.getName(), thread.getState());
         } else {
-            System.out.println(
-                    "[Runtime Environment Message] : " + thread.getName() +
-                            " is already in the createdThreadList of the RuntimeEnvironment"
-            );
+            LOGGER.warn("{} is already in the createdThreadList", thread.getName());
         }
     }
 
@@ -737,25 +713,18 @@ public class RuntimeEnvironment {
      */
     public static void threadStart(Thread thread, Thread currentThread) {
         if (createdThreadList.contains(thread) && !readyThread.contains(thread)) {
-            System.out.println(
-                    "[Runtime Environment Message] : " + thread.getName() + " requested to run by the command of" +
-                            " the " + currentThread.getName()
-            );
+            LOGGER.debug("{} requested to run through {}", thread.getName(), currentThread.getName());
             readyThread.add(thread);
-            System.out.println(
-                    "[Runtime Environment Message] : " + thread.getName() + " added to the readyThread list " +
-                            "of the Runtime Environment"
-            );
+            LOGGER.debug("{} added to the readyThread list", thread.getName());
             threadStartReq = thread;
             waitRequest(currentThread);
         } else {
-            System.out.println("[Runtime Environment Message] : thread-" + threadIdMap.get(thread.getId()) + " is not " +
-                    "in the createdThreadList");
+            LOGGER.debug("thread-{} not in createdThreadList", threadIdMap.get(thread.getId()));
         }
     }
 
     public static void mainThreadStart(Thread thread) {
-        System.out.println("[Runtime Environment Message] : The main thread requested to start running the program");
+        LOGGER.debug("The main thread has requested to start");
         MainStartEvent mainStartEvent = createMainStartEvent(thread);
         mainStartEventReq = mainStartEvent;
         waitRequest(thread);
@@ -777,10 +746,7 @@ public class RuntimeEnvironment {
      * @param threadRes The thread that the threadReq requested to join over it.
      */
     public static void threadJoin(Thread threadRes, Thread threadReq) {
-        System.out.println(
-                "[Runtime Environment Message] : " + threadReq.getName() + " requested to join over the " +
-                        threadRes.getName()
-        );
+        LOGGER.debug("{} requested to join over the {}", threadReq.getName(), threadRes.getName());
         threadJoinReq = threadReq;
         threadJoinRes = threadRes;
         waitRequest(threadReq);
@@ -799,8 +765,7 @@ public class RuntimeEnvironment {
      */
     public static void getPermission(Thread thread) {
         synchronized (locks.get(threadIdMap.get(thread.getId()))) {
-            System.out.println("[Runtime Environment Message] : " + Thread.currentThread().getName() + " got " +
-                    "permitted to RUN");
+            LOGGER.debug("{} permitted to RUN", Thread.currentThread().getName());
         }
     }
 
@@ -823,7 +788,7 @@ public class RuntimeEnvironment {
      */
     public static void waitRequest(Thread thread) {
         synchronized (locks.get(threadIdMap.get(thread.getId()))) {
-            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has requested to WAIT");
+            LOGGER.debug("{} requested to WAIT", thread.getName());
             /*
               There could be a race condition on {@link #threadWaitReq} in the following assignment statement.
               While the thread is changing the value of {@link #threadWaitReq}, {@link SchedulerThread} can read the
@@ -845,9 +810,9 @@ public class RuntimeEnvironment {
     public static void takeFromQueueRequest(Thread thread) {
         if (thread instanceof JMCStarterThread jmcStarterThread) {
             int id = jmcStarterThread.threadPoolExecutorId;
-            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has requested to take from " + workQueue.get(id));
+            LOGGER.debug("{} requested to take from {}", thread.getName(), workQueue.get(id));
         } else {
-            System.out.println("[Runtime Environment Message] : " + thread.getName() + " is not a JMC Starter Thread");
+            LOGGER.error("{} is not a JMC Starter Thread", thread.getName());
             System.exit(0);
         }
         takeFromBlockingQueueReq = thread;
@@ -874,13 +839,10 @@ public class RuntimeEnvironment {
      */
     public static void initSchedulerThread(Thread main, Thread st) {
         synchronized (locks.get(threadIdMap.get(main.getId()))) {
-            System.out.println(
-                    "[Runtime Environment Message] : Thread-" + threadIdMap.get(main.getId()) + " is calling " +
-                            "the start() of the SchedulerThread"
-            );
+            LOGGER.debug("Thread-{} calling start() of SchedulerThread", threadIdMap.get(main.getId()));
             st.start();
-            System.out.println("[Runtime Environment Message] : " + st.getName() + " has the " + st.getState() + " state");
-            System.out.println("[Runtime Environment Message] : " + main.getName() + " has requested to WAIT");
+            LOGGER.debug("{} has state {}", st.getName(), st.getState());
+            LOGGER.debug("{} requested to WAIT", main.getName());
             threadWaitReq = main;
             try {
                 locks.get(threadIdMap.get(main.getId())).wait();
@@ -911,7 +873,7 @@ public class RuntimeEnvironment {
      */
     public static void finishThreadRequest(Thread thread) throws HaltExecutionException {
         synchronized (locks.get(threadIdMap.get(thread.getId()))) {
-            System.out.println("[Runtime Environment Message] : " + thread.getName() + " has requested to FINISH");
+            LOGGER.debug("{} requested to FINISH", thread.getName());
             createdThreadList.remove(thread);
             readyThread.remove(thread);
             isFinished = true;
@@ -952,12 +914,12 @@ public class RuntimeEnvironment {
      */
     private static void terminateExecution() throws HaltExecutionException {
         if (isExecutionBlocked) {
-            System.out.println("[Runtime Environment Message] : The execution is blocked");
+            LOGGER.info("The execution is blocked");
             numOfBlockedExecutions++;
         }
 
         if (deadlockHappened) {
-            System.out.println("[Runtime Environment Message] : The deadlock happened");
+            LOGGER.info("The deadlock happened");
             createFinishObject(FinishedType.DEADLOCK);
             throw new HaltExecutionException();
         } else if (allExecutionsFinished) {
@@ -965,19 +927,19 @@ public class RuntimeEnvironment {
             createFinishObject(FinishedType.SUCCESS);
             throw new HaltExecutionException();
         } else {
-            System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
-            System.out.println("[Runtime Environment Message] : The " + numOfBlockedExecutions + " execution is blocked");
+            LOGGER.info("Executions finished: {}", numOfExecutions);
+            LOGGER.info("Executions blocked: {} ", numOfBlockedExecutions);
             resetRuntimeEnvironment();
         }
     }
 
     public static void printFinalMessage() {
-        System.out.println("[Runtime Environment Message] : The " + numOfExecutions + " execution is finished");
-        System.out.println("[Runtime Environment Message] : The " + numOfBlockedExecutions + " execution is blocked");
-        System.out.println("[Runtime Environment Message] : The maximum number of the executions is reached");
-        System.out.println("[Runtime Environment Message] : Resource Usage:");
-        System.out.println("[Runtime Environment Message] : Memory Usage: " + currentMemoryUsageInMegaBytes() + " MB");
-        System.out.println("[Runtime Environment Message] : Elapsed Time: " + elapsedTimeInSeconds() + " seconds");
+        LOGGER.info("Executions finished: {}", numOfExecutions);
+        LOGGER.info("Executions blocked: {} ", numOfBlockedExecutions);
+        LOGGER.info("The maximum number of the executions is reached");
+        LOGGER.info("Resource Usage:");
+        LOGGER.info("Memory Usage: {} MB", currentMemoryUsageInMegaBytes());
+        LOGGER.info("Elapsed Time: {} seconds", elapsedTimeInSeconds());
     }
 
     /**
@@ -1004,17 +966,12 @@ public class RuntimeEnvironment {
      */
     public static void readOperation(Object obj, Thread thread, String owner, String name, String descriptor) {
         Location location = createLocation(obj, owner, name, descriptor);
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "read the value of " + owner + "." + name + "(" + descriptor + ") = ");
+        LOGGER.debug("Thread-{} requested to read the value of {}.{}({}) = ", threadIdMap.get(thread.getId()), owner, name, descriptor);
         if (location.isPrimitive()) {
             readEventReq = createReadEvent(thread, location);
             waitRequest(thread);
         } else {
-            System.out.println(
-                    "[Runtime Environment Message] : Since the value is not a primitive type, the Model" +
-                            "Checker will not care about it"
-            );
+            LOGGER.debug("Not primitive type, ignored by Model Checker");
         }
     }
 
@@ -1044,34 +1001,23 @@ public class RuntimeEnvironment {
     public static void writeOperation(Object obj, Object newVal, Thread thread, String owner, String name,
                                       String descriptor) {
         Location location = createLocation(obj, owner, name, descriptor);
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "write the [" + newVal + "] value to " + owner + "." + name + "(" + descriptor + ") ");
+        LOGGER.debug("Thread-{} requested to write value [{}] to {}.{}({}) ", threadIdMap.get(thread.getId()), newVal, owner, name, descriptor);
         if (location.isPrimitive()) {
             writeEventReq = createWriteEvent(thread, location, newVal);
             waitRequest(thread);
         } else {
-            System.out.println(
-                    "[Runtime Environment Message] : Since the value is not a primitive type, the Model " +
-                            "Checker will not care about it"
-            );
+            LOGGER.debug("Not primitive type, ignored by Model Checker");
         }
     }
 
     public static void receiveOperation(Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "receive a message"
-        );
+        LOGGER.debug("Thread-{} requested to receive a message", threadIdMap.get(thread.getId()));
         receiveEventReq = createReceiveEvent(thread);
         waitRequest(thread);
     }
 
     public static ReceiveEvent blockingReceiveRequestOperation(Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "receive a blocking message"
-        );
+        LOGGER.debug("Thread-{} requested to receive a blocking message", threadIdMap.get(thread.getId()));
         ReceiveEvent receiveEvent = createReceiveBlockEvent(thread);
         blockingReceiveEventReq = receiveEvent;
         waitRequest(thread);
@@ -1079,29 +1025,20 @@ public class RuntimeEnvironment {
     }
 
     public static void blockingReceiveOperation(ReceiveEvent receiveEvent) {
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + receiveEvent.getTid() + " requested to " +
-                        "receive a message"
-        );
+        LOGGER.debug("Thread-{} requested to receive a message", receiveEvent.getTid());
         JMCThread jmcThread = (JMCThread) findThreadObject(receiveEvent.getTid());
         receiveEvent.setSerial(getNextSerialNumber(jmcThread));
         if (jmcThread.getNextMessageIndex() < 0) {
             receiveEventReq = receiveEvent;
             waitRequest(jmcThread);
         } else {
-            System.out.println(
-                    "[Runtime Environment Message] : Thread-" + receiveEvent.getTid() + " has already " +
-                            "received the message"
-            );
+            LOGGER.debug("Thread-{} already received the message", receiveEvent.getTid());
             eventsRecord.add(receiveEvent);
         }
     }
 
     public static ReceiveEvent blockingReceiveRequestOperation(Thread thread, BiFunction<Long, Long, Boolean> function) {
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "receive a blocking message"
-        );
+        LOGGER.debug("Thread-{} requested to receive a blocking message", threadIdMap.get(thread.getId()));
         ReceiveEvent receiveEvent = createReceiveTaggedBlockEvent(thread, function);
         blockingReceiveEventReq = receiveEvent;
         waitRequest(thread);
@@ -1109,20 +1046,14 @@ public class RuntimeEnvironment {
     }
 
     public static void receiveTaggedOperation(Thread thread, BiFunction<Long, Long, Boolean> function) {
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "receive a message"
-        );
+        LOGGER.debug("Thread-{} requested to receive a message", threadIdMap.get(thread.getId()));
         receiveEventReq = createReceiveTaggedUnblockEvent(thread, function);
         waitRequest(thread);
     }
 
     public static Message sendSimpleMessageOperation(Thread thread, long receiverId, Object value) {
         Message message = createSimpleMessage(receiverId, value);
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "send an untagged message to Thread-" + threadIdMap.get(receiverId)
-        );
+        LOGGER.debug("Thread-{} requested to send an untagged message to Thread-{}", threadIdMap.get(thread.getId()), threadIdMap.get(receiverId));
         sendEventReq = createSimpleSendEvent(thread, message, receiverId);
         message.setSendEvent(sendEventReq);
         waitRequest(thread);
@@ -1131,10 +1062,7 @@ public class RuntimeEnvironment {
 
     public static Message sendTaggedMessageOperation(Thread thread, long receiverId, long tag, Object value) {
         Message message = createTaggedMessage(receiverId, Thread.currentThread().getId(), value, tag);
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "send a tagged message to Thread-" + threadIdMap.get(receiverId)
-        );
+        LOGGER.debug("Thread-{} requested to send a tagged message to Thread-{}", threadIdMap.get(thread.getId()), threadIdMap.get(receiverId));
         sendEventReq = createTaggedSendEvent(thread, message, receiverId, tag);
         message.setSendEvent(sendEventReq);
         waitRequest(thread);
@@ -1154,7 +1082,7 @@ public class RuntimeEnvironment {
      * @param thread The thread that requested to park.
      */
     public static void parkOperation(Thread thread) {
-        System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to PARK");
+        LOGGER.debug("{} requested to PARK", thread.getName());
         threadToPark = thread;
         waitRequest(thread);
     }
@@ -1173,8 +1101,7 @@ public class RuntimeEnvironment {
      * @param calleeThread the thread that is going to be unparked.
      */
     public static void unparkOperation(Thread callerThread, Thread calleeThread) {
-        System.out.println("[Runtime Environment Message] : " + callerThread.getName() + " requested to UNPARK " +
-                calleeThread.getName());
+        LOGGER.debug("{} requested to UNPARK {}", callerThread.getName(), calleeThread.getName());
         unparkerThread = callerThread;
         unparkeeThread = calleeThread;
         waitRequest(callerThread);
@@ -1195,8 +1122,7 @@ public class RuntimeEnvironment {
      * @return The result of the symbolic arithmetic operation.
      */
     public static boolean symbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
-        System.out.println("[Runtime Environment Message] : " + thread.getName() + " requested to execute a symbolic " +
-                "arithmetic operation");
+        LOGGER.debug("{} requested to execute a symbolic arithmetic operation", thread.getName());
         RuntimeEnvironment.symbolicOperation = symbolicOperation;
         waitRequest(thread);
         return solverResult;
@@ -1219,10 +1145,7 @@ public class RuntimeEnvironment {
      * @param thread The thread that wishes to enter the lock.
      */
     public static void enterMonitor(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " requested to MONITORENTER over " +
-                        "the " + lock.toString()
-        );
+        LOGGER.debug("{} requested to MONITORENTER over the {}", thread.getName(), lock.toString());
         threadEnterMonitorReq = thread;
         objectEnterMonitorReq = lock;
         waitRequest(thread);
@@ -1247,10 +1170,7 @@ public class RuntimeEnvironment {
      * @param thread The thread that wishes to exit the lock.
      */
     public static void exitMonitor(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " requested to MONITOREXIT over " +
-                        "the " + lock.toString()
-        );
+        LOGGER.debug("{} requested to MONITOREXIT over the {}", thread.getName(), lock.toString());
     }
 
     /**
@@ -1269,14 +1189,9 @@ public class RuntimeEnvironment {
      * @param thread The thread that has acquired the lock.
      */
     public static void acquiredMonitor(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " acquired the " + lock.toString() + " lock"
-        );
+        LOGGER.debug("{} acquired the {} lock", thread.getName(), lock.toString());
         monitorList.put(lock, thread);
-        System.out.println(
-                "[Runtime Environment Message] : The monitor (" + lock + ", " + thread.getName() + ") added to the " +
-                        "monitorList of the RuntimeEnvironment"
-        );
+        LOGGER.debug("The monitor ({}, {}) added to the monitorList of the RuntimeEnvironment", lock, thread.getName());
     }
 
     /**
@@ -1295,17 +1210,11 @@ public class RuntimeEnvironment {
      * @param thread The thread that has released the lock.
      */
     public static void releasedMonitor(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " released the " + lock.toString() +
-                        " lock"
-        );
+        LOGGER.debug("{} released the {} lock", thread.getName(), lock.toString());
         monitorList.remove(lock, thread);
         threadExitMonitorReq = thread;
         objectExitMonitorReq = lock;
-        System.out.println(
-                "[Runtime Environment Message] : Monitor (" + lock + ", " + thread.getName() + ") removed from the " +
-                        "monitorList of the RuntimeEnvironment"
-        );
+        LOGGER.debug("Monitor ({}, {}) removed from the monitorList of the RuntimeEnvironment", lock, thread.getName());
         waitRequest(thread);
     }
 
@@ -1320,16 +1229,12 @@ public class RuntimeEnvironment {
      * @throws JMCInterruptException
      */
     public static void acquireLockReq(Object lock, Thread thread) throws JMCInterruptException {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " requested to acquire the " +
-                        lock.toString() + " lock");
+        LOGGER.debug("{} requested to acquire the {} lock", thread.getName(), lock.toString());
         casWithAssume(lock, thread);
     }
 
     public static void acquiredLock(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " acquired the " + lock.toString() + " lock"
-        );
+        LOGGER.debug("{} acquired the {} lock", thread.getName(), lock.toString());
         lockAvailMap.get(lock).acquire();
     }
 
@@ -1363,17 +1268,12 @@ public class RuntimeEnvironment {
 
     public static boolean exclusiveReadOperation(Object obj, Thread thread, String owner, String name, String descriptor) {
         Location location = createLocation(obj, owner, name, descriptor);
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "read the value of " + owner + "." + name + "(" + descriptor + ")");
+        LOGGER.debug("Thread-{} requested to read the value of {}.{}({})", threadIdMap.get(thread.getId()), owner, name, descriptor);
         if (location.isPrimitive()) {
             readEventReq = createReadEvent(thread, location);
             return true;
         } else {
-            System.out.println(
-                    "[Runtime Environment Message] : Since the value is not a primitive type, the Model Checker " +
-                            "will not care about it"
-            );
+            LOGGER.debug("Not primitive type, ignored by Model Checker");
             return false;
         }
     }
@@ -1381,34 +1281,23 @@ public class RuntimeEnvironment {
     public static boolean exclusiveWriteOperation(Object obj, Object newVal, Thread thread, String owner, String name,
                                                   String descriptor) {
         Location location = createLocation(obj, owner, name, descriptor);
-        System.out.println(
-                "[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                        "write the [" + newVal + "] value to " + owner + "." + name + "(" + descriptor + ") ");
+        LOGGER.debug("Thread-{} requested to write the [{}] value to {}.{}({}) ", threadIdMap.get(thread.getId()), newVal, owner, name, descriptor);
         if (location.isPrimitive()) {
             writeEventReq = createWriteEvent(thread, location, newVal);
             return true;
         } else {
-            System.out.println(
-                    "[Runtime Environment Message] : Since the value is not a primitive type, the Model Checker " +
-                            "will not care about it"
-            );
+            LOGGER.debug("Not primitive type, ignored by Model Checker");
             return false;
         }
     }
 
     public static void releaseLockReq(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " requested to release the " +
-                        lock.toString() + " lock"
-        );
+        LOGGER.debug("{} requested to release the {} lock", thread.getName(), lock.toString());
         lockAvailMap.get(lock).release();
     }
 
     public static void releasedLock(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " released the " + lock.toString() +
-                        " lock"
-        );
+        LOGGER.debug("{} released the {} lock", thread.getName(), lock.toString());
         Location location = createLocation(lockAvailMap.get(lock), "org/mpisws/util/concurrent/JMCLock", "permits", "I");
         WriteEvent writeEvent = createWriteEvent(thread, location, 0);
         writeEventReq = writeEvent;
@@ -1416,10 +1305,7 @@ public class RuntimeEnvironment {
     }
 
     public static void initLock(Object lock, Thread thread) {
-        System.out.println(
-                "[Runtime Environment Message] : " + thread.getName() + " requested to initialize the " +
-                        lock.toString() + " lock"
-        );
+        LOGGER.debug("{} requested to initialize the {} lock", thread.getName(), lock.toString());
         JMCLock jmcLock = new JMCLock(lock, 0);
         lockAvailMap.put(lock, jmcLock);
         Location location = createLocation(jmcLock, "org/mpisws/util/concurrent/JMCLock", "permits", "I");
@@ -1429,7 +1315,7 @@ public class RuntimeEnvironment {
     }
 
     public static void addFuture(Future future, Thread thread) {
-        System.out.println("[Runtime Environment Message] : Future (" + future + ") has been created for thread-" + threadIdMap.get(thread.getId()));
+        LOGGER.debug("Future ({}) has been created for thread-{}", future, threadIdMap.get(thread.getId()));
         futureThreadMap.put(threadIdMap.get(thread.getId()), future);
     }
 
@@ -1442,28 +1328,10 @@ public class RuntimeEnvironment {
     }
 
     public static void getFuture(Thread thread, FutureTask future) {
-        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to get the value of the future (" + future + ")");
+        LOGGER.debug("Thread-{} requested to get the value of the future ({})", threadIdMap.get(thread.getId()), future);
         getFutureReq = future;
         waitRequest(thread);
     }
-
-//    public static void taskAssignToThread(Thread thread, Runnable task) {
-//        // TODO(): check the body of this method
-//        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been assigned to the task (" + task + ")");
-//        if (!readyThread.contains(thread) && untaskedThreadList.contains(thread)) {
-//            readyThread.add(thread);
-//            untaskedThreadList.remove(thread);
-//        }
-//    }
-
-//    public static void taskDissociateFromThread(Thread thread, Runnable task) {
-//        // TODO(): check the body of this method
-//        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " has been dissociated from the task");
-//        if (readyThread.contains(thread) && !untaskedThreadList.contains(thread)) {
-//            readyThread.remove(thread);
-//            untaskedThreadList.add(thread);
-//        }
-//    }
 
     /**
      * Handles an assertion failure from a thread.
@@ -1481,37 +1349,34 @@ public class RuntimeEnvironment {
      * @param message The failure message associated with the assert statement.
      */
     public static void assertOperation(String message) {
-        System.out.println("[Runtime Environment Message] : " + message);
+        LOGGER.debug("Assertion message : {}", message);
         if (isExecutionBlocked) {
-            System.out.println("[Runtime Environment Message] : However, the execution is blocked. So, the assertion is ignored");
+            LOGGER.debug("The execution is blocked. Ignoring assertion message");
         }
         assertFlag = true;
         waitRequest(Thread.currentThread());
     }
 
     public static void symAssertOperation(String meesage, SymbolicOperation sym, Thread thread) {
-        System.out.println("[Runtime Environment Message] : Thread-" + threadIdMap.get(thread.getId()) + " requested to " +
-                "execute a symbolic assert operation with the formula of " + sym.getFormula());
+        LOGGER.debug("Thread-{} requested to execute a symbolic assert operation with the formula of {}", threadIdMap.get(thread.getId()), sym.getFormula());
         solver.computeSymbolicAssertOperationRequest(sym);
         if (solverResult) {
-            System.out.println("[Runtime Environment Message] : The symbolic assert operation is SAT");
+            LOGGER.debug("The symbolic assert operation is SAT");
         } else {
-            System.out.println("[Runtime Environment Message] : The symbolic assert operation is UNSAT");
+            LOGGER.debug("The symbolic assert operation is UNSAT");
             assertOperation(meesage);
         }
     }
 
     public static void concreteAssume(Thread thread, boolean result) {
-        System.out.println("[Runtime Environment Message] : " + Thread.currentThread().getName() + " requested to " +
-                "execute a concrete assume operation with the result of " + result);
+        LOGGER.debug("{} requested to execute a concrete assume operation with the result of {}", Thread.currentThread().getName(), result);
         ConAssumeEvent conAssumeEvent = createConAssumeEvent(thread, result);
         conAssumeEventReq = conAssumeEvent;
         waitRequest(thread);
     }
 
     public static boolean symbolicAssume(Thread thread, SymbolicOperation op) {
-        System.out.println("[Runtime Environment Message] : " + Thread.currentThread().getName() + " requested to " +
-                "execute a symbolic assume operation with the formula of " + op.getFormula());
+        LOGGER.debug("{} requested to execute a symbolic assume operation with the formula of {}", Thread.currentThread().getName(), op.getFormula());
         symAssumeEventReq = op;
         waitRequest(thread);
         return solverResult;
@@ -1523,8 +1388,7 @@ public class RuntimeEnvironment {
     }
 
     public static void AssumeBlocked(Thread thread) {
-        System.out.println("[Runtime Environment Message] : " + Thread.currentThread().getName() + " requested to " +
-                "execute a blocking assume operation");
+        LOGGER.debug("{} requested to execute a blocking assume operation", Thread.currentThread().getName());
         AssumeBlockedEvent assumeBlockedEvent = createAssumeBlockedEvent(thread);
         assumeBlockedEventReq = assumeBlockedEvent;
         waitRequest(thread);
@@ -1964,7 +1828,7 @@ public class RuntimeEnvironment {
      */
 
     public static StaticMethodMonitor getStaticMethodMonitor(String className, String methodName, String descriptor) {
-        System.out.println("[Runtime Environment Message] : Getting StaticMethodMonitor for " + className + "." + methodName + descriptor);
+        LOGGER.debug("Getting StaticMethodMonitor for {}.{}{}", className, methodName, descriptor);
         for (StaticMethodMonitor stm : staticMethodMonitorList) {
             if (stm.getClassName().equals(className) && stm.getMethodName().equals(methodName) && stm.getMethodDescriptor().equals(descriptor)) {
                 return stm;
@@ -1991,7 +1855,7 @@ public class RuntimeEnvironment {
      * @return the {@link InstanceMethodMonitor} for the method.
      */
     public static InstanceMethodMonitor getInstanceMethodMonitor(Object obj, String methodName, String descriptor) {
-        System.out.println("[Runtime Environment Message] : Getting InstanceMethodMonitor for " + obj + "." + methodName + descriptor);
+        LOGGER.debug("Getting InstanceMethodMonitor for {}.{}{}", obj, methodName, descriptor);
         for (InstanceMethodMonitor imm : instanceMethodMonitorList) {
             if (imm.getObject().equals(obj) && imm.getMethodName().equals(methodName) && imm.getMethodDescriptor().equals(descriptor)) {
                 return imm;
@@ -2029,7 +1893,7 @@ public class RuntimeEnvironment {
      */
     private static Location createLocation(Object obj, String owner, String name, String descriptor) {
         try {
-            System.out.println("[Runtime Environment Message] : Creating Location for " + owner + " $ " + name + " $ " + descriptor);
+            LOGGER.debug("Creating Location for {} $ {} $ {}", owner, name, descriptor);
             Class<?> clazz = Class.forName(owner.replace("/", "."));
             Object instance = clazz.cast(obj);
             Field field = clazz.getDeclaredField(name);

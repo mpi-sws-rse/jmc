@@ -23,6 +23,8 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.util.Textifier;
@@ -38,6 +40,8 @@ import org.objectweb.asm.util.TraceClassVisitor;
  * The class requires the path to the directory containing the .java files and the name of the main class.
  */
 public class ByteCodeManager {
+
+    private static final Logger LOGGER = LogManager.getLogger(ByteCodeManager.class);
 
     /**
      * @property {@link #path} - The path to the directory containing the .java files
@@ -138,8 +142,7 @@ public class ByteCodeManager {
         JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, null, null, null, compilationUnits);
         boolean isCompiledSuccessfully = task.call();
         // Print the result of the compilation
-        System.out.println("[Bytecode Manager Message] : Compilation of file " + filePath + " " +
-                (isCompiledSuccessfully ? "succeeded" : "failed"));
+        LOGGER.info("Compilation of file {} {}", filePath, isCompiledSuccessfully ? "succeeded" : "failed");
     }
 
     /**
@@ -157,8 +160,7 @@ public class ByteCodeManager {
         }
         File directory = new File(this.path);
         if (!directory.exists() || !directory.isDirectory()) {
-            System.out.println(path);
-            System.out.println(directory);
+            LOGGER.error("Path does not exist : {}/{}", directory, path);
             throw new IllegalArgumentException("Path must point to an existing directory");
         }
         Map<String, byte[]> classToBytecode = new HashMap<>();
@@ -186,8 +188,7 @@ public class ByteCodeManager {
                         String className = classReader.getClassName().replace("/", ".");
                         classToBytecode.put(className, bytecode);
                     } catch (IOException e) {
-                        System.out.println("[Bytecode Manager Message] : Error reading bytecode from file: " +
-                                file.getPath());
+                        LOGGER.error("Error reading bytecode from file: {}", file.getPath());
                         e.printStackTrace();
                     }
                 }
@@ -211,12 +212,10 @@ public class ByteCodeManager {
             byte[] bytecode = entry.getValue();
             String classPath = className.replace(".", "/");
             try {
-                System.out.println("[Bytecode Manager Message] : Writing bytecode to file: src/test/java/" +
-                        classPath + ".class");
+                LOGGER.info("Writing bytecode to file: src/test/java/{}.class", classPath);
                 Files.write(Path.of("src/test/java/" + classPath + ".class"), bytecode);
             } catch (IOException e) {
-                System.out.println("[Bytecode Manager Message] : Error writing bytecode to file: src/test/java/" +
-                        classPath + ".class");
+                LOGGER.error("Error writing bytecode to file: src/test/java/{}.class", classPath);
                 e.printStackTrace();
             }
         }
@@ -256,31 +255,30 @@ public class ByteCodeManager {
                     finished = loadFinishObject();
                 } catch (InvocationTargetException e) {
                     if (e.getTargetException() instanceof HaltExecutionException) {
-                        System.out.println("[Bytecode Manager Message] : The Halt Execution Exception happened");
+                        LOGGER.error("The Halt Execution Exception happened");
                         finished = loadFinishObject();
                     } else {
                         // Handle other exceptions
-                        System.out.println("[Bytecode Manager Message] : Error invoking the main method: " +
-                                e.getMessage());
+                        LOGGER.error("Error invoking the main method: {}", e.getMessage());
                         e.printStackTrace();
                     }
                 }
             }
             state(finished);
         } catch (IOException e) {
-            System.out.println("[Bytecode Manager Message] : Error reading bytecode file: " + e.getMessage());
+            LOGGER.error("Error reading bytecode file: {}", e.getMessage());
             e.printStackTrace();
         } catch (IllegalArgumentException e) {
-            System.out.println("[Bytecode Manager Message] : Invalid argument provided: " + e.getMessage());
+            LOGGER.error("Invalid argument provided: {}", e.getMessage());
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
-            System.out.println("[Bytecode Manager Message] : Error loading the class: " + e.getMessage());
+            LOGGER.error("Error loading the class: {}", e.getMessage());
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
-            System.out.println("[Bytecode Manager Message] : Error getting the main method: " + e.getMessage());
+            LOGGER.error("Error getting the main method: {}", e.getMessage());
             e.printStackTrace();
         } catch (IllegalAccessException e) {
-            System.out.println("[Bytecode Manager Message] : Error accessing the main method: " + e.getMessage());
+            LOGGER.error("Error accessing the main method: {}", e.getMessage());
             e.printStackTrace();
         }
     }
@@ -345,8 +343,7 @@ public class ByteCodeManager {
                     fileWriter.write(stringWriter.toString());
                 }
             } catch (IOException e) {
-                System.out.println("[Bytecode Manager Message] : Error generating readable bytecode for class: " +
-                        className);
+                LOGGER.error("Error generating readable bytecode for class: {}", className);
                 e.printStackTrace();
             }
         }
@@ -356,13 +353,13 @@ public class ByteCodeManager {
      * Print the state of the model checking process
      */
     public void state(Finished finished) {
-        System.out.println("[Bytecode Manager Message] : The Model Checking process has finished");
+        LOGGER.info("The Model Checking process has finished");
         if (finished.type == FinishedType.SUCCESS) {
-            System.out.println("[Bytecode Manager Message] : The program is thread-safe");
+            LOGGER.info("The program is thread-safe");
         } else if (finished.type == FinishedType.DEADLOCK) {
-            System.out.println("[Bytecode Manager Message] : The program has a potential deadlock");
+            LOGGER.info("The program has a potential deadlock");
         } else if (finished.type == FinishedType.BUG) {
-            System.out.println("[Bytecode Manager Message] : The program is not thread-safe");
+            LOGGER.info("The program is not thread-safe");
         }
     }
 }

@@ -4,6 +4,8 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.checker.StrategyType;
 import org.mpisws.checker.strategy.*;
@@ -21,6 +23,8 @@ import programStructure.*;
  * of operations.
  */
 public class SchedulerThread extends Thread {
+
+    private static final Logger LOGGER = LogManager.getLogger(SchedulerThread.class);
 
     /**
      * @property {@link SearchStrategy} is used to select the next thread to be executed based on the selected strategy.
@@ -57,7 +61,7 @@ public class SchedulerThread extends Thread {
             searchStrategy = new OptTrustStrategy();
         } else {
             // TODO() : Fix it
-            System.out.println("[Scheduler Thread Message] : Unsupported strategy type: " + strategyType);
+            LOGGER.error("Unsupported strategy type: {}", strategyType);
             //throw new IllegalArgumentException("Unsupported strategy type: " + strategyType);
             System.exit(1);
         }
@@ -79,7 +83,7 @@ public class SchedulerThread extends Thread {
             if (checkAssertFlag()) {
                 handleAssertFail();
             }
-            System.out.println("[Scheduler Thread Message] : All threads are in waiting state");
+            LOGGER.debug("All threads are in waiting state");
             waitForThreadStateChange();
             eventHandler();
         }
@@ -114,9 +118,9 @@ public class SchedulerThread extends Thread {
      * This method is used to print the start message.
      */
     private void printStartMessage() {
-        System.out.println("******************************************************************************************");
-        System.out.println("[*** From this point on, the flow of the program is controlled by the SchedulerThread ***]");
-        System.out.println("******************************************************************************************");
+        LOGGER.debug("******************************************************************************************");
+        LOGGER.debug("[*** From this point on, the flow of the program is controlled by the SchedulerThread ***]");
+        LOGGER.debug("******************************************************************************************");
     }
 
     /**
@@ -158,35 +162,31 @@ public class SchedulerThread extends Thread {
             // TODO() : Create FailureEvent and replace the following line with the nextFailureEvent method
             searchStrategy.nextFailureEvent(RuntimeEnvironment.threadWaitReq);
             searchStrategy.printExecutionTrace();
-            System.out.println("******************************************************************************************");
-            System.out.println("[*** Assertion Fail ***]");
-            System.out.println("[*** Number of execution iteration : " + RuntimeEnvironment.numOfExecutions + " ***]");
-            System.out.println("[*** The SchedulerThread requested to FINISH***]");
+            LOGGER.error("[*** Assertion Fail ***]");
+            LOGGER.error("[*** Number of execution iteration : {} ***]", RuntimeEnvironment.numOfExecutions);
+            LOGGER.debug("[*** The SchedulerThread requested to FINISH***]");
             RuntimeEnvironment.printFinalMessage();
-            System.out.println("******************************************************************************************");
             searchStrategy.saveBuggyExecutionTrace();
             System.exit(0);
         }
     }
 
     private void printResourceUsage() {
-        System.out.println("******************************************************************************************");
-        System.out.println("[*** Resource Usage ***]");
-        System.out.println("[*** Number of execution iteration : " + RuntimeEnvironment.numOfExecutions + " ***]");
-        System.out.println("[*** Number of threads created : " + RuntimeEnvironment.createdThreadList.size() + " ***]");
-        System.out.printf("[*** Memory used : %d MB ***]%n", RuntimeEnvironment.currentMemoryUsageInMegaBytes());
+        LOGGER.debug("[*** Resource Usage ***]");
+        LOGGER.debug("[*** Number of execution iteration : {} ***]", RuntimeEnvironment.numOfExecutions);
+        LOGGER.debug("[*** Number of threads created : {} ***]", RuntimeEnvironment.createdThreadList.size());
+        LOGGER.debug("[*** Memory used : {} MB ***]", RuntimeEnvironment.currentMemoryUsageInMegaBytes());
         long timeInNano = RuntimeEnvironment.elapsedTimeInNanoSeconds();
-        System.out.printf("[*** Time taken to execute the program : %d ns%n", timeInNano);
-        double timeInSeconds = timeInNano / 1_000_000_000;
+        LOGGER.debug("[*** Time taken to execute the program : {} ns", timeInNano);
+        double timeInSeconds = (double) timeInNano / 1_000_000_000;
         double timeInMinutes = timeInSeconds / 60;
         timeInSeconds = timeInSeconds % 60;
-        System.out.printf("[*** Time taken to execute the program : %f min: %f sec%n", timeInMinutes, timeInSeconds);
+        LOGGER.debug("[*** Time taken to execute the program : {} min: {} sec", timeInMinutes, timeInSeconds);
 //        System.out.println("[*** Number of threads started : " + RuntimeEnvironment.startedThreadList.size() + " ***]");
 //        System.out.println("[*** Number of threads finished : " + RuntimeEnvironment.finishedThreadList.size() + " ***]");
 //        System.out.println("[*** Number of threads waiting : " + RuntimeEnvironment.waitingThreadList.size() + " ***]");
 //        System.out.println("[*** Number of threads in monitor : " + RuntimeEnvironment.monitorThreadList.size() + " ***]");
 //        System.out.println("[*** Number of threads in deadlock : " + RuntimeEnvironment.deadlockThreadList.size() + " ***]");
-        System.out.println("******************************************************************************************");
     }
 
     /**
@@ -197,7 +197,7 @@ public class SchedulerThread extends Thread {
      */
     private void waitForThreadStateChange() {
         synchronized (RuntimeEnvironment.locks.get(getThreadId(RuntimeEnvironment.threadWaitReq))) {
-            System.out.println("[Scheduler Thread Message] : Scheduling phase begins");
+            LOGGER.debug("Scheduling phase begins");
         }
     }
 
@@ -207,11 +207,9 @@ public class SchedulerThread extends Thread {
      * <p>This method is used to print the end message.</p>
      */
     private void printEndMessage() {
-        //System.out.println("[Scheduler Thread Message] : The last execution trace is :");
+        //LOGGER.debug("The last execution trace is :");
         //searchStrategy.printExecutionTrace();
-        System.out.println("******************************************************************************************");
-        System.out.println("[*** The SchedulerThread requested to FINISH***]");
-        System.out.println("******************************************************************************************");
+        LOGGER.debug("[*** The SchedulerThread requested to FINISH***]");
         //printResourceUsage();
     }
 
@@ -261,7 +259,7 @@ public class SchedulerThread extends Thread {
         Optional<Thread> optionalThread = Optional.ofNullable(thread);
         if (optionalThread.isPresent()) {
             Long threadId = getThreadId(optionalThread.get());
-            System.out.println("[Scheduler Thread Message] : Thread-" + threadId + " is permitted to run");
+            LOGGER.debug("Thread-{} is permitted to run", threadId);
             synchronized (RuntimeEnvironment.locks.get(threadId)) {
                 RuntimeEnvironment.locks.get(threadId).notify();
             }
@@ -416,7 +414,7 @@ public class SchedulerThread extends Thread {
     }
 
     private void casRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : CAS request handler is called");
+        LOGGER.debug("CAS request handler is called");
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         Optional<ReadExEvent> exclusiveReadEvent = Optional.ofNullable(RuntimeEnvironment.exclusiveReadEventReq);
         Optional<WriteExEvent> exclusiveWriteEvent = Optional.ofNullable(RuntimeEnvironment.exclusiveWriteEventReq);
@@ -430,7 +428,7 @@ public class SchedulerThread extends Thread {
     }
 
     private void symAssumeRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Symbolic assume request handler is called");
+        LOGGER.debug("Symbolic assume request handler is called");
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         Optional<SymbolicOperation> symAssumeEvent = Optional.ofNullable(RuntimeEnvironment.symAssumeEventReq);
         RuntimeEnvironment.symAssumeEventReq = null;
@@ -442,7 +440,7 @@ public class SchedulerThread extends Thread {
     }
 
     private void conAssumeRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Concrete assume request handler is called");
+        LOGGER.debug("Concrete assume request handler is called");
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         Optional<ConAssumeEvent> conAssumeEvent = Optional.ofNullable(RuntimeEnvironment.conAssumeEventReq);
         RuntimeEnvironment.conAssumeEventReq = null;
@@ -454,7 +452,7 @@ public class SchedulerThread extends Thread {
     }
 
     private void assumeBlockedRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Assume blocked request handler is called");
+        LOGGER.debug("Assume blocked request handler is called");
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         Optional<AssumeBlockedEvent> assumeBlockedEvent = Optional.ofNullable(RuntimeEnvironment.assumeBlockedEventReq);
         RuntimeEnvironment.assumeBlockedEventReq = null;
@@ -466,7 +464,7 @@ public class SchedulerThread extends Thread {
     }
 
     private void mainStartEventHandler() {
-        System.out.println("[Scheduler Thread Message] : Main Start event handler is called");
+        LOGGER.debug("Main Start event handler is called");
         Optional<MainStartEvent> mainStartEvent = Optional.ofNullable(RuntimeEnvironment.mainStartEventReq);
         Optional<Thread> callerThread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.mainStartEventReq = null;
@@ -490,7 +488,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     private void startEventHandler() {
-        System.out.println("[Scheduler Thread Message] : Start event handler is called");
+        LOGGER.debug("Start event handler is called");
         Optional<Thread> calleeThread = Optional.ofNullable(RuntimeEnvironment.threadStartReq);
         Optional<Thread> callerThread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.threadWaitReq = null;
@@ -511,10 +509,7 @@ public class SchedulerThread extends Thread {
      * @param thread the thread to be started.
      */
     private void startThread(Thread thread) {
-        System.out.println(
-                "[Scheduler Thread Message] : Thread-" + getThreadId(thread) +
-                        " is permitted to run for loading in the runtime environment"
-        );
+        LOGGER.debug("Thread-{} is permitted to run for loading in the runtime environment", getThreadId(thread));
         if (thread instanceof JMCStarterThread jmcStarterThread) {
             jmcStarterThread.startByScheduler();
         } else {
@@ -531,7 +526,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     public void enterMonitorRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Enter monitor request handler is called");
+        LOGGER.debug("Enter monitor request handler is called");
         Optional<Thread> enterMonitorThread = Optional.ofNullable(RuntimeEnvironment.threadEnterMonitorReq);
         Optional<Object> enterMonitorObject = Optional.ofNullable(RuntimeEnvironment.objectEnterMonitorReq);
         RuntimeEnvironment.threadEnterMonitorReq = null;
@@ -561,7 +556,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     public void exitMonitorRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Exit monitor request handler is called");
+        LOGGER.debug("Exit monitor request handler is called");
         Optional<Thread> exitMonitorThread = Optional.ofNullable(RuntimeEnvironment.threadExitMonitorReq);
         Optional<Object> exitMonitorObject = Optional.ofNullable(RuntimeEnvironment.objectExitMonitorReq);
         RuntimeEnvironment.threadExitMonitorReq = null;
@@ -583,7 +578,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     public void joinRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Join request handler is called");
+        LOGGER.debug("Join request handler is called");
         Optional<Thread> joinRequestThread = Optional.ofNullable(RuntimeEnvironment.threadJoinReq);
         Optional<Thread> joinResponseThread = Optional.ofNullable(RuntimeEnvironment.threadJoinRes);
         RuntimeEnvironment.threadJoinReq = null;
@@ -608,7 +603,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     public void readRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : read request handler is called");
+        LOGGER.debug("Read request handler is called");
         Optional<ReadEvent> readRequestEvent = Optional.ofNullable(RuntimeEnvironment.readEventReq);
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.readEventReq = null;
@@ -620,7 +615,7 @@ public class SchedulerThread extends Thread {
     }
 
     public void receiveRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : receive request handler is called");
+        LOGGER.debug("Receive request handler is called");
         Optional<ReceiveEvent> receiveRequestEvent = Optional.ofNullable(RuntimeEnvironment.receiveEventReq);
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.receiveEventReq = null;
@@ -632,7 +627,7 @@ public class SchedulerThread extends Thread {
     }
 
     public void blockingReceiveRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : blocking receive request handler is called");
+        LOGGER.debug("Blocking receive request handler is called");
         Optional<ReceiveEvent> blockingReceiveEventReq = Optional.ofNullable(RuntimeEnvironment.blockingReceiveEventReq);
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.blockingReceiveEventReq = null;
@@ -655,7 +650,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     public void writeRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : write request handler is called");
+        LOGGER.debug("Write request handler is called");
         Optional<WriteEvent> writeRequestEvent = Optional.ofNullable(RuntimeEnvironment.writeEventReq);
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.writeEventReq = null;
@@ -667,7 +662,7 @@ public class SchedulerThread extends Thread {
     }
 
     public void sendRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : send request handler is called");
+        LOGGER.debug("Send request handler is called");
         Optional<SendEvent> sendRequestEvent = Optional.ofNullable(RuntimeEnvironment.sendEventReq);
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.sendEventReq = null;
@@ -687,7 +682,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     public void finishRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Finish request handler is called");
+        LOGGER.debug("Finish request handler is called");
         Optional<Thread> finishedThread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         RuntimeEnvironment.threadWaitReq = null;
         RuntimeEnvironment.isFinished = false;
@@ -707,7 +702,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     public void unparkRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Unpark request handler is called");
+        LOGGER.debug("Unpark request handler is called");
         Optional<Thread> unparkerThread = Optional.ofNullable(RuntimeEnvironment.unparkerThread);
         Optional<Thread> unparkeeThread = Optional.ofNullable(RuntimeEnvironment.unparkeeThread);
         RuntimeEnvironment.unparkerThread = null;
@@ -728,7 +723,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     public void parkRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Park request handler is called");
+        LOGGER.debug("Park request handler is called");
         Optional<Thread> threadToPark = Optional.ofNullable(RuntimeEnvironment.threadToPark);
         RuntimeEnvironment.threadToPark = null;
         RuntimeEnvironment.threadWaitReq = null;
@@ -747,7 +742,7 @@ public class SchedulerThread extends Thread {
      * </p>
      */
     public void symbolicArithmeticRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Symbolic arithmetic request handler is called");
+        LOGGER.debug("Symbolic arithmetic request handler is called");
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         Optional<SymbolicOperation> symbolicOperation = Optional.ofNullable(RuntimeEnvironment.symbolicOperation);
         RuntimeEnvironment.threadWaitReq = null;
@@ -759,7 +754,7 @@ public class SchedulerThread extends Thread {
     }
 
     public void getFutureRequestHandler() {
-        System.out.println("[Scheduler Thread Message] : Get future request handler is called");
+        LOGGER.debug("Get future request handler is called");
         Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
         Optional<FutureTask> getFutureRequest = Optional.ofNullable(RuntimeEnvironment.getFutureReq);
         RuntimeEnvironment.threadWaitReq = null;

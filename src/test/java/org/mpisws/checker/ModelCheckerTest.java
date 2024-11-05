@@ -205,6 +205,7 @@ class ModelCheckerTest {
                 "main",
                 "src/test/java/org/mpisws/concurrent/programs/correct/counter/"
         );
+        checker.configuration.maxIterations = 100;
         checker.configuration.strategyType = StrategyType.RANDOM;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.graphExploration = GraphExploration.DFS;

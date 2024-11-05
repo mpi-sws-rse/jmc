@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.FutureTask;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.runtime.ThreadCollection;
 import org.mpisws.util.concurrent.JMCFutureTask;
 import org.mpisws.util.concurrent.JMCStarterThread;
@@ -23,6 +25,9 @@ import org.mpisws.runtime.RuntimeEnvironment;
  * class to control the flow of a program's execution and ensure a specific execution order of operations.
  */
 public interface SearchStrategy {
+
+    Logger LOGGER = LogManager.getLogger(SearchStrategy.class);
+
     /**
      * Represents the required strategy for the next start event.
      *
@@ -85,18 +90,12 @@ public interface SearchStrategy {
         RuntimeEnvironment.eventsRecord.add(monitorRequestEvent);
         RuntimeEnvironment.monitorRequest.put(thread, monitor);
         if (monitorsDeadlockDetection()) {
-            System.out.println(
-                    "[Search Strategy Message] : There is a deadlock between the threads in using " +
-                            "the monitors"
-            );
+            LOGGER.debug("There is a deadlock between the threads in using the monitors");
             RuntimeEnvironment.deadlockHappened = true;
             RuntimeEnvironment.executionFinished = true;
             return null;
         } else {
-            System.out.println(
-                    "[Search Strategy Message] : There is no deadlock between the threads in using " +
-                            "the monitors"
-            );
+            LOGGER.debug("There is no deadlock between the threads in using the monitors");
             return pickNextThread();
         }
     }
@@ -252,7 +251,7 @@ public interface SearchStrategy {
      */
     private SymbolicOperation negateSymbolicOperation(SymbolicOperation symbolicOperation) {
         symbolicOperation.setFormula(RuntimeEnvironment.solver.negateFormula(symbolicOperation.getFormula()));
-        System.out.println("[Search Strategy Message] : The negated formula is saved " + symbolicOperation.getFormula());
+        LOGGER.debug("The negated formula is saved {}", symbolicOperation.getFormula());
         return symbolicOperation;
     }
 
@@ -261,10 +260,10 @@ public interface SearchStrategy {
      */
     default void printExecutionTrace() {
         if (RuntimeEnvironment.verbose) {
-            System.out.println("[Search Strategy Message] : Execution trace:");
+            LOGGER.debug("Execution trace:");
             for (Event event : RuntimeEnvironment.eventsRecord) {
                 int index = RuntimeEnvironment.eventsRecord.indexOf(event) + 1;
-                System.out.println("[Search Strategy Message] : " + index + "." + event);
+                LOGGER.debug("{}.{}", index, event);
             }
         }
     }
@@ -295,42 +294,35 @@ public interface SearchStrategy {
         Optional<ThreadCollection> readyThread = Optional.ofNullable(RuntimeEnvironment.readyThread);
         if (!readyThread.get().isEmpty()) {
             if (readyThread.get().size() > 1) {
-                System.out.println("[Search Strategy Message] : There are more than one thread in the ready thread list");
+                LOGGER.debug("There are more than one thread in the ready thread list");
                 Thread randomElement = readyThread.get().getNext();
                 return handleChosenThreadRequest(randomElement);
             } else { // readyThread.get().size() == 1
-                System.out.println("[Search Strategy Message] : Only one thread is in the ready thread list");
+                LOGGER.debug("Only one thread is in the ready thread list");
                 return handleChosenThreadRequest(readyThread.get().getNext());
             }
         } else if (!RuntimeEnvironment.blockedRecvThreadMap.isEmpty()) {
-            System.out.println("[Search Strategy Message] : Ready list is empty, but there are blocked receive threads");
+            LOGGER.debug("Ready list is empty, but there are blocked receive threads");
             if (computeUnblockedRecvThread()) {
                 return pickNextReadyThread();
             } else {
-                System.out.println(
-                        "[Search Strategy Message] : There is a deadlock between the threads in executing " +
-                                "blocking receive operations"
-                );
+                LOGGER.error("There is a deadlock between the threads in executing blocking receive operations");
                 printExecutionTrace();
                 saveBuggyExecutionTrace();
-                System.out.println("******************************************************************************************");
-                System.out.println("[*** Resource Usage ***]");
+                LOGGER.error("[*** Resource Usage ***]");
                 RuntimeEnvironment.printFinalMessage();
-                System.out.println("******************************************************************************************");
                 System.exit(0);
                 return null;
             }
         } else if (RuntimeEnvironment.suspendedThreads.size() > 0) {
-            System.out.println(
-                    "[Search Strategy Message] : There is a deadlock between the threads in using monitors "
-            );
+            LOGGER.error("There is a deadlock between the threads in using monitors");
             printExecutionTrace();
             saveBuggyExecutionTrace();
             System.exit(0);
             return null;
         } else {
-            System.out.println("[Search Strategy Message] : There is no thread in the ready list");
-            System.out.println("[Search Strategy Message] : The scheduler thread is going to terminate");
+            LOGGER.debug("There is no thread in the ready list");
+            LOGGER.debug("The scheduler thread is going to terminate");
             return null;
         }
     }
@@ -342,10 +334,7 @@ public interface SearchStrategy {
                 JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(entry.getValue().getTid());
                 RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, entry.getValue());
                 result = true;
-                System.out.println(
-                        "[Search Strategy Message] : The thread " + jmcThread.getName() + " is unblocked" + ", since " +
-                                "the message is available"
-                );
+                LOGGER.debug("The thread {} is unblocked, since the message is available", jmcThread.getName());
             }
         }
         return result;
@@ -410,25 +399,15 @@ public interface SearchStrategy {
      */
     default Thread handleMonitorRequest(Thread thread) {
         Object monitor = RuntimeEnvironment.monitorRequest.get(thread);
-        System.out.println(
-                "[Search Strategy Message] : Thread-" + RuntimeEnvironment.threadIdMap.get(thread.getId())
-                        + " is requested to enter the monitor " + monitor
-        );
+        LOGGER.debug("Thread-{} is requested to enter the monitor {}", RuntimeEnvironment.threadIdMap.get(thread.getId()), monitor);
         if (RuntimeEnvironment.monitorList.containsKey(monitor)) {
-            System.out.println("[Search Strategy Message] : However, the monitor " + monitor + " is not available");
-            System.out.println(
-                    "[Search Strategy Message] : The monitor " + monitor + " is already in use by " +
-                            RuntimeEnvironment.threadIdMap.get(RuntimeEnvironment.monitorList.get(monitor).getId())
-            );
+            LOGGER.debug("The monitor {} is already in use by {}", monitor, RuntimeEnvironment.threadIdMap.get(RuntimeEnvironment.monitorList.get(monitor).getId()));
             suspendThread(thread);
             return pickNextReadyThread();
         } else {
-            System.out.println("[Search Strategy Message] : The monitor " + monitor + " is available");
+            LOGGER.debug("The monitor {} is available", monitor);
             RuntimeEnvironment.monitorRequest.remove(thread, monitor);
-            System.out.println(
-                    "[Search Strategy Message] : The request of " + thread.getName() +
-                            " to enter the monitor " + monitor + " is removed from the monitorRequest"
-            );
+            LOGGER.debug("The request of {} to enter the monitor {} is removed from the monitorRequest", thread.getName(), monitor);
             handleCachedCASEvent(RuntimeEnvironment.threadIdMap.get(thread.getId()).intValue());
             return thread;
         }
@@ -447,22 +426,15 @@ public interface SearchStrategy {
      */
     default Thread handleJoinRequest(Thread thread) {
         Thread joinRes = RuntimeEnvironment.joinRequest.get(thread);
-        System.out.println(
-                "[Search Strategy Message] : " + thread.getName() + " is requested to join "
-                        + joinRes.getName()
-        );
+        LOGGER.debug("{} is requested to join {}", thread.getName(), joinRes.getName());
         if (!RuntimeEnvironment.createdThreadList.contains(joinRes) &&
                 !RuntimeEnvironment.readyThread.contains(joinRes)) {
             RuntimeEnvironment.joinRequest.remove(thread, joinRes);
-            System.out.println(
-                    "[Search Strategy Message] : As " + joinRes.getName() + " is not in the " +
-                            "createdThreadList or the readyThread list, the request of " + thread.getName() +
-                            " to join " + joinRes.getName() + " is removed from the joinRequest"
-            );
+            LOGGER.debug("Request of {} to join {} removed from the joinRequest. {} not in createdThreadList or readyThread list", thread.getName(), joinRes.getName(), joinRes.getName());
             nextJoinEvent(thread, joinRes);
             return thread;
         } else {
-            System.out.println("[Search Strategy Message] : However, " + joinRes.getName() + " is not finished yet");
+            LOGGER.debug("However, {} is not finished yet", joinRes.getName());
             suspendThread(thread);
             return pickNextReadyThread();
         }
@@ -507,7 +479,7 @@ public interface SearchStrategy {
      * @param thread the selected thread.
      */
     default void suspendThread(Thread thread) {
-        System.out.println("[Search Strategy Message] : " + thread.getName() + " is suspended");
+        LOGGER.debug("{} suspended", thread.getName());
         RuntimeEnvironment.readyThread.remove(thread);
         RuntimeEnvironment.suspendedThreads.add(thread);
     }
@@ -522,7 +494,7 @@ public interface SearchStrategy {
      * @param thread the selected thread which is going to be parked.
      */
     default void parkThread(Thread thread) {
-        System.out.println("[Search Strategy Message] : " + thread.getName() + " is parked");
+        LOGGER.debug("{} parked", thread.getName());
         if (RuntimeEnvironment.readyThread.contains(thread) && !RuntimeEnvironment.parkedThreadList.contains(thread)) {
             RuntimeEnvironment.readyThread.remove(thread);
             RuntimeEnvironment.parkedThreadList.add(thread);
@@ -539,7 +511,7 @@ public interface SearchStrategy {
      * @param thread the selected thread which is going to be unparked.
      */
     default void unparkThread(Thread thread) {
-        System.out.println("[Search Strategy Message] : " + thread.getName() + " is unparked");
+        LOGGER.debug("{} unparked", thread.getName());
         if (RuntimeEnvironment.parkedThreadList.contains(thread) && !RuntimeEnvironment.readyThread.contains(thread)) {
             RuntimeEnvironment.parkedThreadList.remove(thread);
             RuntimeEnvironment.readyThread.add(thread);
@@ -557,7 +529,7 @@ public interface SearchStrategy {
      * @param thread the selected thread.
      */
     default void unsuspendThread(Thread thread) {
-        System.out.println("[Search Strategy Message] : " + thread.getName() + " is unsuspended");
+        LOGGER.debug("{} unsuspended", thread.getName());
         RuntimeEnvironment.suspendedThreads.remove(thread);
         RuntimeEnvironment.readyThread.add(thread);
     }
@@ -603,7 +575,7 @@ public interface SearchStrategy {
                 RuntimeEnvironment.waitingThreadForFuture.put(future, thread);
             }
         } else {
-            System.out.println("[Search Strategy Message] : The FutureTask is not an instance of JMCFutureTask");
+            LOGGER.debug("The FutureTask is not an instance of JMCFutureTask");
             System.exit(0);
         }
         return pickNextThread();
@@ -639,12 +611,12 @@ public interface SearchStrategy {
      * @return {@code true} if there is a deadlock, {@code false} otherwise.
      */
     default boolean monitorsDeadlockDetection() {
-        System.out.println("[Search Strategy Message] : The deadlock detection phase is started");
+        LOGGER.debug("The deadlock detection phase is started");
         Optional<Map<Thread, Thread>> threadClosure = computeTransitiveClosure();
         if (threadClosure.isPresent()) {
             return checkIrreflexivity(threadClosure.get());
         } else {
-            System.out.println("[Search Strategy Message] : There is no need to check the deadlock");
+            LOGGER.debug("There is no need to check the deadlock");
             return false;
         }
     }
