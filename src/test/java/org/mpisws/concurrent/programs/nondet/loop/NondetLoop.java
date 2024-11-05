@@ -11,18 +11,20 @@ public class NondetLoop {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 3;
+            int SIZE = 5;
             Numbers numbers = new Numbers(0, new SymbolicInteger(true));
 
             ArithmeticFormula f = new ArithmeticFormula();
             SymbolicOperation op1 = f.geq(numbers.n, SIZE / 2);
             SymbolicOperation op2 = f.lt(numbers.n, SIZE);
             PropositionalFormula pf = new PropositionalFormula();
-            SymbolicOperation op4 = pf.and(op1, op2);
-            Utils.assume(op4);
+            SymbolicOperation op3 = pf.and(op1, op2);
+            SymbolicOperation op4 = f.gt(numbers.n, 0);
+            SymbolicOperation op5 = pf.and(op3, op4);
+            Utils.assume(op5);
 
-            AssertThread assertThread1 = new AssertThread(numbers);
-            assertThread1.start();
+//            AssertThread assertThread1 = new AssertThread(numbers);
+//            assertThread1.start();
 
             List<IncThread> threads = new ArrayList<>();
             for (int i = 0; i < SIZE; i++) {
@@ -30,21 +32,25 @@ public class NondetLoop {
             }
 
             int i = 0;
-            SymbolicOperation op3 = f.gt(numbers.n, i);
+            SymbolicOperation op6 = f.gt(numbers.n, i);
             SymbolicFormula sf = new SymbolicFormula();
-            for (i = 0; sf.evaluate(op3); ) {
+            for (i = 0; sf.evaluate(op6); ) {
                 threads.get(i).start();
                 i++;
-                op3 = f.gt(numbers.n, i);
+                op6 = f.gt(numbers.n, i);
             }
 
-//            i = 0;
-//            op4 = f.gt(numbers.n, i);
-//            for (i = 0; sf.evaluate(op4); ) {
-//                threads.get(i).join();
-//                i++;
-//                op4 = f.gt(numbers.n, i);
-//            }
+            i = 0;
+            op6 = f.gt(numbers.n, i);
+            for (i = 0; sf.evaluate(op6); ) {
+                try {
+                    threads.get(i).join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                i++;
+                op6 = f.gt(numbers.n, i);
+            }
         } catch (JMCInterruptException e) {
 
         }

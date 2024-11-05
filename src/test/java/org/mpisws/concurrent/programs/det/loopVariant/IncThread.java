@@ -7,17 +7,18 @@ public class IncThread extends Thread {
 
     Numbers numbers;
     public ReentrantLock lock;
+    int k;
 
-    public IncThread(ReentrantLock lock, Numbers numbers) {
+    public IncThread(ReentrantLock lock, Numbers numbers, int k) {
         this.numbers = numbers;
         this.lock = lock;
+        this.k = k;
     }
 
     @Override
     public void run() {
         try {
             int t;
-            int k = numbers.n;
             lock.lock();
             t = numbers.x;
             if (k == numbers.n) {

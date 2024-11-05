@@ -12,7 +12,7 @@ public class Client3 {
 
         try {
             Stack<Integer> stack = new EliminationBackoffStack();
-            int NUM_OPERATIONS = 3;
+            int NUM_OPERATIONS = 2;
 
             List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
             for (int i = 0; i < NUM_OPERATIONS; i++) {

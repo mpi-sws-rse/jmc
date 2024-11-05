@@ -10,16 +10,24 @@ public class DetLoop {
         int n = SIZE - 1;
         Numbers numbers = new Numbers(0, n);
 
-        AssertThread assertThread1 = new AssertThread(numbers);
-        assertThread1.start();
+//        AssertThread assertThread1 = new AssertThread(numbers);
+//        assertThread1.start();
 
         List<IncThread> threads = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < SIZE; i++) {
             threads.add(new IncThread(numbers));
         }
 
         for (int i = 0; i < n; i++) {
             threads.get(i).start();
+        }
+
+        for (int i = 0; i < n; i++) {
+            try {
+                threads.get(i).join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

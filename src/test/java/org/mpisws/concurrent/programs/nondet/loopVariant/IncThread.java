@@ -25,14 +25,16 @@ public class IncThread extends Thread {
             ArithmeticFormula f = new ArithmeticFormula();
             SymbolicOperation op1 = f.geq(k, SIZE / 2);
             SymbolicOperation op2 = f.leq(k, SIZE);
+            SymbolicOperation op3 = f.gt(k, 0);
             PropositionalFormula prop = new PropositionalFormula();
-            SymbolicOperation op3 = prop.and(op1, op2);
-            Utils.assume(op3);
+            SymbolicOperation op4 = prop.and(op1, op2);
+            SymbolicOperation op5 = prop.and(op3, op4);
+            Utils.assume(op5);
             synchronized (lock) {
                 t = numbers.x;
-                SymbolicOperation op4 = f.eq(k, numbers.n);
+                SymbolicOperation op6 = f.eq(k, numbers.n);
                 SymbolicFormula sf = new SymbolicFormula();
-                if (sf.evaluate(op4)) {
+                if (sf.evaluate(op6)) {
                     numbers.x = t + 1;
                 }
             }

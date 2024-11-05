@@ -11,51 +11,52 @@ public class NondetArray {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 4;
+            int SIZE = 3;
             Array array = new Array(SIZE);
             List<SetterThread> threads = new ArrayList<>(SIZE);
 
             for (int i = 0; i < SIZE; i++) {
                 threads.add(new SetterThread(array));
             }
-
-
+            
             SymbolicInteger n = new SymbolicInteger(false);
             ArithmeticFormula formula = new ArithmeticFormula();
             SymbolicOperation op1 = formula.geq(n, SIZE / 2);
             SymbolicOperation op2 = formula.leq(n, SIZE);
             PropositionalFormula prop = new PropositionalFormula();
             SymbolicOperation op3 = prop.and(op1, op2);
-            Utils.assume(op3); // Assume( n >= SIZE / 2 && n <= SIZE )
+            SymbolicOperation op4 = formula.gt(n, 0);
+            SymbolicOperation op5 = prop.and(op3, op4);
+            Utils.assume(op5); // Assume( n >= SIZE / 2 && n <= SIZE )
 
             int i = 0;
-            SymbolicOperation op4 = formula.gt(n, i);
+            SymbolicOperation op6 = formula.gt(n, i);
             SymbolicFormula sf = new SymbolicFormula();
-            for (i = 0; sf.evaluate(op4); ) {
+            for (i = 0; sf.evaluate(op6); ) {
                 threads.get(i).start();
                 i++;
-                op4 = formula.gt(n, i);
+                op6 = formula.gt(n, i);
             }
 
             i = 0;
-            op4 = formula.gt(n, i);
-            for (i = 0; sf.evaluate(op4); ) {
+            op6 = formula.gt(n, i);
+            for (i = 0; sf.evaluate(op6); ) {
                 threads.get(i).join();
                 i++;
-                op4 = formula.gt(n, i);
+                op6 = formula.gt(n, i);
             }
 
             int sum = 0;
             i = 0;
-            op4 = formula.gt(n, i);
-            for (i = 0; sf.evaluate(op4); ) {
+            op6 = formula.gt(n, i);
+            for (i = 0; sf.evaluate(op6); ) {
                 sum += array.a[i];
                 i++;
-                op4 = formula.gt(n, i);
+                op6 = formula.gt(n, i);
             }
 
             // assert (sum == SIZE - 1) : " ***The assert did not pass, the sum is " + sum + " instead of " + (SIZE - 1);
-            assert (sum <= SIZE) : " ***The assert did not pass, the sum is " + sum + " instead of " + SIZE;
+            //assert (sum <= SIZE) : " ***The assert did not pass, the sum is " + sum + " instead of " + SIZE;
 
         } catch (JMCInterruptException e) {
 

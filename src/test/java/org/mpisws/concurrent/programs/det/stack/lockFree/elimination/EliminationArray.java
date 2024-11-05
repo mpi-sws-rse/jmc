@@ -8,7 +8,7 @@ import java.util.concurrent.TimeoutException;
 
 public class EliminationArray<V> {
 
-    private final int duration = 10;
+    private final int duration = 1000;
     LockFreeExchanger<V>[] exchanger;
 
 

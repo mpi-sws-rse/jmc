@@ -13,6 +13,10 @@ public class LockFreeStack<V> implements Stack<V> {
     public AtomicReference<Node<V>> top = new AtomicReference<>(null);
     public Backoff backoff = new Backoff(MIN_DELAY, MAX_DELAY);
 
+    public LockFreeStack() throws JMCInterruptException {
+
+    }
+
     protected boolean tryPush(Node<V> node) throws JMCInterruptException {
         Node<V> oldTop = top.get();
         node.next = oldTop;

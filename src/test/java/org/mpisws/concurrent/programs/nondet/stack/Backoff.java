@@ -9,9 +9,12 @@ public class Backoff {
     public final SymbolicInteger minDelay, maxDelay;
     public SymbolicInteger limit;
 
-    public Backoff(SymbolicInteger min, SymbolicInteger max) {
+    public Backoff(SymbolicInteger min, SymbolicInteger max) throws JMCInterruptException {
         minDelay = min;
         maxDelay = max;
+        ArithmeticFormula f = new ArithmeticFormula();
+        SymbolicOperation op = f.leq(minDelay, maxDelay);
+        Utils.assume(op); // assert minDelay <= maxDelay;
         limit = new SymbolicInteger(true);
         limit.assign(minDelay);
     }

@@ -759,7 +759,7 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                 Det LOOP VARIANT
+     *                                 DET LOOP VARIANT
      */
 
     @Test

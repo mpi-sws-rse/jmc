@@ -9,64 +9,33 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a77cf13e-783c-4986-a602-2eab5283c6bd" name="Changes" comment="Controlling join() methods by the SchedulerThread in user program has been added">
-      <change afterPath="$PROJECT_DIR$/java_pid1419282.hprof" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client6.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/PoperThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client2.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client4.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client5.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client6.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/DeletionThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/PoperThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/PusherThread.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/Result.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/SPPool.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/TNode.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/TSStack.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/java_pid1419282.hprof" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client6.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/PoperThread.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client2.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client4.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client5.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client6.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/DeletionThread.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/PoperThread.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/PusherThread.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/Result.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/SPPool.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/TNode.java" afterDir="false" />
-      <change afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/timeStamped/TSStack.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client4.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client4.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client5.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/Client5.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationArray.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationArray.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationBackoffStack.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationBackoffStack.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/SPPool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/SPPool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TNode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TSStack.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TSStack.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client3.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/EliminationArray.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/EliminationArray.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/EliminationBackoffStack.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/EliminationBackoffStack.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/LockFreeExchanger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/LockFreeExchanger.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/RangePolicy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/RangePolicy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/array/DetArray.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/array/DetArray.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/loop/DetLoop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/loop/DetLoop.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/loopVariant/DetLoop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/loopVariant/DetLoop.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/loopVariant/IncThread.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/det/loopVariant/IncThread.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/array/NondetArray.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/array/NondetArray.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/loop/NondetLoop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/loop/NondetLoop.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant/NondetLoop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant/NondetLoop.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/.idea/workspace.xml" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/checker/ModelCheckerTest.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client2.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client2.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client4.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client4.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client5.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/Client5.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/array/DetArray.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/array/DetArray.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/loop/DetLoop.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/loop/DetLoop.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/loopVariant/DetLoop.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/loopVariant/DetLoop.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/loopVariant/IncThread.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/loopVariant/IncThread.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/LockFreeStack.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/LockFreeStack.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationArray.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationArray.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationBackoffStack.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/EliminationBackoffStack.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/SPPool.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/SPPool.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TNode.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TNode.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TSStack.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/TSStack.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/array/NondetArray.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/array/NondetArray.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/loop/NondetLoop.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/loop/NondetLoop.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant/IncThread.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant/IncThread.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant/NondetLoop.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant/NondetLoop.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Backoff.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Backoff.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client1.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client1.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client2.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client2.java" afterDir="false" />
       <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client3.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/Client3.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/EliminationArray.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/EliminationArray.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/EliminationBackoffStack.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/EliminationBackoffStack.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/LockFreeExchanger.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/LockFreeExchanger.java" afterDir="false" />
-      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/elimination/RangePolicy.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/elimination/RangePolicy.java" afterDir="false" />
+      <change beforePath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/LockFreeStack.java" beforeDir="false" afterPath="/local/home/mkhoshechin/IdeaProjects/jmc/src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/LockFreeStack.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -170,149 +139,151 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
-    &quot;Application.TestInconsistentCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Downloaded.Files.Path.Enabled&quot;: &quot;false&quot;,
-    &quot;Gradle.Build jmc.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest (1).executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.mustTestMessageCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.mustTestSimpleMessage.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.mustTestSyncMessage.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.mustTestTaggedMessage.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestAtomicCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks (1).executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestComplexCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestCorrectCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestDiningPhilosophers.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestMessageCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestParkingCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestPoolCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestRandomCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestSimpleCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestSimpleMessage.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestStaticCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestSymbolicCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestSyncCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestSyncMessage.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.randomTestTaggedMessage.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.replayTestDiningPhilosophers.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.replayTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.replayTestMessageCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.replayTestParkingCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.replayTestRandomCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.replayTestSimpleCounter (1).executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.replayTestSimpleCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.replayTestSymbolicCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testComplexCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testCorrectCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testDiningPhilosophers.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testInconsistentCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testMutex.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.testSimpleCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestBuggyCounterThatDeadlocks.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestCoarseListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestCoarseListII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestComplexCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestConcreteGCD.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestCorrectCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetArray.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetCoarseListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStack.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStackII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetFineListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetLockFreeStack.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetLockFreeStackII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetLoop.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetLoopVariant.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetOptimistListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetOptimistListII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetTimeStampedStack.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDetTimeStampedStackII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestDiningPhilosophers.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestFineListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestFineListII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestInconsistentCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestLazyListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestLazyListII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetCoarseListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetCoarseListII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStack.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStackII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetFineListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetFineListII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetLazyListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetLazyListII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetLockFreeStack.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetOptimistListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetOptimistListII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetTimeStampedStack.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNonDetTimeStampedStackII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNondetArray.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNondetLoop.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestNondetLoopVariant.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestOptimistListI.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestOptimistListII.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestParkingCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestRandomCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestSimpleCounter (1).executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestSimpleCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestStaticCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestSymbolicCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestSymbolicGCD.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModelCheckerTest.trustTestSyncCounter.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc [build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:BuggyCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:CorrectCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:DiningPhilosophers.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:InconsistentCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:KTest.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:Main.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:MainMutex.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:NewTest.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:RandomCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestBuggyCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestComplexCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestCorrectCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestInconsistentCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestKotlinCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestSimpleCounter.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestSymbolic.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Kotlin script (Beta).build.gradle.kts.executor&quot;: &quot;Run&quot;,
-    &quot;Kotlin.CounterKt.executor&quot;: &quot;Run&quot;,
-    &quot;Kotlin.MainKt.executor&quot;: &quot;Run&quot;,
-    &quot;OverrideImplement.generate.javadoc&quot;: &quot;true&quot;,
-    &quot;Repository.Attach.Annotations&quot;: &quot;false&quot;,
-    &quot;Repository.Attach.JavaDocs&quot;: &quot;false&quot;,
-    &quot;Repository.Attach.Sources&quot;: &quot;false&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;code.cleanup.on.save&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;kianadev&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/KIANA/jmc/src/main/java/org/mpisws/util/concurrent&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/Main.kt&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Problems&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "Application.Main.executor": "Run",
+    "Application.TestInconsistentCounter.executor": "Run",
+    "Downloaded.Files.Path.Enabled": "false",
+    "Gradle.Build jmc.executor": "Run",
+    "Gradle.ModelCheckerTest (1).executor": "Run",
+    "Gradle.ModelCheckerTest.executor": "Run",
+    "Gradle.ModelCheckerTest.mustTestMessageCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.mustTestSimpleMessage.executor": "Run",
+    "Gradle.ModelCheckerTest.mustTestSyncMessage.executor": "Run",
+    "Gradle.ModelCheckerTest.mustTestTaggedMessage.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestAtomicCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks (1).executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestBuggyCounterThatDeadlocks.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestComplexCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestCorrectCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestDiningPhilosophers.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestMessageCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestParkingCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestPoolCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestRandomCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestSimpleCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestSimpleMessage.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestStaticCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestSymbolicCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestSyncCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestSyncMessage.executor": "Run",
+    "Gradle.ModelCheckerTest.randomTestTaggedMessage.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestBuggyCounterThatDeadlocks.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestDiningPhilosophers.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestMessageCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestParkingCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestRandomCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestSimpleCounter (1).executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestSimpleCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.replayTestSymbolicCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testBuggyCounterThatDeadlocks.executor": "Run",
+    "Gradle.ModelCheckerTest.testComplexCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testCorrectCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testDiningPhilosophers.executor": "Run",
+    "Gradle.ModelCheckerTest.testInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.testMutex.executor": "Run",
+    "Gradle.ModelCheckerTest.testSimpleCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestBuggyCounterThatDeadlocks.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestCoarseListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestCoarseListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestComplexCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestConcreteGCD.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestCorrectCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetArray.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetCoarseListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStack.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStackII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetFineListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetLazyListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetLockFreeStack.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetLockFreeStackII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetLoop.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetLoopVariant.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetOptimistListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetOptimistListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetTimeStampedStack.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDetTimeStampedStackII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestDiningPhilosophers.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestFineListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestFineListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestInconsistentCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestLazyListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestLazyListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetCoarseListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetCoarseListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStack.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStackII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetFineListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetFineListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetLazyListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetLazyListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetLockFreeStack.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetLockFreeStackII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetOptimistListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetOptimistListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetTimeStampedStack.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNonDetTimeStampedStackII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNondetArray.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNondetLoop.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestNondetLoopVariant.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestOptimistListI.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestOptimistListII.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestParkingCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestRandomCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestSimpleCounter (1).executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestSimpleCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestStaticCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestSymbolicCounter.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestSymbolicGCD.executor": "Run",
+    "Gradle.ModelCheckerTest.trustTestSyncCounter.executor": "Run",
+    "Gradle.jmc [build].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:BuggyCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:CorrectCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:DiningPhilosophers.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:InconsistentCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:KTest.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:Main.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:MainMutex.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:NewTest.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:RandomCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestBuggyCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestComplexCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestCorrectCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestInconsistentCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestKotlinCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestSimpleCounter.main()].executor": "Run",
+    "Gradle.jmc::local:home:mkhoshechin:IdeaProjects:jmc [:TestSymbolic.main()].executor": "Run",
+    "Kotlin script (Beta).build.gradle.kts.executor": "Run",
+    "Kotlin.CounterKt.executor": "Run",
+    "Kotlin.MainKt.executor": "Run",
+    "OverrideImplement.generate.javadoc": "true",
+    "Repository.Attach.Annotations": "false",
+    "Repository.Attach.JavaDocs": "false",
+    "Repository.Attach.Sources": "false",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "code.cleanup.on.save": "true",
+    "git-widget-placeholder": "kianadev",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/KIANA/jmc/src/main/java/org/mpisws/util/concurrent",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "/home/mkhoshechin/IdeaProjects/jmc/src/main/kotlin/Main.kt",
+    "project.structure.last.edited": "Problems",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\KIANA\jmc\src\main\java\org\mpisws\util\concurrent" />
@@ -335,7 +306,7 @@
       <recent name="org.example.concurrent.programs.simple.counter" />
     </key>
   </component>
-  <component name="RunManager" selected="Gradle.ModelCheckerTest.trustTestDetLockFreeStackII">
+  <component name="RunManager" selected="Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStack">
     <configuration name="ModelCheckerTest.mustTestMessageCounter" type="GradleRunConfiguration" factoryName="Gradle">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -624,7 +595,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestDetEliminationBackoffStackII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestDetEliminationBackoffStack" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -637,7 +608,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetEliminationBackoffStackII&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetEliminationBackoffStack&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -648,7 +619,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestDetLockFreeStackII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestDetLockFreeStack" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -661,7 +632,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetLockFreeStackII&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetLockFreeStack&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -720,7 +691,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestDetTimeStampedStackII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestNonDetEliminationBackoffStack" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -733,7 +704,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestDetTimeStampedStackII&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetEliminationBackoffStack&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -744,7 +715,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestNonDetEliminationBackoffStackII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestNonDetLazyListII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -757,7 +728,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetEliminationBackoffStackII&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetLazyListII&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -768,7 +739,7 @@
       <RunAsTest>true</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="ModelCheckerTest.trustTestNonDetLockFreeStackII" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="ModelCheckerTest.trustTestNonDetLockFreeStack" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -781,7 +752,7 @@
           <list>
             <option value=":test" />
             <option value="--tests" />
-            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetLockFreeStackII&quot;" />
+            <option value="&quot;org.mpisws.checker.ModelCheckerTest.trustTestNonDetLockFreeStack&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -974,19 +945,19 @@
       <item itemvalue="Gradle.ModelCheckerTest.trustTestParkingCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestStaticCounter" />
       <item itemvalue="Gradle.ModelCheckerTest.trustTestSyncCounter" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLockFreeStackII" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestDetLockFreeStackII" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStackII" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStackII" />
-      <item itemvalue="Gradle.ModelCheckerTest.trustTestDetTimeStampedStackII" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStack" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestDetLockFreeStack" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStack" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListII" />
+      <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLockFreeStack" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestDetLockFreeStackII" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLockFreeStackII" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStackII" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStackII" />
-        <item itemvalue="Gradle.ModelCheckerTest.trustTestDetTimeStampedStackII" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestDetEliminationBackoffStack" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetEliminationBackoffStack" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestDetLockFreeStack" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLockFreeStack" />
+        <item itemvalue="Gradle.ModelCheckerTest.trustTestNonDetLazyListII" />
       </list>
     </recent_temporary>
   </component>
@@ -1236,6 +1207,8 @@
       <workItem from="1730731081129" duration="664000" />
       <workItem from="1730731809522" duration="365000" />
       <workItem from="1730732235120" duration="68000" />
+      <workItem from="1730732331087" duration="13792000" />
+      <workItem from="1730760853116" duration="21423000" />
     </task>
     <task id="LOCAL-00001" summary="Updated JARTA added to JMC">
       <option name="closed" value="true" />
