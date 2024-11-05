@@ -9,6 +9,8 @@ import org.sosy_lab.java_smt.api.SolverException;
 
 import java.math.BigInteger;
 
+
+// TODO: should be a decorator on the SimpleSolver. Using inheritance makes it harder to use later on.
 public class IncrementalSolver extends SymbolicSolver {
 
     ProverEnvironment prover;
