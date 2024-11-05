@@ -2155,6 +2155,7 @@ public class RuntimeEnvironment {
         suspendedThreads = new ArrayList<>();
         threadObjectMap = new HashMap<>();
         suspendPriority = new HashMap<>();
+        // TODO: solver needs a reset method
         solver = SymbolicSolverSingletonFactory.getSolver(solverApproach, solverType);
         symbolicOperation = null;
         solverResult = false;
