@@ -13,7 +13,7 @@ check:
     paths:
       - build
       - .gradle
-  when:
+  rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 build:
