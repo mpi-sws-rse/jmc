@@ -1,4 +1,3 @@
 package org.mpisws.symbolic;
 
-public interface SymbolicOperand {
-}
+public interface SymbolicOperand {}

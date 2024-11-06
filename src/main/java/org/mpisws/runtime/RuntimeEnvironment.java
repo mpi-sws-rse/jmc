@@ -2,25 +2,6 @@ package org.mpisws.runtime;
 
 import executionGraph.OptExecutionGraph;
 import executionGraph.operations.GraphOp;
-import kotlin.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.mpisws.checker.CheckerConfiguration;
-import org.mpisws.checker.GraphExploration;
-import org.mpisws.checker.SchedulingPolicy;
-import org.mpisws.solver.*;
-import org.mpisws.checker.StrategyType;
-import org.mpisws.manager.Finished;
-import org.mpisws.manager.FinishedType;
-import org.mpisws.manager.HaltExecutionException;
-import org.mpisws.symbolic.SymbolicBoolean;
-import org.mpisws.util.concurrent.*;
-import programStructure.*;
-import org.mpisws.symbolic.SymbolicOperation;
-import programStructure.Message;
-import programStructure.SimpleMessage;
-import programStructure.TaggedMessage;
-
 import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -28,6 +9,24 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.function.BiFunction;
+import kotlin.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.mpisws.checker.CheckerConfiguration;
+import org.mpisws.checker.GraphExploration;
+import org.mpisws.checker.SchedulingPolicy;
+import org.mpisws.checker.StrategyType;
+import org.mpisws.manager.Finished;
+import org.mpisws.manager.FinishedType;
+import org.mpisws.manager.HaltExecutionException;
+import org.mpisws.solver.*;
+import org.mpisws.symbolic.SymbolicBoolean;
+import org.mpisws.symbolic.SymbolicOperation;
+import org.mpisws.util.concurrent.*;
+import programStructure.*;
+import programStructure.Message;
+import programStructure.SimpleMessage;
+import programStructure.TaggedMessage;
 
 /**
  * The RuntimeEnvironment class is a singleton that manages the execution state of a multithreaded
@@ -539,7 +538,8 @@ public class RuntimeEnvironment {
       config = (CheckerConfiguration) in.readObject();
       assert (config != null) : "The CheckerConfiguration is null";
       LOGGER.debug(
-          "Config: The verbose mode is {}, the random seed is {} , the maximum events per execution is {} , and the maximum iteration is : {}",
+          "Config: The verbose mode is {}, the random seed is {} , the maximum events per execution"
+              + " is {} , and the maximum iteration is : {}",
           config.verbose,
           config.seed,
           config.maxEventsPerExecution,

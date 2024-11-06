@@ -1,6 +1,6 @@
 package org.mpisws.checker;
 
 public enum ProgramType {
-    SHARED_MEM,
-    MESSAGE_PASS
+  SHARED_MEM,
+  MESSAGE_PASS
 }

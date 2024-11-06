@@ -4,21 +4,20 @@ import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class DeletionThread extends Thread {
 
-    public Stack<Integer> stack;
+  public Stack<Integer> stack;
 
-    public DeletionThread(Stack<Integer> stack) {
-        this.stack = stack;
-    }
+  public DeletionThread(Stack<Integer> stack) {
+    this.stack = stack;
+  }
 
-    public DeletionThread() {
-    }
+  public DeletionThread() {}
 
-    @Override
-    public void run() {
-        try {
-            stack.pop();
-        } catch (JMCInterruptException e) {
-            System.out.println("Interrupted");
-        }
+  @Override
+  public void run() {
+    try {
+      stack.pop();
+    } catch (JMCInterruptException e) {
+      System.out.println("Interrupted");
     }
+  }
 }

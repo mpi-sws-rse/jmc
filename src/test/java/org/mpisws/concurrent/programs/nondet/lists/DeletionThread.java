@@ -6,20 +6,20 @@ import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class DeletionThread extends Thread {
 
-    private final Set set;
-    private final Element item;
+  private final Set set;
+  private final Element item;
 
-    public DeletionThread(Set set, Element item) {
-        this.set = set;
-        this.item = item;
-    }
+  public DeletionThread(Set set, Element item) {
+    this.set = set;
+    this.item = item;
+  }
 
-    @Override
-    public void run() {
-        try {
-            set.remove(item);
-        } catch (JMCInterruptException e) {
-            System.out.println("Deletion Interrupted");
-        }
+  @Override
+  public void run() {
+    try {
+      set.remove(item);
+    } catch (JMCInterruptException e) {
+      System.out.println("Deletion Interrupted");
     }
+  }
 }
