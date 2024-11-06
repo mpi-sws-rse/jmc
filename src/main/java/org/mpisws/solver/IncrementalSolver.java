@@ -11,8 +11,8 @@ import org.sosy_lab.java_smt.api.SolverException;
 
 import java.math.BigInteger;
 
-// TODO: should be a decorator on the SimpleSolver. Using inheritance makes it harder to use later
-// on.
+
+// TODO: should be a decorator on the SimpleSolver. Using inheritance makes it harder to use later on.
 public class IncrementalSolver extends SymbolicSolver {
 
   private static final Logger LOGGER = LogManager.getLogger(IncrementalSolver.class);

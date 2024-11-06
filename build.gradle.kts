@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("checkstyle")
     kotlin("jvm") version "1.9.22"
 }
 
@@ -8,14 +9,13 @@ version = "0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
-//    ivy {
-//        url = uri("https://www.sosy-lab.org/ivy")
-//        patternLayout {
-//            ivy("[organisation]/[module]/ivy-[revision].xml")
-//            artifact("[organisation]/[module]/[artifact]-[revision](-[classifier]).[ext]")
-//        }
-//    }
 }
+
+
+checkstyle {
+    toolVersion = "10.19.0"
+}
+
 
 dependencies {
     implementation("org.sosy-lab:java-smt:5.0.1")

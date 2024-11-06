@@ -4,19 +4,19 @@ import java.util.Collection;
 
 public interface ThreadCollection {
 
-    void add(Thread thread);
+  void add(Thread thread);
 
-    void remove(Thread thread);
+  void remove(Thread thread);
 
-    boolean contains(Thread thread);
+  boolean contains(Thread thread);
 
-    void addAll(Collection<Thread> threads);
+  void addAll(Collection<Thread> threads);
 
-    Thread getNext();
+  Thread getNext();
 
-    boolean isEmpty();
+  boolean isEmpty();
 
-    int size();
+  int size();
 
-    void printThreadStatus();
+  void printThreadStatus();
 }

@@ -1,4 +1,3 @@
 package org.mpisws.runtime;
 
-public class ThreadNotExists extends Exception {
-}
+public class ThreadNotExists extends Exception {}

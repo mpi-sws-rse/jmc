@@ -2,7 +2,7 @@ package org.mpisws.concurrent.programs.mutex;
 
 public interface Lock {
 
-    void lock();
+  void lock();
 
-    void unlock();
+  void unlock();
 }

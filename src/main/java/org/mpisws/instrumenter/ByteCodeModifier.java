@@ -23,13 +23,13 @@ import java.util.*;
  */
 public class ByteCodeModifier {
 
-  private static final Logger LOGGER = LogManager.getLogger(ByteCodeModifier.class);
-
   /**
    * @property {@link #nextVarIndex} is used to store the index of the next local variable. It is
    *     used whenever a new local variable is needed inside a method
    */
   private int nextVarIndex;
+  private static final Logger LOGGER = LogManager.getLogger(ByteCodeModifier.class);
+
 
   /**
    * @property {@link #allByteCode} is used to store the bytecode of the compiled classes. The key
