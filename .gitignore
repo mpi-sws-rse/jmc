@@ -113,7 +113,10 @@ src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/*.cl
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/*.class
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/*.txt
-
+src/test/java/org/mpisws/concurrent/programs/det/queue/*.class
+src/test/java/org/mpisws/concurrent/programs/det/queue/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/*.txt
 ### IntelliJ IDEA ###
 .idea/modules.xml
 /.idea/workspace.xml
