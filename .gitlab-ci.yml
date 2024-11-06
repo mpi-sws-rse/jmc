@@ -4,6 +4,18 @@ before_script:
   - GRADLE_USER_HOME="$(pwd)/.gradle"
   - export GRADLE_USER_HOME
 
+check:
+  stage: build
+  script: ./gradlew checkstyleMain checkstyleTest
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+  when:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
 build:
   stage: build
   script: ./gradlew --build-cache assemble
@@ -13,13 +25,5 @@ build:
     paths:
       - build
       - .gradle
-
-test:
-  stage: test
-  script: ./gradlew check
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: pull
-    paths:
-      - build
-      - .gradle
+  when:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
