@@ -13,102 +13,102 @@ import programStructure.TaggedMessage;
 
 public abstract class JMCThread extends Thread {
 
-    private final List<Message> queue = new ArrayList<>();
+  private final List<Message> queue = new ArrayList<>();
 
-    private int nextMessageIndex = -1;
+  private int nextMessageIndex = -1;
 
-    public JMCThread() {
-        RuntimeEnvironment.addThread(this);
+  public JMCThread() {
+    RuntimeEnvironment.addThread(this);
+  }
+
+  public final synchronized void pushMessage(Message message) {
+    this.queue.add(message);
+  }
+
+  public final void joinThread() {
+    RuntimeEnvironment.threadJoin(this, currentThread());
+    RuntimeEnvironment.waitRequest(currentThread());
+  }
+
+  public final Message findMessage() {
+    if (nextMessageIndex >= 0) {
+      Message message = this.queue.get(nextMessageIndex);
+      queue.remove(nextMessageIndex);
+      nextMessageIndex = -1;
+      return message;
+    } else {
+      return null;
     }
+  }
 
-    public final synchronized void pushMessage(Message message) {
-        this.queue.add(message);
+  public final void findNextMessageIndex(Message message) {
+    if (queue.contains(message)) {
+      nextMessageIndex = queue.indexOf(message);
+    } else {
+      nextMessageIndex = -1;
     }
+  }
 
-    public final void joinThread() {
-        RuntimeEnvironment.threadJoin(this, currentThread());
-        RuntimeEnvironment.waitRequest(currentThread());
-    }
-
-    public final Message findMessage() {
-        if (nextMessageIndex >= 0) {
-            Message message = this.queue.get(nextMessageIndex);
-            queue.remove(nextMessageIndex);
-            nextMessageIndex = -1;
-            return message;
-        } else {
-            return null;
+  public final List<Message> computePredicateMessage(BiFunction<Long, Long, Boolean> function) {
+    List<Message> collectedMessages = new ArrayList<>();
+    for (Message message : queue) {
+      if (message instanceof TaggedMessage taggedMessage) {
+        boolean result =
+            function.apply(taggedMessage.getReceiverThreadId(), taggedMessage.getTag());
+        if (result) {
+          collectedMessages.add(taggedMessage);
         }
+      }
     }
+    return collectedMessages;
+  }
 
-    public final void findNextMessageIndex(Message message) {
-        if (queue.contains(message)) {
-            nextMessageIndex = queue.indexOf(message);
-        } else {
-            nextMessageIndex = -1;
+  public final boolean isPredicateSatisfiable(BiFunction<Long, Long, Boolean> function) {
+    for (Message message : queue) {
+      if (message instanceof TaggedMessage taggedMessage) {
+        boolean result =
+            function.apply(taggedMessage.getReceiverThreadId(), taggedMessage.getTag());
+        if (result) {
+          return true;
         }
+      }
     }
+    return false;
+  }
 
-    public final List<Message> computePredicateMessage(BiFunction<Long, Long, Boolean> function) {
-        List<Message> collectedMessages = new ArrayList<>();
-        for (Message message : queue) {
-            if (message instanceof TaggedMessage taggedMessage) {
-                boolean result = function.apply(taggedMessage.getReceiverThreadId(), taggedMessage.getTag());
-                if (result) {
-                    collectedMessages.add(taggedMessage);
-                }
-            }
-        }
-        return collectedMessages;
-    }
+  public final void noMessageExists() {
+    nextMessageIndex = -1;
+  }
 
-    public final boolean isPredicateSatisfiable(BiFunction<Long, Long, Boolean> function) {
-        for (Message message : queue) {
-            if (message instanceof TaggedMessage taggedMessage) {
-                boolean result = function.apply(taggedMessage.getReceiverThreadId(), taggedMessage.getTag());
-                if (result) {
-                    return true;
-                }
-            }
-        }
-        return false;
+  public final Message findRandomMessage(Random random) {
+    if (queue.isEmpty()) {
+      return null;
+    } else {
+      int randomIndex = random.nextInt(queue.size());
+      nextMessageIndex = randomIndex;
+      return queue.get(randomIndex);
     }
+  }
 
-    public final void noMessageExists() {
-        nextMessageIndex = -1;
+  @Override
+  public void run() {
+    RuntimeEnvironment.waitRequest(Thread.currentThread());
+    this.context();
+    try {
+      RuntimeEnvironment.finishThreadRequest(Thread.currentThread());
+    } catch (HaltExecutionException e) {
+      throw new RuntimeException(e);
+      // TODO(): CHECK try catch block
     }
+  }
 
-    public final Message findRandomMessage(Random random) {
-        if (queue.isEmpty()) {
-            return null;
-        } else {
-            int randomIndex = random.nextInt(queue.size());
-            nextMessageIndex = randomIndex;
-            return queue.get(randomIndex);
-        }
-    }
+  public abstract void context();
 
-    @Override
-    public void run() {
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
-        this.context();
-        try {
-            RuntimeEnvironment.finishThreadRequest(Thread.currentThread());
-        } catch (HaltExecutionException e) {
-            throw new RuntimeException(e);
-            // TODO(): CHECK try catch block
-        }
-    }
+  public final int getNextMessageIndex() {
+    return nextMessageIndex;
+  }
 
-    public void context() {
-        System.out.println("[JMC Message] : You need to override context method for each JMCThread");
-    }
-
-    public final int getNextMessageIndex() {
-        return nextMessageIndex;
-    }
-
-    public final boolean isMessageQueueEmpty() {
-        return queue.isEmpty();
-    }
+  public final boolean isMessageQueueEmpty() {
+    return queue.isEmpty();
+  }
 }

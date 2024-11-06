@@ -3,9 +3,14 @@ package dpor
 import consistencyChecking.communicationConsistency.FullyAsynchronousConsistency
 import executionGraph.CO
 import executionGraph.ExecutionGraph
+import org.apache.logging.log4j.LogManager
 import programStructure.*
 
 class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
+
+    companion object {
+        private val LOGGER = LogManager.getLogger(Must::class.java)
+    }
 
     override fun visit(G: ExecutionGraph, allEvents: MutableList<Event>) {
 
@@ -17,7 +22,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 nextEvent == null -> {
                     this.graphCounter++
                     G.id = this.graphCounter
-                    println("[Must Message] : Visited full execution graph G_$graphCounter")
+                    LOGGER.debug("Visited full execution graph G_$graphCounter")
                     if (verbose) {
                         G.visualizeGraph(this.graphCounter, this.graphsPath)
                     }
@@ -25,8 +30,10 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
 
                 nextEvent.type == EventType.RECEIVE -> {
-                    println("[Must Message] : The next event is a RECEIVE event -> $nextEvent")
-                    println("[Must Message] : The forward revisit phase begins")
+                    LOGGER.debug(
+                        "The next event is a RECEIVE event -> {} as the forward revisit phase begins.",
+                        nextEvent
+                    )
                     val G1 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val nextReceiveEvent = (nextEvent as ReceiveEvent)
@@ -43,7 +50,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 newNextReceiveEvent.rf = copySendEvent
                                 G2.addRecvFrom(copySendEvent, newNextReceiveEvent)
                                 newNextReceiveEvent.value = copySendEvent.value
-                                println("[Must Message] : The event $newNextReceiveEvent revisits event $copySendEvent")
+                                LOGGER.debug("The event {} revisits event {}", newNextReceiveEvent, copySendEvent)
                                 G2.addEvent(newNextReceiveEvent as Event)
                                 val newAllEvents = deepCopyAllEvents(allEvents)
                                 visit(G2, newAllEvents)
@@ -57,7 +64,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 newNextReceiveEvent.rf = copyInit
                                 newNextReceiveEvent.value = null
                                 G3.addRecvFrom(copyInit, newNextReceiveEvent)
-                                println("[Must Message] : The event $newNextReceiveEvent revisits event $copyInit")
+                                LOGGER.debug("The event {} revisits event {}", newNextReceiveEvent, copyInit)
                                 G3.addEvent(newNextReceiveEvent as Event)
                                 val newAllEvents = deepCopyAllEvents(allEvents)
                                 visit(G3, newAllEvents)
@@ -67,7 +74,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
 
                 nextEvent.type == EventType.BLOCK_RECV_REQ -> {
-                    println("[Must Message] : The next event is a BLOCK_RECV_REQ event -> $nextEvent")
+                    LOGGER.debug("The next event is a BLOCK_RECV_REQ event -> {}", nextEvent)
                     val G1 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val nextBlockingReceiveEvent = (nextEvent as BlockingRecvReq)
@@ -87,9 +94,9 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                     }
                     if (!sendFound) {
                         nextBlockingReceiveEvent.isBlocked = true
-                        println("[Must Message] : The thread-${nextBlockingReceiveEvent.receiveEvent.tid} is blocked")
+                        LOGGER.debug("The thread-${nextBlockingReceiveEvent.receiveEvent.tid} is blocked")
                     } else {
-                        println("[Must Message] : The thread-${nextBlockingReceiveEvent.receiveEvent.tid} is eligible to perform the receive event")
+                        LOGGER.debug("The thread-${nextBlockingReceiveEvent.receiveEvent.tid} is eligible to perform the receive event")
                     }
                     val newAllEvents = deepCopyAllEvents(allEvents)
                     G1.addEvent(nextBlockingReceiveEvent)
@@ -97,28 +104,28 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
 
                 nextEvent.type == EventType.BLOCKED_RECV -> {
-                    println("[Must Message] : The next event is a BLOCKED_RECV event -> $nextEvent")
+                    LOGGER.debug("The next event is a BLOCKED_RECV event -> {}", nextEvent)
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
 
                 nextEvent.type == EventType.UNBLOCKED_RECV -> {
-                    println("[Must Message] : The next event is a UNBLOCKED_RECV event -> $nextEvent")
+                    LOGGER.debug("The next event is a UNBLOCKED_RECV event -> {}", nextEvent)
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
 
                 nextEvent.type == EventType.SEND -> {
-                    println("[Must Message] : The next event is a SEND event -> $nextEvent")
+                    LOGGER.debug("The next event is a SEND event -> {}", nextEvent)
                     // Forward Revisit
-                    println("[Must Message] : The forward revisit phase begins")
+                    LOGGER.debug("The forward revisit phase begins")
                     val G1 = G.deepCopy()
                     G1.addEvent(nextEvent.deepCopy())
                     val newAllEvents = deepCopyAllEvents(allEvents)
                     visit(G1, newAllEvents)
 
                     // Backward Revisit
-                    println("[Must Message] : The backward revisit phase begins")
+                    LOGGER.debug("The backward revisit phase begins")
                     val G2 = G.deepCopy()
                     G2.addEvent(nextEvent.deepCopy())
                     val possibleRecvs = calculatePossibleReceiveEvents(nextEvent as SendEvent, G2)
@@ -153,7 +160,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                     recv.rf = nextSendEvent.deepCopy() as SendEvent
                                     G3.removeRecvFrom(recv)
                                     G3.addRecvFrom(recv.rf as Event, recv)
-                                    println("[Must Message] : The event $recv revisits event $nextSendEvent")
+                                    LOGGER.debug("The event {} revisits event {}", recv, nextSendEvent)
                                 }
                                 visit(G3, deepCopyAllEvents(allEvents))
                             }
@@ -162,7 +169,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
 
                 nextEvent.type == EventType.START -> {
-                    println("[Must Message] : The next event is a START event -> $nextEvent")
+                    LOGGER.debug("The next event is a START event -> {}", nextEvent)
                     val threadId = (nextEvent as StartEvent).callerThread
                     var threadEvent = findLastEvent(G, threadId)
                     if (threadEvent != null) {
@@ -180,7 +187,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
 
                 nextEvent.type == EventType.JOIN -> {
-                    println("[Must Message] : The next event is a JOIN event -> $nextEvent")
+                    LOGGER.debug("The next event is a JOIN event -> {}", nextEvent)
                     val threadId = (nextEvent as JoinEvent).joinTid
                     val finishEvent = findFinishEvent(G, threadId)
                     if (finishEvent != null) {
@@ -191,25 +198,25 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
 
                 nextEvent.type == EventType.FINISH -> {
-                    println("[Must Message] : The next event is a FINISH event -> $nextEvent")
+                    LOGGER.debug("The next event is a FINISH event -> {}", nextEvent)
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
 
                 nextEvent.type == EventType.FAILURE -> {
-                    println("[Must Message] : The next event is a FAILURE event -> $nextEvent")
+                    LOGGER.debug("The next event is a FAILURE event -> {}", nextEvent)
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
 
                 nextEvent.type == EventType.DEADLOCK -> {
-                    println("[Must Message] : The next event is a DEADLOCK event -> $nextEvent")
+                    LOGGER.debug("The next event is a DEADLOCK event -> {}", nextEvent)
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
 
                 nextEvent.type == EventType.MAIN_START -> {
-                    println("[Must Message] : The next event is a MAIN_START event -> $nextEvent")
+                    LOGGER.debug("The next event is a MAIN_START event -> {}", nextEvent)
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
@@ -231,7 +238,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.SYM_EXECUTION -> {
                     // The following is for debugging purposes only
-                    println("[Must Message] : The next event is a SYM_EXECUTION event -> $nextEvent")
+                    LOGGER.debug("The next event is a SYM_EXECUTION event -> {}", nextEvent)
                     var nextSymEvent = nextEvent as SymExecutionEvent
                     if (nextSymEvent.isNegatable) {
                         val G1 = G.deepCopy()
@@ -251,7 +258,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
             }
         } else {
-            println("[Must Message] : The graph is not consistent")
+            LOGGER.debug("The graph is not consistent")
         }
     }
 
@@ -367,7 +374,7 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 val actualSend = firstEvent.rf as SendEvent
                 return candidateSend.tid == actualSend.tid && candidateSend.serial == actualSend.serial
             } else {
-                println("[Must Message] : **Error** the tie breaker is null")
+                LOGGER.error("The tie breaker is null")
                 return false
             }
         }

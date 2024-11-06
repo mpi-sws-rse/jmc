@@ -5,6 +5,7 @@ import consistencyChecking.memoryConsistency.SequentialConsistency
 import executionGraph.CO
 import executionGraph.EventNode
 import executionGraph.ExecutionGraph
+import org.apache.logging.log4j.LogManager
 import programStructure.*
 import kotlin.system.exitProcess
 
@@ -15,10 +16,13 @@ import kotlin.system.exitProcess
  */
 
 class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
-//    private var graph: ExecutionGraph = ExecutionGraph()
+    //    private var graph: ExecutionGraph = ExecutionGraph()
 //    var allAbstractThread: MutableMap<Int, AbstractThread>? = mutableMapOf()
 //    var allEvents: MutableList<Event> = mutableListOf()
 //
+    companion object {
+        private val LOGGER = LogManager.getLogger(Trust::class.java)
+    }
 //
 //    init {
 //        val init: Event = InitializationEvent()
@@ -32,7 +36,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 //        for (i in this.allAbstractThread!!.keys)
 //            for (e in this.allAbstractThread?.get(i)?.instructions!!) {
 //                this.allEvents.add(e)
-//                println("[MC Message] : the event : $e")
+//                LOGGER.debug("The event : $e")
 //            }
 //    }
 //
@@ -46,112 +50,112 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 //            when (i.type) {
 //                EventType.READ -> {
 //                    val read: ReadEvent? = i as ReadEvent?
-//                    println(read)
+//                    LOGGER.debug(read)
 //                }
 //
 //                EventType.RECEIVE -> {
 //                    val receive: ReceiveEvent? = i as ReceiveEvent?
-//                    println(receive)
+//                    LOGGER.debug(receive)
 //                }
 //
 //                EventType.WRITE -> {
 //                    val write: WriteEvent = i as WriteEvent
-//                    println(write)
+//                    LOGGER.debug(write)
 //                }
 //
 //                EventType.SEND -> {
 //                    val send: SendEvent = i as SendEvent
-//                    println(send)
+//                    LOGGER.debug(send)
 //                }
 //
 //                EventType.INITIAL -> {
 //                    val init: InitializationEvent = i as InitializationEvent
-//                    println(init)
+//                    LOGGER.debug(init)
 //                }
 //
 //                EventType.START -> {
 //                    val start: StartEvent = i as StartEvent
-//                    println(start)
+//                    LOGGER.debug(start)
 //                }
 //
 //                EventType.JOIN -> {
 //                    val join: JoinEvent = i as JoinEvent
-//                    println(join)
+//                    LOGGER.debug(join)
 //                }
 //
 //                EventType.FINISH -> {
 //                    val finish: FinishEvent = i as FinishEvent
-//                    println(finish)
+//                    LOGGER.debug(finish)
 //                }
 //
 //                EventType.ENTER_MONITOR -> {
 //                    val enterMonitor: EnterMonitorEvent = i as EnterMonitorEvent
-//                    println(enterMonitor)
+//                    LOGGER.debug(enterMonitor)
 //                }
 //
 //                EventType.EXIT_MONITOR -> {
 //                    val exitMonitor: ExitMonitorEvent = i as ExitMonitorEvent
-//                    println(exitMonitor)
+//                    LOGGER.debug(exitMonitor)
 //                }
 //
 //                EventType.DEADLOCK -> {
 //                    val deadlock: DeadlockEvent = i as DeadlockEvent
-//                    println(deadlock)
+//                    LOGGER.debug(deadlock)
 //                }
 //
 //                EventType.MONITOR_REQUEST -> {
 //                    val monitorRequestEvent: MonitorRequestEvent = i as MonitorRequestEvent
-//                    println(monitorRequestEvent)
+//                    LOGGER.debug(monitorRequestEvent)
 //                }
 //
 //                EventType.FAILURE -> {
 //                    val failureEvent: FailureEvent = i as FailureEvent
-//                    println(failureEvent)
+//                    LOGGER.debug(failureEvent)
 //                }
 //
 //                EventType.SUSPEND -> {
 //                    val suspendEvent: SuspendEvent = i as SuspendEvent
-//                    println(suspendEvent)
+//                    LOGGER.debug(suspendEvent)
 //                }
 //
 //                EventType.UNSUSPEND -> {
 //                    val unsuspendEvent: UnsuspendEvent = i as UnsuspendEvent
-//                    println(unsuspendEvent)
+//                    LOGGER.debug(unsuspendEvent)
 //                }
 //
 //                EventType.SYM_EXECUTION -> {
 //                    val symExecutionEvent: SymExecutionEvent = i as SymExecutionEvent
-//                    println(symExecutionEvent)
+//                    LOGGER.debug(symExecutionEvent)
 //                }
 //
 //                EventType.PARK -> {
 //                    val parkEvent: ParkEvent = i as ParkEvent
-//                    println(parkEvent)
+//                    LOGGER.debug(parkEvent)
 //                }
 //
 //                EventType.UNPARK -> {
 //                    val unparkEvent: UnparkEvent = i as UnparkEvent
-//                    println(unparkEvent)
+//                    LOGGER.debug(unparkEvent)
 //                }
 //
 //                EventType.UNPARKING -> {
 //                    val unparkingEvent: UnparkingEvent = i as UnparkingEvent
-//                    println(unparkingEvent)
+//                    LOGGER.debug(unparkingEvent)
 //                }
 //
 //                EventType.UNBLOCKED_RECV -> {
 //                    val unblockedRecvEvent: UnblockedRecvEvent = i as UnblockedRecvEvent
-//                    println(unblockedRecvEvent)
+//                    LOGGER.debug(unblockedRecvEvent)
 //                }
 //
 //                EventType.BLOCKED_RECV -> {
 //                    val blockedRecvEvent: BlockedRecvEvent = i as BlockedRecvEvent
-//                    println(blockedRecvEvent)
+//                    LOGGER.debug(blockedRecvEvent)
 //                }
 //
 //                EventType.BLOCK_RECV_REQ -> {
 //                    val blockRecvReqEvent: BlockingRecvReq = i as BlockingRecvReq
-//                    println(blockRecvReqEvent)
+//                    LOGGER.debug(blockRecvReqEvent)
 //                }
 //
 //                EventType.OTHER -> TODO()
@@ -181,17 +185,16 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
          */
         // val graphConsistency = SequentialConsistency.porfAcyclicity(G)
 
-        //println("[Trust Message] : Model checking started")
+        //LOGGER.debug("Model checking started")
         if (graphConsistency) {
-            //println("[Trust Message] : The graph G_${G.id} is consistent")
+            //LOGGER.debug("The graph G_${G.id} is consistent")
             val nextEvent = findNext(allEvents)
-            println("[Trust Debugging Message] : The next event is : $nextEvent")
-            println("[Trust Debugging Message] : The next event type is : ${nextEvent?.type}")
+            LOGGER.debug("The next event is : {} of type {}", nextEvent, nextEvent?.type)
             when {
                 nextEvent == null -> {
                     this.graphCounter++
                     G.id = this.graphCounter
-                    println("[Trust Message] : Visited full execution graph G_$graphCounter")
+                    LOGGER.debug("Visited full execution graph G_$graphCounter")
                     if (verbose) {
                         G.visualizeGraph(this.graphCounter, this.graphsPath)
                     }
@@ -210,7 +213,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
 
                 nextEvent.type == EventType.READ -> {
-                    println("[Trust Message] : The next event is a READ event -> $nextEvent")
+                    LOGGER.debug("The next event is a READ event -> {}", nextEvent)
                     val G1 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val nextReadEvent = (nextEvent as ReadEvent)
@@ -224,7 +227,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 newNextReadEvent.rf = (findWriteEvent.deepCopy()) as WriteEvent
                                 G2.addEvent(newNextReadEvent as Event)
                                 val newAllEvents = deepCopyAllEvents(allEvents)
-                                //println("[Trust Message] : Forward Revisit(R -> W) : ($newNextReadEvent, $findWriteEvent)")
+                                //LOGGER.debug("Forward Revisit(R -> W) : ($newNextReadEvent, $findWriteEvent)")
                                 visit(G2, newAllEvents)
                             }
                         }
@@ -235,14 +238,14 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 //                            newNextReadEvent.rf = (G.graphEvents[i].deepCopy()) as InitializationEvent
 //                            G3.addEvent(newNextReadEvent as Event)
 //                            val newAllEvents = deepCopyAllEvents(allEvents)
-//                            println("[Trust Message] : Forward Revisit(R -> I) : ($newNextReadEvent, ${G.graphEvents[i]})")
+//                            LOGGER.debug("Forward Revisit(R -> I) : ($newNextReadEvent, ${G.graphEvents[i]})")
 //                            visit(G3, newAllEvents)
 //                        }
                     }
                 }
 
                 nextEvent.type == EventType.READ_EX -> {
-                    println("[Trust Message] : The next event is a READ_EX event -> $nextEvent")
+                    LOGGER.debug("The next event is a READ_EX event -> {}", nextEvent)
                     val G1 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val nextReadExEvent = (nextEvent as ReadExEvent)
@@ -261,7 +264,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 newNextReadExEvent.internalValue = findWriteExEvent.internalValue
                                 G2.addEvent(newNextReadExEvent as Event)
                                 val newAllEvents = deepCopyAllEvents(allEvents)
-                                println("[Trust Message] : Forward Revisit(R -> W) : ($newNextReadExEvent, $findWriteExEvent)")
+                                LOGGER.debug("Forward Revisit(R -> W) : ({}, {})", newNextReadExEvent, findWriteExEvent)
                                 visit(G2, newAllEvents)
                             }
                         } else if (G.graphEvents[i].type == EventType.WRITE) {
@@ -274,7 +277,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                 newNextReadExEvent.internalValue = findWriteEvent.value as Int
                                 G2.addEvent(newNextReadExEvent as Event)
                                 val newAllEvents = deepCopyAllEvents(allEvents)
-                                println("[Trust Message] : Forward Revisit(R -> W) : ($newNextReadExEvent, $findWriteEvent)")
+                                LOGGER.debug("Forward Revisit(R -> W) : ({}, {})", newNextReadExEvent, findWriteEvent)
                                 visit(G2, newAllEvents)
                             }
                         } else if (G.graphEvents[i].type == EventType.INITIAL) {
@@ -285,34 +288,34 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                             newNextReadExEvent.internalValue = 0
                             G3.addEvent(newNextReadExEvent as Event)
                             val newAllEvents = deepCopyAllEvents(allEvents)
-                            println("[Trust Message] : Forward Revisit(R -> I) : ($newNextReadExEvent, ${G.graphEvents[i]})")
+                            LOGGER.debug("Forward Revisit(R -> I) : ({}, {})", newNextReadExEvent, G.graphEvents[i])
                             visit(G3, newAllEvents)
                         }
                     }
                 }
 
                 nextEvent.type == EventType.WRITE_EX -> {
-                    println("[Trust Message] : The next event is a WRITE_EX event -> $nextEvent")
+                    LOGGER.debug("The next event is a WRITE_EX event -> {}", nextEvent)
                     val G1 = G.deepCopy()
                     val nextWriteExEvent = (nextEvent as WriteExEvent)
                     val readExEvent = findLastEvent(G1, nextWriteExEvent.tid) as ReadExEvent
                     if (readExEvent == null) {
-                        println("[Trust Message] : The readExEvent is null")
+                        LOGGER.debug("The readExEvent is null")
                         // Terminate the program
                         exitProcess(0)
                     }
 
                     if (readExEvent.internalValue == nextWriteExEvent.conditionValue) {
                         nextWriteExEvent.operationSuccess = true
-                        //println("[Trust Debugging Message] : The operation is successful")
+                        //LOGGER.debug("The operation is successful")
                         // Forward Revisits
                         if (G1.areExReadsConsistent(nextWriteExEvent.loc!!)) {
-                            //println("[Trust Debugging Message] : The ExReads are consistent")
+                            //LOGGER.debug("The ExReads are consistent")
                             val G2 = G1.deepCopy()
                             val newAllEvents = deepCopyAllEvents(allEvents)
                             visitCOs(G2, nextWriteExEvent.deepCopy() as WriteExEvent, newAllEvents)
                         } else {
-                            println("[Trust Message] : The ExReads are not consistent. The graph is discarded")
+                            LOGGER.debug("The ExReads are not consistent. The graph is discarded")
                         }
 
                         // Backward Revisits
@@ -383,7 +386,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                             }
                         }
                     } else {
-                        //println("[Trust Debugging Message] : The condition of the writeExEvent is not satisfied")
+                        //LOGGER.debug("The condition of the writeExEvent is not satisfied")
                         nextWriteExEvent.operationSuccess = false
 //                        if (G1.areExReadsConsistent(nextWriteExEvent.loc!!)) {
 //                            G1.addEvent(nextWriteExEvent)
@@ -395,7 +398,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
 
                 nextEvent.type == EventType.WRITE -> {
-                    println("[Trust Message] : The next event is a WRITE event -> $nextEvent")
+                    LOGGER.debug("The next event is a WRITE event -> {}", nextEvent)
                     val G3 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val newAllEvents = deepCopyAllEvents(allEvents)
@@ -466,14 +469,14 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 nextEvent.type == EventType.JOIN -> {
 
                     // The following is for debugging purposes only
-                    //println("[Trust Message] : The next event is a JOIN event")
-                    //println("[Trust Message] : The JOIN event is : $nextEvent")
+                    //LOGGER.debug("The next event is a JOIN event")
+                    //LOGGER.debug("The JOIN event is : $nextEvent")
 
                     val threadId = (nextEvent as JoinEvent).joinTid
                     val finishEvent = findFinishEvent(G, threadId)
                     if (finishEvent != null) {
-                        //println("[Trust Message] : The finish event is found")
-                        //println("[Trust Message] : The finish event is : $finishEvent")
+                        //LOGGER.debug("The finish event is found")
+                        //LOGGER.debug("The finish event is : $finishEvent")
                         G.addEvent(nextEvent)
                         G.addJT(finishEvent, nextEvent)
                         visit(G, allEvents)
@@ -482,15 +485,15 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.START -> {
                     // The following is for debugging purposes only
-                    println("[Trust Message] : The next event is a START event")
-                    println("[Trust Message] : The START event is : $nextEvent")
+                    LOGGER.debug("The next event is a START event")
+                    LOGGER.debug("The START event is : {}", nextEvent)
 
                     val threadId = (nextEvent as StartEvent).callerThread
                     val threadEvent = findLastEvent(G, threadId)
                     if (threadEvent != null) {
-                        //println("[Trust Debugging] : The starter thread event is found : $threadEvent")
-                        //println("[Trust Message] : The thread event is found")
-                        //println("[Trust Message] : The thread event is : $threadEvent")
+                        //LOGGER.debug("[Trust Debugging] : The starter thread event is found : $threadEvent")
+                        //LOGGER.debug("The thread event is found")
+                        //LOGGER.debug("The thread event is : $threadEvent")
                         // From the list of G.graphEvents, find the last inserted START event where its callerThread is equal to the threadId of the nextEvent and store it in threadEvent
                         val prevStart =
                             G.graphEvents.filter { it.type == EventType.START && (it as StartEvent).callerThread == nextEvent.callerThread }
@@ -500,16 +503,16 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                             G.addTC(prevStart, nextEvent)
                         }
                         G.addST(threadEvent, nextEvent)
-                        println("[Trust Debugging] : The graph ST is : ")
-                        println(G.STs)
+                        LOGGER.debug("[Trust Debugging] : The graph ST is : ")
+                        LOGGER.debug(G.STs)
                         visit(G, allEvents)
                     }
                 }
 
                 nextEvent.type == EventType.FINISH -> {
                     // The following is for debugging purposes only
-                    //println("[Trust Message] : The next event is a FINISH event")
-                    //println("[Trust Message] : The FINISH event is : $nextEvent")
+                    //LOGGER.debug("The next event is a FINISH event")
+                    //LOGGER.debug("The FINISH event is : $nextEvent")
 
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
@@ -517,8 +520,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.FAILURE -> {
                     // The following is for debugging purposes only
-                    //println("[Trust Message] : The next event is a FAILURE event")
-                    //println("[Trust Message] : The FAILURE event is : $nextEvent")
+                    //LOGGER.debug("The next event is a FAILURE event")
+                    //LOGGER.debug("The FAILURE event is : $nextEvent")
 
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
@@ -526,8 +529,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.DEADLOCK -> {
                     // The following is for debugging purposes only
-                    //println("[Trust Message] : The next event is a DEADLOCK event")
-                    //println("[Trust Message] : The DEADLOCK event is : $nextEvent")
+                    //LOGGER.debug("The next event is a DEADLOCK event")
+                    //LOGGER.debug("The DEADLOCK event is : $nextEvent")
 
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
@@ -535,27 +538,27 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.MONITOR_REQUEST -> {
                     // The following is for debugging purposes only
-                    //println("[Trust Message] : The next event is a MONITOR_REQUEST event")
-                    //println("[Trust Message] : The MONITOR_REQUEST event is : $nextEvent")
+                    //LOGGER.debug("The next event is a MONITOR_REQUEST event")
+                    //LOGGER.debug("The MONITOR_REQUEST event is : $nextEvent")
 
                     G.addEvent(nextEvent)
                     visit(G, allEvents)
                 }
 
                 nextEvent.type == EventType.ENTER_MONITOR -> {
-                    //println("[Trust Message] : The next event is a ENTER_MONITOR event")
-                    //println("[Trust Message] : The ENTER_MONITOR event is : $nextEvent")
+                    //LOGGER.debug("The next event is a ENTER_MONITOR event")
+                    //LOGGER.debug("The ENTER_MONITOR event is : $nextEvent")
                     val suspendEvent = isLastEventSusspende(G, (nextEvent as ThreadEvent).tid)
                     // For the given ENTER_MONITOR event, find the last SUSPEND event in the same thread if exists
-                    //println("[Trust debugging] : The suspend event is found : $suspendEvent")
+                    //LOGGER.debug("[Trust debugging] : The suspend event is found : $suspendEvent")
                     if (suspendEvent != null) {
-                        //println("[Trust Message] : The suspend event is found")
-                        //println("[Trust Message] : The suspend event is : $suspendEvent")
+                        //LOGGER.debug("The suspend event is found")
+                        //LOGGER.debug("The suspend event is : $suspendEvent")
                         var nextExitMonitorEvent = findExitMonitorEvent(G, suspendEvent)
-                        //println("[Trust Message] : The next exit monitor event is : $nextExitMonitorEvent")
+                        //LOGGER.debug("The next exit monitor event is : $nextExitMonitorEvent")
                         if (nextExitMonitorEvent != null) {
-                            //println("[Trust Message] : The next exit monitor event is found")
-                            //println("[Trust Message] : The next exit monitor event is : $nextExitMonitorEvent")
+                            //LOGGER.debug("The next exit monitor event is found")
+                            //LOGGER.debug("The next exit monitor event is : $nextExitMonitorEvent")
                             //removeSuspend(G, suspendEvent)
                             turnSuspendToEnterMonitor(G, suspendEvent, nextEvent as EnterMonitorEvent)
                             //G.addEvent(nextEvent)
@@ -569,7 +572,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                         val nextEnterMonitorEvent = (nextEvent as EnterMonitorEvent)
 
                         // FORWARD REVISITS
-                        //System.out.println("[Trust Message] : Forward Revisit(EnM -> ExM) : $nextEnterMonitorEvent")
+                        //System.out.LOGGER.debug("Forward Revisit(EnM -> ExM) : $nextEnterMonitorEvent")
                         for (i in 0..<G.graphEvents.size) {
                             if (G.graphEvents[i].type == EventType.EXIT_MONITOR) {
                                 val findExitMonitorEvent = G.graphEvents[i] as ExitMonitorEvent
@@ -665,7 +668,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                     var newMC: MutableSet<Pair<Event, Event>> = mutableSetOf()
                                     for (pair in G2.MCs) {
                                         if (pair.second.type == EventType.SUSPEND && pair.first.type == EventType.EXIT_MONITOR) {
-                                            //println("[Trust Kt Debugging] : The pair is : $pair")
+                                            //LOGGER.debug("[Trust Kt Debugging] : The pair is : $pair")
                                             val exitMonitor = pair.first as ExitMonitorEvent
                                             val suspend = pair.second as SuspendEvent
                                             var eventNode = G2.root?.children?.get(exitMonitor.tid)
@@ -681,10 +684,10 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                                         }
                                     }
                                     if (newMC.isNotEmpty()) {
-                                        //println("[Trust Kt Debugging] : The newMC is : $newMC")
+                                        //LOGGER.debug("[Trust Kt Debugging] : The newMC is : $newMC")
                                         G2.MCs.addAll(newMC)
                                     }
-                                    //println("[Trust Kt Debugging] : The deleted set 2 is : ")
+                                    //LOGGER.debug("[Trust Kt Debugging] : The deleted set 2 is : ")
                                     G2.printDeleted()
                                     G2 = G2.restrictingGraph()
                                     val newAllEvents = deepCopyAllEvents(allEvents)
@@ -722,8 +725,8 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.SYM_EXECUTION -> {
                     // The following is for debugging purposes only
-                    println("[Trust Message] : The next event is a SYM_EXECUTION event")
-                    println("[Trust Message] : The SYM_EXECUTION event is : $nextEvent")
+                    LOGGER.debug("The next event is a SYM_EXECUTION event")
+                    LOGGER.debug("The SYM_EXECUTION event is : {}", nextEvent)
                     var nextSymEvent = nextEvent as SymExecutionEvent
                     if (nextSymEvent.isNegatable) {
                         val G1 = G.deepCopy()
@@ -744,7 +747,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.UNPARK -> {
                     // Forward Revisits
-                    println("[Trust Message] : The next event is a UNPARK event -> $nextEvent")
+                    LOGGER.debug("The next event is a UNPARK event -> {}", nextEvent)
                     val G1 = G.deepCopy()
                     G.addEvent(nextEvent)
                     val nextUnparkEvent = (nextEvent as UnparkEvent)
@@ -771,7 +774,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
 
                 nextEvent.type == EventType.UNPARKING -> {
                     // Forward Revisits
-                    println("[Trust Message] : The next event is a UNPARKING event -> $nextEvent")
+                    LOGGER.debug("The next event is a UNPARKING event -> {}", nextEvent)
                     val G1 = G.deepCopy()
                     var nextUnparkingEvent = nextEvent.deepCopy() as UnparkingEvent
                     G.addEvent(nextEvent)
@@ -826,7 +829,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 }
             }
         } else {
-            println("[Trust Message] : The graph is not consistent")
+            LOGGER.debug("The graph is not consistent")
             //G.printSc()
         }
     }
@@ -876,9 +879,9 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
     private fun findExitMonitorEvent(graph: ExecutionGraph, SuspendedEvent: SuspendEvent): ExitMonitorEvent? {
         // In graph.MCs, find the pair with its second element equal to the SuspendedEvent
         val matchingPair = graph.MCs.find { it.second == SuspendedEvent }
-        //println("The matching pair is : $matchingPair")
+        //LOGGER.debug("The matching pair is : $matchingPair")
         val enterMonitor = matchingPair?.first as EnterMonitorEvent
-        //println("The enter monitor is : $enterMonitor")
+        //LOGGER.debug("The enter monitor is : $enterMonitor")
         // In graph.root.children, find the value with its tid equal to the tid of the enterMonitor next in that branch, find the corresponding eventNode for the enterMonitor
         var EventNode = graph.root?.children?.get(enterMonitor.tid)
         var enterMonitorNode: EventNode? = null
@@ -890,7 +893,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                 EventNode = EventNode.child
             }
         }
-        //println("The enter monitor node is : $enterMonitorNode")
+        //LOGGER.debug("The enter monitor node is : $enterMonitorNode")
         // In the children of the enterMonitorNode, find the first ExitMonitorEvent
         var exitMonitorNode = enterMonitorNode!!.child
         while (exitMonitorNode != null) {
@@ -935,7 +938,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
         suspendEvent: SuspendEvent,
         enterMonitorEvent: EnterMonitorEvent
     ) {
-        //println("Entering the turnSuspendToEnterMonitor function")
+        //LOGGER.debug("Entering the turnSuspendToEnterMonitor function")
         // In graph.MCS, find the pair with its second element equal to the suspendEvent and remove it
         var matchingPair = graph.MCs.find { it.second == suspendEvent }
         graph.MCs.remove(matchingPair)
@@ -948,20 +951,20 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
         }
 
         // In G.graphEvents, find the suspendEvent and remove it from the graphEvents.
-        //println("Before removing the suspend event,")
+        //LOGGER.debug("Before removing the suspend event,")
         //graph.printEvents()
         val index = graph.graphEvents.indexOf(suspendEvent)
         graph.graphEvents.removeAt(index)
         graph.graphEvents.add(enterMonitorEvent)
-        //println("After removing the suspend event, the graph events are,")
+        //LOGGER.debug("After removing the suspend event, the graph events are,")
         //graph.printEvents()
         // In G.eventsOrder, find the suspendEvent and remove it from the eventsOrder.
-        //println("Before removing the suspend event,")
+        //LOGGER.debug("Before removing the suspend event,")
         //graph.printEventsOrder()
         val index2 = graph.eventsOrder.indexOf(suspendEvent)
         graph.eventsOrder.removeAt(index2)
         graph.eventsOrder.add(enterMonitorEvent)
-        //println("After removing the suspend event, the events order is,")
+        //LOGGER.debug("After removing the suspend event, the events order is,")
         //graph.printEventsOrder()
 
         // In the graph.porf, find the pair which its first or second element is the suspendEvent and replace that element with enterMonitorEvent
@@ -992,17 +995,17 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
         // In the graph.deleted, find the suspendEvent and replace it with enterMonitorEvent
         if (graph.deleted.contains(suspendEvent)) {
             val index3 = graph.deleted.indexOf(suspendEvent)
-            //println("The index of the suspend event in the deleted set is : $index3")
+            //LOGGER.debug("The index of the suspend event in the deleted set is : $index3")
             graph.deleted[index3] = enterMonitorEvent
-            //println("The deleted set is : ${graph.deleted}")
+            //LOGGER.debug("The deleted set is : ${graph.deleted}")
         }
 
         // In the graph.previous, find the suspendEvent and replace it with enterMonitorEvent
         if (graph.previous.contains(suspendEvent)) {
             val index4 = graph.previous.indexOf(suspendEvent)
-            //println("The index of the suspend event in the previous set is : $index4")
+            //LOGGER.debug("The index of the suspend event in the previous set is : $index4")
             graph.previous[index4] = enterMonitorEvent
-            //println("The previous set is : ${graph.previous}")
+            //LOGGER.debug("The previous set is : ${graph.previous}")
         }
 
 
@@ -1157,7 +1160,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
      */
 
     private fun visitCOs(G: ExecutionGraph, exWrite: WriteExEvent, allEvents: MutableList<Event>) {
-        //System.out.println("[Trust Message] : Visiting COs started for the write event -> $exWrite")
+        //System.out.LOGGER.debug("Visiting COs started for the write event -> $exWrite")
         for (i in 0..<G.graphEvents.size) {
             if (G.graphEvents[i].type == EventType.WRITE) {
                 val findWriteEvent = G.graphEvents[i] as WriteEvent
@@ -1266,7 +1269,7 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
     }
 
     private fun visitCOs(G: ExecutionGraph, writeEvent: WriteEvent, allEvents: MutableList<Event>) {
-        //System.out.println("[Trust Message] : Visiting COs started for the write event -> $writeEvent")
+        //System.out.LOGGER.debug("Visiting COs started for the write event -> $writeEvent")
         for (i in 0..<G.graphEvents.size) {
             if (G.graphEvents[i].type == EventType.WRITE) {
                 val findWriteEvent = G.graphEvents[i] as WriteEvent
@@ -1378,15 +1381,15 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
     }
 
     fun printLocationReferences(location: Location) {
-        println("Location :")
+        LOGGER.debug("Location :")
         location.clazz?.let {
-            println("${it.name}@${it.hashCode().toString(16)}")
+            LOGGER.debug("${it.name}@${it.hashCode().toString(16)}")
         }
         location.instance?.let {
-            println("${it}@${it.hashCode().toString(16)}")
+            LOGGER.debug("{}@{}", it, it.hashCode().toString(16))
         }
         location.field?.let {
-            println("${it.name}@${it.hashCode().toString(16)}")
+            LOGGER.debug("${it.name}@${it.hashCode().toString(16)}")
         }
     }
 }
