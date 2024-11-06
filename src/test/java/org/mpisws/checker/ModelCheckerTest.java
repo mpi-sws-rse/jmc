@@ -421,6 +421,54 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  DET HERLIHY–WING QUEUE I
+     */
+
+    @Test
+    @DisplayName("Det Herlihy-Wing Queue")
+    void trustTestDetHerlihyWingQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.queue",
+                "Client1",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/queue/"
+        );
+        System.out.println("Det Herlihy-Wing Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Herlihy-Wing Queue Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET HERLIHY–WING QUEUE I
+     */
+
+    @Test
+    @DisplayName("NonDet Herlihy-Wing Queue")
+    void trustTestNonDetHerlihyWingQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
+                "Client1",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/queue/"
+        );
+        System.out.println("NonDet Herlihy-Wing Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Herlihy-Wing Queue Trust Strategy Finished");
+    }
+
+    /*
      *                                  DET LOCK FREE STACK I
      */
 

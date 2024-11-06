@@ -45,7 +45,6 @@ public class AtomicReference<V> {
         }
     }
 
-
     public V get() {
         RuntimeEnvironment.readOperation(this, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicReference", "value", "Ljava/lang/Object;");
         V result = value;
@@ -57,5 +56,21 @@ public class AtomicReference<V> {
         RuntimeEnvironment.writeOperation(this, newValue, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicReference", "value", "Ljava/lang/Object;");
         value = newValue;
         RuntimeEnvironment.waitRequest(Thread.currentThread());
+    }
+
+    public V getAndSet(V newValue) throws JMCInterruptException {
+        lock.lock();
+        try {
+            RuntimeEnvironment.readOperation(this, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicReference", "value", "Ljava/lang/Object;");
+            V result = value;
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+
+            RuntimeEnvironment.writeOperation(this, newValue, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicReference", "value", "Ljava/lang/Object;");
+            value = newValue;
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            return result;
+        } finally {
+            lock.unlock();
+        }
     }
 }
