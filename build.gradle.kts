@@ -8,17 +8,18 @@ version = "0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
-    ivy {
-        url = uri("https://www.sosy-lab.org/ivy")
-        patternLayout {
-            ivy("[organisation]/[module]/ivy-[revision].xml")
-            artifact("[organisation]/[module]/[artifact]-[revision](-[classifier]).[ext]")
-        }
-    }
+//    ivy {
+//        url = uri("https://www.sosy-lab.org/ivy")
+//        patternLayout {
+//            ivy("[organisation]/[module]/ivy-[revision].xml")
+//            artifact("[organisation]/[module]/[artifact]-[revision](-[classifier]).[ext]")
+//        }
+//    }
 }
 
 dependencies {
-    implementation("org.sosy-lab:java-smt:4.1.1")
+    implementation("org.sosy-lab:java-smt:5.0.1")
+    implementation("org.sosy-lab:javasmt-solver-z3:4.13.3")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
