@@ -5,10 +5,15 @@ import executionGraph.ClosureGraph
 import executionGraph.OptExecutionGraph
 import executionGraph.operations.GraphOp
 import executionGraph.operations.GraphOpType
+import org.apache.logging.log4j.LogManager
 import programStructure.*
 import kotlin.system.exitProcess
 
 class OptTrust(path: String, verbose: Boolean) {
+
+    companion object {
+        private val LOGGER = LogManager.getLogger(OptTrust::class.java)
+    }
 
     var graphCounter: Int = 0
     var graphsPath: String = path
@@ -22,10 +27,10 @@ class OptTrust(path: String, verbose: Boolean) {
 
         when {
             nextEvent == null -> {
-                println("[OPT-Trust Message] : No more events to explore")
+                LOGGER.debug("No more events to explore")
                 this.graphCounter++
                 g.id = this.graphCounter
-                println("[Trust Message] : Graph ${g.id} with size of ${g.eventOrder.size} is visited")
+                LOGGER.debug("Graph ${g.id} with size of ${g.eventOrder.size} is visited")
                 if (verbose /*|| (g.id >= 0 && g.id <= 100)*/) {
                     g.visualizeGraph(this.graphCounter, this.graphsPath)
                 }
@@ -33,19 +38,19 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.READ -> {
-                println("[OPT-Trust Message] : Next event is a read event - $nextEvent")
+                LOGGER.debug("Next event is a read event - {}", nextEvent)
                 var nextRead = nextEvent as ReadEvent
                 if (g.existsSameLocationWriteEvent(nextRead.loc!!)) {
                     batching_fR_read_write(g, nextRead)
                     fR_read_last_write(g, nextRead)
                 } else {
-                    println("[Trust Message] : No same location write event exists in the graph for the read event $nextRead")
+                    LOGGER.debug("No same location write event exists in the graph for the read event {}", nextRead)
                     exitProcess(0)
                 }
             }
 
             nextEvent.type == EventType.READ_EX -> {
-                println("[OPT-Trust Message] : Next event is a read ex event - $nextEvent")
+                LOGGER.debug("Next event is a read ex event - {}", nextEvent)
                 var nextReadEx = nextEvent as ReadExEvent
                 if (g.existsSameLocationWriteEvent(nextReadEx.loc!!)) {
                     val newAllEvents = ArrayList<ThreadEvent>()
@@ -53,13 +58,16 @@ class OptTrust(path: String, verbose: Boolean) {
                     batching_fR_exRead_write(g, nextReadEx, allEvents)
                     fR_readEx_last_write(g, nextReadEx, newAllEvents)
                 } else {
-                    println("[Trust Message] : No same location write event exists in the graph for the read ex event $nextReadEx")
+                    LOGGER.debug(
+                        "No same location write event exists in the graph for the read ex event {}",
+                        nextReadEx
+                    )
                     exitProcess(0)
                 }
             }
 
             nextEvent.type == EventType.WRITE -> {
-                println("[OPT-Trust Message] : Next event is a write event - $nextEvent")
+                LOGGER.debug("Next event is a write event - {}", nextEvent)
                 val nextWrite = nextEvent as WriteEvent
                 g.addEvent(nextWrite)
                 g.addProgramOrder(nextWrite)
@@ -81,11 +89,11 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.WRITE_EX -> {
-                println("[Trust Message] : Next event is a write ex event - $nextEvent")
+                LOGGER.debug("Next event is a write ex event - {}", nextEvent)
                 val nextWriteEx = nextEvent as WriteExEvent
                 val last = g.programOrder[nextEvent.tid]!!.last()
                 if (last.type != EventType.READ_EX) {
-                    println("[Trust Message] : No read ex event exists in the program order for the write ex event $nextWriteEx")
+                    LOGGER.debug("No read ex event exists in the program order for the write ex event {}", nextWriteEx)
                     exitProcess(0)
                 }
 
@@ -107,7 +115,7 @@ class OptTrust(path: String, verbose: Boolean) {
                             batching_fR_write_write(g, nextWriteEx, allEvents)
                         }
                     } else {
-                        println("[Trust Message] : Ex reads are not consistent for the write ex event $nextWriteEx")
+                        LOGGER.debug("Ex reads are not consistent for the write ex event {}", nextWriteEx)
                         topoSort = null
                     }
 
@@ -128,11 +136,11 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.JOIN -> {
-                println("[Trust Message] : Next event is a join event - $nextEvent")
+                LOGGER.debug("Next event is a join event - {}", nextEvent)
                 val joinTid = (nextEvent as JoinEvent).joinTid
                 val finishEvent = g.programOrder[joinTid]!!.last()
                 if (finishEvent.type != EventType.FINISH) {
-                    println("[Trust Message] : No finish event exists in the program order for the join event $nextEvent")
+                    LOGGER.debug("No finish event exists in the program order for the join event {}", nextEvent)
                     exitProcess(0)
                 }
                 g.addEvent(nextEvent)
@@ -142,7 +150,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.START -> {
-                println("[Trust Message] : Next event is a start event - $nextEvent")
+                LOGGER.debug("Next event is a start event - {}", nextEvent)
                 g.addEvent(nextEvent as StartEvent)
                 g.addProgramOrder(nextEvent)
                 g.addTC(nextEvent)
@@ -155,56 +163,56 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.FINISH -> {
-                println("[Trust Message] : Next event is a finish event - $nextEvent")
+                LOGGER.debug("Next event is a finish event - {}", nextEvent)
                 g.addEvent(nextEvent as FinishEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.FAILURE -> {
-                println("[Trust Message] : Next event is a failure event - $nextEvent")
+                LOGGER.debug("Next event is a failure event - {}", nextEvent)
                 g.addEvent(nextEvent as FailureEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.DEADLOCK -> {
-                println("[Trust Message] : Next event is a deadlock event - $nextEvent")
+                LOGGER.debug("Next event is a deadlock event - {}", nextEvent)
                 g.addEvent(nextEvent as DeadlockEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.MAIN_START -> {
-                println("[Trust Message] : Next event is a main start event - $nextEvent")
+                LOGGER.debug("Next event is a main start event - {}", nextEvent)
                 g.addEvent(nextEvent as MainStartEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.CON_ASSUME -> {
-                println("[Trust Message] : Next event is a con assume event - $nextEvent")
+                LOGGER.debug("Next event is a con assume event - {}", nextEvent)
                 g.addEvent(nextEvent as ConAssumeEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.SYM_ASSUME -> {
-                println("[Trust Message] : Next event is a sym assume event - $nextEvent")
+                LOGGER.debug("Next event is a sym assume event - {}", nextEvent)
                 g.addEvent(nextEvent as SymAssumeEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.ASSUME_BLOCKED -> {
-                println("[Trust Message] : Next event is a assume blocked event - $nextEvent")
+                LOGGER.debug("Next event is a assume blocked event - {}", nextEvent)
                 g.addEvent(nextEvent as AssumeBlockedEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.SYM_EXECUTION -> {
-                println("[Trust Message] : Next event is a symbolic execution event - $nextEvent")
+                LOGGER.debug("Next event is a symbolic execution event - {}", nextEvent)
                 g.addEvent(nextEvent as SymExecutionEvent)
                 g.addProgramOrder(nextEvent)
                 if (nextEvent.isNegatable) {
@@ -214,17 +222,25 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             else -> {
-                println("[Trust Message] : Next event is not supported - $nextEvent")
+                LOGGER.debug("Next event is not supported - {}", nextEvent)
                 exitProcess(0)
             }
         }
     }
 
     private fun batching_fR_read_write(g: OptExecutionGraph, nextRead: ReadEvent) {
-        //println("[DEBUGGING] The size of the writes is: ${g.writes[nextRead.loc]!!.size}")
+        //LOGGER.debug("The size of the writes is: ${g.writes[nextRead.loc]!!.size}")
         if (g.writes[nextRead.loc]!!.size > 1) {
             for (i in 0 until g.writes[nextRead.loc]!!.size - 1) {
-                println("[OPT-Trust] batching frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${g.writes[nextRead.loc]!![i].type}(${g.writes[nextRead.loc]!![i].tid}:${g.writes[nextRead.loc]!![i].serial})")
+                LOGGER.debug(
+                    "batching frw {}({}:{}) {}({}:{})",
+                    nextRead.type,
+                    nextRead.tid,
+                    nextRead.serial,
+                    g.writes[nextRead.loc]!![i].type,
+                    g.writes[nextRead.loc]!![i].tid,
+                    g.writes[nextRead.loc]!![i].serial
+                )
                 val writeEvent = g.writes[nextRead.loc]!![i]
                 val op = GraphOp(nextRead, writeEvent, GraphOpType.FR_R_W, g)
                 nextOperations.add(op)
@@ -238,19 +254,35 @@ class OptTrust(path: String, verbose: Boolean) {
         allEvents: ArrayList<ThreadEvent>
     ) {
         for (i in 0 until g.writes[nextRead.loc]!!.size - 1) {
-            println("[OPT-Trust] batching frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${g.writes[nextRead.loc]!![i].type}(${g.writes[nextRead.loc]!![i].tid}:${g.writes[nextRead.loc]!![i].serial})")
+            LOGGER.debug(
+                "batching frw {}({}:{}) {}({}:{})",
+                nextRead.type,
+                nextRead.tid,
+                nextRead.serial,
+                g.writes[nextRead.loc]!![i].type,
+                g.writes[nextRead.loc]!![i].tid,
+                g.writes[nextRead.loc]!![i].serial
+            )
             val writeEvent = g.writes[nextRead.loc]!![i]
             val addList = ArrayList<ThreadEvent>()
             addList.add(allEvents[0])
             val op = GraphOp(nextRead, writeEvent, GraphOpType.FR_RX_W, g, addList)
             nextOperations.add(op)
-            //println(allEvents)
+            //LOGGER.debug(allEvents)
         }
     }
 
     private fun fR_read_last_write(g: OptExecutionGraph, nextRead: ReadEvent) {
         val writeEvent = g.writes[nextRead.loc]!!.last()
-        println("[OPT-Trust] frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
+        LOGGER.debug(
+            "frw {}({}:{}) last {}({}:{})",
+            nextRead.type,
+            nextRead.tid,
+            nextRead.serial,
+            writeEvent.type,
+            writeEvent.tid,
+            writeEvent.serial
+        )
         g.addEvent(nextRead)
         g.addProgramOrder(nextRead)
         g.addRead(nextRead)
@@ -260,7 +292,15 @@ class OptTrust(path: String, verbose: Boolean) {
 
     private fun fR_readEx_last_write(g: OptExecutionGraph, nextRead: ReadExEvent, allEvents: ArrayList<ThreadEvent>) {
         val writeEvent = g.writes[nextRead.loc]!!.last()
-        println("[OPT-Trust] frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
+        LOGGER.debug(
+            "frw {}({}:{}) last {}({}:{})",
+            nextRead.type,
+            nextRead.tid,
+            nextRead.serial,
+            writeEvent.type,
+            writeEvent.tid,
+            writeEvent.serial
+        )
         g.addEvent(nextRead)
         g.addProgramOrder(nextRead)
         g.addRead(nextRead)
@@ -275,19 +315,27 @@ class OptTrust(path: String, verbose: Boolean) {
 
 
     private fun fR_write_last_write(g: OptExecutionGraph, nextWrite: WriteEvent) {
-        println("[OPT-Trust] frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) last ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial})")
+        LOGGER.debug(
+            "frw {}({}:{}) last {}({}:{})",
+            nextWrite.type,
+            nextWrite.tid,
+            nextWrite.serial,
+            nextWrite.type,
+            nextWrite.tid,
+            nextWrite.serial
+        )
         g.addWrite(nextWrite)
         visit(g, ArrayList())
     }
 
     private fun batching_fR_last_write(g: OptExecutionGraph, write: WriteEvent, toBeAdded: ArrayList<ThreadEvent>) {
-        println("[OPT-Trust] batching frw last ${write.type}(${write.tid}:${write.serial})")
+        LOGGER.debug("batching frw last {}({}:{})", write.type, write.tid, write.serial)
         val newEvents = ArrayList<ThreadEvent>()
         if (toBeAdded.isNotEmpty()) {
             newEvents.add(toBeAdded[0])
         }
         val op = GraphOp(write, write, GraphOpType.FR_L_W, g, newEvents)
-        //println("[debugging] fR Op: $op")
+        //LOGGER.debug("[debugging] fR Op: $op")
         nextOperations.add(op)
     }
 
@@ -298,14 +346,22 @@ class OptTrust(path: String, verbose: Boolean) {
     ) {
         if (g.writes[nextWrite.loc]!!.size > 0) {
             for (i in 0 until g.writes[nextWrite.loc]!!.size) {
-                println("[OPT-Trust] batching frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) ${g.writes[nextWrite.loc]!![i].type}(${g.writes[nextWrite.loc]!![i].tid}:${g.writes[nextWrite.loc]!![i].serial})")
+                LOGGER.debug(
+                    "batching frw {}({}:{}) {}({}:{})",
+                    nextWrite.type,
+                    nextWrite.tid,
+                    nextWrite.serial,
+                    g.writes[nextWrite.loc]!![i].type,
+                    g.writes[nextWrite.loc]!![i].tid,
+                    g.writes[nextWrite.loc]!![i].serial
+                )
                 val writeEvent = g.writes[nextWrite.loc]!![i]
                 val addList = ArrayList<ThreadEvent>()
                 if (toBeAdded.isNotEmpty()) {
                     addList.add(toBeAdded[0])
                 }
                 val op = GraphOp(nextWrite, writeEvent, GraphOpType.FR_W_W, g, addList)
-                //println("[debugging] fR Op: $op")
+                //LOGGER.debug("[debugging] fR Op: $op")
                 nextOperations.add(op)
             }
         }
@@ -314,7 +370,7 @@ class OptTrust(path: String, verbose: Boolean) {
     private fun batching_fR_write_write(g: OptExecutionGraph, nextWrite: WriteEvent) {
         if (g.writes[nextWrite.loc]!!.size > 0) {
             for (i in 0 until g.writes[nextWrite.loc]!!.size) {
-                //println("[debugging] $i-write: ${g.writes[nextWrite.loc]!![i]}")
+                //LOGGER.debug("[debugging] $i-write: ${g.writes[nextWrite.loc]!![i]}")
                 val writeEvent = g.writes[nextWrite.loc]!![i]
                 val op = GraphOp(nextWrite, writeEvent, GraphOpType.FR_W_W, g)
                 nextOperations.add(op)
@@ -332,7 +388,7 @@ class OptTrust(path: String, verbose: Boolean) {
         computePorf(g, closureGraph)
         val readEvent = g.reads[nextWrite.loc]!!.first()
         if (/*(readEvent.tid != nextWrite.tid) &&*/ !closureGraph.pathExists(readEvent, nextWrite)) {
-            //println("[debugging] The read event for processing BR_W_R is : $readEvent")
+            //LOGGER.debug("[debugging] The read event for processing BR_W_R is : $readEvent")
             val deleted = LinkedHashSet<ThreadEvent>()
             deleted.addAll(closureGraph.visited)
             val index = g.eventOrder.indexOf(readEvent)
@@ -363,7 +419,7 @@ class OptTrust(path: String, verbose: Boolean) {
         for (i in 1 until g.reads[nextWrite.loc]!!.size) {
             val readEvent = g.reads[nextWrite.loc]!![i]
             if (notPorf.contains(readEvent)) {
-                //println("[debugging] The read event for processing BR_W_R is : $readEvent")
+                //LOGGER.debug("[debugging] The read event for processing BR_W_R is : $readEvent")
                 val deleted = LinkedHashSet<ThreadEvent>()
                 val index = g.eventOrder.indexOf(readEvent)
                 for (j in index + 1 until g.eventOrder.size - 1) {
@@ -381,9 +437,17 @@ class OptTrust(path: String, verbose: Boolean) {
             val closureGraph = ClosureGraph()
             computePorf(g, closureGraph)
             for (readEvent in g.reads[nextWrite.loc]!!) {
-                println("[OPT-TRUST] The ${readEvent.type}(${readEvent.tid}:${readEvent.serial}) event for processing BR_W_R is of ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial})")
+                LOGGER.debug(
+                    "The {}({}:{}) event for processing BR_W_R is of {}({}:{})",
+                    readEvent.type,
+                    readEvent.tid,
+                    readEvent.serial,
+                    nextWrite.type,
+                    nextWrite.tid,
+                    nextWrite.serial
+                )
                 if ((readEvent.tid != nextWrite.tid) && !closureGraph.pathExists(readEvent, nextWrite)) {
-                    println("[OPT-TRUST] The read event was not in porf")
+                    LOGGER.debug("The read event was not in porf.")
                     val deleted = LinkedHashSet<ThreadEvent>()
                     //deleted.addAll(closureGraph.visited)
                     val visited = LinkedHashSet<ThreadEvent>()
@@ -412,7 +476,7 @@ class OptTrust(path: String, verbose: Boolean) {
                     val porfPrefix = computePorfPrefix(g, deleted, readEvent)
                     revisitIfIsMaximal(g, porfPrefix, deleted, nextWrite, readEvent)
                 } else {
-                    println("[OPT-TRUST] The read event was in porf!")
+                    LOGGER.debug("The read event was in porf!")
                 }
             }
         }
@@ -426,7 +490,7 @@ class OptTrust(path: String, verbose: Boolean) {
         readEvent: ReadEvent
     ) {
         if (isMaximal(g, porfPrefix, deleted, nextWrite)) {
-            println("[OPT-TRUST] The deleted events are maximal")
+            LOGGER.debug("The deleted events are maximal")
 
             val toBeAdded = ArrayList<ThreadEvent>()
 //            if (readEvent is ReadExEvent) {
@@ -461,7 +525,7 @@ class OptTrust(path: String, verbose: Boolean) {
                     batching_fR_write_write(g_copy, wr, toBeAdded)
                     batching_fR_last_write(g_copy, wr, toBeAdded)
                 } else {
-                    println("[OPT-Trust Message] : Ex reads are not consistent for the write ex event $wr")
+                    LOGGER.debug("Ex reads are not consistent for the write ex event {}", wr)
                 }
             } else {
                 batching_fR_write_write(g_copy, wr, toBeAdded)
@@ -514,32 +578,40 @@ class OptTrust(path: String, verbose: Boolean) {
     }
 
     private fun batching_fR_neg_sym(g: OptExecutionGraph, event: SymExecutionEvent) {
-        println("[OPT-Trust] batching frw neg sym ${event.type}(${event.tid}:${event.serial})")
+        LOGGER.debug("batching frw neg sym {}({}:{})", event.type, event.tid, event.serial)
         val op = GraphOp(event, event, GraphOpType.FR_NEG_SYM, g)
         nextOperations.add(op)
     }
 
     fun processFR_R_W(g: OptExecutionGraph, nextRead: ReadEvent, writeEvent: WriteEvent) {
-        println("[OPT-Trust] processing frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
-//        println("[debugging] The Graph number is: ${g.id}")
-//        println("nextRead: $nextRead")
-//        println("writeEvent: $writeEvent")
-//        println("[debugging] The Graph before restricting is: ")
-//        println("[debugging] eventOrder:")
+        LOGGER.debug(
+            "processing frw {}({}:{}) {}({}:{})",
+            nextRead.type,
+            nextRead.tid,
+            nextRead.serial,
+            writeEvent.type,
+            writeEvent.tid,
+            writeEvent.serial
+        )
+//        LOGGER.debug("[debugging] The Graph number is: ${g.id}")
+//        LOGGER.debug("nextRead: $nextRead")
+//        LOGGER.debug("writeEvent: $writeEvent")
+//        LOGGER.debug("[debugging] The Graph before restricting is: ")
+//        LOGGER.debug("[debugging] eventOrder:")
 //        g.printEventOrder()
-//        println("[debugging] po:")
+//        LOGGER.debug("[debugging] po:")
 //        g.printPO()
-//        println("[debugging] rf:")
+//        LOGGER.debug("[debugging] rf:")
 //        g.printRf()
-//        println("[debugging] co:")
+//        LOGGER.debug("[debugging] co:")
 //        g.printCO()
-//        println("[debugging] jt:")
+//        LOGGER.debug("[debugging] jt:")
 //        g.printJT()
-//        println("[debugging] st:")
+//        LOGGER.debug("[debugging] st:")
 //        g.printST()
-//        println("[debugging] tc:")
+//        LOGGER.debug("[debugging] tc:")
 //        g.printTC()
-//        println("[debugging] reads:")
+//        LOGGER.debug("[debugging] reads:")
 //        g.printReads()
         val rd = g.findReadEvent(nextRead)
         val wr = g.findWriteEvent(writeEvent)
@@ -548,28 +620,28 @@ class OptTrust(path: String, verbose: Boolean) {
         //rd.rf = wr
         g.addRF(rd, wr!!)
 
-//        println("[debugging] The Graph after restricting is: ")
-//        println("[debugging] eventOrder:")
+//        LOGGER.debug("[debugging] The Graph after restricting is: ")
+//        LOGGER.debug("[debugging] eventOrder:")
 //        g.printEventOrder()
-//        println("[debugging] po:")
+//        LOGGER.debug("[debugging] po:")
 //        g.printPO()
-//        println("[debugging] rf:")
+//        LOGGER.debug("[debugging] rf:")
 //        g.printRf()
-//        println("[debugging] co:")
+//        LOGGER.debug("[debugging] co:")
 //        g.printCO()
-//        println("[debugging] jt:")
+//        LOGGER.debug("[debugging] jt:")
 //        g.printJT()
-//        println("[debugging] st:")
+//        LOGGER.debug("[debugging] st:")
 //        g.printST()
-//        println("[debugging] tc:")
+//        LOGGER.debug("[debugging] tc:")
 //        g.printTC()
-//        println("[debugging] reads:")
+//        LOGGER.debug("[debugging] reads:")
 //        g.printReads()
         topoSort = SequentialConsistency.scAcyclicity(g)
         if (topoSort!!.isNotEmpty()) {
             visit(g, ArrayList())
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            LOGGER.debug("Graph G_${g.id} is not sequentially consistent")
         }
     }
 
@@ -579,26 +651,34 @@ class OptTrust(path: String, verbose: Boolean) {
         writeEvent: WriteEvent,
         toBeAddedEvents: ArrayList<ThreadEvent>
     ) {
-        println("[OPT-Trust] processing frw ${nextReadEx.type}(${nextReadEx.tid}:${nextReadEx.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
-//        println("nextReadEx: $nextReadEx")
-//        println("writeEvent: $writeEvent")
-//        println("[debugging] The Graph before restricting is: ")
-//        println("[debugging] The Graph number is: ${g.id}")
-//        println("[debugging] eventOrder:")
+        LOGGER.debug(
+            "processing frw {}({}:{}) {}({}:{})",
+            nextReadEx.type,
+            nextReadEx.tid,
+            nextReadEx.serial,
+            writeEvent.type,
+            writeEvent.tid,
+            writeEvent.serial
+        )
+//        LOGGER.debug("nextReadEx: $nextReadEx")
+//        LOGGER.debug("writeEvent: $writeEvent")
+//        LOGGER.debug("[debugging] The Graph before restricting is: ")
+//        LOGGER.debug("[debugging] The Graph number is: ${g.id}")
+//        LOGGER.debug("[debugging] eventOrder:")
 //        g.printEventOrder()
-//        println("[debugging] po:")
+//        LOGGER.debug("[debugging] po:")
 //        g.printPO()
-//        println("[debugging] rf:")
+//        LOGGER.debug("[debugging] rf:")
 //        g.printRf()
-//        println("[debugging] co:")
+//        LOGGER.debug("[debugging] co:")
 //        g.printCO()
-//        println("[debugging] jt:")
+//        LOGGER.debug("[debugging] jt:")
 //        g.printJT()
-//        println("[debugging] st:")
+//        LOGGER.debug("[debugging] st:")
 //        g.printST()
-//        println("[debugging] tc:")
+//        LOGGER.debug("[debugging] tc:")
 //        g.printTC()
-//        println("[debugging] reads:")
+//        LOGGER.debug("[debugging] reads:")
 //        g.printReads()
         val rd = g.findReadEvent(nextReadEx) as ReadExEvent
         val wr = g.findWriteEvent(writeEvent) as WriteEvent
@@ -607,22 +687,22 @@ class OptTrust(path: String, verbose: Boolean) {
         //rd.rf = wr
         rd.internalValue = wr.value as Int
         g.addRF(rd, wr)
-//        println("[debugging] The Graph after restricting is: ")
-//        println("[debugging] eventOrder:")
+//        LOGGER.debug("[debugging] The Graph after restricting is: ")
+//        LOGGER.debug("[debugging] eventOrder:")
 //        g.printEventOrder()
-//        println("[debugging] po:")
+//        LOGGER.debug("[debugging] po:")
 //        g.printPO()
-//        println("[debugging] rf:")
+//        LOGGER.debug("[debugging] rf:")
 //        g.printRf()
-//        println("[debugging] co:")
+//        LOGGER.debug("[debugging] co:")
 //        g.printCO()
-//        println("[debugging] jt:")
+//        LOGGER.debug("[debugging] jt:")
 //        g.printJT()
-//        println("[debugging] st:")
+//        LOGGER.debug("[debugging] st:")
 //        g.printST()
-//        println("[debugging] tc:")
+//        LOGGER.debug("[debugging] tc:")
 //        g.printTC()
-//        println("[debugging] reads:")
+//        LOGGER.debug("[debugging] reads:")
 //        g.printReads()
 //        if (toBeAddedEvents.isNotEmpty()) {
 //            g.addEvent(toBeAddedEvents[0])
@@ -636,12 +716,12 @@ class OptTrust(path: String, verbose: Boolean) {
         topoSort = SequentialConsistency.scAcyclicity(g)
         if (topoSort!!.isNotEmpty()) {
             if (toBeAddedEvents.isNotEmpty()) {
-                //println("[DEBUGGING] The event for adding wrx after rdx is: ${toBeAddedEvents[0]}")
+                //LOGGER.debug("The event for adding wrx after rdx is: ${toBeAddedEvents[0]}")
                 addWrxAfterRdx(toBeAddedEvents[0] as WriteExEvent)
             }
             visit(g, toBeAddedEvents)
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            LOGGER.debug("Graph G_${g.id} is not sequentially consistent")
         }
     }
 
@@ -651,45 +731,53 @@ class OptTrust(path: String, verbose: Boolean) {
         writeEvent: WriteEvent,
         toBeAddedEvents: ArrayList<ThreadEvent>
     ) {
-        println("[OPT-Trust] processing frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
-//        println("nextWrite: $nextWrite")
-//        println("writeEvent: $writeEvent")
-//        println("[debugging] The Graph before restricting is: ")
-//        println("[debugging] eventOrder:")
+        LOGGER.debug(
+            "processing frw {}({}:{}) {}({}:{})",
+            nextWrite.type,
+            nextWrite.tid,
+            nextWrite.serial,
+            writeEvent.type,
+            writeEvent.tid,
+            writeEvent.serial
+        )
+//        LOGGER.debug("nextWrite: $nextWrite")
+//        LOGGER.debug("writeEvent: $writeEvent")
+//        LOGGER.debug("[debugging] The Graph before restricting is: ")
+//        LOGGER.debug("[debugging] eventOrder:")
 //        g.printEventOrder()
-//        println("[debugging] po:")
+//        LOGGER.debug("[debugging] po:")
 //        g.printPO()
-//        println("[debugging] rf:")
+//        LOGGER.debug("[debugging] rf:")
 //        g.printRf()
-//        println("[debugging] co:")
+//        LOGGER.debug("[debugging] co:")
 //        g.printCO()
-//        println("[debugging] jt:")
+//        LOGGER.debug("[debugging] jt:")
 //        g.printJT()
-//        println("[debugging] st:")
+//        LOGGER.debug("[debugging] st:")
 //        g.printST()
-//        println("[debugging] tc:")
+//        LOGGER.debug("[debugging] tc:")
 //        g.printTC()
-//        println("[debugging] reads:")
+//        LOGGER.debug("[debugging] reads:")
 //        g.printReads()
         g.restrictStrictAfterEvent(nextWrite)
         g.removeWrite(nextWrite)
         g.addWriteBefore(nextWrite, writeEvent)
-//        println("[debugging] The Graph after restricting is: ")
-//        println("[debugging] eventOrder:")
+//        LOGGER.debug("[debugging] The Graph after restricting is: ")
+//        LOGGER.debug("[debugging] eventOrder:")
 //        g.printEventOrder()
-//        println("[debugging] po:")
+//        LOGGER.debug("[debugging] po:")
 //        g.printPO()
-//        println("[debugging] rf:")
+//        LOGGER.debug("[debugging] rf:")
 //        g.printRf()
-//        println("[debugging] co:")
+//        LOGGER.debug("[debugging] co:")
 //        g.printCO()
-//        println("[debugging] jt:")
+//        LOGGER.debug("[debugging] jt:")
 //        g.printJT()
-//        println("[debugging] st:")
+//        LOGGER.debug("[debugging] st:")
 //        g.printST()
-//        println("[debugging] tc:")
+//        LOGGER.debug("[debugging] tc:")
 //        g.printTC()
-//        println("[debugging] reads:")
+//        LOGGER.debug("[debugging] reads:")
 //        g.printReads()
 //        if (toBeAddedEvents.isNotEmpty()) {
 //            g.addEvent(toBeAddedEvents[0])
@@ -707,7 +795,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
             visit(g, toBeAddedEvents)
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            LOGGER.debug("Graph G_${g.id} is not sequentially consistent")
         }
     }
 
@@ -716,7 +804,7 @@ class OptTrust(path: String, verbose: Boolean) {
         // Then add the wr after that event
         for (i in topoSort!!.size - 1 downTo 0) {
             if (topoSort!![i].tid == wr.tid && topoSort!![i].serial + 1 == wr.serial) {
-                //println("[DEBUGGING] The event for adding wrx after rdx is: ${topoSort!![i]}")
+                //LOGGER.debug("The event for adding wrx after rdx is: ${topoSort!![i]}")
                 topoSort!!.add(i + 1, wr)
                 break
             }
@@ -724,69 +812,69 @@ class OptTrust(path: String, verbose: Boolean) {
     }
 
     fun processFR_L_W(g: OptExecutionGraph, writeEvent: WriteEvent, toBeAddedEvents: ArrayList<ThreadEvent>) {
-        println("[OPT-Trust] processing frw last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
-        println("[DEBUGGING] The graph id is: ${g.id}")
-//        println("writeEvent: $writeEvent")
-//        println("[debugging] The Graph before restricting is: ")
-//        println("[debugging] The Graph number is: ${g.id}")
-//        println("[debugging] eventOrder:")
+        LOGGER.debug("processing frw last {}({}:{})", writeEvent.type, writeEvent.tid, writeEvent.serial)
+        LOGGER.debug("The graph id is: ${g.id}")
+//        LOGGER.debug("writeEvent: $writeEvent")
+//        LOGGER.debug("[debugging] The Graph before restricting is: ")
+//        LOGGER.debug("[debugging] The Graph number is: ${g.id}")
+//        LOGGER.debug("[debugging] eventOrder:")
 //        g.printEventOrder()
-//        println("[debugging] po:")
+//        LOGGER.debug("[debugging] po:")
 //        g.printPO()
-//        println("[debugging] rf:")
+//        LOGGER.debug("[debugging] rf:")
 //        g.printRf()
-//        println("[debugging] co:")
+//        LOGGER.debug("[debugging] co:")
 //        g.printCO()
-//        println("[debugging] jt:")
+//        LOGGER.debug("[debugging] jt:")
 //        g.printJT()
-//        println("[debugging] st:")
+//        LOGGER.debug("[debugging] st:")
 //        g.printST()
-//        println("[debugging] tc:")
+//        LOGGER.debug("[debugging] tc:")
 //        g.printTC()
-//        println("[debugging] reads:")
+//        LOGGER.debug("[debugging] reads:")
 //        g.printReads()
         // For Debugging
 //        if (writeEvent.type == EventType.WRITE && writeEvent.tid == 7 && writeEvent.serial == 16) {
 //            if (toBeAddedEvents[0].type == EventType.WRITE_EX && toBeAddedEvents[0].tid == 5 && toBeAddedEvents[0].serial == 6) {
 //                g.visualizeGraph(100001, graphsPath)
-//                println("[DEBUGGING] The graph before restricting is: ")
-//                println("[DEBUGGING] eventOrder:")
+//                LOGGER.debug("The graph before restricting is: ")
+//                LOGGER.debug("eventOrder:")
 //                g.printEventOrder()
-//                println("[DEBUGGING] po:")
+//                LOGGER.debug("po:")
 //                g.printPO()
-//                println("[DEBUGGING] rf:")
+//                LOGGER.debug("rf:")
 //                g.printRf()
-//                println("[DEBUGGING] co:")
+//                LOGGER.debug("co:")
 //                g.printCO()
-//                println("[DEBUGGING] jt:")
+//                LOGGER.debug("jt:")
 //                g.printJT()
-//                println("[DEBUGGING] st:")
+//                LOGGER.debug("st:")
 //                g.printST()
-//                println("[DEBUGGING] tc:")
+//                LOGGER.debug("tc:")
 //                g.printTC()
-//                println("[DEBUGGING] reads:")
+//                LOGGER.debug("reads:")
 //                g.printReads()
 //            }
 //        }
         g.restrictStrictAfterEvent(writeEvent)
         g.removeWrite(writeEvent)
         g.addWrite(writeEvent)
-//        println("[debugging] The Graph after restricting is: ")
-//        println("[debugging] eventOrder:")
+//        LOGGER.debug("[debugging] The Graph after restricting is: ")
+//        LOGGER.debug("[debugging] eventOrder:")
 //        g.printEventOrder()
-//        println("[debugging] po:")
+//        LOGGER.debug("[debugging] po:")
 //        g.printPO()
-//        println("[debugging] rf:")
+//        LOGGER.debug("[debugging] rf:")
 //        g.printRf()
-//        println("[debugging] co:")
+//        LOGGER.debug("[debugging] co:")
 //        g.printCO()
-//        println("[debugging] jt:")
+//        LOGGER.debug("[debugging] jt:")
 //        g.printJT()
-//        println("[debugging] st:")
+//        LOGGER.debug("[debugging] st:")
 //        g.printST()
-//        println("[debugging] tc:")
+//        LOGGER.debug("[debugging] tc:")
 //        g.printTC()
-//        println("[debugging] reads:")
+//        LOGGER.debug("[debugging] reads:")
 //        g.printReads()
 //        if (toBeAddedEvents.isNotEmpty()) {
 //            g.addEvent(toBeAddedEvents[0])
@@ -801,47 +889,47 @@ class OptTrust(path: String, verbose: Boolean) {
 //        if (writeEvent.type == EventType.WRITE && writeEvent.tid == 7 && writeEvent.serial == 16) {
 //            if (toBeAddedEvents[0].type == EventType.WRITE_EX && toBeAddedEvents[0].tid == 5 && toBeAddedEvents[0].serial == 6) {
 //                g.visualizeGraph(100002, graphsPath)
-//                println("[DEBUGGING] The graph after restricting is: ")
-//                println("[DEBUGGING] eventOrder:")
+//                LOGGER.debug("The graph after restricting is: ")
+//                LOGGER.debug("eventOrder:")
 //                g.printEventOrder()
-//                println("[DEBUGGING] po:")
+//                LOGGER.debug("po:")
 //                g.printPO()
-//                println("[DEBUGGING] rf:")
+//                LOGGER.debug("rf:")
 //                g.printRf()
-//                println("[DEBUGGING] co:")
+//                LOGGER.debug("co:")
 //                g.printCO()
-//                println("[DEBUGGING] jt:")
+//                LOGGER.debug("jt:")
 //                g.printJT()
-//                println("[DEBUGGING] st:")
+//                LOGGER.debug("st:")
 //                g.printST()
-//                println("[DEBUGGING] tc:")
+//                LOGGER.debug("tc:")
 //                g.printTC()
-//                println("[DEBUGGING] reads:")
+//                LOGGER.debug("reads:")
 //                g.printReads()
 //            }
 //        }
         topoSort = SequentialConsistency.scAcyclicity(g)
         if (topoSort!!.isNotEmpty()) {
             if (toBeAddedEvents.isNotEmpty()) {
-                //println("[DEBUGGING] The event for adding wrx after rdx is: ${toBeAddedEvents[0]}")
+                //LOGGER.debug("The event for adding wrx after rdx is: ${toBeAddedEvents[0]}")
                 addWrxAfterRdx(toBeAddedEvents[0] as WriteExEvent)
             }
             visit(g, toBeAddedEvents)
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            LOGGER.debug("Graph G_${g.id} is not sequentially consistent")
         }
     }
 
     fun processFR_neg_sym(g: OptExecutionGraph, event: SymExecutionEvent) {
-        println("[OPT-Trust] processing frw neg sym ${event.type}(${event.tid}:${event.serial})")
-        println("symbolicEvent: $event")
+        LOGGER.debug("processing frw neg sym {}({}:{})", event.type, event.tid, event.serial)
+        LOGGER.debug("symbolicEvent: {}", event)
         g.restrictStrictAfterEvent(event)
         event.result = !event.result
         topoSort = SequentialConsistency.scAcyclicity(g)
         if (topoSort!!.isNotEmpty()) {
             visit(g, ArrayList())
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            LOGGER.debug("Graph G_${g.id} is not sequentially consistent")
         }
     }
 
@@ -853,9 +941,9 @@ class OptTrust(path: String, verbose: Boolean) {
     ): Boolean {
         var maximal = true
         for (event in set) {
-            //println("[debugging] The event for checking isMaximal is: $event")
+            //LOGGER.debug("[debugging] The event for checking isMaximal is: $event")
             if (!isMaximallyAdded(g, porfPrefix, event, write)) {
-                //println("[debugging] The event is not maximally added")
+                //LOGGER.debug("[debugging] The event is not maximally added")
                 maximal = false
                 break
             }
@@ -907,7 +995,7 @@ class OptTrust(path: String, verbose: Boolean) {
         }
 
         if (previous.contains(eventPrime)) {
-            // println("[debugging] the eventPrime is: $eventPrime is in the previous")
+            // LOGGER.debug("[debugging] the eventPrime is: $eventPrime is in the previous")
             if (eventPrime is WriteEvent) {
                 if (eventPrime == g.writes[eventPrime.loc]!!.last()) {
                     return true
@@ -925,7 +1013,7 @@ class OptTrust(path: String, verbose: Boolean) {
                 return true
             }
         } else {
-            //println("[debugging] Iam the bug")
+            //LOGGER.debug("[debugging] Iam the bug")
             return false
         }
     }
