@@ -1,5 +1,6 @@
-package org.mpisws.concurrent.programs.det.queue;
+package org.mpisws.concurrent.programs.det.queue.hwQueue;
 
+import org.mpisws.concurrent.programs.det.queue.Queue;
 import org.mpisws.util.concurrent.AtomicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 

@@ -1,5 +1,6 @@
-package org.mpisws.concurrent.programs.nondet.queue;
+package org.mpisws.concurrent.programs.nondet.queue.hwQueue;
 
+import org.mpisws.concurrent.programs.nondet.queue.Queue;
 import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.AtomicInteger;
 import org.mpisws.util.concurrent.AtomicReference;

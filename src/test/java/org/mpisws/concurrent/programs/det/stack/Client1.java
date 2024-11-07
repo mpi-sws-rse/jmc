@@ -10,7 +10,7 @@ public class Client1 {
     public static void main(String[] args) {
 
         Stack stack = new LockFreeStack<Integer>();
-        int NUM_OPERATIONS = 3;
+        int NUM_OPERATIONS = 6;
 
         List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
