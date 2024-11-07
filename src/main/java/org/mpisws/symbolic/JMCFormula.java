@@ -1,320 +1,335 @@
 package org.mpisws.symbolic;
 
+import org.mpisws.runtime.RuntimeEnvironment;
+
 import java.util.HashSet;
 import java.util.List;
-import org.mpisws.runtime.RuntimeEnvironment;
 
 public class JMCFormula {
 
-  public SymbolicOperand leftOperand;
+    public SymbolicOperand leftOperand;
 
-  public SymbolicOperand rightOperand;
+    public SymbolicOperand rightOperand;
 
-  public List<SymbolicOperand> operands;
+    public List<SymbolicOperand> operands;
 
-  public InstructionType operator;
+    public InstructionType operator;
 
-  public void setLeftOperand(SymbolicOperand leftOperand) {
-    this.leftOperand = leftOperand;
-  }
-
-  public void setRightOperand(SymbolicOperand rightOperand) {
-    this.rightOperand = rightOperand;
-  }
-
-  public void setOperator(InstructionType operator) {
-    this.operator = operator;
-  }
-
-  public void setOperands(List<SymbolicOperand> operands) {
-    this.operands = operands;
-  }
-
-  public boolean evaluate() {
-    if (operator == null) {
-      throw new IllegalArgumentException("[JMC Formula Message] Operator is not set");
-    } else if (operator == InstructionType.EQ) {
-      return evalEqual();
-    } else if (operator == InstructionType.NEQ) {
-      return evalNeq();
-    } else if (operator == InstructionType.GT) {
-      return evalGreater();
-    } else if (operator == InstructionType.LT) {
-      return evalLess();
-    } else if (operator == InstructionType.GEQ) {
-      return evalGreaterEqual();
-    } else if (operator == InstructionType.LEQ) {
-      return evalLessEqual();
-    } else if (operator == InstructionType.AND) {
-      return evalAnd();
-    } else if (operator == InstructionType.OR) {
-      return evalOr();
-    } else if (operator == InstructionType.IMPLIES) {
-      return evalImplies();
-    } else if (operator == InstructionType.IFF) {
-      return evalIff();
-    } else if (operator == InstructionType.XOR) {
-      return evalXor();
-    } else if (operator == InstructionType.NOT) {
-      return evalNot();
-    } else if (operator == InstructionType.ATOM) {
-      return evalAtom();
-    } else if (operator == InstructionType.DISTINCT) {
-      return evalDistinct();
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Unsupported operator");
-    }
-  }
-
-  private boolean evalDistinct() {
-    if (operands == null || operands.size() == 0) {
-      throw new IllegalArgumentException(
-          "[JMC Formula Message] Distinct operator must have at least two operands");
+    public void setLeftOperand(SymbolicOperand leftOperand) {
+        this.leftOperand = leftOperand;
     }
 
-    if (operands.size() == 1) {
-      return true; // Single element is always distinct
+    public void setRightOperand(SymbolicOperand rightOperand) {
+        this.rightOperand = rightOperand;
     }
 
-    HashSet<Integer> seenValues = new HashSet<>();
-    for (SymbolicOperand operand : operands) {
-      if (operand instanceof AbstractInteger intOp) {
-        int value = getIntValue(intOp);
-        if (!seenValues.add(value)) {
-          return false; // Duplicate found
+    public void setOperator(InstructionType operator) {
+        this.operator = operator;
+    }
+
+    public void setOperands(List<SymbolicOperand> operands) {
+        this.operands = operands;
+    }
+
+    public boolean evaluate() {
+        if (operator == null) {
+            throw new IllegalArgumentException("[JMC Formula Message] Operator is not set");
+        } else if (operator == InstructionType.EQ) {
+            return evalEqual();
+        } else if (operator == InstructionType.NEQ) {
+            return evalNeq();
+        } else if (operator == InstructionType.GT) {
+            return evalGreater();
+        } else if (operator == InstructionType.LT) {
+            return evalLess();
+        } else if (operator == InstructionType.GEQ) {
+            return evalGreaterEqual();
+        } else if (operator == InstructionType.LEQ) {
+            return evalLessEqual();
+        } else if (operator == InstructionType.AND) {
+            return evalAnd();
+        } else if (operator == InstructionType.OR) {
+            return evalOr();
+        } else if (operator == InstructionType.IMPLIES) {
+            return evalImplies();
+        } else if (operator == InstructionType.IFF) {
+            return evalIff();
+        } else if (operator == InstructionType.XOR) {
+            return evalXor();
+        } else if (operator == InstructionType.NOT) {
+            return evalNot();
+        } else if (operator == InstructionType.ATOM) {
+            return evalAtom();
+        } else if (operator == InstructionType.DISTINCT) {
+            return evalDistinct();
+        } else {
+            throw new IllegalArgumentException("[JMC Formula Message] Unsupported operator");
         }
-      } else {
-        throw new IllegalArgumentException(
-            "[JMC Formula Message] Invalid operand for operator DISTINCT");
-      }
     }
-    return true; // All elements are distinct
-  }
 
-  private boolean evalAtom() {
-    if (rightOperand != null) {
-      throw new IllegalArgumentException(
-          "[JMC Formula Message] Right operand must be null for ATOM operator");
-    } else if (leftOperand instanceof AbstractBoolean left) {
-      return getBoolValue(left);
-    } else if (leftOperand instanceof SymbolicOperation left) {
-      return left.concreteEvaluation();
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operand for operator ATOM");
-    }
-  }
+    private boolean evalDistinct() {
+        if (operands == null || operands.size() == 0) {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Distinct operator must have at least two operands");
+        }
 
-  private boolean evalNot() {
-    if (rightOperand != null) {
-      throw new IllegalArgumentException(
-          "[JMC Formula Message] Right operand must be null for NOT operator");
-    } else if (leftOperand instanceof AbstractBoolean left) {
-      return !getBoolValue(left);
-    } else if (leftOperand instanceof SymbolicOperation left) {
-      return !left.concreteEvaluation();
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operand for operator NOT");
-    }
-  }
+        if (operands.size() == 1) {
+            return true; // Single element is always distinct
+        }
 
-  private boolean evalEqual() {
-    if (leftOperand instanceof AbstractInteger left
-        && rightOperand instanceof AbstractInteger right) {
-      return getIntValue(left) == getIntValue(right);
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator EQ");
+        HashSet<Integer> seenValues = new HashSet<>();
+        for (SymbolicOperand operand : operands) {
+            if (operand instanceof AbstractInteger intOp) {
+                int value = getIntValue(intOp);
+                if (!seenValues.add(value)) {
+                    return false; // Duplicate found
+                }
+            } else {
+                throw new IllegalArgumentException(
+                        "[JMC Formula Message] Invalid operand for operator DISTINCT");
+            }
+        }
+        return true; // All elements are distinct
     }
-  }
 
-  private boolean evalNeq() {
-    if (leftOperand instanceof AbstractInteger left
-        && rightOperand instanceof AbstractInteger right) {
-      return getIntValue(left) != getIntValue(right);
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator NEQ");
+    private boolean evalAtom() {
+        if (rightOperand != null) {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Right operand must be null for ATOM operator");
+        } else if (leftOperand instanceof AbstractBoolean left) {
+            return getBoolValue(left);
+        } else if (leftOperand instanceof SymbolicOperation left) {
+            return left.concreteEvaluation();
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operand for operator ATOM");
+        }
     }
-  }
 
-  private boolean evalGreater() {
-    if (leftOperand instanceof AbstractInteger left
-        && rightOperand instanceof AbstractInteger right) {
-      return getIntValue(left) > getIntValue(right);
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator GT");
+    private boolean evalNot() {
+        if (rightOperand != null) {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Right operand must be null for NOT operator");
+        } else if (leftOperand instanceof AbstractBoolean left) {
+            return !getBoolValue(left);
+        } else if (leftOperand instanceof SymbolicOperation left) {
+            return !left.concreteEvaluation();
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operand for operator NOT");
+        }
     }
-  }
 
-  private boolean evalLess() {
-    if (leftOperand instanceof AbstractInteger left
-        && rightOperand instanceof AbstractInteger right) {
-      return getIntValue(left) < getIntValue(right);
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator LT");
+    private boolean evalEqual() {
+        if (leftOperand instanceof AbstractInteger left
+                && rightOperand instanceof AbstractInteger right) {
+            return getIntValue(left) == getIntValue(right);
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator EQ");
+        }
     }
-  }
 
-  private boolean evalLessEqual() {
-    if (leftOperand instanceof AbstractInteger left
-        && rightOperand instanceof AbstractInteger right) {
-      return getIntValue(left) <= getIntValue(right);
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator LEQ");
+    private boolean evalNeq() {
+        if (leftOperand instanceof AbstractInteger left
+                && rightOperand instanceof AbstractInteger right) {
+            return getIntValue(left) != getIntValue(right);
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator NEQ");
+        }
     }
-  }
 
-  private boolean evalGreaterEqual() {
-    if (leftOperand instanceof AbstractInteger left
-        && rightOperand instanceof AbstractInteger right) {
-      return getIntValue(left) >= getIntValue(right);
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator GEQ");
+    private boolean evalGreater() {
+        if (leftOperand instanceof AbstractInteger left
+                && rightOperand instanceof AbstractInteger right) {
+            return getIntValue(left) > getIntValue(right);
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator GT");
+        }
     }
-  }
 
-  private boolean evalAnd() {
-    if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof AbstractBoolean right) {
-      return getBoolValue(left) && getBoolValue(right);
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof AbstractBoolean right) {
-      return left.concreteEvaluation() && getBoolValue(right);
-    } else if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof SymbolicOperation right) {
-      return getBoolValue(left) && right.concreteEvaluation();
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof SymbolicOperation right) {
-      return left.concreteEvaluation() && right.concreteEvaluation();
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator AND");
+    private boolean evalLess() {
+        if (leftOperand instanceof AbstractInteger left
+                && rightOperand instanceof AbstractInteger right) {
+            return getIntValue(left) < getIntValue(right);
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator LT");
+        }
     }
-  }
 
-  private boolean evalOr() {
-    if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof AbstractBoolean right) {
-      return getBoolValue(left) || getBoolValue(right);
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof AbstractBoolean right) {
-      return left.concreteEvaluation() || getBoolValue(right);
-    } else if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof SymbolicOperation right) {
-      return getBoolValue(left) || right.concreteEvaluation();
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof SymbolicOperation right) {
-      return left.concreteEvaluation() || right.concreteEvaluation();
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator OR");
+    private boolean evalLessEqual() {
+        if (leftOperand instanceof AbstractInteger left
+                && rightOperand instanceof AbstractInteger right) {
+            return getIntValue(left) <= getIntValue(right);
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator LEQ");
+        }
     }
-  }
 
-  private boolean evalImplies() {
-    if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof AbstractBoolean right) {
-      return !getBoolValue(left) || getBoolValue(right);
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof AbstractBoolean right) {
-      return !left.concreteEvaluation() || getBoolValue(right);
-    } else if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof SymbolicOperation right) {
-      return !getBoolValue(left) || right.concreteEvaluation();
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof SymbolicOperation right) {
-      return !left.concreteEvaluation() || right.concreteEvaluation();
-    } else {
-      throw new IllegalArgumentException(
-          "[JMC Formula Message] Invalid operands for operator IMPLIES");
+    private boolean evalGreaterEqual() {
+        if (leftOperand instanceof AbstractInteger left
+                && rightOperand instanceof AbstractInteger right) {
+            return getIntValue(left) >= getIntValue(right);
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator GEQ");
+        }
     }
-  }
 
-  private boolean evalIff() {
-    if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof AbstractBoolean right) {
-      return getBoolValue(left) == getBoolValue(right);
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof AbstractBoolean right) {
-      return left.concreteEvaluation() == getBoolValue(right);
-    } else if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof SymbolicOperation right) {
-      return getBoolValue(left) == right.concreteEvaluation();
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof SymbolicOperation right) {
-      return left.concreteEvaluation() == right.concreteEvaluation();
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator IFF");
+    private boolean evalAnd() {
+        if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof AbstractBoolean right) {
+            return getBoolValue(left) && getBoolValue(right);
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof AbstractBoolean right) {
+            return left.concreteEvaluation() && getBoolValue(right);
+        } else if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof SymbolicOperation right) {
+            return getBoolValue(left) && right.concreteEvaluation();
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof SymbolicOperation right) {
+            return left.concreteEvaluation() && right.concreteEvaluation();
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator AND");
+        }
     }
-  }
 
-  private boolean evalXor() {
-    if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof AbstractBoolean right) {
-      return getBoolValue(left) != getBoolValue(right);
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof AbstractBoolean right) {
-      return left.concreteEvaluation() != getBoolValue(right);
-    } else if (leftOperand instanceof AbstractBoolean left
-        && rightOperand instanceof SymbolicOperation right) {
-      return getBoolValue(left) != right.concreteEvaluation();
-    } else if (leftOperand instanceof SymbolicOperation left
-        && rightOperand instanceof SymbolicOperation right) {
-      return left.concreteEvaluation() != right.concreteEvaluation();
-    } else {
-      throw new IllegalArgumentException("[JMC Formula Message] Invalid operands for operator XOR");
+    private boolean evalOr() {
+        if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof AbstractBoolean right) {
+            return getBoolValue(left) || getBoolValue(right);
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof AbstractBoolean right) {
+            return left.concreteEvaluation() || getBoolValue(right);
+        } else if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof SymbolicOperation right) {
+            return getBoolValue(left) || right.concreteEvaluation();
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof SymbolicOperation right) {
+            return left.concreteEvaluation() || right.concreteEvaluation();
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator OR");
+        }
     }
-  }
 
-  public int getIntValue(AbstractInteger abstractInteger) {
-    if (abstractInteger instanceof ConcreteInteger) {
-      return abstractInteger.getValue();
-    } else if (abstractInteger instanceof SymbolicInteger symbolicInteger) {
-      return symbolicInteger.getIntValue();
-      //            if (symbolicInteger.getEval() != null) {
-      //                int leftValue = getIntValue(symbolicInteger.getEval().getLeft());
-      //                int rightValue = getIntValue(symbolicInteger.getEval().getRight());
-      //                switch (symbolicInteger.getEval().getOperator()) {
-      //                    case ADD:
-      //                        return leftValue + rightValue;
-      //                    case SUB:
-      //                        return leftValue - rightValue;
-      //                    case MUL:
-      //                        return leftValue * rightValue;
-      //                    case DIV:
-      //                        if (rightValue == 0) {
-      //                            throw new ArithmeticException("[JMC Formula Message] Division by
-      // zero");
-      //                        }
-      //                        return leftValue / rightValue;
-      //                    case MOD:
-      //                        if (rightValue == 0) {
-      //                            throw new ArithmeticException("[JMC Formula Message] Modulo by
-      // zero");
-      //                        }
-      //                        return leftValue % rightValue;
-      //                    default:
-      //                        throw new IllegalArgumentException("[JMC Formula Message]
-      // Unsupported operator");
-      //                }
-      //            } else {
-      //                return
-      // RuntimeEnvironment.solver.getSymIntVarValue(symbolicInteger.getName());
-      //            }
-    } else {
-      throw new IllegalArgumentException(
-          "[JMC Formula Message] Unsupported type of AbstractInteger");
+    private boolean evalImplies() {
+        if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof AbstractBoolean right) {
+            return !getBoolValue(left) || getBoolValue(right);
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof AbstractBoolean right) {
+            return !left.concreteEvaluation() || getBoolValue(right);
+        } else if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof SymbolicOperation right) {
+            return !getBoolValue(left) || right.concreteEvaluation();
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof SymbolicOperation right) {
+            return !left.concreteEvaluation() || right.concreteEvaluation();
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator IMPLIES");
+        }
     }
-  }
 
-  public boolean getBoolValue(AbstractBoolean abstractBoolean) {
-    if (abstractBoolean instanceof ConcreteBoolean) {
-      return abstractBoolean.getValue();
-    } else if (abstractBoolean instanceof SymbolicBoolean symbolicBoolean) {
-      if (symbolicBoolean.getEval() != null) {
-        return symbolicBoolean.getEval().concreteEvaluation();
-      } else {
-        return RuntimeEnvironment.solver.getSymBoolVarValue(symbolicBoolean.getName());
-      }
-    } else {
-      throw new IllegalArgumentException(
-          "[JMC Formula Message] Unsupported type of AbstractBoolean");
+    private boolean evalIff() {
+        if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof AbstractBoolean right) {
+            return getBoolValue(left) == getBoolValue(right);
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof AbstractBoolean right) {
+            return left.concreteEvaluation() == getBoolValue(right);
+        } else if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof SymbolicOperation right) {
+            return getBoolValue(left) == right.concreteEvaluation();
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof SymbolicOperation right) {
+            return left.concreteEvaluation() == right.concreteEvaluation();
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator IFF");
+        }
     }
-  }
+
+    private boolean evalXor() {
+        if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof AbstractBoolean right) {
+            return getBoolValue(left) != getBoolValue(right);
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof AbstractBoolean right) {
+            return left.concreteEvaluation() != getBoolValue(right);
+        } else if (leftOperand instanceof AbstractBoolean left
+                && rightOperand instanceof SymbolicOperation right) {
+            return getBoolValue(left) != right.concreteEvaluation();
+        } else if (leftOperand instanceof SymbolicOperation left
+                && rightOperand instanceof SymbolicOperation right) {
+            return left.concreteEvaluation() != right.concreteEvaluation();
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Invalid operands for operator XOR");
+        }
+    }
+
+    public int getIntValue(AbstractInteger abstractInteger) {
+        if (abstractInteger instanceof ConcreteInteger) {
+            return abstractInteger.getValue();
+        } else if (abstractInteger instanceof SymbolicInteger symbolicInteger) {
+            return symbolicInteger.getIntValue();
+            //            if (symbolicInteger.getEval() != null) {
+            //                int leftValue = getIntValue(symbolicInteger.getEval().getLeft());
+            //                int rightValue = getIntValue(symbolicInteger.getEval().getRight());
+            //                switch (symbolicInteger.getEval().getOperator()) {
+            //                    case ADD:
+            //                        return leftValue + rightValue;
+            //                    case SUB:
+            //                        return leftValue - rightValue;
+            //                    case MUL:
+            //                        return leftValue * rightValue;
+            //                    case DIV:
+            //                        if (rightValue == 0) {
+            //                            throw new ArithmeticException("[JMC Formula Message]
+            // Division by
+            // zero");
+            //                        }
+            //                        return leftValue / rightValue;
+            //                    case MOD:
+            //                        if (rightValue == 0) {
+            //                            throw new ArithmeticException("[JMC Formula Message]
+            // Modulo by
+            // zero");
+            //                        }
+            //                        return leftValue % rightValue;
+            //                    default:
+            //                        throw new IllegalArgumentException("[JMC Formula Message]
+            // Unsupported operator");
+            //                }
+            //            } else {
+            //                return
+            // RuntimeEnvironment.solver.getSymIntVarValue(symbolicInteger.getName());
+            //            }
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Unsupported type of AbstractInteger");
+        }
+    }
+
+    public boolean getBoolValue(AbstractBoolean abstractBoolean) {
+        if (abstractBoolean instanceof ConcreteBoolean) {
+            return abstractBoolean.getValue();
+        } else if (abstractBoolean instanceof SymbolicBoolean symbolicBoolean) {
+            if (symbolicBoolean.getEval() != null) {
+                return symbolicBoolean.getEval().concreteEvaluation();
+            } else {
+                return RuntimeEnvironment.solver.getSymBoolVarValue(symbolicBoolean.getName());
+            }
+        } else {
+            throw new IllegalArgumentException(
+                    "[JMC Formula Message] Unsupported type of AbstractBoolean");
+        }
+    }
 }

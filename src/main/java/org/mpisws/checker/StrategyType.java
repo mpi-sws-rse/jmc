@@ -7,9 +7,9 @@ import java.io.Serializable;
  * manage the execution.
  */
 public enum StrategyType implements Serializable {
-  RANDOM,
-  TRUST,
-  REPLAY,
-  MUST,
-  OPT_TRUST,
+    RANDOM,
+    TRUST,
+    REPLAY,
+    MUST,
+    OPT_TRUST,
 }

@@ -2,18 +2,18 @@ package org.mpisws.concurrent.programs.simple.message;
 
 public class SimpleMessage {
 
-  public static void main(String[] args) {
-    SenderThread senderThread = new SenderThread();
-    ReceiverThread receiverThread = new ReceiverThread();
+    public static void main(String[] args) {
+        SenderThread senderThread = new SenderThread();
+        ReceiverThread receiverThread = new ReceiverThread();
 
-    senderThread.receiver_tid = receiverThread.getId();
+        senderThread.receiver_tid = receiverThread.getId();
 
-    senderThread.start();
-    receiverThread.start();
+        senderThread.start();
+        receiverThread.start();
 
-    senderThread.joinThread();
-    receiverThread.joinThread();
+        senderThread.joinThread();
+        receiverThread.joinThread();
 
-    System.out.println("Simple Message finished");
-  }
+        System.out.println("Simple Message finished");
+    }
 }

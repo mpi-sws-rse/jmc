@@ -9,35 +9,35 @@ import java.util.Map;
  */
 public class ThreadPool {
 
-  /** Contains references to the Thread objects with actual thread IDs */
-  private final Map<Long, Thread> threads;
+    /** Contains references to the Thread objects with actual thread IDs */
+    private final Map<Long, Thread> threads;
 
-  /** Stores a mapping from custom IDs to the actual thread IDs */
-  private final Map<Long, Long> idMap;
+    /** Stores a mapping from custom IDs to the actual thread IDs */
+    private final Map<Long, Long> idMap;
 
-  public ThreadPool() {
-    this.threads = new HashMap<>();
-    this.idMap = new HashMap<>();
-  }
-
-  public void reset() {
-    threads.clear();
-    idMap.clear();
-  }
-
-  public Long add(Thread thread, Long customId, String customName) {
-    Long threadId = thread.getId();
-    threads.put(threadId, thread);
-    thread.setName(customName);
-    idMap.put(customId, threadId);
-    return threadId;
-  }
-
-  public Thread get(Long customId) throws ThreadNotExists {
-    Long threadId = idMap.get(customId);
-    if (threadId == null) {
-      throw new ThreadNotExists();
+    public ThreadPool() {
+        this.threads = new HashMap<>();
+        this.idMap = new HashMap<>();
     }
-    return threads.get(customId);
-  }
+
+    public void reset() {
+        threads.clear();
+        idMap.clear();
+    }
+
+    public Long add(Thread thread, Long customId, String customName) {
+        Long threadId = thread.getId();
+        threads.put(threadId, thread);
+        thread.setName(customName);
+        idMap.put(customId, threadId);
+        return threadId;
+    }
+
+    public Thread get(Long customId) throws ThreadNotExists {
+        Long threadId = idMap.get(customId);
+        if (threadId == null) {
+            throw new ThreadNotExists();
+        }
+        return threads.get(customId);
+    }
 }

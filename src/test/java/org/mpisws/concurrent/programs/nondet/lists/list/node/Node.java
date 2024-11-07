@@ -6,19 +6,19 @@ import org.mpisws.symbolic.ConcreteInteger;
 
 public class Node {
 
-  public Element item;
-  public Node next;
+    public Element item;
+    public Node next;
 
-  public Node(Element item) {
-    this.item = item;
-  }
+    public Node(Element item) {
+        this.item = item;
+    }
 
-  public Node(int item) {
-    ConcreteInteger concrete = new ConcreteInteger(item);
-    this.item = new Element(concrete);
-  }
+    public Node(int item) {
+        ConcreteInteger concrete = new ConcreteInteger(item);
+        this.item = new Element(concrete);
+    }
 
-  public AbstractInteger getKey() {
-    return item.key;
-  }
+    public AbstractInteger getKey() {
+        return item.key;
+    }
 }

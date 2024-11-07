@@ -54,12 +54,14 @@
 
     <module name="LineLength">
         <property name="fileExtensions" value="java"/>
-        <property name="max" value="100"/>
+        <property name="max" value="120"/>
         <property name="ignorePattern"
                   value="^package.*|^import.*|href\s*=\s*&quot;[^&quot;]*&quot;|http://|https://|ftp://"/>
     </module>
 
     <module name="TreeWalker">
+
+        <property name="tabWidth" value="4"/>
         <module name="OuterTypeFilename"/>
         <module name="IllegalTokenText">
             <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
@@ -276,14 +278,6 @@
                      value="GenericWhitespace ''{0}'' should followed by whitespace."/>
             <message key="ws.notPreceded"
                      value="GenericWhitespace ''{0}'' is not preceded with whitespace."/>
-        </module>
-        <module name="Indentation">
-            <property name="basicOffset" value="2"/>
-            <property name="braceAdjustment" value="2"/>
-            <property name="caseIndent" value="2"/>
-            <property name="throwsIndent" value="4"/>
-            <property name="lineWrappingIndentation" value="4"/>
-            <property name="arrayInitIndent" value="2"/>
         </module>
         <!-- Suppression for block code until we find a way to detect them properly
              until https://github.com/checkstyle/checkstyle/issues/15769 -->

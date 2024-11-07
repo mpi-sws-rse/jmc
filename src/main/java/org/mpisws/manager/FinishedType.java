@@ -7,7 +7,7 @@ import java.io.Serializable;
  * three values: SUCCESS, BUG, and DEADLOCK.
  */
 public enum FinishedType implements Serializable {
-  SUCCESS,
-  BUG,
-  DEADLOCK
+    SUCCESS,
+    BUG,
+    DEADLOCK
 }

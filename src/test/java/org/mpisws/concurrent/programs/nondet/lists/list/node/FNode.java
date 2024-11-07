@@ -8,28 +8,28 @@ import org.mpisws.util.concurrent.ReentrantLock;
 
 public class FNode {
 
-  public Element item;
-  public FNode next;
-  public ReentrantLock lock = new ReentrantLock();
+    public Element item;
+    public FNode next;
+    public ReentrantLock lock = new ReentrantLock();
 
-  public FNode(Element item) {
-    this.item = item;
-  }
+    public FNode(Element item) {
+        this.item = item;
+    }
 
-  public FNode(int item) {
-    ConcreteInteger concrete = new ConcreteInteger(item);
-    this.item = new Element(concrete);
-  }
+    public FNode(int item) {
+        ConcreteInteger concrete = new ConcreteInteger(item);
+        this.item = new Element(concrete);
+    }
 
-  public void lock() throws JMCInterruptException {
-    lock.lock();
-  }
+    public void lock() throws JMCInterruptException {
+        lock.lock();
+    }
 
-  public void unlock() {
-    lock.unlock();
-  }
+    public void unlock() {
+        lock.unlock();
+    }
 
-  public AbstractInteger getKey() {
-    return item.key;
-  }
+    public AbstractInteger getKey() {
+        return item.key;
+    }
 }

@@ -9,29 +9,29 @@ import java.io.Serializable;
  */
 public class Finished implements Serializable {
 
-  /**
-   * @property {@link #terminate} - A boolean flag to indicate whether the task should terminate
-   */
-  public boolean terminate;
+    /**
+     * @property {@link #terminate} - A boolean flag to indicate whether the task should terminate
+     */
+    public boolean terminate;
 
-  /**
-   * @property {@link #type} - The type of task that has finished
-   */
-  public FinishedType type;
+    /**
+     * @property {@link #type} - The type of task that has finished
+     */
+    public FinishedType type;
 
-  /** The default constructor initializes the class with a terminate flag set to false */
-  public Finished() {
-    terminate = false;
-  }
+    /** The default constructor initializes the class with a terminate flag set to false */
+    public Finished() {
+        terminate = false;
+    }
 
-  /**
-   * The following constructor initializes the class with a terminate flag and a type
-   *
-   * @param terminate - A boolean flag to indicate whether the task should terminate
-   * @param type - The type of task that has finished
-   */
-  public Finished(boolean terminate, FinishedType type) {
-    this.terminate = terminate;
-    this.type = type;
-  }
+    /**
+     * The following constructor initializes the class with a terminate flag and a type
+     *
+     * @param terminate - A boolean flag to indicate whether the task should terminate
+     * @param type - The type of task that has finished
+     */
+    public Finished(boolean terminate, FinishedType type) {
+        this.terminate = terminate;
+        this.type = type;
+    }
 }

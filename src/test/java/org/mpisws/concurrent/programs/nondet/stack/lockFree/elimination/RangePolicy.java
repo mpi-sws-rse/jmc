@@ -8,15 +8,15 @@ import org.mpisws.util.concurrent.Utils;
 
 public class RangePolicy {
 
-  public SymbolicInteger range = new SymbolicInteger(false);
+    public SymbolicInteger range = new SymbolicInteger(false);
 
-  public RangePolicy() throws JMCInterruptException {
-    ArithmeticFormula f = new ArithmeticFormula();
-    SymbolicOperation op1 = f.geq(range, 0);
-    Utils.assume(op1); // assume range >= 0
-  }
+    public RangePolicy() throws JMCInterruptException {
+        ArithmeticFormula f = new ArithmeticFormula();
+        SymbolicOperation op1 = f.geq(range, 0);
+        Utils.assume(op1); // assume range >= 0
+    }
 
-  public SymbolicInteger getRange() {
-    return range;
-  }
+    public SymbolicInteger getRange() {
+        return range;
+    }
 }

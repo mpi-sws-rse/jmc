@@ -4,11 +4,11 @@ import org.mpisws.symbolic.SymbolicInteger;
 
 public class Numbers {
 
-  public int x;
-  public SymbolicInteger n;
+    public int x;
+    public SymbolicInteger n;
 
-  public Numbers(int x, SymbolicInteger n) {
-    this.x = x;
-    this.n = n;
-  }
+    public Numbers(int x, SymbolicInteger n) {
+        this.x = x;
+        this.n = n;
+    }
 }

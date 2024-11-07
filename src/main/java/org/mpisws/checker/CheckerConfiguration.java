@@ -1,13 +1,14 @@
 package org.mpisws.checker;
 
+import org.mpisws.solver.SMTSolverTypes;
+import org.mpisws.solver.SolverApproach;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Random;
-import org.mpisws.solver.SMTSolverTypes;
-import org.mpisws.solver.SolverApproach;
 
 /**
  * The CheckerConfiguration class is responsible for managing the configuration of the checker. It
@@ -24,220 +25,220 @@ import org.mpisws.solver.SolverApproach;
  */
 public final class CheckerConfiguration implements Serializable {
 
-  /**
-   * @property {@link #maxEventsPerExecution} maximum number of events to be executed in a single
-   *     execution
-   */
-  public long maxEventsPerExecution;
+    /**
+     * @property {@link #maxEventsPerExecution} maximum number of events to be executed in a single
+     *     execution
+     */
+    public long maxEventsPerExecution;
 
-  /**
-   * @property {@link #progressReport} progress report interval
-   */
-  public long progressReport;
+    /**
+     * @property {@link #progressReport} progress report interval
+     */
+    public long progressReport;
 
-  /**
-   * @property {@link #verbose} verbose mode
-   */
-  public boolean verbose;
+    /**
+     * @property {@link #verbose} verbose mode
+     */
+    public boolean verbose;
 
-  /**
-   * @property {@link #maxIterations} maximum number of iterations
-   */
-  public int maxIterations;
+    /**
+     * @property {@link #maxIterations} maximum number of iterations
+     */
+    public int maxIterations;
 
-  /**
-   * @property {@link #seed} seed for random number generator
-   */
-  public long seed;
+    /**
+     * @property {@link #seed} seed for random number generator
+     */
+    public long seed;
 
-  /**
-   * @property {@link #strategyType} strategy type to be used
-   */
-  public StrategyType strategyType;
+    /**
+     * @property {@link #strategyType} strategy type to be used
+     */
+    public StrategyType strategyType;
 
-  /**
-   * @property {@link #buggyTracePath} path to the buggy trace object
-   */
-  public String buggyTracePath;
+    /**
+     * @property {@link #buggyTracePath} path to the buggy trace object
+     */
+    public String buggyTracePath;
 
-  /**
-   * @property {@link #buggyTraceFile} name of the buggy trace file
-   */
-  public String buggyTraceFile;
+    /**
+     * @property {@link #buggyTraceFile} name of the buggy trace file
+     */
+    public String buggyTraceFile;
 
-  /**
-   * @property {@link #executionGraphsPath} path to the visualized execution graphs
-   */
-  public String executionGraphsPath;
+    /**
+     * @property {@link #executionGraphsPath} path to the visualized execution graphs
+     */
+    public String executionGraphsPath;
 
-  /**
-   * @property {@link #solverType} solver types to be used
-   */
-  public SMTSolverTypes solverType;
+    /**
+     * @property {@link #solverType} solver types to be used
+     */
+    public SMTSolverTypes solverType;
 
-  /**
-   * @property {@link #programType} determines whether the program uses shared memory or message
-   *     passing.
-   */
-  public ProgramType programType;
+    /**
+     * @property {@link #programType} determines whether the program uses shared memory or message
+     *     passing.
+     */
+    public ProgramType programType;
 
-  public GraphExploration graphExploration;
+    public GraphExploration graphExploration;
 
-  public SolverApproach solverApproach;
+    public SolverApproach solverApproach;
 
-  public SchedulingPolicy schedulingPolicy;
+    public SchedulingPolicy schedulingPolicy;
 
-  /**
-   * The following constructor is used to initialize the configuration with default values. <br>
-   * This constructor is private and only accessible through the builder.
-   *
-   * @param builder the builder to be used to initialize the configuration
-   */
-  private CheckerConfiguration(ConfigurationBuilder builder) {
-    maxEventsPerExecution = builder.maxEventsPerExecution;
-    maxIterations = builder.maxIterations;
-    progressReport = builder.progressReport;
-    verbose = builder.verbose;
-    seed = builder.seed;
-    strategyType = builder.strategyType;
-    buggyTracePath = builder.buggyTracePath;
-    executionGraphsPath = builder.executionGraphsPath;
-    buggyTraceFile = builder.buggyTraceFile;
-    solverType = builder.solverType;
-    programType = builder.programType;
-    graphExploration = builder.graphExploration;
-    solverApproach = builder.solverApproach;
-    schedulingPolicy = builder.schedulingPolicy;
-  }
-
-  /**
-   * Generates the byte array of the configuration object.
-   *
-   * @return the bytes of the configuration
-   * @throws RuntimeException if the bytes cannot be generated
-   */
-  public byte[] generateBytes() {
-    try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bos)) {
-      out.writeObject(this);
-      return bos.toByteArray();
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to generate bytes", e);
-    }
-  }
-
-  /**
-   * Saves the configuration to a given file name.
-   *
-   * @param fileName the file name to load the configuration from
-   * @throws RuntimeException if the configuration cannot be saved
-   */
-  public void saveConfig(String fileName) {
-    try (FileOutputStream fileOut = new FileOutputStream(fileName);
-        ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
-      out.writeObject(this);
-    } catch (IOException i) {
-      throw new RuntimeException("Failed to save configuration", i);
-    }
-  }
-
-  /**
-   * The following static class is used to build the configuration object. <br>
-   * The builder is used to set the configuration parameters and then build the configuration
-   * object. It provides default values for the configuration parameters. Additionally, it provides
-   * methods to set the configuration parameters.
-   */
-  public static class ConfigurationBuilder {
-
-    public long maxEventsPerExecution = 100;
-    public int maxIterations = 10;
-    public long progressReport = 0;
-    public boolean verbose = false;
-    public long seed = new Random().nextLong();
-    public StrategyType strategyType = StrategyType.REPLAY;
-    public String buggyTracePath = "src/main/resources/buggyTrace/";
-    public String buggyTraceFile = "buggyTrace.obj";
-    public String executionGraphsPath = "src/main/resources/Visualized_Graphs/";
-    public SMTSolverTypes solverType = SMTSolverTypes.SMTINTERPOL;
-    public ProgramType programType = ProgramType.SHARED_MEM;
-    public GraphExploration graphExploration = GraphExploration.DFS;
-    public SolverApproach solverApproach = SolverApproach.INCREMENTAL;
-    public SchedulingPolicy schedulingPolicy = SchedulingPolicy.FIFO;
-
-    public ConfigurationBuilder() {}
-
-    public CheckerConfiguration build() {
-      return new CheckerConfiguration(this);
+    /**
+     * The following constructor is used to initialize the configuration with default values. <br>
+     * This constructor is private and only accessible through the builder.
+     *
+     * @param builder the builder to be used to initialize the configuration
+     */
+    private CheckerConfiguration(ConfigurationBuilder builder) {
+        maxEventsPerExecution = builder.maxEventsPerExecution;
+        maxIterations = builder.maxIterations;
+        progressReport = builder.progressReport;
+        verbose = builder.verbose;
+        seed = builder.seed;
+        strategyType = builder.strategyType;
+        buggyTracePath = builder.buggyTracePath;
+        executionGraphsPath = builder.executionGraphsPath;
+        buggyTraceFile = builder.buggyTraceFile;
+        solverType = builder.solverType;
+        programType = builder.programType;
+        graphExploration = builder.graphExploration;
+        solverApproach = builder.solverApproach;
+        schedulingPolicy = builder.schedulingPolicy;
     }
 
-    public ConfigurationBuilder withMaxEventsPerExecution(long maxEventsPerExecution) {
-      this.maxEventsPerExecution = maxEventsPerExecution;
-      return this;
+    /**
+     * Generates the byte array of the configuration object.
+     *
+     * @return the bytes of the configuration
+     * @throws RuntimeException if the bytes cannot be generated
+     */
+    public byte[] generateBytes() {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                ObjectOutputStream out = new ObjectOutputStream(bos)) {
+            out.writeObject(this);
+            return bos.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to generate bytes", e);
+        }
     }
 
-    public ConfigurationBuilder withMaxIterations(int maxIterations) {
-      this.maxIterations = maxIterations;
-      return this;
+    /**
+     * Saves the configuration to a given file name.
+     *
+     * @param fileName the file name to load the configuration from
+     * @throws RuntimeException if the configuration cannot be saved
+     */
+    public void saveConfig(String fileName) {
+        try (FileOutputStream fileOut = new FileOutputStream(fileName);
+                ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+            out.writeObject(this);
+        } catch (IOException i) {
+            throw new RuntimeException("Failed to save configuration", i);
+        }
     }
 
-    public ConfigurationBuilder withProgressReport(long progressReport) {
-      this.progressReport = progressReport;
-      return this;
-    }
+    /**
+     * The following static class is used to build the configuration object. <br>
+     * The builder is used to set the configuration parameters and then build the configuration
+     * object. It provides default values for the configuration parameters. Additionally, it
+     * provides methods to set the configuration parameters.
+     */
+    public static class ConfigurationBuilder {
 
-    public ConfigurationBuilder withSeed(long seed) {
-      this.seed = seed;
-      return this;
-    }
+        public long maxEventsPerExecution = 100;
+        public int maxIterations = 10;
+        public long progressReport = 0;
+        public boolean verbose = false;
+        public long seed = new Random().nextLong();
+        public StrategyType strategyType = StrategyType.REPLAY;
+        public String buggyTracePath = "src/main/resources/buggyTrace/";
+        public String buggyTraceFile = "buggyTrace.obj";
+        public String executionGraphsPath = "src/main/resources/Visualized_Graphs/";
+        public SMTSolverTypes solverType = SMTSolverTypes.SMTINTERPOL;
+        public ProgramType programType = ProgramType.SHARED_MEM;
+        public GraphExploration graphExploration = GraphExploration.DFS;
+        public SolverApproach solverApproach = SolverApproach.INCREMENTAL;
+        public SchedulingPolicy schedulingPolicy = SchedulingPolicy.FIFO;
 
-    public ConfigurationBuilder withVerbose(boolean verbose) {
-      this.verbose = verbose;
-      return this;
-    }
+        public ConfigurationBuilder() {}
 
-    public ConfigurationBuilder withStrategyType(StrategyType strategyType) {
-      this.strategyType = strategyType;
-      return this;
-    }
+        public CheckerConfiguration build() {
+            return new CheckerConfiguration(this);
+        }
 
-    public ConfigurationBuilder withBuggyTracePath(String buggyTracePath) {
-      this.buggyTracePath = buggyTracePath;
-      return this;
-    }
+        public ConfigurationBuilder withMaxEventsPerExecution(long maxEventsPerExecution) {
+            this.maxEventsPerExecution = maxEventsPerExecution;
+            return this;
+        }
 
-    public ConfigurationBuilder withExecutionGraphsPath(String executionGraphsPath) {
-      this.executionGraphsPath = executionGraphsPath;
-      return this;
-    }
+        public ConfigurationBuilder withMaxIterations(int maxIterations) {
+            this.maxIterations = maxIterations;
+            return this;
+        }
 
-    public ConfigurationBuilder withBuggyTraceFile(String buggyTraceFile) {
-      this.buggyTraceFile = buggyTraceFile;
-      return this;
-    }
+        public ConfigurationBuilder withProgressReport(long progressReport) {
+            this.progressReport = progressReport;
+            return this;
+        }
 
-    public ConfigurationBuilder withSolverType(SMTSolverTypes solverType) {
-      this.solverType = solverType;
-      return this;
-    }
+        public ConfigurationBuilder withSeed(long seed) {
+            this.seed = seed;
+            return this;
+        }
 
-    public ConfigurationBuilder withProgramType(ProgramType programType) {
-      this.programType = programType;
-      return this;
-    }
+        public ConfigurationBuilder withVerbose(boolean verbose) {
+            this.verbose = verbose;
+            return this;
+        }
 
-    public ConfigurationBuilder withGraphExploration(GraphExploration graphExploration) {
-      this.graphExploration = graphExploration;
-      return this;
-    }
+        public ConfigurationBuilder withStrategyType(StrategyType strategyType) {
+            this.strategyType = strategyType;
+            return this;
+        }
 
-    public ConfigurationBuilder withSolverApproach(SolverApproach solverApproach) {
-      this.solverApproach = solverApproach;
-      return this;
-    }
+        public ConfigurationBuilder withBuggyTracePath(String buggyTracePath) {
+            this.buggyTracePath = buggyTracePath;
+            return this;
+        }
 
-    public ConfigurationBuilder withSchedulingPolicy(SchedulingPolicy schedulingPolicy) {
-      this.schedulingPolicy = schedulingPolicy;
-      return this;
+        public ConfigurationBuilder withExecutionGraphsPath(String executionGraphsPath) {
+            this.executionGraphsPath = executionGraphsPath;
+            return this;
+        }
+
+        public ConfigurationBuilder withBuggyTraceFile(String buggyTraceFile) {
+            this.buggyTraceFile = buggyTraceFile;
+            return this;
+        }
+
+        public ConfigurationBuilder withSolverType(SMTSolverTypes solverType) {
+            this.solverType = solverType;
+            return this;
+        }
+
+        public ConfigurationBuilder withProgramType(ProgramType programType) {
+            this.programType = programType;
+            return this;
+        }
+
+        public ConfigurationBuilder withGraphExploration(GraphExploration graphExploration) {
+            this.graphExploration = graphExploration;
+            return this;
+        }
+
+        public ConfigurationBuilder withSolverApproach(SolverApproach solverApproach) {
+            this.solverApproach = solverApproach;
+            return this;
+        }
+
+        public ConfigurationBuilder withSchedulingPolicy(SchedulingPolicy schedulingPolicy) {
+            this.schedulingPolicy = schedulingPolicy;
+            return this;
+        }
     }
-  }
 }

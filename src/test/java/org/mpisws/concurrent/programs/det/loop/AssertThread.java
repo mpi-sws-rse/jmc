@@ -2,15 +2,15 @@ package org.mpisws.concurrent.programs.det.loop;
 
 public class AssertThread extends Thread {
 
-  Numbers numbers;
+    Numbers numbers;
 
-  public AssertThread(Numbers numbers) {
-    this.numbers = numbers;
-  }
+    public AssertThread(Numbers numbers) {
+        this.numbers = numbers;
+    }
 
-  @Override
-  public void run() {
-    // assert (numbers.x < numbers.n) : "numbers.x >= n";
-    assert (numbers.x <= numbers.n) : "numbers.x > n";
-  }
+    @Override
+    public void run() {
+        // assert (numbers.x < numbers.n) : "numbers.x >= n";
+        assert (numbers.x <= numbers.n) : "numbers.x > n";
+    }
 }

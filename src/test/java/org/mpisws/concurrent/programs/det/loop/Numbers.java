@@ -2,12 +2,12 @@ package org.mpisws.concurrent.programs.det.loop;
 
 public class Numbers {
 
-  public int x;
+    public int x;
 
-  public int n;
+    public int n;
 
-  public Numbers(int x, int n) {
-    this.x = x;
-    this.n = n;
-  }
+    public Numbers(int x, int n) {
+        this.x = x;
+        this.n = n;
+    }
 }
