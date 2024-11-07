@@ -117,6 +117,11 @@ src/test/java/org/mpisws/concurrent/programs/det/queue/*.class
 src/test/java/org/mpisws/concurrent/programs/det/queue/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/lfQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/lfQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/queue/lfQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/det/queue/lfQueue/*.txt
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 /.idea/workspace.xml
