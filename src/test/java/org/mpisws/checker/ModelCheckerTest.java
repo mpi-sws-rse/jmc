@@ -445,6 +445,30 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  DET LOCK-FREE QUEUE I
+     */
+
+    @Test
+    @DisplayName("Det Lock-Free Queue")
+    void trustTestDetLockFreeQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.queue",
+                "Client3",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/queue/"
+        );
+        System.out.println("Det Lock-Free Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Lock-Free Queue Trust Strategy Finished");
+    }
+
+    /*
      *                                  NONDET HERLIHY–WING QUEUE I
      */
 
@@ -466,6 +490,30 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Herlihy-Wing Queue Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET LOCK-FREE QUEUE I
+     */
+
+    @Test
+    @DisplayName("NonDet Lock-Free Queue")
+    void trustTestNonDetLockFreeQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
+                "Client3",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/queue/"
+        );
+        System.out.println("NonDet Lock-Free Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Lock-Free Queue Trust Strategy Finished");
     }
 
     /*
