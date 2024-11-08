@@ -117,10 +117,31 @@ src/test/java/org/mpisws/concurrent/programs/det/queue/*.class
 src/test/java/org/mpisws/concurrent/programs/det/queue/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/*.txt
-src/test/java/org/mpisws/concurrent/programs/nondet/queue/lfQueue/*.class
-src/test/java/org/mpisws/concurrent/programs/nondet/queue/lfQueue/*.txt
-src/test/java/org/mpisws/concurrent/programs/det/queue/lfQueue/*.class
-src/test/java/org/mpisws/concurrent/programs/det/queue/lfQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/lbQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/lbQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/queue/lbQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/det/queue/lbQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/queue/ubQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/det/queue/ubQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/ubQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/ubQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/stack/agmStack/*.class
+src/test/java/org/mpisws/concurrent/programs/det/stack/agmStack/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/agmStack/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/agmStack/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/michaelScott/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/michaelScott/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/michaelScott/*.class
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/michaelScott/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/treiber/*.class
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/treiber/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/treiber/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/treiber/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/queue/msQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/det/queue/msQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/msQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/msQueue/*.txt
+
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

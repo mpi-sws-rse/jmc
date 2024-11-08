@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.nondet.queue.lfuQueue;
+package org.mpisws.concurrent.programs.nondet.queue.msQueue;
 
 import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.AtomicReference;

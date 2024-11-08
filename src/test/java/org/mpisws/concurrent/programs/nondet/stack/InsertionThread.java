@@ -1,13 +1,14 @@
 package org.mpisws.concurrent.programs.nondet.stack;
 
+import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class InsertionThread extends Thread {
 
-    public Stack<Integer> stack;
-    public int item;
+    public Stack<SymbolicInteger> stack;
+    public SymbolicInteger item;
 
-    public InsertionThread(Stack<Integer> stack, int item) {
+    public InsertionThread(Stack<SymbolicInteger> stack, SymbolicInteger item) {
         this.stack = stack;
         this.item = item;
     }

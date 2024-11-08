@@ -1,16 +1,16 @@
-package org.mpisws.concurrent.programs.det.queue.lfQueue;
+package org.mpisws.concurrent.programs.det.queue.lbQueue;
 
 import org.mpisws.concurrent.programs.det.queue.Queue;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.ReentrantLock;
 
-public class LFQueue implements Queue {
+public class LBQueue implements Queue {
     public int head, tail;
     public int[] items;
     public final int CAPACITY;
     public final ReentrantLock lock;
 
-    public LFQueue(int capacity) {
+    public LBQueue(int capacity) {
         CAPACITY = capacity;
         items = new int[CAPACITY];
         head = 0;

@@ -1,15 +1,15 @@
-package org.mpisws.concurrent.programs.nondet.queue.lfuQueue;
+package org.mpisws.concurrent.programs.nondet.queue.msQueue;
 
 import org.mpisws.concurrent.programs.nondet.queue.Queue;
 import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.AtomicReference;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
-public class LFUQueue implements Queue {
+public class MSQueue implements Queue {
 
     AtomicReference<Node> head, tail;
 
-    public LFUQueue() {
+    public MSQueue() {
         SymbolicInteger value = new SymbolicInteger(false);
         Node node = new Node(value);
         head = new AtomicReference<Node>(node);

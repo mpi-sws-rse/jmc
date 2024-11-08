@@ -1,13 +1,14 @@
 package org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped;
 
 import org.mpisws.concurrent.programs.nondet.stack.Stack;
+import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class PoperThread extends Thread {
 
-    public Stack<Integer> stack;
+    public Stack<SymbolicInteger> stack;
 
-    public PoperThread(Stack<Integer> stack) {
+    public PoperThread(Stack<SymbolicInteger> stack) {
         this.stack = stack;
     }
 

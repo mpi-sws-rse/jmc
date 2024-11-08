@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.det.queue.lfuQueue;
+package org.mpisws.concurrent.programs.det.queue.msQueue;
 
 import org.mpisws.util.concurrent.AtomicReference;
 

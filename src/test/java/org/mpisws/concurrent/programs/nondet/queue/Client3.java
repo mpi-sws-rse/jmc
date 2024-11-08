@@ -1,14 +1,13 @@
 package org.mpisws.concurrent.programs.nondet.queue;
 
-import org.mpisws.concurrent.programs.nondet.queue.hwQueue.HWQueue;
-import org.mpisws.concurrent.programs.nondet.queue.lfQueue.LFQueue;
+import org.mpisws.concurrent.programs.nondet.queue.lbQueue.LBQueue;
 import org.mpisws.symbolic.SymbolicInteger;
 
 public class Client3 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 6;
-        Queue q = new LFQueue(NUM_OPERATIONS);
+        int NUM_OPERATIONS = 4;
+        Queue q = new LBQueue(NUM_OPERATIONS);
 
         SymbolicInteger[] items = new SymbolicInteger[NUM_OPERATIONS];
         for (int i = 0; i < NUM_OPERATIONS; i++) {

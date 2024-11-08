@@ -1,12 +1,13 @@
 package org.mpisws.concurrent.programs.nondet.stack;
 
+import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class DeletionThread extends Thread {
 
-    public Stack<Integer> stack;
+    public Stack<SymbolicInteger> stack;
 
-    public DeletionThread(Stack<Integer> stack) {
+    public DeletionThread(Stack<SymbolicInteger> stack) {
         this.stack = stack;
     }
 

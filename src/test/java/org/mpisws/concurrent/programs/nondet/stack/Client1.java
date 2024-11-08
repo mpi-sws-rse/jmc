@@ -1,6 +1,7 @@
 package org.mpisws.concurrent.programs.nondet.stack;
 
 import org.mpisws.concurrent.programs.nondet.stack.lockFree.LockFreeStack;
+import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 import java.util.ArrayList;
@@ -11,17 +12,18 @@ public class Client1 {
     public static void main(String[] args) {
 
         try {
-            Stack stack = new LockFreeStack<Integer>();
+            Stack stack = new LockFreeStack<SymbolicInteger>();
             int NUM_OPERATIONS = 3;
 
-            List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
+            List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
             for (int i = 0; i < NUM_OPERATIONS; i++) {
-                items.add(i);
+                SymbolicInteger item = new SymbolicInteger(false);
+                items.add(item);
             }
 
             List<InsertionThread> threads = new ArrayList<>(NUM_OPERATIONS);
             for (int i = 0; i < NUM_OPERATIONS; i++) {
-                Integer item = items.get(i);
+                SymbolicInteger item = items.get(i);
                 InsertionThread thread = new InsertionThread();
                 thread.stack = stack;
                 thread.item = item;

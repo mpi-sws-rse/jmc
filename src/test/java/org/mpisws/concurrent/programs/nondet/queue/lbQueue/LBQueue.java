@@ -1,18 +1,18 @@
-package org.mpisws.concurrent.programs.nondet.queue.lfQueue;
+package org.mpisws.concurrent.programs.nondet.queue.lbQueue;
 
 import org.mpisws.concurrent.programs.nondet.queue.Queue;
 import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.ReentrantLock;
 
-public class LFQueue implements Queue {
+public class LBQueue implements Queue {
 
     public int head, tail;
     public SymbolicInteger[] items;
     public final int CAPACITY;
     public final ReentrantLock lock;
 
-    public LFQueue(int capacity) {
+    public LBQueue(int capacity) {
         CAPACITY = capacity;
         items = new SymbolicInteger[CAPACITY];
         head = 0;
