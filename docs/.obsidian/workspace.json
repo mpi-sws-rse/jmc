@@ -1,0 +1,182 @@
+{
+  "main": {
+    "id": "e20f6334d327f042",
+    "type": "split",
+    "children": [
+      {
+        "id": "38fef86cfc43dd29",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6c8ed8a6c7193356",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "8efb670d7c062a77",
+    "type": "split",
+    "children": [
+      {
+        "id": "1a178fbf7394d106",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "82d1ad6138cad0b4",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "ed470c27b6422545",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "788547c05b40df49",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "9adec5ddcde7653b",
+    "type": "split",
+    "children": [
+      {
+        "id": "5e06491a88cb9c7d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ac8f49f81500c7ce",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "JMC/Byte code Modifier.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Byte code Modifier"
+            }
+          },
+          {
+            "id": "0a59c5499be33345",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "892eff7f0d136151",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "207bd9a017074b80",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {},
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "6c8ed8a6c7193356",
+  "lastOpenFiles": [
+    "Developing.md",
+    "JMC Overview.md",
+    "Byte code Modifier.md",
+    "Runtime.md",
+    "Byte code Instrumentation/Thread creation Instrumentation.md",
+    "Configuration.md",
+    "Symbolic execution engine.md",
+    "Byte code Instrumentation/Synchronized method instrumentation.md",
+    "Concurrent primitives.md",
+    "Byte code Instrumentation/Symbolic instrumentation.md",
+    "Byte code Instrumentation/Park and Unpark Instrumentation.md",
+    "Byte code Instrumentation/Executors Instrumentation.md",
+    "Backlog.md",
+    "Scheduler.md",
+    "ModelChecker.md",
+    "JMC/Supporting Futures.md",
+    "Byte code Instrumentation",
+    "JMC/Tasks.md",
+    "JMC",
+    "Welcome.md",
+    "create a link.md"
+  ]
+}
