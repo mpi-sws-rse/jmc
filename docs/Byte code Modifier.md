@@ -15,14 +15,20 @@ Given the Byte-code, the instrumentation engine (represented by the `ByteCodeMod
 
 Based on the program type (Shared Memory/Message passing), a set of the following methods will be invoked.
 
-| Method                 | Description                                                                                                                         | SharedMem/MessagePassing |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `modifySyncMethod`     | Updates Synchronized methods. ([[Synchronized method instrumentation]])                                                             | SharedMem                |
-| `modifySymbolicEval`   | Inserts calls to Runtime whenever [[Symbolic execution engine#Symbolic Methods]] are called.<br>([[Symbolic instrumentation]])      | SharedMem                |
-| `modifyParkAndUnpark`  | Replaces calls to `LockSupport` using a custom instrumentation.<br>([[Park and Unpark Instrumentation]])                            | Both                     |
-| `modifyExecutors`      | `java.util.concurrent.Executors` calls are updated. (?) ([[Executors Instrumentation]])                                             | Both                     |
-| `modifyThreadCreation` | Every instance of thread creation is updated with calls to the Runtime `addThread` method.<br>([[Thread creation Instrumentation]]) | SharedMem                |
-|                        |                                                                                                                                     |                          |
+| Method                     | Description                                                                                                                                                                                | SharedMem/<br>MessagePassing |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| `modifySyncMethod`         | Updates Synchronized methods. ([[Synchronized method instrumentation]])                                                                                                                    | SharedMem                    |
+| `modifySymbolicEval`       | Inserts calls to Runtime whenever [[Symbolic execution engine#Symbolic Methods]] are called.<br>([[Symbolic instrumentation]])                                                             | SharedMem                    |
+| `modifyParkAndUnpark`      | Replaces calls to `LockSupport` using a custom instrumentation.<br>([[Park and Unpark Instrumentation]])                                                                                   | Both                         |
+| `modifyExecutors`          | `java.util.concurrent.Executors` calls are updated. (?) ([[Executors Instrumentation]])                                                                                                    | Both                         |
+| `modifyThreadCreation`     | Every instance of thread creation is updated with calls to the Runtime `addThread` method.<br>([[Thread Instrumentation]])                                                                 | SharedMem                    |
+| `modifyThreadStart`        | At every invocation of `thread.start()`, we insert a call to `Runtime.threadStart`<br>([[Thread Instrumentation]])                                                                         | Both                         |
+| `modifyThreadRun`          | Each `run` method of a thread is modified to invoke `Runtime.waitRequest`<br>([[Thread Instrumentation]])                                                                                  | Both                         |
+| `modifyReadWriteOperation` | All `GETFIELD` and `PUTFIELD` instructions in the byte-code and instrumented with a `Runtime.readOperation` and `Runtime.writeOperation` respectively.<br>([[Read write Instrumentation]]) | SharedMem                    |
+| `modifyMonitorStatements`  | Update `MONITORENTER` and `MONITOREXIT` statements with calls to locks in the runtime.<br>([[Monitor Instrumentation]])                                                                    | SharedMem                    |
+| `modifyAssert`             | For every `assertion`, the modifier inserts a call to the `Runtime.assertOperation` within a try-catch block.<br>([[Assert Instrumentation]])                                              | Both                         |
+| `modifyThreadJoin`         | `thread.join()` calls are preceded by calls to `Runtime.threadJoin`<br>([[Thread Instrumentation]])                                                                                        | Both                         |
+| `addRuntimeEnvironment`    | The main method of the target is updated to initialize the [[Runtime]] and [[Scheduler]]<br>([[Runtime Instrumentation]])                                                                  | Both                         |
 
 ### Pending Tasks
 
