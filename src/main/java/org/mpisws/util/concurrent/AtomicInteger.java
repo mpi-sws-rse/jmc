@@ -1,6 +1,6 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 public class AtomicInteger {
 
@@ -8,7 +8,7 @@ public class AtomicInteger {
     public ReentrantLock lock = new ReentrantLock();
 
     public AtomicInteger(int initialValue) {
-        RuntimeEnvironment.writeOperation(
+        JmcRuntime.writeOperation(
                 this,
                 initialValue,
                 Thread.currentThread(),
@@ -16,11 +16,11 @@ public class AtomicInteger {
                 "value",
                 "I");
         value = initialValue;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public AtomicInteger() {
-        RuntimeEnvironment.writeOperation(
+        JmcRuntime.writeOperation(
                 this,
                 0,
                 Thread.currentThread(),
@@ -28,23 +28,23 @@ public class AtomicInteger {
                 "value",
                 "I");
         value = 0;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public int get() {
-        RuntimeEnvironment.readOperation(
+        JmcRuntime.readOperation(
                 this,
                 Thread.currentThread(),
                 "org/mpisws/util/concurrent/AtomicInteger",
                 "value",
                 "I");
         int result = value;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
         return result;
     }
 
     public void set(int newValue) {
-        RuntimeEnvironment.writeOperation(
+        JmcRuntime.writeOperation(
                 this,
                 newValue,
                 Thread.currentThread(),
@@ -52,22 +52,22 @@ public class AtomicInteger {
                 "value",
                 "I");
         value = newValue;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public boolean compareAndSet(int expectedValue, int newValue) throws JMCInterruptException {
         lock.lock();
         try {
-            RuntimeEnvironment.readOperation(
+            JmcRuntime.readOperation(
                     this,
                     Thread.currentThread(),
                     "org/mpisws/util/concurrent/AtomicInteger",
                     "value",
                     "I");
             if (value == expectedValue) {
-                RuntimeEnvironment.waitRequest(Thread.currentThread());
+                JmcRuntime.waitRequest(Thread.currentThread());
 
-                RuntimeEnvironment.writeOperation(
+                JmcRuntime.writeOperation(
                         this,
                         newValue,
                         Thread.currentThread(),
@@ -75,10 +75,10 @@ public class AtomicInteger {
                         "value",
                         "I");
                 value = newValue;
-                RuntimeEnvironment.waitRequest(Thread.currentThread());
+                JmcRuntime.waitRequest(Thread.currentThread());
                 return true;
             }
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
             return false;
         } finally {
             lock.unlock();
@@ -88,16 +88,16 @@ public class AtomicInteger {
     public int getAndIncrement() throws JMCInterruptException {
         lock.lock();
         try {
-            RuntimeEnvironment.readOperation(
+            JmcRuntime.readOperation(
                     this,
                     Thread.currentThread(),
                     "org/mpisws/util/concurrent/AtomicInteger",
                     "value",
                     "I");
             int result = value;
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
 
-            RuntimeEnvironment.writeOperation(
+            JmcRuntime.writeOperation(
                     this,
                     result + 1,
                     Thread.currentThread(),
@@ -105,7 +105,7 @@ public class AtomicInteger {
                     "value",
                     "I");
             value = result + 1;
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
             return result;
         } finally {
             lock.unlock();

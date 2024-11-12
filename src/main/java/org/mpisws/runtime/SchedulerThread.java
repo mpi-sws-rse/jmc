@@ -64,7 +64,7 @@ public class SchedulerThread extends Thread {
      * @throws IllegalArgumentException if the selected strategy type is not supported.
      */
     private void createSearchStrategy() {
-        StrategyType strategyType = RuntimeEnvironment.strategyType;
+        StrategyType strategyType = JmcRuntime.strategyType;
         if (strategyType == StrategyType.RANDOM) {
             searchStrategy = new RandomStrategy();
         } else if (strategyType == StrategyType.TRUST) {
@@ -95,7 +95,7 @@ public class SchedulerThread extends Thread {
     public void run() {
         waitForMainThread();
         printStartMessage();
-        while (!RuntimeEnvironment.executionFinished) {
+        while (!JmcRuntime.executionFinished) {
             waitForOtherThread();
             if (checkAssertFlag()) {
                 handleAssertFail();
@@ -126,7 +126,7 @@ public class SchedulerThread extends Thread {
      * <p>This method is used to wait until the other thread (which is the main thread) waits.
      */
     private void waitForMainThread() {
-        RuntimeEnvironment.getPermission(RuntimeEnvironment.createdThreadList.get(0));
+        JmcRuntime.getPermission(JmcRuntime.threadManager.getThread(1L));
     }
 
     /**
@@ -147,8 +147,8 @@ public class SchedulerThread extends Thread {
      */
     private void waitForOtherThread() {
         while (true) {
-            synchronized (RuntimeEnvironment.threadWaitReqLock) {
-                if (RuntimeEnvironment.threadWaitReq != null) {
+            synchronized (JmcRuntime.threadWaitReqLock) {
+                if (JmcRuntime.threadWaitReq != null) {
                     break;
                 }
                 Thread.yield();
@@ -166,7 +166,7 @@ public class SchedulerThread extends Thread {
      *     otherwise.
      */
     private boolean checkAssertFlag() {
-        return RuntimeEnvironment.assertFlag;
+        return JmcRuntime.assertFlag;
     }
 
     /**
@@ -177,18 +177,18 @@ public class SchedulerThread extends Thread {
      * executed events.
      */
     private void handleAssertFail() {
-        if (!RuntimeEnvironment.isExecutionBlocked) {
-            RuntimeEnvironment.executionFinished = true;
+        if (!JmcRuntime.isExecutionBlocked) {
+            JmcRuntime.executionFinished = true;
             // TODO() : Create FailureEvent and replace the following line with the nextFailureEvent
             // method
-            searchStrategy.nextFailureEvent(RuntimeEnvironment.threadWaitReq);
+            searchStrategy.nextFailureEvent(JmcRuntime.threadWaitReq);
             searchStrategy.printExecutionTrace();
             LOGGER.error("[*** Assertion Fail ***]");
             LOGGER.error(
                     "[*** Number of execution iteration : {} ***]",
-                    RuntimeEnvironment.numOfExecutions);
+                    JmcRuntime.numOfExecutions);
             LOGGER.debug("[*** The SchedulerThread requested to FINISH***]");
-            RuntimeEnvironment.printFinalMessage();
+            JmcRuntime.printFinalMessage();
             searchStrategy.saveBuggyExecutionTrace();
             System.exit(0);
         }
@@ -197,14 +197,15 @@ public class SchedulerThread extends Thread {
     private void printResourceUsage() {
         LOGGER.debug("[*** Resource Usage ***]");
         LOGGER.debug(
-                "[*** Number of execution iteration : {} ***]", RuntimeEnvironment.numOfExecutions);
+                "[*** Number of execution iteration : {} ***]", JmcRuntime.numOfExecutions);
         LOGGER.debug(
                 "[*** Number of threads created : {} ***]",
-                RuntimeEnvironment.createdThreadList.size());
+                JmcRuntime.threadManager.findThreadsWithStatus(ThreadManager.ThreadState.CREATED)
+                        .size());
         LOGGER.debug(
                 "[*** Memory used : {} MB ***]",
-                RuntimeEnvironment.currentMemoryUsageInMegaBytes());
-        long timeInNano = RuntimeEnvironment.elapsedTimeInNanoSeconds();
+                JmcRuntime.currentMemoryUsageInMegaBytes());
+        long timeInNano = JmcRuntime.elapsedTimeInNanoSeconds();
         LOGGER.debug("[*** Time taken to execute the program : {} ns", timeInNano);
         double timeInSeconds = (double) timeInNano / 1_000_000_000;
         double timeInMinutes = timeInSeconds / 60;
@@ -232,7 +233,7 @@ public class SchedulerThread extends Thread {
      * the WAIT state.
      */
     private void waitForThreadStateChange() {
-        synchronized (RuntimeEnvironment.locks.get(getThreadId(RuntimeEnvironment.threadWaitReq))) {
+        synchronized (JmcRuntime.locks.get(getThreadId(JmcRuntime.threadWaitReq))) {
             LOGGER.debug("Scheduling phase begins");
         }
     }
@@ -256,14 +257,14 @@ public class SchedulerThread extends Thread {
      * current execution iteration.
      */
     private void notifyMainThread() {
-        if (RuntimeEnvironment.deadlockHappened) {
+        if (JmcRuntime.deadlockHappened) {
             searchStrategy.printExecutionTrace();
             printResourceUsage();
             searchStrategy.saveBuggyExecutionTrace();
             System.exit(0);
         }
-        synchronized (RuntimeEnvironment.locks.get((long) 1)) {
-            RuntimeEnvironment.locks.get((long) 1).notify();
+        synchronized (JmcRuntime.locks.get((long) 1)) {
+            JmcRuntime.locks.get((long) 1).notify();
         }
     }
 
@@ -285,7 +286,7 @@ public class SchedulerThread extends Thread {
      *
      * <p>This method is used to notify the specified thread to continue its execution. If the
      * thread is null, it indicates that the execution is finished. In this case, the method sets
-     * the {@link RuntimeEnvironment#executionFinished} flag to true. Otherwise, The method
+     * the {@link JmcRuntime#executionFinished} flag to true. Otherwise, The method
      * retrieves the thread's ID, prints a message indicating that the thread is permitted to run,
      * and then notifies the thread.
      *
@@ -296,11 +297,11 @@ public class SchedulerThread extends Thread {
         if (optionalThread.isPresent()) {
             Long threadId = getThreadId(optionalThread.get());
             LOGGER.debug("Thread-{} is permitted to run", threadId);
-            synchronized (RuntimeEnvironment.locks.get(threadId)) {
-                RuntimeEnvironment.locks.get(threadId).notify();
+            synchronized (JmcRuntime.locks.get(threadId)) {
+                JmcRuntime.locks.get(threadId).notify();
             }
         } else {
-            RuntimeEnvironment.executionFinished = true;
+            JmcRuntime.executionFinished = true;
         }
     }
 
@@ -312,7 +313,7 @@ public class SchedulerThread extends Thread {
      * @return the ID of the thread.
      */
     private Long getThreadId(Thread thread) {
-        return RuntimeEnvironment.threadIdMap.get(thread.getId());
+        return JmcRuntime.threadManager.getRevId(thread.getId());
     }
 
     /**
@@ -385,7 +386,7 @@ public class SchedulerThread extends Thread {
                 casRequestHandler();
                 break;
             default:
-                RuntimeEnvironment.threadWaitReq = null;
+                JmcRuntime.threadWaitReq = null;
                 waitEventHandler();
                 break;
         }
@@ -400,46 +401,46 @@ public class SchedulerThread extends Thread {
      * @return the type of the event that should be handled next.
      */
     private RequestType determineEventType() {
-        if (RuntimeEnvironment.threadStartReq != null) {
+        if (JmcRuntime.threadStartReq != null) {
             return RequestType.START_REQUEST;
-        } else if (RuntimeEnvironment.threadEnterMonitorReq != null) {
+        } else if (JmcRuntime.threadEnterMonitorReq != null) {
             return RequestType.ENTER_MONITOR_REQUEST;
-        } else if (RuntimeEnvironment.threadExitMonitorReq != null) {
+        } else if (JmcRuntime.threadExitMonitorReq != null) {
             return RequestType.EXIT_MONITOR_REQUEST;
-        } else if (RuntimeEnvironment.threadJoinReq != null) {
+        } else if (JmcRuntime.threadJoinReq != null) {
             return RequestType.JOIN_REQUEST;
-        } else if (RuntimeEnvironment.writeEventReq != null) {
+        } else if (JmcRuntime.writeEventReq != null) {
             return RequestType.WRITE_REQUEST;
-        } else if (RuntimeEnvironment.readEventReq != null) {
+        } else if (JmcRuntime.readEventReq != null) {
             return RequestType.READ_REQUEST;
-        } else if (RuntimeEnvironment.sendEventReq != null) {
+        } else if (JmcRuntime.sendEventReq != null) {
             return RequestType.SEND_REQUEST;
-        } else if (RuntimeEnvironment.receiveEventReq != null) {
+        } else if (JmcRuntime.receiveEventReq != null) {
             return RequestType.RECV_REQUEST;
-        } else if (RuntimeEnvironment.blockingReceiveEventReq != null) {
+        } else if (JmcRuntime.blockingReceiveEventReq != null) {
             return RequestType.RECV_BLOCKING_REQUEST;
-        } else if (RuntimeEnvironment.isFinished) {
+        } else if (JmcRuntime.isFinished) {
             return RequestType.FINISH_REQUEST;
-        } else if (RuntimeEnvironment.symbolicOperation != null) {
+        } else if (JmcRuntime.symbolicOperation != null) {
             return RequestType.SYMB_ARTH_REQUEST;
-        } else if (RuntimeEnvironment.unparkerThread != null) {
+        } else if (JmcRuntime.unparkerThread != null) {
             return RequestType.UNPARK_REQUEST;
-        } else if (RuntimeEnvironment.threadToPark != null) {
+        } else if (JmcRuntime.threadToPark != null) {
             return RequestType.PARK_REQUEST;
-        } else if (RuntimeEnvironment.mainStartEventReq != null) {
+        } else if (JmcRuntime.mainStartEventReq != null) {
             return RequestType.MAIN_START_REQUEST;
-        } else if (RuntimeEnvironment.getFutureReq != null) {
+        } else if (JmcRuntime.getFutureReq != null) {
             return RequestType.GET_FUTURE_REQUEST;
-        } else if (RuntimeEnvironment.takeFromBlockingQueueReq != null) {
+        } else if (JmcRuntime.takeFromBlockingQueueReq != null) {
             return RequestType.TAKE_WORK_QUEUE;
-        } else if (RuntimeEnvironment.conAssumeEventReq != null) {
+        } else if (JmcRuntime.conAssumeEventReq != null) {
             return RequestType.CON_ASSUME_REQUEST;
-        } else if (RuntimeEnvironment.assumeBlockedEventReq != null) {
+        } else if (JmcRuntime.assumeBlockedEventReq != null) {
             return RequestType.ASSUME_BLOCKED_REQUEST;
-        } else if (RuntimeEnvironment.symAssumeEventReq != null) {
+        } else if (JmcRuntime.symAssumeEventReq != null) {
             return RequestType.SYM_ASSUME_REQUEST;
-        } else if (RuntimeEnvironment.exclusiveReadEventReq != null
-                && RuntimeEnvironment.exclusiveWriteEventReq != null) {
+        } else if (JmcRuntime.exclusiveReadEventReq != null
+                && JmcRuntime.exclusiveWriteEventReq != null) {
             return RequestType.CAS_REQUEST;
         } else {
             return RequestType.WAIT_REQUEST;
@@ -448,14 +449,14 @@ public class SchedulerThread extends Thread {
 
     private void casRequestHandler() {
         LOGGER.debug("CAS request handler is called");
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
         Optional<ReadExEvent> exclusiveReadEvent =
-                Optional.ofNullable(RuntimeEnvironment.exclusiveReadEventReq);
+                Optional.ofNullable(JmcRuntime.exclusiveReadEventReq);
         Optional<WriteExEvent> exclusiveWriteEvent =
-                Optional.ofNullable(RuntimeEnvironment.exclusiveWriteEventReq);
-        RuntimeEnvironment.exclusiveReadEventReq = null;
-        RuntimeEnvironment.exclusiveWriteEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.exclusiveWriteEventReq);
+        JmcRuntime.exclusiveReadEventReq = null;
+        JmcRuntime.exclusiveWriteEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (exclusiveReadEvent.isPresent()
                 && exclusiveWriteEvent.isPresent()
                 && thread.isPresent()) {
@@ -468,11 +469,11 @@ public class SchedulerThread extends Thread {
 
     private void symAssumeRequestHandler() {
         LOGGER.debug("Symbolic assume request handler is called");
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
         Optional<SymbolicOperation> symAssumeEvent =
-                Optional.ofNullable(RuntimeEnvironment.symAssumeEventReq);
-        RuntimeEnvironment.symAssumeEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.symAssumeEventReq);
+        JmcRuntime.symAssumeEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (symAssumeEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextSymAssumeRequest(thread.get(), symAssumeEvent.get());
             notifyThread(thread.get());
@@ -481,11 +482,11 @@ public class SchedulerThread extends Thread {
 
     private void conAssumeRequestHandler() {
         LOGGER.debug("Concrete assume request handler is called");
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
         Optional<ConAssumeEvent> conAssumeEvent =
-                Optional.ofNullable(RuntimeEnvironment.conAssumeEventReq);
-        RuntimeEnvironment.conAssumeEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.conAssumeEventReq);
+        JmcRuntime.conAssumeEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (conAssumeEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextConAssumeRequest(conAssumeEvent.get());
             waitEventHandler();
@@ -494,11 +495,11 @@ public class SchedulerThread extends Thread {
 
     private void assumeBlockedRequestHandler() {
         LOGGER.debug("Assume blocked request handler is called");
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
         Optional<AssumeBlockedEvent> assumeBlockedEvent =
-                Optional.ofNullable(RuntimeEnvironment.assumeBlockedEventReq);
-        RuntimeEnvironment.assumeBlockedEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.assumeBlockedEventReq);
+        JmcRuntime.assumeBlockedEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (assumeBlockedEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextAssumeBlockedRequest(assumeBlockedEvent.get());
             waitEventHandler();
@@ -508,10 +509,10 @@ public class SchedulerThread extends Thread {
     private void mainStartEventHandler() {
         LOGGER.debug("Main Start event handler is called");
         Optional<MainStartEvent> mainStartEvent =
-                Optional.ofNullable(RuntimeEnvironment.mainStartEventReq);
-        Optional<Thread> callerThread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        RuntimeEnvironment.mainStartEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.mainStartEventReq);
+        Optional<Thread> callerThread = Optional.ofNullable(JmcRuntime.threadWaitReq);
+        JmcRuntime.mainStartEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (mainStartEvent.isPresent() && callerThread.isPresent()) {
             searchStrategy.nextMainStartEvent(mainStartEvent.get());
             waitEventHandler();
@@ -532,10 +533,10 @@ public class SchedulerThread extends Thread {
      */
     private void startEventHandler() {
         LOGGER.debug("Start event handler is called");
-        Optional<Thread> calleeThread = Optional.ofNullable(RuntimeEnvironment.threadStartReq);
-        Optional<Thread> callerThread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        RuntimeEnvironment.threadWaitReq = null;
-        RuntimeEnvironment.threadStartReq = null;
+        Optional<Thread> calleeThread = Optional.ofNullable(JmcRuntime.threadStartReq);
+        Optional<Thread> callerThread = Optional.ofNullable(JmcRuntime.threadWaitReq);
+        JmcRuntime.threadWaitReq = null;
+        JmcRuntime.threadStartReq = null;
         if (calleeThread.isPresent() && callerThread.isPresent()) {
             searchStrategy.nextStartEvent(calleeThread.get(), callerThread.get());
             startThread(calleeThread.get());
@@ -573,12 +574,12 @@ public class SchedulerThread extends Thread {
     public void enterMonitorRequestHandler() {
         LOGGER.debug("Enter monitor request handler is called");
         Optional<Thread> enterMonitorThread =
-                Optional.ofNullable(RuntimeEnvironment.threadEnterMonitorReq);
+                Optional.ofNullable(JmcRuntime.threadEnterMonitorReq);
         Optional<Object> enterMonitorObject =
-                Optional.ofNullable(RuntimeEnvironment.objectEnterMonitorReq);
-        RuntimeEnvironment.threadEnterMonitorReq = null;
-        RuntimeEnvironment.objectEnterMonitorReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.objectEnterMonitorReq);
+        JmcRuntime.threadEnterMonitorReq = null;
+        JmcRuntime.objectEnterMonitorReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (enterMonitorThread.isPresent() && enterMonitorObject.isPresent()) {
             Optional<Thread> thread =
                     Optional.ofNullable(
@@ -604,12 +605,12 @@ public class SchedulerThread extends Thread {
     public void exitMonitorRequestHandler() {
         LOGGER.debug("Exit monitor request handler is called");
         Optional<Thread> exitMonitorThread =
-                Optional.ofNullable(RuntimeEnvironment.threadExitMonitorReq);
+                Optional.ofNullable(JmcRuntime.threadExitMonitorReq);
         Optional<Object> exitMonitorObject =
-                Optional.ofNullable(RuntimeEnvironment.objectExitMonitorReq);
-        RuntimeEnvironment.threadExitMonitorReq = null;
-        RuntimeEnvironment.objectExitMonitorReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.objectExitMonitorReq);
+        JmcRuntime.threadExitMonitorReq = null;
+        JmcRuntime.objectExitMonitorReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (exitMonitorThread.isPresent() && exitMonitorObject.isPresent()) {
             searchStrategy.nextExitMonitorEvent(exitMonitorThread.get(), exitMonitorObject.get());
             waitEventHandler();
@@ -627,11 +628,11 @@ public class SchedulerThread extends Thread {
      */
     public void joinRequestHandler() {
         LOGGER.debug("Join request handler is called");
-        Optional<Thread> joinRequestThread = Optional.ofNullable(RuntimeEnvironment.threadJoinReq);
-        Optional<Thread> joinResponseThread = Optional.ofNullable(RuntimeEnvironment.threadJoinRes);
-        RuntimeEnvironment.threadJoinReq = null;
-        RuntimeEnvironment.threadJoinRes = null;
-        RuntimeEnvironment.threadWaitReq = null;
+        Optional<Thread> joinRequestThread = Optional.ofNullable(JmcRuntime.threadJoinReq);
+        Optional<Thread> joinResponseThread = Optional.ofNullable(JmcRuntime.threadJoinRes);
+        JmcRuntime.threadJoinReq = null;
+        JmcRuntime.threadJoinRes = null;
+        JmcRuntime.threadWaitReq = null;
         if (joinRequestThread.isPresent() && joinResponseThread.isPresent()) {
             Optional<Thread> thread =
                     Optional.ofNullable(
@@ -650,10 +651,10 @@ public class SchedulerThread extends Thread {
      */
     public void readRequestHandler() {
         LOGGER.debug("Read request handler is called");
-        Optional<ReadEvent> readRequestEvent = Optional.ofNullable(RuntimeEnvironment.readEventReq);
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        RuntimeEnvironment.readEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+        Optional<ReadEvent> readRequestEvent = Optional.ofNullable(JmcRuntime.readEventReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
+        JmcRuntime.readEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (readRequestEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextReadEvent(readRequestEvent.get());
             notifyThread(thread.get());
@@ -664,10 +665,10 @@ public class SchedulerThread extends Thread {
     public void receiveRequestHandler() {
         LOGGER.debug("Receive request handler is called");
         Optional<ReceiveEvent> receiveRequestEvent =
-                Optional.ofNullable(RuntimeEnvironment.receiveEventReq);
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        RuntimeEnvironment.receiveEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.receiveEventReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
+        JmcRuntime.receiveEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (receiveRequestEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextReceiveEvent(receiveRequestEvent.get());
             notifyThread(thread.get());
@@ -678,10 +679,10 @@ public class SchedulerThread extends Thread {
     public void blockingReceiveRequestHandler() {
         LOGGER.debug("Blocking receive request handler is called");
         Optional<ReceiveEvent> blockingReceiveEventReq =
-                Optional.ofNullable(RuntimeEnvironment.blockingReceiveEventReq);
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        RuntimeEnvironment.blockingReceiveEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.blockingReceiveEventReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
+        JmcRuntime.blockingReceiveEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (blockingReceiveEventReq.isPresent() && thread.isPresent()) {
             if (searchStrategy.nextBlockingReceiveRequest(blockingReceiveEventReq.get())) {
                 notifyThread(thread.get());
@@ -701,10 +702,10 @@ public class SchedulerThread extends Thread {
     public void writeRequestHandler() {
         LOGGER.debug("Write request handler is called");
         Optional<WriteEvent> writeRequestEvent =
-                Optional.ofNullable(RuntimeEnvironment.writeEventReq);
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        RuntimeEnvironment.writeEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+                Optional.ofNullable(JmcRuntime.writeEventReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
+        JmcRuntime.writeEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (writeRequestEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextWriteEvent(writeRequestEvent.get());
             notifyThread(thread.get());
@@ -714,10 +715,10 @@ public class SchedulerThread extends Thread {
     /** Handle a request to send a message. */
     public void sendRequestHandler() {
         LOGGER.debug("Send request handler is called");
-        Optional<SendEvent> sendRequestEvent = Optional.ofNullable(RuntimeEnvironment.sendEventReq);
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        RuntimeEnvironment.sendEventReq = null;
-        RuntimeEnvironment.threadWaitReq = null;
+        Optional<SendEvent> sendRequestEvent = Optional.ofNullable(JmcRuntime.sendEventReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
+        JmcRuntime.sendEventReq = null;
+        JmcRuntime.threadWaitReq = null;
         if (sendRequestEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextSendEvent(sendRequestEvent.get());
             notifyThread(thread.get());
@@ -734,9 +735,9 @@ public class SchedulerThread extends Thread {
      */
     public void finishRequestHandler() {
         LOGGER.debug("Finish request handler is called");
-        Optional<Thread> finishedThread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
-        RuntimeEnvironment.threadWaitReq = null;
-        RuntimeEnvironment.isFinished = false;
+        Optional<Thread> finishedThread = Optional.ofNullable(JmcRuntime.threadWaitReq);
+        JmcRuntime.threadWaitReq = null;
+        JmcRuntime.isFinished = false;
         if (finishedThread.isPresent()) {
             Thread thread = searchStrategy.nextFinishRequest(finishedThread.get());
             notifyThread(thread);
@@ -753,11 +754,11 @@ public class SchedulerThread extends Thread {
      */
     public void unparkRequestHandler() {
         LOGGER.debug("Unpark request handler is called");
-        Optional<Thread> unparkerThread = Optional.ofNullable(RuntimeEnvironment.unparkerThread);
-        Optional<Thread> unparkeeThread = Optional.ofNullable(RuntimeEnvironment.unparkeeThread);
-        RuntimeEnvironment.unparkerThread = null;
-        RuntimeEnvironment.unparkeeThread = null;
-        RuntimeEnvironment.threadWaitReq = null;
+        Optional<Thread> unparkerThread = Optional.ofNullable(JmcRuntime.unparkerThread);
+        Optional<Thread> unparkeeThread = Optional.ofNullable(JmcRuntime.unparkeeThread);
+        JmcRuntime.unparkerThread = null;
+        JmcRuntime.unparkeeThread = null;
+        JmcRuntime.threadWaitReq = null;
         if (unparkerThread.isPresent() && unparkeeThread.isPresent()) {
             searchStrategy.nextUnparkRequest(unparkerThread.get(), unparkeeThread.get());
             waitEventHandler();
@@ -774,9 +775,9 @@ public class SchedulerThread extends Thread {
      */
     public void parkRequestHandler() {
         LOGGER.debug("Park request handler is called");
-        Optional<Thread> threadToPark = Optional.ofNullable(RuntimeEnvironment.threadToPark);
-        RuntimeEnvironment.threadToPark = null;
-        RuntimeEnvironment.threadWaitReq = null;
+        Optional<Thread> threadToPark = Optional.ofNullable(JmcRuntime.threadToPark);
+        JmcRuntime.threadToPark = null;
+        JmcRuntime.threadWaitReq = null;
         if (threadToPark.isPresent()) {
             searchStrategy.nextParkRequest(threadToPark.get());
             waitEventHandler();
@@ -793,11 +794,11 @@ public class SchedulerThread extends Thread {
      */
     public void symbolicArithmeticRequestHandler() {
         LOGGER.debug("Symbolic arithmetic request handler is called");
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
         Optional<SymbolicOperation> symbolicOperation =
-                Optional.ofNullable(RuntimeEnvironment.symbolicOperation);
-        RuntimeEnvironment.threadWaitReq = null;
-        RuntimeEnvironment.symbolicOperation = null;
+                Optional.ofNullable(JmcRuntime.symbolicOperation);
+        JmcRuntime.threadWaitReq = null;
+        JmcRuntime.symbolicOperation = null;
         if (thread.isPresent() && symbolicOperation.isPresent()) {
             searchStrategy.nextSymbolicOperationRequest(thread.get(), symbolicOperation.get());
             notifyThread(thread.get());
@@ -806,11 +807,11 @@ public class SchedulerThread extends Thread {
 
     public void getFutureRequestHandler() {
         LOGGER.debug("Get future request handler is called");
-        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<Thread> thread = Optional.ofNullable(JmcRuntime.threadWaitReq);
         Optional<FutureTask> getFutureRequest =
-                Optional.ofNullable(RuntimeEnvironment.getFutureReq);
-        RuntimeEnvironment.threadWaitReq = null;
-        RuntimeEnvironment.getFutureReq = null;
+                Optional.ofNullable(JmcRuntime.getFutureReq);
+        JmcRuntime.threadWaitReq = null;
+        JmcRuntime.getFutureReq = null;
         if (thread.isPresent() && getFutureRequest.isPresent()) {
             notifyThread(searchStrategy.nextGetFutureRequest(thread.get(), getFutureRequest.get()));
         }
@@ -820,11 +821,11 @@ public class SchedulerThread extends Thread {
      * Checks whether the last execution is finished or not.
      *
      * <p>This method is used to check whether the last execution is finished or not. If the search
-     * strategy is done, it sets the {@link RuntimeEnvironment#allExecutionsFinished} flag to true.
+     * strategy is done, it sets the {@link JmcRuntime#allExecutionsFinished} flag to true.
      */
     public void wasLastExecution() {
         if (searchStrategy.done()) {
-            RuntimeEnvironment.allExecutionsFinished = true;
+            JmcRuntime.allExecutionsFinished = true;
         }
     }
 }

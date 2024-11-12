@@ -3,6 +3,7 @@ package org.mpisws.checker;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.*;
+import org.mpisws.concurrent.programs.correct.counter.CorrectCounter;
 import org.mpisws.solver.SMTSolverTypes;
 import org.mpisws.solver.SolverApproach;
 

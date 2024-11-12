@@ -1,6 +1,6 @@
 package org.mpisws.symbolic;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 public class SymbolicBoolean extends AbstractBoolean {
     private String name;
@@ -74,14 +74,14 @@ public class SymbolicBoolean extends AbstractBoolean {
     @Override
     public AbstractBoolean read() {
         if (this.isShared) {
-            RuntimeEnvironment.readOperation(
+            JmcRuntime.readOperation(
                     this,
                     Thread.currentThread(),
                     "org.mpisws.symbolic.SymbolicBoolean",
                     "value",
                     "SZ");
             AbstractBoolean copy = this.deepCopy();
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
             return copy;
         } else {
             return this.deepCopy();
@@ -93,7 +93,7 @@ public class SymbolicBoolean extends AbstractBoolean {
         SymbolicBoolean symbolicBoolean = (SymbolicBoolean) value.read();
 
         if (isShared) {
-            RuntimeEnvironment.writeOperation(
+            JmcRuntime.writeOperation(
                     this,
                     symbolicBoolean,
                     Thread.currentThread(),
@@ -112,7 +112,7 @@ public class SymbolicBoolean extends AbstractBoolean {
         }
 
         if (isShared) {
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
         }
     }
 
@@ -120,7 +120,7 @@ public class SymbolicBoolean extends AbstractBoolean {
     public void write(SymbolicOperation value) {
 
         if (isShared) {
-            RuntimeEnvironment.writeOperation(
+            JmcRuntime.writeOperation(
                     this,
                     value,
                     Thread.currentThread(),
@@ -135,20 +135,20 @@ public class SymbolicBoolean extends AbstractBoolean {
         this.eval = expressionCopy;
 
         if (isShared) {
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
         }
     }
 
     private void write() {
         if (isShared) {
-            RuntimeEnvironment.writeOperation(
+            JmcRuntime.writeOperation(
                     this,
                     value,
                     Thread.currentThread(),
                     "org.mpisws.symbolic.SymbolicBoolean",
                     "value",
                     "SZ");
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
         }
     }
 }

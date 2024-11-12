@@ -2,7 +2,7 @@ package org.mpisws.solver;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.symbolic.SymbolicOperation;
 import org.sosy_lab.java_smt.api.BooleanFormula;
 import org.sosy_lab.java_smt.api.ProverEnvironment;
@@ -42,10 +42,10 @@ public class IncrementalSolver extends SymbolicSolver {
         pop();
         if (concreteEval) {
             push(symbolicOperation);
-            RuntimeEnvironment.solverResult = true;
+            JmcRuntime.solverResult = true;
         } else {
             push(negateFormula(symbolicOperation.getFormula()));
-            RuntimeEnvironment.solverResult = false;
+            JmcRuntime.solverResult = false;
         }
     }
 
@@ -56,11 +56,11 @@ public class IncrementalSolver extends SymbolicSolver {
     public void computeNewSymAssumeOperationRequest(SymbolicOperation symbolicOperation) {
         boolean concreteEval = symbolicOperation.concreteEvaluation();
         if (concreteEval) {
-            RuntimeEnvironment.solverResult = true;
+            JmcRuntime.solverResult = true;
             push(symbolicOperation);
         } else {
             boolean symbolicEval = solveSymbolicFormula(symbolicOperation);
-            RuntimeEnvironment.solverResult = symbolicEval;
+            JmcRuntime.solverResult = symbolicEval;
             if (symbolicEval) {
                 updateModel();
             } else {
@@ -76,14 +76,14 @@ public class IncrementalSolver extends SymbolicSolver {
     public void computeSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
         boolean concreteEval = symbolicOperation.concreteEvaluation();
         if (concreteEval) {
-            RuntimeEnvironment.solverResult = true;
+            JmcRuntime.solverResult = true;
         } else {
             boolean sat = solveSymbolicFormula(symbolicOperation);
             if (sat) {
-                RuntimeEnvironment.solverResult = true;
+                JmcRuntime.solverResult = true;
                 pop();
             } else {
-                RuntimeEnvironment.solverResult = false;
+                JmcRuntime.solverResult = false;
                 push(negateFormula(symbolicOperation.getFormula()));
             }
         }
@@ -133,16 +133,16 @@ public class IncrementalSolver extends SymbolicSolver {
             boolean unsat = disSolveSymbolicFormula(symbolicOperation);
             pop();
             bothSatUnsat = unsat;
-            RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unsat);
+            JmcRuntime.solverResult = pickSatOrUnsat(sat, unsat);
         } else {
             boolean unsat = true;
             boolean sat = solveSymbolicFormula(symbolicOperation);
             pop();
             bothSatUnsat = sat;
-            RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unsat);
+            JmcRuntime.solverResult = pickSatOrUnsat(sat, unsat);
         }
 
-        if (RuntimeEnvironment.solverResult) {
+        if (JmcRuntime.solverResult) {
             push(symbolicOperation);
         } else {
             push(negateFormula(symbolicOperation.getFormula()));
@@ -181,11 +181,11 @@ public class IncrementalSolver extends SymbolicSolver {
         boolean unSat = disSolveSymbolicFormula(symbolicOperation);
         bothSatUnsat = sat && unSat;
         if (unSat) {
-            RuntimeEnvironment.solverResult = false;
+            JmcRuntime.solverResult = false;
         } else {
             pop();
             push(symbolicOperation);
-            RuntimeEnvironment.solverResult = true;
+            JmcRuntime.solverResult = true;
         }
     }
 

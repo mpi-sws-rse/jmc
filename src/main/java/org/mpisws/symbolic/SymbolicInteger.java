@@ -1,6 +1,6 @@
 package org.mpisws.symbolic;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 import java.io.Serializable;
 
@@ -101,14 +101,14 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
     @Override
     public AbstractInteger read() {
         if (isShared) {
-            RuntimeEnvironment.readOperation(
+            JmcRuntime.readOperation(
                     this,
                     Thread.currentThread(),
                     "org.mpisws.symbolic.SymbolicInteger",
                     "value",
                     "SI");
             AbstractInteger copy = this.deepCopy();
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
             return copy;
         } else {
             return this.deepCopy();
@@ -120,7 +120,7 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
         SymbolicInteger symbolicInteger = (SymbolicInteger) value.read();
 
         if (isShared) {
-            RuntimeEnvironment.writeOperation(
+            JmcRuntime.writeOperation(
                     this,
                     symbolicInteger,
                     Thread.currentThread(),
@@ -136,14 +136,14 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
         }
 
         if (isShared) {
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
         }
     }
 
     @Override
     public void write(ArithmeticStatement value) {
         if (isShared) {
-            RuntimeEnvironment.writeOperation(
+            JmcRuntime.writeOperation(
                     this,
                     value,
                     Thread.currentThread(),
@@ -155,20 +155,20 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
         this.eval = value.deepCopy();
 
         if (isShared) {
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
         }
     }
 
     private void write() {
         if (isShared) {
-            RuntimeEnvironment.writeOperation(
+            JmcRuntime.writeOperation(
                     this,
                     this.value,
                     Thread.currentThread(),
                     "org.mpisws.symbolic.SymbolicInteger",
                     "value",
                     "SI");
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
         }
     }
 
@@ -208,7 +208,7 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
                             "[JMC Formula Message] Unsupported operator");
             }
         } else {
-            return RuntimeEnvironment.solver.getSymIntVarValue(this.getName());
+            return JmcRuntime.solver.getSymIntVarValue(this.getName());
         }
     }
 }

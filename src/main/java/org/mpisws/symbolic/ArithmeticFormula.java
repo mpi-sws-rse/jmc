@@ -1,6 +1,6 @@
 package org.mpisws.symbolic;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.solver.SymbolicSolver;
 import org.sosy_lab.common.ShutdownManager;
 import org.sosy_lab.common.configuration.Configuration;
@@ -58,9 +58,9 @@ public class ArithmeticFormula {
 
     /**
      * @property {@link #solver} is used to store the symbolic solver of the {@link
-     *     RuntimeEnvironment}
+     *     JmcRuntime}
      */
-    private final SymbolicSolver solver = RuntimeEnvironment.solver;
+    private final SymbolicSolver solver = JmcRuntime.solver;
 
     /** Initializes a newly created {@link ArithmeticFormula} object. */
     public ArithmeticFormula() {

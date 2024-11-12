@@ -6,7 +6,7 @@ import executionGraph.OptExecutionGraph;
 import executionGraph.operations.GraphOp;
 
 import org.mpisws.checker.SearchStrategy;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.solver.SymbolicSolver;
 import org.mpisws.symbolic.SymbolicOperation;
 
@@ -42,19 +42,19 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     protected String executionGraphsPath;
 
     public OptDPORStrategy() {
-        buggyTracePath = RuntimeEnvironment.buggyTracePath;
-        buggyTraceFile = RuntimeEnvironment.buggyTraceFile;
-        executionGraphsPath = RuntimeEnvironment.executionGraphsPath;
-        solver = RuntimeEnvironment.solver;
+        buggyTracePath = JmcRuntime.buggyTracePath;
+        buggyTraceFile = JmcRuntime.buggyTraceFile;
+        executionGraphsPath = JmcRuntime.executionGraphsPath;
+        solver = JmcRuntime.solver;
         initCurrentGraph();
     }
 
     private void initCurrentGraph() {
-        if (RuntimeEnvironment.guidingGraph == null) {
+        if (JmcRuntime.guidingGraph == null) {
             currentGraph = new OptExecutionGraph();
         } else {
-            currentGraph = RuntimeEnvironment.guidingGraph;
-            guidingEvents = RuntimeEnvironment.guidingEvents;
+            currentGraph = JmcRuntime.guidingGraph;
+            guidingEvents = JmcRuntime.guidingEvents;
             guidingActivate = true;
         }
     }
@@ -105,13 +105,13 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     public void nextStartEvent(Thread calleeThread, Thread callerThread) {
         if (guidingActivate) {
             StartEvent st = (StartEvent) guidingEvent;
-            RuntimeEnvironment.eventsRecord.add(st);
+            JmcRuntime.eventsRecord.add(st);
         } else {
             // System.out.println("[OPT-DPOR Strategy Message] : The start event is passed to the
             // model
             // checker");
-            StartEvent st = RuntimeEnvironment.createStartEvent(calleeThread, callerThread);
-            RuntimeEnvironment.eventsRecord.add(st);
+            StartEvent st = JmcRuntime.createStartEvent(calleeThread, callerThread);
+            JmcRuntime.eventsRecord.add(st);
             passEventToDPOR(st);
         }
     }
@@ -123,12 +123,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     public void nextMainStartEvent(MainStartEvent mainStartEvent) {
         if (guidingActivate) {
             MainStartEvent mst = (MainStartEvent) guidingEvent;
-            RuntimeEnvironment.eventsRecord.add(mst);
+            JmcRuntime.eventsRecord.add(mst);
         } else {
             // System.out.println("[OPT-DPOR Strategy Message] : The main start event is passed to
             // the
             // model checker");
-            RuntimeEnvironment.eventsRecord.add(mainStartEvent);
+            JmcRuntime.eventsRecord.add(mainStartEvent);
             passEventToDPOR(mainStartEvent);
         }
     }
@@ -164,16 +164,16 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     @Override
     public void nextJoinEvent(Thread joinReq, Thread joinRes) {
         if (guidingActivate) {
-            RuntimeEnvironment.getNextSerialNumber(
+            JmcRuntime.getNextSerialNumber(
                     joinReq); // To update the serial number of the joinRq thread
             JoinEvent je = (JoinEvent) guidingEvent;
-            RuntimeEnvironment.eventsRecord.add(je);
+            JmcRuntime.eventsRecord.add(je);
         } else {
             // System.out.println("[OPT-DPOR Strategy Message] : The join event is passed to the
             // model
             // checker");
-            JoinEvent je = RuntimeEnvironment.createJoinEvent(joinReq, joinRes);
-            RuntimeEnvironment.eventsRecord.add(je);
+            JoinEvent je = JmcRuntime.createJoinEvent(joinReq, joinRes);
+            JmcRuntime.eventsRecord.add(je);
             passEventToDPOR(je);
         }
     }
@@ -190,7 +190,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             nextJoinEvent(joinReq, joinRes);
             return joinReq;
         } else {
-            RuntimeEnvironment.joinRequest.put(joinReq, joinRes);
+            JmcRuntime.joinRequest.put(joinReq, joinRes);
             return pickNextReadyThread();
         }
     }
@@ -198,10 +198,10 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     /**
      * Handles the next enter monitor request of a given thread and monitor.
      *
-     * <p>This method records the monitor request in the {@link RuntimeEnvironment#monitorRequest}
+     * <p>This method records the monitor request in the {@link JmcRuntime#monitorRequest}
      * map. It also checks for a deadlock between the threads in using the monitors. If a deadlock
-     * is detected, the method sets the {@link RuntimeEnvironment#deadlockHappened} flag to true and
-     * the {@link RuntimeEnvironment#executionFinished} flag to true. Otherwise, the method selects
+     * is detected, the method sets the {@link JmcRuntime#deadlockHappened} flag to true and
+     * the {@link JmcRuntime#executionFinished} flag to true. Otherwise, the method selects
      * the next thread to run.
      *
      * @param thread is the thread that is requested to enter the monitor.
@@ -251,17 +251,17 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     @Override
     public void nextFinishEvent(Thread thread) {
         if (guidingActivate) {
-            RuntimeEnvironment.getNextSerialNumber(
+            JmcRuntime.getNextSerialNumber(
                     thread); // To update the serial number of the thread
             FinishEvent fe = (FinishEvent) guidingEvent;
-            RuntimeEnvironment.eventsRecord.add(fe);
+            JmcRuntime.eventsRecord.add(fe);
             analyzeSuspendedThreadsForJoin(thread);
         } else {
             // System.out.println("[OPT-DPOR Strategy Message] : The finish event is passed to the
             // model
             // checker");
-            FinishEvent fe = RuntimeEnvironment.createFinishEvent(thread);
-            RuntimeEnvironment.eventsRecord.add(fe);
+            FinishEvent fe = JmcRuntime.createFinishEvent(thread);
+            JmcRuntime.eventsRecord.add(fe);
             passEventToDPOR(fe);
             analyzeSuspendedThreadsForJoin(thread);
         }
@@ -275,16 +275,16 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     @Override
     public void nextFailureEvent(Thread thread) {
         if (guidingActivate) {
-            RuntimeEnvironment.getNextSerialNumber(
+            JmcRuntime.getNextSerialNumber(
                     thread); // To update the serial number of the thread
             FailureEvent fe = (FailureEvent) guidingEvent;
-            RuntimeEnvironment.eventsRecord.add(fe);
+            JmcRuntime.eventsRecord.add(fe);
         } else {
             // System.out.println("[OPT-DPOR Strategy Message] : The failure event is passed to the
             // model
             // checker");
-            FailureEvent fe = RuntimeEnvironment.createFailureEvent(thread);
-            RuntimeEnvironment.eventsRecord.add(fe);
+            FailureEvent fe = JmcRuntime.createFailureEvent(thread);
+            JmcRuntime.eventsRecord.add(fe);
             passEventToDPOR(fe);
         }
     }
@@ -297,16 +297,16 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     @Override
     public void nextDeadlockEvent(Thread thread) {
         if (guidingActivate) {
-            RuntimeEnvironment.getNextSerialNumber(
+            JmcRuntime.getNextSerialNumber(
                     thread); // To update the serial number of the thread
             DeadlockEvent de = (DeadlockEvent) guidingEvent;
-            RuntimeEnvironment.eventsRecord.add(de);
+            JmcRuntime.eventsRecord.add(de);
         } else {
             // System.out.println("[OPT-DPOR Strategy Message] : The deadlock event is passed to the
             // model
             // checker");
-            DeadlockEvent de = RuntimeEnvironment.createDeadlockEvent(thread);
-            RuntimeEnvironment.eventsRecord.add(de);
+            DeadlockEvent de = JmcRuntime.createDeadlockEvent(thread);
+            JmcRuntime.eventsRecord.add(de);
             passEventToDPOR(de);
         }
     }
@@ -343,12 +343,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     public void nextConAssumeRequest(ConAssumeEvent conAssumeEvent) {
         if (guidingActivate) {
             ConAssumeEvent cae = (ConAssumeEvent) guidingEvent;
-            RuntimeEnvironment.eventsRecord.add(cae);
+            JmcRuntime.eventsRecord.add(cae);
         } else {
             // System.out.println("[OPT-DPOR Strategy Message] : The con assume event is passed to
             // the
             // model checker");
-            RuntimeEnvironment.eventsRecord.add(conAssumeEvent);
+            JmcRuntime.eventsRecord.add(conAssumeEvent);
             passEventToDPOR(conAssumeEvent);
         }
     }
@@ -369,13 +369,13 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     private void handleGuidingSymAssumeOperationRequest(
             Thread thread, SymbolicOperation symbolicOperation) {
         SymAssumeEvent guidingSymAssumeEvent = (SymAssumeEvent) guidingEvent;
-        RuntimeEnvironment.solverResult = guidingSymAssumeEvent.getResult();
-        if (RuntimeEnvironment.solverResult) {
+        JmcRuntime.solverResult = guidingSymAssumeEvent.getResult();
+        if (JmcRuntime.solverResult) {
             solver.updatePathSymbolicOperations(symbolicOperation);
             solver.push(symbolicOperation);
         }
-        RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
-        RuntimeEnvironment.eventsRecord.add(guidingSymAssumeEvent);
+        JmcRuntime.getNextSerialNumber(thread); // To update the serial number of the thread
+        JmcRuntime.eventsRecord.add(guidingSymAssumeEvent);
     }
 
     /**
@@ -385,12 +385,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     public void nextAssumeBlockedRequest(AssumeBlockedEvent assumeBlockedEvent) {
         if (guidingActivate) {
             AssumeBlockedEvent abe = (AssumeBlockedEvent) guidingEvent;
-            RuntimeEnvironment.eventsRecord.add(abe);
+            JmcRuntime.eventsRecord.add(abe);
         } else {
             // System.out.println("[OPT-DPOR Strategy Message] : The assume blocked event is passed
             // to the
             // model checker");
-            RuntimeEnvironment.eventsRecord.add(assumeBlockedEvent);
+            JmcRuntime.eventsRecord.add(assumeBlockedEvent);
             passEventToDPOR(assumeBlockedEvent);
         }
     }
@@ -400,15 +400,15 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         solver.computeNewSymAssumeOperationRequest(symbolicOperation);
         System.out.println(
                 "[OPT-DPOR Strategy Message] : The result of the symbolic assume operation is "
-                        + RuntimeEnvironment.solverResult);
+                        + JmcRuntime.solverResult);
 
-        if (RuntimeEnvironment.solverResult) {
+        if (JmcRuntime.solverResult) {
             solver.updatePathSymbolicOperations(symbolicOperation);
         }
 
         SymAssumeEvent symAssumeEvent =
-                RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
-        RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
+                JmcRuntime.createSymAssumeEvent(thread, symbolicOperation);
+        JmcRuntime.eventsRecord.add(symAssumeEvent);
         passEventToDPOR(symAssumeEvent);
     }
 
@@ -441,16 +441,16 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     public void handleGuidingSymbolicOperationRequest(
             Thread thread, SymbolicOperation symbolicOperation) {
         SymExecutionEvent guidingSymExecutionEvent = (SymExecutionEvent) guidingEvent;
-        RuntimeEnvironment.solverResult = guidingSymExecutionEvent.getResult();
+        JmcRuntime.solverResult = guidingSymExecutionEvent.getResult();
         solver.updatePathSymbolicOperations(symbolicOperation);
-        RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
+        JmcRuntime.getNextSerialNumber(thread); // To update the serial number of the thread
         guidingSymExecutionEvent.setFormula(symbolicOperation.getFormula().toString());
         if (guidingSymExecutionEvent.getResult()) {
             solver.push(symbolicOperation);
         } else {
             solver.push(solver.negateFormula(symbolicOperation.getFormula()));
         }
-        RuntimeEnvironment.eventsRecord.add(guidingSymExecutionEvent);
+        JmcRuntime.eventsRecord.add(guidingSymExecutionEvent);
     }
 
     public void handleNewSymbolicOperationRequest(
@@ -459,12 +459,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
 
         System.out.println(
                 "[OPT-DPOR Strategy Message] : The result of the symbolic arithmetic operation is "
-                        + RuntimeEnvironment.solverResult);
+                        + JmcRuntime.solverResult);
         solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent =
-                RuntimeEnvironment.createSymExecutionEvent(
+                JmcRuntime.createSymExecutionEvent(
                         thread, symbolicOperation.getFormula().toString(), solver.bothSatUnsat);
-        RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
+        JmcRuntime.eventsRecord.add(symExecutionEvent);
         passEventToDPOR(symExecutionEvent);
     }
 
@@ -489,26 +489,26 @@ public abstract class OptDPORStrategy implements SearchStrategy {
      */
     @Override
     public boolean done() {
-        if (RuntimeEnvironment.mcGraphOp.isEmpty()) {
+        if (JmcRuntime.mcGraphOp.isEmpty()) {
             return true;
         } else {
-            GraphOp graphOp = RuntimeEnvironment.mcGraphOp.pop();
+            GraphOp graphOp = JmcRuntime.mcGraphOp.pop();
             handleGraphOp(graphOp);
             if (dpor.getExtendedGraph() == null || dpor.getTopoSort() == null) {
                 if (!dpor.getNextOperations().isEmpty()) {
                     for (int i = 0; i < dpor.getNextOperations().size(); i++) {
                         GraphOp g = dpor.getNextOperations().get(i);
-                        RuntimeEnvironment.mcGraphOp.push(g);
+                        JmcRuntime.mcGraphOp.push(g);
                     }
                 }
                 return done();
             } else {
-                RuntimeEnvironment.guidingGraph = dpor.getExtendedGraph();
+                JmcRuntime.guidingGraph = dpor.getExtendedGraph();
                 System.out.println("[DPOR Message] : The guiding execution graph is loaded");
                 System.out.println(
                         "[DPOR Message] : The guiding execution graph is : G_"
-                                + RuntimeEnvironment.guidingGraph.getId());
-                RuntimeEnvironment.guidingEvents = dpor.getTopoSort();
+                                + JmcRuntime.guidingGraph.getId());
+                JmcRuntime.guidingEvents = dpor.getTopoSort();
                 //                if (!graphOp.getToBeAddedEvents().isEmpty()) {
                 //                    ThreadEvent e =
                 // RuntimeEnvironment.guidingGraph.getEventOrder().get(RuntimeEnvironment.guidingGraph.getEventOrder().size() - 1);
@@ -517,14 +517,14 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                 if (!dpor.getNextOperations().isEmpty()) {
                     for (int i = 0; i < dpor.getNextOperations().size(); i++) {
                         GraphOp g = dpor.getNextOperations().get(i);
-                        RuntimeEnvironment.mcGraphOp.push(g);
+                        JmcRuntime.mcGraphOp.push(g);
                     }
                 }
                 // For debugging
-                if (RuntimeEnvironment.verbose) {
+                if (JmcRuntime.verbose) {
                     System.out.println("[DPOR Message] : The guiding events are :");
-                    for (int i = 0; i < RuntimeEnvironment.guidingEvents.size(); i++) {
-                        ThreadEvent e = RuntimeEnvironment.guidingEvents.get(i);
+                    for (int i = 0; i < JmcRuntime.guidingEvents.size(); i++) {
+                        ThreadEvent e = JmcRuntime.guidingEvents.get(i);
                         System.out.println(
                                 i
                                         + "-"
@@ -564,10 +564,10 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             for (int i = 0; i < mcOpGraphs.size(); i++) {
                 // System.out.println("[OPT-DPOR Strategy Message] : The graph operation is " +
                 // mcOpGraphs.get(i));
-                RuntimeEnvironment.mcGraphOp.push(mcOpGraphs.get(i));
+                JmcRuntime.mcGraphOp.push(mcOpGraphs.get(i));
             }
         }
-        RuntimeEnvironment.numOfGraphs = dpor.getGraphCounter();
+        JmcRuntime.numOfGraphs = dpor.getGraphCounter();
     }
 
     /** Saves the buggy execution trace. */
@@ -576,7 +576,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         try {
             FileOutputStream fileOut = new FileOutputStream(buggyTracePath + buggyTraceFile);
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(RuntimeEnvironment.eventsRecord);
+            out.writeObject(JmcRuntime.eventsRecord);
             out.close();
             fileOut.close();
             System.out.println(

@@ -9,7 +9,7 @@ import executionGraph.Node;
 import kotlin.Pair;
 
 import org.mpisws.checker.SearchStrategy;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.solver.SymbolicSolver;
 import org.mpisws.symbolic.SymbolicOperation;
 
@@ -85,7 +85,7 @@ public abstract class DPORStrategy implements SearchStrategy {
     protected String executionGraphsPath;
 
     /**
-     * @property {@link #solver} is keeping the reference to {@link RuntimeEnvironment#solver}
+     * @property {@link #solver} is keeping the reference to {@link JmcRuntime#solver}
      */
     protected SymbolicSolver solver;
 
@@ -95,10 +95,10 @@ public abstract class DPORStrategy implements SearchStrategy {
     protected DPOR dpor;
 
     public DPORStrategy() {
-        buggyTracePath = RuntimeEnvironment.buggyTracePath;
-        buggyTraceFile = RuntimeEnvironment.buggyTraceFile;
-        executionGraphsPath = RuntimeEnvironment.executionGraphsPath;
-        solver = RuntimeEnvironment.solver;
+        buggyTracePath = JmcRuntime.buggyTracePath;
+        buggyTraceFile = JmcRuntime.buggyTraceFile;
+        executionGraphsPath = JmcRuntime.executionGraphsPath;
+        solver = JmcRuntime.solver;
         if (!Files.exists(Paths.get(executionGraphsPath))) {
             System.out.println(
                     "[DPOR Strategy Message] : Directory "
@@ -119,12 +119,12 @@ public abstract class DPORStrategy implements SearchStrategy {
     /**
      * Initializes the model checker graphs list.
      *
-     * <p>This method initializes the {@link RuntimeEnvironment#mcGraphs} list and {@link #mcGraphs}
+     * <p>This method initializes the {@link JmcRuntime#mcGraphs} list and {@link #mcGraphs}
      * list.
      */
     private void initMcGraphs() {
-        if (RuntimeEnvironment.mcGraphs == null) {
-            RuntimeEnvironment.initGraphCollection();
+        if (JmcRuntime.mcGraphs == null) {
+            JmcRuntime.initGraphCollection();
         }
         mcGraphs = new ArrayList<>();
     }
@@ -143,11 +143,11 @@ public abstract class DPORStrategy implements SearchStrategy {
      * Initializes the guiding execution graph.
      *
      * <p>This method initializes the {@link #guidingExecutionGraph} if the {@link
-     * RuntimeEnvironment#mcGraphs} is not empty. Otherwise, it initializes the {@link #dpor} object
+     * JmcRuntime#mcGraphs} is not empty. Otherwise, it initializes the {@link #dpor} object
      * with the root event of the {@link #currentGraph}.
      */
     private void initGuidingGraph() {
-        if (!RuntimeEnvironment.mcGraphs.isEmpty()) {
+        if (!JmcRuntime.mcGraphs.isEmpty()) {
             loadGuidingGraph();
             System.out.println("[DPOR Message] : The guiding execution graph is loaded");
             System.out.println(
@@ -168,7 +168,7 @@ public abstract class DPORStrategy implements SearchStrategy {
      * Loads the guiding execution graph.
      *
      * <p>This method loads the guiding execution graph from the first element of the {@link
-     * RuntimeEnvironment#mcGraphs} list, sets the {@link #guidingActivate} to true, initializes the
+     * JmcRuntime#mcGraphs} list, sets the {@link #guidingActivate} to true, initializes the
      * {@link #guidingNode} with the root of the {@link #guidingExecutionGraph}, sets the {@link
      * #guidingThread} to 0, and initializes the {@link #guidingEvents}.
      */
@@ -176,7 +176,7 @@ public abstract class DPORStrategy implements SearchStrategy {
         System.out.println(
                 "[DPOR Strategy Message] : The RuntimeEnvironment has a guiding execution graph");
         guidingActivate = true;
-        guidingExecutionGraph = RuntimeEnvironment.mcGraphs.nextGraph();
+        guidingExecutionGraph = JmcRuntime.mcGraphs.nextGraph();
         guidingNode = guidingExecutionGraph.getRoot();
         guidingThread = 0;
         guidingEvents = new ArrayList<>();
@@ -342,8 +342,8 @@ public abstract class DPORStrategy implements SearchStrategy {
      */
     @Override
     public void nextStartEvent(Thread calleeThread, Thread callerThread) {
-        StartEvent st = RuntimeEnvironment.createStartEvent(calleeThread, callerThread);
-        RuntimeEnvironment.eventsRecord.add(st);
+        StartEvent st = JmcRuntime.createStartEvent(calleeThread, callerThread);
+        JmcRuntime.eventsRecord.add(st);
         if (guidingActivate) {
             addEventToCurrentGraph(st);
         } else {
@@ -356,7 +356,7 @@ public abstract class DPORStrategy implements SearchStrategy {
 
     @Override
     public void nextMainStartEvent(MainStartEvent mainStartEvent) {
-        RuntimeEnvironment.eventsRecord.add(mainStartEvent);
+        JmcRuntime.eventsRecord.add(mainStartEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(mainStartEvent);
         } else {
@@ -373,7 +373,7 @@ public abstract class DPORStrategy implements SearchStrategy {
      */
     @Override
     public void nextConAssumeRequest(ConAssumeEvent conAssumeEvent) {
-        RuntimeEnvironment.eventsRecord.add(conAssumeEvent);
+        JmcRuntime.eventsRecord.add(conAssumeEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(conAssumeEvent);
         } else {
@@ -390,7 +390,7 @@ public abstract class DPORStrategy implements SearchStrategy {
      */
     @Override
     public void nextAssumeBlockedRequest(AssumeBlockedEvent assumeBlockedEvent) {
-        RuntimeEnvironment.eventsRecord.add(assumeBlockedEvent);
+        JmcRuntime.eventsRecord.add(assumeBlockedEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(assumeBlockedEvent);
         } else {
@@ -415,8 +415,8 @@ public abstract class DPORStrategy implements SearchStrategy {
      */
     @Override
     public void nextJoinEvent(Thread joinReq, Thread joinRes) {
-        JoinEvent joinEvent = RuntimeEnvironment.createJoinEvent(joinReq, joinRes);
-        RuntimeEnvironment.eventsRecord.add(joinEvent);
+        JoinEvent joinEvent = JmcRuntime.createJoinEvent(joinReq, joinRes);
+        JmcRuntime.eventsRecord.add(joinEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(joinEvent);
         } else {
@@ -429,7 +429,7 @@ public abstract class DPORStrategy implements SearchStrategy {
      *
      * <p>This method represents the required strategy for the next join request. It calls the
      * {@link #nextJoinEvent(Thread, Thread)} if the {@link #guidingActivate} is true. Otherwise, it
-     * puts the join request and join response in the {@link RuntimeEnvironment#joinRequest} map and
+     * puts the join request and join response in the {@link JmcRuntime#joinRequest} map and
      * picks the next random thread.
      *
      * @param joinReq is the thread that is going to join another thread.
@@ -442,7 +442,7 @@ public abstract class DPORStrategy implements SearchStrategy {
             nextJoinEvent(joinReq, joinRes);
             return joinReq;
         } else {
-            RuntimeEnvironment.joinRequest.put(joinReq, joinRes);
+            JmcRuntime.joinRequest.put(joinReq, joinRes);
             return pickNextReadyThread();
         }
     }
@@ -460,8 +460,8 @@ public abstract class DPORStrategy implements SearchStrategy {
      */
     @Override
     public void nextFinishEvent(Thread thread) {
-        FinishEvent finishEvent = RuntimeEnvironment.createFinishEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(finishEvent);
+        FinishEvent finishEvent = JmcRuntime.createFinishEvent(thread);
+        JmcRuntime.eventsRecord.add(finishEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(finishEvent);
             analyzeSuspendedThreadsForJoin(thread);
@@ -503,8 +503,8 @@ public abstract class DPORStrategy implements SearchStrategy {
      */
     @Override
     public void nextFailureEvent(Thread thread) {
-        FailureEvent failureEvent = RuntimeEnvironment.createFailureEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(failureEvent);
+        FailureEvent failureEvent = JmcRuntime.createFailureEvent(thread);
+        JmcRuntime.eventsRecord.add(failureEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(failureEvent);
         } else {
@@ -524,8 +524,8 @@ public abstract class DPORStrategy implements SearchStrategy {
      */
     @Override
     public void nextDeadlockEvent(Thread thread) {
-        DeadlockEvent deadlockEvent = RuntimeEnvironment.createDeadlockEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(deadlockEvent);
+        DeadlockEvent deadlockEvent = JmcRuntime.createDeadlockEvent(thread);
+        JmcRuntime.eventsRecord.add(deadlockEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(deadlockEvent);
         } else {
@@ -559,7 +559,7 @@ public abstract class DPORStrategy implements SearchStrategy {
      * the given symbolic operation. It updates the path symbolic operations with the given symbolic
      * operation and thread. It creates a new {@link SymExecutionEvent} with the given thread, the
      * formula of the symbolic operation, and the negatable value. Finally, it adds the created
-     * event to the {@link RuntimeEnvironment#eventsRecord} and passes the event to the dpor.
+     * event to the {@link JmcRuntime#eventsRecord} and passes the event to the dpor.
      *
      * @param symbolicOperation is the symbolic operation that is going to be added to the path
      *     symbolic operations.
@@ -571,13 +571,13 @@ public abstract class DPORStrategy implements SearchStrategy {
 
         System.out.println(
                 "[DPOR Strategy Message] : The result of the symbolic arithmetic operation is "
-                        + RuntimeEnvironment.solverResult);
+                        + JmcRuntime.solverResult);
         // updatePathSymbolicOperations(symbolicOperation, thread);
         solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent =
-                RuntimeEnvironment.createSymExecutionEvent(
+                JmcRuntime.createSymExecutionEvent(
                         thread, symbolicOperation.getFormula().toString(), solver.bothSatUnsat);
-        RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
+        JmcRuntime.eventsRecord.add(symExecutionEvent);
         passEventToDPOR(symExecutionEvent);
         updateCurrentGraph(symExecutionEvent);
     }
@@ -600,15 +600,15 @@ public abstract class DPORStrategy implements SearchStrategy {
         solver.computeNewSymAssumeOperationRequest(symbolicOperation);
         System.out.println(
                 "[DPOR Strategy Message] : The result of the symbolic assume operation is "
-                        + RuntimeEnvironment.solverResult);
+                        + JmcRuntime.solverResult);
 
-        if (RuntimeEnvironment.solverResult) {
+        if (JmcRuntime.solverResult) {
             solver.updatePathSymbolicOperations(symbolicOperation);
         }
 
         SymAssumeEvent symAssumeEvent =
-                RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
-        RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
+                JmcRuntime.createSymAssumeEvent(thread, symbolicOperation);
+        JmcRuntime.eventsRecord.add(symAssumeEvent);
         passEventToDPOR(symAssumeEvent);
         updateCurrentGraph(symAssumeEvent);
     }
@@ -616,14 +616,14 @@ public abstract class DPORStrategy implements SearchStrategy {
     private void handleGuidingSymAssumeOperationRequest(
             Thread thread, SymbolicOperation symbolicOperation) {
         SymAssumeEvent guidingSymAssumeEvent = (SymAssumeEvent) guidingEvent;
-        RuntimeEnvironment.solverResult = guidingSymAssumeEvent.getResult();
-        if (RuntimeEnvironment.solverResult) {
+        JmcRuntime.solverResult = guidingSymAssumeEvent.getResult();
+        if (JmcRuntime.solverResult) {
             solver.updatePathSymbolicOperations(symbolicOperation);
             solver.push(symbolicOperation);
         }
         SymAssumeEvent symAssumeEvent =
-                RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
-        RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
+                JmcRuntime.createSymAssumeEvent(thread, symbolicOperation);
+        JmcRuntime.eventsRecord.add(symAssumeEvent);
         addEventToCurrentGraph(symAssumeEvent);
     }
 
@@ -631,12 +631,12 @@ public abstract class DPORStrategy implements SearchStrategy {
      * Handles the guiding symbolic operation request.
      *
      * <p>This method handles the guiding symbolic operation request. It sets the {@link
-     * RuntimeEnvironment#solverResult} with the result of the {@link SymExecutionEvent#getResult()}
+     * JmcRuntime#solverResult} with the result of the {@link SymExecutionEvent#getResult()}
      * of the {@link #guidingEvent}. Then, it updates the path symbolic operations with the given
      * symbolic operation and thread. It creates a new {@link SymExecutionEvent} with the given
      * thread, the formula of the symbolic operation, and the negatable value of the {@link
      * #guidingEvent}. Finally, it adds the created event to the {@link
-     * RuntimeEnvironment#eventsRecord} and passes the event to the current graph.
+     * JmcRuntime#eventsRecord} and passes the event to the current graph.
      *
      * @param thread is the thread that is going to execute the symbolic operation.
      * @param symbolicOperation is the symbolic operation that is going to be executed.
@@ -644,10 +644,10 @@ public abstract class DPORStrategy implements SearchStrategy {
     public void handleGuidingSymbolicOperationRequest(
             Thread thread, SymbolicOperation symbolicOperation) {
         SymExecutionEvent guidingSymExecutionEvent = (SymExecutionEvent) guidingEvent;
-        RuntimeEnvironment.solverResult = guidingSymExecutionEvent.getResult();
+        JmcRuntime.solverResult = guidingSymExecutionEvent.getResult();
         solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent =
-                RuntimeEnvironment.createSymExecutionEvent(
+                JmcRuntime.createSymExecutionEvent(
                         thread,
                         symbolicOperation.getFormula().toString(),
                         guidingSymExecutionEvent.isNegatable());
@@ -657,7 +657,7 @@ public abstract class DPORStrategy implements SearchStrategy {
             solver.push(solver.negateFormula(symbolicOperation.getFormula()));
         }
         // solver.push(symbolicOperation);
-        RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
+        JmcRuntime.eventsRecord.add(symExecutionEvent);
         addEventToCurrentGraph(symExecutionEvent);
     }
 
@@ -682,13 +682,13 @@ public abstract class DPORStrategy implements SearchStrategy {
      * Indicates whether the execution is done or not.
      *
      * <p>This method indicates whether the execution is done or not. It returns true if the {@link
-     * RuntimeEnvironment#mcGraphs} is empty. Otherwise, it returns false.
+     * JmcRuntime#mcGraphs} is empty. Otherwise, it returns false.
      *
      * @return true if the execution is done, otherwise false.
      */
     @Override
     public boolean done() {
-        return RuntimeEnvironment.mcGraphs.isEmpty();
+        return JmcRuntime.mcGraphs.isEmpty();
     }
 
     /**
@@ -755,14 +755,14 @@ public abstract class DPORStrategy implements SearchStrategy {
      * Saves the buggy execution trace.
      *
      * <p>This method saves the buggy execution trace. It writes the {@link
-     * RuntimeEnvironment#eventsRecord} to the file.
+     * JmcRuntime#eventsRecord} to the file.
      */
     @Override
     public void saveBuggyExecutionTrace() {
         try {
             FileOutputStream fileOut = new FileOutputStream(buggyTracePath + buggyTraceFile);
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(RuntimeEnvironment.eventsRecord);
+            out.writeObject(JmcRuntime.eventsRecord);
             out.close();
             fileOut.close();
             System.out.println(
@@ -778,16 +778,16 @@ public abstract class DPORStrategy implements SearchStrategy {
      * Saves the execution state.
      *
      * <p>This method saves the execution state. It saves the {@link #mcGraphs} to the file and
-     * loads the saved graphs to the {@link RuntimeEnvironment#mcGraphs} list. It also sets the
-     * {@link RuntimeEnvironment#numOfGraphs} with the number of graphs that are available in the
+     * loads the saved graphs to the {@link JmcRuntime#mcGraphs} list. It also sets the
+     * {@link JmcRuntime#numOfGraphs} with the number of graphs that are available in the
      * {@link DPOR#getGraphCounter()}.
      */
     @Override
     public void saveExecutionState() {
         if (!mcGraphs.isEmpty()) {
-            RuntimeEnvironment.mcGraphs.addAllGraphs(mcGraphs);
+            JmcRuntime.mcGraphs.addAllGraphs(mcGraphs);
         }
-        RuntimeEnvironment.numOfGraphs = dpor.getGraphCounter();
+        JmcRuntime.numOfGraphs = dpor.getGraphCounter();
     }
 
     /**

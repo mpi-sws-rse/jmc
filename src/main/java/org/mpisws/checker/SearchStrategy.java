@@ -2,8 +2,9 @@ package org.mpisws.checker;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.runtime.ThreadCollection;
+import org.mpisws.runtime.ThreadManager;
 import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCFutureTask;
 import org.mpisws.util.concurrent.JMCStarterThread;
@@ -76,10 +77,10 @@ public interface SearchStrategy {
     /**
      * Handles the next enter monitor request of a given thread and monitor.
      *
-     * <p>This method records the monitor request in the {@link RuntimeEnvironment#monitorRequest}
+     * <p>This method records the monitor request in the {@link JmcRuntime#monitorRequest}
      * map. It also checks for a deadlock between the threads in using the monitors. If a deadlock
-     * is detected, the method sets the {@link RuntimeEnvironment#deadlockHappened} flag to true and
-     * the {@link RuntimeEnvironment#executionFinished} flag to true. Otherwise, the method selects
+     * is detected, the method sets the {@link JmcRuntime#deadlockHappened} flag to true and
+     * the {@link JmcRuntime#executionFinished} flag to true. Otherwise, the method selects
      * the next thread to run.
      *
      * @param thread is the thread that is requested to enter the monitor.
@@ -88,13 +89,13 @@ public interface SearchStrategy {
      */
     default Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
         MonitorRequestEvent monitorRequestEvent =
-                RuntimeEnvironment.createMonitorRequestEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(monitorRequestEvent);
-        RuntimeEnvironment.monitorRequest.put(thread, monitor);
+                JmcRuntime.createMonitorRequestEvent(thread, monitor);
+        JmcRuntime.eventsRecord.add(monitorRequestEvent);
+        JmcRuntime.monitorRequest.put(thread, monitor);
         if (monitorsDeadlockDetection()) {
             LOGGER.debug("There is a deadlock between the threads in using the monitors");
-            RuntimeEnvironment.deadlockHappened = true;
-            RuntimeEnvironment.executionFinished = true;
+            JmcRuntime.deadlockHappened = true;
+            JmcRuntime.executionFinished = true;
             return null;
         } else {
             LOGGER.debug("There is no deadlock between the threads in using the monitors");
@@ -200,7 +201,7 @@ public interface SearchStrategy {
      * @param symbolicOperation is the symbolic operation that is going to be executed.
      */
     default void updatePathSymbolicOperations(SymbolicOperation symbolicOperation, Thread thread) {
-        if (RuntimeEnvironment.solverResult) {
+        if (JmcRuntime.solverResult) {
             updatePathAndThreadSymbolicOperations(symbolicOperation, thread);
         } else {
             updatePathSymbolicOperationsWithNegate(symbolicOperation, thread);
@@ -210,25 +211,25 @@ public interface SearchStrategy {
     /**
      * Updates the path and thread symbolic operations.
      *
-     * <p>It adds the symbolic operation to the {@link RuntimeEnvironment#pathSymbolicOperations}
-     * list and the {@link RuntimeEnvironment#threadSymbolicOperation} map.
+     * <p>It adds the symbolic operation to the {@link JmcRuntime#pathSymbolicOperations}
+     * list and the {@link JmcRuntime#threadSymbolicOperation} map.
      *
      * @param symbolicOperation is the symbolic operation that is going to be executed.
      * @param thread is the thread that is going to execute the symbolic operation.
      */
     private void updatePathAndThreadSymbolicOperations(
             SymbolicOperation symbolicOperation, Thread thread) {
-        RuntimeEnvironment.pathSymbolicOperations.add(symbolicOperation);
-        if (RuntimeEnvironment.threadSymbolicOperation.containsKey(
-                RuntimeEnvironment.threadIdMap.get(thread.getId()))) {
-            RuntimeEnvironment.threadSymbolicOperation
-                    .get(RuntimeEnvironment.threadIdMap.get(thread.getId()))
+        JmcRuntime.pathSymbolicOperations.add(symbolicOperation);
+        if (JmcRuntime.threadSymbolicOperation.containsKey(
+                JmcRuntime.threadManager.getRevId(thread.getId()))) {
+            JmcRuntime.threadSymbolicOperation
+                    .get(JmcRuntime.threadManager.getRevId(thread.getId()))
                     .add(symbolicOperation);
         } else {
             List<SymbolicOperation> symbolicOperations = new ArrayList<>();
             symbolicOperations.add(symbolicOperation);
-            RuntimeEnvironment.threadSymbolicOperation.put(
-                    RuntimeEnvironment.threadIdMap.get(thread.getId()), symbolicOperations);
+            JmcRuntime.threadSymbolicOperation.put(
+                    JmcRuntime.threadManager.getRevId(thread.getId()), symbolicOperations);
         }
     }
 
@@ -253,17 +254,17 @@ public interface SearchStrategy {
      */
     private SymbolicOperation negateSymbolicOperation(SymbolicOperation symbolicOperation) {
         symbolicOperation.setFormula(
-                RuntimeEnvironment.solver.negateFormula(symbolicOperation.getFormula()));
+                JmcRuntime.solver.negateFormula(symbolicOperation.getFormula()));
         LOGGER.debug("The negated formula is saved {}", symbolicOperation.getFormula());
         return symbolicOperation;
     }
 
     /** Prints the current execution trace. */
     default void printExecutionTrace() {
-        if (RuntimeEnvironment.verbose) {
+        if (JmcRuntime.verbose) {
             LOGGER.debug("Execution trace:");
-            for (Event event : RuntimeEnvironment.eventsRecord) {
-                int index = RuntimeEnvironment.eventsRecord.indexOf(event) + 1;
+            for (Event event : JmcRuntime.eventsRecord) {
+                int index = JmcRuntime.eventsRecord.indexOf(event) + 1;
                 LOGGER.debug("{}.{}", index, event);
             }
         }
@@ -271,9 +272,9 @@ public interface SearchStrategy {
 
     default void executeSendEvent(SendEvent sendEvent) {
         //        JMCThread receiverThread = (JMCThread)
-        // RuntimeEnvironment.threadObjectMap.get(RuntimeEnvironment.threadIdMap.get(sendEvent.getReceiverId()));
+        // RuntimeEnvironment.threadObjectMap.get(RuntimeEnvironment.threadManager.getRevId()(sendEvent.getReceiverId()));
         JMCThread receiverThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(sendEvent.getReceiverId());
+                (JMCThread) JmcRuntime.findThreadObject(sendEvent.getReceiverId());
         receiverThread.pushMessage(sendEvent.getValue());
     }
 
@@ -294,7 +295,7 @@ public interface SearchStrategy {
      */
     default Thread pickNextReadyThread() {
         Optional<ThreadCollection> readyThread =
-                Optional.ofNullable(RuntimeEnvironment.readyThread);
+                Optional.ofNullable(JmcRuntime.readyThread);
         if (!readyThread.get().isEmpty()) {
             if (readyThread.get().size() > 1) {
                 LOGGER.debug("There are more than one thread in the ready thread list");
@@ -304,7 +305,7 @@ public interface SearchStrategy {
                 LOGGER.debug("Only one thread is in the ready thread list");
                 return handleChosenThreadRequest(readyThread.get().getNext());
             }
-        } else if (!RuntimeEnvironment.blockedRecvThreadMap.isEmpty()) {
+        } else if (!JmcRuntime.blockedRecvThreadMap.isEmpty()) {
             LOGGER.debug("Ready list is empty, but there are blocked receive threads");
             if (computeUnblockedRecvThread()) {
                 return pickNextReadyThread();
@@ -315,11 +316,12 @@ public interface SearchStrategy {
                 printExecutionTrace();
                 saveBuggyExecutionTrace();
                 LOGGER.error("[*** Resource Usage ***]");
-                RuntimeEnvironment.printFinalMessage();
+                JmcRuntime.printFinalMessage();
                 System.exit(0);
                 return null;
             }
-        } else if (RuntimeEnvironment.suspendedThreads.size() > 0) {
+        } else if (!JmcRuntime.threadManager
+                .findThreadsWithStatus(ThreadManager.ThreadState.SUSPENDED).isEmpty()) {
             LOGGER.error("There is a deadlock between the threads in using monitors");
             printExecutionTrace();
             saveBuggyExecutionTrace();
@@ -335,11 +337,11 @@ public interface SearchStrategy {
     default boolean computeUnblockedRecvThread() {
         boolean result = false;
         for (Map.Entry<Long, ReceiveEvent> entry :
-                RuntimeEnvironment.blockedRecvThreadMap.entrySet()) {
+                JmcRuntime.blockedRecvThreadMap.entrySet()) {
             if (isMessageAvailable(entry.getValue())) {
                 JMCThread jmcThread =
-                        (JMCThread) RuntimeEnvironment.findThreadObject(entry.getValue().getTid());
-                RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, entry.getValue());
+                        (JMCThread) JmcRuntime.findThreadObject(entry.getValue().getTid());
+                JmcRuntime.addUnblockedThreadToReadyQueue(jmcThread, entry.getValue());
                 result = true;
                 LOGGER.debug(
                         "The thread {} is unblocked, since the message is available",
@@ -351,7 +353,7 @@ public interface SearchStrategy {
 
     default boolean isMessageAvailable(ReceiveEvent receiveEvent) {
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+                (JMCThread) JmcRuntime.findThreadObject(receiveEvent.getTid());
         if (receiveEvent.getPredicate() == null) {
             return !jmcThread.isMessageQueueEmpty();
         } else {
@@ -366,9 +368,9 @@ public interface SearchStrategy {
      * @return the candidate thread if it can run, otherwise selects another random thread.
      */
     default Thread handleChosenThreadRequest(Thread thread) {
-        if (RuntimeEnvironment.monitorRequest.containsKey(thread)) {
+        if (JmcRuntime.monitorRequest.containsKey(thread)) {
             return handleMonitorRequest(thread);
-        } else if (RuntimeEnvironment.joinRequest.containsKey(thread)) {
+        } else if (JmcRuntime.joinRequest.containsKey(thread)) {
             return handleJoinRequest(thread);
         } else if (thread instanceof JMCStarterThread jmcStarterThread) {
             return handleStarterThread(jmcStarterThread);
@@ -387,10 +389,10 @@ public interface SearchStrategy {
 
     default Thread handleIdleStarterThread(JMCStarterThread jmcStarterThread) {
         BlockingQueue<Runnable> queue =
-                RuntimeEnvironment.workQueue.get(jmcStarterThread.threadPoolExecutorId);
+                JmcRuntime.workQueue.get(jmcStarterThread.threadPoolExecutorId);
         if (queue.isEmpty()) {
-            RuntimeEnvironment.readyThread.remove(jmcStarterThread);
-            RuntimeEnvironment.idleThreadsInPool
+            JmcRuntime.readyThread.remove(jmcStarterThread);
+            JmcRuntime.idleThreadsInPool
                     .get(jmcStarterThread.threadPoolExecutorId)
                     .add(jmcStarterThread);
             return pickNextReadyThread();
@@ -403,7 +405,7 @@ public interface SearchStrategy {
      * Handles the monitor request of the candidate thread.
      *
      * <p>This method checks whether the monitor is available or not. If the monitor is available,
-     * the method removes the monitor request from the {@link RuntimeEnvironment#monitorRequest} map
+     * the method removes the monitor request from the {@link JmcRuntime#monitorRequest} map
      * and calls the {@link #nextEnterMonitorEvent} method. Otherwise, the method suspends the
      * candidate thread and selects another random thread to run.
      *
@@ -411,27 +413,27 @@ public interface SearchStrategy {
      * @return the candidate thread if it can run, otherwise selects another random thread.
      */
     default Thread handleMonitorRequest(Thread thread) {
-        Object monitor = RuntimeEnvironment.monitorRequest.get(thread);
+        Object monitor = JmcRuntime.monitorRequest.get(thread);
         LOGGER.debug(
                 "Thread-{} is requested to enter the monitor {}",
-                RuntimeEnvironment.threadIdMap.get(thread.getId()),
+                JmcRuntime.threadManager.getRevId(thread.getId()),
                 monitor);
-        if (RuntimeEnvironment.monitorList.containsKey(monitor)) {
+        if (JmcRuntime.monitorList.containsKey(monitor)) {
             LOGGER.debug(
                     "The monitor {} is already in use by {}",
                     monitor,
-                    RuntimeEnvironment.threadIdMap.get(
-                            RuntimeEnvironment.monitorList.get(monitor).getId()));
+                    JmcRuntime.threadManager.getRevId(
+                            JmcRuntime.monitorList.get(monitor).getId()));
             suspendThread(thread);
             return pickNextReadyThread();
         } else {
             LOGGER.debug("The monitor {} is available", monitor);
-            RuntimeEnvironment.monitorRequest.remove(thread, monitor);
+            JmcRuntime.monitorRequest.remove(thread, monitor);
             LOGGER.debug(
                     "The request of {} to enter the monitor {} is removed from the monitorRequest",
                     thread.getName(),
                     monitor);
-            handleCachedCASEvent(RuntimeEnvironment.threadIdMap.get(thread.getId()).intValue());
+            handleCachedCASEvent(JmcRuntime.threadManager.getRevId(thread.getId()).intValue());
             return thread;
         }
     }
@@ -441,18 +443,18 @@ public interface SearchStrategy {
      *
      * <p>This method checks whether the join request is available or not. If the join request is
      * available, the method removes the join request from the {@link
-     * RuntimeEnvironment#joinRequest} map and calls the {@link #nextJoinEvent} method. Otherwise,
+     * JmcRuntime#joinRequest} map and calls the {@link #nextJoinEvent} method. Otherwise,
      * the method suspends the candidate thread and selects another random thread to run.
      *
      * @param thread the candidate thread.
      * @return the candidate thread if it can run, otherwise selects another random thread.
      */
     default Thread handleJoinRequest(Thread thread) {
-        Thread joinRes = RuntimeEnvironment.joinRequest.get(thread);
+        Thread joinRes = JmcRuntime.joinRequest.get(thread);
         LOGGER.debug("{} is requested to join {}", thread.getName(), joinRes.getName());
-        if (!RuntimeEnvironment.createdThreadList.contains(joinRes)
-                && !RuntimeEnvironment.readyThread.contains(joinRes)) {
-            RuntimeEnvironment.joinRequest.remove(thread, joinRes);
+        if (!JmcRuntime.threadManager.containsSystemId(joinRes.getId())
+                && !JmcRuntime.readyThread.contains(joinRes)) {
+            JmcRuntime.joinRequest.remove(thread, joinRes);
             LOGGER.debug(
                     "Request of {} to join {} removed from the joinRequest. {} not in"
                         + " createdThreadList or readyThread list",
@@ -500,75 +502,79 @@ public interface SearchStrategy {
      * Suspends the given thread.
      *
      * <p>This method is used to suspend the selected thread and remove it from the {@link
-     * RuntimeEnvironment#readyThread} list and add it to the {@link
-     * RuntimeEnvironment#suspendedThreads} list. This action is required when the selected thread
+     * JmcRuntime#readyThread} list and update the status in {@link
+     * JmcRuntime#threadManager}. This action is required when the selected thread
      * is waiting for a monitor or a join request.
      *
      * @param thread the selected thread.
      */
     default void suspendThread(Thread thread) {
         LOGGER.debug("{} suspended", thread.getName());
-        RuntimeEnvironment.readyThread.remove(thread);
-        RuntimeEnvironment.suspendedThreads.add(thread);
+        JmcRuntime.readyThread.remove(thread);
+        Long threadId = JmcRuntime.threadManager.getRevId(thread.getId());
+        JmcRuntime.threadManager.markStatus(threadId, ThreadManager.ThreadState.SUSPENDED);
     }
 
     /**
      * Parks the given thread.
      *
      * <p>This method is used to park the selected thread and remove it from the {@link
-     * RuntimeEnvironment#readyThread} list and add it to the {@link
-     * RuntimeEnvironment#parkedThreadList} list.
+     * JmcRuntime#readyThread} list and update the status in {@link
+     * JmcRuntime#threadManager} list.
      *
      * @param thread the selected thread which is going to be parked.
      */
     default void parkThread(Thread thread) {
         LOGGER.debug("{} parked", thread.getName());
-        if (RuntimeEnvironment.readyThread.contains(thread)
-                && !RuntimeEnvironment.parkedThreadList.contains(thread)) {
-            RuntimeEnvironment.readyThread.remove(thread);
-            RuntimeEnvironment.parkedThreadList.add(thread);
+        Long threadId = JmcRuntime.threadManager.getRevId(thread.getId());
+        if (JmcRuntime.readyThread.contains(thread)
+                && !JmcRuntime.threadManager.isSystemThreadParked(thread.getId())) {
+            JmcRuntime.readyThread.remove(thread);
+            JmcRuntime.threadManager.markStatus(threadId, ThreadManager.ThreadState.PARKED);
         }
     }
 
     /**
      * Unparks the given thread.
      *
-     * <p>This method is used to unpark the selected thread and remove it from the {@link
-     * RuntimeEnvironment#parkedThreadList} list and add it to the {@link
-     * RuntimeEnvironment#readyThread} list.
+     * <p>This method is used to unpark the selected thread and update the status in {@link
+     * JmcRuntime#threadManager} list and add it to the {@link
+     * JmcRuntime#readyThread} list.
      *
      * @param thread the selected thread which is going to be unparked.
      */
     default void unparkThread(Thread thread) {
         LOGGER.debug("{} unparked", thread.getName());
-        if (RuntimeEnvironment.parkedThreadList.contains(thread)
-                && !RuntimeEnvironment.readyThread.contains(thread)) {
-            RuntimeEnvironment.parkedThreadList.remove(thread);
-            RuntimeEnvironment.readyThread.add(thread);
+        if (JmcRuntime.threadManager.isSystemThreadParked(thread.getId())
+                && !JmcRuntime.readyThread.contains(thread)) {
+            Long threadId = JmcRuntime.threadManager.getRevId(thread.getId());
+            JmcRuntime.threadManager.markStatus(threadId, ThreadManager.ThreadState.READY);
+            JmcRuntime.readyThread.add(thread);
         }
     }
 
     /**
      * Unsuspend the given thread.
      *
-     * <p>This method is used to unsuspend the selected thread and remove it from the {@link
-     * RuntimeEnvironment#suspendedThreads} list and add it to the {@link
-     * RuntimeEnvironment#readyThread} list. This action is required when the monitor or join
+     * <p>This method is used to unsuspend the selected thread and udpate the status in {@link
+     * JmcRuntime#threadManager} and add it to the {@link
+     * JmcRuntime#readyThread} list. This action is required when the monitor or join
      * request of the selected thread is available.
      *
      * @param thread the selected thread.
      */
     default void unsuspendThread(Thread thread) {
         LOGGER.debug("{} unsuspended", thread.getName());
-        RuntimeEnvironment.suspendedThreads.remove(thread);
-        RuntimeEnvironment.readyThread.add(thread);
+        Long threadId = JmcRuntime.threadManager.getRevId(thread.getId());
+        JmcRuntime.threadManager.markStatus(threadId, ThreadManager.ThreadState.READY);
+        JmcRuntime.readyThread.add(thread);
     }
 
     /**
      * Finds the suspended threads that are waiting for the given monitor.
      *
      * <p>This method checks for each suspended thread in the {@link
-     * RuntimeEnvironment#suspendedThreads} list whether the monitor request of the thread is equal
+     * JmcRuntime#threadManager} whether the monitor request of the thread is equal
      * to the given monitor or not. If the monitor request of the thread is equal to the given
      * monitor, the thread is added to the list of suspended threads that are waiting for the
      * monitor.
@@ -577,8 +583,8 @@ public interface SearchStrategy {
      * @return the list of suspended threads that are waiting for the monitor.
      */
     default List<Thread> findSuspendedThreads(Object monitor) {
-        return RuntimeEnvironment.suspendedThreads.stream()
-                .filter(thread -> RuntimeEnvironment.monitorRequest.get(thread) == monitor)
+        return JmcRuntime.threadManager.findThreadsWithStatus(ThreadManager.ThreadState.SUSPENDED).stream()
+                .filter(thread -> JmcRuntime.monitorRequest.get(thread) == monitor)
                 .toList();
     }
 
@@ -586,7 +592,7 @@ public interface SearchStrategy {
      * Finds the suspended threads that are waiting for the given thread.
      *
      * <p>This method checks for each suspended thread in the {@link
-     * RuntimeEnvironment#suspendedThreads} list whether the join request of the thread is equal to
+     * JmcRuntime#threadManager} whether the join request of the thread is equal to
      * the given thread or not. If the join request of the thread is equal to the given thread, the
      * thread is added to the list of suspended threads that are waiting for the join request.
      *
@@ -594,16 +600,16 @@ public interface SearchStrategy {
      * @return the list of suspended threads that are waiting for the join request.
      */
     default List<Thread> findSuspendedThreads(Thread joinRes) {
-        return RuntimeEnvironment.suspendedThreads.stream()
-                .filter(thread -> RuntimeEnvironment.joinRequest.get(thread) == joinRes)
+        return JmcRuntime.threadManager.findThreadsWithStatus(ThreadManager.ThreadState.SUSPENDED).stream()
+                .filter(thread -> JmcRuntime.joinRequest.get(thread) == joinRes)
                 .toList();
     }
 
     default Thread nextGetFutureRequest(Thread thread, FutureTask future) {
         if (future instanceof JMCFutureTask jmcFutureTask) {
             if (!jmcFutureTask.isFinished) {
-                RuntimeEnvironment.readyThread.remove(thread);
-                RuntimeEnvironment.waitingThreadForFuture.put(future, thread);
+                JmcRuntime.readyThread.remove(thread);
+                JmcRuntime.waitingThreadForFuture.put(future, thread);
             }
         } else {
             LOGGER.debug("The FutureTask is not an instance of JMCFutureTask");
@@ -648,13 +654,13 @@ public interface SearchStrategy {
     }
 
     private Optional<Map<Thread, Thread>> computeTransitiveClosure() {
-        if (RuntimeEnvironment.monitorList.isEmpty()) {
+        if (JmcRuntime.monitorList.isEmpty()) {
             return Optional.empty();
         } else {
             Map<Thread, Thread> threadClosure = new HashMap<>();
             // Compute the primitive closure of the (@monitorRequest \cup @monitorList) relation.
-            for (Map.Entry<Thread, Object> entry : RuntimeEnvironment.monitorRequest.entrySet()) {
-                for (Map.Entry<Object, Thread> entry2 : RuntimeEnvironment.monitorList.entrySet()) {
+            for (Map.Entry<Thread, Object> entry : JmcRuntime.monitorRequest.entrySet()) {
+                for (Map.Entry<Object, Thread> entry2 : JmcRuntime.monitorList.entrySet()) {
                     if (entry.getValue().equals(entry2.getKey())) {
                         threadClosure.put(entry.getKey(), entry2.getValue());
                     }

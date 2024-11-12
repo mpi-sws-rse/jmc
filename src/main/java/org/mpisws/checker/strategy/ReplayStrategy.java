@@ -1,7 +1,9 @@
 package org.mpisws.checker.strategy;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.checker.SearchStrategy;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCThread;
 
@@ -19,10 +21,12 @@ import java.util.List;
  * maintains a guiding trace and a guiding event to guide the execution. The class provides
  * functionality to handle various types of events including start, enter monitor, exit monitor,
  * join, read, write, finish, and symbolic arithmetic events. The class uses the {@link
- * RuntimeEnvironment} API to create and record events. The ReplayStrategy class is designed to
+ * JmcRuntime} API to create and record events. The ReplayStrategy class is designed to
  * control the flow of a program's execution and ensure a replay execution order of operations.
  */
 public class ReplayStrategy implements SearchStrategy {
+
+    private static final Logger LOGGER = LogManager.getLogger(ReplayStrategy.class);
 
     /**
      * @property {@link #guidingTrace} is the trace that is used to guide the execution.
@@ -56,8 +60,8 @@ public class ReplayStrategy implements SearchStrategy {
      * loads the guiding trace.
      */
     public ReplayStrategy() {
-        buggyTracePath = RuntimeEnvironment.buggyTracePath;
-        buggyTraceFile = RuntimeEnvironment.buggyTraceFile;
+        buggyTracePath = JmcRuntime.buggyTracePath;
+        buggyTraceFile = JmcRuntime.buggyTraceFile;
         loadGuidingTrace();
     }
 
@@ -69,13 +73,13 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextStartEvent(Thread calleeThread, Thread callerThread) {
-        StartEvent startEvent = RuntimeEnvironment.createStartEvent(calleeThread, callerThread);
-        RuntimeEnvironment.eventsRecord.add(startEvent);
+        StartEvent startEvent = JmcRuntime.createStartEvent(calleeThread, callerThread);
+        JmcRuntime.eventsRecord.add(startEvent);
     }
 
     @Override
     public void nextMainStartEvent(MainStartEvent mainStartEvent) {
-        RuntimeEnvironment.eventsRecord.add(mainStartEvent);
+        JmcRuntime.eventsRecord.add(mainStartEvent);
     }
 
     /**
@@ -83,7 +87,7 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextConAssumeRequest(ConAssumeEvent conAssumeEvent) {
-        RuntimeEnvironment.eventsRecord.add(conAssumeEvent);
+        JmcRuntime.eventsRecord.add(conAssumeEvent);
     }
 
     /**
@@ -91,7 +95,7 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextAssumeBlockedRequest(AssumeBlockedEvent assumeBlockedEvent) {
-        RuntimeEnvironment.eventsRecord.add(assumeBlockedEvent);
+        JmcRuntime.eventsRecord.add(assumeBlockedEvent);
     }
 
     /**
@@ -103,8 +107,8 @@ public class ReplayStrategy implements SearchStrategy {
     @Override
     public void nextEnterMonitorEvent(Thread thread, Object monitor) {
         EnterMonitorEvent enterMonitorEvent =
-                RuntimeEnvironment.createEnterMonitorEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(enterMonitorEvent);
+                JmcRuntime.createEnterMonitorEvent(thread, monitor);
+        JmcRuntime.eventsRecord.add(enterMonitorEvent);
     }
 
     /**
@@ -116,8 +120,8 @@ public class ReplayStrategy implements SearchStrategy {
     @Override
     public void nextExitMonitorEvent(Thread thread, Object monitor) {
         ExitMonitorEvent exitMonitorEvent =
-                RuntimeEnvironment.createExitMonitorEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(exitMonitorEvent);
+                JmcRuntime.createExitMonitorEvent(thread, monitor);
+        JmcRuntime.eventsRecord.add(exitMonitorEvent);
         analyzeSuspendedThreadsForMonitor(monitor);
     }
 
@@ -129,8 +133,8 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextJoinEvent(Thread joinReq, Thread joinRes) {
-        JoinEvent joinEvent = RuntimeEnvironment.createJoinEvent(joinReq, joinRes);
-        RuntimeEnvironment.eventsRecord.add(joinEvent);
+        JoinEvent joinEvent = JmcRuntime.createJoinEvent(joinReq, joinRes);
+        JmcRuntime.eventsRecord.add(joinEvent);
     }
 
     /**
@@ -144,8 +148,8 @@ public class ReplayStrategy implements SearchStrategy {
         if (readExEvent.getInternalValue() == writeExEvent.getConditionValue()) {
             writeExEvent.setOperationSuccess(true);
         }
-        RuntimeEnvironment.eventsRecord.add(readExEvent);
-        RuntimeEnvironment.eventsRecord.add(writeExEvent);
+        JmcRuntime.eventsRecord.add(readExEvent);
+        JmcRuntime.eventsRecord.add(writeExEvent);
         guidingTrace.remove(0);
         return pickNextThread();
     }
@@ -173,11 +177,11 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextParkRequest(Thread thread) {
-        ParkEvent parkRequestEvent = RuntimeEnvironment.createParkEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(parkRequestEvent);
-        long tid = RuntimeEnvironment.threadIdMap.get(thread.getId());
-        if (RuntimeEnvironment.threadParkingPermit.get(tid)) {
-            RuntimeEnvironment.threadParkingPermit.put(tid, false);
+        ParkEvent parkRequestEvent = JmcRuntime.createParkEvent(thread);
+        JmcRuntime.eventsRecord.add(parkRequestEvent);
+        long tid = JmcRuntime.threadManager.getRevId(thread.getId());
+        if (JmcRuntime.threadParkingPermit.get(tid)) {
+            JmcRuntime.threadParkingPermit.put(tid, false);
         } else {
             parkThread(thread);
         }
@@ -196,13 +200,13 @@ public class ReplayStrategy implements SearchStrategy {
     @Override
     public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
         UnparkingEvent unparkingRequestEvent =
-                RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
-        RuntimeEnvironment.eventsRecord.add(unparkingRequestEvent);
-        if (RuntimeEnvironment.parkedThreadList.contains(unparkeeThread)) {
+                JmcRuntime.createUnparkingEvent(unparkerThread, unparkeeThread);
+        JmcRuntime.eventsRecord.add(unparkingRequestEvent);
+        if (JmcRuntime.threadManager.isSystemThreadParked(unparkeeThread.getId())) {
             unparkThread(unparkeeThread);
         } else {
-            RuntimeEnvironment.threadParkingPermit.put(
-                    RuntimeEnvironment.threadIdMap.get(unparkeeThread.getId()), true);
+            JmcRuntime.threadParkingPermit.put(
+                    JmcRuntime.threadManager.getRevId(unparkeeThread.getId()), true);
         }
     }
 
@@ -213,7 +217,7 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextReadEvent(ReadEvent readEvent) {
-        RuntimeEnvironment.eventsRecord.add(readEvent);
+        JmcRuntime.eventsRecord.add(readEvent);
     }
 
     /**
@@ -221,7 +225,7 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextReceiveEvent(ReceiveEvent receiveEvent) {
-        RuntimeEnvironment.eventsRecord.add(receiveEvent);
+        JmcRuntime.eventsRecord.add(receiveEvent);
         ReceiveEvent guidingRecvEvent = (ReceiveEvent) guidingEvent;
         if (guidingRecvEvent.getRf() == null) {
             handleGuidedNullRecvEvent(receiveEvent, guidingRecvEvent);
@@ -233,7 +237,7 @@ public class ReplayStrategy implements SearchStrategy {
     private void handleGuidedNullRecvEvent(
             ReceiveEvent receiveEvent, ReceiveEvent guidingRecvEvent) {
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+                (JMCThread) JmcRuntime.findThreadObject(receiveEvent.getTid());
         jmcThread.noMessageExists();
         receiveEvent.setRf(guidingRecvEvent.getRf());
         receiveEvent.setValue(null);
@@ -241,14 +245,14 @@ public class ReplayStrategy implements SearchStrategy {
 
     private void handleGuidedRecvEvent(ReceiveEvent receiveEvent, ReceiveEvent guidingRecvEvent) {
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+                (JMCThread) JmcRuntime.findThreadObject(receiveEvent.getTid());
         SendEvent guidedReceiveFrom = (SendEvent) guidingRecvEvent.getRf();
 
         // Assign receiveFrom with the send event in the RuntimeEnvironment.eventsRecord that has
         // the
         // same tid and serial number as the guidedReceiveFrom
         SendEvent receiveFrom = null;
-        for (Event event : RuntimeEnvironment.eventsRecord) {
+        for (Event event : JmcRuntime.eventsRecord) {
             if (event instanceof SendEvent sendEvent) {
                 if (sendEvent.getTid() == guidedReceiveFrom.getTid()
                         && sendEvent.getSerial() == guidedReceiveFrom.getSerial()) {
@@ -259,8 +263,8 @@ public class ReplayStrategy implements SearchStrategy {
         }
 
         if (receiveFrom == null) {
-            System.out.println(
-                    "[Replay Strategy Message] : The receive event does not have a corresponding"
+            LOGGER.debug(
+                    "The receive event does not have a corresponding"
                         + " send event");
             System.exit(0);
         }
@@ -278,7 +282,7 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextWriteEvent(WriteEvent writeEvent) {
-        RuntimeEnvironment.eventsRecord.add(writeEvent);
+        JmcRuntime.eventsRecord.add(writeEvent);
     }
 
     /**
@@ -286,19 +290,19 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextSendEvent(SendEvent sendEvent) {
-        RuntimeEnvironment.eventsRecord.add(sendEvent);
+        JmcRuntime.eventsRecord.add(sendEvent);
         executeSendEvent(sendEvent);
     }
 
     @Override
     public boolean nextBlockingReceiveRequest(ReceiveEvent receiveEvent) {
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+                (JMCThread) JmcRuntime.findThreadObject(receiveEvent.getTid());
         BlockingRecvReq blockingRecvReq =
-                RuntimeEnvironment.createBlockingRecvReq(jmcThread, receiveEvent);
+                JmcRuntime.createBlockingRecvReq(jmcThread, receiveEvent);
         BlockingRecvReq guidingBlockingRecvReq = (BlockingRecvReq) guidingEvent;
         blockingRecvReq.setBlocked(guidingBlockingRecvReq.isBlocked());
-        RuntimeEnvironment.eventsRecord.add(blockingRecvReq);
+        JmcRuntime.eventsRecord.add(blockingRecvReq);
         return false;
     }
 
@@ -309,8 +313,8 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextFinishEvent(Thread thread) {
-        FinishEvent finishEvent = RuntimeEnvironment.createFinishEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(finishEvent);
+        FinishEvent finishEvent = JmcRuntime.createFinishEvent(thread);
+        JmcRuntime.eventsRecord.add(finishEvent);
     }
 
     /**
@@ -320,8 +324,8 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextFailureEvent(Thread thread) {
-        FailureEvent failureEvent = RuntimeEnvironment.createFailureEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(failureEvent);
+        FailureEvent failureEvent = JmcRuntime.createFailureEvent(thread);
+        JmcRuntime.eventsRecord.add(failureEvent);
     }
 
     /**
@@ -331,8 +335,8 @@ public class ReplayStrategy implements SearchStrategy {
      */
     @Override
     public void nextDeadlockEvent(Thread thread) {
-        DeadlockEvent deadlockEvent = RuntimeEnvironment.createDeadlockEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(deadlockEvent);
+        DeadlockEvent deadlockEvent = JmcRuntime.createDeadlockEvent(thread);
+        JmcRuntime.eventsRecord.add(deadlockEvent);
     }
 
     /**
@@ -356,16 +360,16 @@ public class ReplayStrategy implements SearchStrategy {
     @Override
     public void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         if (guidingEvent.getType() != EventType.SYM_EXECUTION) {
-            System.out.println(
-                    "[Replay Strategy Message] : The next event is not a symbolic operation");
+            LOGGER.debug(
+                    "The next event is not a symbolic operation");
             System.exit(0);
         }
         SymExecutionEvent symEvent = (SymExecutionEvent) this.guidingEvent;
-        RuntimeEnvironment.solverResult = symEvent.getResult();
+        JmcRuntime.solverResult = symEvent.getResult();
         SymExecutionEvent symbolicOperationEvent =
-                RuntimeEnvironment.createSymExecutionEvent(
+                JmcRuntime.createSymExecutionEvent(
                         thread, symbolicOperation.getFormula().toString(), symEvent.isNegatable());
-        RuntimeEnvironment.eventsRecord.add(symbolicOperationEvent);
+        JmcRuntime.eventsRecord.add(symbolicOperationEvent);
     }
 
     /**
@@ -375,15 +379,15 @@ public class ReplayStrategy implements SearchStrategy {
     @Override
     public void nextSymAssumeRequest(Thread thread, SymbolicOperation symbolicOperation) {
         if (guidingEvent.getType() != EventType.SYM_ASSUME) {
-            System.out.println(
-                    "[Replay Strategy Message] : The next event is not a symbolic operation");
+            LOGGER.debug(
+                    "The next event is not a symbolic operation");
             System.exit(0);
         }
         SymAssumeEvent symAssumeEvent = (SymAssumeEvent) this.guidingEvent;
-        RuntimeEnvironment.solverResult = symAssumeEvent.getResult();
+        JmcRuntime.solverResult = symAssumeEvent.getResult();
         SymAssumeEvent symAssumeRequest =
-                RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
-        RuntimeEnvironment.eventsRecord.add(symAssumeRequest);
+                JmcRuntime.createSymAssumeEvent(thread, symbolicOperation);
+        JmcRuntime.eventsRecord.add(symAssumeRequest);
     }
 
     /**
@@ -416,25 +420,25 @@ public class ReplayStrategy implements SearchStrategy {
     @Override
     public Thread pickNextThread() {
         if (guidingTrace.isEmpty()) {
-            System.out.println("[Replay Strategy Message] : Guiding trace is empty");
-            System.out.println(
-                    "[Replay Strategy Message] : However, the execution is not done yet");
-            System.out.println(
-                    "[Replay Strategy Message] : Thus, there is something wrong with the Replay"
+            LOGGER.debug("Guiding trace is empty");
+            LOGGER.debug(
+                    "However, the execution is not done yet");
+            LOGGER.debug(
+                    "Thus, there is something wrong with the Replay"
                         + " Strategy");
             printExecutionTrace();
             System.exit(0);
         }
 
         if (guidingEvent != null && guidingEvent.getType() == EventType.UNPARKING) {
-            System.out.println(
-                    "[Replay Strategy Message] : Thread-"
-                            + RuntimeEnvironment.threadObjectMap
-                                    .get((long) ((UnparkingEvent) guidingEvent).getTid())
+            LOGGER.debug(
+                    "Thread-"
+                            + JmcRuntime.threadManager
+                                    .getThread((long) ((UnparkingEvent) guidingEvent).getTid())
                                     .getId()
                             + " is the next guided thread for UNPARKING");
             Thread nextThread =
-                    RuntimeEnvironment.threadObjectMap.get(
+                    JmcRuntime.threadManager.getThread(
                             (long) ((UnparkingEvent) guidingEvent).getTid());
             guidingEvent = null;
             return nextThread;
@@ -452,7 +456,7 @@ public class ReplayStrategy implements SearchStrategy {
         }
         if (guidingEvent.getType() == EventType.UNPARK) {
             guidedUnparkEventHelper((UnparkEvent) guidingEvent);
-            return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+            return JmcRuntime.threadManager.getThread((long) guidingThread);
         }
         if (guidingEvent.getType() == EventType.BLOCKED_RECV) {
             BlockedRecvEvent guidedBlockedRecvEvent = (BlockedRecvEvent) guidingEvent;
@@ -465,49 +469,49 @@ public class ReplayStrategy implements SearchStrategy {
             return pickNextThread();
         }
         if (guidingEvent.getType() == EventType.DEADLOCK) {
-            nextDeadlockEvent(RuntimeEnvironment.threadObjectMap.get((long) guidingThread));
+            nextDeadlockEvent(JmcRuntime.threadManager.getThread((long) guidingThread));
             printExecutionTrace();
             saveBuggyExecutionTrace();
-            System.out.println(
+            LOGGER.debug(
                     "******************************************************************************************");
-            System.out.println("[*** Resource Usage ***]");
-            RuntimeEnvironment.printFinalMessage();
-            System.out.println(
+            LOGGER.debug("[*** Resource Usage ***]");
+            JmcRuntime.printFinalMessage();
+            LOGGER.debug(
                     "******************************************************************************************");
             System.exit(0);
         }
 
-        System.out.println("[Replay Strategy Message] : Guiding event is " + guidingEvent);
-        System.out.println(
-                "[Replay Strategy Message] : Thread-" + guidingThread + " is selected to run");
-        return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+        LOGGER.debug("Guiding event is " + guidingEvent);
+        LOGGER.debug(
+                "Thread-" + guidingThread + " is selected to run");
+        return JmcRuntime.threadManager.getThread((long) guidingThread);
     }
 
     private void handleNextGuidedBlockedRecvEvent(BlockedRecvEvent guidedBlockedRecvEvent) {
-        System.out.println(
-                "[Replay Strategy Message] : The recv event is: "
+        LOGGER.debug(
+                "The recv event is: "
                         + guidedBlockedRecvEvent.getReceiveEvent());
         ReceiveEvent guidedReceiveEvent = guidedBlockedRecvEvent.getReceiveEvent();
         ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
-        System.out.println(
-                "[Replay Strategy Message] : The recv event in the record is: "
+        LOGGER.debug(
+                "The recv event in the record is: "
                         + receiveEventInRecord);
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEventInRecord.getTid());
-        RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEventInRecord);
+                (JMCThread) JmcRuntime.findThreadObject(receiveEventInRecord.getTid());
+        JmcRuntime.removeBlockedThreadFromReadyQueue(jmcThread, receiveEventInRecord);
     }
 
     private void handleNextGuidedUnblockedRecvEvent(UnblockedRecvEvent guidedUnblockedRecvEvent) {
         ReceiveEvent guidedReceiveEvent = guidedUnblockedRecvEvent.getReceiveEvent();
         ReceiveEvent receiveEventInRecord = findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEventInRecord.getTid());
-        RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, receiveEventInRecord);
+                (JMCThread) JmcRuntime.findThreadObject(receiveEventInRecord.getTid());
+        JmcRuntime.addUnblockedThreadToReadyQueue(jmcThread, receiveEventInRecord);
     }
 
     private ReceiveEvent findReceiveEventInRecord(ReceiveEvent guidedReceiveEvent) {
         ReceiveEvent receiveEventInRecord = null;
-        for (Event event : RuntimeEnvironment.eventsRecord) {
+        for (Event event : JmcRuntime.eventsRecord) {
             if (event instanceof ReceiveEvent recvEvent) {
                 if (recvEvent.getTid() == guidedReceiveEvent.getTid()
                         && recvEvent.getSerial() == guidedReceiveEvent.getSerial()) {
@@ -521,7 +525,7 @@ public class ReplayStrategy implements SearchStrategy {
 
     private ReceiveEvent findReceiveEventFromBlockingRecvReq(ReceiveEvent guidedReceiveEvent) {
         ReceiveEvent receiveEvent = null;
-        for (Event event : RuntimeEnvironment.eventsRecord) {
+        for (Event event : JmcRuntime.eventsRecord) {
             if (event instanceof BlockingRecvReq blockingRecvReq) {
                 ReceiveEvent recvEvent = blockingRecvReq.getReceiveEvent();
                 if (recvEvent.getTid() == guidedReceiveEvent.getTid()
@@ -540,8 +544,8 @@ public class ReplayStrategy implements SearchStrategy {
      * @param unparkEvent is the unpark event that is going to be executed.
      */
     private void guidedUnparkEventHelper(UnparkEvent unparkEvent) {
-        System.out.println("[Replay Strategy Message] : The next guided event is UNPARK event.");
-        Thread thread = RuntimeEnvironment.threadObjectMap.get((long) unparkEvent.getTid());
+        LOGGER.debug("The next guided event is UNPARK event.");
+        Thread thread = JmcRuntime.threadManager.getThread((long) unparkEvent.getTid());
         unparkThread(thread);
     }
 
@@ -555,9 +559,9 @@ public class ReplayStrategy implements SearchStrategy {
      * @param threadId is the id of the thread that its monitor request is going to be removed.
      */
     private void removeMonitorRequest(int threadId) {
-        Thread thread = RuntimeEnvironment.threadObjectMap.get((long) threadId);
-        Object monitor = RuntimeEnvironment.monitorRequest.get(thread);
-        RuntimeEnvironment.monitorRequest.remove(thread, monitor);
+        Thread thread = JmcRuntime.threadManager.getThread((long) threadId);
+        Object monitor = JmcRuntime.monitorRequest.get(thread);
+        JmcRuntime.monitorRequest.remove(thread, monitor);
         nextEnterMonitorEvent(thread, monitor);
     }
 
@@ -579,16 +583,16 @@ public class ReplayStrategy implements SearchStrategy {
             try (FileInputStream fileIn = new FileInputStream(file);
                     ObjectInputStream in = new ObjectInputStream(fileIn)) {
                 guidingTrace = (List<Event>) in.readObject();
-                System.out.println(
-                        "[Replay Strategy Message] : Guiding trace is loaded from "
+                LOGGER.debug(
+                        "Guiding trace is loaded from "
                                 + buggyTracePath
                                 + buggyTraceFile);
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
         } else {
-            System.out.println(
-                    "[Replay Strategy Message] : File "
+            LOGGER.debug(
+                    "File "
                             + buggyTracePath
                             + buggyTraceFile
                             + " does not exist");

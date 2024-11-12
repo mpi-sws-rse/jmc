@@ -3,7 +3,7 @@ package org.mpisws.util.concurrent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 import java.util.concurrent.*;
 
@@ -23,7 +23,7 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
             int id) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
         this.id = id;
-        RuntimeEnvironment.setWorkQueue(id, workQueue);
+        JmcRuntime.setWorkQueue(id, workQueue);
     }
 
     public JMCThreadPoolExecutor(
@@ -33,8 +33,8 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
             @NotNull TimeUnit unit,
             @NotNull BlockingQueue<Runnable> workQueue) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-        id = RuntimeEnvironment.nextThreadPoolExecutorId();
-        RuntimeEnvironment.setWorkQueue(id, workQueue);
+        id = JmcRuntime.nextThreadPoolExecutorId();
+        JmcRuntime.setWorkQueue(id, workQueue);
     }
 
     public JMCThreadPoolExecutor(
@@ -45,8 +45,8 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
             @NotNull BlockingQueue<Runnable> workQueue,
             @NotNull RejectedExecutionHandler handler) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, handler);
-        id = RuntimeEnvironment.nextThreadPoolExecutorId();
-        RuntimeEnvironment.setWorkQueue(id, workQueue);
+        id = JmcRuntime.nextThreadPoolExecutorId();
+        JmcRuntime.setWorkQueue(id, workQueue);
     }
 
     public JMCThreadPoolExecutor(
@@ -65,13 +65,13 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
                 workQueue,
                 threadFactory,
                 handler);
-        id = RuntimeEnvironment.nextThreadPoolExecutorId();
-        RuntimeEnvironment.setWorkQueue(id, workQueue);
+        id = JmcRuntime.nextThreadPoolExecutorId();
+        JmcRuntime.setWorkQueue(id, workQueue);
     }
 
     @Override
     protected void beforeExecute(Thread t, Runnable r) {
-        RuntimeEnvironment.threadRunningNewTask(t, r);
+        JmcRuntime.threadRunningNewTask(t, r);
         super.beforeExecute(t, r);
     }
 
@@ -100,7 +100,7 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
         Future future = (Future) command;
         Runnable wrappedCommand =
                 () -> {
-                    RuntimeEnvironment.addFuture(future, Thread.currentThread());
+                    JmcRuntime.addFuture(future, Thread.currentThread());
                     command.run();
                 };
         super.execute(wrappedCommand);
@@ -120,7 +120,7 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
         JMCFutureTask jmcFutureTask = new JMCFutureTask(callable);
-        RuntimeEnvironment.newTaskCreated(Thread.currentThread(), jmcFutureTask, id);
+        JmcRuntime.newTaskCreated(Thread.currentThread(), jmcFutureTask, id);
         return jmcFutureTask;
     }
 
@@ -133,7 +133,7 @@ public class JMCThreadPoolExecutor extends ThreadPoolExecutor {
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
         JMCFutureTask jmcFutureTask = new JMCFutureTask(runnable, value);
-        RuntimeEnvironment.newTaskCreated(Thread.currentThread(), jmcFutureTask, id);
+        JmcRuntime.newTaskCreated(Thread.currentThread(), jmcFutureTask, id);
         return jmcFutureTask;
     }
 

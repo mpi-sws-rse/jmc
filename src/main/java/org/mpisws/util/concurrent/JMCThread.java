@@ -1,7 +1,7 @@
 package org.mpisws.util.concurrent;
 
 import org.mpisws.manager.HaltExecutionException;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 import programStructure.Message;
 import programStructure.TaggedMessage;
@@ -18,7 +18,7 @@ public abstract class JMCThread extends Thread {
     private int nextMessageIndex = -1;
 
     public JMCThread() {
-        RuntimeEnvironment.addThread(this);
+        JmcRuntime.addThread(this);
     }
 
     public final synchronized void pushMessage(Message message) {
@@ -26,8 +26,8 @@ public abstract class JMCThread extends Thread {
     }
 
     public final void joinThread() {
-        RuntimeEnvironment.threadJoin(this, currentThread());
-        RuntimeEnvironment.waitRequest(currentThread());
+        JmcRuntime.threadJoin(this, currentThread());
+        JmcRuntime.waitRequest(currentThread());
     }
 
     public final Message findMessage() {
@@ -92,10 +92,10 @@ public abstract class JMCThread extends Thread {
 
     @Override
     public void run() {
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
         this.context();
         try {
-            RuntimeEnvironment.finishThreadRequest(Thread.currentThread());
+            JmcRuntime.finishThreadRequest(Thread.currentThread());
         } catch (HaltExecutionException e) {
             throw new RuntimeException(e);
             // TODO(): CHECK try catch block

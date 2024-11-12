@@ -3,7 +3,7 @@ package org.mpisws.checker.strategy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.checker.SearchStrategy;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.solver.SymbolicSolver;
 import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCLock;
@@ -27,8 +27,8 @@ import java.util.Random;
  * maintains a record of random events and a random number generator for the random strategy. The
  * class provides functionality to handle various types of events including start, enter monitor,
  * exit monitor, join, read, write, finish, and symbolic arithmetic events. The class uses the
- * {@link RuntimeEnvironment} API to create and record events. The class initializes the random
- * number generator with the seed value from the {@link RuntimeEnvironment}. It also includes
+ * {@link JmcRuntime} API to create and record events. The class initializes the random
+ * number generator with the seed value from the {@link JmcRuntime}. It also includes
  * functionality for printing the execution trace and checking if the execution is done. The
  * RandomStrategy class is designed to control the flow of a program's execution and ensure a random
  * execution order of operations.
@@ -55,7 +55,7 @@ public class RandomStrategy implements SearchStrategy {
     private final String buggyTraceFile;
 
     /**
-     * @property {@link #solver} is keeping the reference to {@link RuntimeEnvironment#solver}
+     * @property {@link #solver} is keeping the reference to {@link JmcRuntime#solver}
      */
     private final SymbolicSolver solver;
 
@@ -63,20 +63,20 @@ public class RandomStrategy implements SearchStrategy {
 
     /**
      * The following constructor initializes {@link #buggyTraceFile} with the value from {@link
-     * RuntimeEnvironment#buggyTraceFile}, {@link #buggyTracePath} with the value from {@link
-     * RuntimeEnvironment#buggyTracePath}, and {@link #random} with a new random number generator
-     * with the seed value from {@link RuntimeEnvironment#seed}, and {@link #solver} with the value
-     * from {@link RuntimeEnvironment#solver}.
+     * JmcRuntime#buggyTraceFile}, {@link #buggyTracePath} with the value from {@link
+     * JmcRuntime#buggyTracePath}, and {@link #random} with a new random number generator
+     * with the seed value from {@link JmcRuntime#seed}, and {@link #solver} with the value
+     * from {@link JmcRuntime#solver}.
      */
     public RandomStrategy() {
-        buggyTracePath = RuntimeEnvironment.buggyTracePath;
+        buggyTracePath = JmcRuntime.buggyTracePath;
         if (!Files.exists(Paths.get(buggyTracePath))) {
             LOGGER.debug("Directory {} does not exist ", buggyTracePath);
             System.exit(0);
         }
-        buggyTraceFile = RuntimeEnvironment.buggyTraceFile;
-        random = new Random(RuntimeEnvironment.seed);
-        solver = RuntimeEnvironment.solver;
+        buggyTraceFile = JmcRuntime.buggyTraceFile;
+        random = new Random(JmcRuntime.seed);
+        solver = JmcRuntime.solver;
     }
 
     /**
@@ -84,15 +84,15 @@ public class RandomStrategy implements SearchStrategy {
      *
      * <p>This method creates a {@link StartEvent} for the corresponding starting a thread request
      * of a thread. The created {@link StartEvent} is added to the {@link
-     * RuntimeEnvironment#eventsRecord}.
+     * JmcRuntime#eventsRecord}.
      *
      * @param calleeThread is the thread that is going to be started.
      * @param callerThread is the thread that is going to call the start method of the calleeThread.
      */
     @Override
     public void nextStartEvent(Thread calleeThread, Thread callerThread) {
-        StartEvent startEvent = RuntimeEnvironment.createStartEvent(calleeThread, callerThread);
-        RuntimeEnvironment.eventsRecord.add(startEvent);
+        StartEvent startEvent = JmcRuntime.createStartEvent(calleeThread, callerThread);
+        JmcRuntime.eventsRecord.add(startEvent);
     }
 
     /**
@@ -100,7 +100,7 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public void nextConAssumeRequest(ConAssumeEvent conAssumeEvent) {
-        RuntimeEnvironment.eventsRecord.add(conAssumeEvent);
+        JmcRuntime.eventsRecord.add(conAssumeEvent);
     }
 
     /**
@@ -112,15 +112,15 @@ public class RandomStrategy implements SearchStrategy {
         solver.computeNewSymAssumeOperationRequest(symbolicOperation);
         LOGGER.debug(
                 "The result of the symbolic assume operation is "
-                        + RuntimeEnvironment.solverResult);
+                        + JmcRuntime.solverResult);
 
-        if (RuntimeEnvironment.solverResult) {
+        if (JmcRuntime.solverResult) {
             solver.updatePathSymbolicOperations(symbolicOperation);
         }
 
         SymAssumeEvent symAssumeEvent =
-                RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
-        RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
+                JmcRuntime.createSymAssumeEvent(thread, symbolicOperation);
+        JmcRuntime.eventsRecord.add(symAssumeEvent);
     }
 
     /**
@@ -141,13 +141,13 @@ public class RandomStrategy implements SearchStrategy {
 
         LOGGER.debug(
                 "The result of the symbolic arithmetic operation is {}",
-                RuntimeEnvironment.solverResult);
+                JmcRuntime.solverResult);
         // updatePathSymbolicOperations(symbolicOperation, thread);
         solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent =
-                RuntimeEnvironment.createSymExecutionEvent(
+                JmcRuntime.createSymExecutionEvent(
                         thread, symbolicOperation.getFormula().toString(), solver.bothSatUnsat);
-        RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
+        JmcRuntime.eventsRecord.add(symExecutionEvent);
     }
 
     /**
@@ -155,12 +155,12 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public void nextAssumeBlockedRequest(AssumeBlockedEvent assumeBlockedEvent) {
-        RuntimeEnvironment.eventsRecord.add(assumeBlockedEvent);
+        JmcRuntime.eventsRecord.add(assumeBlockedEvent);
     }
 
     @Override
     public void nextMainStartEvent(MainStartEvent mainStartEvent) {
-        RuntimeEnvironment.eventsRecord.add(mainStartEvent);
+        JmcRuntime.eventsRecord.add(mainStartEvent);
     }
 
     /**
@@ -169,7 +169,7 @@ public class RandomStrategy implements SearchStrategy {
      *
      * <p>This method creates a {@link EnterMonitorEvent} for the corresponding entering a monitor
      * request of a thread. The created {@link EnterMonitorEvent} is added to the {@link
-     * RuntimeEnvironment#eventsRecord}.
+     * JmcRuntime#eventsRecord}.
      *
      * @param thread is the thread that is going to enter the monitor.
      * @param monitor is the monitor that is going to be entered by the thread.
@@ -177,8 +177,8 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void nextEnterMonitorEvent(Thread thread, Object monitor) {
         EnterMonitorEvent enterMonitorEvent =
-                RuntimeEnvironment.createEnterMonitorEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(enterMonitorEvent);
+                JmcRuntime.createEnterMonitorEvent(thread, monitor);
+        JmcRuntime.eventsRecord.add(enterMonitorEvent);
     }
 
     /**
@@ -187,7 +187,7 @@ public class RandomStrategy implements SearchStrategy {
      *
      * <p>This method creates an {@link ExitMonitorEvent} for the corresponding exiting a monitor
      * request of a thread. The created {@link ExitMonitorEvent} is added to the {@link
-     * RuntimeEnvironment#eventsRecord}. The method also analyzes the suspended threads for the
+     * JmcRuntime#eventsRecord}. The method also analyzes the suspended threads for the
      * released monitor.
      *
      * @param thread is the thread that is going to exit the monitor.
@@ -196,8 +196,8 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void nextExitMonitorEvent(Thread thread, Object monitor) {
         ExitMonitorEvent exitMonitorEvent =
-                RuntimeEnvironment.createExitMonitorEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(exitMonitorEvent);
+                JmcRuntime.createExitMonitorEvent(thread, monitor);
+        JmcRuntime.eventsRecord.add(exitMonitorEvent);
         analyzeSuspendedThreadsForMonitor(monitor);
     }
 
@@ -206,15 +206,15 @@ public class RandomStrategy implements SearchStrategy {
      *
      * <p>This method creates a {@link JoinEvent} for the corresponding joining a thread request of
      * a thread. The created {@link JoinEvent} is added to the {@link
-     * RuntimeEnvironment#eventsRecord}.
+     * JmcRuntime#eventsRecord}.
      *
      * @param joinReq is the thread that is going to join another thread.
      * @param joinRes is the thread that is going to be joined by another thread.
      */
     @Override
     public void nextJoinEvent(Thread joinReq, Thread joinRes) {
-        JoinEvent joinEvent = RuntimeEnvironment.createJoinEvent(joinReq, joinRes);
-        RuntimeEnvironment.eventsRecord.add(joinEvent);
+        JoinEvent joinEvent = JmcRuntime.createJoinEvent(joinReq, joinRes);
+        JmcRuntime.eventsRecord.add(joinEvent);
     }
 
     /**
@@ -226,12 +226,12 @@ public class RandomStrategy implements SearchStrategy {
     public Thread nextCasRequest(
             Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
         Object monitor = readExEvent.getLoc().getInstance();
-        if (RuntimeEnvironment.monitorList.containsKey(monitor)) {
-            RuntimeEnvironment.monitorRequest.put(thread, monitor);
+        if (JmcRuntime.monitorList.containsKey(monitor)) {
+            JmcRuntime.monitorRequest.put(thread, monitor);
             if (monitorsDeadlockDetection()) {
                 LOGGER.debug("There is a deadlock between the threads in using the monitors");
-                RuntimeEnvironment.deadlockHappened = true;
-                RuntimeEnvironment.executionFinished = true;
+                JmcRuntime.deadlockHappened = true;
+                JmcRuntime.executionFinished = true;
                 nextDeadlockEvent(thread);
                 return null;
             } else {
@@ -242,10 +242,10 @@ public class RandomStrategy implements SearchStrategy {
                 cachedEvents.put(readExEvent.getTid(), threadEvents);
             }
         } else {
-            RuntimeEnvironment.monitorList.put(monitor, thread);
+            JmcRuntime.monitorList.put(monitor, thread);
             writeExEvent.setOperationSuccess(true);
-            RuntimeEnvironment.eventsRecord.add(readExEvent);
-            RuntimeEnvironment.eventsRecord.add(writeExEvent);
+            JmcRuntime.eventsRecord.add(readExEvent);
+            JmcRuntime.eventsRecord.add(writeExEvent);
         }
         return pickNextThread();
     }
@@ -255,8 +255,8 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public void handleCachedCASEvent(int tid) {
-        RuntimeEnvironment.eventsRecord.add(cachedEvents.get(tid).get(0));
-        RuntimeEnvironment.eventsRecord.add(cachedEvents.get(tid).get(1));
+        JmcRuntime.eventsRecord.add(cachedEvents.get(tid).get(0));
+        JmcRuntime.eventsRecord.add(cachedEvents.get(tid).get(1));
         WriteExEvent writeExEvent = (WriteExEvent) cachedEvents.get(tid).get(1);
         writeExEvent.setOperationSuccess(true);
         cachedEvents.remove(tid);
@@ -275,13 +275,13 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public void nextParkRequest(Thread thread) {
-        ParkEvent parkRequestEvent = RuntimeEnvironment.createParkEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(parkRequestEvent);
-        long tid = RuntimeEnvironment.threadIdMap.get(thread.getId());
-        if (RuntimeEnvironment.threadParkingPermit.get(tid)) {
-            RuntimeEnvironment.threadParkingPermit.put(tid, false);
-            UnparkEvent unparkRequestEvent = RuntimeEnvironment.createUnparkEvent(thread);
-            RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+        ParkEvent parkRequestEvent = JmcRuntime.createParkEvent(thread);
+        JmcRuntime.eventsRecord.add(parkRequestEvent);
+        long tid = JmcRuntime.threadManager.getRevId(thread.getId());
+        if (JmcRuntime.threadParkingPermit.get(tid)) {
+            JmcRuntime.threadParkingPermit.put(tid, false);
+            UnparkEvent unparkRequestEvent = JmcRuntime.createUnparkEvent(thread);
+            JmcRuntime.eventsRecord.add(unparkRequestEvent);
         } else {
             parkThread(thread);
         }
@@ -303,15 +303,15 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
         UnparkingEvent unparkingRequestEvent =
-                RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
-        RuntimeEnvironment.eventsRecord.add(unparkingRequestEvent);
-        if (RuntimeEnvironment.parkedThreadList.contains(unparkeeThread)) {
+                JmcRuntime.createUnparkingEvent(unparkerThread, unparkeeThread);
+        JmcRuntime.eventsRecord.add(unparkingRequestEvent);
+        if (JmcRuntime.threadManager.isSystemThreadParked(unparkeeThread.getId())) {
             unparkThread(unparkeeThread);
-            UnparkEvent unparkRequestEvent = RuntimeEnvironment.createUnparkEvent(unparkeeThread);
-            RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+            UnparkEvent unparkRequestEvent = JmcRuntime.createUnparkEvent(unparkeeThread);
+            JmcRuntime.eventsRecord.add(unparkRequestEvent);
         } else {
-            long tid = RuntimeEnvironment.threadIdMap.get(unparkeeThread.getId());
-            RuntimeEnvironment.threadParkingPermit.put(tid, true);
+            long tid = JmcRuntime.threadManager.getRevId(unparkeeThread.getId());
+            JmcRuntime.threadParkingPermit.put(tid, true);
         }
     }
 
@@ -319,7 +319,7 @@ public class RandomStrategy implements SearchStrategy {
      * Handles the next join request of a given thread.
      *
      * <p>This method handles the next join request of a given thread. It records the join request
-     * and join response threads in the {@link RuntimeEnvironment#joinRequest} map. The method also
+     * and join response threads in the {@link JmcRuntime#joinRequest} map. The method also
      * selects the next random thread to run.
      *
      * @param joinReq is the thread that is going to join another thread.
@@ -328,7 +328,7 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public Thread nextJoinRequest(Thread joinReq, Thread joinRes) {
-        RuntimeEnvironment.joinRequest.put(joinReq, joinRes);
+        JmcRuntime.joinRequest.put(joinReq, joinRes);
         return pickNextReadyThread();
     }
 
@@ -338,13 +338,13 @@ public class RandomStrategy implements SearchStrategy {
      *
      * <p>This method records the created {@link ReadEvent} for the corresponding reading a variable
      * request of a thread. The {@link ReadEvent} is added to the {@link
-     * RuntimeEnvironment#eventsRecord}.
+     * JmcRuntime#eventsRecord}.
      *
      * @param readEvent is the read event that is going to be executed.
      */
     @Override
     public void nextReadEvent(ReadEvent readEvent) {
-        RuntimeEnvironment.eventsRecord.add(readEvent);
+        JmcRuntime.eventsRecord.add(readEvent);
     }
 
     /**
@@ -353,22 +353,22 @@ public class RandomStrategy implements SearchStrategy {
      *
      * <p>This method records the created {@link WriteEvent} for the corresponding writing a
      * variable request of a thread. The {@link WriteEvent} is added to the {@link
-     * RuntimeEnvironment#eventsRecord}.
+     * JmcRuntime#eventsRecord}.
      *
      * @param writeEvent is the write event that is going to be executed.
      */
     @Override
     public void nextWriteEvent(WriteEvent writeEvent) {
-        RuntimeEnvironment.eventsRecord.add(writeEvent);
+        JmcRuntime.eventsRecord.add(writeEvent);
         if (writeEvent.getLoc().getInstance() instanceof JMCLock lock) {
-            RuntimeEnvironment.monitorList.remove(lock);
+            JmcRuntime.monitorList.remove(lock);
             analyzeSuspendedThreadsForMonitor(lock);
         }
     }
 
     @Override
     public void nextSendEvent(SendEvent sendEvent) {
-        RuntimeEnvironment.eventsRecord.add(sendEvent);
+        JmcRuntime.eventsRecord.add(sendEvent);
         executeSendEvent(sendEvent);
     }
 
@@ -379,16 +379,16 @@ public class RandomStrategy implements SearchStrategy {
         } else {
             handleConditionalMessage(receiveEvent);
         }
-        RuntimeEnvironment.eventsRecord.add(receiveEvent);
+        JmcRuntime.eventsRecord.add(receiveEvent);
     }
 
     @Override
     public boolean nextBlockingReceiveRequest(ReceiveEvent receiveEvent) {
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+                (JMCThread) JmcRuntime.findThreadObject(receiveEvent.getTid());
         BlockingRecvReq blockingRecvReq =
-                RuntimeEnvironment.createBlockingRecvReq(jmcThread, receiveEvent);
-        RuntimeEnvironment.eventsRecord.add(blockingRecvReq);
+                JmcRuntime.createBlockingRecvReq(jmcThread, receiveEvent);
+        JmcRuntime.eventsRecord.add(blockingRecvReq);
         if (receiveEvent.getPredicate() == null) {
             return handleFreeBlockingRecvReq(receiveEvent, jmcThread, blockingRecvReq);
         } else {
@@ -400,7 +400,7 @@ public class RandomStrategy implements SearchStrategy {
             ReceiveEvent receiveEvent, JMCThread jmcThread, BlockingRecvReq blockingRecvReq) {
         Message message = jmcThread.findRandomMessage(random);
         if (message == null) {
-            RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
+            JmcRuntime.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
             blockingRecvReq.setBlocked(true);
             return false;
         }
@@ -415,7 +415,7 @@ public class RandomStrategy implements SearchStrategy {
         List<Message> matchedMessages =
                 jmcThread.computePredicateMessage(receiveEvent.getPredicate());
         if (matchedMessages.isEmpty()) {
-            RuntimeEnvironment.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
+            JmcRuntime.removeBlockedThreadFromReadyQueue(jmcThread, receiveEvent);
             blockingRecvReq.setBlocked(true);
             return false;
         } else {
@@ -430,7 +430,7 @@ public class RandomStrategy implements SearchStrategy {
 
     private void handleConditionalMessage(ReceiveEvent receiveEvent) {
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+                (JMCThread) JmcRuntime.findThreadObject(receiveEvent.getTid());
         List<Message> matchedMessages =
                 jmcThread.computePredicateMessage(receiveEvent.getPredicate());
         if (matchedMessages.isEmpty()) {
@@ -447,7 +447,7 @@ public class RandomStrategy implements SearchStrategy {
 
     private void handleFreeMessage(ReceiveEvent receiveEvent) {
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+                (JMCThread) JmcRuntime.findThreadObject(receiveEvent.getTid());
         Message message = jmcThread.findRandomMessage(random);
         if (message == null) {
             jmcThread.noMessageExists();
@@ -466,15 +466,15 @@ public class RandomStrategy implements SearchStrategy {
      *
      * <p>This method creates a {@link FinishEvent} for the corresponding finishing execution
      * request of a thread. The created {@link FinishEvent} is added to the {@link
-     * RuntimeEnvironment#eventsRecord}. The method also analyzes the suspended threads for joining
+     * JmcRuntime#eventsRecord}. The method also analyzes the suspended threads for joining
      * the finished thread.
      *
      * @param thread is the thread that is going to be finished.
      */
     @Override
     public void nextFinishEvent(Thread thread) {
-        FinishEvent finishEvent = RuntimeEnvironment.createFinishEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(finishEvent);
+        FinishEvent finishEvent = JmcRuntime.createFinishEvent(thread);
+        JmcRuntime.eventsRecord.add(finishEvent);
         analyzeSuspendedThreadsForJoin(thread);
     }
 
@@ -498,14 +498,14 @@ public class RandomStrategy implements SearchStrategy {
      *
      * <p>This method creates a {@link FailureEvent} for the corresponding failure event of a
      * thread. The created {@link FailureEvent} is added to the {@link
-     * RuntimeEnvironment#eventsRecord}.
+     * JmcRuntime#eventsRecord}.
      *
      * @param thread is the thread that is going to fail.
      */
     @Override
     public void nextFailureEvent(Thread thread) {
-        FailureEvent failureEvent = RuntimeEnvironment.createFailureEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(failureEvent);
+        FailureEvent failureEvent = JmcRuntime.createFailureEvent(thread);
+        JmcRuntime.eventsRecord.add(failureEvent);
     }
 
     /**
@@ -513,14 +513,14 @@ public class RandomStrategy implements SearchStrategy {
      *
      * <p>This method creates a {@link DeadlockEvent} for the corresponding deadlock event of a
      * thread. The created {@link DeadlockEvent} is added to the {@link
-     * RuntimeEnvironment#eventsRecord}.
+     * JmcRuntime#eventsRecord}.
      *
      * @param thread is the thread that is going to be deadlocked.
      */
     @Override
     public void nextDeadlockEvent(Thread thread) {
-        DeadlockEvent deadlockEvent = RuntimeEnvironment.createDeadlockEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(deadlockEvent);
+        DeadlockEvent deadlockEvent = JmcRuntime.createDeadlockEvent(thread);
+        JmcRuntime.eventsRecord.add(deadlockEvent);
     }
 
     /**
@@ -533,7 +533,7 @@ public class RandomStrategy implements SearchStrategy {
         try {
             FileOutputStream fileOut = new FileOutputStream(buggyTracePath + buggyTraceFile);
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(RuntimeEnvironment.eventsRecord);
+            out.writeObject(JmcRuntime.eventsRecord);
             out.close();
             fileOut.close();
             LOGGER.debug("Buggy execution trace is saved in {}{}", buggyTracePath, buggyTraceFile);
@@ -569,6 +569,6 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public boolean done() {
-        return (RuntimeEnvironment.numOfExecutions == RuntimeEnvironment.maxNumOfExecutions);
+        return (JmcRuntime.numOfExecutions == JmcRuntime.maxNumOfExecutions);
     }
 }

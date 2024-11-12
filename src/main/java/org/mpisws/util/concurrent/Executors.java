@@ -1,13 +1,13 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 import java.util.concurrent.*;
 
 public class Executors {
 
     public static ExecutorService newFixedThreadPool(int nThreads) {
-        int id = RuntimeEnvironment.nextThreadPoolExecutorId();
+        int id = JmcRuntime.nextThreadPoolExecutorId();
         JMCSimpleThreadFactory jmcSimpleThreadFactory = new JMCSimpleThreadFactory(id);
         return new JMCThreadPoolExecutor(
                 nThreads,
@@ -21,7 +21,7 @@ public class Executors {
 
     public static ExecutorService newFixedThreadPool(
             int nThreads, ThreadFactory userDefinedThreadFactory) {
-        int id = RuntimeEnvironment.nextThreadPoolExecutorId();
+        int id = JmcRuntime.nextThreadPoolExecutorId();
         JMCDependantThreadFactory jmcDependantThreadFactory =
                 new JMCDependantThreadFactory(userDefinedThreadFactory, id);
         return new JMCThreadPoolExecutor(

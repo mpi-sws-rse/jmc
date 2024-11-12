@@ -1,6 +1,6 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 import java.util.concurrent.ThreadFactory;
 
@@ -21,7 +21,7 @@ public class JMCDependantThreadFactory implements ThreadFactory {
         Thread newThread = userDefinedThreadFactory.newThread(r);
         JMCDependantStarterThread jmcDependantStarterThread =
                 new JMCDependantStarterThread(newThread, id);
-        RuntimeEnvironment.addThread(jmcDependantStarterThread);
+        JmcRuntime.addThread(jmcDependantStarterThread);
         return jmcDependantStarterThread;
     }
 }

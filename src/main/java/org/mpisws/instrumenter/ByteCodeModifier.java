@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.symbolic.SymbolicBoolean;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
@@ -41,7 +42,7 @@ import org.objectweb.asm.tree.VarInsnNode;
 
 /**
  * The ByteCodeModifier class is responsible for modifying the bytecode of the user's program to
- * integrate with the {@link org.mpisws.runtime.RuntimeEnvironment}. It maintains a map of class
+ * integrate with the {@link JmcRuntime}. It maintains a map of class
  * names to their bytecode, which is used to modify classes. The class provides functionality to
  * modify various aspects of the user's program, including thread creation, thread joining, thread
  * starting, read/write operations, assert statements, and monitor instructions. The class uses the
@@ -49,7 +50,7 @@ import org.objectweb.asm.tree.VarInsnNode;
  * class names to their bytecode and the name of the main class upon construction. It also includes
  * functionality for identifying classes that are castable to Thread and checking if a given type is
  * a primitive type. The ByteCodeModifier class is designed to modify the user's program to enable
- * the {@link org.mpisws.runtime.RuntimeEnvironment} to manage and schedule threads during
+ * the {@link JmcRuntime} to manage and schedule threads during
  * execution.
  */
 public class ByteCodeModifier {
@@ -103,20 +104,20 @@ public class ByteCodeModifier {
     }
 
     /**
-     * Integrates the {@link org.mpisws.runtime.RuntimeEnvironment} into the main class of the
+     * Integrates the {@link JmcRuntime} into the main class of the
      * user's program.
      *
      * <p>This method modifies the bytecode of the main method in the main class to include calls to
      * the RuntimeEnvironment at the start and end of execution. At the start of the main method, it
      * adds the following instructions: <br>
-     * 1. Initializes the {@link org.mpisws.runtime.RuntimeEnvironment} with the current thread.
+     * 1. Initializes the {@link JmcRuntime} with the current thread.
      * <br>
      * 2. Creates a new instance of the {@link org.mpisws.runtime.SchedulerThread}.<br>
      * 3. Sets the name of the SchedulerThread to "SchedulerThread".<br>
      * 4. Initializes the SchedulerThread in the RuntimeEnvironment with the current thread and the
      * newly created SchedulerThread.<br>
      * At the end of the main method, it adds the following instruction:<br>
-     * 5. Calls the {@link org.mpisws.runtime.RuntimeEnvironment#finishThreadRequest} method of the
+     * 5. Calls the {@link JmcRuntime#finishThreadRequest} method of the
      * RuntimeEnvironment with the current thread. <br>
      * These modifications allow the RuntimeEnvironment to manage and schedule threads during the
      * execution of the user's program.
@@ -282,7 +283,7 @@ public class ByteCodeModifier {
      * <p>This method iteratively analyzes the bytecode of the user's program, starting with the
      * main class, and identifies points where new threads are created. When such a point is found,
      * it modifies the bytecode to include a call to the {@link
-     * org.mpisws.runtime.RuntimeEnvironment#addThread(Thread)} method immediately after the thread
+     * JmcRuntime#addThread(Thread)} method immediately after the thread
      * creation. This allows the {@link org.mpisws.runtime.SchedulerThread} to keep track of all
      * threads created during the execution of the user's program. The method uses an iterative
      * analysis approach, starting with the main class and then examining all classes that have a
@@ -386,7 +387,7 @@ public class ByteCodeModifier {
      * <p>This method iteratively analyzes the bytecode of the user's program, starting with the
      * main class, and identifies points where threads are joined. When such a point is found, it
      * modifies the bytecode to include a call to the {@link
-     * org.mpisws.runtime.RuntimeEnvironment#threadJoin(Thread, Thread)} method immediately before
+     * JmcRuntime#threadJoin(Thread, Thread)} method immediately before
      * the thread join operation. This allows the {@link org.mpisws.runtime.SchedulerThread} to keep
      * track of all threads being joined during the execution of the user's program. <br>
      * The method uses an iterative analysis approach, starting with the main class and then
@@ -493,7 +494,7 @@ public class ByteCodeModifier {
      * <p>This method iteratively analyzes the bytecode of the user's program, starting with the
      * main class, and identifies points where threads are started. When such a point is found, it
      * modifies the bytecode to include a call to the {@link
-     * org.mpisws.runtime.RuntimeEnvironment#threadStart(Thread, Thread)} method immediately before
+     * JmcRuntime#threadStart(Thread, Thread)} method immediately before
      * the thread start operation. This allows the {@link org.mpisws.runtime.SchedulerThread} to
      * keep track of all threads being started during the execution of the user's program. <br>
      * The method uses an iterative analysis approach, starting with the main class and then
@@ -581,20 +582,20 @@ public class ByteCodeModifier {
      * <p>This method iteratively analyzes the bytecode of the user's program, identifying points
      * where {@code GETFIELD} and {@code PUTFIELD} instructions are used to read and write fields,
      * respectively. When such a point is found, it modifies the bytecode to include calls to the
-     * {@link org.mpisws.runtime.RuntimeEnvironment#readOperation(Object, Thread, String, String,
-     * String)} and {@link org.mpisws.runtime.RuntimeEnvironment#writeOperation(Object, Object,
+     * {@link JmcRuntime#readOperation(Object, Thread, String, String,
+     * String)} and {@link JmcRuntime#writeOperation(Object, Object,
      * Thread, String, String, String)} methods, respectively. These calls are inserted immediately
      * before the {@code GETFIELD} and {@code PUTFIELD}. <br>
      * For {@code GETFIELD} operations, the method adds the following instructions: {@link
-     * org.mpisws.runtime.RuntimeEnvironment#readOperation(Object, Thread, String, String, String)}
+     * JmcRuntime#readOperation(Object, Thread, String, String, String)}
      * <br>
      * For {@code PUTFIELD} operations, the method adds the following instructions: {@link
-     * org.mpisws.runtime.RuntimeEnvironment#writeOperation(Object, Object, Thread, String, String,
+     * JmcRuntime#writeOperation(Object, Object, Thread, String, String,
      * String)} <br>
      * The method analyzes all methods of all classes in the {@link #allByteCode} map and adds the
      * instructions to the corresponding methods. <br>
      * The modifications made by this method enable the {@link
-     * org.mpisws.runtime.RuntimeEnvironment} to track all field read and write operations during
+     * JmcRuntime} to track all field read and write operations during
      * the execution of the user's program. <br>
      * In the case of a field write operation, if the field is of type long or double, the method
      * duplicates the top operand stack and puts the duplicated value before the second operand
@@ -606,7 +607,7 @@ public class ByteCodeModifier {
      * value using {@code DUP_X1} to get the operand stack as follows: ..., value1, value2,
      * wrapperValue1, value2. The method then swaps the top two operand stack values using {@code
      * SWAP} to get the operand stack as follows: ..., value1, value2, value2, wrapperValue1. The
-     * method then invokes the {@link org.mpisws.runtime.RuntimeEnvironment#writeOperation(Object,
+     * method then invokes the {@link JmcRuntime#writeOperation(Object,
      * Object, Thread, String, String, String)} method. Now the operand stack is as follows: ...,
      * value1, value2. The method then duplicates the top operand stack value using {@code DUP_X2}
      * to get the operand stack as follows: ..., value2, value1, value2. The method then pops the
@@ -959,8 +960,8 @@ public class ByteCodeModifier {
      * <p>This method iteratively analyzes the bytecode of the user's program, identifying classes
      * that extend the `Thread` class and override the `run` method. When such a class is found, it
      * modifies the bytecode to include calls to the {@link
-     * org.mpisws.runtime.RuntimeEnvironment#waitRequest(Thread)} method at the start of the `run`
-     * method and the {@link org.mpisws.runtime.RuntimeEnvironment#finishThreadRequest(Thread)}
+     * JmcRuntime#waitRequest(Thread)} method at the start of the `run`
+     * method and the {@link JmcRuntime#finishThreadRequest(Thread)}
      * method at the end of the `run` method. <br>
      * The modifications made by this method enable the {@link org.mpisws.runtime.SchedulerThread}
      * to manage and schedule threads during the execution of the user's program, specifically
@@ -1049,9 +1050,9 @@ public class ByteCodeModifier {
      * are called. When such a point is found, it modifies the bytecode to include calls to the
      * `org.mpisws.util.concurrent.LockSupport` class, which provides the same functionality as the
      * `java.util.concurrent.locks.LockSupport` class but with additional support for thread
-     * management by the {@link org.mpisws.runtime.RuntimeEnvironment}. <br>
+     * management by the {@link JmcRuntime}. <br>
      * The modifications made by this method enable the {@link
-     * org.mpisws.runtime.RuntimeEnvironment} to manage and schedule threads during the execution of
+     * JmcRuntime} to manage and schedule threads during the execution of
      * the user's program, specifically handling the `park` and `unpark` operations.
      */
     public void modifyParkAndUnpark() {
@@ -1544,7 +1545,7 @@ public class ByteCodeModifier {
      * Finally, it calls the {@link #rewriteSyncMethod(byte[])} method to rewrite the synchronized
      * method itself. <br>
      * The modifications made by this method enable the {@link
-     * org.mpisws.runtime.RuntimeEnvironment} to manage and schedule synchronized methods during the
+     * JmcRuntime} to manage and schedule synchronized methods during the
      * execution of the user's program.
      */
     public void modifySyncMethod() {
@@ -1927,7 +1928,7 @@ public class ByteCodeModifier {
      * <p>This method iteratively analyzes the bytecode of the user's program, identifying points
      * where assert statements are used. When such a point is found, it modifies the bytecode to
      * replace the call to the {@link AssertionError} constructor with a call to the {@link
-     * org.mpisws.runtime.RuntimeEnvironment#assertOperation(String)} method. This allows the {@link
+     * JmcRuntime#assertOperation(String)} method. This allows the {@link
      * org.mpisws.runtime.SchedulerThread} to handle assertion failures during the execution of the
      * user's program. <br>
      * Additionally, the method replaces the throw instruction that follows the {@link
@@ -2013,7 +2014,7 @@ public class ByteCodeModifier {
      * where symbolic operations are evaluated using the {@link
      * org.mpisws.symbolic.SymbolicFormula#evaluate(SymbolicBoolean)} method. When such a point is
      * found, it modifies the bytecode to include calls to the {@link
-     * org.mpisws.runtime.RuntimeEnvironment#waitRequest(Thread)} method immediately before the
+     * JmcRuntime#waitRequest(Thread)} method immediately before the
      * {@link org.mpisws.symbolic.SymbolicFormula#evaluate(SymbolicBoolean)} method call. <br>
      * The modifications made by this method enable the {@link org.mpisws.runtime.SchedulerThread}
      * to manage and schedule threads based on the evaluation of symbolic operations during the
@@ -2114,16 +2115,16 @@ public class ByteCodeModifier {
      * <p>This method iteratively analyzes the bytecode of the user's program, identifying points
      * where {@code MONITORENTER} and {@code MONITOREXIT} instructions are used to acquire and
      * release monitor locks, respectively. When such a point is found, it modifies the bytecode to
-     * include calls to the {@link org.mpisws.runtime.RuntimeEnvironment#enterMonitor(Object,
-     * Thread)} and {@link org.mpisws.runtime.RuntimeEnvironment#exitMonitor(Object, Thread)}
+     * include calls to the {@link JmcRuntime#enterMonitor(Object,
+     * Thread)} and {@link JmcRuntime#exitMonitor(Object, Thread)}
      * methods, respectively. These calls are inserted immediately before the {@code MONITORENTER}
      * and {@code MONITOREXIT} instructions. <br>
      * For {@code MONITORENTER} operations, the method adds the following instructions: <br>
-     * 1. {@link org.mpisws.runtime.RuntimeEnvironment#enterMonitor(Object, Thread)} <br>
-     * 2. {@link org.mpisws.runtime.RuntimeEnvironment#acquiredMonitor(Object, Thread)} <br>
+     * 1. {@link JmcRuntime#enterMonitor(Object, Thread)} <br>
+     * 2. {@link JmcRuntime#acquiredMonitor(Object, Thread)} <br>
      * For `MONITOREXIT` operations, the method adds the following instructions: <br>
-     * 1. {@link org.mpisws.runtime.RuntimeEnvironment#exitMonitor(Object, Thread)} <br>
-     * 2. {@link org.mpisws.runtime.RuntimeEnvironment#releasedMonitor(Object, Thread)} <br>
+     * 1. {@link JmcRuntime#exitMonitor(Object, Thread)} <br>
+     * 2. {@link JmcRuntime#releasedMonitor(Object, Thread)} <br>
      * The method analyzes all methods of all classes in the {@link #allByteCode} map and adds the
      * instructions to the corresponding methods. <br>
      * The modifications made by this method enable the {@link org.mpisws.runtime.SchedulerThread}

@@ -22,4 +22,7 @@ public class Counter extends JMCThread {
         value += (int) val1 + (int) val2;
         System.out.println("Counter value: " + value);
     }
+
+    @Override
+    public void context() {}
 }

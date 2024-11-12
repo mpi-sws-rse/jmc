@@ -4,7 +4,9 @@ import dpor.Must;
 
 import executionGraph.ExecutionGraph;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.util.concurrent.JMCThread;
 
 import programStructure.*;
@@ -12,6 +14,8 @@ import programStructure.*;
 import java.util.*;
 
 public class MustStrategy extends DPORStrategy {
+
+    private static final Logger LOGGER = LogManager.getLogger(MustStrategy.class);
 
     public MustStrategy() {
         super();
@@ -23,11 +27,11 @@ public class MustStrategy extends DPORStrategy {
      *
      * <p>This method initializes the {@link #dpor} object. It sets the {@link
      * Must#getGraphCounter()} with the number of graphs that are available in the {@link
-     * RuntimeEnvironment#mcGraphs}.
+     * JmcRuntime#mcGraphs}.
      */
     private void initMust() {
-        dpor = new Must(executionGraphsPath, RuntimeEnvironment.verbose);
-        dpor.setGraphCounter(RuntimeEnvironment.numOfGraphs);
+        dpor = new Must(executionGraphsPath, JmcRuntime.verbose);
+        dpor.setGraphCounter(JmcRuntime.numOfGraphs);
     }
 
     /**
@@ -81,7 +85,7 @@ public class MustStrategy extends DPORStrategy {
      */
     @Override
     public void nextReceiveEvent(ReceiveEvent receiveEvent) {
-        RuntimeEnvironment.eventsRecord.add(receiveEvent);
+        JmcRuntime.eventsRecord.add(receiveEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(receiveEvent);
             addRfEdgeToCurrentGraph(receiveEvent);
@@ -96,8 +100,8 @@ public class MustStrategy extends DPORStrategy {
         ReceiveEvent tempReceive =
                 (ReceiveEvent)
                         currentGraph.getGraphEvents().get(currentGraph.getGraphEvents().size() - 1);
-        System.out.println("[Debugging Message] : Receive Event - " + tempReceive);
-        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(tempReceive.getTid());
+        LOGGER.debug("[Debugging Message] : Receive Event - " + tempReceive);
+        JMCThread jmcThread = (JMCThread) JmcRuntime.findThreadObject(tempReceive.getTid());
         if (tempReceive.getRf() instanceof InitializationEvent) {
             jmcThread.noMessageExists();
             receiveEvent.setValue(null);
@@ -173,7 +177,7 @@ public class MustStrategy extends DPORStrategy {
      */
     @Override
     public void nextSendEvent(SendEvent sendEvent) {
-        RuntimeEnvironment.eventsRecord.add(sendEvent);
+        JmcRuntime.eventsRecord.add(sendEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(sendEvent);
         } else {
@@ -190,11 +194,11 @@ public class MustStrategy extends DPORStrategy {
     @Override
     public boolean nextBlockingReceiveRequest(ReceiveEvent receiveEvent) {
         JMCThread jmcThread =
-                (JMCThread) RuntimeEnvironment.findThreadObject(receiveEvent.getTid());
+                (JMCThread) JmcRuntime.findThreadObject(receiveEvent.getTid());
         BlockingRecvReq blockingRecvReq =
-                RuntimeEnvironment.createBlockingRecvReq(jmcThread, receiveEvent);
-        RuntimeEnvironment.eventsRecord.add(blockingRecvReq);
-        RuntimeEnvironment.threadBlockingRecvList.put(
+                JmcRuntime.createBlockingRecvReq(jmcThread, receiveEvent);
+        JmcRuntime.eventsRecord.add(blockingRecvReq);
+        JmcRuntime.threadBlockingRecvList.put(
                 Long.valueOf(receiveEvent.getTid()), blockingRecvReq);
         if (guidingActivate) {
             addEventToCurrentGraph(blockingRecvReq);
@@ -220,7 +224,7 @@ public class MustStrategy extends DPORStrategy {
         blockingRecvReq.setBlocked(tempEvent.isBlocked());
         if (tempEvent.isBlocked()) {
             BlockedRecvEvent blockedRecvEvent =
-                    RuntimeEnvironment.removeBlockedThreadFromReadyQueue(
+                    JmcRuntime.removeBlockedThreadFromReadyQueue(
                             jmcThread, blockingRecvReq.getReceiveEvent());
             nextBlockedReceiveEvent(blockedRecvEvent);
         }
@@ -265,7 +269,7 @@ public class MustStrategy extends DPORStrategy {
         }
         guidingEvent = guidingEvents.remove(0);
 
-        System.out.println("[Debugging Message in Must] : Guiding Event - " + guidingEvent);
+        LOGGER.debug("[Debugging Message in Must] : Guiding Event - " + guidingEvent);
 
         if (guidingEvent instanceof StartEvent) {
             guidingThread = findGuidingThreadFromStartEvent();
@@ -284,9 +288,9 @@ public class MustStrategy extends DPORStrategy {
             return pickNextGuidedThread();
         }
 
-        System.out.println(
-                "[Must Strategy Message] : Thread-" + guidingThread + " is the next guided thread");
-        return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+        LOGGER.debug(
+                "Thread-" + guidingThread + " is the next guided thread");
+        return JmcRuntime.threadManager.getThread((long) guidingThread);
     }
 
     private void handleNextGuidedBlockedRecvEvent(BlockedRecvEvent guidedBlockedRecvEvent) {
@@ -295,10 +299,10 @@ public class MustStrategy extends DPORStrategy {
         // findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
         Long jmcTid = Long.valueOf(guidedBlockedRecvEvent.getTid());
         ReceiveEvent receiveEventInRecord =
-                RuntimeEnvironment.threadBlockingRecvList.get(jmcTid).getReceiveEvent();
-        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(jmcTid);
+                JmcRuntime.threadBlockingRecvList.get(jmcTid).getReceiveEvent();
+        JMCThread jmcThread = (JMCThread) JmcRuntime.findThreadObject(jmcTid);
         BlockedRecvEvent blockedRecvEvent =
-                RuntimeEnvironment.removeBlockedThreadFromReadyQueue(
+                JmcRuntime.removeBlockedThreadFromReadyQueue(
                         jmcThread, receiveEventInRecord);
         addEventToCurrentGraph(blockedRecvEvent);
     }
@@ -309,18 +313,18 @@ public class MustStrategy extends DPORStrategy {
         // findReceiveEventFromBlockingRecvReq(guidedReceiveEvent);
         Long jmcTid = Long.valueOf(guidedUnblockedRecvEvent.getTid());
         ReceiveEvent receiveEventInRecord =
-                RuntimeEnvironment.threadBlockingRecvList.get(jmcTid).getReceiveEvent();
-        JMCThread jmcThread = (JMCThread) RuntimeEnvironment.findThreadObject(jmcTid);
+                JmcRuntime.threadBlockingRecvList.get(jmcTid).getReceiveEvent();
+        JMCThread jmcThread = (JMCThread) JmcRuntime.findThreadObject(jmcTid);
         UnblockedRecvEvent unblockedRecvEvent =
-                RuntimeEnvironment.addUnblockedThreadToReadyQueue(jmcThread, receiveEventInRecord);
+                JmcRuntime.addUnblockedThreadToReadyQueue(jmcThread, receiveEventInRecord);
         addEventToCurrentGraph(unblockedRecvEvent);
     }
 
     private ReceiveEvent findReceiveEventFromBlockingRecvReq(ReceiveEvent guidedReceiveEvent) {
         ReceiveEvent receiveEvent = null;
-        for (Event event : RuntimeEnvironment.eventsRecord) {
+        for (Event event : JmcRuntime.eventsRecord) {
             if (event instanceof BlockingRecvReq blockingRecvReq) {
-                System.out.println(
+                LOGGER.debug(
                         "[Debugging Message in Must] : Blocking Receive Request - "
                                 + blockingRecvReq);
                 ReceiveEvent recvEvent = blockingRecvReq.getReceiveEvent();
@@ -343,7 +347,7 @@ public class MustStrategy extends DPORStrategy {
      */
     @Override
     public void handleEmptyGuidingEvents() {
-        System.out.println("[Must Strategy Message] : The guidingEvents is empty");
+        LOGGER.debug("The guidingEvents is empty");
         currentGraph.setRecvFrom(findNewRecvfrom());
         currentGraph.setSTs(findNewSTs());
         currentGraph.setJTs(findNewJTs());
@@ -372,18 +376,18 @@ public class MustStrategy extends DPORStrategy {
     public boolean computeUnblockedRecvThread() {
         boolean result = false;
         for (Map.Entry<Long, ReceiveEvent> entry :
-                RuntimeEnvironment.blockedRecvThreadMap.entrySet()) {
+                JmcRuntime.blockedRecvThreadMap.entrySet()) {
             if (isMessageAvailable(entry.getValue())) {
                 JMCThread jmcThread =
-                        (JMCThread) RuntimeEnvironment.findThreadObject(entry.getValue().getTid());
+                        (JMCThread) JmcRuntime.findThreadObject(entry.getValue().getTid());
                 UnblockedRecvEvent unblockedRecvEvent =
-                        RuntimeEnvironment.addUnblockedThreadToReadyQueue(
+                        JmcRuntime.addUnblockedThreadToReadyQueue(
                                 jmcThread, entry.getValue());
                 passEventToDPOR(unblockedRecvEvent);
                 updateCurrentGraph(unblockedRecvEvent);
                 result = true;
-                System.out.println(
-                        "[Must Strategy Message] : The thread "
+                LOGGER.debug(
+                        "The thread "
                                 + jmcThread.getName()
                                 + " is unblocked"
                                 + ", since "

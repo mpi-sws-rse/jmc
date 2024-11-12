@@ -4,7 +4,9 @@ import dpor.OptTrust;
 
 import executionGraph.operations.GraphOp;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.mpisws.runtime.JmcRuntime;
 
 import programStructure.*;
 
@@ -14,11 +16,13 @@ import java.util.Map;
 
 public class OptTrustStrategy extends OptDPORStrategy {
 
+    private static final Logger LOGGER = LogManager.getLogger(OptTrustStrategy.class);
+
     /** */
     public OptTrustStrategy() {
         super();
-        dpor = new OptTrust(executionGraphsPath, RuntimeEnvironment.verbose);
-        dpor.setGraphCounter(RuntimeEnvironment.numOfGraphs);
+        dpor = new OptTrust(executionGraphsPath, JmcRuntime.verbose);
+        dpor.setGraphCounter(JmcRuntime.numOfGraphs);
     }
 
     /**
@@ -76,24 +80,21 @@ public class OptTrustStrategy extends OptDPORStrategy {
         }
 
         guidingEvent = guidingEvents.remove(0);
-        System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + guidingEvent);
+        LOGGER.debug("The next Guided Event is :" + guidingEvent);
 
         if (guidingEvent instanceof StartEvent) {
             guidingThread = ((StartEvent) guidingEvent).getCallerThread();
         } else {
             guidingThread = guidingEvent.getTid();
         }
-
-        System.out.println(
-                "[OPT-Trust Strategy Message] : "
-                        + RuntimeEnvironment.threadObjectMap.get((long) guidingThread).getName()
-                        + " is the next guided thread");
-        return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+        Thread thread = JmcRuntime.threadManager.getThread((long) guidingThread);
+        LOGGER.debug("{} is the next guided thread", thread.getName());
+        return thread;
     }
 
     @Override
     public void handleEmptyGuidingEvents() {
-        System.out.println("[OPT-Trust Strategy Message] : The guidingEvents is empty");
+        LOGGER.debug("The guidingEvents is empty");
         guidingActivate = false;
         updateWritesMap();
         updateReadsMap();
@@ -137,39 +138,39 @@ public class OptTrustStrategy extends OptDPORStrategy {
         if (guidingActivate) {
             ReadExEvent readEx = (ReadExEvent) guidingEvent;
             readExEvent.setInternalValue(readEx.getInternalValue());
-            System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + readEx);
+            LOGGER.debug("The next Guided Event is :" + readEx);
             WriteEvent wr = currentGraph.getRf().get(readEx);
             currentGraph.removeRf(readEx);
             readEx.setLoc(readExEvent.getLoc());
             currentGraph.addRF(readEx, wr);
-            RuntimeEnvironment.eventsRecord.add(readEx);
+            JmcRuntime.eventsRecord.add(readEx);
 
             for (int i = 0; i < guidingEvents.size(); i++) {
                 if (guidingEvents.get(i) instanceof WriteExEvent
                         && guidingEvents.get(i).getTid() == readEx.getTid()
                         && guidingEvents.get(i).getSerial() == readEx.getSerial() + 1) {
                     guidingEvent = guidingEvents.remove(i);
-                    // System.out.println("[Debug] the corresponding writeExEvent is found: " +
+                    // LOGGER.debug("[Debug] the corresponding writeExEvent is found: " +
                     // guidingEvent);
                     break;
                 }
             }
             // guidingEvent = guidingEvents.remove(0);
             WriteExEvent writeEx = (WriteExEvent) guidingEvent;
-            System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + writeEx);
+            LOGGER.debug("The next Guided Event is :" + writeEx);
             writeExEvent.setConditionValue(writeEx.getConditionValue());
             writeEx.setLoc(writeExEvent.getLoc());
             writeExEvent.setOperationSuccess(writeEx.getOperationSuccess());
-            // System.out.println("[OPT-Trust Strategy Debugging] The success of write is :" +
+            // LOGGER.debug("[OPT-Trust Strategy Debugging] The success of write is :" +
             // writeEx.getOperationSuccess());
-            RuntimeEnvironment.eventsRecord.add(writeEx);
+            JmcRuntime.eventsRecord.add(writeEx);
             return pickNextThread();
         } else {
             ArrayList<ThreadEvent> events = new ArrayList<>();
             events.add(readExEvent);
-            RuntimeEnvironment.eventsRecord.add(readExEvent);
+            JmcRuntime.eventsRecord.add(readExEvent);
             events.add(writeExEvent);
-            RuntimeEnvironment.eventsRecord.add(writeExEvent);
+            JmcRuntime.eventsRecord.add(writeExEvent);
             passEventToDPOR(events);
             return thread;
         }
@@ -183,9 +184,9 @@ public class OptTrustStrategy extends OptDPORStrategy {
             currentGraph.removeRf(read);
             read.setLoc(readEvent.getLoc());
             currentGraph.addRF(read, wr);
-            RuntimeEnvironment.eventsRecord.add(read);
+            JmcRuntime.eventsRecord.add(read);
         } else {
-            RuntimeEnvironment.eventsRecord.add(readEvent);
+            JmcRuntime.eventsRecord.add(readEvent);
             passEventToDPOR(readEvent);
         }
     }
@@ -195,9 +196,9 @@ public class OptTrustStrategy extends OptDPORStrategy {
         if (guidingActivate) {
             WriteEvent write = (WriteEvent) guidingEvent;
             write.setLoc(writeEvent.getLoc());
-            RuntimeEnvironment.eventsRecord.add(write);
+            JmcRuntime.eventsRecord.add(write);
         } else {
-            RuntimeEnvironment.eventsRecord.add(writeEvent);
+            JmcRuntime.eventsRecord.add(writeEvent);
             passEventToDPOR(writeEvent);
         }
     }

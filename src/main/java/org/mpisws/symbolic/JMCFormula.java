@@ -1,6 +1,6 @@
 package org.mpisws.symbolic;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 import java.util.HashSet;
 import java.util.List;
@@ -325,7 +325,7 @@ public class JMCFormula {
             if (symbolicBoolean.getEval() != null) {
                 return symbolicBoolean.getEval().concreteEvaluation();
             } else {
-                return RuntimeEnvironment.solver.getSymBoolVarValue(symbolicBoolean.getName());
+                return JmcRuntime.solver.getSymBoolVarValue(symbolicBoolean.getName());
             }
         } else {
             throw new IllegalArgumentException(

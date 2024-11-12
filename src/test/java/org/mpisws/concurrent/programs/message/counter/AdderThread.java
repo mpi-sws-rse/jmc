@@ -13,4 +13,7 @@ public class AdderThread extends JMCThread {
     public void run() {
         MessageServer.send_tagged_msg(counter_tid, INC, 2);
     }
+
+    @Override
+    public void context() {}
 }

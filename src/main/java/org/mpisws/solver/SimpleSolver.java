@@ -2,7 +2,7 @@ package org.mpisws.solver;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.symbolic.SymbolicOperation;
 import org.sosy_lab.java_smt.api.BooleanFormula;
 import org.sosy_lab.java_smt.api.ProverEnvironment;
@@ -44,10 +44,10 @@ public class SimpleSolver extends SymbolicSolver {
     public void computeNewSymAssumeOperationRequest(SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependentOperations = findDependentFormulas(symbolicOperation);
         if (dependentOperations == null) {
-            RuntimeEnvironment.solverResult = solveSymbolicFormula(symbolicOperation);
+            JmcRuntime.solverResult = solveSymbolicFormula(symbolicOperation);
         } else {
             SymbolicOperation dependency = makeDependencyOperation(dependentOperations);
-            RuntimeEnvironment.solverResult =
+            JmcRuntime.solverResult =
                     solveDependentSymbolicFormulas(symbolicOperation, dependency);
         }
     }
@@ -59,14 +59,14 @@ public class SimpleSolver extends SymbolicSolver {
     public void computeSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependentOperations = findDependentFormulas(symbolicOperation);
         if (dependentOperations == null) {
-            RuntimeEnvironment.solverResult = solveSymbolicFormula(symbolicOperation);
+            JmcRuntime.solverResult = solveSymbolicFormula(symbolicOperation);
         } else {
             SymbolicOperation dependency = makeDependencyOperation(dependentOperations);
-            RuntimeEnvironment.solverResult =
+            JmcRuntime.solverResult =
                     solveDependentSymbolicFormulas(symbolicOperation, dependency);
         }
 
-        if (!RuntimeEnvironment.solverResult) {
+        if (!JmcRuntime.solverResult) {
             updatePathSymbolicOperationsWithNegate(symbolicOperation);
         }
     }
@@ -86,7 +86,7 @@ public class SimpleSolver extends SymbolicSolver {
      * #solveSymbolicFormula(SymbolicOperation)} and {@link
      * #disSolveSymbolicFormula(SymbolicOperation)} methods to solve the symbolic operation. Then,
      * it calls the {@link #pickSatOrUnsat(boolean, boolean)} method to pick the result of the
-     * symbolic operation. Finally, it sets the {@link RuntimeEnvironment#solverResult} with the
+     * symbolic operation. Finally, it sets the {@link JmcRuntime#solverResult} with the
      * result of the symbolic operation.
      *
      * @param symbolicOperation is the symbolic operation that is going to be solved.
@@ -96,7 +96,7 @@ public class SimpleSolver extends SymbolicSolver {
         boolean sat = solveSymbolicFormula(symbolicOperation);
         boolean unSat = disSolveSymbolicFormula(symbolicOperation);
         bothSatUnsat = sat && unSat;
-        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
+        JmcRuntime.solverResult = pickSatOrUnsat(sat, unSat);
     }
 
     /**
@@ -112,7 +112,7 @@ public class SimpleSolver extends SymbolicSolver {
      */
     private List<SymbolicOperation> findDependentFormulas(SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependencyOperations = new ArrayList<>();
-        List<SymbolicOperation> symbolicOperations = RuntimeEnvironment.pathSymbolicOperations;
+        List<SymbolicOperation> symbolicOperations = JmcRuntime.pathSymbolicOperations;
         for (SymbolicOperation symOp : symbolicOperations) {
             if (symOp.isFormulaDependent(symbolicOperation)) {
                 LOGGER.debug(
@@ -149,8 +149,8 @@ public class SimpleSolver extends SymbolicSolver {
             Thread thread, SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependencyOperations = new ArrayList<>();
         List<SymbolicOperation> symbolicOperations =
-                RuntimeEnvironment.threadSymbolicOperation.get(
-                        RuntimeEnvironment.threadIdMap.get(thread.getId()));
+                JmcRuntime.threadSymbolicOperation.get(
+                        JmcRuntime.threadManager.getRevId(thread.getId()));
         for (SymbolicOperation symOp : symbolicOperations) {
             if (symOp.isFormulaDependent(symbolicOperation)) {
                 dependencyOperations.add(symOp);
@@ -172,7 +172,7 @@ public class SimpleSolver extends SymbolicSolver {
      * #disSolveDependentSymbolicFormulas(SymbolicOperation, SymbolicOperation)} methods to solve
      * the symbolic operation. Then, it calls the {@link #pickSatOrUnsat(boolean, boolean)} method
      * to pick the result of the symbolic operation. Finally, it sets the {@link
-     * RuntimeEnvironment#solverResult} with the result of the symbolic operation.
+     * JmcRuntime#solverResult} with the result of the symbolic operation.
      *
      * @param symbolicOperation is the symbolic operation that is going to be solved.
      * @param dependentOperations is the list of dependent formulas of the symbolic operation.
@@ -184,7 +184,7 @@ public class SimpleSolver extends SymbolicSolver {
         boolean sat = solveDependentSymbolicFormulas(symbolicOperation, dependency);
         boolean unSat = disSolveDependentSymbolicFormulas(symbolicOperation, dependency);
         bothSatUnsat = sat && unSat;
-        RuntimeEnvironment.solverResult = pickSatOrUnsat(sat, unSat);
+        JmcRuntime.solverResult = pickSatOrUnsat(sat, unSat);
     }
 
     @Override
@@ -220,7 +220,7 @@ public class SimpleSolver extends SymbolicSolver {
 
     @Override
     public void updatePathSymbolicOperations(SymbolicOperation symbolicOperation) {
-        if (RuntimeEnvironment.solverResult) {
+        if (JmcRuntime.solverResult) {
             addToPathSymbolicOperations(symbolicOperation);
         } else {
             updatePathSymbolicOperationsWithNegate(symbolicOperation);
@@ -232,7 +232,7 @@ public class SimpleSolver extends SymbolicSolver {
     public void solveAndUpdateModelSymbolicVariables() {}
 
     private void addToPathSymbolicOperations(SymbolicOperation symbolicOperation) {
-        RuntimeEnvironment.pathSymbolicOperations.add(symbolicOperation);
+        JmcRuntime.pathSymbolicOperations.add(symbolicOperation);
     }
 
     private void updatePathSymbolicOperationsWithNegate(SymbolicOperation symbolicOperation) {
@@ -249,7 +249,7 @@ public class SimpleSolver extends SymbolicSolver {
      */
     private SymbolicOperation negateSymbolicOperation(SymbolicOperation symbolicOperation) {
         symbolicOperation.setFormula(
-                RuntimeEnvironment.solver.negateFormula(symbolicOperation.getFormula()));
+                JmcRuntime.solver.negateFormula(symbolicOperation.getFormula()));
         LOGGER.debug("The negated formula is saved {}", symbolicOperation.getFormula());
         return symbolicOperation;
     }

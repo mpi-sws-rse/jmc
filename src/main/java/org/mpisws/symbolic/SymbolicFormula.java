@@ -1,13 +1,13 @@
 package org.mpisws.symbolic;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.sosy_lab.java_smt.api.BooleanFormula;
 
 public class SymbolicFormula {
 
     public boolean evaluate(SymbolicOperation operation) {
-        RuntimeEnvironment.symbolicOperationRequest(Thread.currentThread(), operation);
-        return RuntimeEnvironment.solverResult;
+        JmcRuntime.symbolicOperationRequest(Thread.currentThread(), operation);
+        return JmcRuntime.solverResult;
     }
 
     public boolean evaluate(SymbolicBoolean symBool) {
@@ -15,7 +15,7 @@ public class SymbolicFormula {
             return evaluate(symBool.getEval());
         } else {
             SymBoolVariable symVar =
-                    RuntimeEnvironment.solver.getSymBoolVariable(symBool.getName());
+                    JmcRuntime.solver.getSymBoolVariable(symBool.getName());
             BooleanFormula formula = symVar.getVar();
             SymbolicOperation operation = new SymbolicOperation();
             operation.setFormula(formula);

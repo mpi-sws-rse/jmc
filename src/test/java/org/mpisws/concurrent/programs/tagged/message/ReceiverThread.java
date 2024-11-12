@@ -13,4 +13,7 @@ public class ReceiverThread extends JMCThread {
         Object value = MessageServer.recv_tagged_msg((tid, tag) -> tag == knownTag && tid == myTid);
         System.out.println("Value of the message is : " + value);
     }
+
+    @Override
+    public void context() {}
 }

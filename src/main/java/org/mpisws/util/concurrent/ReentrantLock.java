@@ -1,22 +1,22 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 public class ReentrantLock {
 
     public ReentrantLock() {
-        RuntimeEnvironment.initLock(this, Thread.currentThread());
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.initLock(this, Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public void lock() throws JMCInterruptException {
-        RuntimeEnvironment.acquireLockReq(this, Thread.currentThread());
-        RuntimeEnvironment.acquiredLock(this, Thread.currentThread());
+        JmcRuntime.acquireLockReq(this, Thread.currentThread());
+        JmcRuntime.acquiredLock(this, Thread.currentThread());
     }
 
     public void unlock() {
-        RuntimeEnvironment.releaseLockReq(this, Thread.currentThread());
-        RuntimeEnvironment.releasedLock(this, Thread.currentThread());
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.releaseLockReq(this, Thread.currentThread());
+        JmcRuntime.releasedLock(this, Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 }

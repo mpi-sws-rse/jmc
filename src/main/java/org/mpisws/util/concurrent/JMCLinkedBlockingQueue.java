@@ -3,7 +3,7 @@ package org.mpisws.util.concurrent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -26,13 +26,13 @@ public class JMCLinkedBlockingQueue<E> extends LinkedBlockingQueue<E> {
      */
     @Override
     public E take() throws InterruptedException {
-        RuntimeEnvironment.threadAwaitForTask(Thread.currentThread());
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.threadAwaitForTask(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
         // store the super.take() in a variable
         // return the variable
         E e = super.take();
         if (e instanceof Runnable r) {
-            RuntimeEnvironment.taskAssignToThread(Thread.currentThread(), r);
+            JmcRuntime.taskAssignToThread(Thread.currentThread(), r);
         }
         if (Thread.currentThread() instanceof JMCStarterThread jmcStarterThread) {
             jmcStarterThread.hasTask = true;
@@ -51,7 +51,7 @@ public class JMCLinkedBlockingQueue<E> extends LinkedBlockingQueue<E> {
     public boolean offer(@NotNull E e) {
         boolean result = super.offer(e);
         if (result) {
-            RuntimeEnvironment.releaseIdleThreadsInPool(threadPoolId);
+            JmcRuntime.releaseIdleThreadsInPool(threadPoolId);
         } else {
             // TODO()
         }
@@ -66,7 +66,7 @@ public class JMCLinkedBlockingQueue<E> extends LinkedBlockingQueue<E> {
      */
     @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
         return super.poll(timeout, unit);
     }
 }

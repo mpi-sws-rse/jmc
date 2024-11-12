@@ -1,6 +1,6 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.symbolic.SymbolicBoolean;
 import org.mpisws.symbolic.SymbolicOperation;
 
@@ -9,20 +9,20 @@ public class Utils {
     private Utils() {}
 
     public static void assume(boolean b) throws JMCInterruptException {
-        RuntimeEnvironment.concreteAssume(Thread.currentThread(), b);
+        JmcRuntime.concreteAssume(Thread.currentThread(), b);
         if (!b) {
-            RuntimeEnvironment.AssumeBlocked(Thread.currentThread());
-            RuntimeEnvironment.isExecutionBlocked = true;
+            JmcRuntime.AssumeBlocked(Thread.currentThread());
+            JmcRuntime.isExecutionBlocked = true;
             throw new JMCInterruptException();
         }
     }
 
     public static void assume(SymbolicOperation op) throws JMCInterruptException {
-        boolean b = RuntimeEnvironment.symbolicAssume(Thread.currentThread(), op);
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        boolean b = JmcRuntime.symbolicAssume(Thread.currentThread(), op);
+        JmcRuntime.waitRequest(Thread.currentThread());
         if (!b) {
-            RuntimeEnvironment.AssumeBlocked(Thread.currentThread());
-            RuntimeEnvironment.isExecutionBlocked = true;
+            JmcRuntime.AssumeBlocked(Thread.currentThread());
+            JmcRuntime.isExecutionBlocked = true;
             throw new JMCInterruptException();
         }
     }
@@ -32,12 +32,12 @@ public class Utils {
     }
 
     public static void assertion(SymbolicOperation op, String message) {
-        RuntimeEnvironment.symAssertOperation(message, op, Thread.currentThread());
+        JmcRuntime.symAssertOperation(message, op, Thread.currentThread());
     }
 
     public static void assertion(boolean b, String message) throws JMCInterruptException {
         if (!b) {
-            RuntimeEnvironment.assertOperation(message);
+            JmcRuntime.assertOperation(message);
             throw new JMCInterruptException();
         }
     }

@@ -36,7 +36,7 @@ public class ThreadPool {
     public Thread get(Long customId) throws ThreadNotExists {
         Long threadId = idMap.get(customId);
         if (threadId == null) {
-            throw new ThreadNotExists();
+            throw new ThreadNotExists(customId);
         }
         return threads.get(customId);
     }

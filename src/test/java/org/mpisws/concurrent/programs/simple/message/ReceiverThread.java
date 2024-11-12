@@ -9,4 +9,7 @@ public class ReceiverThread extends JMCThread {
     public void run() {
         MessageServer.recv_msg();
     }
+
+    @Override
+    public void context() {}
 }

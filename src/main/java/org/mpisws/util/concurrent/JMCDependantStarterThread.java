@@ -2,7 +2,7 @@ package org.mpisws.util.concurrent;
 
 import org.jetbrains.annotations.NotNull;
 import org.mpisws.manager.HaltExecutionException;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 public class JMCDependantStarterThread extends JMCStarterThread {
 
@@ -15,10 +15,10 @@ public class JMCDependantStarterThread extends JMCStarterThread {
 
     @Override
     public void run() {
-        RuntimeEnvironment.waitRequest(userThread);
+        JmcRuntime.waitRequest(userThread);
         userThread.run();
         try {
-            RuntimeEnvironment.finishThreadRequest(userThread);
+            JmcRuntime.finishThreadRequest(userThread);
         } catch (HaltExecutionException e) {
             throw new RuntimeException(e);
         }

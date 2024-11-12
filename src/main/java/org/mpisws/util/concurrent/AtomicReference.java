@@ -1,6 +1,6 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 public class AtomicReference<V> {
 
@@ -9,7 +9,7 @@ public class AtomicReference<V> {
     ReentrantLock lock = new ReentrantLock();
 
     public AtomicReference(V initialValue) {
-        RuntimeEnvironment.writeOperation(
+        JmcRuntime.writeOperation(
                 this,
                 initialValue,
                 Thread.currentThread(),
@@ -17,13 +17,13 @@ public class AtomicReference<V> {
                 "value",
                 "Ljava/lang/Object;");
         value = initialValue;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     @Deprecated
     public boolean compareAndSetWL(V expectedReference, V newReference) {
         boolean result =
-                RuntimeEnvironment.compareAndSetOperation(
+                JmcRuntime.compareAndSetOperation(
                         value,
                         expectedReference,
                         newReference,
@@ -32,7 +32,7 @@ public class AtomicReference<V> {
                         "org/mpisws/util/concurrent/AtomicReference",
                         "value",
                         "Ljava/lang/Object;");
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
         if (result) {
             value = newReference;
         }
@@ -42,16 +42,16 @@ public class AtomicReference<V> {
     public boolean compareAndSet(V expectedReference, V newReference) throws JMCInterruptException {
         lock.lock();
         try {
-            RuntimeEnvironment.readOperation(
+            JmcRuntime.readOperation(
                     this,
                     Thread.currentThread(),
                     "org/mpisws/util/concurrent/AtomicReference",
                     "value",
                     "Ljava/lang/Object;");
             if (value == expectedReference) {
-                RuntimeEnvironment.waitRequest(Thread.currentThread());
+                JmcRuntime.waitRequest(Thread.currentThread());
 
-                RuntimeEnvironment.writeOperation(
+                JmcRuntime.writeOperation(
                         this,
                         newReference,
                         Thread.currentThread(),
@@ -59,10 +59,10 @@ public class AtomicReference<V> {
                         "value",
                         "Ljava/lang/Object;");
                 value = newReference;
-                RuntimeEnvironment.waitRequest(Thread.currentThread());
+                JmcRuntime.waitRequest(Thread.currentThread());
                 return true;
             }
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
             return false;
         } finally {
             lock.unlock();
@@ -70,19 +70,19 @@ public class AtomicReference<V> {
     }
 
     public V get() {
-        RuntimeEnvironment.readOperation(
+        JmcRuntime.readOperation(
                 this,
                 Thread.currentThread(),
                 "org/mpisws/util/concurrent/AtomicReference",
                 "value",
                 "Ljava/lang/Object;");
         V result = value;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
         return result;
     }
 
     public void set(V newValue) {
-        RuntimeEnvironment.writeOperation(
+        JmcRuntime.writeOperation(
                 this,
                 newValue,
                 Thread.currentThread(),
@@ -90,6 +90,6 @@ public class AtomicReference<V> {
                 "value",
                 "Ljava/lang/Object;");
         value = newValue;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 }

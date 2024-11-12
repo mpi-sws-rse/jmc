@@ -10,4 +10,7 @@ public class SenderThread extends JMCThread {
     public void run() {
         MessageServer.send_msg(receiver_tid, "hello");
     }
+
+    @Override
+    public void context() {}
 }

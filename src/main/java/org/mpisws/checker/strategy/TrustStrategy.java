@@ -6,8 +6,10 @@ import executionGraph.ExecutionGraph;
 
 import kotlin.Pair;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.checker.SearchStrategy;
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.util.concurrent.JMCLock;
 
 import programStructure.*;
@@ -21,7 +23,7 @@ import java.util.stream.Collectors;
  * checker. It maintains a record of execution graphs and a trust object for the trust model
  * checker. The class provides functionality to handle various types of events including start,
  * join, read, write, finish, symbolic arithmetic events. The class uses the {@link
- * RuntimeEnvironment} API to create and record events. The TrustStrategy class is designed to
+ * JmcRuntime} API to create and record events. The TrustStrategy class is designed to
  * control the flow of a program's execution by using trust model checker. When it faces a new
  * event, it passes the event to the trust model checker and updates the current graph based on the
  * model checker's response. Based on the response, it picks the next thread to execute. The class
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
  */
 public class TrustStrategy extends DPORStrategy {
 
+    private static final Logger LOGGER = LogManager.getLogger(TrustStrategy.class);
     /**
      * The following constructor initializes the model checker graphs list, the current execution
      * graph, and trust object, the guiding execution graph if it is available. Moreover, it
@@ -45,11 +48,11 @@ public class TrustStrategy extends DPORStrategy {
      *
      * <p>This method initializes the {@link #dpor} object. It sets the {@link
      * Trust#getGraphCounter()} with the number of graphs that are available in the {@link
-     * RuntimeEnvironment#mcGraphs}.
+     * JmcRuntime#mcGraphs}.
      */
     private void initTrust() {
-        dpor = new Trust(executionGraphsPath, RuntimeEnvironment.verbose);
-        dpor.setGraphCounter(RuntimeEnvironment.numOfGraphs);
+        dpor = new Trust(executionGraphsPath, JmcRuntime.verbose);
+        dpor.setGraphCounter(JmcRuntime.numOfGraphs);
     }
 
     //    /**
@@ -60,7 +63,7 @@ public class TrustStrategy extends DPORStrategy {
     //     * </p>
     //     */
     //    private void noGuidingGraph() {
-    //        System.out.println("[Trust Strategy Message] : The guiding execution graph is empty");
+    //        LOGGER.debug("The guiding execution graph is empty");
     //        Optional<Event> event =
     // Optional.of(Objects.requireNonNull(currentGraph.getRoot()).getValue());
     //        event.ifPresent(value -> trust.getAllEvents().add(value));
@@ -72,7 +75,7 @@ public class TrustStrategy extends DPORStrategy {
      * <p>This method represents the required strategy for the next enter monitor event. It creates
      * a {@link EnterMonitorEvent} for the corresponding entering a monitor request of a thread.
      * First, it adds the created {@link EnterMonitorEvent} to the {@link
-     * RuntimeEnvironment#eventsRecord}. Then, it adds the event to the {@link #currentGraph} if the
+     * JmcRuntime#eventsRecord}. Then, it adds the event to the {@link #currentGraph} if the
      * {@link #guidingActivate} is true. Otherwise, it passes the event to the {@link #dpor} model
      * checker and updatest the current graph.
      *
@@ -82,8 +85,8 @@ public class TrustStrategy extends DPORStrategy {
     @Override
     public void nextEnterMonitorEvent(Thread thread, Object monitor) {
         EnterMonitorEvent enterMonitorEvent =
-                RuntimeEnvironment.createEnterMonitorEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(enterMonitorEvent);
+                JmcRuntime.createEnterMonitorEvent(thread, monitor);
+        JmcRuntime.eventsRecord.add(enterMonitorEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(enterMonitorEvent);
         } else {
@@ -108,8 +111,8 @@ public class TrustStrategy extends DPORStrategy {
     @Override
     public void nextExitMonitorEvent(Thread thread, Object monitor) {
         ExitMonitorEvent exitMonitorEvent =
-                RuntimeEnvironment.createExitMonitorEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(exitMonitorEvent);
+                JmcRuntime.createExitMonitorEvent(thread, monitor);
+        JmcRuntime.eventsRecord.add(exitMonitorEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(exitMonitorEvent);
             analyzeSuspendedThreadsForMonitor(monitor, thread);
@@ -139,22 +142,22 @@ public class TrustStrategy extends DPORStrategy {
      */
     @Override
     public void nextParkRequest(Thread thread) {
-        ParkEvent parkRequestEvent = RuntimeEnvironment.createParkEvent(thread);
-        RuntimeEnvironment.eventsRecord.add(parkRequestEvent);
+        ParkEvent parkRequestEvent = JmcRuntime.createParkEvent(thread);
+        JmcRuntime.eventsRecord.add(parkRequestEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(parkRequestEvent);
-            long tid = RuntimeEnvironment.threadIdMap.get(thread.getId());
-            if (RuntimeEnvironment.threadParkingPermit.get(tid)) {
-                RuntimeEnvironment.threadParkingPermit.put(tid, false);
+            long tid = JmcRuntime.threadManager.getRevId(thread.getId());
+            if (JmcRuntime.threadParkingPermit.get(tid)) {
+                JmcRuntime.threadParkingPermit.put(tid, false);
             } else {
                 parkThread(thread);
             }
         } else {
-            long tid = RuntimeEnvironment.threadIdMap.get(thread.getId());
-            if (RuntimeEnvironment.threadParkingPermit.get(tid)) {
-                RuntimeEnvironment.threadParkingPermit.put(tid, false);
-                UnparkEvent unparkRequestEvent = RuntimeEnvironment.createUnparkEvent(thread);
-                RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+            long tid = JmcRuntime.threadManager.getRevId(thread.getId());
+            if (JmcRuntime.threadParkingPermit.get(tid)) {
+                JmcRuntime.threadParkingPermit.put(tid, false);
+                UnparkEvent unparkRequestEvent = JmcRuntime.createUnparkEvent(thread);
+                JmcRuntime.eventsRecord.add(unparkRequestEvent);
                 List<Event> events = new ArrayList<>();
                 events.add(parkRequestEvent);
                 events.add(unparkRequestEvent);
@@ -189,29 +192,29 @@ public class TrustStrategy extends DPORStrategy {
     @Override
     public void nextUnparkRequest(Thread unparkerThread, Thread unparkeeThread) {
         UnparkingEvent unparkingRequestEvent =
-                RuntimeEnvironment.createUnparkingEvent(unparkerThread, unparkeeThread);
-        RuntimeEnvironment.eventsRecord.add(unparkingRequestEvent);
+                JmcRuntime.createUnparkingEvent(unparkerThread, unparkeeThread);
+        JmcRuntime.eventsRecord.add(unparkingRequestEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(unparkingRequestEvent);
-            if (RuntimeEnvironment.parkedThreadList.contains(unparkeeThread)) {
+            if (JmcRuntime.threadManager.isSystemThreadParked(unparkeeThread.getId())) {
                 unparkThread(unparkeeThread);
             } else {
-                RuntimeEnvironment.threadParkingPermit.put(
-                        RuntimeEnvironment.threadIdMap.get(unparkeeThread.getId()), true);
+                JmcRuntime.threadParkingPermit.put(
+                        JmcRuntime.threadManager.getRevId(unparkeeThread.getId()), true);
             }
         } else {
-            if (RuntimeEnvironment.parkedThreadList.contains(unparkeeThread)) {
+            if (JmcRuntime.threadManager.isSystemThreadParked(unparkeeThread.getId())) {
                 unparkThread(unparkeeThread);
                 passEventToDPOR(unparkingRequestEvent);
                 updateCurrentGraph(unparkingRequestEvent);
                 UnparkEvent unparkRequestEvent =
-                        RuntimeEnvironment.createUnparkEvent(unparkeeThread);
-                RuntimeEnvironment.eventsRecord.add(unparkRequestEvent);
+                        JmcRuntime.createUnparkEvent(unparkeeThread);
+                JmcRuntime.eventsRecord.add(unparkRequestEvent);
                 passEventToDPOR(unparkRequestEvent);
                 updateCurrentGraph(unparkRequestEvent);
             } else {
-                RuntimeEnvironment.threadParkingPermit.put(
-                        RuntimeEnvironment.threadIdMap.get(unparkeeThread.getId()), true);
+                JmcRuntime.threadParkingPermit.put(
+                        JmcRuntime.threadManager.getRevId(unparkeeThread.getId()), true);
                 passEventToDPOR(unparkingRequestEvent);
                 updateCurrentGraph(unparkingRequestEvent);
             }
@@ -230,7 +233,7 @@ public class TrustStrategy extends DPORStrategy {
      */
     @Override
     public void nextReadEvent(ReadEvent readEvent) {
-        RuntimeEnvironment.eventsRecord.add(readEvent);
+        JmcRuntime.eventsRecord.add(readEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(readEvent);
             addRfEdgeToCurrentGraph(readEvent);
@@ -366,7 +369,7 @@ public class TrustStrategy extends DPORStrategy {
     private void updateCurrentGraph(ReadExEvent readExEvent, WriteExEvent writeExEvent) {
         List<ExecutionGraph> newGraphs = dpor.getAllGraphs();
         if (newGraphs.size() == 1) {
-            System.out.println("[Trust Strategy Message] : There is only one new graph");
+            LOGGER.debug("There is only one new graph");
             currentGraph = newGraphs.get(0);
         } else if (newGraphs.size() > 1) {
             findExtendingGraph(newGraphs, readExEvent, writeExEvent);
@@ -374,10 +377,10 @@ public class TrustStrategy extends DPORStrategy {
             int numOfGraphs = dpor.getGraphCounter() + 1;
             dpor.setGraphCounter(numOfGraphs);
             currentGraph.visualizeGraph(numOfGraphs, executionGraphsPath);
-            System.out.println(
-                    "[Trust Strategy Message] : There is no new graph from model checker");
-            System.out.println(
-                    "[Trust Strategy Message] : visited full execution graph G_" + numOfGraphs);
+            LOGGER.debug(
+                    "There is no new graph from model checker");
+            LOGGER.debug(
+                    "visited full execution graph G_" + numOfGraphs);
         }
 
         WriteExEvent lastWriteExEvent =
@@ -399,8 +402,8 @@ public class TrustStrategy extends DPORStrategy {
 
         mcGraphs.addAll(newGraphs);
 
-        System.out.println(
-                "[Trust Strategy Message] : The chosen graph is : " + currentGraph.getId());
+        LOGGER.debug(
+                "The chosen graph is : " + currentGraph.getId());
     }
 
     private boolean isValidGraph(
@@ -435,7 +438,7 @@ public class TrustStrategy extends DPORStrategy {
      */
     @Override
     public void nextWriteEvent(WriteEvent writeEvent) {
-        RuntimeEnvironment.eventsRecord.add(writeEvent);
+        JmcRuntime.eventsRecord.add(writeEvent);
         if (guidingActivate) {
             addEventToCurrentGraph(writeEvent);
         } else {
@@ -443,7 +446,7 @@ public class TrustStrategy extends DPORStrategy {
             updateCurrentGraph(writeEvent);
         }
         if (writeEvent.getLoc().getInstance() instanceof JMCLock lock) {
-            RuntimeEnvironment.monitorList.remove(lock);
+            JmcRuntime.monitorList.remove(lock);
             analyzeSuspendedThreadsForMonitor(lock);
         }
     }
@@ -456,23 +459,23 @@ public class TrustStrategy extends DPORStrategy {
     @Override
     public Thread nextCasRequest(
             Thread thread, ReadExEvent readExEvent, WriteExEvent writeExEvent) {
-        RuntimeEnvironment.eventsRecord.add(readExEvent);
-        RuntimeEnvironment.eventsRecord.add(writeExEvent);
+        JmcRuntime.eventsRecord.add(readExEvent);
+        JmcRuntime.eventsRecord.add(writeExEvent);
         Object monitor = readExEvent.getLoc().getInstance();
 
-        if (RuntimeEnvironment.monitorList.containsKey(monitor)) {
-            RuntimeEnvironment.monitorRequest.put(thread, monitor);
+        if (JmcRuntime.monitorList.containsKey(monitor)) {
+            JmcRuntime.monitorRequest.put(thread, monitor);
             if (monitorsDeadlockDetection()) {
-                System.out.println(
-                        "[Trust Strategy Message] : There is a deadlock between the threads in"
+                LOGGER.debug(
+                        "There is a deadlock between the threads in"
                             + " using the monitors");
-                RuntimeEnvironment.deadlockHappened = true;
-                RuntimeEnvironment.executionFinished = true;
+                JmcRuntime.deadlockHappened = true;
+                JmcRuntime.executionFinished = true;
                 nextDeadlockEvent(thread);
                 return null;
             }
         } else {
-            RuntimeEnvironment.monitorList.put(monitor, thread);
+            JmcRuntime.monitorList.put(monitor, thread);
         }
 
         if (guidingActivate) {
@@ -520,8 +523,8 @@ public class TrustStrategy extends DPORStrategy {
      * #currentGraph} if the {@link #guidingActivate} is true. Otherwise, it passes the event to the
      * {@link #dpor} model checker. The method also checks the deadlock detection between the
      * threads in using the monitors. If there is a deadlock, it sets the {@link
-     * RuntimeEnvironment#deadlockHappened} to true and sets the {@link
-     * RuntimeEnvironment#executionFinished} to true. Otherwise, it picks the next thread to
+     * JmcRuntime#deadlockHappened} to true and sets the {@link
+     * JmcRuntime#executionFinished} to true. Otherwise, it picks the next thread to
      * execute.
      *
      * @param thread is the thread that is going to enter the monitor.
@@ -531,24 +534,24 @@ public class TrustStrategy extends DPORStrategy {
     @Override
     public Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
         MonitorRequestEvent monitorRequestEvent =
-                RuntimeEnvironment.createMonitorRequestEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(monitorRequestEvent);
-        RuntimeEnvironment.monitorRequest.put(thread, monitor);
+                JmcRuntime.createMonitorRequestEvent(thread, monitor);
+        JmcRuntime.eventsRecord.add(monitorRequestEvent);
+        JmcRuntime.monitorRequest.put(thread, monitor);
         if (guidingActivate) {
             addEventToCurrentGraph(monitorRequestEvent);
         } else {
             passEventToDPOR(monitorRequestEvent);
         }
         if (monitorsDeadlockDetection()) {
-            System.out.println(
-                    "[Trust Strategy Message] : There is a deadlock between the threads in using "
+            LOGGER.debug(
+                    "There is a deadlock between the threads in using "
                             + "the monitors");
-            RuntimeEnvironment.deadlockHappened = true;
-            RuntimeEnvironment.executionFinished = true;
+            JmcRuntime.deadlockHappened = true;
+            JmcRuntime.executionFinished = true;
             return null;
         } else {
-            System.out.println(
-                    "[Trust Strategy Message] : There is no deadlock between the threads in using "
+            LOGGER.debug(
+                    "There is no deadlock between the threads in using "
                             + "the monitors");
             return pickNextThread();
         }
@@ -565,8 +568,8 @@ public class TrustStrategy extends DPORStrategy {
      * @param monitor is the monitor that the thread is going to be suspended for it.
      */
     private void nextSuspendEvent(Thread thread, Object monitor) {
-        SuspendEvent suspendEvent = RuntimeEnvironment.createSuspendEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(suspendEvent);
+        SuspendEvent suspendEvent = JmcRuntime.createSuspendEvent(thread, monitor);
+        JmcRuntime.eventsRecord.add(suspendEvent);
         addEventToCurrentGraph(suspendEvent);
     }
 
@@ -600,27 +603,27 @@ public class TrustStrategy extends DPORStrategy {
         }
 
         if (guidingEvent != null && guidingEvent.getType() == EventType.UNPARKING) {
-            System.out.println(
-                    "[Trust Strategy Message] : Thread-"
-                            + RuntimeEnvironment.threadObjectMap
-                                    .get((long) ((UnparkingEvent) guidingEvent).getTid())
+            LOGGER.debug(
+                    "Thread-"
+                            + JmcRuntime.threadManager
+                                    .getThread((long) ((UnparkingEvent) guidingEvent).getTid())
                                     .getId()
                             + " is the next guided thread for UNPARKING");
             Thread nextThread =
-                    RuntimeEnvironment.threadObjectMap.get(
+                    JmcRuntime.threadManager.getThread(
                             (long) ((UnparkingEvent) guidingEvent).getTid());
             guidingEvent = null;
             return nextThread;
         }
         guidingEvent = guidingEvents.remove(0);
-        System.out.println("[Trust Strategy Debugging] The next Guided Event is :" + guidingEvent);
+        LOGGER.debug("[Trust Strategy Debugging] The next Guided Event is :" + guidingEvent);
 
         if (guidingEvent instanceof StartEvent) {
             guidingThread = findGuidingThreadFromStartEvent();
-            System.out.println(
+            LOGGER.debug(
                     "[Trust Strategy Debugging] The STs of graph is:"
                             + guidingExecutionGraph.getSTs());
-            System.out.println(
+            LOGGER.debug(
                     "[Trust Strategy Debugging] The guiding starter thread is:" + guidingThread);
         } else {
             guidingThread = ((ThreadEvent) guidingEvent).getTid();
@@ -637,18 +640,14 @@ public class TrustStrategy extends DPORStrategy {
 
         if (guidingEvent.getType() == EventType.UNPARK) {
             guidedUnparkEventHelper((UnparkEvent) guidingEvent);
-            return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+            return JmcRuntime.threadManager.getThread((long) guidingThread);
         }
 
-        System.out.println(
-                "[Trust Strategy Debugging Message] : The threadObjectMap is : "
-                        + RuntimeEnvironment.threadObjectMap);
-
-        System.out.println(
-                "[Trust Strategy Message] : "
-                        + RuntimeEnvironment.threadObjectMap.get((long) guidingThread).getName()
+        LOGGER.debug(
+                ""
+                        + JmcRuntime.threadManager.getThread((long) guidingThread).getName()
                         + " is the next guided thread");
-        return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
+        return JmcRuntime.threadManager.getThread((long) guidingThread);
     }
 
     /**
@@ -660,7 +659,7 @@ public class TrustStrategy extends DPORStrategy {
      */
     @Override
     public void handleEmptyGuidingEvents() {
-        System.out.println("[Trust Strategy Message] : The guidingEvents is empty");
+        LOGGER.debug("The guidingEvents is empty");
         currentGraph.setCOs(findNewCOs());
         currentGraph.setSTs(findNewSTs());
         currentGraph.setJTs(findNewJTs());
@@ -679,8 +678,8 @@ public class TrustStrategy extends DPORStrategy {
      * @param unparkEvent is the unpark event that is going to be executed.
      */
     private void guidedUnparkEventHelper(UnparkEvent unparkEvent) {
-        System.out.println("[Trust Strategy Message] : The next guided event is UNPARK event.");
-        Thread thread = RuntimeEnvironment.threadObjectMap.get((long) unparkEvent.getTid());
+        LOGGER.debug("The next guided event is UNPARK event.");
+        Thread thread = JmcRuntime.threadManager.getThread((long) unparkEvent.getTid());
         unparkThread(thread);
     }
 
@@ -688,17 +687,17 @@ public class TrustStrategy extends DPORStrategy {
      * Prepare the next guided enter monitor event.
      *
      * <p>This method prepares the next guided enter monitor event. It finds the thread from the
-     * {@link RuntimeEnvironment#threadObjectMap} and the monitor from the {@link
-     * RuntimeEnvironment#monitorRequest}. Then, it removes the pair of the thread and the monitor
-     * from the {@link RuntimeEnvironment#monitorRequest} and calls the {@link
+     * {@link JmcRuntime#threadManager} and the monitor from the {@link
+     * JmcRuntime#monitorRequest}. Then, it removes the pair of the thread and the monitor
+     * from the {@link JmcRuntime#monitorRequest} and calls the {@link
      * #nextEnterMonitorEvent(Thread, Object)} method.
      *
      * @param enterMonitorEvent is the enter monitor event that is going to be executed.
      */
     private void guidedEnterMonitorEventHelper(EnterMonitorEvent enterMonitorEvent) {
-        Thread thread = RuntimeEnvironment.threadObjectMap.get((long) enterMonitorEvent.getTid());
-        Object monitor = RuntimeEnvironment.monitorRequest.get(thread);
-        RuntimeEnvironment.monitorRequest.remove(thread, monitor);
+        Thread thread = JmcRuntime.threadManager.getThread((long) enterMonitorEvent.getTid());
+        Object monitor = JmcRuntime.monitorRequest.get(thread);
+        JmcRuntime.monitorRequest.remove(thread, monitor);
         nextEnterMonitorEvent(thread, monitor);
     }
 
@@ -706,10 +705,10 @@ public class TrustStrategy extends DPORStrategy {
      * Prepare the next guided suspend event.
      *
      * <p>This method prepares the next guided suspend event. It finds the thread from the {@link
-     * RuntimeEnvironment#threadObjectMap} and calls the {@link #nextSuspendEvent(Thread, Object)}
+     * JmcRuntime#threadManager} and calls the {@link #nextSuspendEvent(Thread, Object)}
      * method. Then, by iterating through the {@link ExecutionGraph#getMCs()} , it finds the event
      * which made the thread to suspend. It then updates the {@link
-     * RuntimeEnvironment#suspendPriority} map with the the pair of the thread id of the event which
+     * JmcRuntime#suspendPriority} map with the the pair of the thread id of the event which
      * made the thread to suspend and the thread id of the thread which is going to be suspended,
      * related to the monitor. Finally, it calls the {@link #nextSuspendEvent(Thread, Object)}
      * method.
@@ -717,7 +716,7 @@ public class TrustStrategy extends DPORStrategy {
      * @param suspendEvent is the suspend event that is going to be executed.
      */
     private void guidedSuspendEventHelper(SuspendEvent suspendEvent) {
-        Thread suspendThread = RuntimeEnvironment.threadObjectMap.get((long) suspendEvent.getTid());
+        Thread suspendThread = JmcRuntime.threadManager.getThread((long) suspendEvent.getTid());
         suspendThread(suspendThread);
 
         Set<Pair<Event, Event>> mcs = guidingExecutionGraph.getMCs();
@@ -729,12 +728,12 @@ public class TrustStrategy extends DPORStrategy {
             }
         }
 
-        Object monitor = RuntimeEnvironment.monitorRequest.get(suspendThread);
-        if (!RuntimeEnvironment.suspendPriority.containsKey(monitor)) {
-            RuntimeEnvironment.suspendPriority.put(monitor, new HashSet<>());
+        Object monitor = JmcRuntime.monitorRequest.get(suspendThread);
+        if (!JmcRuntime.suspendPriority.containsKey(monitor)) {
+            JmcRuntime.suspendPriority.put(monitor, new HashSet<>());
         }
 
-        RuntimeEnvironment.suspendPriority
+        JmcRuntime.suspendPriority
                 .get(monitor)
                 .add(new Pair<>((long) firstThreadEvent.getTid(), (long) suspendEvent.getTid()));
         nextSuspendEvent(suspendThread, monitor);
@@ -744,7 +743,7 @@ public class TrustStrategy extends DPORStrategy {
      * Analyzes suspended threads to make them unsuspend if possible.
      *
      * <p>This methods analyzes the suspended threads to make them unsuspend if possible. First, it
-     * updates the {@link RuntimeEnvironment#suspendPriority} map by calling the {@link
+     * updates the {@link JmcRuntime#suspendPriority} map by calling the {@link
      * #updateSuspendPriority(Object, Thread)} method. Then, it finds the candidate threads for
      * being unsuspended by calling the {@link #findSuspendedThreads(Object)} method. It also finds
      * the forbidden threads for being unsuspended by calling the {@link
@@ -770,7 +769,7 @@ public class TrustStrategy extends DPORStrategy {
     /**
      * Updates the suspend priority map.
      *
-     * <p>This method removes the pairs from the {@link RuntimeEnvironment#suspendPriority} for the
+     * <p>This method removes the pairs from the {@link JmcRuntime#suspendPriority} for the
      * given existing monitor as a key, if the first element of the pairs is equal to the thread id
      * of the given thread.
      *
@@ -778,14 +777,14 @@ public class TrustStrategy extends DPORStrategy {
      * @param thread is the thread that might be suspended other threads for the monitor.
      */
     private void updateSuspendPriority(Object monitor, Thread thread) {
-        if (RuntimeEnvironment.suspendPriority.containsKey(monitor)) {
-            RuntimeEnvironment.suspendPriority
+        if (JmcRuntime.suspendPriority.containsKey(monitor)) {
+            JmcRuntime.suspendPriority
                     .get(monitor)
                     .removeIf(
                             pair ->
                                     pair.component1()
                                             .equals(
-                                                    RuntimeEnvironment.threadIdMap.get(
+                                                    JmcRuntime.threadManager.getRevId(
                                                             thread.getId())));
         }
     }
@@ -795,7 +794,7 @@ public class TrustStrategy extends DPORStrategy {
      *
      * <p>This method finds the list of threads which are forbidden to be unsuspended. It iterates
      * over the pairs of the existing monitor key from the {@link
-     * RuntimeEnvironment#suspendPriority}. For each pair, it collects the second component of the
+     * JmcRuntime#suspendPriority}. For each pair, it collects the second component of the
      * pair, which is the thread id of the thread that is forbidden to be unsuspended.
      *
      * @param monitor is the monitor that some threads might be suspended for it.
@@ -803,13 +802,13 @@ public class TrustStrategy extends DPORStrategy {
      */
     private List<Thread> findForbiddenThreads(Object monitor) {
         List<Thread> forbiddenThreads = new ArrayList<>();
-        if (RuntimeEnvironment.suspendPriority.containsKey(monitor)) {
+        if (JmcRuntime.suspendPriority.containsKey(monitor)) {
             // Find all the second elements of the pairs in the set of pairs, corresponding to the
             // monitor, and add them
             // to the forbidden threads list.
             forbiddenThreads =
-                    RuntimeEnvironment.suspendPriority.get(monitor).stream()
-                            .map(pair -> RuntimeEnvironment.threadObjectMap.get(pair.component2()))
+                    JmcRuntime.suspendPriority.get(monitor).stream()
+                            .map(pair -> JmcRuntime.threadManager.getThread(pair.component2()))
                             .collect(Collectors.toList());
         }
         return forbiddenThreads;

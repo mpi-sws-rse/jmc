@@ -1,6 +1,6 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 /** The LockSupport class is the replacement for java.util.concurrent.locks.LockSupport class. */
 public class LockSupport {
@@ -12,9 +12,9 @@ public class LockSupport {
      * current thread.
      */
     public static void park() {
-        RuntimeEnvironment.parkOperation(Thread.currentThread());
+        JmcRuntime.parkOperation(Thread.currentThread());
         // Thread Parked
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     /**
@@ -26,8 +26,8 @@ public class LockSupport {
      * @param thread
      */
     public static void unpark(Thread thread) {
-        RuntimeEnvironment.unparkOperation(Thread.currentThread(), thread);
+        JmcRuntime.unparkOperation(Thread.currentThread(), thread);
         // Thread Unparked
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 }

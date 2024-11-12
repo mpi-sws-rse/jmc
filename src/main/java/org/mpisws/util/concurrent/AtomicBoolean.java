@@ -1,6 +1,6 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 
 public class AtomicBoolean {
 
@@ -8,7 +8,7 @@ public class AtomicBoolean {
     public ReentrantLock lock = new ReentrantLock();
 
     public AtomicBoolean(boolean initialValue) {
-        RuntimeEnvironment.writeOperation(
+        JmcRuntime.writeOperation(
                 this,
                 initialValue,
                 Thread.currentThread(),
@@ -16,11 +16,11 @@ public class AtomicBoolean {
                 "value",
                 "Z");
         value = initialValue;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public AtomicBoolean() {
-        RuntimeEnvironment.writeOperation(
+        JmcRuntime.writeOperation(
                 this,
                 false,
                 Thread.currentThread(),
@@ -28,23 +28,23 @@ public class AtomicBoolean {
                 "value",
                 "Z");
         value = false;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public boolean get() {
-        RuntimeEnvironment.readOperation(
+        JmcRuntime.readOperation(
                 this,
                 Thread.currentThread(),
                 "org/mpisws/util/concurrent/AtomicBoolean",
                 "value",
                 "Z");
         boolean result = value;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
         return result;
     }
 
     public void set(boolean newValue) {
-        RuntimeEnvironment.writeOperation(
+        JmcRuntime.writeOperation(
                 this,
                 newValue,
                 Thread.currentThread(),
@@ -52,23 +52,23 @@ public class AtomicBoolean {
                 "value",
                 "Z");
         value = newValue;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public boolean compareAndSet(boolean expectedValue, boolean newValue)
             throws JMCInterruptException {
         lock.lock();
         try {
-            RuntimeEnvironment.readOperation(
+            JmcRuntime.readOperation(
                     this,
                     Thread.currentThread(),
                     "org/mpisws/util/concurrent/AtomicBoolean",
                     "value",
                     "Z");
             if (value == expectedValue) {
-                RuntimeEnvironment.waitRequest(Thread.currentThread());
+                JmcRuntime.waitRequest(Thread.currentThread());
 
-                RuntimeEnvironment.writeOperation(
+                JmcRuntime.writeOperation(
                         this,
                         newValue,
                         Thread.currentThread(),
@@ -76,10 +76,10 @@ public class AtomicBoolean {
                         "value",
                         "Z");
                 value = newValue;
-                RuntimeEnvironment.waitRequest(Thread.currentThread());
+                JmcRuntime.waitRequest(Thread.currentThread());
                 return true;
             }
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            JmcRuntime.waitRequest(Thread.currentThread());
             return false;
         } finally {
             lock.unlock();

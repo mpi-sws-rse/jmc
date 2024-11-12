@@ -1,6 +1,6 @@
 package org.mpisws.symbolic;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.solver.SymbolicSolver;
 import org.sosy_lab.common.ShutdownManager;
 import org.sosy_lab.common.configuration.Configuration;
@@ -21,16 +21,16 @@ public class PropositionalFormula {
     private final BooleanFormulaManager bmgr;
     private final IntegerFormulaManager imgr;
     private final Map<String, BooleanFormula> booleanVariableMap = new HashMap<>();
-    private final SymbolicSolver solver = RuntimeEnvironment.solver;
+    private final SymbolicSolver solver = JmcRuntime.solver;
 
     public PropositionalFormula() {
-        config = RuntimeEnvironment.solver.getConfig();
-        logger = RuntimeEnvironment.solver.getLogger();
-        shutdown = RuntimeEnvironment.solver.getShutdown();
-        context = RuntimeEnvironment.solver.getContext();
-        fmgr = RuntimeEnvironment.solver.getFmgr();
-        bmgr = RuntimeEnvironment.solver.getBmgr();
-        imgr = RuntimeEnvironment.solver.getImgr();
+        config = JmcRuntime.solver.getConfig();
+        logger = JmcRuntime.solver.getLogger();
+        shutdown = JmcRuntime.solver.getShutdown();
+        context = JmcRuntime.solver.getContext();
+        fmgr = JmcRuntime.solver.getFmgr();
+        bmgr = JmcRuntime.solver.getBmgr();
+        imgr = JmcRuntime.solver.getImgr();
     }
 
     public SymbolicOperation atomicLiteral(SymbolicBoolean var) {

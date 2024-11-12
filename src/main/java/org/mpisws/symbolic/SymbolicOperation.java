@@ -1,6 +1,6 @@
 package org.mpisws.symbolic;
 
-import org.mpisws.runtime.RuntimeEnvironment;
+import org.mpisws.runtime.JmcRuntime;
 import org.sosy_lab.java_smt.api.BooleanFormula;
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula;
 
@@ -118,12 +118,12 @@ public class SymbolicOperation implements SymbolicOperand {
         System.out.println("[Debugging] : The result of the symbolic operation is: " + result);
         System.out.println("[Debugging] : The value of the symbolic variables are: ");
         for (Map.Entry<String, SymBoolVariable> entry :
-                RuntimeEnvironment.solver.symBoolVariableMap.entrySet()) {
+                JmcRuntime.solver.symBoolVariableMap.entrySet()) {
             System.out.println(
                     "[Debugging] : " + entry.getKey() + " : " + entry.getValue().getValue());
         }
         for (Map.Entry<String, SymIntVariable> entry :
-                RuntimeEnvironment.solver.symIntVariableMap.entrySet()) {
+                JmcRuntime.solver.symIntVariableMap.entrySet()) {
             System.out.println(
                     "[Debugging] : " + entry.getKey() + " : " + entry.getValue().getValue());
         }
