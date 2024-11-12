@@ -19,17 +19,27 @@ public class AtomicBoolean {
         RuntimeEnvironment.waitRequest(Thread.currentThread());
     }
 
-    public boolean get() {
-        RuntimeEnvironment.readOperation(this, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicBoolean", "value", "Z");
-        boolean result = value;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
-        return result;
+    public boolean get() throws JMCInterruptException {
+        lock.lock();
+        try {
+            RuntimeEnvironment.readOperation(this, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicBoolean", "value", "Z");
+            boolean result = value;
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            return result;
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public void set(boolean newValue) {
-        RuntimeEnvironment.writeOperation(this, newValue, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicBoolean", "value", "Z");
-        value = newValue;
-        RuntimeEnvironment.waitRequest(Thread.currentThread());
+    public void set(boolean newValue) throws JMCInterruptException {
+        lock.lock();
+        try {
+            RuntimeEnvironment.writeOperation(this, newValue, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicBoolean", "value", "Z");
+            value = newValue;
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+        } finally {
+            lock.unlock();
+        }
     }
 
     public boolean compareAndSet(boolean expectedValue, boolean newValue) throws JMCInterruptException {

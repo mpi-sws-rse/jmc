@@ -12,7 +12,7 @@ public class Client2 {
 
     public static void main(String[] args) {
         Set set = new CoarseList();
-        int NUM_OPERATIONS = 8;
+        int NUM_OPERATIONS = 4;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
 
@@ -27,8 +27,18 @@ public class Client2 {
             threads.add(new InsertionThread(set, item));
         }
 
+        List<DeletionThread> deleteThreads = new ArrayList<>(NUM_DELETIONS);
+        for (int i = 0; i < NUM_DELETIONS; i++) {
+            AbstractInteger item = items.get(i);
+            deleteThreads.add(new DeletionThread(set, item));
+        }
+
         for (int i = 0; i < NUM_INSERTIONS; i++) {
             threads.get(i).start();
+        }
+
+        for (int i = 0; i < NUM_DELETIONS; i++) {
+            deleteThreads.get(i).start();
         }
 
         for (int i = 0; i < NUM_INSERTIONS; i++) {
@@ -37,16 +47,6 @@ public class Client2 {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
-
-        List<DeletionThread> deleteThreads = new ArrayList<>(NUM_DELETIONS);
-        for (int i = 0; i < NUM_DELETIONS; i++) {
-            AbstractInteger item = items.get(i);
-            deleteThreads.add(new DeletionThread(set, item));
-        }
-
-        for (int i = 0; i < NUM_DELETIONS; i++) {
-            deleteThreads.get(i).start();
         }
 
         for (int i = 0; i < NUM_DELETIONS; i++) {

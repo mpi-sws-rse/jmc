@@ -15,7 +15,7 @@ public class SPPool<V> {
         this.head = new AtomicReference<>(sentinel);
     }
 
-    public TNode insert(V item) {
+    public TNode insert(V item) throws JMCInterruptException {
         TNode<V> newNode = new TNode<>(item, false);
         newNode.next = head.get();
         head.set(newNode);
@@ -28,7 +28,7 @@ public class SPPool<V> {
         return newNode;
     }
 
-    public Result<V> getYoungest() {
+    public Result<V> getYoungest() throws JMCInterruptException {
         TNode<V> oldTop = head.get();
         TNode<V> result = oldTop;
         while (true) {
