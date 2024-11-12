@@ -153,6 +153,10 @@ src/test/java/org/mpisws/concurrent/programs/det/pqueue/tree/*.class
 src/test/java/org/mpisws/concurrent/programs/det/pqueue/tree/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/tree/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/tree/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/hwQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/hwQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/queue/hwQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/det/queue/hwQueue/*.txt
 
 
 ### IntelliJ IDEA ###
