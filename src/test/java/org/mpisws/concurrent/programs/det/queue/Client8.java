@@ -5,7 +5,7 @@ import org.mpisws.concurrent.programs.det.queue.msQueue.MSQueue;
 public class Client8 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 4;
+        int NUM_OPERATIONS = 3;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
         Queue q = new MSQueue();

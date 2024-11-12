@@ -20,6 +20,11 @@ public class SimpleSolver extends SymbolicSolver {
         super(type);
     }
 
+    @Override
+    public void resetProver() {
+
+    }
+
     /**
      * @param symbolicOperation
      */
@@ -45,6 +50,14 @@ public class SimpleSolver extends SymbolicSolver {
             SymbolicOperation dependency = makeDependencyOperation(dependentOperations);
             RuntimeEnvironment.solverResult = solveDependentSymbolicFormulas(symbolicOperation, dependency);
         }
+    }
+
+    /**
+     * @param symbolicOperation
+     */
+    @Override
+    public void computeGuidedSymAssumeOperationRequest(SymbolicOperation symbolicOperation) {
+
     }
 
     /**

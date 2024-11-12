@@ -7,7 +7,9 @@ public class SymbolicFormula {
 
     public boolean evaluate(SymbolicOperation operation) {
         RuntimeEnvironment.symbolicOperationRequest(Thread.currentThread(), operation);
-        return RuntimeEnvironment.solverResult;
+        boolean result = RuntimeEnvironment.solverResult;
+        RuntimeEnvironment.waitRequest(Thread.currentThread());
+        return result;
     }
 
     public boolean evaluate(SymbolicBoolean symBool) {

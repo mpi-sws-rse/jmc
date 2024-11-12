@@ -26,7 +26,7 @@ class OptTrust(path: String, verbose: Boolean) {
                 this.graphCounter++
                 g.id = this.graphCounter
                 println("[Trust Message] : Graph ${g.id} with size of ${g.eventOrder.size} is visited")
-                if (verbose /*|| (g.id >= 0 && g.id <= 100)*/) {
+                if (verbose /*|| (g.id >= 250)*/) {
                     g.visualizeGraph(this.graphCounter, this.graphsPath)
                 }
                 extendedGraph = g
@@ -579,7 +579,36 @@ class OptTrust(path: String, verbose: Boolean) {
         writeEvent: WriteEvent,
         toBeAddedEvents: ArrayList<ThreadEvent>
     ) {
+        /*if ((nextReadEx.tid == 4 && nextReadEx.serial == 6) && (writeEvent.tid == 1 && writeEvent.serial == 18)) {
+            println("[DEBUGGING] the loc of the nextReadEx is: ${nextReadEx.loc}")
+            println("[DEBUGGING] the keys of the reads are: ")
+            for (key in g.reads.keys) {
+                println(key)
+            }
+            println("[DEBUGGING] the reads are: ")
+            g.printReads()
+        }
         println("[OPT-Trust] processing frw ${nextReadEx.type}(${nextReadEx.tid}:${nextReadEx.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
+        if ((nextReadEx.tid == 4 && nextReadEx.serial == 6) && (writeEvent.tid == 3 && writeEvent.serial == 7)) {
+            g.visualizeGraph(1000, this.graphsPath)
+            println("[DEBUGGING] The graph before restricting is: ")
+            println("[DEBUGGING] eventOrder:")
+            g.printEventOrder()
+            println("[DEBUGGING] po:")
+            g.printPO()
+            println("[DEBUGGING] rf:")
+            g.printRf()
+            println("[DEBUGGING] co:")
+            g.printCO()
+            println("[DEBUGGING] jt:")
+            g.printJT()
+            println("[DEBUGGING] st:")
+            g.printST()
+            println("[DEBUGGING] tc:")
+            g.printTC()
+            println("[DEBUGGING] reads:")
+            g.printReads()
+        }*/
 //        println("nextReadEx: $nextReadEx")
 //        println("writeEvent: $writeEvent")
 //        println("[debugging] The Graph before restricting is: ")
@@ -607,6 +636,26 @@ class OptTrust(path: String, verbose: Boolean) {
         //rd.rf = wr
         rd.internalValue = wr.value as Int
         g.addRF(rd, wr)
+        /*        if ((nextReadEx.tid == 4 && nextReadEx.serial == 6) && (writeEvent.tid == 3 && writeEvent.serial == 7)) {
+                    g.visualizeGraph(1001, this.graphsPath)
+                    println("[DEBUGGING] The graph after restricting is: ")
+                    println("[DEBUGGING] eventOrder:")
+                    g.printEventOrder()
+                    println("[DEBUGGING] po:")
+                    g.printPO()
+                    println("[DEBUGGING] rf:")
+                    g.printRf()
+                    println("[DEBUGGING] co:")
+                    g.printCO()
+                    println("[DEBUGGING] jt:")
+                    g.printJT()
+                    println("[DEBUGGING] st:")
+                    g.printST()
+                    println("[DEBUGGING] tc:")
+                    g.printTC()
+                    println("[DEBUGGING] reads:")
+                    g.printReads()
+                }*/
 //        println("[debugging] The Graph after restricting is: ")
 //        println("[debugging] eventOrder:")
 //        g.printEventOrder()

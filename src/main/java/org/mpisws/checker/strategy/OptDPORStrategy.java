@@ -349,7 +349,8 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         RuntimeEnvironment.solverResult = guidingSymAssumeEvent.getResult();
         if (RuntimeEnvironment.solverResult) {
             solver.updatePathSymbolicOperations(symbolicOperation);
-            solver.push(symbolicOperation);
+//            solver.push(symbolicOperation);
+            solver.computeGuidedSymAssumeOperationRequest(symbolicOperation);
         }
         RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
         RuntimeEnvironment.eventsRecord.add(guidingSymAssumeEvent);
@@ -372,8 +373,8 @@ public abstract class OptDPORStrategy implements SearchStrategy {
 
     private void handleNewSymAssumeOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         solver.computeNewSymAssumeOperationRequest(symbolicOperation);
-        System.out.println("[OPT-DPOR Strategy Message] : The result of the symbolic assume operation is " +
-                RuntimeEnvironment.solverResult);
+//        System.out.println("[OPT-DPOR Strategy Message] : The result of the symbolic assume operation is " +
+//                RuntimeEnvironment.solverResult);
 
         if (RuntimeEnvironment.solverResult) {
             solver.updatePathSymbolicOperations(symbolicOperation);
@@ -427,8 +428,8 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     public void handleNewSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         solver.computeNewSymbolicOperationRequest(symbolicOperation);
 
-        System.out.println("[OPT-DPOR Strategy Message] : The result of the symbolic arithmetic operation is " +
-                RuntimeEnvironment.solverResult);
+//        System.out.println("[OPT-DPOR Strategy Message] : The result of the symbolic arithmetic operation is " +
+//                RuntimeEnvironment.solverResult);
         solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
                 symbolicOperation.getFormula().toString(), solver.bothSatUnsat);
@@ -472,8 +473,8 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                 return done();
             } else {
                 RuntimeEnvironment.guidingGraph = dpor.getExtendedGraph();
-                System.out.println("[DPOR Message] : The guiding execution graph is loaded");
-                System.out.println("[DPOR Message] : The guiding execution graph is : G_" + RuntimeEnvironment.guidingGraph.getId());
+//                System.out.println("[DPOR Message] : The guiding execution graph is loaded");
+//                System.out.println("[DPOR Message] : The guiding execution graph is : G_" + RuntimeEnvironment.guidingGraph.getId());
                 RuntimeEnvironment.guidingEvents = dpor.getTopoSort();
 //                if (!graphOp.getToBeAddedEvents().isEmpty()) {
 //                    ThreadEvent e = RuntimeEnvironment.guidingGraph.getEventOrder().get(RuntimeEnvironment.guidingGraph.getEventOrder().size() - 1);
@@ -486,13 +487,13 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                     }
                 }
                 // For debugging
-                if (RuntimeEnvironment.verbose) {
-                    System.out.println("[DPOR Message] : The guiding events are :");
-                    for (int i = 0; i < RuntimeEnvironment.guidingEvents.size(); i++) {
-                        ThreadEvent e = RuntimeEnvironment.guidingEvents.get(i);
-                        System.out.println(i + "-" + e.getType() + "(" + e.getTid() + ":" + e.getSerial() + ")");
-                    }
-                }
+//                if (RuntimeEnvironment.verbose) {
+//                    System.out.println("[DPOR Message] : The guiding events are :");
+//                    for (int i = 0; i < RuntimeEnvironment.guidingEvents.size(); i++) {
+//                        ThreadEvent e = RuntimeEnvironment.guidingEvents.get(i);
+//                        System.out.println(i + "-" + e.getType() + "(" + e.getTid() + ":" + e.getSerial() + ")");
+//                    }
+//                }
                 return false;
             }
         }

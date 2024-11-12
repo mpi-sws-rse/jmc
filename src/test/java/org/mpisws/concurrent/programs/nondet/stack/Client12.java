@@ -9,7 +9,7 @@ import java.util.List;
 public class Client12 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 4;
+        int NUM_OPERATIONS = 2;
         int NUM_PUSHES = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_POPS = (int) Math.floor(NUM_OPERATIONS / 2.0);
 

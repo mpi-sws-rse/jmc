@@ -23,7 +23,8 @@ public class IncThread extends Thread {
             int t;
             SymbolicInteger k = new SymbolicInteger(false);
             ArithmeticFormula f = new ArithmeticFormula();
-            SymbolicOperation op1 = f.geq(k, SIZE / 2);
+            int ceil = (int) Math.ceil(SIZE / 2.0);
+            SymbolicOperation op1 = f.geq(k, ceil);
             SymbolicOperation op2 = f.leq(k, SIZE);
             SymbolicOperation op3 = f.gt(k, 0);
             PropositionalFormula prop = new PropositionalFormula();

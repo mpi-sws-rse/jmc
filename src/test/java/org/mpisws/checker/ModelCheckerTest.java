@@ -613,6 +613,54 @@ class ModelCheckerTest {
         assertTrue(checker.check(t), "Det Michael-Scott Queue II Trust Strategy Finished");
     }
 
+    /*
+     *                                  NONDET MICHAEL-SCOTT QUEUE I
+     */
+
+    @Test
+    @DisplayName("NonDet Michael-Scott Queue")
+    void trustTestNonDetMichaelScottQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
+                "Client7",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/queue/"
+        );
+        System.out.println("NonDet Michael-Scott Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Michael-Scott Queue Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NONDET MICHAEL-SCOTT QUEUE II
+     */
+
+    @Test
+    @DisplayName("NonDet Michael-Scott Queue II")
+    void trustTestNonDetMichaelScottQueueII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
+                "Client8",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/queue/"
+        );
+        System.out.println("NonDet Michael-Scott Queue II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Michael-Scott Queue II Trust Strategy Finished");
+    }
+
 
     /*
      *                                  NONDET HERLIHY–WING QUEUE I
@@ -809,7 +857,7 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                  DET LOCK FREE STACK I
+     *                                  DET LOCK-FREE STACK I
      */
 
     @Test
@@ -1902,6 +1950,54 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Lazy List II Trust Strategy Finished");
+    }
+
+    /*
+     *                                  DET LOCK-BASED ARRAY-BASED BOUNDED PRIORITY QUEUE
+     */
+
+    @Test
+    @DisplayName("Det Lock-Based Array-Based Bounded Priority Queue")
+    void trustTestDetLockBasedArrayBasedBoundedPriorityQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.pqueue",
+                "Client1",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/pqueue/"
+        );
+        System.out.println("Det Lock-Based Array-Based Bounded Priority Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Lock-Based Array-Based Bounded Priority Queue Trust Strategy Finished");
+    }
+
+    /*
+     *                                  NOTDET LOCK-BASED ARRAY-BASED BOUNDED PRIORITY QUEUE
+     */
+
+    @Test
+    @DisplayName("NonDet Lock-Based Array-Based Bounded Priority Queue")
+    void trustTestNonDetLockBasedArrayBasedBoundedPriorityQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.pqueue",
+                "Client1",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/"
+        );
+        System.out.println("NonDet Lock-Based Array-Based Bounded Priority Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Lock-Based Array-Based Bounded Priority Queue Trust Strategy Finished");
     }
 
 

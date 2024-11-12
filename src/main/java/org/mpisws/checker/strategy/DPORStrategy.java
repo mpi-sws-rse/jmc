@@ -579,7 +579,8 @@ public abstract class DPORStrategy implements SearchStrategy {
         RuntimeEnvironment.solverResult = guidingSymAssumeEvent.getResult();
         if (RuntimeEnvironment.solverResult) {
             solver.updatePathSymbolicOperations(symbolicOperation);
-            solver.push(symbolicOperation);
+            //solver.push(symbolicOperation);
+            solver.computeGuidedSymAssumeOperationRequest(symbolicOperation);
         }
         SymAssumeEvent symAssumeEvent = RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
         RuntimeEnvironment.eventsRecord.add(symAssumeEvent);

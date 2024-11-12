@@ -109,7 +109,7 @@ public class ModelChecker {
      */
     private void modifyByteCodeSharedMem(ByteCodeModifier byteCodeModifier) {
         byteCodeModifier.modifySyncMethod();
-        byteCodeModifier.modifySymbolicEval();
+        //byteCodeModifier.modifySymbolicEval();
         byteCodeModifier.modifyParkAndUnpark();
         byteCodeModifier.modifyExecutors();
         byteCodeModifier.modifyThreadCreation();

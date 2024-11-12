@@ -7,7 +7,7 @@ public class DetLoop {
 
     public static void main(String[] args) {
         int SIZE = 5;
-        int n = SIZE - 1;
+        int n = 4;
         Numbers numbers = new Numbers(0, n);
 
 //        AssertThread assertThread1 = new AssertThread(numbers);

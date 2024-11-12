@@ -12,8 +12,9 @@ public class SymBoolVariable {
 
     public SymBoolVariable(BooleanFormula var) {
         this.var = var;
-        Random random = new Random();
-        this.value = random.nextBoolean();
+//        Random random = new Random();
+//        this.value = random.nextBoolean();
+        value = true;
     }
 
     public BooleanFormula getVar() {

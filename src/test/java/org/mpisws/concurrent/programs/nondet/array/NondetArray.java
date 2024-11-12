@@ -11,14 +11,14 @@ public class NondetArray {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 3;
+            int SIZE = 4;
             Array array = new Array(SIZE);
             List<SetterThread> threads = new ArrayList<>(SIZE);
 
             for (int i = 0; i < SIZE; i++) {
                 threads.add(new SetterThread(array));
             }
-            
+
             SymbolicInteger n = new SymbolicInteger(false);
             ArithmeticFormula formula = new ArithmeticFormula();
             SymbolicOperation op1 = formula.geq(n, SIZE / 2);

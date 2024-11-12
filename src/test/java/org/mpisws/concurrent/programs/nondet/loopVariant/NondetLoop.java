@@ -12,14 +12,15 @@ public class NondetLoop {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 3;
+            int SIZE = 5;
             Numbers numbers = new Numbers(0, new SymbolicInteger(false));
-
+            int ceil = (int) Math.ceil(SIZE / 2.0);
             ArithmeticFormula f = new ArithmeticFormula();
-            SymbolicOperation op1 = f.geq(numbers.n, SIZE / 2);
-            SymbolicOperation op2 = f.leq(numbers.n, SIZE);
+            SymbolicOperation op1 = f.geq(numbers.n, ceil);
+            SymbolicOperation op2 = f.lt(numbers.n, SIZE);
+            //SymbolicOperation op2 = f.leq(numbers.n, SIZE);
             SymbolicOperation op3 = f.gt(numbers.n, 0);
-            //SymbolicOperation op2 = f.lt(numbers.n, SIZE);
+
             PropositionalFormula pf = new PropositionalFormula();
             SymbolicOperation op4 = pf.and(op1, op2);
             SymbolicOperation op5 = pf.and(op4, op3);

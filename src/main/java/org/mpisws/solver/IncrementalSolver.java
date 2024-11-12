@@ -26,6 +26,14 @@ public class IncrementalSolver extends SymbolicSolver {
     }
 
     @Override
+    public void resetProver() {
+        if (prover != null) {
+            prover.close();
+            prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
+        }
+    }
+
+    @Override
     public void computeNewSymbolicOperationRequest(SymbolicOperation symbolicOperation) {
         boolean concreteEval = symbolicOperation.concreteEvaluation();
         boolean symbolicEval;
@@ -69,6 +77,24 @@ public class IncrementalSolver extends SymbolicSolver {
      * @param symbolicOperation
      */
     @Override
+    public void computeGuidedSymAssumeOperationRequest(SymbolicOperation symbolicOperation) {
+        boolean concreteEval = symbolicOperation.concreteEvaluation();
+        if (concreteEval) {
+            push(symbolicOperation);
+        } else {
+            boolean symbolicEval = solveSymbolicFormula(symbolicOperation);
+            if (!symbolicEval) {
+                System.out.println("[Incremental Symbolic Solver Message] : The guided sym assume is unsatisfiable");
+                System.exit(0);
+            }
+            updateModel();
+        }
+    }
+
+    /**
+     * @param symbolicOperation
+     */
+    @Override
     public void computeSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
         boolean concreteEval = symbolicOperation.concreteEvaluation();
         if (concreteEval) {
@@ -89,7 +115,7 @@ public class IncrementalSolver extends SymbolicSolver {
     private void updateModel() {
         if (model != null) {
             model.iterator().forEachRemaining(entry -> {
-                System.out.println("[Incremental Symbolic Solver Message] : Model Entry: " + entry.getKey() + " : " + entry.getValue());
+                //System.out.println("[Incremental Symbolic Solver Message] : Model Entry: " + entry.getKey() + " : " + entry.getValue());
                 // The key is a string like className@address. extract the class Name
                 String symbolicType = entry.getKey().toString().split("@")[0];
                 if (symbolicType.equals("SymbolicBoolean")) {
@@ -205,15 +231,15 @@ public class IncrementalSolver extends SymbolicSolver {
     @Override
     protected boolean solver(BooleanFormula formula) {
         try {
-            System.out.println("[Incremental Symbolic Solver Message] : Solving the formula: " + formula.toString());
+            //System.out.println("[Incremental Symbolic Solver Message] : Solving the formula: " + formula.toString());
             prover.push(formula);
             boolean isUnsat = prover.isUnsat();
             if (!isUnsat) {
                 model = prover.getModel();
-                System.out.println("[Incremental Symbolic Solver Message] : The formula is satisfiable");
+                //System.out.println("[Incremental Symbolic Solver Message] : The formula is satisfiable");
                 return true;
             } else {
-                System.out.println("[Incremental Symbolic Solver Message] : The formula is unsatisfiable");
+                //System.out.println("[Incremental Symbolic Solver Message] : The formula is unsatisfiable");
                 return false;
             }
         } catch (InterruptedException e) {

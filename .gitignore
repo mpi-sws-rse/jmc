@@ -141,6 +141,18 @@ src/test/java/org/mpisws/concurrent/programs/det/queue/msQueue/*.class
 src/test/java/org/mpisws/concurrent/programs/det/queue/msQueue/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/msQueue/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/msQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/pqueue/*.class
+src/test/java/org/mpisws/concurrent/programs/det/pqueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/pqueue/linear/*.class
+src/test/java/org/mpisws/concurrent/programs/det/pqueue/linear/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/linear/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/linear/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/pqueue/tree/*.class
+src/test/java/org/mpisws/concurrent/programs/det/pqueue/tree/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/tree/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/tree/*.txt
 
 
 ### IntelliJ IDEA ###

@@ -30,15 +30,14 @@ public class AtomicReference<V> {
         lock.lock();
         try {
             RuntimeEnvironment.readOperation(this, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicReference", "value", "Ljava/lang/Object;");
-            if (value == expectedReference) {
-                RuntimeEnvironment.waitRequest(Thread.currentThread());
-
+            V readedValue = value;
+            RuntimeEnvironment.waitRequest(Thread.currentThread());
+            if (readedValue == expectedReference) {
                 RuntimeEnvironment.writeOperation(this, newReference, Thread.currentThread(), "org/mpisws/util/concurrent/AtomicReference", "value", "Ljava/lang/Object;");
                 value = newReference;
                 RuntimeEnvironment.waitRequest(Thread.currentThread());
                 return true;
             }
-            RuntimeEnvironment.waitRequest(Thread.currentThread());
             return false;
         } finally {
             lock.unlock();

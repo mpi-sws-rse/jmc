@@ -8,9 +8,9 @@ import java.util.ArrayList;
 public class DetLoop {
 
     public static void main(String[] args) {
-        int SIZE = 2;
+        int SIZE = 5;
         //int n = SIZE;
-        int n = 2;
+        int n = 4;
         Numbers numbers = new Numbers(0, n);
 
 //        AssertThread assertThread1 = new AssertThread(numbers);
@@ -18,9 +18,11 @@ public class DetLoop {
 
         ReentrantLock lock = new ReentrantLock();
         ArrayList<IncThread> threads = new ArrayList<>(SIZE);
-        for (int i = 0; i < SIZE; i++) {
-            threads.add(new IncThread(lock, numbers, i + 1));
-        }
+        threads.add(new IncThread(lock, numbers, 1));
+        threads.add(new IncThread(lock, numbers, 1));
+        threads.add(new IncThread(lock, numbers, 1));
+        threads.add(new IncThread(lock, numbers, 1));
+
 
         for (int i = 0; i < n; i++) {
             threads.get(i).start();

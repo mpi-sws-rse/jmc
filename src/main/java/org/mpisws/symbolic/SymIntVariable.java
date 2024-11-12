@@ -12,8 +12,9 @@ public class SymIntVariable {
 
     public SymIntVariable(IntegerFormula var) {
         this.var = var;
-        Random random = new Random();
-        this.value = random.nextInt();
+//        Random random = new Random();
+//        this.value = random.nextInt();
+        this.value = 1;
     }
 
     public IntegerFormula getVar() {

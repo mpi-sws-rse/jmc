@@ -11,11 +11,11 @@ public class NondetLoop {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 5;
+            int SIZE = 2;
             Numbers numbers = new Numbers(0, new SymbolicInteger(true));
-
+            int ceil = (int) Math.ceil(SIZE / 2.0);
             ArithmeticFormula f = new ArithmeticFormula();
-            SymbolicOperation op1 = f.geq(numbers.n, SIZE / 2);
+            SymbolicOperation op1 = f.geq(numbers.n, ceil);
             SymbolicOperation op2 = f.lt(numbers.n, SIZE);
             PropositionalFormula pf = new PropositionalFormula();
             SymbolicOperation op3 = pf.and(op1, op2);

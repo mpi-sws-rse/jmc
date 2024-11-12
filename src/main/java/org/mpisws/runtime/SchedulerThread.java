@@ -748,6 +748,7 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.threadWaitReq = null;
         RuntimeEnvironment.symbolicOperation = null;
         if (thread.isPresent() && symbolicOperation.isPresent()) {
+            //System.out.println("[************]Symbolic operation request is : " + symbolicOperation.get());
             searchStrategy.nextSymbolicOperationRequest(thread.get(), symbolicOperation.get());
             notifyThread(thread.get());
         }

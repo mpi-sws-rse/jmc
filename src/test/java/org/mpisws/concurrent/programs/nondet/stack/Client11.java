@@ -9,7 +9,7 @@ import java.util.List;
 public class Client11 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 3;
+        int NUM_OPERATIONS = 2;
         Stack<SymbolicInteger> stack = new TreiberStack<>();
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);

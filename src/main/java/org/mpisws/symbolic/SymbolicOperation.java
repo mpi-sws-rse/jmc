@@ -112,15 +112,10 @@ public class SymbolicOperation implements SymbolicOperand {
 
     public boolean concreteEvaluation() {
         boolean result = jmcFormula.evaluate();
-        System.out.println("[Debugging] : The JMC formula is: " + getFormula());
-        System.out.println("[Debugging] : The result of the symbolic operation is: " + result);
-        System.out.println("[Debugging] : The value of the symbolic variables are: ");
-        for (Map.Entry<String, SymBoolVariable> entry : RuntimeEnvironment.solver.symBoolVariableMap.entrySet()) {
-            System.out.println("[Debugging] : " + entry.getKey() + " : " + entry.getValue().getValue());
-        }
-        for (Map.Entry<String, SymIntVariable> entry : RuntimeEnvironment.solver.symIntVariableMap.entrySet()) {
-            System.out.println("[Debugging] : " + entry.getKey() + " : " + entry.getValue().getValue());
-        }
+        //System.out.println("[Debugging] : The JMC formula is: " + getFormula());
+        //System.out.println("[Debugging] : The result of the symbolic operation is: " + result);
+        //System.out.println("[Debugging] : The value of the symbolic variables are: ");
+//
         return result;
     }
 

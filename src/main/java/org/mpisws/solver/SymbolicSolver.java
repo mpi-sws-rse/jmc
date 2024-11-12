@@ -233,7 +233,7 @@ abstract public class SymbolicSolver {
             }
         }
         dependencyOperation.setFormula(dependencyFormula);
-        System.out.println("[Debugging Message] : Dependency Operation: " + dependencyOperation.getFormula().toString());
+        //System.out.println("[Debugging Message] : Dependency Operation: " + dependencyOperation.getFormula().toString());
         return dependencyOperation;
     }
 
@@ -246,16 +246,16 @@ abstract public class SymbolicSolver {
      */
     protected boolean pickSatOrUnsat(boolean sat, boolean unSat) {
         if (sat && unSat) {
-            System.out.println("[Symbolic Solver Message] : Both SAT and UNSAT are possible for the symbolic " +
-                    "arithmetic operation");
+//            System.out.println("[Symbolic Solver Message] : Both SAT and UNSAT are possible for the symbolic " +
+//                    "arithmetic operation");
             return new Random().nextBoolean();
         } else if (sat) {
-            System.out.println("[Symbolic Solver Message] : Only SAT is possible for the symbolic arithmetic " +
-                    "operation");
+//            System.out.println("[Symbolic Solver Message] : Only SAT is possible for the symbolic arithmetic " +
+//                    "operation");
             return true;
         } else if (unSat) {
-            System.out.println("[Symbolic Solver Message] : Only UNSAT is possible for the symbolic arithmetic " +
-                    "operation");
+//            System.out.println("[Symbolic Solver Message] : Only UNSAT is possible for the symbolic arithmetic " +
+//                    "operation");
             return false;
         } else {
             System.out.println("[Symbolic Solver Message] : No solution is found for the symbolic arithmetic " +
@@ -328,10 +328,10 @@ abstract public class SymbolicSolver {
      */
     public SymIntVariable getSymIntVariable(String name) {
         if (symIntVariableMap.containsKey(name)) {
-            System.out.println("[Symbolic Solver Message] Returning existing SymIntVariable: " + name);
+            //System.out.println("[Symbolic Solver Message] Returning existing SymIntVariable: " + name);
             return symIntVariableMap.get(name);
         } else {
-            System.out.println("[Symbolic Solver Message] Creating new SymIntVariable: " + name);
+            //System.out.println("[Symbolic Solver Message] Creating new SymIntVariable: " + name);
             IntegerFormula symInt = imgr.makeVariable(name);
             SymIntVariable variable = new SymIntVariable(symInt);
             symIntVariableMap.put(name, variable);
@@ -399,6 +399,8 @@ abstract public class SymbolicSolver {
 
     public abstract void computeNewSymAssumeOperationRequest(SymbolicOperation symbolicOperation);
 
+    public abstract void computeGuidedSymAssumeOperationRequest(SymbolicOperation symbolicOperation);
+
     public abstract void computeSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation);
 
     public abstract void updatePathSymbolicOperations(SymbolicOperation symbolicOperation);
@@ -406,4 +408,6 @@ abstract public class SymbolicSolver {
     public abstract void solveAndUpdateModelSymbolicVariables();
 
     public abstract void computeRandomlyNewSymbolicOperationRequest(SymbolicOperation symbolicOperation);
+
+    public abstract void resetProver();
 }

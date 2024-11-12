@@ -100,13 +100,23 @@ public class OptTrustStrategy extends OptDPORStrategy {
         HashMap<Location, ArrayList<ReadEvent>> oldReadsMap = currentGraph.getReads();
         HashMap<Location, ArrayList<ReadEvent>> newReadsMap = new HashMap<>();
 
+        /*System.out.println("[OPT-Trust Strategy Debugging] The oldReadsMap is :");
+        currentGraph.printReads();*/
+
+        /*int x = 0;*/
         for (Map.Entry<Location, ArrayList<ReadEvent>> entry : oldReadsMap.entrySet()) {
+            /*x++;
+            System.out.println("[OPT-Trust Strategy Debugging] The " + x + "th entry is visited");*/
             ArrayList<ReadEvent> reads = entry.getValue();
             Location loc = reads.get(0).getLoc();
+            /*System.out.println("[OPT-Trust Strategy Debugging] The reads is :" + reads.get(0));
+            System.out.println("[OPT-Trust Strategy Debugging] The location is :" + loc);*/
             newReadsMap.put(loc, reads);
         }
 
         currentGraph.setReads(newReadsMap);
+        /*System.out.println("[OPT-Trust Strategy Debugging] The newReadsMap is :");
+        currentGraph.printReads();*/
     }
 
     /**

@@ -927,6 +927,7 @@ public class RuntimeEnvironment {
         LOGGER.info("The maximum number of the executions is reached");
         LOGGER.info("Resource Usage:");
         LOGGER.info("Memory Usage: {} MB", currentMemoryUsageInMegaBytes());
+        LOGGER.info("Elapsed Time: {} nano seconds", elapsedTimeInNanoSeconds());
         LOGGER.info("Elapsed Time: {} seconds", elapsedTimeInSeconds());
     }
 
@@ -1112,6 +1113,7 @@ public class RuntimeEnvironment {
     public static boolean symbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         LOGGER.debug("{} requested to execute a symbolic arithmetic operation", thread.getName());
         RuntimeEnvironment.symbolicOperation = symbolicOperation;
+        System.out.println("[Debugging] Symbolic operation: " + symbolicOperation);
         waitRequest(thread);
         return solverResult;
     }

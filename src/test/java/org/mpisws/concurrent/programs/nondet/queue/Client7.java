@@ -6,7 +6,7 @@ import org.mpisws.symbolic.SymbolicInteger;
 public class Client7 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 2;
+        int NUM_OPERATIONS = 1;
         Queue q = new MSQueue();
 
         SymbolicInteger[] items = new SymbolicInteger[NUM_OPERATIONS];
