@@ -45,18 +45,6 @@ public class Client6 {
                 threads.add(thread);
             }
 
-            for (int i = 0; i < NUM_INSERTIONS; i++) {
-                threads.get(i).start();
-            }
-
-            for (int i = 0; i < NUM_INSERTIONS; i++) {
-                try {
-                    threads.get(i).join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
             List<DeletionThread> deleteThreads = new ArrayList<>(NUM_DELETIONS);
             for (int i = 0; i < NUM_DELETIONS; i++) {
                 Element item = items.get(i);
@@ -64,15 +52,27 @@ public class Client6 {
                 deleteThreads.add(thread);
             }
 
+            for (int i = 0; i < NUM_INSERTIONS; i++) {
+                threads.get(i).start();
+            }
+
             for (int i = 0; i < NUM_DELETIONS; i++) {
                 deleteThreads.get(i).start();
+            }
+
+            for (int i = 0; i < NUM_INSERTIONS; i++) {
+                try {
+                    threads.get(i).join();
+                } catch (InterruptedException e) {
+
+                }
             }
 
             for (int i = 0; i < NUM_DELETIONS; i++) {
                 try {
                     deleteThreads.get(i).join();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+
                 }
             }
 

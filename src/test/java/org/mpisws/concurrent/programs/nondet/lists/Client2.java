@@ -15,7 +15,7 @@ public class Client2 {
     public static void main(String[] args) {
         try {
             Set set = new CoarseList();
-            int NUM_OPERATIONS = 7;
+            int NUM_OPERATIONS = 5;
             int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
             int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
 
@@ -45,18 +45,6 @@ public class Client2 {
                 threads.add(thread);
             }
 
-            for (int i = 0; i < NUM_INSERTIONS; i++) {
-                threads.get(i).start();
-            }
-
-            for (int i = 0; i < NUM_INSERTIONS; i++) {
-                try {
-                    threads.get(i).join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
             List<DeletionThread> deleteThreads = new ArrayList<>(NUM_DELETIONS);
             for (int i = 0; i < NUM_DELETIONS; i++) {
                 Element item = items.get(i);
@@ -64,15 +52,27 @@ public class Client2 {
                 deleteThreads.add(thread);
             }
 
+            for (int i = 0; i < NUM_INSERTIONS; i++) {
+                threads.get(i).start();
+            }
+
             for (int i = 0; i < NUM_DELETIONS; i++) {
                 deleteThreads.get(i).start();
+            }
+
+            for (int i = 0; i < NUM_INSERTIONS; i++) {
+                try {
+                    threads.get(i).join();
+                } catch (InterruptedException e) {
+
+                }
             }
 
             for (int i = 0; i < NUM_DELETIONS; i++) {
                 try {
                     deleteThreads.get(i).join();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+
                 }
             }
 
