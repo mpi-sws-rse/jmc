@@ -2,10 +2,12 @@
 	- The root cause is that when the main thread finishes in the [[Runtime]], the rest of the threads are blocked on `waitRequest` waiting for a lock that is never released. Therefore, these threads never run to completion.
 	- The problem is apparent if you run a test with a profiler. The threads that do not end are visible and are blocked on `waitRequest`
 	- The fix is that if the execution is halted, then we need to explicitly make sure that all `Thread`s are run to completion
-	- [ ] Move to using `Future`to block threads.
-	- [ ] Each `Thread` is associated with a `Future` that is used to yield control back to the `Runtime`
-	- [ ] Introduce a clean `yield` co-routine interface for the runtime that uses `Futures` underneath. This way ending the execution would mean ending all `Futures`
-- [ ] **Thread Manager** - Build a `ThreadManager` to manage references to `Thread` objects and ensure all state is cleared in each iteration. Avoiding memory leaks.
+	- [x] Move to using `Future`to block threads.
+	- [x] Each `Thread` is associated with a `Future` that is used to yield control back to the `Runtime`
+	- [x] Introduce a clean `yield` co-routine interface for the runtime that uses `Futures` underneath. This way ending the execution would mean ending all `Futures`
+	- [ ] Need to understand why locks are special. Dig into the byte code instrumentation process.
+	- [ ] What events corresponds to thread operations. Maybe this needs to be abstracted away with a helper function
+- [x] **Thread Manager** - Build a `ThreadManager` to manage references to `Thread` objects and ensure all state is cleared in each iteration. Avoiding memory leaks.
 - [ ] **Annotation Processor** - Move to an Annotation Processor based instrumentation. The user annotates a test with the configuration and automatically, we will instrument and run the Model checker ^35f61b
 	- [ ] Read up on Annotation processing. Move just the Configuration first
 	- [ ] Need to write plugins.

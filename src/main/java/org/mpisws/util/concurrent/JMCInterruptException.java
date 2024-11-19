@@ -24,8 +24,4 @@ public class JMCInterruptException extends Exception {
     public String getMessage() {
         return message;
     }
-
-    public void terminateThread() throws HaltExecutionException {
-        JmcRuntime.finishThreadRequest(Thread.currentThread());
-    }
 }

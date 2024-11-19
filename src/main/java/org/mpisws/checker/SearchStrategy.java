@@ -3,7 +3,6 @@ package org.mpisws.checker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.runtime.JmcRuntime;
-import org.mpisws.runtime.ThreadCollection;
 import org.mpisws.runtime.ThreadManager;
 import org.mpisws.symbolic.SymbolicOperation;
 import org.mpisws.util.concurrent.JMCFutureTask;

@@ -54,13 +54,6 @@ public class Scheduler {
     }
 
     /**
-     * Add a new thread to the scheduler.
-     */
-    public void addThread(Long threadId) {
-        strategy.addThread(threadId);
-    }
-
-    /**
      * Returns the ID of the current thread.
      *
      * @return the ID of the current thread
@@ -128,6 +121,7 @@ public class Scheduler {
      * Resets the ThreadManager and the scheduling strategy for a new iteration.
      */
     public void endIteration() {
+        strategy.reset();
     }
 
     /**
@@ -165,6 +159,15 @@ public class Scheduler {
          */
         public void enable() {
             synchronized (futureLock) {
+                future.complete(false);
+            }
+        }
+
+        /**
+         * Shuts down the scheduler.
+         */
+        public void shutdown() {
+            synchronized (futureLock) {
                 future.complete(true);
             }
         }
@@ -182,7 +185,10 @@ public class Scheduler {
                     curFuture = future;
                 }
                 try {
-                    curFuture.join();
+                    Boolean shutdown = curFuture.join();
+                    if (shutdown) {
+                        break;
+                    }
                     Long nextThread = strategy.nextThread();
                     if (nextThread == null) {
                         break;

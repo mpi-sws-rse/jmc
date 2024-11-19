@@ -43,7 +43,7 @@ public class JmcRuntime {
         threadManager.markStatus(mainThreadId, ThreadManager.ThreadState.BLOCKED);
 
         scheduler.init(threadManager, mainThreadId);
-        scheduler.addThread(mainThreadId);
+        scheduler.updateEvent(new RuntimeEvent(RuntimeEventType.START_EVENT, mainThreadId));
         JmcRuntime.yield();
     }
 
@@ -102,4 +102,10 @@ public class JmcRuntime {
         updateEvent(event);
         JmcRuntime.yield();
     }
+
+    public static Long addNewThread() {
+        return threadManager.addNextThread();
+    }
+
+
 }

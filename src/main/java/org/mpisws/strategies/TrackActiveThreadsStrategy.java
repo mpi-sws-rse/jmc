@@ -1,0 +1,49 @@
+package org.mpisws.strategies;
+
+import java.util.HashSet;
+import java.util.Set;
+import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.RuntimeEventType;
+
+public abstract class TrackActiveThreadsStrategy implements SchedulingStrategy{
+    public abstract Long nextThread();
+
+    private final Set<Long> activeThreads;
+    private final Object threadsLock = new Object();
+
+    public TrackActiveThreadsStrategy() {
+        this.activeThreads = new HashSet<>();
+    }
+
+    @Override
+    public void updateEvent(RuntimeEvent event) {
+        if (event.getType() == RuntimeEventType.START_EVENT || event.getType() == RuntimeEventType.MAIN_START_EVENT) {
+            synchronized (threadsLock) {
+                activeThreads.add(event.getThreadId());
+            }
+        } else if (event.getType() == RuntimeEventType.JOIN_EVENT) {
+            synchronized (threadsLock) {
+                activeThreads.remove(event.getThreadId());
+            }
+        }
+    }
+
+    @Override
+    public void reset() {
+        synchronized (threadsLock) {
+            activeThreads.clear();
+        }
+    }
+
+    protected Boolean isActive(Long threadId) {
+        synchronized (threadsLock) {
+            return activeThreads.contains(threadId);
+        }
+    }
+
+    protected Set<Long> getActiveThreads() {
+        synchronized (threadsLock) {
+            return new HashSet<>(activeThreads);
+        }
+    }
+}

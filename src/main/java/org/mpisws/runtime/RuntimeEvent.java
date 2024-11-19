@@ -15,6 +15,12 @@ public class RuntimeEvent {
         this.params = params;
     }
 
+    public RuntimeEvent(RuntimeEventType type, Long threadId) {
+        this.type = type;
+        this.threadId = threadId;
+        this.params = new HashMap<>();
+    }
+
     public RuntimeEventType getType() {
         return type;
     }

@@ -1,7 +1,6 @@
 package org.mpisws.runtime;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -24,11 +23,9 @@ public class ThreadManager {
         TERMINATED,
     }
 
-    /** Stores a mapping from custom IDs to the actual thread IDs. */
-    private final Map<Long, Long> idMap;
-
-    /** Stores a mapping from actual thread IDs to custom IDs. */
-    private final Map<Long, Long> revIdMap;
+    /** Stores a set of custom IDs used by the Runtime. */
+    private Long idCounter;
+    private final Object idCounterLock = new Object();
 
     /** Stores the state of each thread. */
     private final Map<Long, ThreadState> threadStates;
@@ -42,15 +39,16 @@ public class ThreadManager {
      * @return the next thread ID to be assigned
      */
     private Long nextThreadId() {
-        return (long) (idMap.size() + 1);
+        synchronized (idCounterLock) {
+            return idCounter++;
+        }
     }
 
     /**
      * Constructs a new ThreadManager object.
      */
     public ThreadManager() {
-        this.idMap = new HashMap<>();
-        this.revIdMap = new HashMap<>();
+        this.idCounter = 1L;
         this.threadStates = new ConcurrentHashMap<>();
         this.threadFutures = new ConcurrentHashMap<>();
     }
@@ -59,8 +57,7 @@ public class ThreadManager {
      * Resets the ThreadManager object.
      */
     public void reset() {
-        idMap.clear();
-        revIdMap.clear();
+        idCounter = 1L;
         threadStates.clear();
         for (CompletableFuture<Boolean> future : threadFutures.values()) {
             future.complete(true);
@@ -71,25 +68,12 @@ public class ThreadManager {
      * Adds a new thread to the ThreadManager object.
      * The thread is assigned the next available thread ID and a default name "Thread-ID".
      *
-     * @param threadId the system thread ID of the thread to be added
      * @return the ID of the thread
      */
-    public Long addNextThread(Long threadId) {
+    public Long addNextThread() {
         Long customThreadId = nextThreadId();
-        return add(threadId, customThreadId);
-    }
-
-    /**
-     * Adds a new thread to the ThreadManager object.
-     *
-     * @param threadId the System thread ID of the thread to be added
-     * @param customId the custom ID of the thread
-     * @return the ID of the thread
-     */
-    public Long add(Long threadId, Long customId) {
-        idMap.put(customId, threadId);
-        revIdMap.put(threadId, customId);
-        return threadId;
+        threadStates.put(customThreadId, ThreadState.CREATED);
+        return customThreadId;
     }
 
     /**
@@ -134,7 +118,7 @@ public class ThreadManager {
      * @return the size of the thread pool
      */
     public int size() {
-        return idMap.size();
+        return threadStates.size();
     }
 
     /**
@@ -178,68 +162,29 @@ public class ThreadManager {
      *
      * @return a list of custom IDs of all the threads
      */
-    public List<Long> getThreadKeys() {
-        return new ArrayList<>(idMap.keySet());
-    }
-
-    /**
-     * Return the thread ID of the thread with the specified custom ID.
-     *
-     * @param threadId the custom ID of the thread
-     * @return the thread ID of the thread
-     */
-    public Long getRevId(Long threadId) {
-        return revIdMap.get(threadId);
-    }
-
-    /**
-     * Return true if the thread with the specified system thread ID exists.
-     *
-     * @param threadId the custom ID of the thread
-     * @return true if the thread with the specified system thread ID exists
-     */
-    public boolean containsSystemId(Long threadId) {
-        return revIdMap.containsKey(threadId);
-    }
-
-    /**
-     * Return true if the thread with the specified custom ID exists.
-     *
-     * @param customId the custom ID of the thread
-     * @return true if the thread with the specified custom ID exists
-     */
-    public boolean containsCustomId(Long customId) {
-        return idMap.containsKey(customId);
-    }
-
-    /**
-     * Return true if the thread with the specified custom ID is in the thread pool and with status
-     * ThreadState.CREATED.
-     *
-     * @param systemThreadId the custom ID of the thread
-     * @return true if the thread exists with status ThreadState.CREATED
-     */
-    public boolean isCreated(Long systemThreadId) {
-        if (!revIdMap.containsKey(systemThreadId)) {
-            return false;
+    public List<Long> getActiveThreads() {
+        ArrayList<Long> result = new ArrayList<>();
+        for (Map.Entry<Long, ThreadState> threadStateEntry : threadStates.entrySet()) {
+            if (threadStateEntry.getValue() != ThreadState.TERMINATED) {
+                result.add(threadStateEntry.getKey());
+            }
         }
-        Long threadId = revIdMap.get(systemThreadId);
-        return threadStates.get(threadId) == ThreadState.CREATED;
+        return result;
     }
+
 
     /**
      * Return true if the thread with the specified system thread ID is in the thread pool and with status
      * provided.
      *
-     * @param systemThreadId the custom ID of the thread
+     * @param threadId the custom ID of the thread
      * @param state the state of the thread
      * @return true if the thread exists with status
      */
-    public boolean isSystemThreadOfStatus(Long systemThreadId, ThreadState state) {
-        if (!revIdMap.containsKey(systemThreadId)) {
+    public boolean isThreadOfStatus(Long threadId, ThreadState state) {
+        if (!threadStates.containsKey(threadId)) {
             return false;
         }
-        Long threadId = revIdMap.get(systemThreadId);
         return threadStates.get(threadId) == state;
     }
 

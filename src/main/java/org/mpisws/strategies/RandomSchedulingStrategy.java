@@ -1,20 +1,32 @@
 package org.mpisws.strategies;
 
-import org.mpisws.runtime.RuntimeEvent;
+import java.util.Random;
+import java.util.Set;
 
-public class RandomSchedulingStrategy implements SchedulingStrategy {
-    public void updateEvent(RuntimeEvent event) {
-        // TODO Auto-generated method stub
+/**
+ * A random scheduling strategy that selects the next thread to be scheduled randomly.
+ */
+public class RandomSchedulingStrategy extends TrackActiveThreadsStrategy implements SchedulingStrategy {
+
+    private final Random random;
+
+    /**
+     * Constructs a new RandomSchedulingStrategy object.
+     *
+     * @param seed the seed for the random number generator
+     */
+    public RandomSchedulingStrategy(Long seed) {
+        this.random = new Random(seed);
     }
+
 
     @Override
     public Long nextThread() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void addThread(Long threadId) {
-        // TODO Auto-generated method stub
+        Set<Long> activeThreads = getActiveThreads();
+        if (activeThreads.isEmpty()) {
+            return null;
+        }
+        int index = random.nextInt(activeThreads.size());
+        return (Long) activeThreads.toArray()[index];
     }
 }

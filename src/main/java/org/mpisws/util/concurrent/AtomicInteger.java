@@ -1,6 +1,9 @@
 package org.mpisws.util.concurrent;
 
+import java.util.HashMap;
 import org.mpisws.runtime.JmcRuntime;
+import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.RuntimeEventType;
 
 public class AtomicInteger {
 
@@ -8,77 +11,58 @@ public class AtomicInteger {
     public ReentrantLock lock = new ReentrantLock();
 
     public AtomicInteger(int initialValue) {
-        JmcRuntime.writeOperation(
-                this,
-                initialValue,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicInteger",
-                "value",
-                "I");
-        value = initialValue;
-        JmcRuntime.waitRequest(Thread.currentThread());
+        write(initialValue);
+    }
+
+    private void write(int newValue) {
+        RuntimeEvent event = new RuntimeEvent(
+                RuntimeEventType.WRITE_EVENT,
+                JmcRuntime.currentThread(),
+                new HashMap<>() {{
+                    put("newValue", newValue);
+                    put("owner", "org/mpisws/util/concurrent/AtomicInteger");
+                    put("name", "value");
+                    put("descriptor", "I");
+                }}
+        );
+        JmcRuntime.updateEventAndYield(event);
+        value = newValue;
+    }
+
+    private int read() {
+        RuntimeEvent event = new RuntimeEvent(
+                RuntimeEventType.READ_EVENT,
+                JmcRuntime.currentThread(),
+                new HashMap<>() {{
+                    put("owner", "org/mpisws/util/concurrent/AtomicInteger");
+                    put("name", "value");
+                    put("descriptor", "I");
+                }}
+        );
+        JmcRuntime.updateEventAndYield(event);
+        return value;
     }
 
     public AtomicInteger() {
-        JmcRuntime.writeOperation(
-                this,
-                0,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicInteger",
-                "value",
-                "I");
-        value = 0;
-        JmcRuntime.waitRequest(Thread.currentThread());
+        write(0);
     }
 
     public int get() {
-        JmcRuntime.readOperation(
-                this,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicInteger",
-                "value",
-                "I");
-        int result = value;
-        JmcRuntime.waitRequest(Thread.currentThread());
-        return result;
+       return read();
     }
 
     public void set(int newValue) {
-        JmcRuntime.writeOperation(
-                this,
-                newValue,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicInteger",
-                "value",
-                "I");
-        value = newValue;
-        JmcRuntime.waitRequest(Thread.currentThread());
+        write(newValue);
     }
 
     public boolean compareAndSet(int expectedValue, int newValue) throws JMCInterruptException {
         lock.lock();
         try {
-            JmcRuntime.readOperation(
-                    this,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicInteger",
-                    "value",
-                    "I");
+            read();
             if (value == expectedValue) {
-                JmcRuntime.waitRequest(Thread.currentThread());
-
-                JmcRuntime.writeOperation(
-                        this,
-                        newValue,
-                        Thread.currentThread(),
-                        "org/mpisws/util/concurrent/AtomicInteger",
-                        "value",
-                        "I");
-                value = newValue;
-                JmcRuntime.waitRequest(Thread.currentThread());
+                write(newValue);
                 return true;
             }
-            JmcRuntime.waitRequest(Thread.currentThread());
             return false;
         } finally {
             lock.unlock();
@@ -88,24 +72,8 @@ public class AtomicInteger {
     public int getAndIncrement() throws JMCInterruptException {
         lock.lock();
         try {
-            JmcRuntime.readOperation(
-                    this,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicInteger",
-                    "value",
-                    "I");
-            int result = value;
-            JmcRuntime.waitRequest(Thread.currentThread());
-
-            JmcRuntime.writeOperation(
-                    this,
-                    result + 1,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicInteger",
-                    "value",
-                    "I");
-            value = result + 1;
-            JmcRuntime.waitRequest(Thread.currentThread());
+            int result = read();
+            write(result + 1);
             return result;
         } finally {
             lock.unlock();
