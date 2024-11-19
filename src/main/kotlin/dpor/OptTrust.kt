@@ -22,10 +22,10 @@ class OptTrust(path: String, verbose: Boolean) {
 
         when {
             nextEvent == null -> {
-                println("[OPT-Trust Message] : No more events to explore")
+                //println("[OPT-Trust Message] : No more events to explore")
                 this.graphCounter++
                 g.id = this.graphCounter
-                println("[Trust Message] : Graph ${g.id} with size of ${g.eventOrder.size} is visited")
+                //println("[Trust Message] : Graph ${g.id} with size of ${g.eventOrder.size} is visited")
                 if (verbose /*|| (g.id >= 250)*/) {
                     g.visualizeGraph(this.graphCounter, this.graphsPath)
                 }
@@ -33,7 +33,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.READ -> {
-                println("[OPT-Trust Message] : Next event is a read event - $nextEvent")
+                //println("[OPT-Trust Message] : Next event is a read event - $nextEvent")
                 var nextRead = nextEvent as ReadEvent
                 if (g.existsSameLocationWriteEvent(nextRead.loc!!)) {
                     batching_fR_read_write(g, nextRead)
@@ -45,7 +45,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.READ_EX -> {
-                println("[OPT-Trust Message] : Next event is a read ex event - $nextEvent")
+                //println("[OPT-Trust Message] : Next event is a read ex event - $nextEvent")
                 var nextReadEx = nextEvent as ReadExEvent
                 if (g.existsSameLocationWriteEvent(nextReadEx.loc!!)) {
                     val newAllEvents = ArrayList<ThreadEvent>()
@@ -59,7 +59,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.WRITE -> {
-                println("[OPT-Trust Message] : Next event is a write event - $nextEvent")
+                //println("[OPT-Trust Message] : Next event is a write event - $nextEvent")
                 val nextWrite = nextEvent as WriteEvent
                 g.addEvent(nextWrite)
                 g.addProgramOrder(nextWrite)
@@ -81,7 +81,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.WRITE_EX -> {
-                println("[Trust Message] : Next event is a write ex event - $nextEvent")
+                //println("[Trust Message] : Next event is a write ex event - $nextEvent")
                 val nextWriteEx = nextEvent as WriteExEvent
                 val last = g.programOrder[nextEvent.tid]!!.last()
                 if (last.type != EventType.READ_EX) {
@@ -107,7 +107,7 @@ class OptTrust(path: String, verbose: Boolean) {
                             batching_fR_write_write(g, nextWriteEx, allEvents)
                         }
                     } else {
-                        println("[Trust Message] : Ex reads are not consistent for the write ex event $nextWriteEx")
+                        //println("[Trust Message] : Ex reads are not consistent for the write ex event $nextWriteEx")
                         topoSort = null
                     }
 
@@ -128,7 +128,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.JOIN -> {
-                println("[Trust Message] : Next event is a join event - $nextEvent")
+                //println("[Trust Message] : Next event is a join event - $nextEvent")
                 val joinTid = (nextEvent as JoinEvent).joinTid
                 val finishEvent = g.programOrder[joinTid]!!.last()
                 if (finishEvent.type != EventType.FINISH) {
@@ -142,7 +142,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.START -> {
-                println("[Trust Message] : Next event is a start event - $nextEvent")
+                //println("[Trust Message] : Next event is a start event - $nextEvent")
                 g.addEvent(nextEvent as StartEvent)
                 g.addProgramOrder(nextEvent)
                 g.addTC(nextEvent)
@@ -155,56 +155,56 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             nextEvent.type == EventType.FINISH -> {
-                println("[Trust Message] : Next event is a finish event - $nextEvent")
+                //println("[Trust Message] : Next event is a finish event - $nextEvent")
                 g.addEvent(nextEvent as FinishEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.FAILURE -> {
-                println("[Trust Message] : Next event is a failure event - $nextEvent")
+                //println("[Trust Message] : Next event is a failure event - $nextEvent")
                 g.addEvent(nextEvent as FailureEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.DEADLOCK -> {
-                println("[Trust Message] : Next event is a deadlock event - $nextEvent")
+                //println("[Trust Message] : Next event is a deadlock event - $nextEvent")
                 g.addEvent(nextEvent as DeadlockEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.MAIN_START -> {
-                println("[Trust Message] : Next event is a main start event - $nextEvent")
+                //println("[Trust Message] : Next event is a main start event - $nextEvent")
                 g.addEvent(nextEvent as MainStartEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.CON_ASSUME -> {
-                println("[Trust Message] : Next event is a con assume event - $nextEvent")
+                //println("[Trust Message] : Next event is a con assume event - $nextEvent")
                 g.addEvent(nextEvent as ConAssumeEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.SYM_ASSUME -> {
-                println("[Trust Message] : Next event is a sym assume event - $nextEvent")
+                //println("[Trust Message] : Next event is a sym assume event - $nextEvent")
                 g.addEvent(nextEvent as SymAssumeEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.ASSUME_BLOCKED -> {
-                println("[Trust Message] : Next event is a assume blocked event - $nextEvent")
+                //println("[Trust Message] : Next event is a assume blocked event - $nextEvent")
                 g.addEvent(nextEvent as AssumeBlockedEvent)
                 g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
             nextEvent.type == EventType.SYM_EXECUTION -> {
-                println("[Trust Message] : Next event is a symbolic execution event - $nextEvent")
+                //println("[Trust Message] : Next event is a symbolic execution event - $nextEvent")
                 g.addEvent(nextEvent as SymExecutionEvent)
                 g.addProgramOrder(nextEvent)
                 if (nextEvent.isNegatable) {
@@ -214,7 +214,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
 
             else -> {
-                println("[Trust Message] : Next event is not supported - $nextEvent")
+                //println("[Trust Message] : Next event is not supported - $nextEvent")
                 exitProcess(0)
             }
         }
@@ -224,7 +224,7 @@ class OptTrust(path: String, verbose: Boolean) {
         //println("[DEBUGGING] The size of the writes is: ${g.writes[nextRead.loc]!!.size}")
         if (g.writes[nextRead.loc]!!.size > 1) {
             for (i in 0 until g.writes[nextRead.loc]!!.size - 1) {
-                println("[OPT-Trust] batching frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${g.writes[nextRead.loc]!![i].type}(${g.writes[nextRead.loc]!![i].tid}:${g.writes[nextRead.loc]!![i].serial})")
+                //println("[OPT-Trust] batching frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${g.writes[nextRead.loc]!![i].type}(${g.writes[nextRead.loc]!![i].tid}:${g.writes[nextRead.loc]!![i].serial})")
                 val writeEvent = g.writes[nextRead.loc]!![i]
                 val op = GraphOp(nextRead, writeEvent, GraphOpType.FR_R_W, g)
                 nextOperations.add(op)
@@ -238,7 +238,7 @@ class OptTrust(path: String, verbose: Boolean) {
         allEvents: ArrayList<ThreadEvent>
     ) {
         for (i in 0 until g.writes[nextRead.loc]!!.size - 1) {
-            println("[OPT-Trust] batching frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${g.writes[nextRead.loc]!![i].type}(${g.writes[nextRead.loc]!![i].tid}:${g.writes[nextRead.loc]!![i].serial})")
+            //println("[OPT-Trust] batching frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${g.writes[nextRead.loc]!![i].type}(${g.writes[nextRead.loc]!![i].tid}:${g.writes[nextRead.loc]!![i].serial})")
             val writeEvent = g.writes[nextRead.loc]!![i]
             val addList = ArrayList<ThreadEvent>()
             addList.add(allEvents[0])
@@ -250,7 +250,7 @@ class OptTrust(path: String, verbose: Boolean) {
 
     private fun fR_read_last_write(g: OptExecutionGraph, nextRead: ReadEvent) {
         val writeEvent = g.writes[nextRead.loc]!!.last()
-        println("[OPT-Trust] frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
+        //println("[OPT-Trust] frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
         g.addEvent(nextRead)
         g.addProgramOrder(nextRead)
         g.addRead(nextRead)
@@ -260,7 +260,7 @@ class OptTrust(path: String, verbose: Boolean) {
 
     private fun fR_readEx_last_write(g: OptExecutionGraph, nextRead: ReadExEvent, allEvents: ArrayList<ThreadEvent>) {
         val writeEvent = g.writes[nextRead.loc]!!.last()
-        println("[OPT-Trust] frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
+        //println("[OPT-Trust] frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
         g.addEvent(nextRead)
         g.addProgramOrder(nextRead)
         g.addRead(nextRead)
@@ -275,13 +275,13 @@ class OptTrust(path: String, verbose: Boolean) {
 
 
     private fun fR_write_last_write(g: OptExecutionGraph, nextWrite: WriteEvent) {
-        println("[OPT-Trust] frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) last ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial})")
+        //println("[OPT-Trust] frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) last ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial})")
         g.addWrite(nextWrite)
         visit(g, ArrayList())
     }
 
     private fun batching_fR_last_write(g: OptExecutionGraph, write: WriteEvent, toBeAdded: ArrayList<ThreadEvent>) {
-        println("[OPT-Trust] batching frw last ${write.type}(${write.tid}:${write.serial})")
+        //println("[OPT-Trust] batching frw last ${write.type}(${write.tid}:${write.serial})")
         val newEvents = ArrayList<ThreadEvent>()
         if (toBeAdded.isNotEmpty()) {
             newEvents.add(toBeAdded[0])
@@ -298,7 +298,7 @@ class OptTrust(path: String, verbose: Boolean) {
     ) {
         if (g.writes[nextWrite.loc]!!.size > 0) {
             for (i in 0 until g.writes[nextWrite.loc]!!.size) {
-                println("[OPT-Trust] batching frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) ${g.writes[nextWrite.loc]!![i].type}(${g.writes[nextWrite.loc]!![i].tid}:${g.writes[nextWrite.loc]!![i].serial})")
+                //println("[OPT-Trust] batching frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) ${g.writes[nextWrite.loc]!![i].type}(${g.writes[nextWrite.loc]!![i].tid}:${g.writes[nextWrite.loc]!![i].serial})")
                 val writeEvent = g.writes[nextWrite.loc]!![i]
                 val addList = ArrayList<ThreadEvent>()
                 if (toBeAdded.isNotEmpty()) {
@@ -381,9 +381,9 @@ class OptTrust(path: String, verbose: Boolean) {
             val closureGraph = ClosureGraph()
             computePorf(g, closureGraph)
             for (readEvent in g.reads[nextWrite.loc]!!) {
-                println("[OPT-TRUST] The ${readEvent.type}(${readEvent.tid}:${readEvent.serial}) event for processing BR_W_R is of ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial})")
+                //println("[OPT-TRUST] The ${readEvent.type}(${readEvent.tid}:${readEvent.serial}) event for processing BR_W_R is of ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial})")
                 if ((readEvent.tid != nextWrite.tid) && !closureGraph.pathExists(readEvent, nextWrite)) {
-                    println("[OPT-TRUST] The read event was not in porf")
+                    //println("[OPT-TRUST] The read event was not in porf")
                     val deleted = LinkedHashSet<ThreadEvent>()
                     //deleted.addAll(closureGraph.visited)
                     val visited = LinkedHashSet<ThreadEvent>()
@@ -412,7 +412,7 @@ class OptTrust(path: String, verbose: Boolean) {
                     val porfPrefix = computePorfPrefix(g, deleted, readEvent)
                     revisitIfIsMaximal(g, porfPrefix, deleted, nextWrite, readEvent)
                 } else {
-                    println("[OPT-TRUST] The read event was in porf!")
+                    //println("[OPT-TRUST] The read event was in porf!")
                 }
             }
         }
@@ -426,7 +426,7 @@ class OptTrust(path: String, verbose: Boolean) {
         readEvent: ReadEvent
     ) {
         if (isMaximal(g, porfPrefix, deleted, nextWrite)) {
-            println("[OPT-TRUST] The deleted events are maximal")
+            //println("[OPT-TRUST] The deleted events are maximal")
 
             val toBeAdded = ArrayList<ThreadEvent>()
 //            if (readEvent is ReadExEvent) {
@@ -461,7 +461,7 @@ class OptTrust(path: String, verbose: Boolean) {
                     batching_fR_write_write(g_copy, wr, toBeAdded)
                     batching_fR_last_write(g_copy, wr, toBeAdded)
                 } else {
-                    println("[OPT-Trust Message] : Ex reads are not consistent for the write ex event $wr")
+                    //println("[OPT-Trust Message] : Ex reads are not consistent for the write ex event $wr")
                 }
             } else {
                 batching_fR_write_write(g_copy, wr, toBeAdded)
@@ -514,13 +514,13 @@ class OptTrust(path: String, verbose: Boolean) {
     }
 
     private fun batching_fR_neg_sym(g: OptExecutionGraph, event: SymExecutionEvent) {
-        println("[OPT-Trust] batching frw neg sym ${event.type}(${event.tid}:${event.serial})")
+        //println("[OPT-Trust] batching frw neg sym ${event.type}(${event.tid}:${event.serial})")
         val op = GraphOp(event, event, GraphOpType.FR_NEG_SYM, g)
         nextOperations.add(op)
     }
 
     fun processFR_R_W(g: OptExecutionGraph, nextRead: ReadEvent, writeEvent: WriteEvent) {
-        println("[OPT-Trust] processing frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
+        //println("[OPT-Trust] processing frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
 //        println("[debugging] The Graph number is: ${g.id}")
 //        println("nextRead: $nextRead")
 //        println("writeEvent: $writeEvent")
@@ -569,7 +569,7 @@ class OptTrust(path: String, verbose: Boolean) {
         if (topoSort!!.isNotEmpty()) {
             visit(g, ArrayList())
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            //println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
         }
     }
 
@@ -690,7 +690,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
             visit(g, toBeAddedEvents)
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            //println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
         }
     }
 
@@ -700,7 +700,7 @@ class OptTrust(path: String, verbose: Boolean) {
         writeEvent: WriteEvent,
         toBeAddedEvents: ArrayList<ThreadEvent>
     ) {
-        println("[OPT-Trust] processing frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
+        //println("[OPT-Trust] processing frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
 //        println("nextWrite: $nextWrite")
 //        println("writeEvent: $writeEvent")
 //        println("[debugging] The Graph before restricting is: ")
@@ -756,7 +756,7 @@ class OptTrust(path: String, verbose: Boolean) {
             }
             visit(g, toBeAddedEvents)
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            //println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
         }
     }
 
@@ -773,8 +773,8 @@ class OptTrust(path: String, verbose: Boolean) {
     }
 
     fun processFR_L_W(g: OptExecutionGraph, writeEvent: WriteEvent, toBeAddedEvents: ArrayList<ThreadEvent>) {
-        println("[OPT-Trust] processing frw last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
-        println("[DEBUGGING] The graph id is: ${g.id}")
+        //println("[OPT-Trust] processing frw last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
+        //println("[DEBUGGING] The graph id is: ${g.id}")
 //        println("writeEvent: $writeEvent")
 //        println("[debugging] The Graph before restricting is: ")
 //        println("[debugging] The Graph number is: ${g.id}")
@@ -877,20 +877,20 @@ class OptTrust(path: String, verbose: Boolean) {
             }
             visit(g, toBeAddedEvents)
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            //println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
         }
     }
 
     fun processFR_neg_sym(g: OptExecutionGraph, event: SymExecutionEvent) {
-        println("[OPT-Trust] processing frw neg sym ${event.type}(${event.tid}:${event.serial})")
-        println("symbolicEvent: $event")
+        //println("[OPT-Trust] processing frw neg sym ${event.type}(${event.tid}:${event.serial})")
+        //println("symbolicEvent: $event")
         g.restrictStrictAfterEvent(event)
         event.result = !event.result
         topoSort = SequentialConsistency.scAcyclicity(g)
         if (topoSort!!.isNotEmpty()) {
             visit(g, ArrayList())
         } else {
-            println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
+            //println("[Trust Message] : Graph G_${g.id} is not sequentially consistent")
         }
     }
 

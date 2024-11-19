@@ -74,4 +74,9 @@ public class FIFOThreadCollection implements ThreadCollection {
             System.out.println("[FIFO Thread Collection] " + thread.getName() + " has the " + thread.getState());
         }
     }
+
+    @Override
+    public void clear() {
+        list.clear();
+    }
 }

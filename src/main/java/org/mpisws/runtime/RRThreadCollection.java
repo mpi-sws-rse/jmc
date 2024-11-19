@@ -88,4 +88,9 @@ public class RRThreadCollection implements ThreadCollection {
             System.out.println("[Round Robin Thread Collection] " + thread.getName() + " has the " + thread.getState());
         }
     }
+
+    @Override
+    public void clear() {
+        list.clear();
+    }
 }

@@ -43,21 +43,21 @@ data class Location(
      * <p>
      * This field is used to avoid serialization issues when the class is serialized and deserialized.
      */
-    var clazzString: String? = clazz?.name + "@" + clazz?.`package`?.name
+    //var clazzString: String? = clazz?.name + "@" + clazz?.`package`?.name
 
     /**
      * @property instanceString The instance of the class as a string
      * <p>
      * This field is used to avoid serialization issues when the instance is serialized and deserialized.
      */
-    var instanceString: String? = instance?.let { "${it}@${it.hashCode().toString(16)}" }
+    //var instanceString: String? = instance?.let { "${it}@${it.hashCode().toString(16)}" }
 
     /**
      * @property fieldString The field as a string
      * <p>
      * This field is used to avoid serialization issues when the field is serialized and deserialized.
      */
-    var fieldString: String? = field?.let { "${it.name}@${it.hashCode().toString(16)}" }
+    //var fieldString: String? = field?.let { "${it.name}@${it.hashCode().toString(16)}" }
 
     /**
      * Returns a deep copy of this object

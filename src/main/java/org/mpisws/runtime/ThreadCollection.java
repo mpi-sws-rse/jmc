@@ -19,4 +19,6 @@ public interface ThreadCollection {
     int size();
 
     void printThreadStatus();
+
+    void clear();
 }

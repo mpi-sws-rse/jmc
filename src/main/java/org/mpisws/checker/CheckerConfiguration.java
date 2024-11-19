@@ -160,7 +160,7 @@ public final class CheckerConfiguration implements Serializable {
         public SMTSolverTypes solverType = SMTSolverTypes.SMTINTERPOL;
         public ProgramType programType = ProgramType.SHARED_MEM;
         public GraphExploration graphExploration = GraphExploration.DFS;
-        public SolverApproach solverApproach = SolverApproach.INCREMENTAL;
+        public SolverApproach solverApproach = SolverApproach.NO_SOLVER;
         public SchedulingPolicy schedulingPolicy = SchedulingPolicy.FIFO;
 
         public ConfigurationBuilder() {

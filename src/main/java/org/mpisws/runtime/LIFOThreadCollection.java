@@ -74,4 +74,9 @@ public class LIFOThreadCollection implements ThreadCollection {
             System.out.println("[LIFO Thread Collection] " + thread.getName() + " has the " + thread.getState());
         }
     }
+
+    @Override
+    public void clear() {
+        list.clear();
+    }
 }

@@ -259,11 +259,13 @@ public interface SearchStrategy {
      * Prints the current execution trace.
      */
     default void printExecutionTrace() {
-        if (RuntimeEnvironment.verbose) {
-            LOGGER.debug("Execution trace:");
+        if (RuntimeEnvironment.verbose || RuntimeEnvironment.deadlockHappened) {
+            //LOGGER.debug("Execution trace:");
+            System.out.println("Execution trace:");
             for (Event event : RuntimeEnvironment.eventsRecord) {
                 int index = RuntimeEnvironment.eventsRecord.indexOf(event) + 1;
-                LOGGER.debug("{}.{}", index, event);
+                //LOGGER.debug("{}.{}", index, event);
+                System.out.println(index + "." + event);
             }
         }
     }

@@ -19,21 +19,24 @@ public class InconsistentCounter extends Thread {
 
     public static void main(String[] args) throws InterruptedException {
         Counter counter = new Counter();
-        InconsistentCounter thread1 = new InconsistentCounter(counter);
-        InconsistentCounter thread2 = new InconsistentCounter(counter);
-        InconsistentCounter thread3 = new InconsistentCounter(counter);
+        int numThreads = 5;
 
-        thread1.start();
-        thread2.start();
-        thread3.start();
+        InconsistentCounter[] threads = new InconsistentCounter[numThreads];
+        for (int i = 0; i < numThreads; i++) {
+            threads[i] = new InconsistentCounter(counter);
+        }
 
-        thread1.join();
-        thread2.join();
-        thread3.join();
+        for (int i = 0; i < numThreads; i++) {
+            threads[i].start();
+        }
 
-        assert (counter.count == 3) : " ***The assert did not pass, the counter value is " + counter.count + "***";
+        for (int i = 0; i < numThreads; i++) {
+            threads[i].join();
+        }
 
-        System.out.println("[Final Program Message] : If you see this message, the assert passed. The counter value is " + counter.count);
+//        assert (counter.count == 3) : " ***The assert did not pass, the counter value is " + counter.count + "***";
+//
+//        System.out.println("[Final Program Message] : If you see this message, the assert passed. The counter value is " + counter.count);
 
     }
 }

@@ -134,7 +134,7 @@ public class SchedulerThread extends Thread {
                 if (RuntimeEnvironment.threadWaitReq != null) {
                     break;
                 }
-                Thread.yield();
+                //Thread.yield();
             }
         }
     }
@@ -226,6 +226,7 @@ public class SchedulerThread extends Thread {
             System.exit(0);
         }
         synchronized (RuntimeEnvironment.locks.get((long) 1)) {
+            RuntimeEnvironment.conditions.put((long) 1, true);
             RuntimeEnvironment.locks.get((long) 1).notify();
         }
     }
@@ -261,6 +262,7 @@ public class SchedulerThread extends Thread {
             Long threadId = getThreadId(optionalThread.get());
             LOGGER.debug("Thread-{} is permitted to run", threadId);
             synchronized (RuntimeEnvironment.locks.get(threadId)) {
+                RuntimeEnvironment.conditions.put(threadId, true);
                 RuntimeEnvironment.locks.get(threadId).notify();
             }
         } else {

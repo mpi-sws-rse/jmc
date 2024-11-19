@@ -28,8 +28,11 @@ public class IncrementalSolver extends SymbolicSolver {
     @Override
     public void resetProver() {
         if (prover != null) {
-            prover.close();
-            prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
+            while (prover.size() > 0) {
+                prover.pop();
+            }
+            //prover.close();
+            //prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
         }
     }
 

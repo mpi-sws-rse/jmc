@@ -113,6 +113,7 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/inconsistent/counter/"
         );
         System.out.println("InconsistentCounter Random Strategy Started");
+        checker.configuration.maxIterations = 20000;
         checker.configuration.strategyType = StrategyType.RANDOM;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
         checker.configuration.verbose = true;
@@ -131,7 +132,7 @@ class ModelCheckerTest {
         );
         System.out.println("InconsistentCounter Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
@@ -325,7 +326,8 @@ class ModelCheckerTest {
         );
         System.out.println("DiningPhilosophers Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.maxIterations = 1000;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "DiningPhilosophers Random Strategy Finished");
@@ -341,7 +343,7 @@ class ModelCheckerTest {
         );
         System.out.println("DiningPhilosophers Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.TRUST; // The StrategyType.OP_TRUST is not supported for this test
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
@@ -873,7 +875,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1782,8 +1784,8 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1806,8 +1808,8 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";

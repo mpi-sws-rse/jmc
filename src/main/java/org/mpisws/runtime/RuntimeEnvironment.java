@@ -62,7 +62,7 @@ public class RuntimeEnvironment {
     /**
      * @property {@link #threadCount} is used to store the number of threads that are created in the program under test.
      */
-    private static int threadCount = 1;
+    private static long threadCount = 1;
 
     /**
      * @property {@link #threadWaitReq} is used to store the thread that requested to wait
@@ -124,6 +124,7 @@ public class RuntimeEnvironment {
      */
     public static Map<Long, Object> locks = new HashMap<>();
 
+    public static Map<Long, Boolean> conditions = new HashMap<>();
     /**
      * @property {@link #createdThreadList} is used to store the threads that are created in the program under test.
      */
@@ -422,6 +423,16 @@ public class RuntimeEnvironment {
      */
     public static Map<Object, JMCLock> lockAvailMap = new HashMap<>();
 
+    static {
+        loadConfig();
+        if (solverApproach == SolverApproach.NO_SOLVER) {
+            solver = null;
+        } else {
+            solver = SymbolicSolverSingletonFactory.getSolver(solverApproach, solverType);
+        }
+        initReadyThreadCollection();
+    }
+
     /**
      * The constructor is private to prevent the instantiation of the class
      */
@@ -443,17 +454,19 @@ public class RuntimeEnvironment {
 
         numOfExecutions++;
         LOGGER.info("Initializing Runtime, iteration: {}", numOfExecutions);
-        loadConfig();
-        solver = SymbolicSolverSingletonFactory.getSolver(solverApproach, solverType);
+        //loadConfig();
+        //solver = SymbolicSolverSingletonFactory.getSolver(solverApproach, solverType);
 
-        initReadyThreadCollection();
+        //initReadyThreadCollection();
 
         LOGGER.debug("Loaded CheckerConfiguration");
-        threadIdMap.put(thread.getId(), (long) threadCount);
+        threadIdMap.put(thread.getId(), threadCount);
         threadObjectMap.put(threadIdMap.get(thread.getId()), thread);
-        thread.setName("Thread-" + threadCount++);
+        threadCount++;
+        //thread.setName("Thread-" + threadCount++);
         Object lock = new Object();
         locks.put(threadIdMap.get(thread.getId()), lock);
+        conditions.put(threadIdMap.get(thread.getId()), false);
         createdThreadList.add(thread);
         LOGGER.debug("Thread {} added to the createdThreadList", thread.getName());
         readyThread.add(thread);
@@ -667,16 +680,17 @@ public class RuntimeEnvironment {
      */
     public static void addThread(Thread thread) {
         if (!createdThreadList.contains(thread)) {
-            threadIdMap.put(thread.getId(), (long) threadCount);
+            threadIdMap.put(thread.getId(), threadCount);
             threadObjectMap.put(threadIdMap.get(thread.getId()), thread);
             thread.setName("Thread-" + threadCount++);
             Object lock = new Object();
             locks.put(threadIdMap.get(thread.getId()), lock);
+            conditions.put(threadIdMap.get(thread.getId()), false);
             createdThreadList.add(thread);
             mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
             threadParkingPermit.put(threadIdMap.get(thread.getId()), false);
-            LOGGER.debug("{} added to the createdThreadList", thread.getName());
-            LOGGER.debug("{} has the {} state", thread.getName(), thread.getState());
+            //LOGGER.debug("{} added to the createdThreadList", thread.getName());
+            //LOGGER.debug("{} has the {} state", thread.getName(), thread.getState());
         } else {
             LOGGER.warn("{} is already in the createdThreadList", thread.getName());
         }
@@ -787,7 +801,11 @@ public class RuntimeEnvironment {
                 threadWaitReq = thread;
             }
             try {
-                locks.get(threadIdMap.get(thread.getId())).wait();
+                while (!conditions.get(threadIdMap.get(thread.getId()))) {
+                    locks.get(threadIdMap.get(thread.getId())).wait();
+                }
+                conditions.put(threadIdMap.get(thread.getId()), false);
+                //locks.get(threadIdMap.get(thread.getId())).wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 assert (false) : "InterruptedException in waitRequest method";
@@ -833,7 +851,11 @@ public class RuntimeEnvironment {
             LOGGER.debug("{} requested to WAIT", main.getName());
             threadWaitReq = main;
             try {
-                locks.get(threadIdMap.get(main.getId())).wait();
+                while (!conditions.get(threadIdMap.get(main.getId()))) {
+                    locks.get(threadIdMap.get(main.getId())).wait();
+                }
+                conditions.put(threadIdMap.get(main.getId()), false);
+                //locks.get(threadIdMap.get(main.getId())).wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 assert (false) : "InterruptedException in initSchedulerThread method";
@@ -1113,7 +1135,7 @@ public class RuntimeEnvironment {
     public static boolean symbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         LOGGER.debug("{} requested to execute a symbolic arithmetic operation", thread.getName());
         RuntimeEnvironment.symbolicOperation = symbolicOperation;
-        System.out.println("[Debugging] Symbolic operation: " + symbolicOperation);
+        //System.out.println("[Debugging] Symbolic operation: " + symbolicOperation);
         waitRequest(thread);
         return solverResult;
     }
@@ -1295,7 +1317,7 @@ public class RuntimeEnvironment {
     }
 
     public static void initLock(Object lock, Thread thread) {
-        LOGGER.debug("{} requested to initialize the {} lock", thread.getName(), lock.toString());
+        //LOGGER.debug("{} requested to initialize the {} lock", thread.getName(), lock.toString());
         JMCLock jmcLock = new JMCLock(lock, 0);
         lockAvailMap.put(lock, jmcLock);
         Location location = createLocation(jmcLock, "org/mpisws/util/concurrent/JMCLock", "permits", "I");
@@ -1883,7 +1905,7 @@ public class RuntimeEnvironment {
      */
     private static Location createLocation(Object obj, String owner, String name, String descriptor) {
         try {
-            LOGGER.debug("Creating Location for {} $ {} $ {}", owner, name, descriptor);
+            //LOGGER.debug("Creating Location for {} $ {} $ {}", owner, name, descriptor);
             Class<?> clazz = Class.forName(owner.replace("/", "."));
             Object instance = clazz.cast(obj);
             Field field = clazz.getDeclaredField(name);
@@ -2007,31 +2029,52 @@ public class RuntimeEnvironment {
         threadJoinReq = null;
         threadJoinRes = null;
         assertFlag = false;
-        locks = new HashMap<>();
-        createdThreadList = new ArrayList<>();
-        initReadyThreadCollection();
-        monitorList = new HashMap<>();
-        monitorRequest = new HashMap<>();
-        joinRequest = new HashMap<>();
-        mcThreadSerialNumber = new HashMap<>();
+        //locks = new HashMap<>();
+        locks.clear();
+        //conditions = new HashMap<>();
+        conditions.clear();
+        //createdThreadList = new ArrayList<>();
+        createdThreadList.clear();
+        //initReadyThreadCollection();
+        readyThread.clear();
+        //initReadyThreadCollection();
+        //monitorList = new HashMap<>();
+        monitorList.clear();
+        //monitorRequest = new HashMap<>();
+        monitorRequest.clear();
+        //joinRequest = new HashMap<>();
+        joinRequest.clear();
+        //mcThreadSerialNumber = new HashMap<>();
+        mcThreadSerialNumber.clear();
         writeEventReq = null;
-        threadIdMap = new HashMap<>();
+        //threadIdMap = new HashMap<>();
+        threadIdMap.clear();
         executionFinished = false;
-        eventsRecord = new ArrayList<>();
-        suspendedThreads = new ArrayList<>();
-        threadObjectMap = new HashMap<>();
-        suspendPriority = new HashMap<>();
-        // TODO: solver needs a reset method
-        solver = SymbolicSolverSingletonFactory.getSolver(solverApproach, solverType);
+        //eventsRecord = new ArrayList<>();
+        eventsRecord.clear();
+        //suspendedThreads = new ArrayList<>();
+        suspendedThreads.clear();
+        //threadObjectMap = new HashMap<>();
+        threadObjectMap.clear();
+        //suspendPriority = new HashMap<>();
+        suspendPriority.clear();
+        if (solver != null) {
+            solver.resetProver();
+        }
         symbolicOperation = null;
         solverResult = false;
-        threadParkingPermit = new HashMap<>();
+        //threadParkingPermit = new HashMap<>();
+        threadParkingPermit.clear();
         threadToPark = null;
         unparkerThread = null;
-        staticMethodMonitorList = new ArrayList<>();
-        instanceMethodMonitorList = new ArrayList<>();
-        parkedThreadList = new ArrayList<>();
-        blockedRecvThreadMap = new HashMap<>();
+        //staticMethodMonitorList = new ArrayList<>();
+        staticMethodMonitorList.clear();
+        //instanceMethodMonitorList = new ArrayList<>();
+        instanceMethodMonitorList.clear();
+        //parkedThreadList = new ArrayList<>();
+        parkedThreadList.clear();
+        //blockedRecvThreadMap = new HashMap<>();
+        blockedRecvThreadMap.clear();
         threadExitMonitorReq = null;
         objectExitMonitorReq = null;
         blockingReceiveEventReq = null;
@@ -2039,15 +2082,21 @@ public class RuntimeEnvironment {
         receiveEventReq = null;
         unparkeeThread = null;
         mainStartEventReq = null;
-        threadBlockingRecvList = new HashMap<>();
-        futureThreadMap = new HashMap<>();
+        //threadBlockingRecvList = new HashMap<>();
+        threadBlockingRecvList.clear();
+        //futureThreadMap = new HashMap<>();
+        futureThreadMap.clear();
         getFutureReq = null;
-        untaskedThreadList = new ArrayList<>();
-        workQueue = new HashMap<>();
+        //untaskedThreadList = new ArrayList<>();
+        untaskedThreadList.clear();
+        //workQueue = new HashMap<>();
+        workQueue.clear();
         numOfThreadPoolExecutors = 0;
         takeFromBlockingQueueReq = null;
-        idleThreadsInPool = new HashMap<>();
-        waitingThreadForFuture = new HashMap<>();
+        //idleThreadsInPool = new HashMap<>();
+        idleThreadsInPool.clear();
+        //waitingThreadForFuture = new HashMap<>();
+        waitingThreadForFuture.clear();
         //runtime = null;
         //memoryBefore = 0;
         //memoryAfter = 0;
@@ -2056,10 +2105,12 @@ public class RuntimeEnvironment {
         conAssumeEventReq = null;
         assumeBlockedEventReq = null;
         symAssumeEventReq = null;
-        lockAvailMap = new HashMap<>();
+        //lockAvailMap = new HashMap<>();
+        lockAvailMap.clear();
         exclusiveReadEventReq = null;
         exclusiveWriteEventReq = null;
         isExecutionBlocked = false;
-        locationMap = new HashMap<>();
+        //locationMap = new HashMap<>();
+        locationMap.clear();
     }
 }

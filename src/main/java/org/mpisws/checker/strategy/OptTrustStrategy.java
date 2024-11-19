@@ -57,12 +57,15 @@ public class OptTrustStrategy extends OptDPORStrategy {
     Thread pickNextGuidedThread() {
         if (guidingEvents.isEmpty()) {
             handleEmptyGuidingEvents();
-            solver.solveAndUpdateModelSymbolicVariables();
+            if (solver != null) {
+                solver.solveAndUpdateModelSymbolicVariables();
+            }
+            //solver.solveAndUpdateModelSymbolicVariables();
             return pickNextReadyThread();
         }
 
         guidingEvent = guidingEvents.remove(0);
-        System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + guidingEvent);
+        //System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + guidingEvent);
 
         if (guidingEvent instanceof StartEvent) {
             guidingThread = ((StartEvent) guidingEvent).getCallerThread();
@@ -70,14 +73,14 @@ public class OptTrustStrategy extends OptDPORStrategy {
             guidingThread = guidingEvent.getTid();
         }
 
-        System.out.println("[OPT-Trust Strategy Message] : " +
-                RuntimeEnvironment.threadObjectMap.get((long) guidingThread).getName() + " is the next guided thread");
+//        System.out.println("[OPT-Trust Strategy Message] : " +
+//                RuntimeEnvironment.threadObjectMap.get((long) guidingThread).getName() + " is the next guided thread");
         return RuntimeEnvironment.threadObjectMap.get((long) guidingThread);
     }
 
     @Override
     public void handleEmptyGuidingEvents() {
-        System.out.println("[OPT-Trust Strategy Message] : The guidingEvents is empty");
+        //System.out.println("[OPT-Trust Strategy Message] : The guidingEvents is empty");
         guidingActivate = false;
         updateWritesMap();
         updateReadsMap();
@@ -130,7 +133,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
         if (guidingActivate) {
             ReadExEvent readEx = (ReadExEvent) guidingEvent;
             readExEvent.setInternalValue(readEx.getInternalValue());
-            System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + readEx);
+            //System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + readEx);
             WriteEvent wr = currentGraph.getRf().get(readEx);
             currentGraph.removeRf(readEx);
             readEx.setLoc(readExEvent.getLoc());
@@ -146,7 +149,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
             }
             //guidingEvent = guidingEvents.remove(0);
             WriteExEvent writeEx = (WriteExEvent) guidingEvent;
-            System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + writeEx);
+            //System.out.println("[OPT-Trust Strategy] The next Guided Event is :" + writeEx);
             writeExEvent.setConditionValue(writeEx.getConditionValue());
             writeEx.setLoc(writeExEvent.getLoc());
             writeExEvent.setOperationSuccess(writeEx.getOperationSuccess());

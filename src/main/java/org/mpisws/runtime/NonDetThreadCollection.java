@@ -84,4 +84,9 @@ public class NonDetThreadCollection implements ThreadCollection {
             System.out.println("[NONDET Thread Collection] " + thread.getName() + " has the " + thread.getState());
         }
     }
+
+    @Override
+    public void clear() {
+        list.clear();
+    }
 }
