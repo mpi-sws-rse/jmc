@@ -3,10 +3,9 @@ package org.mpisws.strategies;
 import java.util.Random;
 import java.util.Set;
 
-/**
- * A random scheduling strategy that selects the next thread to be scheduled randomly.
- */
-public class RandomSchedulingStrategy extends TrackActiveThreadsStrategy implements SchedulingStrategy {
+/** A random scheduling strategy that selects the next thread to be scheduled randomly. */
+public class RandomSchedulingStrategy extends TrackActiveThreadsStrategy
+        implements SchedulingStrategy {
 
     private final Random random;
 
@@ -19,9 +18,8 @@ public class RandomSchedulingStrategy extends TrackActiveThreadsStrategy impleme
         this.random = new Random(seed);
     }
 
-
     @Override
-    public Long nextThread() {
+    public Long nextTask() {
         Set<Long> activeThreads = getActiveThreads();
         if (activeThreads.isEmpty()) {
             return null;

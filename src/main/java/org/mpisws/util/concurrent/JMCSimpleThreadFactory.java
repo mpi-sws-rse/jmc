@@ -8,8 +8,8 @@ public class JMCSimpleThreadFactory implements ThreadFactory {
 
     @Override
     public Thread newThread(Runnable r) {
-        JMCStarterThread newThread = new JMCStarterThread(r);
-        JmcRuntime.addThread(newThread);
+        Long newThreadId = JmcRuntime.addNewTask();
+        JmcThread newThread = new JmcThread(r, newThreadId);
         return newThread;
     }
 }

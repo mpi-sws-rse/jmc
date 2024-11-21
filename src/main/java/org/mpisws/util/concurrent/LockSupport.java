@@ -2,6 +2,7 @@ package org.mpisws.util.concurrent;
 
 import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.RuntimeEventType;
 
 /** The LockSupport class is the replacement for java.util.concurrent.locks.LockSupport class. */
 public class LockSupport {
@@ -14,7 +15,11 @@ public class LockSupport {
      */
     public static void park() {
         RuntimeEvent event =
-        JmcRuntime.yield();
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.PARK_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
     }
 
     /**
@@ -26,8 +31,11 @@ public class LockSupport {
      * @param thread
      */
     public static void unpark(Thread thread) {
-        JmcRuntime.unparkOperation(Thread.currentThread(), thread);
-        // Thread Unparked
-        JmcRuntime.waitRequest(Thread.currentThread());
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.UNPARK_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
     }
 }

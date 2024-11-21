@@ -11,6 +11,8 @@
 		- [ ] We need to keep state to track the requests of threads and ensure no deadlock. This deals with locks and also join requests.
 	- [ ] What is compare and set operation?
 		- [ ] Introduce a compare and set Operation (Should be handled separately for Trust)
+	- [ ] Need to understand executors!
+	- [ ] What is JMCThread with message passing primitives?
 	- [x] ~~Points where the yield occurs - `AtomicReference`, `AtomicStampedReference` (yield occurs after locking, shouldn't this be a problem)~~ Not a problem
 	- [ ] `AtomicStampedReference` why is `stamp` and `value` two different variables? No use of locks...
 		- [ ] Need to keep them separate. Maybe? Maybe not?

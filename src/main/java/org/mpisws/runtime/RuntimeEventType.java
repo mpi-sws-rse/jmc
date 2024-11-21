@@ -5,6 +5,7 @@ public enum RuntimeEventType {
     START_EVENT,
     JOIN_EVENT,
     FINISH_EVENT,
+    HALT_EVENT,
 
     // Thread park and un-park events
     PARK_EVENT,
@@ -31,11 +32,24 @@ public enum RuntimeEventType {
     // Symbolic arithmetic execution
     SYMB_ARTH_EVENT,
 
-    // TODO: explain
+    // Related to futures
     GET_FUTURE_EVENT,
+    FUTURE_EXCEPTION_EVENT,
+    FUTURE_SET_EVENT,
+
+    // TODO: explain
     TAKE_WORK_QUEUE,
     CON_ASSUME_EVENT,
     SYM_ASSUME_EVENT,
     ASSUME_BLOCKED_EVENT,
     WAIT_EVENT,
+
+    // Task events when using an executor
+    TASK_ASSIGNED_EVENT,
+    THREAD_POOL_CREATED,
+    TASK_CREATED_EVENT,
+
+    // Related to assertions in the code
+    ASSUME_EVENT,
+    ASSERT_EVENT
 }

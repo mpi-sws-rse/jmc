@@ -15,30 +15,34 @@ public class AtomicInteger {
     }
 
     private void write(int newValue) {
-        RuntimeEvent event = new RuntimeEvent(
-                RuntimeEventType.WRITE_EVENT,
-                JmcRuntime.currentThread(),
-                new HashMap<>() {{
-                    put("newValue", newValue);
-                    put("owner", "org/mpisws/util/concurrent/AtomicInteger");
-                    put("name", "value");
-                    put("descriptor", "I");
-                }}
-        );
+        RuntimeEvent event =
+                new RuntimeEvent(
+                        RuntimeEventType.WRITE_EVENT,
+                        JmcRuntime.currentTask(),
+                        new HashMap<>() {
+                            {
+                                put("newValue", newValue);
+                                put("owner", "org/mpisws/util/concurrent/AtomicInteger");
+                                put("name", "value");
+                                put("descriptor", "I");
+                            }
+                        });
         JmcRuntime.updateEventAndYield(event);
         value = newValue;
     }
 
     private int read() {
-        RuntimeEvent event = new RuntimeEvent(
-                RuntimeEventType.READ_EVENT,
-                JmcRuntime.currentThread(),
-                new HashMap<>() {{
-                    put("owner", "org/mpisws/util/concurrent/AtomicInteger");
-                    put("name", "value");
-                    put("descriptor", "I");
-                }}
-        );
+        RuntimeEvent event =
+                new RuntimeEvent(
+                        RuntimeEventType.READ_EVENT,
+                        JmcRuntime.currentTask(),
+                        new HashMap<>() {
+                            {
+                                put("owner", "org/mpisws/util/concurrent/AtomicInteger");
+                                put("name", "value");
+                                put("descriptor", "I");
+                            }
+                        });
         JmcRuntime.updateEventAndYield(event);
         return value;
     }
@@ -48,7 +52,7 @@ public class AtomicInteger {
     }
 
     public int get() {
-       return read();
+        return read();
     }
 
     public void set(int newValue) {

@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class TrackActiveThreadsStrategy implements SchedulingStrategy {
-    public abstract Long nextThread();
+    public abstract Long nextTask();
 
     private final Set<Long> activeThreads;
     private final Object threadsLock = new Object();
@@ -20,11 +20,11 @@ public abstract class TrackActiveThreadsStrategy implements SchedulingStrategy {
     public void updateEvent(RuntimeEvent event) {
         if (event.getType() == RuntimeEventType.START_EVENT) {
             synchronized (threadsLock) {
-                activeThreads.add(event.getThreadId());
+                activeThreads.add(event.getTaskId());
             }
         } else if (event.getType() == RuntimeEventType.FINISH_EVENT) {
             synchronized (threadsLock) {
-                activeThreads.remove(event.getThreadId());
+                activeThreads.remove(event.getTaskId());
             }
         }
     }

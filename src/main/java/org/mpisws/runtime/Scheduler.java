@@ -1,33 +1,35 @@
 package org.mpisws.runtime;
 
-import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.strategies.SchedulingStrategy;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * The scheduler is responsible for managing the execution of threads.
  *
- * <p>The scheduler uses the strategy to decide which thread to Schedule.
- * To do so, it instantiates a separate SchedulerThread that is blocked whenever other
- * threads are running and unblocked only when it need to pick the next thread to schedule.</p>
+ * <p>The scheduler uses the strategy to decide which thread to Schedule. To do so, it instantiates
+ * a separate SchedulerThread that is blocked whenever other threads are running and unblocked only
+ * when it need to pick the next thread to schedule.
  *
  * <p>To interact with the scheduler, invoke the {@link Scheduler#yield()} which will defer control
- * the scheduler thread.</p>
+ * the scheduler thread.
  */
 public class Scheduler {
 
     private static final Logger LOGGER = LogManager.getLogger(Scheduler.class.getName());
 
     /** The thread manager used to manage the thread states. */
-    private ThreadManager threadManager;
+    private TaskManager taskManager;
 
     /** The scheduling strategy used to decide which thread to schedule. */
     private final SchedulingStrategy strategy;
 
-    /** The ID of the current thread. Protected by the lock for accesses to read and write*/
-    private Long currentThread;
-    private final Object currentThreadLock = new Object();
+    /** The ID of the current thread. Protected by the lock for accesses to read and write */
+    private Long currentTask;
+
+    private final Object currentTaskLock = new Object();
 
     /** The scheduler thread instance. */
     private final SchedulerThread schedulerThread;
@@ -43,50 +45,50 @@ public class Scheduler {
     }
 
     /**
-     * Initializes the scheduler with the thread manager and the main thread.
+     * Initializes the scheduler with the task manager and the main thread.
      *
-     * @param threadManager the thread manager
-     * @param mainThreadId the ID of the main thread
+     * @param taskManager the task manager
+     * @param mainTaskId the ID of the main thread
      */
-    public void init(ThreadManager threadManager, Long mainThreadId) {
-        this.threadManager = threadManager;
-        this.setCurrentThread(mainThreadId);
+    public void init(TaskManager taskManager, Long mainTaskId) {
+        this.taskManager = taskManager;
+        this.setCurrentTask(mainTaskId);
     }
 
     /**
-     * Returns the ID of the current thread.
+     * Returns the ID of the current task.
      *
-     * @return the ID of the current thread
+     * @return the ID of the current task
      */
-    public Long currentThread() {
-        synchronized (currentThreadLock) {
-            return currentThread;
+    public Long currentTask() {
+        synchronized (currentTaskLock) {
+            return currentTask;
         }
     }
 
     /**
-     * Sets the ID of the current thread.
+     * Sets the ID of the current task.
      *
-     * @param threadId the ID of the current thread
+     * @param taskId the ID of the current task
      */
-    protected void setCurrentThread(Long threadId) {
-        synchronized (currentThreadLock) {
-            currentThread = threadId;
+    protected void setCurrentTask(Long taskId) {
+        synchronized (currentTaskLock) {
+            currentTask = taskId;
         }
     }
 
     /**
-     * Schedules the thread with the given ID. The thread is resumed using the ThreadManager.
-     * Exits the program if the thread does not exist. (Should never happen)
+     * Schedules the task with the given ID. The task is resumed using the TaskManager. Exits the
+     * program if the task does not exist. (Should never happen)
      *
-     * @param threadId the ID of the thread to be scheduled
+     * @param taskId the ID of the task to be scheduled
      */
-    protected void scheduleThread(Long threadId) {
-        setCurrentThread(threadId);
+    protected void scheduleTask(Long taskId) {
+        setCurrentTask(taskId);
         try {
-            threadManager.resume(threadId);
-        } catch (ThreadNotExists e) {
-            LOGGER.error("Resuming a non existent thread: {}", e.getMessage());
+            taskManager.resume(taskId);
+        } catch (TaskNotExists e) {
+            LOGGER.error("Resuming a non existent task: {}", e.getMessage());
             System.exit(1);
         }
     }
@@ -101,45 +103,46 @@ public class Scheduler {
     }
 
     /**
-     * Pauses the current thread and yields the control to the scheduler.
+     * Pauses the current task and yields the control to the scheduler.
      *
-     * @return a future that completes when the thread is resumed
-     * @throws ThreadAlreadyPaused if the current thread is already paused
+     * <p>The call is non-blocking and returns immediately.
+     *
+     * @return a future that completes when the task is resumed
+     * @throws TaskAlreadyPaused if the current task is already paused
      */
-    public CompletableFuture<Boolean> yield() throws ThreadAlreadyPaused {
+    public CompletableFuture<Boolean> yield() throws TaskAlreadyPaused {
         CompletableFuture<Boolean> future;
-        synchronized (currentThreadLock) {
-            future = threadManager.pause(currentThread);
-            currentThread = null;
+        synchronized (currentTaskLock) {
+            future = taskManager.pause(currentTask);
+            currentTask = null;
         }
         // Release the scheduler thread
         schedulerThread.enable();
         return future;
     }
 
-    /**
-     * Resets the ThreadManager and the scheduling strategy for a new iteration.
-     */
+    /** Resets the TaskManager and the scheduling strategy for a new iteration. */
     public void endIteration() {
         strategy.reset();
     }
 
-    /**
-     * The SchedulerThread class is responsible for scheduling the threads.
-     */
+    /** The SchedulerThread class is responsible for scheduling the tasks. */
     private static class SchedulerThread extends Thread {
 
         private static final Logger LOGGER = LogManager.getLogger(SchedulerThread.class.getName());
 
         /** The scheduler instance. */
         private final Scheduler scheduler;
+
         /** The scheduling strategy used by the scheduler. */
         private final SchedulingStrategy strategy;
 
-        /** The future that is completed when the scheduler is enabled. Protected by a lock.
-         *  Every time the scheduler is enabled a new future is created.
+        /**
+         * The future that is completed when the scheduler is enabled. Protected by a lock. Every
+         * time the scheduler is enabled a new future is created.
          */
         private CompletableFuture<Boolean> future;
+
         private final Object futureLock = new Object();
 
         /**
@@ -154,27 +157,21 @@ public class Scheduler {
             this.future = new CompletableFuture<>();
         }
 
-        /**
-         * Enables the scheduler.
-         */
+        /** Enables the scheduler. */
         public void enable() {
             synchronized (futureLock) {
                 future.complete(false);
             }
         }
 
-        /**
-         * Shuts down the scheduler.
-         */
+        /** Shuts down the scheduler. */
         public void shutdown() {
             synchronized (futureLock) {
                 future.complete(true);
             }
         }
 
-        /**
-         * The main loop of the scheduler thread.
-         */
+        /** The main loop of the scheduler thread. */
         @Override
         public void run() {
             LOGGER.info("Scheduler thread started.");
@@ -189,11 +186,11 @@ public class Scheduler {
                     if (shutdown) {
                         break;
                     }
-                    Long nextThread = strategy.nextThread();
-                    if (nextThread == null) {
+                    Long nextTask = strategy.nextTask();
+                    if (nextTask == null) {
                         break;
                     }
-                    scheduler.scheduleThread(nextThread);
+                    scheduler.scheduleTask(nextTask);
                 } catch (Exception e) {
                     LOGGER.error("Scheduler thread threw an exception: {}", e.getMessage());
                     break;

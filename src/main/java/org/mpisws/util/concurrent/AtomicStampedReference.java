@@ -80,7 +80,7 @@ public class AtomicStampedReference<V> {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEventType.READ_EVENT)
-                        .threadId(JmcRuntime.currentThread())
+                        .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/util/concurrent/AtomicStampedReference")
                         .param("name", "value")
                         .param("descriptor", "Ljava/lang/Object;")
@@ -94,7 +94,7 @@ public class AtomicStampedReference<V> {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEventType.WRITE_EVENT)
-                        .threadId(JmcRuntime.currentThread())
+                        .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/util/concurrent/AtomicStampedReference")
                         .param("name", "value")
                         .param("descriptor", "Ljava/lang/Object;")
