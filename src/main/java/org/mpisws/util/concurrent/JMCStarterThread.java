@@ -1,39 +1,38 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.manager.HaltExecutionException;
 import org.mpisws.runtime.JmcRuntime;
+import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.RuntimeEventType;
 
 public class JMCStarterThread extends Thread {
 
-    public int threadPoolExecutorId;
-
     public boolean hasTask = false;
 
-    public JMCStarterThread(int threadPoolExecutorId) {
-        super();
-        this.threadPoolExecutorId = threadPoolExecutorId;
-    }
-
-    public JMCStarterThread(Runnable r, int threadPoolExecutorId) {
+    public JMCStarterThread(Runnable r) {
         super(r);
-        this.threadPoolExecutorId = threadPoolExecutorId;
     }
 
     @Override
     public void run() {
         this.hasTask = true;
-        JmcRuntime.waitRequest(Thread.currentThread());
+        JmcRuntime.yield();
         super.run();
-        try {
-            JmcRuntime.finishThreadRequest(Thread.currentThread());
-        } catch (HaltExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.JOIN_EVENT)
+                        .threadId(JmcRuntime.currentThread())
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
     }
 
     @Override
     public void start() {
-        JmcRuntime.threadStart(this, Thread.currentThread());
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.START_EVENT)
+                        .threadId(JmcRuntime.currentThread())
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
     }
 
     public void startByScheduler() {

@@ -1,6 +1,10 @@
 package org.mpisws.util.concurrent;
 
 import org.mpisws.runtime.JmcRuntime;
+import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.RuntimeEventType;
+
+import java.util.HashMap;
 
 public class AtomicReference<V> {
 
@@ -9,60 +13,19 @@ public class AtomicReference<V> {
     ReentrantLock lock = new ReentrantLock();
 
     public AtomicReference(V initialValue) {
-        JmcRuntime.writeOperation(
-                this,
-                initialValue,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicReference",
-                "value",
-                "Ljava/lang/Object;");
+        writeOp(initialValue);
         value = initialValue;
-        JmcRuntime.waitRequest(Thread.currentThread());
-    }
-
-    @Deprecated
-    public boolean compareAndSetWL(V expectedReference, V newReference) {
-        boolean result =
-                JmcRuntime.compareAndSetOperation(
-                        value,
-                        expectedReference,
-                        newReference,
-                        this,
-                        Thread.currentThread(),
-                        "org/mpisws/util/concurrent/AtomicReference",
-                        "value",
-                        "Ljava/lang/Object;");
-        JmcRuntime.waitRequest(Thread.currentThread());
-        if (result) {
-            value = newReference;
-        }
-        return result;
     }
 
     public boolean compareAndSet(V expectedReference, V newReference) throws JMCInterruptException {
         lock.lock();
         try {
-            JmcRuntime.readOperation(
-                    this,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicReference",
-                    "value",
-                    "Ljava/lang/Object;");
+            readOp();
             if (value == expectedReference) {
-                JmcRuntime.waitRequest(Thread.currentThread());
-
-                JmcRuntime.writeOperation(
-                        this,
-                        newReference,
-                        Thread.currentThread(),
-                        "org/mpisws/util/concurrent/AtomicReference",
-                        "value",
-                        "Ljava/lang/Object;");
+                writeOp(newReference);
                 value = newReference;
-                JmcRuntime.waitRequest(Thread.currentThread());
                 return true;
             }
-            JmcRuntime.waitRequest(Thread.currentThread());
             return false;
         } finally {
             lock.unlock();
@@ -70,26 +33,49 @@ public class AtomicReference<V> {
     }
 
     public V get() {
-        JmcRuntime.readOperation(
-                this,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicReference",
-                "value",
-                "Ljava/lang/Object;");
-        V result = value;
-        JmcRuntime.waitRequest(Thread.currentThread());
-        return result;
+        readOp();
+        return value;
     }
 
     public void set(V newValue) {
-        JmcRuntime.writeOperation(
-                this,
-                newValue,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicReference",
-                "value",
-                "Ljava/lang/Object;");
+        writeOp(newValue);
         value = newValue;
-        JmcRuntime.waitRequest(Thread.currentThread());
+    }
+
+    private void writeOp(V newValue) {
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.WRITE_EVENT)
+                        .threadId(JmcRuntime.currentThread())
+                        .params(
+                                new HashMap<>() {
+                                    {
+                                        put("newValue", newValue);
+                                        put("owner", "org/mpisws/util/concurrent/AtomicReference");
+                                        put("name", "value");
+                                        put("descriptor", "Ljava/lang/Object;");
+                                    }
+                                })
+                        .param("instance", this)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
+    }
+
+    private void readOp() {
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.READ_EVENT)
+                        .threadId(JmcRuntime.currentThread())
+                        .params(
+                                new HashMap<>() {
+                                    {
+                                        put("owner", "org/mpisws/util/concurrent/AtomicReference");
+                                        put("name", "value");
+                                        put("descriptor", "Ljava/lang/Object;");
+                                    }
+                                })
+                        .param("instance", this)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
     }
 }

@@ -1,6 +1,8 @@
 package org.mpisws.util.concurrent;
 
 import org.mpisws.runtime.JmcRuntime;
+import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.RuntimeEventType;
 
 public class AtomicStampedReference<V> {
 
@@ -11,25 +13,9 @@ public class AtomicStampedReference<V> {
     public ReentrantLock lock = new ReentrantLock();
 
     public AtomicStampedReference(V initialValue, int initialStamp) {
-        JmcRuntime.writeOperation(
-                this,
-                initialValue,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicStampedReference",
-                "value",
-                "Ljava/lang/Object;");
+        writeOp(initialValue, initialStamp);
         value = initialValue;
-        JmcRuntime.waitRequest(Thread.currentThread());
-
-        JmcRuntime.writeOperation(
-                this,
-                initialStamp,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicStampedReference",
-                "stamp",
-                "I");
         stamp = initialStamp;
-        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public boolean compareAndSet(
@@ -37,48 +23,16 @@ public class AtomicStampedReference<V> {
             throws JMCInterruptException {
         lock.lock();
         try {
-            JmcRuntime.readOperation(
-                    this,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicStampedReference",
-                    "value",
-                    "Ljava/lang/Object;");
+            readOp();
             V readValue = value;
-            JmcRuntime.waitRequest(Thread.currentThread());
-
-            JmcRuntime.readOperation(
-                    this,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicStampedReference",
-                    "stamp",
-                    "I");
             int readStamp = stamp;
 
             if (readValue == expectedReference && readStamp == expectedStamp) {
-                JmcRuntime.waitRequest(Thread.currentThread());
-
-                JmcRuntime.writeOperation(
-                        this,
-                        newReference,
-                        Thread.currentThread(),
-                        "org/mpisws/util/concurrent/AtomicStampedReference",
-                        "value",
-                        "Ljava/lang/Object;");
+                writeOp(newReference, newStamp);
                 value = newReference;
-                JmcRuntime.waitRequest(Thread.currentThread());
-
-                JmcRuntime.writeOperation(
-                        this,
-                        newStamp,
-                        Thread.currentThread(),
-                        "org/mpisws/util/concurrent/AtomicStampedReference",
-                        "stamp",
-                        "I");
                 stamp = newStamp;
-                JmcRuntime.waitRequest(Thread.currentThread());
                 return true;
             }
-            JmcRuntime.waitRequest(Thread.currentThread());
             return false;
         } finally {
             lock.unlock();
@@ -86,51 +40,23 @@ public class AtomicStampedReference<V> {
     }
 
     public V getReference() {
-        JmcRuntime.readOperation(
-                this,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicStampedReference",
-                "value",
-                "Ljava/lang/Object;");
+        readOp();
         V result = value;
-        JmcRuntime.waitRequest(Thread.currentThread());
         return result;
     }
 
     public int getStamp() {
-        JmcRuntime.readOperation(
-                this,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicStampedReference",
-                "stamp",
-                "I");
+        readOp();
         int result = stamp;
-        JmcRuntime.waitRequest(Thread.currentThread());
         return result;
     }
 
     public void set(V newReference, int newStamp) throws JMCInterruptException {
         lock.lock();
         try {
-            JmcRuntime.writeOperation(
-                    this,
-                    newReference,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicStampedReference",
-                    "value",
-                    "Ljava/lang/Object;");
+            writeOp(newReference, newStamp);
             value = newReference;
-            JmcRuntime.waitRequest(Thread.currentThread());
-
-            JmcRuntime.writeOperation(
-                    this,
-                    newStamp,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicStampedReference",
-                    "stamp",
-                    "I");
             stamp = newStamp;
-            JmcRuntime.waitRequest(Thread.currentThread());
         } finally {
             lock.unlock();
         }
@@ -139,28 +65,44 @@ public class AtomicStampedReference<V> {
     public V get(int[] stampHolder) throws JMCInterruptException {
         lock.lock();
         try {
-            JmcRuntime.readOperation(
-                    this,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicStampedReference",
-                    "value",
-                    "Ljava/lang/Object;");
+            readOp();
             V result = value;
-            JmcRuntime.waitRequest(Thread.currentThread());
-
-            JmcRuntime.readOperation(
-                    this,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicStampedReference",
-                    "stamp",
-                    "I");
             int resultStamp = stamp;
-            JmcRuntime.waitRequest(Thread.currentThread());
 
             stampHolder[0] = resultStamp;
             return result;
         } finally {
             lock.unlock();
         }
+    }
+
+    private void readOp() {
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.READ_EVENT)
+                        .threadId(JmcRuntime.currentThread())
+                        .param("owner", "org/mpisws/util/concurrent/AtomicStampedReference")
+                        .param("name", "value")
+                        .param("descriptor", "Ljava/lang/Object;")
+                        .param("instance", this)
+                        .param("stamp", stamp)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
+    }
+
+    private void writeOp(V newValue, int newStamp) {
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.WRITE_EVENT)
+                        .threadId(JmcRuntime.currentThread())
+                        .param("owner", "org/mpisws/util/concurrent/AtomicStampedReference")
+                        .param("name", "value")
+                        .param("descriptor", "Ljava/lang/Object;")
+                        .param("instance", this)
+                        .param("stamp", stamp)
+                        .param("newValue", newValue)
+                        .param("newStamp", newStamp)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
     }
 }

@@ -5,15 +5,15 @@ import org.apache.logging.log4j.Logger;
 import org.mpisws.strategies.SchedulingStrategy;
 
 /**
- * The Runtime environment complete with a scheduler and configuration options
- * used by the model checker.
+ * The Runtime environment complete with a scheduler and configuration options used by the model
+ * checker.
  *
- * <p>Calls to the runtime are made by the instrumented byte code. These calls are used to
- * record events occurring during the execution of threads or allow for scheduling changes.
- * For example, the runtime can be used to record Thread creation and deletion.</p>
+ * <p>Calls to the runtime are made by the instrumented byte code. These calls are used to record
+ * events occurring during the execution of threads or allow for scheduling changes. For example,
+ * the runtime can be used to record Thread creation and deletion.
  *
- * <p>The runtime is a static class that stores minimal states and delegates calls to the
- * {@link Scheduler} which retains all the state.</p>
+ * <p>The runtime is a static class that stores minimal states and delegates calls to the {@link
+ * Scheduler} which retains all the state.
  */
 public class JmcRuntime {
 
@@ -23,9 +23,7 @@ public class JmcRuntime {
 
     public static Scheduler scheduler;
 
-    /**
-     * Constructs a new JmcRuntime object.
-     */
+    /** Constructs a new JmcRuntime object. */
     public static void setup(SchedulingStrategy strategy) {
         scheduler = new Scheduler(strategy);
     }
@@ -33,13 +31,13 @@ public class JmcRuntime {
     /**
      * Initializes the runtime with the main thread for a given iteration.
      *
-     * <p>Initializes the scheduler with the main thread and marks it as ready.</p>
+     * <p>Initializes the scheduler with the main thread and marks it as ready.
      *
-     * @param mainThread the System thread ID of the main thread
+     * @param iteration the iteration number
      */
-    public static void initIteration(Long mainThread, int iteration) {
+    public static void initIteration(int iteration) {
         LOGGER = LogManager.getLogger(JmcRuntime.class.getName() + iteration);
-        Long mainThreadId = threadManager.addNextThread(mainThread);
+        Long mainThreadId = threadManager.addNextThread();
         threadManager.markStatus(mainThreadId, ThreadManager.ThreadState.BLOCKED);
 
         scheduler.init(threadManager, mainThreadId);
@@ -47,9 +45,7 @@ public class JmcRuntime {
         JmcRuntime.yield();
     }
 
-    /**
-     * Resets the runtime for a new iteration.
-     */
+    /** Resets the runtime for a new iteration. */
     public static void resetIteration() {
         scheduler.endIteration();
         threadManager.reset();
@@ -103,9 +99,12 @@ public class JmcRuntime {
         JmcRuntime.yield();
     }
 
+    /**
+     * Adds a new thread to the runtime.
+     *
+     * @return the ID of the new thread
+     */
     public static Long addNewThread() {
         return threadManager.addNextThread();
     }
-
-
 }

@@ -1,6 +1,10 @@
 package org.mpisws.util.concurrent;
 
 import org.mpisws.runtime.JmcRuntime;
+import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.RuntimeEventType;
+
+import java.util.HashMap;
 
 public class AtomicBoolean {
 
@@ -8,81 +12,82 @@ public class AtomicBoolean {
     public ReentrantLock lock = new ReentrantLock();
 
     public AtomicBoolean(boolean initialValue) {
-        JmcRuntime.writeOperation(
-                this,
-                initialValue,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicBoolean",
-                "value",
-                "Z");
+        writeOp(initialValue);
         value = initialValue;
-        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public AtomicBoolean() {
-        JmcRuntime.writeOperation(
-                this,
-                false,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicBoolean",
-                "value",
-                "Z");
+        writeOp(false);
         value = false;
-        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public boolean get() {
-        JmcRuntime.readOperation(
-                this,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicBoolean",
-                "value",
-                "Z");
-        boolean result = value;
-        JmcRuntime.waitRequest(Thread.currentThread());
-        return result;
+        try {
+            lock.lock();
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+        readOp();
+        return value;
     }
 
     public void set(boolean newValue) {
-        JmcRuntime.writeOperation(
-                this,
-                newValue,
-                Thread.currentThread(),
-                "org/mpisws/util/concurrent/AtomicBoolean",
-                "value",
-                "Z");
+        writeOp(newValue);
         value = newValue;
-        JmcRuntime.waitRequest(Thread.currentThread());
     }
 
     public boolean compareAndSet(boolean expectedValue, boolean newValue)
             throws JMCInterruptException {
         lock.lock();
         try {
-            JmcRuntime.readOperation(
-                    this,
-                    Thread.currentThread(),
-                    "org/mpisws/util/concurrent/AtomicBoolean",
-                    "value",
-                    "Z");
+            readOp();
             if (value == expectedValue) {
-                JmcRuntime.waitRequest(Thread.currentThread());
-
-                JmcRuntime.writeOperation(
-                        this,
-                        newValue,
-                        Thread.currentThread(),
-                        "org/mpisws/util/concurrent/AtomicBoolean",
-                        "value",
-                        "Z");
+                writeOp(newValue);
                 value = newValue;
-                JmcRuntime.waitRequest(Thread.currentThread());
                 return true;
             }
-            JmcRuntime.waitRequest(Thread.currentThread());
             return false;
         } finally {
             lock.unlock();
         }
+    }
+
+    private void writeOp(boolean newValue) {
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.WRITE_EVENT)
+                        .threadId(JmcRuntime.currentThread())
+                        .params(
+                                new HashMap<>() {
+                                    {
+                                        put("newValue", newValue);
+                                        put("owner", "org/mpisws/util/concurrent/AtomicBoolean");
+                                        put("name", "value");
+                                        put("descriptor", "Z");
+                                    }
+                                })
+                        .param("instance", this)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
+    }
+
+    private void readOp() {
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.READ_EVENT)
+                        .threadId(JmcRuntime.currentThread())
+                        .params(
+                                new HashMap<>() {
+                                    {
+                                        put("owner", "org/mpisws/util/concurrent/AtomicBoolean");
+                                        put("name", "value");
+                                        put("descriptor", "Z");
+                                    }
+                                })
+                        .param("instance", this)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
     }
 }

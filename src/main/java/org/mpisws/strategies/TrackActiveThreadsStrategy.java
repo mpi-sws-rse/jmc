@@ -1,11 +1,12 @@
 package org.mpisws.strategies;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.mpisws.runtime.RuntimeEvent;
 import org.mpisws.runtime.RuntimeEventType;
 
-public abstract class TrackActiveThreadsStrategy implements SchedulingStrategy{
+import java.util.HashSet;
+import java.util.Set;
+
+public abstract class TrackActiveThreadsStrategy implements SchedulingStrategy {
     public abstract Long nextThread();
 
     private final Set<Long> activeThreads;
@@ -17,11 +18,11 @@ public abstract class TrackActiveThreadsStrategy implements SchedulingStrategy{
 
     @Override
     public void updateEvent(RuntimeEvent event) {
-        if (event.getType() == RuntimeEventType.START_EVENT || event.getType() == RuntimeEventType.MAIN_START_EVENT) {
+        if (event.getType() == RuntimeEventType.START_EVENT) {
             synchronized (threadsLock) {
                 activeThreads.add(event.getThreadId());
             }
-        } else if (event.getType() == RuntimeEventType.JOIN_EVENT) {
+        } else if (event.getType() == RuntimeEventType.FINISH_EVENT) {
             synchronized (threadsLock) {
                 activeThreads.remove(event.getThreadId());
             }

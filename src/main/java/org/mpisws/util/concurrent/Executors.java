@@ -7,8 +7,7 @@ import java.util.concurrent.*;
 public class Executors {
 
     public static ExecutorService newFixedThreadPool(int nThreads) {
-        int id = JmcRuntime.nextThreadPoolExecutorId();
-        JMCSimpleThreadFactory jmcSimpleThreadFactory = new JMCSimpleThreadFactory(id);
+        JMCSimpleThreadFactory jmcSimpleThreadFactory = new JMCSimpleThreadFactory();
         return new JMCThreadPoolExecutor(
                 nThreads,
                 nThreads,

@@ -6,16 +6,9 @@ import java.util.concurrent.ThreadFactory;
 
 public class JMCSimpleThreadFactory implements ThreadFactory {
 
-    int id;
-
-    public JMCSimpleThreadFactory(int id) {
-        super();
-        this.id = id;
-    }
-
     @Override
     public Thread newThread(Runnable r) {
-        JMCStarterThread newThread = new JMCStarterThread(r, id);
+        JMCStarterThread newThread = new JMCStarterThread(r);
         JmcRuntime.addThread(newThread);
         return newThread;
     }

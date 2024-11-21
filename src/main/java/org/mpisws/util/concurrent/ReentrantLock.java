@@ -6,6 +6,7 @@ public class ReentrantLock {
 
     // TODO: need
     public ReentrantLock() {
+
         JmcRuntime.initLock(this, Thread.currentThread());
         JmcRuntime.waitRequest(Thread.currentThread());
     }
