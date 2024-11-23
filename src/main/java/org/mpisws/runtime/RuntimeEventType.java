@@ -3,7 +3,6 @@ package org.mpisws.runtime;
 public enum RuntimeEventType {
     // Thread creation and termination events
     START_EVENT,
-    JOIN_EVENT,
     FINISH_EVENT,
     HALT_EVENT,
 
@@ -51,5 +50,9 @@ public enum RuntimeEventType {
 
     // Related to assertions in the code
     ASSUME_EVENT,
-    ASSERT_EVENT
+    ASSERT_EVENT,
+
+    SYMB_OP_EVENT,
+    SYMB_ASSUME_EVENT,
+    SYMB_ASSERT_EVENT,
 }

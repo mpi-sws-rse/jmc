@@ -2,7 +2,6 @@ package org.mpisws.runtime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mpisws.strategies.StrategyFactory;
 
 /**
  * The Runtime environment complete with a scheduler and configuration options used by the model
@@ -33,12 +32,7 @@ public class JmcRuntime {
     public static void setup(JmcRuntimeConfiguration config) {
         LOGGER.debug("Setting up!");
         JmcRuntime.config = config;
-        if (config.isCustomStrategy()) {
-            scheduler = new Scheduler(config.getCustomStrategy());
-        } else {
-            scheduler =
-                    new Scheduler(StrategyFactory.createSchedulingStrategy(config.getStrategy()));
-        }
+        scheduler = new Scheduler(config.getStrategy());
     }
 
     /**
@@ -70,14 +64,14 @@ public class JmcRuntime {
      * call returns only when the task that invoked this method is resumed.
      */
     public static void yield() {
-        Long currentThread = scheduler.currentTask();
+        Long currentTask = scheduler.currentTask();
         try {
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Yielding an already paused task.");
             System.exit(1);
         }
-        taskManager.wait(currentThread);
+        taskManager.wait(currentTask);
     }
 
     /**

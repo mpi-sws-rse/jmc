@@ -4,8 +4,7 @@ import java.util.Random;
 import java.util.Set;
 
 /** A random scheduling strategy that selects the next thread to be scheduled randomly. */
-public class RandomSchedulingStrategy extends TrackActiveThreadsStrategy
-        implements SchedulingStrategy {
+public class RandomSchedulingStrategy extends TrackLockWaitingStrategy {
 
     private final Random random;
 
@@ -20,7 +19,7 @@ public class RandomSchedulingStrategy extends TrackActiveThreadsStrategy
 
     @Override
     public Long nextTask() {
-        Set<Long> activeThreads = getActiveThreads();
+        Set<Long> activeThreads = getActiveTasks();
         if (activeThreads.isEmpty()) {
             return null;
         }

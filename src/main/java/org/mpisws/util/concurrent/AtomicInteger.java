@@ -1,9 +1,10 @@
 package org.mpisws.util.concurrent;
 
-import java.util.HashMap;
 import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.runtime.RuntimeEvent;
 import org.mpisws.runtime.RuntimeEventType;
+
+import java.util.HashMap;
 
 public class AtomicInteger {
 
@@ -11,10 +12,11 @@ public class AtomicInteger {
     public ReentrantLock lock = new ReentrantLock();
 
     public AtomicInteger(int initialValue) {
-        write(initialValue);
+        writeOp(initialValue);
+        value = initialValue;
     }
 
-    private void write(int newValue) {
+    private void writeOp(int newValue) {
         RuntimeEvent event =
                 new RuntimeEvent(
                         RuntimeEventType.WRITE_EVENT,
@@ -28,10 +30,9 @@ public class AtomicInteger {
                             }
                         });
         JmcRuntime.updateEventAndYield(event);
-        value = newValue;
     }
 
-    private int read() {
+    private void readOp() {
         RuntimeEvent event =
                 new RuntimeEvent(
                         RuntimeEventType.READ_EVENT,
@@ -44,27 +45,40 @@ public class AtomicInteger {
                             }
                         });
         JmcRuntime.updateEventAndYield(event);
-        return value;
     }
 
     public AtomicInteger() {
-        write(0);
+        writeOp(0);
+        value = 0;
     }
 
     public int get() {
-        return read();
+        try {
+            lock.lock();
+            readOp();
+            return value;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void set(int newValue) {
-        write(newValue);
+        try {
+            lock.lock();
+            writeOp(newValue);
+            value = newValue;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public boolean compareAndSet(int expectedValue, int newValue) throws JMCInterruptException {
         lock.lock();
         try {
-            read();
+            readOp();
             if (value == expectedValue) {
-                write(newValue);
+                writeOp(newValue);
+                value = newValue;
                 return true;
             }
             return false;
@@ -76,8 +90,10 @@ public class AtomicInteger {
     public int getAndIncrement() throws JMCInterruptException {
         lock.lock();
         try {
-            int result = read();
-            write(result + 1);
+            readOp();
+            int result = value;
+            writeOp(result + 1);
+            value = result + 1;
             return result;
         } finally {
             lock.unlock();

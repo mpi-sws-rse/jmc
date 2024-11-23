@@ -1,11 +1,11 @@
 package org.mpisws.runtime;
 
-import org.mpisws.checker.GraphExploration;
+import org.mpisws.strategies.RandomSchedulingStrategy;
 import org.mpisws.strategies.SchedulingStrategy;
 
 public class JmcRuntimeConfiguration {
-    private String strategy;
-    private SchedulingStrategy customStrategy;
+
+    private SchedulingStrategy strategy;
 
     private Integer iterations;
 
@@ -13,17 +13,10 @@ public class JmcRuntimeConfiguration {
 
     private String bugsPath;
 
-    // To be deprecated
-    private GraphExploration graphExploration;
-
     private JmcRuntimeConfiguration() {}
 
-    public String getStrategy() {
+    public SchedulingStrategy getStrategy() {
         return strategy;
-    }
-
-    public SchedulingStrategy getCustomStrategy() {
-        return customStrategy;
     }
 
     public Integer getIterations() {
@@ -38,38 +31,21 @@ public class JmcRuntimeConfiguration {
         return bugsPath;
     }
 
-    public boolean isCustomStrategy() {
-        return customStrategy != null;
-    }
-
-    public GraphExploration getGraphExploration() {
-        return graphExploration;
-    }
-
     public static class Builder {
-        private String strategy;
-        private SchedulingStrategy customStrategy;
+        private SchedulingStrategy strategy;
         private Integer iterations;
         private Boolean debug;
         private String bugsPath;
-        private GraphExploration graphExploration;
 
         public Builder() {
-            this.strategy = "random";
-            this.customStrategy = null;
+            this.strategy = new RandomSchedulingStrategy(System.nanoTime());
             this.iterations = 1;
             this.debug = false;
             this.bugsPath = "build/test-results/jmc-bugs";
-            this.graphExploration = GraphExploration.BFS;
         }
 
-        public Builder strategy(String strategy) {
+        public Builder strategy(SchedulingStrategy strategy) {
             this.strategy = strategy;
-            return this;
-        }
-
-        public Builder customStrategy(SchedulingStrategy customStrategy) {
-            this.customStrategy = customStrategy;
             return this;
         }
 
@@ -88,15 +64,9 @@ public class JmcRuntimeConfiguration {
             return this;
         }
 
-        public Builder graphExploration(GraphExploration graphExploration) {
-            this.graphExploration = graphExploration;
-            return this;
-        }
-
         public JmcRuntimeConfiguration build() {
             JmcRuntimeConfiguration config = new JmcRuntimeConfiguration();
             config.strategy = strategy;
-            config.customStrategy = customStrategy;
             config.iterations = iterations;
             config.debug = debug;
             config.bugsPath = bugsPath;
