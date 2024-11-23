@@ -1,9 +1,7 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.manager.HaltExecutionException;
-import org.mpisws.runtime.JmcRuntime;
 
-public class JMCInterruptException extends Exception {
+public class JMCInterruptException extends RuntimeException {
 
     private String message;
 

@@ -1,7 +1,5 @@
 package org.mpisws.util.concurrent;
 
-import org.mpisws.runtime.JmcRuntime;
-
 import java.util.concurrent.*;
 
 public class Executors {
@@ -13,23 +11,20 @@ public class Executors {
                 nThreads,
                 0L,
                 TimeUnit.MILLISECONDS,
-                new JMCLinkedBlockingQueue<Runnable>(id),
-                jmcSimpleThreadFactory,
-                id);
+                new JMCLinkedBlockingQueue<Runnable>(),
+                jmcSimpleThreadFactory);
     }
 
     public static ExecutorService newFixedThreadPool(
             int nThreads, ThreadFactory userDefinedThreadFactory) {
-        int id = JmcRuntime.nextThreadPoolExecutorId();
         JMCDependantThreadFactory jmcDependantThreadFactory =
-                new JMCDependantThreadFactory(userDefinedThreadFactory, id);
+                new JMCDependantThreadFactory(userDefinedThreadFactory);
         return new JMCThreadPoolExecutor(
                 nThreads,
                 nThreads,
                 0L,
                 TimeUnit.MILLISECONDS,
-                new JMCLinkedBlockingQueue<Runnable>(id),
-                jmcDependantThreadFactory,
-                id);
+                new JMCLinkedBlockingQueue<Runnable>(),
+                jmcDependantThreadFactory);
     }
 }

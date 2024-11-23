@@ -8,35 +8,35 @@ public class RuntimeEvent {
 
     // The type of the event
     private RuntimeEventType type;
-    // The ID of the thread that generated the event
-    private Long threadId;
+    // The ID of the task that generated the event
+    private Long taskId;
     // The parameters of the event
     private Map<String, Object> params;
 
     /**
-     * Constructs a new runtime event with the specified type, thread ID, and parameters.
+     * Constructs a new runtime event with the specified type, task ID, and parameters.
      *
      * @param type the type of the event
-     * @param threadId the ID of the thread that generated the event
+     * @param taskId the ID of the task that generated the event
      * @param params the parameters of the event
      */
-    public RuntimeEvent(RuntimeEventType type, Long threadId, Map<String, Object> params) {
+    public RuntimeEvent(RuntimeEventType type, Long taskId, Map<String, Object> params) {
         this.type = type;
-        this.threadId = threadId;
+        this.taskId = taskId;
         this.params = params;
     }
 
     /**
-     * Constructs a new runtime event with the specified type and thread ID.
+     * Constructs a new runtime event with the specified type and task ID.
      *
      * <p>The parameters of the event are initialized to an empty map.
      *
      * @param type the type of the event
-     * @param threadId the ID of the thread that generated the event
+     * @param taskId the ID of the task that generated the event
      */
-    public RuntimeEvent(RuntimeEventType type, Long threadId) {
+    public RuntimeEvent(RuntimeEventType type, Long taskId) {
         this.type = type;
-        this.threadId = threadId;
+        this.taskId = taskId;
         this.params = new HashMap<>();
     }
 
@@ -50,12 +50,12 @@ public class RuntimeEvent {
     }
 
     /**
-     * Returns the ID of the thread that generated the event.
+     * Returns the ID of the task that generated the event.
      *
-     * @return the ID of the thread that generated the event
+     * @return the ID of the task that generated the event
      */
-    public Long getThreadId() {
-        return threadId;
+    public Long getTaskId() {
+        return taskId;
     }
 
     /**
@@ -77,12 +77,12 @@ public class RuntimeEvent {
     }
 
     /**
-     * Sets the ID of the thread that generated the event.
+     * Sets the ID of the task that generated the event.
      *
-     * @param threadId the ID of the thread that generated the event
+     * @param taskId the ID of the task that generated the event
      */
-    public void setThreadId(Long threadId) {
-        this.threadId = threadId;
+    public void setTaskId(Long taskId) {
+        this.taskId = taskId;
     }
 
     /**
@@ -130,7 +130,7 @@ public class RuntimeEvent {
     /** A builder for constructing a {@link RuntimeEvent} object. */
     public static class Builder {
         private RuntimeEventType type;
-        private Long threadId;
+        private Long taskId;
         private Map<String, Object> params;
 
         /** Sets the type of the event. */
@@ -139,9 +139,9 @@ public class RuntimeEvent {
             return this;
         }
 
-        /** Sets the ID of the thread that generated the event. */
-        public Builder threadId(Long threadId) {
-            this.threadId = threadId;
+        /** Sets the ID of the task that generated the event. */
+        public Builder taskId(Long taskId) {
+            this.taskId = taskId;
             return this;
         }
 
@@ -162,7 +162,7 @@ public class RuntimeEvent {
 
         /** Builds the {@link RuntimeEvent} object. */
         public RuntimeEvent build() {
-            return new RuntimeEvent(type, threadId, params);
+            return new RuntimeEvent(type, taskId, params);
         }
     }
 }

@@ -58,7 +58,7 @@ public class AtomicBoolean {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEventType.WRITE_EVENT)
-                        .threadId(JmcRuntime.currentThread())
+                        .taskId(JmcRuntime.currentTask())
                         .params(
                                 new HashMap<>() {
                                     {
@@ -77,7 +77,7 @@ public class AtomicBoolean {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEventType.READ_EVENT)
-                        .threadId(JmcRuntime.currentThread())
+                        .taskId(JmcRuntime.currentTask())
                         .params(
                                 new HashMap<>() {
                                     {
