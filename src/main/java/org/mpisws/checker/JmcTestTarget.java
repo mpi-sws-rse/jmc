@@ -1,11 +1,11 @@
 package org.mpisws.checker;
 
-/*
- * Functional interface for JMC test targets.
- *
- * Targets are the methods that return nothing and take no arguments.
- */
+/** Represents a target for JMC. */
 public interface JmcTestTarget {
+
+    /** Returns the name of the target. */
+    String name();
+
     /** Invokes the target. */
     void invoke();
 }
