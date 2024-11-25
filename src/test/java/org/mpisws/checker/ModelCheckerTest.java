@@ -3,7 +3,6 @@ package org.mpisws.checker;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.*;
-import org.mpisws.concurrent.programs.correct.counter.CorrectCounter;
 import org.mpisws.solver.SMTSolverTypes;
 import org.mpisws.solver.SolverApproach;
 
@@ -79,7 +78,6 @@ class ModelCheckerTest {
         checker.configuration.strategyType =
                 StrategyType.TRUST; // The StrategyType.OP_TRUST is not supported for this test
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -137,7 +135,6 @@ class ModelCheckerTest {
         System.out.println("InconsistentCounter Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -193,7 +190,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/complex/counter/");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         System.out.println("ComplexCounter Trust Strategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
@@ -217,7 +213,6 @@ class ModelCheckerTest {
         checker.configuration.maxIterations = 100;
         checker.configuration.strategyType = StrategyType.RANDOM;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         System.out.println("CorrectCounter Random Strategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
@@ -236,7 +231,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/correct/counter/");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         System.out.println("CorrectCounter Trust Strategy Started");
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
@@ -278,7 +272,6 @@ class ModelCheckerTest {
         System.out.println("SimpleCounter Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -359,7 +352,6 @@ class ModelCheckerTest {
         checker.configuration.strategyType =
                 StrategyType.TRUST; // The StrategyType.OP_TRUST is not supported for this test
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -416,7 +408,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/symbolic/counter/");
         System.out.println("SymbolicCounter Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
@@ -456,7 +447,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/stack/");
         System.out.println("Det Lock Free Stack Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
@@ -481,7 +471,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/stack/");
         System.out.println("NonDet Lock Free Stack Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
@@ -506,7 +495,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/stack/");
         System.out.println("Det Lock Free Stack II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
@@ -531,7 +519,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/stack/");
         System.out.println("NonDet Lock Free Stack II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
@@ -556,7 +543,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/stack/");
         System.out.println("Det Elimination Backoff Stack Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -581,7 +567,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/stack/");
         System.out.println("NonDet Elimination Backoff Stack Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -606,7 +591,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/stack/");
         System.out.println("Det Elimination Backoff Stack II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -631,7 +615,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/stack/");
         System.out.println("NonDet Elimination Backoff Stack II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -656,7 +639,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/stack/");
         System.out.println("Det Time Stamped Stack Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -681,7 +663,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/stack/");
         System.out.println("NonDet Time Stamped Stack Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -706,7 +687,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/stack/");
         System.out.println("Det Time Stamped Stack II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -731,7 +711,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/stack/");
         System.out.println("NonDet Time Stamped Stack II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -756,7 +735,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/array");
         System.out.println("Det Array Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -781,7 +759,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/loop");
         System.out.println("Det Array Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -806,7 +783,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/loopVariant");
         System.out.println("Det Array Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -831,7 +807,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/array");
         System.out.println("Nondet Array Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -856,7 +831,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/loop");
         System.out.println("Nondet Array Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -881,7 +855,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/loopVariant");
         System.out.println("Nondet Array Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -906,7 +879,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/lists/");
         System.out.println("NonDet Coarse List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -931,7 +903,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/lists/");
         System.out.println("NonDet Coarse List II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -955,7 +926,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/lists/");
         System.out.println("NonDet Fine List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -979,7 +949,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/lists/");
         System.out.println("NonDet Fine List II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1003,7 +972,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/lists/");
         System.out.println("NonDet Optimist List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1027,7 +995,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/lists/");
         System.out.println("NonDet Optimist List II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1051,7 +1018,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/lists/");
         System.out.println("NonDet Lazy List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1075,7 +1041,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/nondet/lists/");
         System.out.println("NonDet Lazy List II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1100,7 +1065,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/lists/");
         System.out.println("Det Coarse List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1125,7 +1089,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/lists/");
         System.out.println("Det Coarse List II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1149,7 +1112,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/lists/");
         System.out.println("Det Fine List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1173,7 +1135,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/lists/");
         System.out.println("Det Fine List II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1197,7 +1158,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/lists/");
         System.out.println("Det Optimist List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1221,7 +1181,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/lists/");
         System.out.println("Det Optimist List II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1245,7 +1204,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/lists/");
         System.out.println("Det Lazy List I Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1269,7 +1227,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/det/lists/");
         System.out.println("Det Lazy List II Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
@@ -1314,7 +1271,6 @@ class ModelCheckerTest {
         checker.configuration.strategyType =
                 StrategyType.TRUST; // The StrategyType.OP_TRUST is not supported for this test
         checker.configuration.verbose = false;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1389,7 +1345,6 @@ class ModelCheckerTest {
         System.out.println("SimpleMessage Must Strategy Started");
         checker.configuration.strategyType = StrategyType.MUST;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1430,7 +1385,6 @@ class ModelCheckerTest {
         System.out.println("TaggedMessage Must Strategy Started");
         checker.configuration.strategyType = StrategyType.MUST;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1471,7 +1425,6 @@ class ModelCheckerTest {
         System.out.println("SyncMessage Must Strategy Started");
         checker.configuration.strategyType = StrategyType.MUST;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1512,7 +1465,6 @@ class ModelCheckerTest {
         System.out.println("MessageCounter Must Strategy Started");
         checker.configuration.strategyType = StrategyType.MUST;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1559,7 +1511,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/random/counter/");
         System.out.println("RandomCounter Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
@@ -1703,7 +1654,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/symbolic/gcd/");
         System.out.println("Symbolic GCD Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = true;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
@@ -1729,7 +1679,6 @@ class ModelCheckerTest {
                         "src/test/java/org/mpisws/concurrent/programs/concrete/gcd/");
         System.out.println("Concrete GCD Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.RR;

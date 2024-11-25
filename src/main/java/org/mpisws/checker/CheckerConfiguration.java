@@ -82,8 +82,6 @@ public final class CheckerConfiguration implements Serializable {
      */
     public ProgramType programType;
 
-    public GraphExploration graphExploration;
-
     public SolverApproach solverApproach;
 
     public SchedulingPolicy schedulingPolicy;
@@ -106,7 +104,6 @@ public final class CheckerConfiguration implements Serializable {
         buggyTraceFile = builder.buggyTraceFile;
         solverType = builder.solverType;
         programType = builder.programType;
-        graphExploration = builder.graphExploration;
         solverApproach = builder.solverApproach;
         schedulingPolicy = builder.schedulingPolicy;
     }
@@ -161,7 +158,6 @@ public final class CheckerConfiguration implements Serializable {
         public String executionGraphsPath = "src/main/resources/Visualized_Graphs/";
         public SMTSolverTypes solverType = SMTSolverTypes.SMTINTERPOL;
         public ProgramType programType = ProgramType.SHARED_MEM;
-        public GraphExploration graphExploration = GraphExploration.DFS;
         public SolverApproach solverApproach = SolverApproach.INCREMENTAL;
         public SchedulingPolicy schedulingPolicy = SchedulingPolicy.FIFO;
 
@@ -223,11 +219,6 @@ public final class CheckerConfiguration implements Serializable {
 
         public ConfigurationBuilder withProgramType(ProgramType programType) {
             this.programType = programType;
-            return this;
-        }
-
-        public ConfigurationBuilder withGraphExploration(GraphExploration graphExploration) {
-            this.graphExploration = graphExploration;
             return this;
         }
 
