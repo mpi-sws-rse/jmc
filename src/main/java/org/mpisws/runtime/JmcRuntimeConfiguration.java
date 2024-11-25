@@ -7,8 +7,6 @@ public class JmcRuntimeConfiguration {
 
     private SchedulingStrategy strategy;
 
-    private Integer iterations;
-
     private Boolean debug;
 
     private String bugsPath;
@@ -17,10 +15,6 @@ public class JmcRuntimeConfiguration {
 
     public SchedulingStrategy getStrategy() {
         return strategy;
-    }
-
-    public Integer getIterations() {
-        return iterations;
     }
 
     public Boolean getDebug() {
@@ -33,24 +27,17 @@ public class JmcRuntimeConfiguration {
 
     public static class Builder {
         private SchedulingStrategy strategy;
-        private Integer iterations;
         private Boolean debug;
         private String bugsPath;
 
         public Builder() {
             this.strategy = new RandomSchedulingStrategy(System.nanoTime());
-            this.iterations = 1;
             this.debug = false;
             this.bugsPath = "build/test-results/jmc-bugs";
         }
 
         public Builder strategy(SchedulingStrategy strategy) {
             this.strategy = strategy;
-            return this;
-        }
-
-        public Builder iterations(Integer iterations) {
-            this.iterations = iterations;
             return this;
         }
 
@@ -67,7 +54,6 @@ public class JmcRuntimeConfiguration {
         public JmcRuntimeConfiguration build() {
             JmcRuntimeConfiguration config = new JmcRuntimeConfiguration();
             config.strategy = strategy;
-            config.iterations = iterations;
             config.debug = debug;
             config.bugsPath = bugsPath;
             return config;

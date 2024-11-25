@@ -32,6 +32,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-api:2.22.1")
     implementation("org.apache.logging.log4j:log4j-api-kotlin:1.5.0")
     implementation("org.apache.logging.log4j:log4j-core:2.22.1")
+    implementation("org.junit.platform:junit-platform-engine:1.11.3")
 }
 
 tasks.test {

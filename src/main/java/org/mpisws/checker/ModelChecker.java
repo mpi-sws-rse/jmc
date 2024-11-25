@@ -60,7 +60,7 @@ public class ModelChecker {
         logger.trace("Starting checker");
         this.target = target;
         logger.debug("Checking {}", target.getTestClass());
-        this.run(target);
+        this.runBytecode(target);
         return true;
     }
 
@@ -71,7 +71,7 @@ public class ModelChecker {
      *
      * @param target The program under test.
      */
-    void run(TestTarget target) {
+    void runBytecode(TestTarget target) {
         this.configuration.saveConfig("src/main/resources/config/config.obj");
         String path = target.getTestPath();
         String classPath = target.getTestPackage() + "." + target.getTestClass();
