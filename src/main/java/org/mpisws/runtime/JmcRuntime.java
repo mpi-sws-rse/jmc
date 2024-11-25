@@ -33,6 +33,13 @@ public class JmcRuntime {
         LOGGER.debug("Setting up!");
         JmcRuntime.config = config;
         scheduler = new Scheduler(config.getStrategy());
+        scheduler.start();
+    }
+
+    /** Tears down the runtime. */
+    public static void tearDown() {
+        LOGGER.debug("Tearing down!");
+        scheduler.shutdown();
     }
 
     /**
@@ -49,7 +56,11 @@ public class JmcRuntime {
         taskManager.markStatus(mainThreadId, TaskManager.TaskState.BLOCKED);
 
         scheduler.init(taskManager, mainThreadId);
-        scheduler.updateEvent(new RuntimeEvent(RuntimeEventType.START_EVENT, mainThreadId));
+        scheduler.updateEvent(
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.START_EVENT)
+                        .taskId(mainThreadId)
+                        .build());
         JmcRuntime.yield();
     }
 
@@ -66,6 +77,7 @@ public class JmcRuntime {
     public static void yield() {
         Long currentTask = scheduler.currentTask();
         try {
+            LOGGER.debug("Yielding task {}", currentTask);
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Yielding an already paused task.");
@@ -81,6 +93,7 @@ public class JmcRuntime {
      * @param taskId the ID of the task to be paused
      */
     public static void spawn(Long taskId) {
+        LOGGER.debug("Spawning task {}", taskId);
         taskManager.wait(taskId);
     }
 
@@ -91,6 +104,7 @@ public class JmcRuntime {
      * @param taskId the ID of the task to be terminated
      */
     public static void join(Long taskId) {
+        LOGGER.debug("Joining task {}", taskId);
         taskManager.terminate(taskId);
         try {
             scheduler.yield();
@@ -120,6 +134,7 @@ public class JmcRuntime {
      * @param event to be added
      */
     public static void updateEvent(RuntimeEvent event) {
+        LOGGER.debug("Updating event: {}", event);
         scheduler.updateEvent(event);
     }
 
@@ -140,6 +155,7 @@ public class JmcRuntime {
      */
     public static Long addNewTask() {
         Long newTaskId = taskManager.addNextTask();
+        LOGGER.debug("Adding new task {}", newTaskId);
         try {
             taskManager.pause(newTaskId);
         } catch (TaskAlreadyPaused e) {

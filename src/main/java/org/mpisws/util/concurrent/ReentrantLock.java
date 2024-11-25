@@ -14,6 +14,14 @@ public class ReentrantLock {
                         .param("lock", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);
+        event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.LOCK_ACQUIRED_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param("owner", "org/mpisws/util/concurrent/ReentrantLock")
+                        .param("lock", this)
+                        .build();
+        JmcRuntime.updateEvent(event);
     }
 
     public void unlock() {

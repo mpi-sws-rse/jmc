@@ -44,6 +44,11 @@ public class Scheduler {
         this.schedulerThread = new SchedulerThread(this, strategy);
     }
 
+    /** Starts the scheduler thread. */
+    public void start() {
+        schedulerThread.start();
+    }
+
     /**
      * Initializes the scheduler with the task manager and the main thread.
      *
@@ -86,6 +91,7 @@ public class Scheduler {
     protected void scheduleTask(Long taskId) {
         setCurrentTask(taskId);
         try {
+            LOGGER.debug("Resuming task: {}", taskId);
             taskManager.resume(taskId);
         } catch (TaskNotExists e) {
             LOGGER.error("Resuming a non existent task: {}", e.getMessage());
@@ -117,6 +123,7 @@ public class Scheduler {
             currentTask = null;
         }
         // Release the scheduler thread
+        LOGGER.debug("Enabling scheduler thread.");
         schedulerThread.enable();
         return future;
     }
@@ -124,6 +131,11 @@ public class Scheduler {
     /** Resets the TaskManager and the scheduling strategy for a new iteration. */
     public void endIteration() {
         strategy.reset();
+    }
+
+    /** Shuts down the scheduler. */
+    public void shutdown() {
+        schedulerThread.shutdown();
     }
 
     /** The SchedulerThread class is responsible for scheduling the tasks. */
@@ -184,13 +196,15 @@ public class Scheduler {
                 try {
                     Boolean shutdown = curFuture.join();
                     if (shutdown) {
+                        LOGGER.info("Shutting down scheduler thread.");
                         break;
                     }
                     Long nextTask = strategy.nextTask();
-                    if (nextTask == null) {
-                        break;
+                    if (nextTask != null) {
+                        scheduler.scheduleTask(nextTask);
+                    } else {
+                        LOGGER.debug("No task to schedule.");
                     }
-                    scheduler.scheduleTask(nextTask);
                 } catch (Exception e) {
                     LOGGER.error("Scheduler thread threw an exception: {}", e.getMessage());
                     break;

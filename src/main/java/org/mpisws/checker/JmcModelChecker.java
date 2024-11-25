@@ -2,9 +2,7 @@ package org.mpisws.checker;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mpisws.runtime.HaltExecutionException;
-import org.mpisws.runtime.JmcRuntime;
-import org.mpisws.runtime.JmcRuntimeConfiguration;
+import org.mpisws.runtime.*;
 
 /**
  * The JmcModelChecker class is responsible for managing the model checking process. It uses a
@@ -17,6 +15,11 @@ public class JmcModelChecker {
 
     private final JmcCheckerConfiguration config;
 
+    /** Constructs a new JMC model checker with the default configuration. */
+    public JmcModelChecker() {
+        this(new JmcCheckerConfiguration.Builder().build());
+    }
+
     /**
      * Constructs a new JMC model checker with the given configuration.
      *
@@ -24,9 +27,6 @@ public class JmcModelChecker {
      */
     public JmcModelChecker(JmcCheckerConfiguration config) {
         this.config = config;
-
-        JmcRuntimeConfiguration runtimeConfig = config.toRuntimeConfiguration();
-        JmcRuntime.setup(runtimeConfig);
     }
 
     /**
@@ -35,11 +35,20 @@ public class JmcModelChecker {
      * @param target the test target to check
      */
     public void check(JmcTestTarget target) {
+        JmcRuntimeConfiguration runtimeConfig = config.toRuntimeConfiguration();
+        JmcRuntime.setup(runtimeConfig);
+        int numIterations = config.getNumIterations();
         try {
-            for (int i = 0; i < config.getNumIterations(); i++) {
+            for (int i = 0; i < numIterations; i++) {
                 try {
                     JmcRuntime.initIteration(i);
                     target.invoke();
+                    RuntimeEvent mainEndEvent =
+                            new RuntimeEvent.Builder()
+                                    .type(RuntimeEventType.FINISH_EVENT)
+                                    .taskId(1L)
+                                    .build();
+                    JmcRuntime.updateEvent(mainEndEvent);
                     JmcRuntime.resetIteration();
                 } catch (HaltExecutionException e) {
                     LOGGER.error("Halting execution: {} due to exception: {}", i, e.getMessage());
@@ -48,6 +57,8 @@ public class JmcModelChecker {
             }
         } catch (HaltExecutionException e) {
             LOGGER.error("Halting checking due to exception: {}", e.getMessage());
+        } finally {
+            JmcRuntime.tearDown();
         }
     }
 }

@@ -12,8 +12,8 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="org.mpisws" level="INFO"/>
-        <Root level="WARN">
+        <Logger name="org.mpisws" level="DEBUG"/>
+        <Root level="DEBUG">
             <AppenderRef ref="CONSOLE"/>
         </Root>
     </Loggers>
