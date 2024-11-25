@@ -5,6 +5,10 @@ public class SchedulingStrategyConfiguration {
 
     private SchedulingStrategyConfiguration() {}
 
+    public Long getSeed() {
+        return seed;
+    }
+
     public static class Builder {
         private Long seed;
 

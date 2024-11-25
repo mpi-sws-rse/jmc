@@ -17,6 +17,12 @@ public class RandomSchedulingStrategy extends TrackLockWaitingStrategy {
         this.random = new Random(seed);
     }
 
+    /**
+     * Returns the next task to be scheduled. The task is picked randomly from the set of active
+     * tasks.
+     *
+     * @return the next task to be scheduled
+     */
     @Override
     public Long nextTask() {
         Set<Long> activeThreads = getActiveTasks();
