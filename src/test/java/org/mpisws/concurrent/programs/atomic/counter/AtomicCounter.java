@@ -16,6 +16,7 @@ public class AtomicCounter {
         } catch (InterruptedException e) {
             System.out.println("Interrupted");
         }
+        assert counter.get() == 1;
         System.out.println("Counter value: " + counter.get());
     }
 }

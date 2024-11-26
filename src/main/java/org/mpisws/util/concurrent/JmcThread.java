@@ -5,21 +5,35 @@ import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.runtime.RuntimeEvent;
 import org.mpisws.runtime.RuntimeEventType;
 
+/**
+ * This class is a wrapper around the Java Thread class. It is used to intercept the start, finish,
+ * and interrupt events of a thread.
+ */
 public class JmcThread extends Thread {
 
     public boolean hasTask = false;
     private Long jmcThreadId;
 
+    // TODO: extend to all constructors of Thread and handle ThreadGroups
+
+    /** Constructs a new JmcThread object. */
     public JmcThread() {
         this(JmcRuntime.addNewTask());
     }
 
+    /** Constructs a new JmcThread object with the given Runnable. */
+    public JmcThread(Runnable r) {
+        this(r, JmcRuntime.addNewTask());
+    }
+
+    /** Constructs a new JmcThread object with the given JMC thread ID. */
     public JmcThread(Long jmcThreadId) {
         super();
         this.jmcThreadId = jmcThreadId;
         super.setUncaughtExceptionHandler(this::handleInterrupt);
     }
 
+    /** Constructs a new JmcThread object with the given Runnable and JMC thread ID. */
     public JmcThread(Runnable r, Long jmcThreadId) {
         super(r);
         this.jmcThreadId = jmcThreadId;
@@ -35,7 +49,7 @@ public class JmcThread extends Thread {
                         .taskId(jmcThreadId)
                         .build();
         JmcRuntime.updateEvent(event);
-        JmcRuntime.spawn(jmcThreadId);
+        JmcRuntime.yield(jmcThreadId);
         try {
             run1();
         } catch (HaltTaskException e) {
@@ -56,6 +70,13 @@ public class JmcThread extends Thread {
         }
     }
 
+    @Override
+    public void start() {
+        super.start();
+        JmcRuntime.spawn();
+    }
+
+    /** This method is overridden by the user. */
     public void run1() {
         super.run();
     }
@@ -69,6 +90,7 @@ public class JmcThread extends Thread {
         JmcRuntime.updateEvent(event);
     }
 
+    /** Replacing the Thread join to intercept the join Event. */
     public void join1() throws InterruptedException {
         Long requestingTask = JmcRuntime.currentTask();
         RuntimeEvent event =

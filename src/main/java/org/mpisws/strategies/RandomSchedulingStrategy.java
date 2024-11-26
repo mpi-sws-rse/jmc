@@ -1,10 +1,15 @@
 package org.mpisws.strategies;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.Random;
 import java.util.Set;
 
 /** A random scheduling strategy that selects the next thread to be scheduled randomly. */
 public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
+
+    private static final Logger LOGGER = LogManager.getLogger(RandomSchedulingStrategy.class);
 
     private final Random random;
 
@@ -28,6 +33,9 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
         Set<Long> activeThreads = getActiveTasks();
         if (activeThreads.isEmpty()) {
             return null;
+        }
+        if (activeThreads.size() == 1) {
+            return (Long) activeThreads.toArray()[0];
         }
         int index = random.nextInt(activeThreads.size());
         return (Long) activeThreads.toArray()[index];

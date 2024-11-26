@@ -8,6 +8,7 @@ import org.mpisws.runtime.RuntimeEventType;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -150,10 +151,13 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                 Long requestedTask = event.getParam("waitingTask");
 
                 synchronized (tasksLock) {
-                    Set<Long> waitingList =
-                            waitingTasks.computeIfAbsent(requestedTask, k -> new HashSet<>());
-                    waitingList.add(requestingTask);
-                    activeTasks.remove(requestingTask);
+                    // If the requested task is active, mark the requesting task as waiting
+                    if (activeTasks.contains(requestedTask)) {
+                        Set<Long> waitingList =
+                                waitingTasks.computeIfAbsent(requestedTask, k -> new HashSet<>());
+                        waitingList.add(requestingTask);
+                        activeTasks.remove(requestingTask);
+                    }
                 }
             }
             return getActiveTasks();
@@ -177,29 +181,22 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     /** Tracks the locks acquired and released events of tasks. */
     public static class TrackLocks implements Tracker {
 
+        /**
+         * For each lock, Contains a list of tasks that want the lock. Once the task acquires the
+         * lock, it is removed from the set.
+         */
         private final Map<Object, Set<Long>> waitingTasks;
 
+        private final Map<Long, Optional<Object>> activeTasks;
+
         private final Set<Long> blockedTasks;
-        private final Set<Long> activeTasks;
         private final Object tasksLock = new Object();
 
         /** Constructs a new TrackLocks object. */
         public TrackLocks() {
             this.waitingTasks = new ConcurrentHashMap<>();
             this.blockedTasks = new HashSet<>();
-            this.activeTasks = new HashSet<>();
-        }
-
-        private void markActive(Long taskId) {
-            synchronized (tasksLock) {
-                activeTasks.add(taskId);
-            }
-        }
-
-        private void markInactive(Long taskId) {
-            synchronized (tasksLock) {
-                activeTasks.remove(taskId);
-            }
+            this.activeTasks = new ConcurrentHashMap<>();
         }
 
         /**
@@ -217,19 +214,25 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         public Set<Long> updateEvent(RuntimeEvent event) {
             // If the task is not blocked, mark it as active
             if (!blockedTasks.contains(event.getTaskId())) {
-                markActive(event.getTaskId());
+                activeTasks.put(event.getTaskId(), Optional.empty());
             }
 
             if (event.getType() == RuntimeEventType.LOCK_ACQUIRE_EVENT) {
                 // If the lock is already acquired, block the task.
                 Object lock = event.getParam("lock");
                 Long taskId = event.getTaskId();
-                Set<Long> tasks = waitingTasks.get(lock);
-                if (tasks == null) {
-                    waitingTasks.put(lock, new HashSet<>());
-                } else {
-                    tasks.add(taskId);
-                    markInactive(taskId);
+                Optional<Object> owner = activeTasks.get(taskId);
+                if (owner != null && owner.isPresent()) {
+                    // Check who holds the lock to enable reentrancy
+                    if (owner.get() == lock) {
+                        return getActiveTasks();
+                    }
+                }
+                Set<Long> tasks = waitingTasks.computeIfAbsent(lock, k -> new HashSet<>());
+                tasks.add(taskId);
+                if (owner != null && owner.isPresent()) {
+                    // If the lock is already acquired, mark the task as blocked
+                    activeTasks.remove(taskId);
                     synchronized (tasksLock) {
                         blockedTasks.add(taskId);
                     }
@@ -237,9 +240,13 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
             } else if (event.getType() == RuntimeEventType.LOCK_ACQUIRED_EVENT) {
                 // If the lock is acquired, mark the other waiting tasks as inactive.
                 // Remove the current task from the waiting tasks.
-                // TODO: review this
                 Object lock = event.getParam("lock");
                 Long taskId = event.getTaskId();
+                // For re-entrant locks, the lock owner is the task itself
+                activeTasks.put(taskId, Optional.of(lock));
+                synchronized (tasksLock) {
+                    blockedTasks.remove(taskId);
+                }
                 if (waitingTasks.containsKey(lock)) {
                     Set<Long> tasks = waitingTasks.get(lock);
                     tasks.remove(taskId);
@@ -260,8 +267,8 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                 Set<Long> blockedTasks = waitingTasks.get(lock);
                 if (blockedTasks != null) {
                     for (Long blockedTask : blockedTasks) {
+                        activeTasks.put(blockedTask, Optional.empty());
                         synchronized (tasksLock) {
-                            this.activeTasks.add(blockedTask);
                             this.blockedTasks.remove(blockedTask);
                         }
                     }
@@ -271,9 +278,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         }
 
         private Set<Long> getActiveTasks() {
-            synchronized (tasksLock) {
-                return new HashSet<>(activeTasks);
-            }
+            return new HashSet<>(activeTasks.keySet());
         }
 
         @Override

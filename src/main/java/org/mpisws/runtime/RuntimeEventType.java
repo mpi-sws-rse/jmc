@@ -36,6 +36,7 @@ public enum RuntimeEventType {
     SYMB_ARTH_EVENT,
 
     // Related to futures
+    FUTURE_START_EVENT,
     GET_FUTURE_EVENT,
     FUTURE_EXCEPTION_EVENT,
     FUTURE_SET_EVENT,

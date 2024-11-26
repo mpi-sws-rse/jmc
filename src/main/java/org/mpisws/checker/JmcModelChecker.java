@@ -53,6 +53,10 @@ public class JmcModelChecker {
                 } catch (HaltExecutionException e) {
                     LOGGER.error("Halting execution: {} due to exception: {}", i, e.getMessage());
                     break;
+                } catch (AssertionError e) {
+                    LOGGER.error("Assertion error in iteration {}: {}", i, e.getMessage());
+                    // TODO: capture the report
+                    break;
                 }
             }
         } catch (HaltExecutionException e) {

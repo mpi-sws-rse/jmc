@@ -1,10 +1,10 @@
 package org.mpisws.runtime;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Encapsulates all the operations related to Task objects used by the runtime Except the
@@ -34,6 +34,8 @@ public class TaskManager {
     /** Stores the future of blocked tasks. */
     private final Map<Long, CompletableFuture<Boolean>> taskFutures;
 
+    private final Object tasksLock = new Object();
+
     /**
      * Returns the next task ID to be assigned.
      *
@@ -48,16 +50,21 @@ public class TaskManager {
     /** Constructs a new TaskManager object. */
     public TaskManager() {
         this.idCounter = 1L;
-        this.taskStates = new ConcurrentHashMap<>();
-        this.taskFutures = new ConcurrentHashMap<>();
+        this.taskStates = new HashMap<>();
+        this.taskFutures = new HashMap<>();
     }
 
     /** Resets the TaskManager object. */
     public void reset() {
-        idCounter = 1L;
-        taskStates.clear();
-        for (CompletableFuture<Boolean> future : taskFutures.values()) {
-            future.complete(true);
+        synchronized (idCounterLock) {
+            idCounter = 1L;
+        }
+        synchronized (tasksLock) {
+            taskStates.clear();
+            for (CompletableFuture<Boolean> future : taskFutures.values()) {
+                future.complete(true);
+            }
+            taskFutures.clear();
         }
     }
 
@@ -69,7 +76,9 @@ public class TaskManager {
      */
     public Long addNextTask() {
         Long customTaskId = nextTaskId();
-        taskStates.put(customTaskId, TaskState.CREATED);
+        synchronized (tasksLock) {
+            taskStates.put(customTaskId, TaskState.CREATED);
+        }
         return customTaskId;
     }
 
@@ -83,12 +92,14 @@ public class TaskManager {
      * @throws TaskAlreadyPaused if the task with the specified custom ID is already paused
      */
     public CompletableFuture<Boolean> pause(Long taskId) throws TaskAlreadyPaused {
-        if (taskFutures.containsKey(taskId)) {
-            throw new TaskAlreadyPaused();
-        }
-        taskStates.put(taskId, TaskState.BLOCKED);
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        taskFutures.put(taskId, future);
+        synchronized (tasksLock) {
+            if (taskFutures.containsKey(taskId)) {
+                throw new TaskAlreadyPaused();
+            }
+            taskStates.put(taskId, TaskState.BLOCKED);
+            taskFutures.put(taskId, future);
+        }
         return future;
     }
 
@@ -100,14 +111,16 @@ public class TaskManager {
      * @throws TaskNotExists if the task with the specified custom ID does not exist
      */
     public void resume(Long taskId) throws TaskNotExists {
-        CompletableFuture<Boolean> future = taskFutures.get(taskId);
-        if (future == null) {
-            // The task is not paused or has been completed.
-            throw new TaskNotExists(taskId);
+        synchronized (tasksLock) {
+            CompletableFuture<Boolean> future = taskFutures.get(taskId);
+            if (future == null) {
+                // The task is not paused or has been completed.
+                throw new TaskNotExists(taskId);
+            }
+            future.complete(true);
+            taskFutures.remove(taskId);
+            taskStates.put(taskId, TaskState.RUNNING);
         }
-        future.complete(true);
-        taskFutures.remove(taskId);
-        taskStates.put(taskId, TaskState.RUNNING);
     }
 
     /**
@@ -117,13 +130,15 @@ public class TaskManager {
      * @param taskId the custom ID of the task
      */
     public void terminate(Long taskId) {
-        taskStates.put(taskId, TaskState.TERMINATED);
-        CompletableFuture<Boolean> future = taskFutures.get(taskId);
-        if (future == null) {
-            return;
+        synchronized (tasksLock) {
+            taskStates.put(taskId, TaskState.TERMINATED);
+            CompletableFuture<Boolean> future = taskFutures.get(taskId);
+            if (future == null) {
+                return;
+            }
+            future.complete(true);
+            taskFutures.remove(taskId);
         }
-        future.complete(true);
-        taskFutures.remove(taskId);
     }
 
     /**
@@ -132,7 +147,9 @@ public class TaskManager {
      * @return the size of the task pool
      */
     public int size() {
-        return taskStates.size();
+        synchronized (tasksLock) {
+            return taskStates.size();
+        }
     }
 
     /**
@@ -142,7 +159,9 @@ public class TaskManager {
      * @param state the new state of the task
      */
     public void markStatus(Long taskId, TaskState state) {
-        taskStates.put(taskId, state);
+        synchronized (tasksLock) {
+            taskStates.put(taskId, state);
+        }
     }
 
     /**
@@ -152,7 +171,9 @@ public class TaskManager {
      * @return the state of the task
      */
     public TaskState getStatus(Long taskId) {
-        return taskStates.get(taskId);
+        synchronized (tasksLock) {
+            return taskStates.get(taskId);
+        }
     }
 
     /**
@@ -163,9 +184,11 @@ public class TaskManager {
      */
     public List<Long> findTasksWithStatus(TaskState state) {
         List<Long> result = new ArrayList<>();
-        for (Map.Entry<Long, TaskState> entry : taskStates.entrySet()) {
-            if (entry.getValue() == state) {
-                result.add(entry.getKey());
+        synchronized (tasksLock) {
+            for (Map.Entry<Long, TaskState> entry : taskStates.entrySet()) {
+                if (entry.getValue() == state) {
+                    result.add(entry.getKey());
+                }
             }
         }
         return result;
@@ -178,9 +201,11 @@ public class TaskManager {
      */
     public List<Long> getActiveTasks() {
         ArrayList<Long> result = new ArrayList<>();
-        for (Map.Entry<Long, TaskState> taskStateEntry : taskStates.entrySet()) {
-            if (taskStateEntry.getValue() != TaskState.TERMINATED) {
-                result.add(taskStateEntry.getKey());
+        synchronized (tasksLock) {
+            for (Map.Entry<Long, TaskState> taskStateEntry : taskStates.entrySet()) {
+                if (taskStateEntry.getValue() != TaskState.TERMINATED) {
+                    result.add(taskStateEntry.getKey());
+                }
             }
         }
         return result;
@@ -195,10 +220,12 @@ public class TaskManager {
      * @return true if the task exists with status
      */
     public boolean isTaskOfStatus(Long taskId, TaskState state) {
-        if (!taskStates.containsKey(taskId)) {
-            return false;
+        synchronized (tasksLock) {
+            if (!taskStates.containsKey(taskId)) {
+                return false;
+            }
+            return taskStates.get(taskId) == state;
         }
-        return taskStates.get(taskId) == state;
     }
 
     /**
@@ -207,7 +234,10 @@ public class TaskManager {
      * @param taskId the custom ID of the task
      */
     public void wait(Long taskId) {
-        CompletableFuture<Boolean> future = taskFutures.get(taskId);
+        CompletableFuture<Boolean> future;
+        synchronized (tasksLock) {
+            future = taskFutures.get(taskId);
+        }
         if (future == null) {
             return;
         }

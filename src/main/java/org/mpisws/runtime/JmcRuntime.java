@@ -50,8 +50,8 @@ public class JmcRuntime {
      * @param iteration the iteration number
      */
     public static void initIteration(int iteration) {
-        LOGGER = LogManager.getLogger(JmcRuntime.class.getName() + iteration);
-        LOGGER.debug("Initializing iteration {}", iteration);
+        LOGGER = LogManager.getLogger(JmcRuntime.class.getName() + " Iteration=" + iteration);
+        LOGGER.info("Initializing iteration");
         Long mainThreadId = taskManager.addNextTask();
         taskManager.markStatus(mainThreadId, TaskManager.TaskState.BLOCKED);
 
@@ -87,14 +87,39 @@ public class JmcRuntime {
     }
 
     /**
-     * Waits for the task to be scheduled. Everything else is handled in the {@link
-     * JmcRuntime#addNewTask()} method.
+     * Pauses the task with the given ID and yields the control to the scheduler. The call returns
+     * only when the task with the given ID is resumed.
+     *
+     * <p>Use with Caution! It is meant to be called when a new concurrent task starts and yields
+     * with the new task id. Should not be used otherwise.
      *
      * @param taskId the ID of the task to be paused
      */
-    public static void spawn(Long taskId) {
-        LOGGER.debug("Spawning task {}", taskId);
+    public static void yield(Long taskId) {
+        try {
+            LOGGER.debug("Yielding task {}", taskId);
+            scheduler.yield(taskId);
+        } catch (TaskAlreadyPaused e) {
+            LOGGER.error("Yielding an already paused task.");
+            System.exit(1);
+        }
         taskManager.wait(taskId);
+    }
+
+    /**
+     * Called by the task that spawns a new task to just pause and wait. Everything else is handled
+     * in the {@link JmcRuntime#addNewTask()} method.
+     */
+    public static void spawn() {
+        LOGGER.debug("Spawning new task and waiting");
+        Long currentTask = scheduler.currentTask();
+        try {
+            taskManager.pause(currentTask);
+        } catch (TaskAlreadyPaused e) {
+            LOGGER.error("Current thread is already paused.");
+            System.exit(1);
+        }
+        taskManager.wait(currentTask);
     }
 
     /**
@@ -105,13 +130,13 @@ public class JmcRuntime {
      */
     public static void join(Long taskId) {
         LOGGER.debug("Joining task {}", taskId);
-        taskManager.terminate(taskId);
         try {
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Joining an already paused task.");
             System.exit(1);
         }
+        taskManager.terminate(taskId);
     }
 
     /**
@@ -156,12 +181,6 @@ public class JmcRuntime {
     public static Long addNewTask() {
         Long newTaskId = taskManager.addNextTask();
         LOGGER.debug("Adding new task {}", newTaskId);
-        try {
-            taskManager.pause(newTaskId);
-        } catch (TaskAlreadyPaused e) {
-            LOGGER.error("Adding a new task that is already paused.");
-            System.exit(1);
-        }
         return newTaskId;
     }
 }

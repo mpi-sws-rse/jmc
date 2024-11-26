@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.mpisws.strategies.SchedulingStrategy;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.SynchronousQueue;
 
 /**
  * The scheduler is responsible for managing the execution of threads.
@@ -128,6 +129,26 @@ public class Scheduler {
         return future;
     }
 
+    /**
+     * Pauses the task with the given ID and yields the control to the scheduler.
+     *
+     * <p>The call is non-blocking and returns immediately.
+     *
+     * @param taskId the ID of the task to be paused
+     * @return a future that completes when the task is resumed
+     * @throws TaskAlreadyPaused if the task is already paused
+     */
+    public CompletableFuture<Boolean> yield(Long taskId) throws TaskAlreadyPaused {
+        CompletableFuture<Boolean> future = taskManager.pause(taskId);
+        synchronized (currentTaskLock) {
+            currentTask = null;
+        }
+        // Release the scheduler thread
+        LOGGER.debug("Enabling scheduler thread.");
+        schedulerThread.enable();
+        return future;
+    }
+
     /** Resets the TaskManager and the scheduling strategy for a new iteration. */
     public void endIteration() {
         strategy.reset();
@@ -153,9 +174,7 @@ public class Scheduler {
          * The future that is completed when the scheduler is enabled. Protected by a lock. Every
          * time the scheduler is enabled a new future is created.
          */
-        private CompletableFuture<Boolean> future;
-
-        private final Object futureLock = new Object();
+        private SynchronousQueue<Boolean> enablingQueue;
 
         /**
          * Constructs a new SchedulerThread object.
@@ -166,20 +185,25 @@ public class Scheduler {
         public SchedulerThread(Scheduler scheduler, SchedulingStrategy strategy) {
             this.scheduler = scheduler;
             this.strategy = strategy;
-            this.future = new CompletableFuture<>();
+            this.enablingQueue = new SynchronousQueue<>();
         }
 
         /** Enables the scheduler. */
         public void enable() {
-            synchronized (futureLock) {
-                future.complete(false);
+            try {
+                enablingQueue.put(false);
+            } catch (InterruptedException e) {
+                LOGGER.error("Enabling the scheduler thread was interrupted: {}", e.getMessage());
             }
         }
 
         /** Shuts down the scheduler. */
         public void shutdown() {
-            synchronized (futureLock) {
-                future.complete(true);
+            try {
+                enablingQueue.put(true);
+            } catch (InterruptedException e) {
+                LOGGER.error(
+                        "Shutting down the scheduler thread was interrupted: {}", e.getMessage());
             }
         }
 
@@ -189,16 +213,13 @@ public class Scheduler {
             LOGGER.info("Scheduler thread started.");
             while (true) {
                 // Wait for the scheduler to be enabled
-                CompletableFuture<Boolean> curFuture;
-                synchronized (futureLock) {
-                    curFuture = future;
-                }
                 try {
-                    Boolean shutdown = curFuture.join();
+                    Boolean shutdown = enablingQueue.take();
                     if (shutdown) {
                         LOGGER.info("Shutting down scheduler thread.");
                         break;
                     }
+                    LOGGER.debug("Scheduler thread enabled.");
                     Long nextTask = strategy.nextTask();
                     if (nextTask != null) {
                         scheduler.scheduleTask(nextTask);
@@ -208,11 +229,6 @@ public class Scheduler {
                 } catch (Exception e) {
                     LOGGER.error("Scheduler thread threw an exception: {}", e.getMessage());
                     break;
-                } finally {
-                    // Reset the future to wait for the next iteration
-                    synchronized (futureLock) {
-                        future = new CompletableFuture<>();
-                    }
                 }
             }
             LOGGER.info("Scheduler thread finished.");
