@@ -8,13 +8,16 @@ import org.mpisws.runtime.RuntimeEventType;
 /**
  * This class is a wrapper around the Java Thread class. It is used to intercept the start, finish,
  * and interrupt events of a thread.
+ *
+ * <p>The goal is to replace all references to Thread with JmcThread in bytecode instrumentation
  */
 public class JmcThread extends Thread {
 
     public boolean hasTask = false;
     private Long jmcThreadId;
 
-    // TODO: extend to all constructors of Thread and handle ThreadGroups
+    // TODO: extend to all constructors of Thread and handle ThreadGroups, also all join methods
+    // Should be a drop in replacement for all possible ways to use Threads
 
     /** Constructs a new JmcThread object. */
     public JmcThread() {

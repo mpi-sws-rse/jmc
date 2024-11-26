@@ -8,11 +8,11 @@ import org.mpisws.util.concurrent.JMCInterruptException;
  */
 public class ComplexCounter {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         try {
             Dummy dummy = new Dummy();
             dummy.exe();
-        } catch (JMCInterruptException e) {
+        } catch (JMCInterruptException | InterruptedException e) {
             System.out.println("JMCInterruptException thrown");
         }
     }

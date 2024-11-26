@@ -1,5 +1,8 @@
 package org.mpisws.runtime;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +14,8 @@ import java.util.concurrent.CompletableFuture;
  * SchedulerTask The encapsulation ensures no memory leak when creating many tasks.
  */
 public class TaskManager {
+
+    private static final Logger LOGGER = LogManager.getLogger(TaskManager.class);
 
     /**
      * The state of each task managed by the @RuntimeEnvironment is represented by one of the
@@ -241,6 +246,10 @@ public class TaskManager {
         if (future == null) {
             return;
         }
-        future.join();
+        try {
+            future.get();
+        } catch (Exception e) {
+            LOGGER.error("Error while waiting for task to complete", e);
+        }
     }
 }

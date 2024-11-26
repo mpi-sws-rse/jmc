@@ -1,6 +1,6 @@
 package org.mpisws.concurrent.programs.det.stack;
 
-import org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped.PoperThread;
+import org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped.PopperThread;
 import org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped.PusherThread;
 import org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped.TSStack;
 
@@ -42,7 +42,7 @@ public class Client6 {
 
         for (int i = 0; i < NUM_PUSHES; i++) {
             try {
-                pusherThreads.get(i).join();
+                pusherThreads.get(i).join1();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -50,20 +50,20 @@ public class Client6 {
 
         System.out.println("Insertion Finished");
 
-        List<PoperThread> poperThreads = new ArrayList<>(NUM_POPS);
+        List<PopperThread> popperThreads = new ArrayList<>(NUM_POPS);
         for (int i = 0; i < NUM_POPS; i++) {
-            PoperThread poperThread = new PoperThread();
-            poperThread.stack = stack;
-            poperThreads.add(poperThread);
+            PopperThread popperThread = new PopperThread();
+            popperThread.stack = stack;
+            popperThreads.add(popperThread);
         }
 
         for (int i = 0; i < NUM_POPS; i++) {
-            poperThreads.get(i).start();
+            popperThreads.get(i).start();
         }
 
         for (int i = 0; i < NUM_POPS; i++) {
             try {
-                poperThreads.get(i).join();
+                popperThreads.get(i).join1();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

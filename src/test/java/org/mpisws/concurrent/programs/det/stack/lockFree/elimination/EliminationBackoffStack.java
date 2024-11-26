@@ -2,7 +2,6 @@ package org.mpisws.concurrent.programs.det.stack.lockFree.elimination;
 
 import org.mpisws.concurrent.programs.det.stack.lockFree.LockFreeStack;
 import org.mpisws.concurrent.programs.det.stack.lockFree.Node;
-import org.mpisws.util.concurrent.JMCInterruptException;
 
 import java.util.concurrent.TimeoutException;
 
@@ -12,7 +11,7 @@ public class EliminationBackoffStack<V> extends LockFreeStack<V> {
     public EliminationArray<V> eliminationArray = new EliminationArray<V>(capacity);
 
     @Override
-    public void push(V value) throws JMCInterruptException {
+    public void push(V value) {
         Node<V> node = new Node<V>(value);
         while (true) {
             if (tryPush(node)) {
@@ -31,7 +30,7 @@ public class EliminationBackoffStack<V> extends LockFreeStack<V> {
     }
 
     @Override
-    public V pop() throws JMCInterruptException {
+    public V pop() {
         while (true) {
             Node<V> returnNode = tryPop();
             if (returnNode != null) {

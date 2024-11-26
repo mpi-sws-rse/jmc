@@ -12,7 +12,7 @@ import java.util.concurrent.SynchronousQueue;
  *
  * <p>The scheduler uses the strategy to decide which thread to Schedule. To do so, it instantiates
  * a separate SchedulerThread that is blocked whenever other threads are running and unblocked only
- * when it need to pick the next thread to schedule.
+ * when it needs to pick the next thread to schedule.
  *
  * <p>To interact with the scheduler, invoke the {@link Scheduler#yield()} which will defer control
  * the scheduler thread.
@@ -171,10 +171,10 @@ public class Scheduler {
         private final SchedulingStrategy strategy;
 
         /**
-         * The future that is completed when the scheduler is enabled. Protected by a lock. Every
-         * time the scheduler is enabled a new future is created.
+         * A queue used to enable the scheduler thread. Adding a boolean value to the queue enables
+         * the scheduler to run one iteration, while adding a true value shuts down the scheduler.
          */
-        private SynchronousQueue<Boolean> enablingQueue;
+        private final SynchronousQueue<Boolean> enablingQueue;
 
         /**
          * Constructs a new SchedulerThread object.

@@ -24,7 +24,7 @@ public class DetLoop {
 
         for (int i = 0; i < n; i++) {
             try {
-                threads.get(i).join();
+                threads.get(i).join1();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

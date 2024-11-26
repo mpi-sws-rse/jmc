@@ -31,7 +31,7 @@ public class Client3 {
 
         for (int i = 0; i < NUM_OPERATIONS; i++) {
             try {
-                threads.get(i).join();
+                threads.get(i).join1();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

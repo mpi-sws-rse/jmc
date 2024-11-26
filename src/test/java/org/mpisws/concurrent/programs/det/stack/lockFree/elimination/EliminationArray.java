@@ -1,6 +1,5 @@
 package org.mpisws.concurrent.programs.det.stack.lockFree.elimination;
 
-import org.mpisws.util.concurrent.JMCInterruptException;
 
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +17,7 @@ public class EliminationArray<V> {
         }
     }
 
-    public V visit(V value, int range) throws TimeoutException, JMCInterruptException {
+    public V visit(V value, int range) throws TimeoutException {
         int slot = ThreadLocalRandom.current().nextInt(range);
         return exchanger[slot].exchange(value, duration, TimeUnit.MILLISECONDS);
     }
