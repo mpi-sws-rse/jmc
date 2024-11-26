@@ -11,11 +11,12 @@ public class AtomicCounter {
         adder1.start();
         adder2.start();
         try {
-            adder1.join();
-            adder2.join();
+            adder1.join1();
+            adder2.join1();
         } catch (InterruptedException e) {
             System.out.println("Interrupted");
         }
+        assert counter.get() == 1;
         System.out.println("Counter value: " + counter.get());
     }
 }

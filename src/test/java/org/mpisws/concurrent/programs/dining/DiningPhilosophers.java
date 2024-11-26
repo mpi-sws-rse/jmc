@@ -30,7 +30,7 @@ public class DiningPhilosophers {
 
         for (Philosopher philosopher : philosophers) {
             try {
-                philosopher.join();
+                philosopher.join1();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

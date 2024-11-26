@@ -1,19 +1,21 @@
 package org.mpisws.concurrent.programs.complex.counter;
 
 import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.JmcThread;
 import org.mpisws.util.concurrent.ReentrantLock;
 
-public class CounterThread extends Thread {
+public class CounterThread extends JmcThread {
     Counter counter;
     ReentrantLock lock;
 
     public CounterThread(Counter counter, ReentrantLock lock) {
+        super();
         this.counter = counter;
         this.lock = lock;
     }
 
     @Override
-    public void run() {
+    public void run1() {
         try {
             lock.lock();
             counter.count = counter.count + 1;

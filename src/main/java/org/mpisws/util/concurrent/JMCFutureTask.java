@@ -43,7 +43,8 @@ public class JMCFutureTask<V> extends FutureTask<V> {
 
     @Override
     protected boolean runAndReset() {
-        JmcRuntime.spawn(this.taskId);
+        // Yielding to the runtime. Maybe there should be an event before this. TODO: review
+        JmcRuntime.yield();
         return super.runAndReset();
     }
 

@@ -33,7 +33,7 @@ public class Client2 {
 
         for (int i = 0; i < NUM_PUSHES; i++) {
             try {
-                threads.get(i).join();
+                threads.get(i).join1();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -56,7 +56,7 @@ public class Client2 {
 
         for (int i = 0; i < NUM_POPS; i++) {
             try {
-                popThreads.get(i).join();
+                popThreads.get(i).join1();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

@@ -1,7 +1,6 @@
 package org.mpisws.concurrent.programs.det.stack.lockFree.elimination;
 
 import org.mpisws.util.concurrent.AtomicStampedReference;
-import org.mpisws.util.concurrent.JMCInterruptException;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -13,8 +12,7 @@ public class LockFreeExchanger<V> {
 
     AtomicStampedReference<V> slot = new AtomicStampedReference<V>(null, EMPTY);
 
-    public V exchange(V myItem, long timeout, TimeUnit unit)
-            throws JMCInterruptException, TimeoutException {
+    public V exchange(V myItem, long timeout, TimeUnit unit) throws TimeoutException {
         long nanos = unit.toNanos(timeout);
         long timeBound = System.nanoTime() + nanos;
         int[] stampHolder = {EMPTY};

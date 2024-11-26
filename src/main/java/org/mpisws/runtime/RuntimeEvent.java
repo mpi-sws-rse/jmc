@@ -95,16 +95,6 @@ public class RuntimeEvent {
     }
 
     /**
-     * Returns the value of the parameter with the specified key.
-     *
-     * @param key the key of the parameter
-     * @return the value of the parameter
-     */
-    public Object getParam(String key) {
-        return params.get(key);
-    }
-
-    /**
      * Sets the value of the parameter with the specified key.
      *
      * @param key the key of the parameter
@@ -119,12 +109,16 @@ public class RuntimeEvent {
      * class.
      *
      * @param key the key of the parameter
-     * @param clazz the class of the object
      * @return the value of the parameter as an object of the specified class. Can throw an
      *     exception when casting.
      */
-    public Object getParamAs(String key, Class<?> clazz) {
-        return clazz.cast(params.get(key));
+    public <T> T getParam(String key) {
+        return (T) params.get(key);
+    }
+
+    @Override
+    public String toString() {
+        return "RuntimeEvent{" + "type=" + type + ", taskId=" + taskId + ", params=" + params + '}';
     }
 
     /** A builder for constructing a {@link RuntimeEvent} object. */

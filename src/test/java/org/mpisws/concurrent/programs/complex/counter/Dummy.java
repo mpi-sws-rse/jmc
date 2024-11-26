@@ -2,7 +2,6 @@ package org.mpisws.concurrent.programs.complex.counter;
 
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.ReentrantLock;
-import org.mpisws.util.concurrent.Utils;
 
 public class Dummy {
 
@@ -13,11 +12,9 @@ public class Dummy {
         CounterThread thread2 = new CounterThread(counter, lock);
         thread1.exe();
         thread2.exe();
-        thread1.join();
-        thread2.join();
-        Utils.assertion(
-                counter.count == 2,
-                " ***The assert did not pass, the counter value is " + counter.count + "***");
+        thread1.join1();
+        thread2.join1();
+        assert counter.count == 2;
         System.out.println(
                 "["
                         + Thread.currentThread().getName()

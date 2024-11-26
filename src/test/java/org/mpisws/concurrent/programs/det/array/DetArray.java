@@ -22,7 +22,7 @@ public class DetArray {
             }
 
             for (int i = 0; i < n; i++) {
-                threads.get(i).join();
+                threads.get(i).join1();
             }
 
             int sum = 0;

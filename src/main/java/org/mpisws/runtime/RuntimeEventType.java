@@ -6,6 +6,9 @@ public enum RuntimeEventType {
     FINISH_EVENT,
     HALT_EVENT,
 
+    // Thread join events
+    JOIN_REQUEST_EVENT,
+
     // Thread park and un-park events
     PARK_EVENT,
     UNPARK_EVENT,
@@ -16,6 +19,7 @@ public enum RuntimeEventType {
 
     // Lock events
     LOCK_ACQUIRE_EVENT,
+    LOCK_ACQUIRED_EVENT,
     LOCK_RELEASE_EVENT,
 
     // Read and write events
@@ -32,6 +36,7 @@ public enum RuntimeEventType {
     SYMB_ARTH_EVENT,
 
     // Related to futures
+    FUTURE_START_EVENT,
     GET_FUTURE_EVENT,
     FUTURE_EXCEPTION_EVENT,
     FUTURE_SET_EVENT,

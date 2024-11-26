@@ -12,21 +12,21 @@ public class LockFreeStack<V> implements Stack<V> {
     public AtomicReference<Node<V>> top = new AtomicReference<>(null);
     public Backoff backoff = new Backoff(MIN_DELAY, MAX_DELAY);
 
-    protected boolean tryPush(Node<V> node) throws JMCInterruptException {
+    protected boolean tryPush(Node<V> node) {
         Node<V> oldTop = top.get();
         node.next = oldTop;
         return top.compareAndSet(oldTop, node);
     }
 
     @Override
-    public void push(V value) throws JMCInterruptException {
+    public void push(V value) {
         Node<V> node = new Node<>(value);
         while (!tryPush(node)) {
             backoff.backoff();
         }
     }
 
-    protected Node<V> tryPop() throws JMCInterruptException {
+    protected Node<V> tryPop() {
         Node<V> oldTop = top.get();
         if (oldTop == null) {
             return null;
@@ -40,7 +40,7 @@ public class LockFreeStack<V> implements Stack<V> {
     }
 
     @Override
-    public V pop() throws JMCInterruptException {
+    public V pop() {
         while (true) {
             Node<V> returnNode = tryPop();
             if (returnNode != null) {

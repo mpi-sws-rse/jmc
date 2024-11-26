@@ -1,13 +1,19 @@
 package org.mpisws.concurrent.programs.wrong.counter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.JmcThread;
 import org.mpisws.util.concurrent.ReentrantLock;
 
 /**
  * This is simple concurrent counter program that demonstrates a deadlock between two threads over
  * using two shared locks.
  */
-public class BuggyCounter extends Thread {
+public class BuggyCounter extends JmcThread {
+
+    private static final Logger LOGGER = LogManager.getLogger(BuggyCounter.class);
+
     Counter counter1;
     Counter counter2;
     ReentrantLock lock1;
@@ -15,6 +21,7 @@ public class BuggyCounter extends Thread {
 
     public BuggyCounter(
             Counter counter1, Counter counter2, ReentrantLock lock1, ReentrantLock lock2) {
+        super();
         this.counter1 = counter1;
         this.counter2 = counter2;
         this.lock1 = lock1;
@@ -22,7 +29,7 @@ public class BuggyCounter extends Thread {
     }
 
     @Override
-    public void run() {
+    public void run1() {
         try {
             lock1.lock();
             this.counter1.count++;
@@ -38,7 +45,7 @@ public class BuggyCounter extends Thread {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         Counter counter1 = new Counter();
         Counter counter2 = new Counter();
         ReentrantLock lock1 = new ReentrantLock();
@@ -50,8 +57,12 @@ public class BuggyCounter extends Thread {
         thread1.start();
         thread2.start();
 
-        thread1.join();
-        thread2.join();
+        try {
+            thread1.join1();
+            thread2.join1();
+        } catch (InterruptedException e) {
+            LOGGER.error("The thread is interrupted");
+        }
 
         System.out.println(
                 "["
