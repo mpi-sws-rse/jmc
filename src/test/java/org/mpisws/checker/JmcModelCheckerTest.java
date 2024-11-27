@@ -6,7 +6,12 @@ import org.mpisws.concurrent.programs.complex.counter.ComplexCounter;
 import org.mpisws.concurrent.programs.det.array.DetArray;
 import org.mpisws.concurrent.programs.det.loop.DetLoop;
 import org.mpisws.concurrent.programs.det.loopVariant.DetLoopWithLock;
-import org.mpisws.concurrent.programs.det.stack.*;
+import org.mpisws.concurrent.programs.det.stack.Client1;
+import org.mpisws.concurrent.programs.det.stack.Client2;
+import org.mpisws.concurrent.programs.det.stack.Client3;
+import org.mpisws.concurrent.programs.det.stack.Client4;
+import org.mpisws.concurrent.programs.det.stack.Client5;
+import org.mpisws.concurrent.programs.det.stack.Client6;
 import org.mpisws.concurrent.programs.dining.DiningPhilosophers;
 import org.mpisws.concurrent.programs.wrong.counter.BuggyCounter;
 

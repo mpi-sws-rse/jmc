@@ -18,7 +18,7 @@ public class JmcRuntime {
 
     private static Logger LOGGER = LogManager.getLogger(JmcRuntime.class);
 
-    private static TaskManager taskManager = new TaskManager();
+    private static final TaskManager taskManager = new TaskManager();
 
     private static Scheduler scheduler;
 
@@ -36,9 +36,10 @@ public class JmcRuntime {
         scheduler.start();
     }
 
-    /** Tears down the runtime. */
+    /** Tears down the runtime by shutting down the scheduler adn clearing the task manager. */
     public static void tearDown() {
         LOGGER.debug("Tearing down!");
+        taskManager.reset();
         scheduler.shutdown();
     }
 
@@ -56,11 +57,15 @@ public class JmcRuntime {
         taskManager.markStatus(mainThreadId, TaskManager.TaskState.BLOCKED);
 
         scheduler.init(taskManager, mainThreadId);
-        scheduler.updateEvent(
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.START_EVENT)
-                        .taskId(mainThreadId)
-                        .build());
+        try {
+            scheduler.updateEvent(
+                    new RuntimeEvent.Builder()
+                            .type(RuntimeEventType.START_EVENT)
+                            .taskId(mainThreadId)
+                            .build());
+        } catch (HaltTaskException ignored) {
+            LOGGER.error("Failed to start main thread.");
+        }
         JmcRuntime.yield();
     }
 
@@ -158,9 +163,15 @@ public class JmcRuntime {
      *
      * @param event to be added
      */
-    public static void updateEvent(RuntimeEvent event) {
+    public static void updateEvent(RuntimeEvent event) throws HaltTaskException {
         LOGGER.debug("Updating event: {}", event);
-        scheduler.updateEvent(event);
+        try {
+            scheduler.updateEvent(event);
+        } catch (HaltTaskException e) {
+            LOGGER.error("Failed to update event: {}", event);
+            taskManager.terminate(event.getTaskId());
+            throw e;
+        }
     }
 
     /**
@@ -168,7 +179,7 @@ public class JmcRuntime {
      *
      * @param event the new event
      */
-    public static void updateEventAndYield(RuntimeEvent event) {
+    public static void updateEventAndYield(RuntimeEvent event) throws HaltTaskException {
         updateEvent(event);
         JmcRuntime.yield();
     }

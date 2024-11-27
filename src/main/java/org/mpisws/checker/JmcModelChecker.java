@@ -50,14 +50,20 @@ public class JmcModelChecker {
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
                     JmcRuntime.resetIteration();
+                } catch (HaltTaskException e) {
+                    LOGGER.debug(
+                            "Halting execution: {} due to main thread halted: {}",
+                            i,
+                            e.getMessage());
+                    break;
                 } catch (HaltExecutionException e) {
                     LOGGER.error("Halting execution: {} due to exception: {}", i, e.getMessage());
                     break;
                 } catch (AssertionError e) {
                     LOGGER.error("Assertion error in iteration {}: {}", i, e.getMessage());
-                    // TODO: capture the report
                     break;
                 }
+                // TODO: capture the report
             }
         } catch (HaltExecutionException e) {
             LOGGER.error("Halting checking due to exception: {}", e.getMessage());

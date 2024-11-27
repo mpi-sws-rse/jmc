@@ -1,5 +1,6 @@
 package org.mpisws.strategies;
 
+import org.mpisws.runtime.HaltTaskException;
 import org.mpisws.runtime.RuntimeEvent;
 
 /**
@@ -19,7 +20,7 @@ public interface SchedulingStrategy {
      *
      * <p>May be left empty if unused
      */
-    void updateEvent(RuntimeEvent event);
+    void updateEvent(RuntimeEvent event) throws HaltTaskException;
 
     /**
      * Returns the ID of the next thread to be scheduled.

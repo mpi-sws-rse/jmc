@@ -105,7 +105,7 @@ public class Scheduler {
      *
      * @param event the event to be updated
      */
-    public void updateEvent(RuntimeEvent event) {
+    public void updateEvent(RuntimeEvent event) throws HaltTaskException {
         strategy.updateEvent(event);
     }
 

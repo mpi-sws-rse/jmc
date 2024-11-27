@@ -5,7 +5,7 @@ import org.mpisws.runtime.RuntimeEvent;
 import org.mpisws.runtime.RuntimeEventType;
 
 public class ReentrantLock {
-    public void lock() throws JMCInterruptException {
+    public void lock() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEventType.LOCK_ACQUIRE_EVENT)
