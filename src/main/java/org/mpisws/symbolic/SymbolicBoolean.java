@@ -10,7 +10,7 @@ public class SymbolicBoolean extends AbstractBoolean {
     private boolean isShared = false;
     private boolean value;
 
-    public SymbolicBoolean(boolean isShared) {
+    private SymbolicBoolean(boolean isShared) {
         String[] parts = this.toString().split("@");
         this.name = "SymbolicBoolean@" + parts[parts.length - 1];
         this.isShared = isShared;
@@ -18,13 +18,15 @@ public class SymbolicBoolean extends AbstractBoolean {
     }
 
     private SymbolicBoolean(String name, boolean value, boolean isShared) {
+        long id = RuntimeEnvironment.threadIdMap.get(Thread.currentThread().getId());
         this.name = name;
         this.setValue(value);
         this.isShared = isShared;
     }
 
-    private SymbolicBoolean(String name, boolean isShared) {
-        this.name = name;
+    public SymbolicBoolean(String name, boolean isShared) {
+        long id = RuntimeEnvironment.threadIdMap.get(Thread.currentThread().getId());
+        this.name = "SymbolicBoolean@" + name + "_" + id;
         this.isShared = isShared;
         this.write();
     }

@@ -8,7 +8,7 @@ import org.mpisws.util.concurrent.Utils;
 
 public class RangePolicy {
 
-    public SymbolicInteger range = new SymbolicInteger(false);
+    public SymbolicInteger range = new SymbolicInteger("range", false);
 
     public RangePolicy() throws JMCInterruptException {
         ArithmeticFormula f = new ArithmeticFormula();

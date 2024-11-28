@@ -12,7 +12,7 @@ public class Client5 {
 
     public static void main(String[] args) {
         Set set = new OptimisticList();
-        int NUM_OPERATIONS = 1;
+        int NUM_OPERATIONS = 5;
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {

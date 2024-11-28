@@ -14,7 +14,7 @@ public class Client7 {
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            items.add(new SymbolicInteger(false));
+            items.add(new SymbolicInteger("item" + i, false));
         }
 
         ArrayList<InsertionThread> threads = new ArrayList<>(NUM_OPERATIONS);

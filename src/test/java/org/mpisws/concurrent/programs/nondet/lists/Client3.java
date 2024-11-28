@@ -20,7 +20,7 @@ public class Client3 {
             List<Element> items = new ArrayList<>(NUM_OPERATIONS);
             List<AbstractInteger> keys = new ArrayList<>(NUM_OPERATIONS);
             for (int i = 0; i < NUM_OPERATIONS; i++) {
-                SymbolicInteger key = new SymbolicInteger(false);
+                SymbolicInteger key = new SymbolicInteger("item" + i, false);
                 ArithmeticFormula f = new ArithmeticFormula();
                 SymbolicOperation op1 = f.gt(key, Integer.MIN_VALUE);
                 SymbolicOperation op2 = f.lt(key, Integer.MAX_VALUE);

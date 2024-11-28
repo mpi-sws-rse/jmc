@@ -10,7 +10,7 @@ public class MSQueue implements Queue {
     AtomicReference<Node> head, tail;
 
     public MSQueue() {
-        SymbolicInteger value = new SymbolicInteger(false);
+        SymbolicInteger value = new SymbolicInteger("value", false);
         Node node = new Node(value);
         head = new AtomicReference<Node>(node);
         tail = new AtomicReference<Node>(node);

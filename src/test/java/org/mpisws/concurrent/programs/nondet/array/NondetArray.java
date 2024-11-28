@@ -19,7 +19,7 @@ public class NondetArray {
                 threads.add(new SetterThread(array));
             }
 
-            SymbolicInteger n = new SymbolicInteger(false);
+            SymbolicInteger n = new SymbolicInteger("n", false);
             ArithmeticFormula formula = new ArithmeticFormula();
             SymbolicOperation op1 = formula.geq(n, SIZE / 2);
             SymbolicOperation op2 = formula.leq(n, SIZE);

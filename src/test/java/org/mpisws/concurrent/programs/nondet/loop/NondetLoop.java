@@ -12,7 +12,7 @@ public class NondetLoop {
     public static void main(String[] args) {
         try {
             int SIZE = 2;
-            Numbers numbers = new Numbers(0, new SymbolicInteger(true));
+            Numbers numbers = new Numbers(0, new SymbolicInteger("n", true));
             int ceil = (int) Math.ceil(SIZE / 2.0);
             ArithmeticFormula f = new ArithmeticFormula();
             SymbolicOperation op1 = f.geq(numbers.n, ceil);

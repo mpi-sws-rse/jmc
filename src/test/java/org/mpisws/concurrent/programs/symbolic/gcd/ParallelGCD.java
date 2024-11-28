@@ -11,8 +11,8 @@ public class ParallelGCD {
 
     public static void main(String[] args) {
         try {
-            SymbolicInteger a_in = new SymbolicInteger(false);
-            SymbolicInteger b_in = new SymbolicInteger(false);
+            SymbolicInteger a_in = new SymbolicInteger("a_in", false);
+            SymbolicInteger b_in = new SymbolicInteger("b_in", false);
 
             ArithmeticFormula formula = new ArithmeticFormula();
 
@@ -29,9 +29,9 @@ public class ParallelGCD {
             Utils.assume(op);
 
             Object lock = new Object();
-            SymbolicInteger a = new SymbolicInteger(true);
+            SymbolicInteger a = new SymbolicInteger("a", true);
             a.assign(a_in);
-            SymbolicInteger b = new SymbolicInteger(true);
+            SymbolicInteger b = new SymbolicInteger("b", true);
             b.assign(b_in);
             Decrementor dec1 = new Decrementor(a, b, lock);
             Decrementor dec2 = new Decrementor(b, a, lock);
@@ -44,19 +44,19 @@ public class ParallelGCD {
 
             System.out.println("GCD is computed");
 
-            SymbolicInteger guessedGCD = new SymbolicInteger(false);
+            SymbolicInteger guessedGCD = new SymbolicInteger("guessedGCD", false);
 
             op = formula.gt(guessedGCD, 1); // guessedGCD > 1
             Utils.assume(op);
 
             ArithmeticStatement stmt1 = new ArithmeticStatement();
             stmt1.mod(a_in, guessedGCD);
-            SymbolicInteger mod1 = new SymbolicInteger(false);
+            SymbolicInteger mod1 = new SymbolicInteger("mod1", false);
             mod1.assign(stmt1); // a_in % guessedGCD
 
             ArithmeticStatement stmt2 = new ArithmeticStatement();
             stmt2.mod(b_in, guessedGCD);
-            SymbolicInteger mod2 = new SymbolicInteger(false);
+            SymbolicInteger mod2 = new SymbolicInteger("mod2", false);
             mod2.assign(stmt2); // b_in % guessedGCD
 
             op = formula.eq(mod1, 0);
@@ -67,12 +67,12 @@ public class ParallelGCD {
 
             ArithmeticStatement stmt3 = new ArithmeticStatement();
             stmt3.mod(a_in, a);
-            SymbolicInteger mod3 = new SymbolicInteger(false);
+            SymbolicInteger mod3 = new SymbolicInteger("mod3", false);
             mod3.assign(stmt3); // a_in % gcd : a = gcd
 
             ArithmeticStatement stmt4 = new ArithmeticStatement();
             stmt4.mod(b_in, a);
-            SymbolicInteger mod4 = new SymbolicInteger(false);
+            SymbolicInteger mod4 = new SymbolicInteger("mod4", false);
             mod4.assign(stmt4); // b_in % gcd : a = gcd
 
             op = formula.eq(mod3, 0);

@@ -20,9 +20,9 @@ public class Client1 {
             ArrayList<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
             ArrayList<SymbolicInteger> scores = new ArrayList<>(NUM_OPERATIONS);
             for (int i = 0; i < NUM_OPERATIONS; i++) {
-                SymbolicInteger item = new SymbolicInteger(false);
+                SymbolicInteger item = new SymbolicInteger("item", false);
                 items.add(item);
-                SymbolicInteger score = new SymbolicInteger(false);
+                SymbolicInteger score = new SymbolicInteger("score", false);
                 ArithmeticFormula f = new ArithmeticFormula();
                 SymbolicOperation op1 = f.geq(score, 0);
                 SymbolicOperation op2 = f.lt(score, NUM_OPERATIONS);

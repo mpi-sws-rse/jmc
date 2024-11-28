@@ -12,11 +12,11 @@ import java.util.concurrent.TimeoutException;
 
 public class EliminationArray<V> {
 
-    private final SymbolicInteger duration = new SymbolicInteger(false);
+    private final SymbolicInteger duration = new SymbolicInteger("duration", false);
     private final int MaxDuration = 1000;
     public ArrayList<LockFreeExchanger<V>> exchanger = new ArrayList<>();
     private final int MAX_CAPACITY = 3;
-    public SymbolicInteger capacityArray = new SymbolicInteger(false);
+    public SymbolicInteger capacityArray = new SymbolicInteger("capacityArray", false);
 
     public EliminationArray(SymbolicInteger capacity) throws JMCInterruptException {
         ArithmeticFormula f = new ArithmeticFormula();
@@ -48,7 +48,7 @@ public class EliminationArray<V> {
         SymbolicOperation op1 = f.lt(range, capacityArray);
         Utils.assume(op1); // assume range < capacityArray
 
-        SymbolicInteger slot = new SymbolicInteger(false);
+        SymbolicInteger slot = new SymbolicInteger("slot", false);
 
         SymbolicOperation op2 = f.geq(slot, 0);
         Utils.assume(op2); // assume slot >= 0

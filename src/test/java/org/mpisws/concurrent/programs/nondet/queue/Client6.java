@@ -13,7 +13,7 @@ public class Client6 {
 
         SymbolicInteger[] items = new SymbolicInteger[NUM_INSERTIONS];
         for (int i = 0; i < NUM_INSERTIONS; i++) {
-            items[i] = new SymbolicInteger(false);
+            items[i] = new SymbolicInteger("k" + i, false);
         }
 
         InsertionThread[] insertionThreads = new InsertionThread[NUM_OPERATIONS];

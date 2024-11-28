@@ -7,7 +7,7 @@ import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class EliminationBackoffStack<V> extends LockFreeStack<V> {
 
-    public final SymbolicInteger capacity = new SymbolicInteger(false);
+    public final SymbolicInteger capacity = new SymbolicInteger("capacity", false);
     public EliminationArray<V> eliminationArray = new EliminationArray<V>(capacity);
     public ThreadLocal<RangePolicy> rangePolicy = new ThreadLocal<>();
 

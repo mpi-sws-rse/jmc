@@ -11,7 +11,7 @@ public class Client1 {
 
         SymbolicInteger[] items = new SymbolicInteger[NUM_OPERATIONS];
         for (int i = 0; i < NUM_OPERATIONS; i++) {
-            items[i] = new SymbolicInteger(false);
+            items[i] = new SymbolicInteger("k" + i, false);
         }
 
         InsertionThread[] threads = new InsertionThread[NUM_OPERATIONS];

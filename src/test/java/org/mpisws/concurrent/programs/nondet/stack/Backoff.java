@@ -15,17 +15,17 @@ public class Backoff {
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op = f.leq(minDelay, maxDelay);
         Utils.assume(op); // assert minDelay <= maxDelay;
-        limit = new SymbolicInteger(true);
+        limit = new SymbolicInteger("limit", true);
         limit.assign(minDelay);
     }
 
     public void backoff() throws JMCInterruptException {
-        SymbolicInteger delay = new SymbolicInteger(false);
+        SymbolicInteger delay = new SymbolicInteger("delay", false);
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op1 = f.lt(delay, limit);
         Utils.assume(op1); // int delay = ThreadLocalRandom.current().nextInt(limit);
 
-        SymbolicInteger limit2 = new SymbolicInteger(false);
+        SymbolicInteger limit2 = new SymbolicInteger("limit2", false);
         ArithmeticStatement s1 = new ArithmeticStatement();
         s1.mul(limit, 2);
         limit2.assign(s1); // limit2 = 2 * limit;

@@ -18,7 +18,7 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
         this.isShared = false;
     }
 
-    public SymbolicInteger(boolean isShared) {
+    private SymbolicInteger(boolean isShared) {
         String[] parts = this.toString().split("@");
         this.name = "SymbolicInteger@" + parts[parts.length - 1];
         this.isShared = isShared;
@@ -34,13 +34,15 @@ public class SymbolicInteger extends AbstractInteger implements Serializable {
     }
 
     private SymbolicInteger(String name, int value, boolean isShared) {
+        long id = RuntimeEnvironment.threadIdMap.get(Thread.currentThread().getId());
         this.name = name;
         this.setValue(value);
         this.isShared = isShared;
     }
 
-    private SymbolicInteger(String name, boolean isShared) {
-        this.name = name;
+    public SymbolicInteger(String name, boolean isShared) {
+        long id = RuntimeEnvironment.threadIdMap.get(Thread.currentThread().getId());
+        this.name = "SymbolicInteger@" + name + "_" + id;
         this.isShared = isShared;
         write();
     }

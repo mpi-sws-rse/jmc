@@ -54,14 +54,14 @@ public class RandomCounter extends Thread {
 
     public static void main(String[] args) throws InterruptedException {
         Counter counter = new Counter();
-        SymbolicInteger x1 = new SymbolicInteger(false);
-        SymbolicInteger x2 = new SymbolicInteger(false);
-        SymbolicInteger y1 = new SymbolicInteger(false);
-        SymbolicInteger y2 = new SymbolicInteger(false);
-        SymbolicBoolean a1 = new SymbolicBoolean(false);
-        SymbolicBoolean a2 = new SymbolicBoolean(false);
-        SymbolicBoolean b1 = new SymbolicBoolean(false);
-        SymbolicBoolean b2 = new SymbolicBoolean(false);
+        SymbolicInteger x1 = new SymbolicInteger("x1", false);
+        SymbolicInteger x2 = new SymbolicInteger("x2", false);
+        SymbolicInteger y1 = new SymbolicInteger("y1", false);
+        SymbolicInteger y2 = new SymbolicInteger("y2", false);
+        SymbolicBoolean a1 = new SymbolicBoolean("a1", false);
+        SymbolicBoolean a2 = new SymbolicBoolean("a2", false);
+        SymbolicBoolean b1 = new SymbolicBoolean("b1", false);
+        SymbolicBoolean b2 = new SymbolicBoolean("b2", false);
         RandomCounter thread1 = new RandomCounter(counter, x1, y1, a1, b1);
         RandomCounter thread2 = new RandomCounter(counter, x2, y2, a2, b2);
         thread1.start();

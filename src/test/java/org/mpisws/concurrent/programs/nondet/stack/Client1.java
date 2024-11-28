@@ -17,7 +17,7 @@ public class Client1 {
 
             List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
             for (int i = 0; i < NUM_OPERATIONS; i++) {
-                SymbolicInteger item = new SymbolicInteger(false);
+                SymbolicInteger item = new SymbolicInteger("item" + i, false);
                 items.add(item);
             }
 

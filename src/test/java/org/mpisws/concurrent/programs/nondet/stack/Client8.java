@@ -17,7 +17,7 @@ public class Client8 {
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_PUSHES);
         for (int i = 0; i < NUM_PUSHES; i++) {
-            items.add(new SymbolicInteger(false));
+            items.add(new SymbolicInteger("item" + i, false));
         }
 
         List<InsertionThread> pusherThreads = new ArrayList<>(NUM_PUSHES);

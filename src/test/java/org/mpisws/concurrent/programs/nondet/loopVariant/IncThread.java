@@ -21,7 +21,7 @@ public class IncThread extends Thread {
     public void run() {
         try {
             int t;
-            SymbolicInteger k = new SymbolicInteger(false);
+            SymbolicInteger k = new SymbolicInteger("k", false);
             ArithmeticFormula f = new ArithmeticFormula();
             int ceil = (int) Math.ceil(SIZE / 2.0);
             SymbolicOperation op1 = f.geq(k, ceil);

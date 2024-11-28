@@ -15,14 +15,14 @@ public class Client4 {
     public static void main(String[] args) {
         try {
             Set set = new FineList();
-            int NUM_OPERATIONS = 6;
+            int NUM_OPERATIONS = 5;
             int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
             int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
 
             List<Element> items = new ArrayList<>(NUM_INSERTIONS);
             List<AbstractInteger> keys = new ArrayList<>(NUM_INSERTIONS);
             for (int i = 0; i < NUM_INSERTIONS; i++) {
-                SymbolicInteger key = new SymbolicInteger(false);
+                SymbolicInteger key = new SymbolicInteger("item" + i, false);
                 ArithmeticFormula f = new ArithmeticFormula();
                 SymbolicOperation op1 = f.gt(key, Integer.MIN_VALUE);
                 SymbolicOperation op2 = f.lt(key, Integer.MAX_VALUE);

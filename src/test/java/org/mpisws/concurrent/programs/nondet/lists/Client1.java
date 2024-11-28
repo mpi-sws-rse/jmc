@@ -15,12 +15,12 @@ public class Client1 {
     public static void main(String[] args) {
         try {
             Set set = new CoarseList();
-            int NUM_OPERATIONS = 5;
+            int NUM_OPERATIONS = 4;
 
             List<Element> items = new ArrayList<>(NUM_OPERATIONS);
             List<AbstractInteger> keys = new ArrayList<>(NUM_OPERATIONS);
             for (int i = 0; i < NUM_OPERATIONS; i++) {
-                SymbolicInteger key = new SymbolicInteger(false);
+                SymbolicInteger key = new SymbolicInteger("item" + i, false);
                 ArithmeticFormula f = new ArithmeticFormula();
                 SymbolicOperation op1 = f.gt(key, Integer.MIN_VALUE);
                 SymbolicOperation op2 = f.lt(key, Integer.MAX_VALUE);

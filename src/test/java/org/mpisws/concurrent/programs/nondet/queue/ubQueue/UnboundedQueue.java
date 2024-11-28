@@ -11,7 +11,7 @@ public class UnboundedQueue implements Queue {
     public volatile Node head, tail;
 
     public UnboundedQueue() {
-        SymbolicInteger sym = new SymbolicInteger(false);
+        SymbolicInteger sym = new SymbolicInteger("sym", false);
         head = new Node(sym);
         tail = head;
         enqLock = new ReentrantLock();

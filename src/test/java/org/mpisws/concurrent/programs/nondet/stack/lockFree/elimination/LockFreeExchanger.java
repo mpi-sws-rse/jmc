@@ -17,7 +17,7 @@ public class LockFreeExchanger<V> {
     public V exchange(V myItem, SymbolicInteger timeout) throws JMCInterruptException, TimeoutException {
         int[] stampHolder = {EMPTY};
         while (true) {
-            SymbolicInteger timeBound = new SymbolicInteger(false);
+            SymbolicInteger timeBound = new SymbolicInteger("timeBound", false);
             ArithmeticStatement as = new ArithmeticStatement();
             as.add(timeout, (int) System.nanoTime());
             timeBound.assign(as);

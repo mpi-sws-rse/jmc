@@ -23,7 +23,7 @@ public class SymbolicCounter extends Thread {
             int a = 0;
             Utils.assume(a == 0);
 
-            SymbolicInteger y = new SymbolicInteger(false);
+            SymbolicInteger y = new SymbolicInteger("y", false);
             ArithmeticStatement as = new ArithmeticStatement();
             as.add(y, 1);
             y.assign(as);
@@ -31,14 +31,14 @@ public class SymbolicCounter extends Thread {
             SymbolicOperation op = af.eq(y, 1);
             Utils.assume(op);
 
-            SymbolicBoolean b = new SymbolicBoolean(false);
+            SymbolicBoolean b = new SymbolicBoolean("b", false);
             PropositionalFormula pf = new PropositionalFormula();
             SymbolicOperation op2 = pf.not(b);
             PropositionalFormula pf2 = new PropositionalFormula();
             SymbolicOperation op3 = pf2.or(op2, b);
             Utils.assume(op3);
 
-            SymbolicInteger x = new SymbolicInteger(true);
+            SymbolicInteger x = new SymbolicInteger("x", true);
             Counter counter = new Counter(x);
             SymbolicCounter sc1 = new SymbolicCounter(counter);
             SymbolicCounter sc2 = new SymbolicCounter(counter);

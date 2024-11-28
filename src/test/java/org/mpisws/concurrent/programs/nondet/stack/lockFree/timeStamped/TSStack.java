@@ -31,7 +31,7 @@ public class TSStack<V> implements Stack<V> {
         int threadID = thread.id;
         SPPool pool = spPools[threadID];
         TNode<V> node = pool.insert(item);
-        SymbolicInteger ts = new SymbolicInteger(false);
+        SymbolicInteger ts = new SymbolicInteger("ts", false);
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op1 = f.gt(ts, 0);
         Utils.assume(op1); // assume ts > 0
@@ -44,7 +44,7 @@ public class TSStack<V> implements Stack<V> {
      */
     @Override
     public V pop() throws JMCInterruptException {
-        SymbolicInteger startTime = new SymbolicInteger(false);
+        SymbolicInteger startTime = new SymbolicInteger("startTime", false);
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op1 = f.gt(startTime, 0);
         Utils.assume(op1); // assume startTime > 0
@@ -61,7 +61,7 @@ public class TSStack<V> implements Stack<V> {
 
     private Result tryRem(SymbolicInteger startTime) throws JMCInterruptException {
         TNode<V> youngest = null;
-        SymbolicInteger timeStamp = new SymbolicInteger(false);
+        SymbolicInteger timeStamp = new SymbolicInteger("timeStamp", false);
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op1 = f.eq(timeStamp, -1);
         Utils.assume(op1); // assume timeStamp == -1

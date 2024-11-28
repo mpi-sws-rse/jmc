@@ -8,8 +8,8 @@ import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class LockFreeStack<V> implements Stack<V> {
 
-    public final SymbolicInteger MIN_DELAY = new SymbolicInteger(false);
-    public final SymbolicInteger MAX_DELAY = new SymbolicInteger(false);
+    public final SymbolicInteger MIN_DELAY = new SymbolicInteger("MIN_DELAY", false);
+    public final SymbolicInteger MAX_DELAY = new SymbolicInteger("MAX_DELAY", false);
     public AtomicReference<Node<V>> top = new AtomicReference<>(null);
     public Backoff backoff = new Backoff(MIN_DELAY, MAX_DELAY);
 
