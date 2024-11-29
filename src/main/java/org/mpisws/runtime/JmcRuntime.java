@@ -53,6 +53,7 @@ public class JmcRuntime {
     public static void initIteration(int iteration) {
         LOGGER = LogManager.getLogger(JmcRuntime.class.getName() + " Iteration=" + iteration);
         LOGGER.info("Initializing iteration");
+        scheduler.initIteration(iteration);
         Long mainThreadId = taskManager.addNextTask();
         taskManager.markStatus(mainThreadId, TaskManager.TaskState.BLOCKED);
 

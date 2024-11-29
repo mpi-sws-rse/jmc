@@ -18,6 +18,11 @@ public class SymbolicStrategy implements SchedulingStrategy {
     }
 
     @Override
+    public void initIteration(int iteration) {
+        // Do nothing
+    }
+
+    @Override
     public Long nextTask() {
         return random.nextLong();
     }
@@ -28,7 +33,12 @@ public class SymbolicStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void reset() {
+    public void resetIteration() {
+        // Do nothing
+    }
+
+    @Override
+    public void teardown() {
         // Do nothing
     }
 }

@@ -1,5 +1,6 @@
 package org.mpisws.strategies;
 
+import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.HaltTaskException;
 import org.mpisws.runtime.RuntimeEvent;
 
@@ -16,11 +17,18 @@ import org.mpisws.runtime.RuntimeEvent;
 public interface SchedulingStrategy {
 
     /**
+     * Initializes the strategy for a new iteration.
+     *
+     * @param iteration the number of the iteration.
+     */
+    void initIteration(int iteration);
+
+    /**
      * Updates the strategy with the event that has occurred.
      *
      * <p>May be left empty if unused
      */
-    void updateEvent(RuntimeEvent event) throws HaltTaskException;
+    void updateEvent(RuntimeEvent event) throws HaltTaskException, HaltExecutionException;
 
     /**
      * Returns the ID of the next thread to be scheduled.
@@ -29,6 +37,9 @@ public interface SchedulingStrategy {
      */
     Long nextTask();
 
-    /** Resets the strategy. */
-    void reset();
+    /** Resets the strategy for the current Iteration. */
+    void resetIteration();
+
+    /** Teardown the strategy. Allows for releasing resources. */
+    void teardown();
 }

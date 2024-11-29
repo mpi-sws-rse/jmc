@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Encapsulates all the operations related to Task objects used by the runtime Except the
@@ -40,6 +41,8 @@ public class TaskManager {
     private final Map<Long, CompletableFuture<Boolean>> taskFutures;
 
     private final Object tasksLock = new Object();
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     /**
      * Returns the next task ID to be assigned.

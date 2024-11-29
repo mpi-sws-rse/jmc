@@ -62,6 +62,15 @@ public class Scheduler {
     }
 
     /**
+     * Initializes the strategy for a new iteration.
+     *
+     * @param iteration the number of the iteration
+     */
+    public void initIteration(int iteration) {
+        strategy.initIteration(iteration);
+    }
+
+    /**
      * Returns the ID of the current task.
      *
      * @return the ID of the current task
@@ -151,12 +160,13 @@ public class Scheduler {
 
     /** Resets the TaskManager and the scheduling strategy for a new iteration. */
     public void endIteration() {
-        strategy.reset();
+        strategy.resetIteration();
     }
 
     /** Shuts down the scheduler. */
     public void shutdown() {
         schedulerThread.shutdown();
+        strategy.teardown();
     }
 
     /** The SchedulerThread class is responsible for scheduling the tasks. */

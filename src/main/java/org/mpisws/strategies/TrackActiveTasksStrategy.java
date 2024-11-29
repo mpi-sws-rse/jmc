@@ -30,6 +30,16 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         this.trackers = List.of(new TrackTasks(), new TrackLocks());
     }
 
+    /** Constructs a new TrackActiveTasksStrategy object with the given trackers. */
+    public TrackActiveTasksStrategy(List<Tracker> trackers) {
+        this.allTasks = new HashSet<>();
+        this.activeTasks = new HashSet<>();
+        this.trackers = trackers;
+    }
+
+    @Override
+    public void initIteration(int iteration) {}
+
     @Override
     public void updateEvent(RuntimeEvent event) {
         Set<Long> localActiveTasks;
@@ -49,7 +59,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void reset() {
+    public void resetIteration() {
         synchronized (tasksLock) {
             activeTasks.clear();
             allTasks.clear();
@@ -57,6 +67,11 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         for (Tracker tracker : trackers) {
             tracker.reset();
         }
+    }
+
+    @Override
+    public void teardown() {
+        resetIteration();
     }
 
     /**
