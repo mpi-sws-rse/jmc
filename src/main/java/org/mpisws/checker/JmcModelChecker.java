@@ -15,7 +15,9 @@ public class JmcModelChecker {
 
     private final JmcCheckerConfiguration config;
 
-    /** Constructs a new JMC model checker with the default configuration. */
+    /**
+     * Constructs a new JMC model checker with the default configuration.
+     */
     public JmcModelChecker() {
         this(new JmcCheckerConfiguration.Builder().build());
     }
@@ -65,8 +67,13 @@ public class JmcModelChecker {
                 }
                 // TODO: capture the report
             }
-        } catch (HaltExecutionException e) {
-            LOGGER.error("Halting checking due to exception: {}", e.getMessage());
+        } catch (HaltCheckerException e) {
+            if (e.isOkay()) {
+                LOGGER.info("Model checking completed successfully.");
+            } else {
+                LOGGER.error("Model checking failed: {}", e.getMessage());
+                System.exit(1);
+            }
         } finally {
             JmcRuntime.tearDown();
         }

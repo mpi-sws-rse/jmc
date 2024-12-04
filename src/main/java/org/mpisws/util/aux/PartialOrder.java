@@ -1,18 +1,21 @@
 package org.mpisws.util.aux;
 
-/** Represents a generic partial order relation. */
+/**
+ * Represents a generic partial order relation.
+ */
 public interface PartialOrder<T> {
 
     /**
-     * Compares two objects of type T.
+     * Compares two objects of type T - the current instance and the other object.
      *
-     * @param t1 The first object of type T.
-     * @param t2 The second object of type T.
+     * @param other the other object to compare to.
      * @return The relation between the two objects.
      */
-    Relation compare(T t1, T t2);
+    Relation compare(T other);
 
-    /** Represents the relation between two objects. */
+    /**
+     * Represents the relation between two objects.
+     */
     enum Relation {
         GT,
         LT,

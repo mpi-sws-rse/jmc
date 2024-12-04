@@ -1,18 +1,15 @@
 package org.mpisws.strategies.trust;
 
+import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.HaltTaskException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Contains the core Trust algorithm implementation. (<a
- * href="https://doi.org/10.1145/3498711"></a>) We implement the iterative version of the algorithm
- * that is presented in detail in the thesis. (<a
- * href="https://kluedo.ub.rptu.de/frontdoor/index/index/docId/7670"></a>)
+ * href="https://doi.org/10.1145/3498711"></a>) We implement the recursive version described in the
+ * paper and in the thesis. (<a href="https://kluedo.ub.rptu.de/frontdoor/index/index/docId/7670"></a>)
  *
  * <p>This class contains, in addition to the execution graph and the algorithm, the auxiliary state
  * needed to enforce a specific task scheduling order.
@@ -23,29 +20,35 @@ import java.util.Set;
 public class Algo {
     // The sequence of tasks to be scheduled. This is kept in sync with the execution graph that we
     // are currently visiting.
-    private List<Long> taskSchedule;
-    // The execution graph used by the algorithm.
-    private ExecutionGraph theExecutionGraph;
-    // The execution graph of the current iteration.
-    // Need to figure this out.
-    private ExecutionGraph curExecutionGraph;
+    private ArrayDeque<Long> guidingTaskSchedule;
+    private ExecutionGraph executionGraph;
+    private boolean isGuiding;
+    private final ExplorationStack explorationStack;
 
-    // The set of events that we need to backtrack
-    private HashMap<Event, Event> backtrackSet;
 
-    /** Creates a new instance of the Trust algorithm. */
+    /**
+     * Creates a new instance of the Trust algorithm.
+     */
     public Algo() {
-        this.taskSchedule = new ArrayList<>();
-        this.theExecutionGraph = new ExecutionGraph();
-        this.backtrackSet = new HashMap<>();
+        this.guidingTaskSchedule = null;
+        this.isGuiding = false;
+        this.executionGraph = new ExecutionGraph();
+        this.explorationStack = new ExplorationStack();
+
+        this.executionGraph.addEvent(Event.init());
     }
 
-    /** Returns the next task to be scheduled according to the execution graph set in place. */
+    /**
+     * Returns the next task to be scheduled according to the execution graph set in place.
+     */
     public Long nextTask() {
-        if (taskSchedule.isEmpty()) {
+        if (!isGuiding) {
             return null;
         }
-        return taskSchedule.remove(0);
+        if (guidingTaskSchedule == null || guidingTaskSchedule.isEmpty()) {
+            return null;
+        }
+        return guidingTaskSchedule.pop();
     }
 
     /**
@@ -56,60 +59,94 @@ public class Algo {
      */
     @SuppressWarnings({"checkstyle:MissingSwitchDefault", "checkstyle:LeftCurly"})
     public void updateEvent(Event event) throws HaltTaskException, HaltExecutionException {
-        if (!theExecutionGraph.isConsistent()) {
-            event = Event.end();
+        switch (event.getType()) {
+            case END:
+                handleBot(event);
+                break;
+            case READ:
+                handleRead(event);
+                break;
+            case WRITE:
+                handleWrite(event);
+                break;
+            case READ_EX:
+                handleReadX(event);
+                break;
+            case WRITE_EX:
+                handleWriteX(event);
+                break;
+            case LOCK_AWAIT:
+                handleLockAwait(event);
+                break;
         }
+    }
 
-        if (event.getType() != Event.Type.INIT) {
-            theExecutionGraph.addEvent(event);
+    public void initIteration(int iteration) {
+        // Check if we are guiding the execution and construct the task schedule accordingly!
+        if (iteration == 0) {
             return;
         }
 
-        switch (event.getType()) {
-            case READ -> {
-                Event maxWrite = theExecutionGraph.getMaxWriteForLocation(event.getLocation());
-                theExecutionGraph.setReadsFrom(event, maxWrite);
-                // TODO: update task schedule based on this.
-            }
-            case WRITE -> {
-                backtrackSet.put(event, event);
-            }
-            case END -> backtrack();
+        if (explorationStack.isEmpty()) {
+            // We have reached the end of the exploration stack.
+            // We should not be guiding the execution
+            throw new HaltCheckerException();
+        }
+
+        // We are guiding
+        isGuiding = true;
+        ExplorationStack.Item item = explorationStack.pop();
+        resetWith(item);
+    }
+
+    private void resetWith(ExplorationStack.Item item) {
+        // Reset based on the kind of item in the schedule
+        if (!item.isBackwardRevisit()) {
+            // Forward revisit (w -> r)
+            ExecutionGraphNode write = item.getEvent1();
+            ExecutionGraphNode read = item.getEvent2();
+
+            executionGraph.setReadsFrom(write, read);
+            executionGraph.restrictTo(read);
+            guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+        } else {
+            // TODO: complete backward revisit
         }
     }
 
-    private void backtrack() {
-        while (!theExecutionGraph.isEmpty()) {
-            Event event = theExecutionGraph.top();
-
-            if (event.getType() == Event.Type.READ) {
-                Event corrWrite = theExecutionGraph.getReadsFrom(event);
-                if (theExecutionGraph.existsWritesToLocationBefore(
-                        event.getLocation(), corrWrite)) {
-                    theExecutionGraph.setReadsFrom(
-                            event,
-                            theExecutionGraph.getMaxWriteForLocationBefore(
-                                    event.getLocation(), corrWrite));
-                    break;
-                }
-            } else if (event.getType() == Event.Type.WRITE) {
-                Event backTrackEvent = backtrackSet.get(event);
-                if (theExecutionGraph.existsReadsToLocationBefore(
-                        event.getLocation(), backTrackEvent)) {
-                    Event maxRead =
-                            theExecutionGraph.getMaxReadForLocationBefore(
-                                    event.getLocation(), backTrackEvent);
-                    if (theExecutionGraph.isInCPrefix(maxRead, backTrackEvent)) {
-                        backtrackSet.put(event, maxRead);
-                        Set<Event> toDelete =
-                                theExecutionGraph.eventsAfter(
-                                        maxRead, (e) -> !theExecutionGraph.isInCPrefix(e, event));
-                        // TODO: continue from here
-                    }
-                }
-            }
-        }
+    public void resetIteration() {
+        // Reset the task schedule and the execution graph.
+        // No-op for now.
     }
 
-    private boolean shouldRevisit(Event read, Event e) {}
+    public void teardown() {
+        // Clean up the execution graph and the task schedule.
+    }
+
+    public List<Long> getSchedulableTasks() {
+        // TODO: implement this method
+        // Get from execution graph
+        return new ArrayList<>();
+    }
+
+    private void handleError(Event event) {
+    }
+
+    private void handleBot(Event event) {
+    }
+
+    private void handleRead(Event event) {
+    }
+
+    private void handleWrite(Event event) {
+    }
+
+    private void handleReadX(Event event) {
+    }
+
+    private void handleWriteX(Event event) {
+    }
+
+    private void handleLockAwait(Event event) {
+    }
 }

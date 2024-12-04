@@ -3,7 +3,9 @@ package org.mpisws.util.aux;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Represents a Lamport vector clock used by the algorithm. It is of variable length. */
+/**
+ * Represents a Lamport vector clock used by the algorithm. It is of variable length.
+ */
 public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
 
     private final List<Integer> vector;
@@ -25,11 +27,9 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      *
      * @param vector The vector clock.
      */
-    public LamportVectorClock(int[] vector) {
-        this.vector = new ArrayList<>(vector.length);
-        for (int i : vector) {
-            this.vector.add(i);
-        }
+    public LamportVectorClock(List<Integer> vector) {
+        this.vector = new ArrayList<>(vector.size());
+        this.vector.addAll(vector);
     }
 
     /**
@@ -51,6 +51,15 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      */
     public List<Integer> getVector() {
         return vector;
+    }
+
+    /**
+     * Returns the size of the vector clock.
+     *
+     * @return The size of the vector clock.
+     */
+    public int getSize() {
+        return vector.size();
     }
 
     /**
@@ -115,19 +124,21 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
     }
 
     @Override
-    public Relation compare(LamportVectorClock t1, LamportVectorClock t2) {
-        if (t1.happenedBefore(t2)) {
+    public Relation compare(LamportVectorClock other) {
+        if (this.happenedBefore(other)) {
             return Relation.LT;
-        } else if (t2.happenedBefore(t1)) {
+        } else if (other.happenedBefore(this)) {
             return Relation.GT;
-        } else if (t1.equals(t2)) {
+        } else if (this.equals(other)) {
             return Relation.EQ;
         } else {
             return Relation.UNRELATED;
         }
     }
 
-    /** Represents a component of the Lamport vector clock. */
+    /**
+     * Represents a component of the Lamport vector clock.
+     */
     public static class Component implements TotalOrder<Component> {
 
         private final int index;
@@ -145,16 +156,16 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
         }
 
         @Override
-        public Relation compare(Component t1, Component t2) throws InvalidComparisonException {
-            if (t1.index != t2.index) {
+        public Relation compare(Component other) throws InvalidComparisonException {
+            if (this.index != other.index) {
                 throw new InvalidComparisonException(
                         "Cannot compare components with different indices: "
-                                + t1.index
+                                + this.index
                                 + " and "
-                                + t2.index);
+                                + other.index);
             }
-            int t1Component = t1.clock.vector.get(t1.index);
-            int t2Component = t2.clock.vector.get(t2.index);
+            int t1Component = this.clock.vector.get(this.index);
+            int t2Component = other.clock.vector.get(other.index);
             if (t1Component < t2Component) {
                 return Relation.LT;
             } else if (t1Component > t2Component) {

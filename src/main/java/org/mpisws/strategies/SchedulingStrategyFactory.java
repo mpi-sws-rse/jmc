@@ -1,9 +1,13 @@
 package org.mpisws.strategies;
 
+import org.mpisws.strategies.trust.TrustStrategy;
+
 import java.util.HashSet;
 import java.util.Set;
 
-/** Factory class for creating scheduling strategies. */
+/**
+ * Factory class for creating scheduling strategies.
+ */
 public class SchedulingStrategyFactory {
 
     // Set of valid strategies
@@ -11,12 +15,13 @@ public class SchedulingStrategyFactory {
 
     static {
         validStrategies.add("random");
+        validStrategies.add("trust");
     }
 
     /**
      * Creates a new scheduling strategy.
      *
-     * @param name the name of the strategy
+     * @param name   the name of the strategy
      * @param config the configuration for the strategy
      * @return the scheduling strategy
      */
@@ -27,6 +32,8 @@ public class SchedulingStrategyFactory {
         }
         if (name.equals("random")) {
             return new RandomSchedulingStrategy(config.getSeed());
+        } else if (name.equals("trust")) {
+            return new TrustStrategy(config.getSeed(), config.getTrustSchedulingPolicy());
         }
         return null;
     }

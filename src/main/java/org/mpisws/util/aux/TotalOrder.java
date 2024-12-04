@@ -1,24 +1,29 @@
 package org.mpisws.util.aux;
 
-/** Represents a generic total order relation. */
+/**
+ * Represents a generic total order relation.
+ */
 public interface TotalOrder<T> {
     /**
-     * Compares two objects of type T.
+     * Compares two objects of type T - the current and the other passed as argument.
      *
-     * @param t1 The first object of type T.
-     * @param t2 The second object of type T.
+     * @param other the other object to compare to
      * @return The relation between the two objects.
      */
-    Relation compare(T t1, T t2) throws InvalidComparisonException;
+    Relation compare(T other) throws InvalidComparisonException;
 
-    /** Represents the relation between two objects. */
+    /**
+     * Represents the relation between two objects.
+     */
     enum Relation {
         GT,
         LT,
         EQ,
     }
 
-    /** Represents an exception thrown when an invalid comparison is attempted. */
+    /**
+     * Represents an exception thrown when an invalid comparison is attempted.
+     */
     class InvalidComparisonException extends Exception {
         public InvalidComparisonException(String message) {
             super(message);

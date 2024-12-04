@@ -21,18 +21,26 @@ public class Scheduler {
 
     private static final Logger LOGGER = LogManager.getLogger(Scheduler.class.getName());
 
-    /** The thread manager used to manage the thread states. */
+    /**
+     * The thread manager used to manage the thread states.
+     */
     private TaskManager taskManager;
 
-    /** The scheduling strategy used to decide which thread to schedule. */
+    /**
+     * The scheduling strategy used to decide which thread to schedule.
+     */
     private final SchedulingStrategy strategy;
 
-    /** The ID of the current thread. Protected by the lock for accesses to read and write */
+    /**
+     * The ID of the current thread. Protected by the lock for accesses to read and write
+     */
     private Long currentTask;
 
     private final Object currentTaskLock = new Object();
 
-    /** The scheduler thread instance. */
+    /**
+     * The scheduler thread instance.
+     */
     private final SchedulerThread schedulerThread;
 
     /**
@@ -45,7 +53,9 @@ public class Scheduler {
         this.schedulerThread = new SchedulerThread(this, strategy);
     }
 
-    /** Starts the scheduler thread. */
+    /**
+     * Starts the scheduler thread.
+     */
     public void start() {
         schedulerThread.start();
     }
@@ -54,7 +64,7 @@ public class Scheduler {
      * Initializes the scheduler with the task manager and the main thread.
      *
      * @param taskManager the task manager
-     * @param mainTaskId the ID of the main thread
+     * @param mainTaskId  the ID of the main thread
      */
     public void init(TaskManager taskManager, Long mainTaskId) {
         this.taskManager = taskManager;
@@ -66,7 +76,7 @@ public class Scheduler {
      *
      * @param iteration the number of the iteration
      */
-    public void initIteration(int iteration) {
+    public void initIteration(int iteration) throws HaltCheckerException {
         strategy.initIteration(iteration);
     }
 
@@ -158,26 +168,36 @@ public class Scheduler {
         return future;
     }
 
-    /** Resets the TaskManager and the scheduling strategy for a new iteration. */
+    /**
+     * Resets the TaskManager and the scheduling strategy for a new iteration.
+     */
     public void endIteration() {
         strategy.resetIteration();
     }
 
-    /** Shuts down the scheduler. */
+    /**
+     * Shuts down the scheduler.
+     */
     public void shutdown() {
         schedulerThread.shutdown();
         strategy.teardown();
     }
 
-    /** The SchedulerThread class is responsible for scheduling the tasks. */
+    /**
+     * The SchedulerThread class is responsible for scheduling the tasks.
+     */
     private static class SchedulerThread extends Thread {
 
         private static final Logger LOGGER = LogManager.getLogger(SchedulerThread.class.getName());
 
-        /** The scheduler instance. */
+        /**
+         * The scheduler instance.
+         */
         private final Scheduler scheduler;
 
-        /** The scheduling strategy used by the scheduler. */
+        /**
+         * The scheduling strategy used by the scheduler.
+         */
         private final SchedulingStrategy strategy;
 
         /**
@@ -190,7 +210,7 @@ public class Scheduler {
          * Constructs a new SchedulerThread object.
          *
          * @param scheduler the scheduler instance
-         * @param strategy the scheduling strategy
+         * @param strategy  the scheduling strategy
          */
         public SchedulerThread(Scheduler scheduler, SchedulingStrategy strategy) {
             this.scheduler = scheduler;
@@ -198,7 +218,9 @@ public class Scheduler {
             this.enablingQueue = new SynchronousQueue<>();
         }
 
-        /** Enables the scheduler. */
+        /**
+         * Enables the scheduler.
+         */
         public void enable() {
             try {
                 enablingQueue.put(false);
@@ -207,7 +229,9 @@ public class Scheduler {
             }
         }
 
-        /** Shuts down the scheduler. */
+        /**
+         * Shuts down the scheduler.
+         */
         public void shutdown() {
             try {
                 enablingQueue.put(true);
@@ -217,7 +241,9 @@ public class Scheduler {
             }
         }
 
-        /** The main loop of the scheduler thread. */
+        /**
+         * The main loop of the scheduler thread.
+         */
         @Override
         public void run() {
             LOGGER.info("Scheduler thread started.");

@@ -1,23 +1,35 @@
 package org.mpisws.strategies.trust;
 
-/** Represents an event object used by the algorithm. */
+import org.mpisws.runtime.RuntimeEvent;
+
+/**
+ * Represents an event object used by the algorithm.
+ */
 public class Event {
     private final Location location;
-    private final Long taskId;
+    private final Key key;
     private final Type type;
-    private Long timestamp;
 
     /**
      * Creates a new event with the given task ID, location, and type.
      *
-     * @param taskId The task ID.
+     * @param taskId   The task ID.
      * @param location The location.
-     * @param type The type.
+     * @param type     The type.
      */
     public Event(Long taskId, Location location, Type type) {
         this.location = location;
         this.type = type;
-        this.taskId = taskId;
+        this.key = new Key(taskId, null);
+    }
+
+    /**
+     * The key of the event.
+     *
+     * @return The key of the event.
+     */
+    public Key key() {
+        return key;
     }
 
     /**
@@ -35,7 +47,7 @@ public class Event {
      * @return The task ID.
      */
     public Long getTaskId() {
-        return taskId;
+        return key.getTaskId();
     }
 
     /**
@@ -52,8 +64,8 @@ public class Event {
      *
      * @return The timestamp of the event.
      */
-    public Long getTimestamp() {
-        return timestamp;
+    public Integer getTimestamp() {
+        return key.getTimestamp();
     }
 
     /**
@@ -61,8 +73,8 @@ public class Event {
      *
      * @param timestamp The timestamp of the event.
      */
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
+    public void setTimestamp(Integer timestamp) {
+        this.key.setTimestamp(timestamp);
     }
 
     /**
@@ -83,12 +95,74 @@ public class Event {
         return new Event(null, null, Type.END);
     }
 
-    /** Represents the type of the event according to the algorithm. */
-    public static enum Type {
+    /**
+     * Represents the type of the event according to the algorithm.
+     */
+    public enum Type {
         READ,
+        READ_EX,
+        LOCK_AWAIT,
         INIT,
         WRITE,
+        WRITE_EX,
         END,
+    }
+
+    public static class Key {
+        // The task to which the event belongs to
+        private final Long taskId;
+        // The index of the event in that task. Assuming deterministic executions here.
+        private Integer timestamp;
+
+        public Key(Long taskId, Integer timestamp) {
+            this.taskId = taskId;
+            this.timestamp = timestamp;
+        }
+
+        public Long getTaskId() {
+            return taskId;
+        }
+
+        public Integer getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(Integer timestamp) {
+            this.timestamp = timestamp;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Key key = (Key) o;
+
+            if (!taskId.equals(key.taskId)) {
+                return false;
+            }
+            return timestamp.equals(key.timestamp);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = taskId.hashCode();
+            result = 31 * result + timestamp.hashCode();
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "{"
+                    + taskId
+                    + ", "
+                    + timestamp
+                    + '}';
+        }
     }
 
     /**
@@ -102,16 +176,7 @@ public class Event {
 
     @Override
     public String toString() {
-        return "Event{"
-                + "location="
-                + location
-                + ", taskId="
-                + taskId
-                + ", type="
-                + type
-                + ", timestamp="
-                + timestamp
-                + '}';
+        return "Event" + key;
     }
 
     @FunctionalInterface
