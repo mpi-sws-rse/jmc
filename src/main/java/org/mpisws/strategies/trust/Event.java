@@ -2,25 +2,64 @@ package org.mpisws.strategies.trust;
 
 import org.mpisws.runtime.RuntimeEvent;
 
-/**
- * Represents an event object used by the algorithm.
- */
+import java.util.HashMap;
+import java.util.Map;
+
+/** Represents an event object used by the algorithm. */
 public class Event {
     private final Location location;
     private final Key key;
     private final Type type;
+    private final Map<String, Object> attributes;
 
     /**
      * Creates a new event with the given task ID, location, and type.
      *
-     * @param taskId   The task ID.
+     * @param taskId The task ID.
      * @param location The location.
-     * @param type     The type.
+     * @param type The type.
      */
     public Event(Long taskId, Location location, Type type) {
         this.location = location;
         this.type = type;
         this.key = new Key(taskId, null);
+        this.attributes = new HashMap<>();
+    }
+
+    /**
+     * Creates a clone of the event.
+     *
+     * @return A clone of the event.
+     */
+    public Event clone() {
+        Event e = new Event(key.getTaskId(), location, type);
+        e.key.setTimestamp(key.getTimestamp());
+        e.attributes.putAll(attributes);
+        return e;
+    }
+
+    /**
+     * Returns the attribute of the event with the given key in the type T.
+     *
+     * @param key The key of the attribute.
+     * @param <T> The type of the attribute.
+     * @return The attribute with the given key.
+     */
+    public <T> T getAttribute(String key) {
+        if (!attributes.containsKey(key)) {
+            return null;
+        }
+        return (T) attributes.get(key);
+    }
+
+    /**
+     * Sets the attribute of the event with the given key and value.
+     *
+     * @param key The key of the attribute.
+     * @param value The value of the attribute.
+     */
+    public void setAttribute(String key, Object value) {
+        attributes.put(key, value);
     }
 
     /**
@@ -95,9 +134,17 @@ public class Event {
         return new Event(null, null, Type.END);
     }
 
-    /**
-     * Represents the type of the event according to the algorithm.
-     */
+    public static Event error(String message) {
+        Event e = new Event(null, null, Type.ERROR);
+        e.setAttribute("message", message);
+        return e;
+    }
+
+    public boolean isExclusiveWrite() {
+        return type == Type.WRITE_EX;
+    }
+
+    /** Represents the type of the event according to the algorithm. */
     public enum Type {
         READ,
         READ_EX,
@@ -106,6 +153,7 @@ public class Event {
         WRITE,
         WRITE_EX,
         END,
+        ERROR,
     }
 
     public static class Key {
@@ -157,11 +205,7 @@ public class Event {
 
         @Override
         public String toString() {
-            return "{"
-                    + taskId
-                    + ", "
-                    + timestamp
-                    + '}';
+            return "{" + taskId + ", " + timestamp + '}';
         }
     }
 

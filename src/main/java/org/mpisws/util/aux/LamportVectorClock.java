@@ -3,9 +3,7 @@ package org.mpisws.util.aux;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Represents a Lamport vector clock used by the algorithm. It is of variable length.
- */
+/** Represents a Lamport vector clock used by the algorithm. It is of variable length. */
 public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
 
     private final List<Integer> vector;
@@ -81,12 +79,12 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
     }
 
     /**
-     * Checks if this vector clock happened before the other vector clock.
+     * Checks if this vector clock happens before the other vector clock.
      *
      * @param other The other vector clock.
      * @return True if this vector clock happened before the other vector clock, false otherwise.
      */
-    public boolean happenedBefore(LamportVectorClock other) {
+    public boolean happensBefore(LamportVectorClock other) {
         boolean happenedBefore = false;
         boolean happenedAfter = false;
         int size = Math.max(vector.size(), other.vector.size());
@@ -125,9 +123,9 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
 
     @Override
     public Relation compare(LamportVectorClock other) {
-        if (this.happenedBefore(other)) {
+        if (this.happensBefore(other)) {
             return Relation.LT;
-        } else if (other.happenedBefore(this)) {
+        } else if (other.happensBefore(this)) {
             return Relation.GT;
         } else if (this.equals(other)) {
             return Relation.EQ;
@@ -136,9 +134,7 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
         }
     }
 
-    /**
-     * Represents a component of the Lamport vector clock.
-     */
+    /** Represents a component of the Lamport vector clock. */
     public static class Component implements TotalOrder<Component> {
 
         private final int index;

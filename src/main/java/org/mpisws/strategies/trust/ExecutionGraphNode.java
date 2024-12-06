@@ -2,13 +2,10 @@ package org.mpisws.strategies.trust;
 
 import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.util.aux.LamportVectorClock;
-import org.mpisws.util.aux.PartialOrder;
 
 import java.util.*;
 
-/**
- * Represents a node in the execution graph.
- */
+/** Represents a node in the execution graph. */
 public class ExecutionGraphNode {
     // The event that this node represents.
     private final Event event;
@@ -18,7 +15,8 @@ public class ExecutionGraphNode {
     private final Map<Relation, List<Event.Key>> edges;
     // Back edges to this node. Grouped by adjacency.
     private final Map<Relation, List<Event.Key>> backEdges;
-    // The vector clock of this node.
+
+    // The vector clock of this node (Used to track only PORF relation)
     private LamportVectorClock vectorClock;
 
     /**
@@ -32,16 +30,6 @@ public class ExecutionGraphNode {
         this.edges = new HashMap<>();
         this.backEdges = new HashMap<>();
         this.vectorClock = new LamportVectorClock(vectorClock, event.getTaskId().intValue());
-    }
-
-    /**
-     * Compare this node with the given node.
-     *
-     * @param other The other node
-     * @return The relation between the two nodes
-     */
-    public PartialOrder.Relation compare(ExecutionGraphNode other) {
-        return vectorClock.compare(other.getVectorClock());
     }
 
     /**
@@ -63,9 +51,7 @@ public class ExecutionGraphNode {
         this.vectorClock = new LamportVectorClock(node.vectorClock.getVector());
     }
 
-    /**
-     * Constructs a new {@link ExecutionGraphNode} copying the given node.
-     */
+    /** Constructs a new {@link ExecutionGraphNode} copying the given node. */
     public ExecutionGraphNode clone() {
         return new ExecutionGraphNode(this);
     }
@@ -84,9 +70,10 @@ public class ExecutionGraphNode {
     }
 
     /**
-     * Adds an edge to this node. The edge is directed from this node to the given node with the given adjacency.
+     * Adds an edge to this node. The edge is directed from this node to the given node with the
+     * given adjacency.
      *
-     * @param to        The node to which the edge is directed.
+     * @param to The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void addEdge(ExecutionGraphNode to, Relation adjacency) {
@@ -98,13 +85,17 @@ public class ExecutionGraphNode {
     }
 
     /**
-     * Adds a back edge to this node. The edge is directed from the given node to this node with the given adjacency.
+     * Adds a back edge to this node. The edge is directed from the given node to this node with the
+     * given adjacency. The vector clock of this node is updated with the vector clock of the given
+     * node (only if the relation is not CO).
      *
-     * @param from      The node from which the edge is directed.
+     * @param from The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void addBackEdge(ExecutionGraphNode from, Relation adjacency) {
-        vectorClock.update(from.getVectorClock());
+        if (adjacency == Relation.ReadsFrom || adjacency == Relation.ProgramOrder) {
+            vectorClock.update(from.getVectorClock());
+        }
         if (!backEdges.containsKey(adjacency)) {
             backEdges.put(adjacency, new ArrayList<>());
         }
@@ -114,10 +105,10 @@ public class ExecutionGraphNode {
     /**
      * Removes the edge with the given adjacency from this node.
      *
-     * <p>Note that removing an edge invalidates the vector clock of all descendants.
-     * The concern of fixing the vector clocks is passed to the calling function.</p>
+     * <p>Note that removing an edge invalidates the vector clock of all descendants. The concern of
+     * fixing the vector clocks is passed to the calling function.
      *
-     * @param to        The node to which the edge is directed.
+     * @param to The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void removeEdge(ExecutionGraphNode to, Relation adjacency) {
@@ -131,7 +122,7 @@ public class ExecutionGraphNode {
     /**
      * Removes the back edge with the given adjacency from this node.
      *
-     * @param from      The node from which the edge is directed.
+     * @param from The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void removeBackEdge(ExecutionGraphNode from, Relation adjacency) {
@@ -167,6 +158,11 @@ public class ExecutionGraphNode {
         return new HashSet<>(edges.get(adjacency));
     }
 
+    /**
+     * Returns all the predecessors of this node.
+     *
+     * @return The predecessors of this node.
+     */
     public Set<Event.Key> getAllPredecessors() {
         Set<Event.Key> neighbors = new HashSet<>();
         for (List<Event.Key> edge : backEdges.values()) {
@@ -174,7 +170,6 @@ public class ExecutionGraphNode {
         }
         return neighbors;
     }
-
 
     /**
      * Returns the back edges of this node.
@@ -189,16 +184,20 @@ public class ExecutionGraphNode {
     }
 
     /**
-     * Recomputes the vector clock based on the vector clocks of all predecessors.
-     * The new vector clock is created based on the PO previous node.
+     * Recomputes the vector clock based on the vector clocks of all _porf_-predecessors. The new
+     * vector clock is created based on the PO previous node.
      *
      * @param poBeforeNode The PO previous node to initialize the new vector clock
      * @param nodeProvider A function to get Node for a given key.
      */
     public void recomputeVectorClock(ExecutionGraphNode poBeforeNode, NodeProvider nodeProvider) {
-        LamportVectorClock newVectorClock = new LamportVectorClock(poBeforeNode.getVectorClock(), event.getTaskId().intValue());
+        LamportVectorClock newVectorClock =
+                new LamportVectorClock(poBeforeNode.getVectorClock(), event.getTaskId().intValue());
         try {
-            for (Event.Key key : getAllPredecessors()) {
+            Set<Event.Key> porfPredecessors = getPredecessors(Relation.ProgramOrder);
+            porfPredecessors.addAll(getPredecessors(Relation.ReadsFrom));
+
+            for (Event.Key key : porfPredecessors) {
                 if (key.equals(poBeforeNode.key())) {
                     continue;
                 }
@@ -212,15 +211,15 @@ public class ExecutionGraphNode {
     }
 
     /**
-     * Check if `this` node is happens-before the `other` node.
+     * Check if `this` node is happens-before (_porf_ relation) the `other` node.
      *
-     * <p>Determined using vector clocks</p>
+     * <p>Determined using vector clocks
      *
      * @param other The other node to compare against.
      * @return Returns true if the `this` is happens-before `other`
      */
     public boolean happensBefore(ExecutionGraphNode other) {
-        return vectorClock.happenedBefore(other.getVectorClock());
+        return vectorClock.happensBefore(other.getVectorClock());
     }
 
     /**
@@ -235,7 +234,7 @@ public class ExecutionGraphNode {
     /**
      * Adds an attribute to this node.
      *
-     * @param key   The key of the attribute.
+     * @param key The key of the attribute.
      * @param value The value of the attribute.
      */
     public void addAttribute(String key, Object value) {

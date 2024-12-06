@@ -10,7 +10,9 @@ import java.util.*;
 /**
  * Represents an execution graph.
  *
- * <p>Contains the exploration and all the relations defined according to the Trust algorithm
+ * <p>Contains the exploration and all the relations defined according to the Trust algorithm. For
+ * now this class implements the sequential consistency model. Which, in theory, could be extended
+ * to other models.
  *
  * <p>Some terminology to understand the code
  *
@@ -27,7 +29,7 @@ public class ExecutionGraph {
     private static final Logger LOGGER = LogManager.getLogger(ExecutionGraph.class);
 
     // Events observed in this execution graph grouped by task. This is the PO order
-    private final List<List<ExecutionGraphNode>> taskEvents;
+    private List<List<ExecutionGraphNode>> taskEvents;
 
     // Tracking coherency order between writes to the same location. This is the CO order
     private final HashMap<Location, List<ExecutionGraphNode>> coherencyOrder;
@@ -35,9 +37,7 @@ public class ExecutionGraph {
     // All events in the execution graph. This is the TO order
     private List<ExecutionGraphNode> allEvents;
 
-    /**
-     * Initializes a new execution graph.
-     */
+    /** Initializes a new execution graph. */
     public ExecutionGraph() {
         this.allEvents = new ArrayList<>();
         this.coherencyOrder = new HashMap<>();
@@ -57,7 +57,10 @@ public class ExecutionGraph {
         this.allEvents = new ArrayList<>();
         for (ExecutionGraphNode node : graph.allEvents) {
             Event.Key nodeKey = node.key();
-            this.allEvents.add(this.taskEvents.get(nodeKey.getTaskId().intValue()).get(nodeKey.getTimestamp()));
+            this.allEvents.add(
+                    this.taskEvents
+                            .get(nodeKey.getTaskId().intValue())
+                            .get(nodeKey.getTimestamp()));
         }
         this.coherencyOrder = new HashMap<>();
         for (Location location : graph.coherencyOrder.keySet()) {
@@ -65,11 +68,13 @@ public class ExecutionGraph {
             List<ExecutionGraphNode> newWrites = new ArrayList<>();
             for (ExecutionGraphNode write : writes) {
                 Event.Key nodeKey = write.key();
-                newWrites.add(this.taskEvents.get(nodeKey.getTaskId().intValue()).get(nodeKey.getTimestamp()));
+                newWrites.add(
+                        this.taskEvents
+                                .get(nodeKey.getTaskId().intValue())
+                                .get(nodeKey.getTimestamp()));
             }
             this.coherencyOrder.put(location, newWrites);
         }
-
     }
 
     public List<Long> getTaskSchedule() {
@@ -102,16 +107,19 @@ public class ExecutionGraph {
      * Adds an event to the execution graph.
      *
      * @param event The event to add.
+     * @return The node representing the added event.
      */
-    public void addEvent(Event event) {
-
+    public ExecutionGraphNode addEvent(Event event) {
         if (event.isInit()) {
             // Add the initial event to the TO order
-            allEvents.add(new ExecutionGraphNode(event, new LamportVectorClock(1)));
-            return;
+            ExecutionGraphNode initialNode =
+                    new ExecutionGraphNode(event, new LamportVectorClock(0));
+            allEvents.add(initialNode);
+            return initialNode;
         }
 
-        // Track the event in the PO order (fetch the latest vector clock first and use that to create a node)
+        // Track the event in the PO order (fetch the latest vector clock first and use that to
+        // create a node)
         int task = Math.toIntExact(event.getTaskId());
         if (task >= taskEvents.size()) {
             taskEvents.add(new ArrayList<>());
@@ -128,48 +136,120 @@ public class ExecutionGraph {
 
         // Set timestamp to task event size
         event.setTimestamp(taskEvents.get(task).size());
-
         taskEvents.get(task).add(node);
+
+        // Track the event in the TO order
         allEvents.add(node);
 
-        // Track the event in the CO order
-        if (event.getType() == Event.Type.WRITE) {
-            Location location = event.getLocation();
-            if (!coherencyOrder.containsKey(location)) {
-                coherencyOrder.put(location, new ArrayList<>());
-            }
-            coherencyOrder.get(location).add(node);
-        }
-
-        // Update the reads from relation
-        if (event.getType() == Event.Type.READ) {
-            ExecutionGraphNode latestWrite = allEvents.get(0);
-            if (coherencyOrder.containsKey(event.getLocation())) {
-                List<ExecutionGraphNode> writes = coherencyOrder.get(event.getLocation());
-                latestWrite = writes.get(writes.size() - 1);
-            }
-            latestWrite.addEdge(node, Relation.ReadsFrom);
-        }
+        return node;
     }
 
-    protected Event getCOMax(Location location) {
+    /**
+     * Returns the last write event to the given location.
+     *
+     * @param location The location to get the last write event for.
+     * @return The last write event to the given location.
+     */
+    public ExecutionGraphNode getCoMax(Location location) {
         List<ExecutionGraphNode> writes = coherencyOrder.get(location);
         if (writes == null || writes.isEmpty()) {
-            return null;
+            // No writes to the location, therefore return the initial event
+            return allEvents.get(0);
         }
-        return writes.get(writes.size() - 1).getEvent();
+        return writes.get(writes.size() - 1);
+    }
+
+    /**
+     * Returns the nodes that are not _porf_-before the given node except the last node in the
+     * returned list. Assumes that the given nodes are ordered in CO order.
+     *
+     * @param node The node to split before.
+     * @param nodes The nodes to split.
+     * @return The nodes that are not _porf_-before the given node.
+     */
+    private List<ExecutionGraphNode> splitNodesBefore(
+            ExecutionGraphNode node, List<ExecutionGraphNode> nodes) {
+        List<ExecutionGraphNode> result = new ArrayList<>();
+        for (int i = nodes.size() - 1; i >= 0; i--) {
+            ExecutionGraphNode iterNode = nodes.get(i);
+            if (!iterNode.happensBefore(node)) {
+                result.add(iterNode);
+            } else {
+                // Add the one last write that is _porf_-before the read
+                result.add(iterNode);
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the alternative writes (in reverse CO order) to the given read event.
+     *
+     * <p>All writes that are not _porf_-before the given read. (Tied to Sequential consistency
+     * model)
+     *
+     * @param read The read event node.
+     * @return The alternative writes to the given read event.
+     */
+    public List<ExecutionGraphNode> getAlternativeWrites(ExecutionGraphNode read) {
+        List<ExecutionGraphNode> allWrites = coherencyOrder.get(read.getEvent().getLocation());
+        return splitNodesBefore(read, allWrites);
+    }
+
+    /**
+     * Resets the coherency order between the given write events.
+     *
+     * <p>Invalidates the total order of events in the graph. The concern of fixing the total order
+     * is passed to the calling function.
+     *
+     * @param write1 The first write event.
+     * @param write2 The second write event.
+     */
+    public void resetCoherence(ExecutionGraphNode write1, ExecutionGraphNode write2) {
+        // Update the coherency order
+    }
+
+    /**
+     * Returns the coherency placings of the given write event under sequential consistency.
+     *
+     * <p>Writes that are not _porf_-before the given write event.
+     *
+     * @param write The write event.
+     * @return The coherency placings of the given write event.
+     */
+    public List<ExecutionGraphNode> getCoherentPlacings(ExecutionGraphNode write) {
+        List<ExecutionGraphNode> allWrites = coherencyOrder.get(write.getEvent().getLocation());
+        List<ExecutionGraphNode> writesAfter = splitNodesBefore(write, allWrites);
+        if (writesAfter.isEmpty()) {
+            // Bug! There should at least be the init
+            throw new HaltCheckerException("No writes after the given write event.");
+        }
+        writesAfter.remove(writesAfter.size() - 1);
+        if (writesAfter.isEmpty()) {
+            // No writes after the given write event
+            return writesAfter;
+        }
+        // Remove exclusive writes
+        // Following the sequential consistency model, we only consider non-exclusive writes
+        // (referencing GenMC implementation)
+        writesAfter =
+                writesAfter.stream()
+                        .filter((w) -> !EventUtils.isExclusiveWrite(w.getEvent()))
+                        .toList();
+        return writesAfter;
     }
 
     /**
      * Updates the reads from relation between the given read and write events.
      *
-     * <p>Invalidates the total order and the vector clocks of events in the graph.
-     * The concern of fixing the total order and the vector clocks is passed to the calling function.
+     * <p>Invalidates the total order and the vector clocks of events in the graph. The concern of
+     * fixing the total order and the vector clocks is passed to the calling function.
      *
-     * @param read  The read event.
+     * @param read The read event.
      * @param write The write event.
      */
-    public void setReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
+    public void resetReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
         Set<Event.Key> writes = read.getPredecessors(Relation.ReadsFrom);
         if (writes.size() != 1) {
             throw new HaltCheckerException("A read has more than one RF back edge.");
@@ -183,6 +263,37 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * Sets the reads from relation between the given read and write events.
+     *
+     * @param read The read event.
+     * @param write The write event.
+     */
+    public void setReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
+        write.addEdge(read, Relation.ReadsFrom);
+    }
+
+    /**
+     * Tracks the coherency order between the given write event and the previous write event to the
+     * same location.
+     *
+     * @param write The write event.
+     */
+    public void trackCoherency(ExecutionGraphNode write) {
+        Location location = write.getEvent().getLocation();
+        if (!coherencyOrder.containsKey(location)) {
+            List<ExecutionGraphNode> writes = new ArrayList<>();
+            writes.add(allEvents.get(0));
+            coherencyOrder.put(location, writes);
+        }
+        coherencyOrder.get(location).add(write);
+        ExecutionGraphNode previousWrite = allEvents.get(0);
+        if (coherencyOrder.get(location).size() > 1) {
+            previousWrite =
+                    coherencyOrder.get(location).get(coherencyOrder.get(location).size() - 2);
+        }
+        previousWrite.addEdge(write, Relation.Coherency);
+    }
 
     /**
      * Restricts the execution graph to the given node. Meaning, all events that are not in the
@@ -194,7 +305,8 @@ public class ExecutionGraph {
      * @param restrictingNode The node to restrict to.
      */
     public void restrictTo(ExecutionGraphNode restrictingNode) {
-        // First recompute vector clocks
+        // First recompute vector clocks (because, prior to restrict we are assuming that the graph
+        // has been modified)
         for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
             ExecutionGraphNode iterNode = it.next();
             if (iterNode.getAllPredecessors().isEmpty()) {
@@ -213,17 +325,64 @@ public class ExecutionGraph {
             }
         }
 
+        // Update Task Events while tracking locations
+        Set<Location> locationsToKeep = new HashSet<>();
+        LamportVectorClock restrictingVectorClock = restrictingNode.getVectorClock();
+        List<List<ExecutionGraphNode>> newTaskEvents = new ArrayList<>();
+        for (int i = 0; i < taskEvents.size(); i++) {
+            List<ExecutionGraphNode> newTaskEvent = new ArrayList<>();
+            if (i > restrictingVectorClock.getSize()) {
+                // This task has no events in the causal prefix of the restricting node
+                newTaskEvents.add(newTaskEvent);
+                continue;
+            }
+            for (ExecutionGraphNode iterNode : taskEvents.get(i)) {
+                if (iterNode.getVectorClock().happensBefore(restrictingVectorClock)) {
+                    newTaskEvent.add(iterNode);
+                    Location eventLocation = iterNode.getEvent().getLocation();
+                    if (eventLocation != null) {
+                        locationsToKeep.add(eventLocation);
+                    }
+                }
+                if (restrictingVectorClock.happensBefore(iterNode.getVectorClock())) {
+                    // We have gone past in the TO. By definition, there are no other nodes that we
+                    // need to include.
+                    break;
+                }
+            }
+            newTaskEvents.add(newTaskEvent);
+        }
+        taskEvents = newTaskEvents;
+
+        // Update Total Order Events
         List<ExecutionGraphNode> newAllEvents = new ArrayList<>();
         for (ExecutionGraphNode iterNode : allEvents) {
             if (iterNode.happensBefore(restrictingNode)) {
                 newAllEvents.add(iterNode);
             }
             if (restrictingNode.happensBefore(iterNode)) {
-                // We have gone past in the TO. By definition, there are no other nodes that we need to include.
+                // We have gone past in the TO. By definition, there are no other nodes that we need
+                // to include.
                 break;
             }
         }
         allEvents = newAllEvents;
+
+        // Remove nodes from coherency tracking
+        for (Location location : coherencyOrder.keySet()) {
+            if (!locationsToKeep.contains(location)) {
+                coherencyOrder.remove(location);
+                continue;
+            }
+            List<ExecutionGraphNode> writes = coherencyOrder.get(location);
+            List<ExecutionGraphNode> newWrites = new ArrayList<>();
+            for (ExecutionGraphNode write : writes) {
+                if (write.happensBefore(restrictingNode)) {
+                    newWrites.add(write);
+                }
+            }
+            coherencyOrder.put(location, newWrites);
+        }
 
         // Handle dangling reads
         // TODO: complete this
@@ -239,9 +398,7 @@ public class ExecutionGraph {
         return true;
     }
 
-    /**
-     * Returns true if the graph contains only the initial event.
-     */
+    /** Returns true if the graph contains only the initial event. */
     public boolean isEmpty() {
         return allEvents.size() == 1 && allEvents.get(0).getEvent().isInit();
     }
@@ -249,15 +406,20 @@ public class ExecutionGraph {
     /**
      * Returns an iterator that iterates over the nodes in the graph in topological order.
      *
-     * <p>Note: can be improved by using DFS to do the ordering</p>
+     * <p>Note: can be improved by using DFS to do the ordering
      *
-     * <p>Does not validate if the graph has cycles!</p>
+     * <p>Does not validate if the graph has cycles!
      */
     public static class TopologicalIterator implements Iterator<ExecutionGraphNode> {
         private final Queue<ExecutionGraphNode> queue;
         private final Set<Event.Key> visited;
         private final ExecutionGraph graph;
 
+        /**
+         * Initializes a new topological iterator for the given graph.
+         *
+         * @param graph The graph to iterate over.
+         */
         public TopologicalIterator(ExecutionGraph graph) {
             this.queue = new LinkedList<>();
             this.visited = new HashSet<>();

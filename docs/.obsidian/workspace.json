@@ -48,9 +48,21 @@
               "icon": "lucide-file",
               "title": "Backlog"
             }
+          },
+          {
+            "id": "d963b2b6d6a17de6",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.7.7"
+              },
+              "icon": "lucide-file",
+              "title": "Release Notes 1.7.7"
+            }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -188,7 +200,7 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "8f0113cc5310a5ce",
+  "active": "d963b2b6d6a17de6",
   "lastOpenFiles": [
     "Symbolic execution engine.md",
     "Concurrent primitives.md",

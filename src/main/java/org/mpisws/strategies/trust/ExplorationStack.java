@@ -24,6 +24,10 @@ public class ExplorationStack {
 
     public static class Item {
         private final ItemType type;
+        // The two events that are part of the item
+        // In the case of a forward revisit of
+        // - (w ->(rf) r), event1 is w and event2 is r
+        // - (w1 ->(co) w2), event1 is w1 and event2 is w2
         private final ExecutionGraphNode event1;
         private final ExecutionGraphNode event2;
 
@@ -36,7 +40,11 @@ public class ExplorationStack {
             this.graph = null;
         }
 
-        public Item(ItemType type, ExecutionGraphNode one, ExecutionGraphNode two, ExecutionGraph graph) {
+        public Item(
+                ItemType type,
+                ExecutionGraphNode one,
+                ExecutionGraphNode two,
+                ExecutionGraph graph) {
             this.type = type;
             this.event1 = one;
             this.event2 = two;
@@ -62,6 +70,7 @@ public class ExplorationStack {
 
     public enum ItemType {
         FRW,
+        FWW,
         BCK,
     }
 }
