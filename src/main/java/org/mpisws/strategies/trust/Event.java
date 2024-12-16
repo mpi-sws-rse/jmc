@@ -1,7 +1,5 @@
 package org.mpisws.strategies.trust;
 
-import org.mpisws.runtime.RuntimeEvent;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -134,6 +132,22 @@ public class Event {
         return new Event(null, null, Type.END);
     }
 
+    /**
+     * Creates a no-op event. This is used to indicate that no operation is to be performed by
+     * Trust.
+     *
+     * @return A no-op event {@link Event}.
+     */
+    public static Event noop() {
+        return new Event(null, null, Type.NOOP);
+    }
+
+    /**
+     * Creates a new error event with the given message.
+     *
+     * @param message The message of the error.
+     * @return An error event {@link Event}.
+     */
     public static Event error(String message) {
         Event e = new Event(null, null, Type.ERROR);
         e.setAttribute("message", message);
@@ -154,14 +168,22 @@ public class Event {
         WRITE_EX,
         END,
         ERROR,
+        NOOP,
     }
 
+    /** Unique key for the event. */
     public static class Key {
         // The task to which the event belongs to
         private final Long taskId;
         // The index of the event in that task. Assuming deterministic executions here.
         private Integer timestamp;
 
+        /**
+         * Creates a new key with the given task ID and timestamp.
+         *
+         * @param taskId The task ID.
+         * @param timestamp The timestamp.
+         */
         public Key(Long taskId, Integer timestamp) {
             this.taskId = taskId;
             this.timestamp = timestamp;
@@ -223,8 +245,15 @@ public class Event {
         return "Event" + key;
     }
 
+    /** A generic event predicate. */
     @FunctionalInterface
     public interface EventPredicate {
+        /**
+         * Tests the event.
+         *
+         * @param event The event to test.
+         * @return True if the event passes the test, false otherwise.
+         */
         boolean test(Event event);
     }
 }

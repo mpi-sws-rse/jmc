@@ -4,7 +4,9 @@ import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.HaltTaskException;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Contains the core Trust algorithm implementation. (<a
@@ -212,6 +214,13 @@ public class Algo {
         // Find potential reads that need to be revisited
         // TODO: complete this
         List<ExecutionGraphNode> potentialReads = executionGraph.getPotentialReads(write);
+        if (potentialReads.isEmpty()) {
+            return;
+        }
+        for (ExecutionGraphNode potentialRead : potentialReads) {
+            explorationStack.push(
+                    new ExplorationStack.Item(ExplorationStack.ItemType.BCK, write, potentialRead));
+        }
     }
 
     private void handleReadX(Event event) {}

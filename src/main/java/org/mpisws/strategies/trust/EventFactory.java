@@ -16,6 +16,7 @@ public class EventFactory {
      * @return A list of trust events (empty if not supported).
      */
     public static List<Event> fromRuntimeEvent(RuntimeEvent runtimeEvent) {
+
         return new ArrayList<>();
     }
 }

@@ -3,6 +3,7 @@ package org.mpisws.strategies.trust;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.runtime.HaltCheckerException;
+import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.util.aux.LamportVectorClock;
 
 import java.util.*;
@@ -195,6 +196,34 @@ public class ExecutionGraph {
     public List<ExecutionGraphNode> getAlternativeWrites(ExecutionGraphNode read) {
         List<ExecutionGraphNode> allWrites = coherencyOrder.get(read.getEvent().getLocation());
         return splitNodesBefore(read, allWrites);
+    }
+
+    public List<ExecutionGraphNode> getPotentialReads(ExecutionGraphNode write) {
+        List<ExecutionGraphNode> otherWrites = coherencyOrder.get(write.getEvent().getLocation());
+        List<ExecutionGraphNode> nonPorfWrites = splitNodesBefore(write, otherWrites);
+        if (nonPorfWrites.isEmpty()) {
+            // No writes after the given write event
+            // Should not happen. There should at least be the init.
+            throw HaltExecutionException.error("No writes after the given write event.");
+        }
+        nonPorfWrites.remove(nonPorfWrites.size() - 1);
+        if (nonPorfWrites.isEmpty()) {
+            // Easy case, no other reads to revisit
+            return nonPorfWrites;
+        }
+
+        List<ExecutionGraphNode> reads = new ArrayList<>();
+        for (ExecutionGraphNode alternativeWrite : nonPorfWrites) {
+            Set<Event.Key> readKeys = alternativeWrite.getSuccessors(Relation.ReadsFrom);
+            for (Event.Key readKey : readKeys) {
+                try {
+                    reads.add(getEventNode(readKey));
+                } catch (NoSuchEventException e) {
+                    throw HaltExecutionException.error("The read event is not found.");
+                }
+            }
+        }
+        return reads;
     }
 
     /**
