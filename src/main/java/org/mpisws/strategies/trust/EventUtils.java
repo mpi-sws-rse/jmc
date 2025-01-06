@@ -5,6 +5,14 @@ public class EventUtils {
         return event.getType() == Event.Type.WRITE_EX;
     }
 
+    public static boolean isWrite(Event event) {
+        return event.getType() == Event.Type.WRITE_EX || event.getType() == Event.Type.WRITE;
+    }
+
+    public static boolean isRead(Event event) {
+        return event.getType() == Event.Type.READ || event.getType() == Event.Type.READ_EX;
+    }
+
     public static void makeUnRevistable(Event event) {
         event.setAttribute("revisit", false);
     }

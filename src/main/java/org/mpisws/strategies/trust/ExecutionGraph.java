@@ -7,6 +7,7 @@ import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.util.aux.LamportVectorClock;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * Represents an execution graph.
@@ -78,8 +79,43 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * Returns the list of task identifiers in the execution graph using the TO order.
+     *
+     * @return The list of task identifiers in the execution graph.
+     */
     public List<Long> getTaskSchedule() {
         return allEvents.stream().map(e -> e.getEvent().getTaskId()).toList();
+    }
+
+    /**
+     * Returns the index of the given node in the TO order.
+     *
+     * @param node The node to get the index of.
+     * @return The index of the given node in the TO order (-1 if not found).
+     */
+    protected int getTOIndex(ExecutionGraphNode node) {
+        for (int i = 0; i < allEvents.size(); i++) {
+            if (allEvents.get(i) == node) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Returns the index of the given key in the TO order.
+     *
+     * @param key The key to get the index of.
+     * @return The index of the given key in the TO order (-1 if not found).
+     */
+    protected int getTOIndex(Event.Key key) {
+        for (int i = 0; i < allEvents.size(); i++) {
+            if (allEvents.get(i).key().equals(key)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -102,6 +138,16 @@ public class ExecutionGraph {
             throw new NoSuchEventException(key);
         }
         return taskEvents.get(taskID).get(timestamp);
+    }
+
+    public boolean contains(Event.Key key) {
+        if (key.getTaskId() == null || key.getTimestamp() == null) {
+            // Init event
+            return true;
+        }
+        int taskID = key.getTaskId().intValue();
+        Integer timestamp = key.getTimestamp();
+        return taskID < taskEvents.size() && timestamp < taskEvents.get(taskID).size();
     }
 
     /**
@@ -223,7 +269,39 @@ public class ExecutionGraph {
                 }
             }
         }
+        reads =
+                reads.stream()
+                        // Filter out reads that are _porf_-before the write
+                        .filter((r) -> !r.happensBefore(write))
+                        .toList();
         return reads;
+    }
+
+    protected BackwardRevisitView revisitView(ExecutionGraphNode write, ExecutionGraphNode read) {
+        // Construct a restricted view of the graph
+        BackwardRevisitView restrictedView = new BackwardRevisitView(this, read, write);
+        int readTOIndex = getTOIndex(read);
+        if (readTOIndex == -1) {
+            throw new HaltCheckerException("The read event is not found in the TO order.");
+        }
+
+        for (int i = readTOIndex; i < allEvents.size(); i++) {
+            ExecutionGraphNode node = allEvents.get(i);
+            if (!node.happensBefore(write)) {
+                restrictedView.removeNode(node.key());
+            }
+        }
+        return restrictedView;
+    }
+
+    /**
+     * Returns the writes to the given location.
+     *
+     * @param location The location to get the writes for.
+     * @return The writes to the given location.
+     */
+    public List<ExecutionGraphNode> getWrites(Location location) {
+        return coherencyOrder.get(location);
     }
 
     /**

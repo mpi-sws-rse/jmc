@@ -18,6 +18,10 @@ public class ExplorationStack {
         return this.stack.pop();
     }
 
+    public Item peek() {
+        return this.stack.peek();
+    }
+
     public boolean isEmpty() {
         return this.stack.isEmpty();
     }
@@ -61,6 +65,10 @@ public class ExplorationStack {
 
         public ExecutionGraphNode getEvent2() {
             return event2;
+        }
+
+        public ExecutionGraph getGraph() {
+            return graph;
         }
 
         public boolean isBackwardRevisit() {

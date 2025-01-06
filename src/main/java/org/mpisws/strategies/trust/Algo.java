@@ -124,13 +124,31 @@ public class Algo {
                 guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 break;
             case BCK:
+                // Should not happen. We should have handled this in the resetIteration method.
                 break;
         }
     }
 
     public void resetIteration() {
         // Reset the task schedule and the execution graph.
-        // No-op for now.
+        // Check if the top of the exploration stack is a backward revisit.
+        // If so, restrict the graph, update reads from and push all co forward revists to the
+        // stack.
+        if (!explorationStack.isEmpty() && explorationStack.peek().isBackwardRevisit()) {
+            ExplorationStack.Item item = explorationStack.pop();
+            ExecutionGraphNode write = item.getEvent1();
+            ExecutionGraphNode read = item.getEvent2();
+            ExecutionGraph restrictedGraph = item.getGraph();
+
+            executionGraph.restrictTo(read);
+            executionGraph.setReadsFrom(read, write);
+            List<ExecutionGraphNode> coMaxWrites = executionGraph.getCoherentPlacings(write);
+            for (ExecutionGraphNode coMaxWrite : coMaxWrites) {
+                explorationStack.push(
+                        new ExplorationStack.Item(
+                                ExplorationStack.ItemType.FWW, write, coMaxWrite));
+            }
+        }
     }
 
     public void teardown() {
@@ -212,14 +230,21 @@ public class Algo {
 
         // Check for (w->r) backward revisits (VisitRF)
         // Find potential reads that need to be revisited
-        // TODO: complete this
         List<ExecutionGraphNode> potentialReads = executionGraph.getPotentialReads(write);
         if (potentialReads.isEmpty()) {
             return;
         }
+        List<BackwardRevisitView> revisitViews =
+                potentialReads.stream().map((r) -> executionGraph.revisitView(write, r)).toList();
+
         for (ExecutionGraphNode potentialRead : potentialReads) {
+            // Update the graph by deleting the
             explorationStack.push(
-                    new ExplorationStack.Item(ExplorationStack.ItemType.BCK, write, potentialRead));
+                    new ExplorationStack.Item(
+                            ExplorationStack.ItemType.BCK,
+                            write,
+                            potentialRead,
+                            executionGraph.clone()));
         }
     }
 

@@ -120,6 +120,30 @@ public class ExecutionGraphNode {
     }
 
     /**
+     * Removes the predecessor with the given adjacency from this node.
+     *
+     * @param from The node from which the edge is directed.
+     * @param adjacency The adjacency of the edge.
+     */
+    public void removePredecessor(ExecutionGraphNode from, Relation adjacency) {
+        // Wraps around removeBackEdge because the external user does not know about back-edges.
+        // Only successors and predecessors.
+        removeBackEdge(from, adjacency);
+    }
+
+    /**
+     * Removes all the predecessors with the given adjacency from this node.
+     *
+     * @param adjacency The adjacency of the edges.
+     */
+    public void removeAllPredecessors(Relation adjacency) {
+        if (!backEdges.containsKey(adjacency)) {
+            return;
+        }
+        backEdges.get(adjacency).clear();
+    }
+
+    /**
      * Removes the back edge with the given adjacency from this node.
      *
      * @param from The node from which the edge is directed.
