@@ -32,4 +32,10 @@ public class SymIntVariable {
     public int getValue() {
         return value;
     }
+
+    public SymIntVariable deepCopy() {
+        SymIntVariable copy = new SymIntVariable(this.var);
+        copy.setValue(this.value);
+        return copy;
+    }
 }

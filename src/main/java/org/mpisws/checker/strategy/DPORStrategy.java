@@ -540,10 +540,33 @@ public abstract class DPORStrategy implements SearchStrategy {
         //updatePathSymbolicOperations(symbolicOperation, thread);
         solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
-                symbolicOperation.getFormula().toString(), solver.bothSatUnsat);
+                symbolicOperation, solver.bothSatUnsat);
         RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
         passEventToDPOR(symExecutionEvent);
         updateCurrentGraph(symExecutionEvent);
+    }
+
+    @Override
+    public void nextSymAssertRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        if (guidingActivate) {
+            handleGuidingSymAssertOperationRequest(thread, symbolicOperation);
+        } else {
+            handleNewSymAssertOperationRequest(thread, symbolicOperation);
+        }
+    }
+
+    private void handleNewSymAssertOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        solver.computeNewSymbolicAssertOperationRequest(symbolicOperation);
+        System.out.println("[DPOR Strategy Message] : The result of the symbolic assert operation is " +
+                RuntimeEnvironment.solverResult);
+        AssertEvent assertEvent = RuntimeEnvironment.createAssertEvent(thread, RuntimeEnvironment.solverResult);
+        RuntimeEnvironment.eventsRecord.add(assertEvent);
+        passEventToDPOR(assertEvent);
+        updateCurrentGraph(assertEvent);
+    }
+
+    private void handleGuidingSymAssertOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        // TODO: Implement the guiding symbolic assert operation request
     }
 
     /**
@@ -606,7 +629,7 @@ public abstract class DPORStrategy implements SearchStrategy {
         RuntimeEnvironment.solverResult = guidingSymExecutionEvent.getResult();
         solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
-                symbolicOperation.getFormula().toString(), guidingSymExecutionEvent.isNegatable());
+                symbolicOperation, guidingSymExecutionEvent.isNegatable());
         if (symExecutionEvent.getResult()) {
             solver.push(symbolicOperation);
         } else {

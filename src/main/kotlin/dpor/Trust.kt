@@ -715,6 +715,11 @@ class Trust(path: String, verbose: Boolean) : DPOR(path, verbose) {
                     visit(G, allEvents)
                 }
 
+                nextEvent.type == EventType.ASSERT -> {
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
                 nextEvent.type == EventType.ASSUME_BLOCKED -> {
                     G.addEvent(nextEvent)
                     visit(G, allEvents)

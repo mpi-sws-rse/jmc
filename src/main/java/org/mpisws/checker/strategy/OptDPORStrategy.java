@@ -1,12 +1,15 @@
 package org.mpisws.checker.strategy;
 
+import dpor.NewTrust;
 import dpor.OptTrust;
 import executionGraph.OptExecutionGraph;
 import executionGraph.operations.GraphOp;
+import executionGraph.operations.GraphOpType;
 import org.mpisws.checker.SearchStrategy;
 import org.mpisws.runtime.RuntimeEnvironment;
 import org.mpisws.solver.SymbolicSolver;
 import org.mpisws.symbolic.SymbolicOperation;
+import org.sosy_lab.java_smt.api.BooleanFormula;
 import programStructure.*;
 
 import java.io.FileOutputStream;
@@ -35,7 +38,9 @@ public abstract class OptDPORStrategy implements SearchStrategy {
 
     protected SymbolicSolver solver;
 
-    protected OptTrust dpor;
+    protected NewTrust dpor;
+
+    //protected OptTrust dpor;
 
     protected String executionGraphsPath;
 
@@ -336,6 +341,35 @@ public abstract class OptDPORStrategy implements SearchStrategy {
      * @param symbolicOperation
      */
     @Override
+    public void nextSymAssertRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        if (guidingActivate) {
+            handleGuidingSymAssertOperationRequest(thread, symbolicOperation);
+        } else {
+            handleNewSymAssertOperationRequest(thread, symbolicOperation);
+        }
+    }
+
+    private void handleGuidingSymAssertOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        AssertEvent guidingAssertEvent = (AssertEvent) guidingEvent;
+        RuntimeEnvironment.solverResult = guidingAssertEvent.getResult();
+        // TODO: Implement the guided symbolic assert operation
+        RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
+        RuntimeEnvironment.eventsRecord.add(guidingAssertEvent);
+    }
+
+    private void handleNewSymAssertOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        solver.computeNewSymbolicAssertOperationRequest(symbolicOperation);
+
+        AssertEvent assertEvent = RuntimeEnvironment.createAssertEvent(thread, RuntimeEnvironment.solverResult);
+        RuntimeEnvironment.eventsRecord.add(assertEvent);
+        passEventToDPOR(assertEvent);
+    }
+
+    /**
+     * @param thread
+     * @param symbolicOperation
+     */
+    @Override
     public void nextSymAssumeRequest(Thread thread, SymbolicOperation symbolicOperation) {
         if (guidingActivate) {
             handleGuidingSymAssumeOperationRequest(thread, symbolicOperation);
@@ -347,7 +381,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     private void handleGuidingSymAssumeOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
         SymAssumeEvent guidingSymAssumeEvent = (SymAssumeEvent) guidingEvent;
         RuntimeEnvironment.solverResult = guidingSymAssumeEvent.getResult();
-        if (RuntimeEnvironment.solverResult) {
+//        System.out.println("[OPT-DPOR Strategy Message] : The result of the symbolic assume operation is " +
+//                RuntimeEnvironment.solverResult);
+        //System.out.println("[OPT-DPOR Strategy Message] : The symbolic operation of the guided assume is " + guidingSymAssumeEvent.getFormula());
+        //System.out.println("[OPT-DPOR Strategy Message] : The result is " + guidingSymAssumeEvent.getResult());
+//        System.out.println("[OPT-DPOR Strategy Message] : The symbolic operation of the new assume is " + symbolicOperation.getFormula());
+        if (RuntimeEnvironment.solverResult && solver.resetProver) {
             solver.updatePathSymbolicOperations(symbolicOperation);
 //            solver.push(symbolicOperation);
             solver.computeGuidedSymAssumeOperationRequest(symbolicOperation);
@@ -416,11 +455,17 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         RuntimeEnvironment.solverResult = guidingSymExecutionEvent.getResult();
         solver.updatePathSymbolicOperations(symbolicOperation);
         RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
+        //System.out.println("[OPT-DPOR Strategy Message] : The symbolic operation before is " + guidingSymExecutionEvent.getFormula());
         guidingSymExecutionEvent.setFormula(symbolicOperation.getFormula().toString());
-        if (guidingSymExecutionEvent.getResult()) {
-            solver.push(symbolicOperation);
-        } else {
-            solver.push(solver.negateFormula(symbolicOperation.getFormula()));
+        //System.out.println("[OPT-DPOR Strategy Message] : The guided symbolic operation is " + guidingSymExecutionEvent.getFormula());
+        //System.out.println("[OPT-DPOR Strategy Message] : The result is " + guidingSymExecutionEvent.getResult());
+        //System.out.println("[OPT-DPOR Strategy Message] : The event is " + guidingSymExecutionEvent.getTid() + " : " + guidingSymExecutionEvent.getSerial());
+        if (solver.resetProver) {
+            if (guidingSymExecutionEvent.getResult()) {
+                solver.push(symbolicOperation);
+            } else {
+                solver.push(solver.negateFormula(symbolicOperation.getFormula()));
+            }
         }
         RuntimeEnvironment.eventsRecord.add(guidingSymExecutionEvent);
     }
@@ -430,9 +475,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
 
 //        System.out.println("[OPT-DPOR Strategy Message] : The result of the symbolic arithmetic operation is " +
 //                RuntimeEnvironment.solverResult);
+//        if (!RuntimeEnvironment.solverResult) {
+//            symbolicOperation.setFormula(solver.negateFormula(symbolicOperation.getFormula()));
+//        }
         solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
-                symbolicOperation.getFormula().toString(), solver.bothSatUnsat);
+                symbolicOperation, solver.bothSatUnsat);
         RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
         passEventToDPOR(symExecutionEvent);
     }
@@ -462,6 +510,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             return true;
         } else {
             GraphOp graphOp = RuntimeEnvironment.mcGraphOp.pop();
+            //System.out.println("[OPT-DPOR Strategy Message] : The next graph operation is " + graphOp.getType());
             handleGraphOp(graphOp);
             if (dpor.getExtendedGraph() == null || dpor.getTopoSort() == null) {
                 if (!dpor.getNextOperations().isEmpty()) {
@@ -469,6 +518,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                         GraphOp g = dpor.getNextOperations().get(i);
                         RuntimeEnvironment.mcGraphOp.push(g);
                     }
+                    dpor.getNextOperations().clear();
                 }
                 return done();
             } else {
@@ -485,15 +535,114 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                         GraphOp g = dpor.getNextOperations().get(i);
                         RuntimeEnvironment.mcGraphOp.push(g);
                     }
+                    dpor.getNextOperations().clear();
                 }
                 // For debugging
 //                if (RuntimeEnvironment.verbose) {
-//                    System.out.println("[DPOR Message] : The guiding events are :");
-//                    for (int i = 0; i < RuntimeEnvironment.guidingEvents.size(); i++) {
-//                        ThreadEvent e = RuntimeEnvironment.guidingEvents.get(i);
-//                        System.out.println(i + "-" + e.getType() + "(" + e.getTid() + ":" + e.getSerial() + ")");
-//                    }
+//                System.out.println("[DPOR Message] : The guiding events are :");
+//                for (int i = 0; i < RuntimeEnvironment.guidingEvents.size(); i++) {
+//                    ThreadEvent e = RuntimeEnvironment.guidingEvents.get(i);
+//                    System.out.println(i + "-" + e.getType() + "(" + e.getTid() + ":" + e.getSerial() + ")");
 //                }
+//
+//                System.out.println("[DPOR Message] : The evetns order of graph is :");
+//                RuntimeEnvironment.guidingGraph.printEventOrder();
+//
+//                System.out.println("[DPOR Message] : The PO order of g is :");
+//                RuntimeEnvironment.guidingGraph.printPO();
+//
+//                System.out.println("[DPOR Message] : The rf order of g is :");
+//                RuntimeEnvironment.guidingGraph.printRf();
+//
+//                System.out.println("[DPOR Message] : The co order of g is :");
+//                RuntimeEnvironment.guidingGraph.printCO();
+//
+//                System.out.println("[DPOR Message] : The jt order of g is :");
+//                RuntimeEnvironment.guidingGraph.printJT();
+//
+//                System.out.println("[DPOR Message] : The st order of g is :");
+//                RuntimeEnvironment.guidingGraph.printST();
+//
+//                System.out.println("[DPOR Message] : The tc order of g is :");
+//                RuntimeEnvironment.guidingGraph.printTC();
+//
+//                System.out.println("[DPOR Message] : The reads order of g is :");
+//                RuntimeEnvironment.guidingGraph.printReads();
+//
+//                System.out.println("[DPOR Message] : The sym order of g is :");
+//                RuntimeEnvironment.guidingGraph.prinSymEx();
+//                }
+                if (solver != null && solver.size() != 0) {
+                    if (graphOp.getType() == GraphOpType.FR_NEG_SYM) {
+                        solver.pop();
+                        SymExecutionEvent symEvent = (SymExecutionEvent) graphOp.getFirstEvent();
+                        if (symEvent.getResult()) {
+                            solver.push(symEvent.getSymbolicOp().getFormula());
+                        } else {
+                            solver.push(solver.negateFormula(symEvent.getSymbolicOp().getFormula()));
+                        }
+                        solver.solveAndUpdateModelSymbolicVariables();
+
+//                        SymExecutionEvent symEvent = (SymExecutionEvent) graphOp.getFirstEvent();
+//                        if (symEvent.getResult()) {
+//                            BooleanFormula f = solver.negateFormula(symEvent.getSymbolicOp().getFormula());
+//                            //int index = solver.stack.indexOf(f);
+//                            int index = -1;
+//                            for (int i = solver.stack.size() - 1; i >= 0; i--) {
+//                                if (solver.stack.get(i).equals(f)) {
+//                                    index = i;
+//                                    break;
+//                                }
+//                            }
+//                            if (index == -1) {
+//                                System.out.println("[OPT-DPOR Strategy Message] : The formula is not found in the stack");
+//                                System.exit(0);
+//                            }
+//                            if (index == solver.stack.size() - 1) {
+//                                solver.pop();
+//                                solver.push(symEvent.getSymbolicOp().getFormula());
+//                            } else {
+//                                // Pop all the formulas till the index. Then pop the formula at the index and push back the formulas popped.
+//                                ArrayList<BooleanFormula> temp = new ArrayList<>();
+//                                while (solver.stack.size() - 1 > index) {
+//                                    temp.add(solver.pop());
+//                                }
+//                                solver.pop();
+//                                while (!temp.isEmpty()) {
+//                                    solver.push(temp.remove(temp.size() - 1));
+//                                }
+//                                solver.push(symEvent.getSymbolicOp().getFormula());
+//                            }
+//                            //solver.push(symEvent.getSymbolicOp().getFormula());
+//                        } else {
+//                            int index = solver.stack.indexOf(symEvent.getSymbolicOp().getFormula());
+//                            if (index == -1) {
+//                                System.out.println("[OPT-DPOR Strategy Message] : The formula is not found in the stack");
+//                                System.exit(0);
+//                            }
+//                            if (index == solver.stack.size() - 1) {
+//                                solver.pop();
+//                                solver.push(solver.negateFormula(symEvent.getSymbolicOp().getFormula()));
+//                            } else {
+//                                // Pop all the formulas till the index. Then pop the formula at the index and push back the formulas popped.
+//                                ArrayList<BooleanFormula> temp = new ArrayList<>();
+//                                while (solver.stack.size() - 1 > index) {
+//                                    temp.add(solver.pop());
+//                                }
+//                                solver.pop();
+//                                while (!temp.isEmpty()) {
+//                                    solver.push(temp.remove(temp.size() - 1));
+//                                }
+//                                solver.push(solver.negateFormula(symEvent.getSymbolicOp().getFormula()));
+//                            }
+//                            //solver.push(solver.negateFormula(symEvent.getSymbolicOp().getFormula()));
+//                        }
+//                        solver.solveAndUpdateModelSymbolicVariables();
+                    }
+                }
+                if (solver != null && solver.size() == 0) {
+                    solver.resetProver = true;
+                }
                 return false;
             }
         }
@@ -521,8 +670,9 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     @Override
     public void saveExecutionState() {
         if (!mcOpGraphs.isEmpty()) {
+            //System.out.println("[OPT-DPOR Strategy Message] : The execution finished, saving execution trace");
             for (int i = 0; i < mcOpGraphs.size(); i++) {
-                //System.out.println("[OPT-DPOR Strategy Message] : The graph operation is " + mcOpGraphs.get(i));
+                //System.out.println("[OPT-DPOR Strategy Message] : The graph operation is " + mcOpGraphs.get(i).getType());
                 RuntimeEnvironment.mcGraphOp.push(mcOpGraphs.get(i));
             }
         }

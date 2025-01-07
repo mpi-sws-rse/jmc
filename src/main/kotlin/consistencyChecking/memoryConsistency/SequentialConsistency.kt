@@ -94,18 +94,19 @@ class SequentialConsistency {
                 }
             }
 
-            // CO
-            for (value in g.writes.values) {
-                for (i in 0 until value.size - 1) {
-                    closureGraph.addEdge(value[i], value[i + 1])
-                }
-            }
             // RF + FR
             for (entry in g.rf) {
                 closureGraph.addEdge(entry.value, entry.key)
                 val index = g.writes[entry.value.loc]!!.indexOf(entry.value)
                 if (index < g.writes[entry.value.loc]!!.size - 1) {
                     closureGraph.addEdge(entry.key, g.writes[entry.value.loc]!![index + 1])
+                }
+            }
+
+            // CO
+            for (value in g.writes.values) {
+                for (i in 0 until value.size - 1) {
+                    closureGraph.addEdge(value[i], value[i + 1])
                 }
             }
 
@@ -121,6 +122,10 @@ class SequentialConsistency {
             for (pair in g.jt) {
                 closureGraph.addEdge(pair.first, pair.second)
             }
+
+//            for (i in 0 until g.symExs.size - 1) {
+//                closureGraph.addEdge(g.symExs[i], g.symExs[i + 1])
+//            }
 
             return closureGraph.topologicalSort()
         }

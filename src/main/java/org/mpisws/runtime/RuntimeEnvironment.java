@@ -15,6 +15,8 @@ import org.mpisws.manager.FinishedType;
 import org.mpisws.manager.HaltExecutionException;
 import org.mpisws.symbolic.SymbolicBoolean;
 import org.mpisws.util.concurrent.*;
+import org.sosy_lab.java_smt.api.BooleanFormula;
+import org.sosy_lab.java_smt.api.ProverEnvironment;
 import programStructure.*;
 import org.mpisws.symbolic.SymbolicOperation;
 import programStructure.Message;
@@ -200,6 +202,8 @@ public class RuntimeEnvironment {
     public static ReadEvent readEventReq;
 
     public static SendEvent sendEventReq;
+
+    public static SymbolicOperation symAssertEvent;
 
     public static ReceiveEvent receiveEventReq;
 
@@ -416,6 +420,20 @@ public class RuntimeEnvironment {
 
     public static HashMap<LocationKey, Location> locationMap = new HashMap<>();
 
+    public static int frCounter = 0;
+
+    public static int brCounter = 0;
+
+    public static HashMap<Integer, ProverState> proverMap = new HashMap<>();
+
+    //public static HashMap<Integer, Stack<BooleanFormula>> proverStackMap = new HashMap<>();
+
+    public static ArrayList<ProverState> proverPool = new ArrayList<>();
+
+    public static int maxProverId = 0;
+
+    public static int numOfCreatedProvers = 0;
+
     /**
      * @property {@link #lockAvailMap} is used to store the availability status of the locks in the program under test.
      * The key is the lock object and the value is the availability of the lock. The value 0 indicates that the lock
@@ -429,14 +447,27 @@ public class RuntimeEnvironment {
             solver = null;
         } else {
             solver = SymbolicSolverSingletonFactory.getSolver(solverApproach, solverType);
+            initProver();
         }
         initReadyThreadCollection();
+        initGraphCollection();
+
     }
 
     /**
      * The constructor is private to prevent the instantiation of the class
      */
     private RuntimeEnvironment() {
+    }
+
+    private static void initProver() {
+        ProverState proverState = solver.createNewProver();
+        //ProverState proverState = new ProverState(prover);
+        //Stack<BooleanFormula> proverStack = new Stack<>();
+        proverMap.put(1, proverState);
+        //proverStackMap.put(1, proverStack);
+        //solver.setProver(prover, proverStack, 1);
+        solver.setProver(proverState, 1);
     }
 
     /**
@@ -951,6 +982,10 @@ public class RuntimeEnvironment {
         LOGGER.info("Memory Usage: {} MB", currentMemoryUsageInMegaBytes());
         LOGGER.info("Elapsed Time: {} nano seconds", elapsedTimeInNanoSeconds());
         LOGGER.info("Elapsed Time: {} seconds", elapsedTimeInSeconds());
+        LOGGER.info("The number of forward revisits: {}", frCounter);
+        LOGGER.info("The number of backward revisits: {}", brCounter);
+        LOGGER.info("The number of created provers: {}", numOfCreatedProvers);
+        LOGGER.info("The total number of proverId: {}", maxProverId);
     }
 
     /**
@@ -1371,7 +1406,8 @@ public class RuntimeEnvironment {
 
     public static void symAssertOperation(String meesage, SymbolicOperation sym, Thread thread) {
         LOGGER.debug("Thread-{} requested to execute a symbolic assert operation with the formula of {}", threadIdMap.get(thread.getId()), sym.getFormula());
-        solver.computeSymbolicAssertOperationRequest(sym);
+        symAssertEvent = sym;
+        waitRequest(Thread.currentThread());
         if (solverResult) {
             LOGGER.debug("The symbolic assert operation is SAT");
         } else {
@@ -1419,7 +1455,7 @@ public class RuntimeEnvironment {
     public static SymAssumeEvent createSymAssumeEvent(Thread thread, SymbolicOperation sym) {
         int serialNumber = getNextSerialNumber(thread);
         return new SymAssumeEvent(EventType.SYM_ASSUME, threadIdMap.get(thread.getId()).intValue(), serialNumber,
-                RuntimeEnvironment.solverResult, sym.getFormula().toString());
+                RuntimeEnvironment.solverResult, sym.getFormula().toString(), sym);
     }
 
     /**
@@ -1540,6 +1576,12 @@ public class RuntimeEnvironment {
         int serialNumber = getNextSerialNumber(thread);
         return new FinishEvent(EventType.FINISH, threadIdMap.get(thread.getId()).intValue(),
                 serialNumber);
+    }
+
+    public static AssertEvent createAssertEvent(Thread thread, boolean result) {
+        int serialNumber = getNextSerialNumber(thread);
+        return new AssertEvent(EventType.ASSERT, threadIdMap.get(thread.getId()).intValue(),
+                serialNumber, result);
     }
 
     /**
@@ -1720,10 +1762,10 @@ public class RuntimeEnvironment {
      * @param formula     The formula that the thread wants to execute symbolically.
      * @param isNegatable Whether the formula is negatable.
      */
-    public static SymExecutionEvent createSymExecutionEvent(Thread thread, String formula, boolean isNegatable) {
+    public static SymExecutionEvent createSymExecutionEvent(Thread thread, SymbolicOperation formula, boolean isNegatable) {
         int serialNumber = getNextSerialNumber(thread);
         return new SymExecutionEvent(threadIdMap.get(thread.getId()).intValue(), EventType.SYM_EXECUTION, serialNumber,
-                solverResult, formula, isNegatable);
+                solverResult, formula.getFormula().toString(), formula, isNegatable);
     }
 
     /**
@@ -2058,9 +2100,9 @@ public class RuntimeEnvironment {
         threadObjectMap.clear();
         //suspendPriority = new HashMap<>();
         suspendPriority.clear();
-        if (solver != null) {
-            solver.resetProver();
-        }
+//        if (solver != null) {
+//            solver.resetProver();
+//        }
         symbolicOperation = null;
         solverResult = false;
         //threadParkingPermit = new HashMap<>();

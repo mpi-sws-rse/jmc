@@ -1,5 +1,6 @@
 package programStructure
 
+import org.mpisws.symbolic.SymbolicOperation
 import java.io.Serializable
 
 data class SymExecutionEvent(
@@ -8,6 +9,7 @@ data class SymExecutionEvent(
     override var serial: Int = 0,
     var result: Boolean = false,
     var formula: String = "",
+    @Transient var symbolicOp: SymbolicOperation?,
     var isNegatable: Boolean = false
 ) : ThreadEvent(), Serializable {
 
@@ -18,6 +20,7 @@ data class SymExecutionEvent(
             serial = copy().serial,
             result = copy().result,
             formula = copy().formula,
+            symbolicOp = copy().symbolicOp,
             isNegatable = copy().isNegatable
         )
     }
@@ -28,9 +31,9 @@ data class SymExecutionEvent(
     }
 
     override fun hashCode(): Int {
-        var result = tid
-        result = 31 * result + type.hashCode()
-        result = 31 * result + serial
-        return result
+        var res = tid
+        res = 31 * res + type.hashCode()
+        res = 31 * res + serial
+        return res
     }
 }

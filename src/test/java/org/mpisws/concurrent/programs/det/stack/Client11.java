@@ -8,7 +8,7 @@ import java.util.List;
 public class Client11 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 1;
+        int NUM_OPERATIONS = 4;
         Stack<Integer> stack = new TreiberStack<>();
 
         List<Integer> items = new ArrayList<>(NUM_OPERATIONS);

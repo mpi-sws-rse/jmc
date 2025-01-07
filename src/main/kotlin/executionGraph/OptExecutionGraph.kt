@@ -1,5 +1,6 @@
 package executionGraph
 
+import org.mpisws.runtime.RuntimeEnvironment
 import programStructure.*
 import java.io.BufferedWriter
 import java.io.File
@@ -12,6 +13,7 @@ data class OptExecutionGraph(
     var writes: HashMap<Location, ArrayList<WriteEvent>> = HashMap(),
     var st: ArrayList<Pair<ThreadEvent, ThreadEvent>> = ArrayList(),
     var tc: ArrayList<ThreadEvent> = ArrayList(),
+    //var symExs: ArrayList<ThreadEvent> = ArrayList(),
     var jt: ArrayList<Pair<ThreadEvent, ThreadEvent>> = ArrayList(),
     var rf: HashMap<ReadEvent, WriteEvent> = HashMap(),
     var id: Int = 0
@@ -41,6 +43,14 @@ data class OptExecutionGraph(
         tc.add(event)
     }
 
+//    fun addSymEx(event: SymExecutionEvent) {
+//        symExs.add(event)
+//    }
+//
+//    fun addSymEx(event: SymAssumeEvent) {
+//        symExs.add(event)
+//    }
+
     fun addJT(event1: ThreadEvent, event2: ThreadEvent) {
         jt.add(Pair(event1, event2))
     }
@@ -63,25 +73,6 @@ data class OptExecutionGraph(
 
     fun existsSameLocationReadEvent(location: Location): Boolean {
         return reads.containsKey(location)
-    }
-
-    fun restrictStrictAfterEvent(event: ThreadEvent) {
-        val index = eventOrder.indexOf(event)
-        val toRemove = eventOrder.subList(index + 1, eventOrder.size).toHashSet()
-        eventOrder = ArrayList(eventOrder.subList(0, index + 1))
-        if (toRemove.isNotEmpty()) {
-            restrictRelations(toRemove)
-        }
-    }
-
-    fun restrictStrictFromTo(from: ThreadEvent, to: ThreadEvent) {
-        val indexFrom = eventOrder.indexOf(from)
-        val indexTo = eventOrder.indexOf(to)
-        val toRemove = eventOrder.subList(indexFrom + 1, indexTo).toHashSet()
-        eventOrder = eventOrder.subList(0, indexFrom + 1) as ArrayList<ThreadEvent>
-        if (toRemove.isNotEmpty()) {
-            restrictRelations(toRemove)
-        }
     }
 
     private fun restrictRelations(set: HashSet<ThreadEvent>) {
@@ -107,6 +98,16 @@ data class OptExecutionGraph(
                 is JoinEvent -> {
                     jt.removeIf { it.second == e }
                 }
+
+//                is SymExecutionEvent -> {
+//                    symExs.remove(e)
+//                }
+//
+//                is SymAssumeEvent -> {
+//                    if (e.result) {
+//                        symExs.remove(e)
+//                    }
+//                }
             }
         }
 
@@ -132,6 +133,13 @@ data class OptExecutionGraph(
             }
         }
     }
+
+//    fun prinSymEx() {
+//        for (i in 0 until this.symExs.size) {
+//            print("${this.symExs[i].type}(${this.symExs[i].tid}:${this.symExs[i].serial}) -> ")
+//        }
+//        println()
+//    }
 
     fun printEventOrder() {
         for (i in 0 until this.eventOrder.size) {
@@ -186,15 +194,6 @@ data class OptExecutionGraph(
         }
     }
 
-    fun restrictAfterEvent(event: ThreadEvent) {
-        val index = eventOrder.indexOf(event)
-        val toRemove = eventOrder.subList(index, eventOrder.size).toHashSet()
-        eventOrder = eventOrder.subList(0, index) as ArrayList<ThreadEvent>
-        if (toRemove.isNotEmpty()) {
-            restrictRelations(toRemove)
-        }
-    }
-
     fun restrictGraph(set: HashSet<ThreadEvent>) {
         eventOrder.removeIf { it in set }
         restrictRelations(set)
@@ -216,6 +215,10 @@ data class OptExecutionGraph(
     fun removeWrite(write: WriteEvent): Boolean {
         return writes[write.loc]!!.remove(write)
     }
+
+//    fun removeSymEx(symEx: SymExecutionEvent): Boolean {
+//        return symExs.remove(symEx)
+//    }
 
     fun addWriteAfter(element: WriteEvent, after: WriteEvent) {
         val index = writes[element.loc]!!.indexOf(after)
@@ -259,6 +262,10 @@ data class OptExecutionGraph(
             newExecutionGraph.tc.add(eventMap[event]!!)
         }
 
+//        symExs.forEach { event ->
+//            newExecutionGraph.symExs.add(eventMap[event]!!)
+//        }
+
         jt.forEach { (first, second) ->
             newExecutionGraph.jt.add(Pair(eventMap[first]!!, eventMap[second]!!))
         }
@@ -295,6 +302,10 @@ data class OptExecutionGraph(
         tc.forEach { event ->
             newExecutionGraph.tc.add(eventMap[event]!!)
         }
+
+//        symExs.forEach { event ->
+//            newExecutionGraph.symExs.add(eventMap[event]!!)
+//        }
 
         jt.forEach { (first, second) ->
             newExecutionGraph.jt.add(Pair(eventMap[first]!!, eventMap[second]!!))
@@ -514,6 +525,8 @@ data class OptExecutionGraph(
             EventType.FINISH -> {
                 visFinishEvent(event as FinishEvent, bufferedWriter)
             }
+
+            EventType.ASSERT -> TODO()
 
             EventType.ENTER_MONITOR -> {
                 visEnterMonitorEvent(event as EnterMonitorEvent, bufferedWriter)

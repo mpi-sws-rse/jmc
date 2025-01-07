@@ -43,6 +43,8 @@ public class ByteMapLoader extends ClassLoader {
         loadClassesFromPackage("src/main/java/org/mpisws/solver/", "org.mpisws.solver");
         loadClassesFromPackage("src/main/java/org/mpisws/symbolic/", "org.mpisws.symbolic");
         loadClassesFromPackage("src/main/java/org/mpisws/util/concurrent", "org.mpisws.util.concurrent");
+        //loadClassesFromPackage("src/main/kotlin/dpor", "dpor");
+        //loadClassesFromPackage("src/main/kotlin/executionGraph/operations", "executionGraph.operations");
     }
 
     /**

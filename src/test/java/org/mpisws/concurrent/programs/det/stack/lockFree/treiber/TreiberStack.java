@@ -14,10 +14,15 @@ public class TreiberStack<V> implements Stack<V> {
         Node<V> newNode = new Node<>(value);
         Node<V> oldTop;
 
-        do {
+        /*do {
             oldTop = top.get();
             newNode.next = oldTop;
-        } while (!top.compareAndSet(oldTop, newNode));
+        } while (!top.compareAndSet(oldTop, newNode));*/
+
+        // Loop unrolled for one iteration
+        oldTop = top.get();
+        newNode.next = oldTop;
+        top.compareAndSet(oldTop, newNode);
     }
 
     @Override
@@ -25,13 +30,23 @@ public class TreiberStack<V> implements Stack<V> {
         Node<V> oldTop;
         Node<V> newTop;
 
-        do {
+        /*do {
             oldTop = top.get();
             if (oldTop == null) {
                 return null;
             }
             newTop = oldTop.next;
-        } while (!top.compareAndSet(oldTop, newTop));
+        } while (!top.compareAndSet(oldTop, newTop));*/
+
+        // Loop unrolled for one iteration
+        oldTop = top.get();
+        if (oldTop == null) {
+            return null;
+        }
+        newTop = oldTop.next;
+        if (!top.compareAndSet(oldTop, newTop)) {
+            return null;
+        }
 
         return oldTop.value;
     }

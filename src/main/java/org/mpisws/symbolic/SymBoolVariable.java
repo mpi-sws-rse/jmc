@@ -32,4 +32,10 @@ public class SymBoolVariable {
     public boolean getValue() {
         return value;
     }
+
+    public SymBoolVariable deepCopy() {
+        SymBoolVariable copy = new SymBoolVariable(this.var);
+        copy.setValue(this.value);
+        return copy;
+    }
 }

@@ -189,6 +189,8 @@ public interface SearchStrategy {
      */
     void nextSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation);
 
+    void nextSymAssertRequest(Thread thread, SymbolicOperation symbolicOperation);
+
     /**
      * Updates the path symbolic operations.
      * <p>

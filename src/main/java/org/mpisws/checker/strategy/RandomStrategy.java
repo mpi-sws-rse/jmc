@@ -118,6 +118,15 @@ public class RandomStrategy implements SearchStrategy {
     }
 
     /**
+     * @param thread
+     * @param symbolicOperation
+     */
+    @Override
+    public void nextSymAssertRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        // TODO: implement this method
+    }
+
+    /**
      * Handles the next symbolic operation request of a given thread.
      * <p>
      * This method handles the next symbolic operation request of a given thread. It checks if the symbolic operation
@@ -138,7 +147,7 @@ public class RandomStrategy implements SearchStrategy {
         //updatePathSymbolicOperations(symbolicOperation, thread);
         solver.updatePathSymbolicOperations(symbolicOperation);
         SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
-                symbolicOperation.getFormula().toString(), solver.bothSatUnsat);
+                symbolicOperation, solver.bothSatUnsat);
         RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
     }
 

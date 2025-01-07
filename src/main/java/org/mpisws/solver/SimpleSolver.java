@@ -9,6 +9,7 @@ import org.sosy_lab.java_smt.api.SolverException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 public class SimpleSolver extends SymbolicSolver {
 
@@ -64,7 +65,7 @@ public class SimpleSolver extends SymbolicSolver {
      * @param symbolicOperation
      */
     @Override
-    public void computeSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
+    public void computeNewSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
         List<SymbolicOperation> dependentOperations = findDependentFormulas(symbolicOperation);
         if (dependentOperations == null) {
             RuntimeEnvironment.solverResult = solveSymbolicFormula(symbolicOperation);
@@ -76,6 +77,11 @@ public class SimpleSolver extends SymbolicSolver {
         if (!RuntimeEnvironment.solverResult) {
             updatePathSymbolicOperationsWithNegate(symbolicOperation);
         }
+    }
+
+    @Override
+    public void computeGuidedSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
+        // TODO: implement this method
     }
 
     /**
@@ -255,5 +261,39 @@ public class SimpleSolver extends SymbolicSolver {
         symbolicOperation.setFormula(RuntimeEnvironment.solver.negateFormula(symbolicOperation.getFormula()));
         System.out.println("[Simple Symbolic Solver Message] : The negated formula is saved " + symbolicOperation.getFormula());
         return symbolicOperation;
+    }
+
+    @Override
+    public ProverState createNewProver() {
+        return null;
+    }
+
+    @Override
+    public void setProver(ProverEnvironment prover, int proverId) {
+
+    }
+
+    /**
+     * @param prover
+     * @param stack
+     * @param proverId
+     */
+    @Override
+    public void setProver(ProverEnvironment prover, Stack<BooleanFormula> stack, int proverId) {
+
+    }
+
+    /**
+     * @param proverState
+     * @param proverId
+     */
+    @Override
+    public void setProver(ProverState proverState, int proverId) {
+
+    }
+
+    @Override
+    public int getProverId() {
+        return 0;
     }
 }

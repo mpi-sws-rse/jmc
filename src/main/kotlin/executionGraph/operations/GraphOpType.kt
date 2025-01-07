@@ -5,5 +5,9 @@ enum class GraphOpType {
     FR_RX_W,
     FR_W_W,
     FR_L_W,
-    FR_NEG_SYM
+    BR_W_R,
+    FR_NEG_SYM,
+    RESET_PROVER,
+    CREATE_PROVER,
+    REMOVE_PROVER,
 }

@@ -8,32 +8,44 @@ import org.sosy_lab.java_smt.api.SolverContext;
 import org.sosy_lab.java_smt.api.SolverException;
 
 import java.math.BigInteger;
+import java.util.Stack;
 
 
 // TODO: should be a decorator on the SimpleSolver. Using inheritance makes it harder to use later on.
 public class IncrementalSolver extends SymbolicSolver {
 
-    ProverEnvironment prover;
+    public ProverEnvironment prover;
+    public int proverId;
 
     public IncrementalSolver() {
         super();
-        prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
+        //prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
     }
 
     public IncrementalSolver(SMTSolverTypes type) {
         super(type);
-        prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
+        //prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
     }
 
     @Override
     public void resetProver() {
+        //System.out.println("[Incremental Symbolic Solver Message] : Resetting the prover");
         if (prover != null) {
             while (prover.size() > 0) {
-                prover.pop();
+                pop();
             }
-            //prover.close();
-            //prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
+//            prover.close();
+//            prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
+            //stack.clear();
         }
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public int size() {
+        return prover.size();
     }
 
     @Override
@@ -98,21 +110,28 @@ public class IncrementalSolver extends SymbolicSolver {
      * @param symbolicOperation
      */
     @Override
-    public void computeSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
-        boolean concreteEval = symbolicOperation.concreteEvaluation();
-        if (concreteEval) {
-            RuntimeEnvironment.solverResult = true;
-        } else {
-            boolean sat = solveSymbolicFormula(symbolicOperation);
-            if (sat) {
-                RuntimeEnvironment.solverResult = true;
-                pop();
-            } else {
-                RuntimeEnvironment.solverResult = false;
-                push(negateFormula(symbolicOperation.getFormula()));
-            }
-        }
+    public void computeNewSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
+//        boolean concreteEval = symbolicOperation.concreteEvaluation();
+//        if (concreteEval) {
+//            RuntimeEnvironment.solverResult = true;
+//        } else {
+//            boolean sat = solveSymbolicFormula(symbolicOperation);
+//            if (sat) {
+//                RuntimeEnvironment.solverResult = true;
+//                pop();
+//            } else {
+//                RuntimeEnvironment.solverResult = false;
+//                push(negateFormula(symbolicOperation.getFormula()));
+//            }
+//        }
+        boolean sat = solver(negateFormula(symbolicOperation.getFormula()));
+        RuntimeEnvironment.solverResult = !sat;
+        pop();
+    }
 
+    @Override
+    public void computeGuidedSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
+        // TODO: implement this method
     }
 
     private void updateModel() {
@@ -175,6 +194,7 @@ public class IncrementalSolver extends SymbolicSolver {
                     model = prover.getModel();
                     updateModel();
                 } else {
+                    //prover.getUnsatCore().forEach(System.out::println);
                     throw new RuntimeException("[Incremental Solver Message] The formula is unsatisfiable");
                 }
             } catch (SolverException e) {
@@ -204,9 +224,15 @@ public class IncrementalSolver extends SymbolicSolver {
     }
 
     @Override
-    public void pop() {
+    public BooleanFormula pop() {
         prover.pop();
+        //return stack.pop();
+        return null;
     }
+
+//    public void pop() {
+//        prover.pop();
+//    }
 
     @Override
     public void push() {
@@ -221,6 +247,7 @@ public class IncrementalSolver extends SymbolicSolver {
     public void push(BooleanFormula formula) {
         try {
             prover.push(formula);
+            //stack.push(formula);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -235,7 +262,7 @@ public class IncrementalSolver extends SymbolicSolver {
     protected boolean solver(BooleanFormula formula) {
         try {
             //System.out.println("[Incremental Symbolic Solver Message] : Solving the formula: " + formula.toString());
-            prover.push(formula);
+            push(formula);
             boolean isUnsat = prover.isUnsat();
             if (!isUnsat) {
                 model = prover.getModel();
@@ -257,4 +284,59 @@ public class IncrementalSolver extends SymbolicSolver {
 
     }
 
+    @Override
+    public ProverState createNewProver() {
+        RuntimeEnvironment.maxProverId++;
+        if (RuntimeEnvironment.proverPool.isEmpty()) {
+            RuntimeEnvironment.numOfCreatedProvers++;
+            ProverEnvironment prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
+            return new ProverState(prover);
+        } else {
+            return RuntimeEnvironment.proverPool.remove(0);
+        }
+//        RuntimeEnvironment.numOfCreatedProvers++;
+//        ProverEnvironment prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
+//        return new ProverState(prover);
+    }
+
+    @Override
+    public void setProver(ProverEnvironment prover, int proverId) {
+        this.prover = prover;
+        this.proverId = proverId;
+    }
+
+    /**
+     * @param proverState
+     * @param proverId
+     */
+    @Override
+    public void setProver(ProverState proverState, int proverId) {
+        this.prover = proverState.prover;
+        this.proverId = proverId;
+        this.symBoolVariableMap = proverState.symBoolVariableMap;
+        this.symIntVariableMap = proverState.symIntVariableMap;
+    }
+
+    @Override
+    public void setProver(ProverEnvironment prover, Stack<BooleanFormula> stack, int proverId) {
+        this.prover = prover;
+        //this.stack = stack;
+        this.proverId = proverId;
+    }
+
+    @Override
+    public int getProverId() {
+        return proverId;
+    }
+
+    /**
+     * @param prover
+     */
+    @Override
+    public void resetProver(ProverEnvironment prover) {
+        while (prover.size() > 0) {
+            prover.pop();
+        }
+        //prover.close();
+    }
 }

@@ -38,5 +38,6 @@ enum class EventType : Serializable {
     ASSUME_BLOCKED,
     READ_EX,
     WRITE_EX,
-    OTHER
+    ASSERT,
+    OTHER,
 }

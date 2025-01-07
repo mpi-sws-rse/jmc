@@ -16,6 +16,7 @@ class OptTrust(path: String, verbose: Boolean) {
     var extendedGraph: OptExecutionGraph? = null
     var topoSort: ArrayList<ThreadEvent>? = null
     var verbose: Boolean = verbose
+    var solverId: Int = 0
 
     fun visit(g: OptExecutionGraph, allEvents: ArrayList<ThreadEvent>) {
         val nextEvent = findNext(allEvents)
@@ -193,6 +194,16 @@ class OptTrust(path: String, verbose: Boolean) {
                 //println("[Trust Message] : Next event is a sym assume event - $nextEvent")
                 g.addEvent(nextEvent as SymAssumeEvent)
                 g.addProgramOrder(nextEvent)
+//                if (nextEvent.result) {
+//                    g.addSymEx(nextEvent)
+//                }
+                visit(g, allEvents)
+            }
+
+            nextEvent.type == EventType.ASSERT -> {
+                //println("[Trust Message] : Next event is a assert event - $nextEvent")
+                g.addEvent(nextEvent as AssertEvent)
+                g.addProgramOrder(nextEvent)
                 visit(g, allEvents)
             }
 
@@ -210,6 +221,7 @@ class OptTrust(path: String, verbose: Boolean) {
                 if (nextEvent.isNegatable) {
                     batching_fR_neg_sym(g, nextEvent)
                 }
+                //g.addSymEx(nextEvent)
                 visit(g, allEvents)
             }
 
@@ -226,7 +238,7 @@ class OptTrust(path: String, verbose: Boolean) {
             for (i in 0 until g.writes[nextRead.loc]!!.size - 1) {
                 //println("[OPT-Trust] batching frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${g.writes[nextRead.loc]!![i].type}(${g.writes[nextRead.loc]!![i].tid}:${g.writes[nextRead.loc]!![i].serial})")
                 val writeEvent = g.writes[nextRead.loc]!![i]
-                val op = GraphOp(nextRead, writeEvent, GraphOpType.FR_R_W, g)
+                val op = GraphOp(nextRead, writeEvent, GraphOpType.FR_R_W, g, solverId)
                 nextOperations.add(op)
             }
         }
@@ -242,7 +254,7 @@ class OptTrust(path: String, verbose: Boolean) {
             val writeEvent = g.writes[nextRead.loc]!![i]
             val addList = ArrayList<ThreadEvent>()
             addList.add(allEvents[0])
-            val op = GraphOp(nextRead, writeEvent, GraphOpType.FR_RX_W, g, addList)
+            val op = GraphOp(nextRead, writeEvent, GraphOpType.FR_RX_W, g, solverId, addList)
             nextOperations.add(op)
             //println(allEvents)
         }
@@ -286,7 +298,7 @@ class OptTrust(path: String, verbose: Boolean) {
         if (toBeAdded.isNotEmpty()) {
             newEvents.add(toBeAdded[0])
         }
-        val op = GraphOp(write, write, GraphOpType.FR_L_W, g, newEvents)
+        val op = GraphOp(write, write, GraphOpType.FR_L_W, g, solverId, newEvents)
         //println("[debugging] fR Op: $op")
         nextOperations.add(op)
     }
@@ -304,7 +316,7 @@ class OptTrust(path: String, verbose: Boolean) {
                 if (toBeAdded.isNotEmpty()) {
                     addList.add(toBeAdded[0])
                 }
-                val op = GraphOp(nextWrite, writeEvent, GraphOpType.FR_W_W, g, addList)
+                val op = GraphOp(nextWrite, writeEvent, GraphOpType.FR_W_W, g, solverId, addList)
                 //println("[debugging] fR Op: $op")
                 nextOperations.add(op)
             }
@@ -316,7 +328,7 @@ class OptTrust(path: String, verbose: Boolean) {
             for (i in 0 until g.writes[nextWrite.loc]!!.size) {
                 //println("[debugging] $i-write: ${g.writes[nextWrite.loc]!![i]}")
                 val writeEvent = g.writes[nextWrite.loc]!![i]
-                val op = GraphOp(nextWrite, writeEvent, GraphOpType.FR_W_W, g)
+                val op = GraphOp(nextWrite, writeEvent, GraphOpType.FR_W_W, g, solverId)
                 nextOperations.add(op)
             }
         }
@@ -458,15 +470,26 @@ class OptTrust(path: String, verbose: Boolean) {
                 val rd_wr =
                     g_copy.programOrder[wr.tid]!!.elementAt(g_copy.programOrder[wr.tid]!!.size - 2) as ReadExEvent
                 if (g_copy.areExReadsConsistent(g_copy.rf[rd_wr]!!)) {
+                    val graphOp1 = GraphOp(null, null, GraphOpType.RESET_PROVER, null, solverId)
+                    nextOperations.add(graphOp1)
                     batching_fR_write_write(g_copy, wr, toBeAdded)
                     batching_fR_last_write(g_copy, wr, toBeAdded)
+                    val graphOp2 = GraphOp(null, null, GraphOpType.RESET_PROVER, null, solverId)
+                    nextOperations.add(graphOp2)
                 } else {
                     //println("[OPT-Trust Message] : Ex reads are not consistent for the write ex event $wr")
+
                 }
             } else {
+                val graphOp1 = GraphOp(null, null, GraphOpType.RESET_PROVER, null, solverId)
+                nextOperations.add(graphOp1)
                 batching_fR_write_write(g_copy, wr, toBeAdded)
                 batching_fR_last_write(g_copy, wr, toBeAdded)
+                val graphOp2 = GraphOp(null, null, GraphOpType.RESET_PROVER, null, solverId)
+                nextOperations.add(graphOp2)
             }
+        } else {
+            //println("[OPT-TRUST] The deleted events are not maximal")
         }
     }
 
@@ -515,11 +538,11 @@ class OptTrust(path: String, verbose: Boolean) {
 
     private fun batching_fR_neg_sym(g: OptExecutionGraph, event: SymExecutionEvent) {
         //println("[OPT-Trust] batching frw neg sym ${event.type}(${event.tid}:${event.serial})")
-        val op = GraphOp(event, event, GraphOpType.FR_NEG_SYM, g)
+        val op = GraphOp(event, event, GraphOpType.FR_NEG_SYM, g, solverId)
         nextOperations.add(op)
     }
 
-    fun processFR_R_W(g: OptExecutionGraph, nextRead: ReadEvent, writeEvent: WriteEvent) {
+    fun processFR_R_W(g: OptExecutionGraph, nextRead: ReadEvent, writeEvent: WriteEvent, state: RevisitState) {
         //println("[OPT-Trust] processing frw ${nextRead.type}(${nextRead.tid}:${nextRead.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
 //        println("[debugging] The Graph number is: ${g.id}")
 //        println("nextRead: $nextRead")
@@ -543,7 +566,7 @@ class OptTrust(path: String, verbose: Boolean) {
 //        g.printReads()
         val rd = g.findReadEvent(nextRead)
         val wr = g.findWriteEvent(writeEvent)
-        g.restrictStrictAfterEvent(rd!!)
+        restrictStrictAfterEvent(g, rd!!, state)
         g.removeRf(rd)
         //rd.rf = wr
         g.addRF(rd, wr!!)
@@ -577,8 +600,10 @@ class OptTrust(path: String, verbose: Boolean) {
         g: OptExecutionGraph,
         nextReadEx: ReadExEvent,
         writeEvent: WriteEvent,
-        toBeAddedEvents: ArrayList<ThreadEvent>
+        toBeAddedEvents: ArrayList<ThreadEvent>,
+        state: RevisitState
     ) {
+        //println("[OPT-Trust] processing frw ${nextReadEx.type}(${nextReadEx.tid}:${nextReadEx.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
         /*if ((nextReadEx.tid == 4 && nextReadEx.serial == 6) && (writeEvent.tid == 1 && writeEvent.serial == 18)) {
             println("[DEBUGGING] the loc of the nextReadEx is: ${nextReadEx.loc}")
             println("[DEBUGGING] the keys of the reads are: ")
@@ -631,7 +656,7 @@ class OptTrust(path: String, verbose: Boolean) {
 //        g.printReads()
         val rd = g.findReadEvent(nextReadEx) as ReadExEvent
         val wr = g.findWriteEvent(writeEvent) as WriteEvent
-        g.restrictStrictAfterEvent(rd)
+        restrictStrictAfterEvent(g, rd, state)
         g.removeRf(rd)
         //rd.rf = wr
         rd.internalValue = wr.value as Int
@@ -698,7 +723,8 @@ class OptTrust(path: String, verbose: Boolean) {
         g: OptExecutionGraph,
         nextWrite: WriteEvent,
         writeEvent: WriteEvent,
-        toBeAddedEvents: ArrayList<ThreadEvent>
+        toBeAddedEvents: ArrayList<ThreadEvent>,
+        state: RevisitState
     ) {
         //println("[OPT-Trust] processing frw ${nextWrite.type}(${nextWrite.tid}:${nextWrite.serial}) ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
 //        println("nextWrite: $nextWrite")
@@ -720,7 +746,7 @@ class OptTrust(path: String, verbose: Boolean) {
 //        g.printTC()
 //        println("[debugging] reads:")
 //        g.printReads()
-        g.restrictStrictAfterEvent(nextWrite)
+        restrictStrictAfterEvent(g, nextWrite, state)
         g.removeWrite(nextWrite)
         g.addWriteBefore(nextWrite, writeEvent)
 //        println("[debugging] The Graph after restricting is: ")
@@ -772,7 +798,12 @@ class OptTrust(path: String, verbose: Boolean) {
         }
     }
 
-    fun processFR_L_W(g: OptExecutionGraph, writeEvent: WriteEvent, toBeAddedEvents: ArrayList<ThreadEvent>) {
+    fun processFR_L_W(
+        g: OptExecutionGraph,
+        writeEvent: WriteEvent,
+        toBeAddedEvents: ArrayList<ThreadEvent>,
+        state: RevisitState
+    ) {
         //println("[OPT-Trust] processing frw last ${writeEvent.type}(${writeEvent.tid}:${writeEvent.serial})")
         //println("[DEBUGGING] The graph id is: ${g.id}")
 //        println("writeEvent: $writeEvent")
@@ -817,7 +848,7 @@ class OptTrust(path: String, verbose: Boolean) {
 //                g.printReads()
 //            }
 //        }
-        g.restrictStrictAfterEvent(writeEvent)
+        restrictStrictAfterEvent(g, writeEvent, state)
         g.removeWrite(writeEvent)
         g.addWrite(writeEvent)
 //        println("[debugging] The Graph after restricting is: ")
@@ -881,12 +912,14 @@ class OptTrust(path: String, verbose: Boolean) {
         }
     }
 
-    fun processFR_neg_sym(g: OptExecutionGraph, event: SymExecutionEvent) {
+    fun processFR_neg_sym(g: OptExecutionGraph, event: SymExecutionEvent, state: RevisitState) {
         //println("[OPT-Trust] processing frw neg sym ${event.type}(${event.tid}:${event.serial})")
         //println("symbolicEvent: $event")
-        g.restrictStrictAfterEvent(event)
+        restrictStrictAfterEvent(g, event, state)
+        //g.removeSymEx(event)
         event.result = !event.result
-        topoSort = SequentialConsistency.scAcyclicity(g)
+        //g.addSymEx(event)
+        topoSort = SequentialConsistency.scAcyclicity(g) // TODO: In refactoring we have to avoid checking consistency
         if (topoSort!!.isNotEmpty()) {
             visit(g, ArrayList())
         } else {
@@ -999,5 +1032,71 @@ class OptTrust(path: String, verbose: Boolean) {
     private fun findNext(allEvents: ArrayList<ThreadEvent>): Event? {
         return if (allEvents.isNotEmpty()) allEvents.removeFirst()
         else null
+    }
+
+    private fun restrictStrictAfterEvent(g: OptExecutionGraph, event: ThreadEvent, state: RevisitState) {
+        val index = g.eventOrder.indexOf(event)
+        val toRemove = g.eventOrder.subList(index + 1, g.eventOrder.size).toHashSet()
+        g.eventOrder = ArrayList(g.eventOrder.subList(0, index + 1))
+        if (toRemove.isNotEmpty()) {
+            restrictRelations(g, toRemove, state)
+        }
+    }
+
+    private fun restrictRelations(g: OptExecutionGraph, set: HashSet<ThreadEvent>, state: RevisitState) {
+        val eventsToRemoveByTid = HashMap<Int, HashSet<ThreadEvent>>()
+        for (e in set) {
+            eventsToRemoveByTid.computeIfAbsent(e.tid) { HashSet() }.add(e)
+            when (e) {
+                is ReadEvent -> {
+                    g.reads[e.loc]?.remove(e)
+                    g.rf.remove(e)
+                }
+
+                is WriteEvent -> {
+                    g.writes[e.loc]?.remove(e)
+                    g.rf.entries.removeIf { it.value == e }
+                }
+
+                is StartEvent -> {
+                    g.tc.remove(e)
+                    g.st.removeIf { it.second == e }
+                }
+
+                is JoinEvent -> {
+                    g.jt.removeIf { it.second == e }
+                }
+
+                is SymExecutionEvent -> {
+//                    if (!solver?.resetProver!!) {
+//                        solver?.pop()
+//                    }
+                    //g.symExs.remove(e)
+                    state.popitems!!.add(e)
+                    //state.numOfPop++
+                }
+
+                is SymAssumeEvent -> {
+//                    if ((!solver?.resetProver!!) && e.result) {
+//                        solver?.pop()
+//                    }
+                    if (e.result) {
+                        //g.symExs.remove(e)
+                        state.popitems!!.add(e)
+                        //state.numOfPop++
+                    }
+                }
+            }
+        }
+
+        g.reads.entries.removeIf { it.value.isEmpty() }
+        g.writes.entries.removeIf { it.value.isEmpty() }
+
+        for ((tid, events) in eventsToRemoveByTid) {
+            g.programOrder[tid]?.removeAll(events)
+            if (g.programOrder[tid]!!.isEmpty()) {
+                g.programOrder.remove(tid)
+            }
+        }
     }
 }

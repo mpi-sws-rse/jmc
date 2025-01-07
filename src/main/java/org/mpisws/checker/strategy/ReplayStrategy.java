@@ -348,7 +348,7 @@ public class ReplayStrategy implements SearchStrategy {
         SymExecutionEvent symEvent = (SymExecutionEvent) this.guidingEvent;
         RuntimeEnvironment.solverResult = symEvent.getResult();
         SymExecutionEvent symbolicOperationEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
-                symbolicOperation.getFormula().toString(), symEvent.isNegatable());
+                symbolicOperation, symEvent.isNegatable());
         RuntimeEnvironment.eventsRecord.add(symbolicOperationEvent);
     }
 
@@ -367,6 +367,15 @@ public class ReplayStrategy implements SearchStrategy {
         SymAssumeEvent symAssumeRequest = RuntimeEnvironment.createSymAssumeEvent(thread,
                 symbolicOperation);
         RuntimeEnvironment.eventsRecord.add(symAssumeRequest);
+    }
+
+    /**
+     * @param thread
+     * @param symbolicOperation
+     */
+    @Override
+    public void nextSymAssertRequest(Thread thread, SymbolicOperation symbolicOperation) {
+        // TODO: Implement the nextSymAssertRequest method
     }
 
     /**

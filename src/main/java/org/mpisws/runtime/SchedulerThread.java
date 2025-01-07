@@ -58,6 +58,7 @@ public class SchedulerThread extends Thread {
         } else if (strategyType == StrategyType.MUST) {
             searchStrategy = new MustStrategy();
         } else if (strategyType == StrategyType.OPT_TRUST) {
+            //searchStrategy = new Opt2TrustStrategy();
             searchStrategy = new OptTrustStrategy();
         } else {
             // TODO() : Fix it
@@ -353,6 +354,9 @@ public class SchedulerThread extends Thread {
             case CAS_REQUEST:
                 casRequestHandler();
                 break;
+            case SYM_ASSERT_REQUEST:
+                symAssertRequestHandler();
+                break;
             default:
                 RuntimeEnvironment.threadWaitReq = null;
                 waitEventHandler();
@@ -410,6 +414,8 @@ public class SchedulerThread extends Thread {
             return RequestType.SYM_ASSUME_REQUEST;
         } else if (RuntimeEnvironment.exclusiveReadEventReq != null && RuntimeEnvironment.exclusiveWriteEventReq != null) {
             return RequestType.CAS_REQUEST;
+        } else if (RuntimeEnvironment.symAssertEvent != null) {
+            return RequestType.SYM_ASSERT_REQUEST;
         } else {
             return RequestType.WAIT_REQUEST;
         }
@@ -437,6 +443,18 @@ public class SchedulerThread extends Thread {
         RuntimeEnvironment.threadWaitReq = null;
         if (symAssumeEvent.isPresent() && thread.isPresent()) {
             searchStrategy.nextSymAssumeRequest(thread.get(), symAssumeEvent.get());
+            notifyThread(thread.get());
+        }
+    }
+
+    private void symAssertRequestHandler() {
+        LOGGER.debug("Symbolic assert request handler is called");
+        Optional<Thread> thread = Optional.ofNullable(RuntimeEnvironment.threadWaitReq);
+        Optional<SymbolicOperation> sym = Optional.ofNullable(RuntimeEnvironment.symAssertEvent);
+        RuntimeEnvironment.symAssertEvent = null;
+        RuntimeEnvironment.threadWaitReq = null;
+        if (sym.isPresent() && thread.isPresent()) {
+            searchStrategy.nextSymAssertRequest(thread.get(), sym.get());
             notifyThread(thread.get());
         }
     }

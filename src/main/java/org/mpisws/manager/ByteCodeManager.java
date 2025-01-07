@@ -89,6 +89,8 @@ public class ByteCodeManager {
             compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/symbolic/"));
             compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/solver/"));
             compileJavaFilesInDirectory(compiler, fileManager, new File("src/main/java/org/mpisws/util/concurrent/"));
+            //compileKotlinFilesInDirectory(new File("src/main/kotlin/dpor/"));
+            //compileKotlinFilesInDirectory(new File("src/main/kotlin/executionGraph/"));
         } catch (IOException e) {
             throw new RuntimeException("Error closing the file manager", e);
         }
@@ -115,6 +117,35 @@ public class ByteCodeManager {
                     compileJavaFiles(compiler, fileManager, file.getPath());
                 }
             }
+        }
+    }
+
+    private void compileKotlinFilesInDirectory(File directory) {
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    compileKotlinFilesInDirectory(file);
+                } else if (file.getName().endsWith(".kt")) {
+                    compileKotlinFile(file.getPath());
+                }
+            }
+        }
+    }
+
+    private void compileKotlinFile(String filePath) {
+        try {
+            ProcessBuilder processBuilder = new ProcessBuilder("kotlinc", filePath, "-d", "out");
+            processBuilder.inheritIO();
+            Process process = processBuilder.start();
+            int exitCode = process.waitFor();
+            if (exitCode == 0) {
+                LOGGER.info("Compilation of file {} succeeded", filePath);
+            } else {
+                LOGGER.error("Compilation of file {} failed", filePath);
+            }
+        } catch (IOException | InterruptedException e) {
+            LOGGER.error("Error compiling Kotlin file: {}", filePath, e);
         }
     }
 

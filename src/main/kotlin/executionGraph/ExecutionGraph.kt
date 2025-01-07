@@ -830,6 +830,11 @@ data class ExecutionGraph(
                     println(finish)
                 }
 
+                EventType.ASSERT -> {
+                    val assertion: AssertEvent = e as AssertEvent
+                    println(assertion)
+                }
+
                 EventType.ENTER_MONITOR -> {
                     val enter: EnterMonitorEvent = e as EnterMonitorEvent
                     println(enter)
@@ -1063,6 +1068,10 @@ data class ExecutionGraph(
                 visFinishEvent(event as FinishEvent, bufferedWriter)
             }
 
+            EventType.ASSERT -> {
+                visAssertEvent(event as AssertEvent, bufferedWriter)
+            }
+
             EventType.ENTER_MONITOR -> {
                 visEnterMonitorEvent(event as EnterMonitorEvent, bufferedWriter)
             }
@@ -1237,6 +1246,14 @@ data class ExecutionGraph(
         bufferedWriter.write(
             "${finish.tid}${finish.serial} [label=\"${finish.tid}:${finish.serial}" +
                     ".Thread Finished\"]"
+        )
+    }
+
+    private fun visAssertEvent(assertion: AssertEvent, bufferedWriter: BufferedWriter) {
+        bufferedWriter.newLine()
+        bufferedWriter.write(
+            "${assertion.tid}${assertion.serial} [label=\"${assertion.tid}:${assertion.serial}" +
+                    ".Assertion\"]"
         )
     }
 

@@ -196,6 +196,12 @@ class Must(path: String, verbose: Boolean) : DPOR(path, verbose) {
                     visit(G, allEvents)
                 }
 
+                nextEvent.type == EventType.ASSERT -> {
+                    println("[Must Message] : The next event is an ASSERT event -> $nextEvent")
+                    G.addEvent(nextEvent)
+                    visit(G, allEvents)
+                }
+
                 nextEvent.type == EventType.FAILURE -> {
                     println("[Must Message] : The next event is a FAILURE event -> $nextEvent")
                     G.addEvent(nextEvent)

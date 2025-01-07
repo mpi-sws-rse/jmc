@@ -15,7 +15,7 @@ public class Client5 {
     public static void main(String[] args) {
         try {
             Set set = new OptimisticList();
-            int NUM_OPERATIONS = 1;
+            int NUM_OPERATIONS = 4;
 
             List<Element> items = new ArrayList<>(NUM_OPERATIONS);
             List<AbstractInteger> keys = new ArrayList<>(NUM_OPERATIONS);

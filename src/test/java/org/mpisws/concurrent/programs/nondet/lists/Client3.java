@@ -15,7 +15,7 @@ public class Client3 {
     public static void main(String[] args) {
         try {
             Set set = new FineList();
-            int NUM_OPERATIONS = 4;
+            int NUM_OPERATIONS = 5;
 
             List<Element> items = new ArrayList<>(NUM_OPERATIONS);
             List<AbstractInteger> keys = new ArrayList<>(NUM_OPERATIONS);

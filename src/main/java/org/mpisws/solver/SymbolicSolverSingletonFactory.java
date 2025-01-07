@@ -8,7 +8,7 @@ public class SymbolicSolverSingletonFactory {
 
     public static SymbolicSolver getSolver(SolverApproach approach, SMTSolverTypes solverType) {
         if (solver != null) {
-            solver.resetProver();
+            //solver.resetProver();
             return solver;
         }
         if (Objects.requireNonNull(approach) == SolverApproach.INCREMENTAL) {

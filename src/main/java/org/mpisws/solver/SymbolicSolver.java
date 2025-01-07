@@ -80,6 +80,10 @@ abstract public class SymbolicSolver {
 
     public boolean bothSatUnsat = false;
 
+    public boolean resetProver = false;
+
+    public Stack<BooleanFormula> stack = new Stack<>();
+
     /**
      * Constructs a new instance of the SymbolicSolver class with the default SMT solver type (SMTInterpol).
      */
@@ -119,6 +123,10 @@ abstract public class SymbolicSolver {
         } catch (InvalidConfigurationException e) {
             e.printStackTrace();
         }
+    }
+
+    public int size() {
+        return 0;
     }
 
     /**
@@ -360,10 +368,10 @@ abstract public class SymbolicSolver {
      */
     public SymBoolVariable getSymBoolVariable(String name) {
         if (symBoolVariableMap.containsKey(name)) {
-            System.out.println("Returning existing SymBoolVariable: " + name);
+            //System.out.println("Returning existing SymBoolVariable: " + name);
             return symBoolVariableMap.get(name);
         } else {
-            System.out.println("Creating new SymBoolVariable: " + name);
+            //System.out.println("Creating new SymBoolVariable: " + name);
             BooleanFormula symBool = bmgr.makeVariable(name);
             SymBoolVariable variable = new SymBoolVariable(symBool);
             symBoolVariableMap.put(name, variable);
@@ -379,9 +387,13 @@ abstract public class SymbolicSolver {
         }
     }
 
-    public void pop() {
-
+    public BooleanFormula pop() {
+        return null;
     }
+
+//    public void pop() {
+//
+//    }
 
     public void push() {
 
@@ -401,7 +413,9 @@ abstract public class SymbolicSolver {
 
     public abstract void computeGuidedSymAssumeOperationRequest(SymbolicOperation symbolicOperation);
 
-    public abstract void computeSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation);
+    public abstract void computeNewSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation);
+
+    public abstract void computeGuidedSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation);
 
     public abstract void updatePathSymbolicOperations(SymbolicOperation symbolicOperation);
 
@@ -410,4 +424,18 @@ abstract public class SymbolicSolver {
     public abstract void computeRandomlyNewSymbolicOperationRequest(SymbolicOperation symbolicOperation);
 
     public abstract void resetProver();
+
+    public abstract ProverState createNewProver();
+
+    public abstract void setProver(ProverEnvironment prover, int proverId);
+
+    public abstract void setProver(ProverState proverState, int proverId);
+
+    public abstract void setProver(ProverEnvironment prover, Stack<BooleanFormula> stack, int proverId);
+
+    public abstract int getProverId();
+
+    public void resetProver(ProverEnvironment prover) {
+
+    }
 }
