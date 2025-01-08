@@ -7,7 +7,6 @@ import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.util.aux.LamportVectorClock;
 
 import java.util.*;
-import java.util.function.Predicate;
 
 /**
  * Represents an execution graph.
@@ -95,7 +94,9 @@ public class ExecutionGraph {
      * @return The index of the given node in the TO order (-1 if not found).
      */
     protected int getTOIndex(ExecutionGraphNode node) {
-        for (int i = 0; i < allEvents.size(); i++) {
+        // A slight optimization to get start from the max vector clock value. The assumption is
+        // that is at least after this value in the TO.
+        for (int i = node.getVectorClock().max(); i < allEvents.size(); i++) {
             if (allEvents.get(i) == node) {
                 return i;
             }
@@ -305,7 +306,8 @@ public class ExecutionGraph {
     }
 
     /**
-     * Resets the coherency order between the given write events.
+     * Resets the coherency order between the given write events. The later write is added just
+     * before the earlier write.
      *
      * <p>Invalidates the total order of events in the graph. The concern of fixing the total order
      * is passed to the calling function.
@@ -313,8 +315,39 @@ public class ExecutionGraph {
      * @param write1 The first write event.
      * @param write2 The second write event.
      */
-    public void resetCoherence(ExecutionGraphNode write1, ExecutionGraphNode write2) {
+    public void swapCoherency(ExecutionGraphNode write1, ExecutionGraphNode write2) {
         // Update the coherency order
+        Location location = write1.getEvent().getLocation();
+        if (write2.getEvent().getLocation() != location) {
+            throw new HaltCheckerException("The write events are not to the same location.");
+        }
+
+        List<ExecutionGraphNode> writes = coherencyOrder.get(location);
+
+        int write1Index = writes.indexOf(write1);
+        int write2Index = writes.indexOf(write2);
+
+        ExecutionGraphNode laterWrite = write2;
+        int earlierIndex = write1Index;
+        int laterIndex = write2Index;
+        if (write1Index > write2Index) {
+            laterWrite = write1;
+            earlierIndex = write2Index;
+            laterIndex = write1Index;
+        }
+
+        // Insert later write just before the earlier write in the writes list while moving the rest
+        // of the writes.
+        writes.remove(laterIndex);
+        writes.add(earlierIndex, laterWrite);
+
+        // Update the edges
+        for (ExecutionGraphNode write : writes) {
+            write.removeEdge(Relation.Coherency);
+        }
+        for (int i = 0; i < writes.size() - 1; i++) {
+            writes.get(i).addEdge(writes.get(i + 1), Relation.Coherency);
+        }
     }
 
     /**
@@ -356,7 +389,7 @@ public class ExecutionGraph {
      * @param read The read event.
      * @param write The write event.
      */
-    public void resetReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
+    public void changeReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
         Set<Event.Key> writes = read.getPredecessors(Relation.ReadsFrom);
         if (writes.size() != 1) {
             throw new HaltCheckerException("A read has more than one RF back edge.");
@@ -372,6 +405,8 @@ public class ExecutionGraph {
 
     /**
      * Sets the reads from relation between the given read and write events.
+     *
+     * <p>Does not validate if there is an existing reads-from edge to the corresponding read
      *
      * @param read The read event.
      * @param write The write event.
@@ -403,6 +438,85 @@ public class ExecutionGraph {
     }
 
     /**
+     * Restricts the execution graph by removing the nodes with the given keys.
+     *
+     * @param keys The keys of the nodes to be removed
+     */
+    public void restrictByRemoving(Set<Event.Key> keys) {
+        // First recreate task events
+        List<List<ExecutionGraphNode>> newTaskEvents = new ArrayList<>();
+        for (int i = 0; i < taskEvents.size(); i++) {
+            List<ExecutionGraphNode> newTaskEvent = new ArrayList<>();
+            for (ExecutionGraphNode node : taskEvents.get(i)) {
+                if (!keys.contains(node.key())) {
+                    newTaskEvent.add(node);
+                }
+            }
+            newTaskEvents.add(newTaskEvent);
+        }
+        taskEvents = newTaskEvents;
+        for (Location location : coherencyOrder.keySet()) {
+            List<ExecutionGraphNode> writes = coherencyOrder.get(location);
+            List<ExecutionGraphNode> newWrites = new ArrayList<>();
+            for (ExecutionGraphNode write : writes) {
+                if (!keys.contains(write.key())) {
+                    newWrites.add(write);
+                }
+            }
+            coherencyOrder.put(location, newWrites);
+        }
+        List<ExecutionGraphNode> newAllEvents = new ArrayList<>();
+        for (ExecutionGraphNode node : allEvents) {
+            if (!keys.contains(node.key())) {
+                newAllEvents.add(node);
+            }
+        }
+
+        allEvents = newAllEvents;
+
+        // Now remove dangling edges using the total order
+        for (ExecutionGraphNode node : allEvents) {
+            Set<Event.Key> successors = node.getAllSuccessors();
+            for (Event.Key successor : successors) {
+                if (keys.contains(successor)) {
+                    node.removeAllEdgesTo(successor);
+                }
+            }
+            Set<Event.Key> predecessors = node.getAllPredecessors();
+            for (Event.Key predecessor : predecessors) {
+                if (keys.contains(predecessor)) {
+                    node.removeAllEdgesFrom(predecessor);
+                }
+            }
+        }
+
+        // Note, apparently there won't be any dangling reads. Need to verify this.
+
+        // Recompute the vector clocks.
+        recomputeVectorClocks();
+    }
+
+    private void recomputeVectorClocks() {
+        for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
+            ExecutionGraphNode iterNode = it.next();
+            if (iterNode.getAllPredecessors().isEmpty()) {
+                // This is the init node, safely continue
+                continue;
+            }
+            Set<Event.Key> poPredecessors = iterNode.getPredecessors(Relation.ProgramOrder);
+            if (poPredecessors.size() != 1) {
+                throw new HaltCheckerException("A node has more than one or no PO predecessor");
+            }
+            try {
+                ExecutionGraphNode lastPONode = getEventNode(poPredecessors.iterator().next());
+                iterNode.recomputeVectorClock(lastPONode, this::getEventNode);
+            } catch (NoSuchEventException e) {
+                throw new HaltCheckerException(e.getMessage());
+            }
+        }
+    }
+
+    /**
      * Restricts the execution graph to the given node. Meaning, all events that are not in the
      * causal prefix of the given node are removed.
      *
@@ -414,23 +528,7 @@ public class ExecutionGraph {
     public void restrictTo(ExecutionGraphNode restrictingNode) {
         // First recompute vector clocks (because, prior to restrict we are assuming that the graph
         // has been modified)
-        for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
-            ExecutionGraphNode iterNode = it.next();
-            if (iterNode.getAllPredecessors().isEmpty()) {
-                // This is the init node, safely continue
-                continue;
-            }
-            Set<Event.Key> poPredecessors = iterNode.getPredecessors(Relation.ProgramOrder);
-            if (poPredecessors.size() != 1) {
-                throw new HaltCheckerException("A node has more than one PO predecessor");
-            }
-            try {
-                ExecutionGraphNode lastPONode = getEventNode(poPredecessors.iterator().next());
-                iterNode.recomputeVectorClock(lastPONode, this::getEventNode);
-            } catch (NoSuchEventException e) {
-                throw new HaltCheckerException(e.getMessage());
-            }
-        }
+        recomputeVectorClocks();
 
         // Update Task Events while tracking locations
         Set<Location> locationsToKeep = new HashSet<>();
@@ -490,12 +588,9 @@ public class ExecutionGraph {
             }
             coherencyOrder.put(location, newWrites);
         }
-
-        // Handle dangling reads
-        // TODO: complete this
     }
 
-    // Returns an iterator walking through the nodes in a topological sort order.
+    /** Returns an iterator walking through the nodes in a topological sort order. */
     public Iterator<ExecutionGraphNode> iterator() {
         return new TopologicalIterator(this);
     }
@@ -543,6 +638,8 @@ public class ExecutionGraph {
 
         @Override
         public ExecutionGraphNode next() {
+            // TODO: start with nodes after init. Should always ignore init?
+            // TODO: insert into queue prioritizing the task number.
             ExecutionGraphNode node = queue.poll();
             if (node == null) {
                 throw new NoSuchElementException();

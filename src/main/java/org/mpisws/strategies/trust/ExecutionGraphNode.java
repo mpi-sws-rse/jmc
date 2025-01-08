@@ -11,9 +11,9 @@ public class ExecutionGraphNode {
     private final Event event;
     // The attributes of this node.
     private Map<String, Object> attributes;
-    // Forward edges from this node. Grouped by adjacency.
+    // Forward edges from this node. Grouped by edge relation.
     private final Map<Relation, List<Event.Key>> edges;
-    // Back edges to this node. Grouped by adjacency.
+    // Back edges to this node. Grouped by edge relation.
     private final Map<Relation, List<Event.Key>> backEdges;
 
     // The vector clock of this node (Used to track only PORF relation)
@@ -102,6 +102,15 @@ public class ExecutionGraphNode {
         backEdges.get(adjacency).add(from.key());
     }
 
+    /*
+     * Removes all edges from this node.
+     * <p> There might be dangling references to this node from other nodes that are not handled.
+     */
+    public void clearAllEdges() {
+        this.edges.clear();
+        this.backEdges.clear();
+    }
+
     /**
      * Removes the edge with the given adjacency from this node.
      *
@@ -120,6 +129,47 @@ public class ExecutionGraphNode {
     }
 
     /**
+     * Removes the edge with the given relation from this node.
+     *
+     * <p>Leads to dandling references
+     *
+     * @param relation The relation of the edge.
+     */
+    public void removeEdge(Relation relation) {
+        edges.remove(relation);
+        backEdges.remove(relation);
+    }
+
+    /*
+     * Removes all edges to the given node.
+     *
+     * <p> There might be dangling references to this node from other nodes that are not handled.
+     * Additionally, the vector clock is invalidated
+     *
+     * @param to The node to which the edges are directed.
+     */
+    public void removeAllEdgesTo(Event.Key to) {
+        for (Relation adjacency : edges.keySet()) {
+            edges.get(adjacency).removeIf(key -> key.equals(to));
+        }
+        // remove adjacency if no more edges
+        edges.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+    }
+
+    /**
+     * Removes all edges from the given node.
+     *
+     * @param from The node from which the edges are directed.
+     */
+    public void removeAllEdgesFrom(Event.Key from) {
+        for (Relation adjacency : backEdges.keySet()) {
+            backEdges.get(adjacency).removeIf(key -> key.equals(from));
+        }
+        // remove adjacency if no more edges
+        backEdges.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+    }
+
+    /**
      * Removes the predecessor with the given adjacency from this node.
      *
      * @param from The node from which the edge is directed.
@@ -129,6 +179,12 @@ public class ExecutionGraphNode {
         // Wraps around removeBackEdge because the external user does not know about back-edges.
         // Only successors and predecessors.
         removeBackEdge(from, adjacency);
+    }
+
+    public void removePredecessor(ExecutionGraphNode from) {
+        for (Relation adjacency : backEdges.keySet()) {
+            backEdges.get(adjacency).removeIf(key -> key.equals(from.key()));
+        }
     }
 
     /**

@@ -110,7 +110,7 @@ public class Algo {
                 ExecutionGraphNode write = item.getEvent1();
                 ExecutionGraphNode read = item.getEvent2();
 
-                executionGraph.resetReadsFrom(write, read);
+                executionGraph.changeReadsFrom(write, read);
                 executionGraph.restrictTo(read);
                 guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 break;
@@ -119,7 +119,7 @@ public class Algo {
                 ExecutionGraphNode write1 = item.getEvent1();
                 ExecutionGraphNode write2 = item.getEvent2();
 
-                executionGraph.resetCoherence(write1, write2);
+                executionGraph.swapCoherency(write1, write2);
                 executionGraph.restrictTo(write2);
                 guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 break;
@@ -132,17 +132,14 @@ public class Algo {
     public void resetIteration() {
         // Reset the task schedule and the execution graph.
         // Check if the top of the exploration stack is a backward revisit.
-        // If so, restrict the graph, update reads from and push all co forward revists to the
+        // If so, copy the graph from the backward revisit and push all forward revisits to the
         // stack.
         if (!explorationStack.isEmpty() && explorationStack.peek().isBackwardRevisit()) {
             ExplorationStack.Item item = explorationStack.pop();
             ExecutionGraphNode write = item.getEvent1();
-            ExecutionGraphNode read = item.getEvent2();
             ExecutionGraph restrictedGraph = item.getGraph();
 
-            executionGraph.restrictTo(read);
-            executionGraph.setReadsFrom(read, write);
-            List<ExecutionGraphNode> coMaxWrites = executionGraph.getCoherentPlacings(write);
+            List<ExecutionGraphNode> coMaxWrites = restrictedGraph.getCoherentPlacings(write);
             for (ExecutionGraphNode coMaxWrite : coMaxWrites) {
                 explorationStack.push(
                         new ExplorationStack.Item(
@@ -193,6 +190,7 @@ public class Algo {
             executionGraph.setReadsFrom(read, coMaxWrite);
             return;
         }
+        // TODO: Discard the last write
         List<ExecutionGraphNode> alternativeWrites = executionGraph.getAlternativeWrites(read);
         // Set the reads-from relation
         executionGraph.setReadsFrom(read, coMaxWrite);
@@ -237,14 +235,16 @@ public class Algo {
         List<BackwardRevisitView> revisitViews =
                 potentialReads.stream().map((r) -> executionGraph.revisitView(write, r)).toList();
 
-        for (ExecutionGraphNode potentialRead : potentialReads) {
+        revisitViews =
+                revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
+
+        for (BackwardRevisitView revisit : revisitViews) {
             // Update the graph by deleting the
             explorationStack.push(
                     new ExplorationStack.Item(
                             ExplorationStack.ItemType.BCK,
-                            write,
-                            potentialRead,
-                            executionGraph.clone()));
+                            revisit.getWrite(),
+                            revisit.getRestrictedGraph()));
         }
     }
 

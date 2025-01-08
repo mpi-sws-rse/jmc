@@ -121,6 +121,16 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
         return true;
     }
 
+    public int max() {
+        int max = 0;
+        for (int i = 0; i < vector.size(); i++) {
+            if (vector.get(i) > max) {
+                max = vector.get(i);
+            }
+        }
+        return max;
+    }
+
     @Override
     public Relation compare(LamportVectorClock other) {
         if (this.happensBefore(other)) {

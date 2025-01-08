@@ -23,19 +23,8 @@ public class BackwardRevisitView {
         this.write = write;
     }
 
-    public ExecutionGraphNode getNode(Event.Key key) throws NoSuchEventException {
-        if (removedNodes.contains(key)) {
-            throw new NoSuchEventException(key);
-        }
-        return graph.getEventNode(key);
-    }
-
-    public boolean containedInView(Event.Key key) {
-        return !removedNodes.contains(key) && graph.contains(key);
-    }
-
-    public ExecutionGraph getGraph() {
-        return graph;
+    public ExecutionGraphNode getWrite() {
+        return write;
     }
 
     // Just marks the node as removed, does not update the graph
@@ -45,7 +34,7 @@ public class BackwardRevisitView {
 
     // Checks if the restricted view is a maximal extension
     // Meta: Breaks the separation of concerns. Is part of the core logic of the Trust algorithm
-    public boolean isMaximalExtension(ExecutionGraphNode write, ExecutionGraphNode read) {
+    public boolean isMaximalExtension() {
         HashSet<Event.Key> nodesToCheck = new HashSet<>(this.removedNodes);
         nodesToCheck.add(read.key());
         try {
@@ -113,12 +102,12 @@ public class BackwardRevisitView {
         return true;
     }
 
-    // TODO: continue here
     public ExecutionGraph getRestrictedGraph() {
         ExecutionGraph restrictedGraph = graph.clone();
-        for (Event.Key key : removedNodes) {
-            restrictedGraph.removeEvent(key);
-        }
+        // Remove the nodes
+        restrictedGraph.restrictByRemoving(removedNodes);
+        // Update the reads-from relation
+
         return restrictedGraph;
     }
 }
