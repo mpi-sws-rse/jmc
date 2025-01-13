@@ -3,9 +3,9 @@ package org.mpisws.strategies.trust;
 import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.HaltTaskException;
+import org.mpisws.runtime.SchedulingChoice;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,12 +18,12 @@ import java.util.List;
  * needed to enforce a specific task scheduling order.
  *
  * <p>Disclaimer!! This algorithm assumes that the programs are deterministic. Meaning, if you run a
- * task, you will receive the same sequence of events.
+ * task, you will receive the same sequence of events in that task.
  */
 public class Algo {
     // The sequence of tasks to be scheduled. This is kept in sync with the execution graph that we
     // are currently visiting.
-    private ArrayDeque<Long> guidingTaskSchedule;
+    private ArrayDeque<SchedulingChoice> guidingTaskSchedule;
     private ExecutionGraph executionGraph;
     private boolean isGuiding;
     private final ExplorationStack explorationStack;
@@ -39,7 +39,7 @@ public class Algo {
     }
 
     /** Returns the next task to be scheduled according to the execution graph set in place. */
-    public Long nextTask() {
+    public SchedulingChoice nextTask() {
         if (!isGuiding) {
             return null;
         }
@@ -53,10 +53,22 @@ public class Algo {
      * Handles the visit with this event. Equivalent of running a single loop iteration of the Visit
      * method of the algorithm.
      *
+     * <p>We assume that the updateEvent call is followed immediately by a yield call. Therefore, we
+     * check the top of a guiding trace and raise exception if the scheduling choice is blocking.
+     *
      * @param event A {@link Event} that is used to update the execution graph.
      */
     @SuppressWarnings({"checkstyle:MissingSwitchDefault", "checkstyle:LeftCurly"})
     public void updateEvent(Event event) throws HaltTaskException, HaltExecutionException {
+        if (areWeGuiding()) {
+            SchedulingChoice choice = guidingTaskSchedule.peek();
+            if (choice.isBlockTask()) {
+                throw new HaltTaskException(choice.getTaskId());
+            } else if (choice.isBlockExecution()) {
+                throw HaltExecutionException.error("Encountered a block label");
+            }
+        }
+
         switch (event.getType()) {
             case END:
                 handleBot(event);
@@ -68,7 +80,7 @@ public class Algo {
                 handleWrite(event);
                 break;
             case READ_EX:
-                handleReadX(event);
+                handleRead(event);
                 break;
             case WRITE_EX:
                 handleWriteX(event);
@@ -76,6 +88,11 @@ public class Algo {
             case LOCK_AWAIT:
                 handleLockAwait(event);
                 break;
+            case NOOP:
+                if (areWeGuiding()) {
+                    return;
+                }
+                this.executionGraph.addEvent(event);
         }
     }
 
@@ -104,13 +121,17 @@ public class Algo {
 
     private void resetWith(ExplorationStack.Item item) {
         // Reset based on the kind of item in the schedule
+        ExecutionGraph newGraph = explorationStack.getGraph(item);
+        if (newGraph != null) {
+            executionGraph = newGraph;
+        }
         switch (item.getType()) {
             case FRW:
                 // Forward revisit of w -> r
-                ExecutionGraphNode write = item.getEvent1();
-                ExecutionGraphNode read = item.getEvent2();
+                ExecutionGraphNode read = item.getEvent1();
+                ExecutionGraphNode write = item.getEvent2();
 
-                executionGraph.changeReadsFrom(write, read);
+                executionGraph.changeReadsFrom(read, write);
                 executionGraph.restrictTo(read);
                 guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 break;
@@ -129,6 +150,9 @@ public class Algo {
         }
     }
 
+    /**
+     * Resets the iteration. This method is called at the end of each iteration of the algorithm.
+     */
     public void resetIteration() {
         // Reset the task schedule and the execution graph.
         // Check if the top of the exploration stack is a backward revisit.
@@ -139,23 +163,27 @@ public class Algo {
             ExecutionGraphNode write = item.getEvent1();
             ExecutionGraph restrictedGraph = item.getGraph();
 
-            List<ExecutionGraphNode> coMaxWrites = restrictedGraph.getCoherentPlacings(write);
-            for (ExecutionGraphNode coMaxWrite : coMaxWrites) {
+            List<ExecutionGraphNode> alternativeWrites = restrictedGraph.getCoherentPlacings(write);
+            for (ExecutionGraphNode alternativeWrite : alternativeWrites) {
                 explorationStack.push(
-                        new ExplorationStack.Item(
-                                ExplorationStack.ItemType.FWW, write, coMaxWrite));
+                        ExplorationStack.Item.forwardWW(write, alternativeWrite, executionGraph));
             }
         }
     }
 
+    /**
+     * Cleans up the execution graph and the task schedule. This method is called at the end of the
+     * exploration.
+     */
     public void teardown() {
         // Clean up the execution graph and the task schedule.
+        this.executionGraph.clear();
+        this.explorationStack.clear();
     }
 
     public List<Long> getSchedulableTasks() {
-        // TODO: implement this method
         // Get from execution graph
-        return new ArrayList<>();
+        return this.executionGraph.getUnblockedTasks().stream().map(Long::valueOf).toList();
     }
 
     private void handleError(Event event) {
@@ -179,18 +207,21 @@ public class Algo {
         ExecutionGraphNode read = executionGraph.addEvent(event);
         ExecutionGraphNode coMaxWrite = executionGraph.getCoMax(event.getLocation());
 
-        // If coMaxWrite is init (reading from a possibly uninitialized location). Write warning if
-        // flag is set
+        // TODO: If coMaxWrite is init (reading from a possibly uninitialized location). Write
+        //      warning if flag is set
         // if (coMaxWrite.getEvent().isInit()) {
         //
         // }
+
+        // Need to handle lock acquire reads
+        // If the read is reading from a write of a lock acquire then we need to add a lock await
+        // label after the read to block the thread.
 
         if (coMaxWrite.happensBefore(read)) {
             // Easy case. No concurrent write to revisit.
             executionGraph.setReadsFrom(read, coMaxWrite);
             return;
         }
-        // TODO: Discard the last write
         List<ExecutionGraphNode> alternativeWrites = executionGraph.getAlternativeWrites(read);
         // Set the reads-from relation
         executionGraph.setReadsFrom(read, coMaxWrite);
@@ -201,8 +232,8 @@ public class Algo {
         // We have alternative writes to revisit.
         for (ExecutionGraphNode alternativeWrite : alternativeWrites) {
             explorationStack.push(
-                    new ExplorationStack.Item(
-                            ExplorationStack.ItemType.FRW, alternativeWrite, read));
+                    ExplorationStack.Item.forwardRW(
+                            read, alternativeWrite, this.executionGraph.clone()));
         }
     }
 
@@ -221,12 +252,11 @@ public class Algo {
             // If flag is set, write race warning
             for (ExecutionGraphNode concurrentWrite : concurrentWrites) {
                 explorationStack.push(
-                        new ExplorationStack.Item(
-                                ExplorationStack.ItemType.FWW, write, concurrentWrite));
+                        ExplorationStack.Item.forwardWW(write, concurrentWrite, executionGraph));
             }
         }
 
-        // Check for (w->r) backward revisits (VisitRF)
+        // Check for (w->r) backward revisits
         // Find potential reads that need to be revisited
         List<ExecutionGraphNode> potentialReads = executionGraph.getPotentialReads(write);
         if (potentialReads.isEmpty()) {
@@ -239,18 +269,52 @@ public class Algo {
                 revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
 
         for (BackwardRevisitView revisit : revisitViews) {
-            // Update the graph by deleting the
             explorationStack.push(
-                    new ExplorationStack.Item(
-                            ExplorationStack.ItemType.BCK,
-                            revisit.getWrite(),
-                            revisit.getRestrictedGraph()));
+                    ExplorationStack.Item.backwardRevisit(
+                            revisit.getWrite(), revisit.getRestrictedGraph()));
         }
     }
 
-    private void handleReadX(Event event) {}
+    private void handleWriteX(Event event) {
+        if (areWeGuiding()) {
+            return;
+        }
+        // Add the write event to the execution graph
+        ExecutionGraphNode write = executionGraph.addEvent(event);
+        executionGraph.trackCoherency(write);
 
-    private void handleWriteX(Event event) {}
+        // If write is a lock acquire, then we don't do any backward revisits for this write with
+        // other reads.
+        // Only the lock release write will be considered.
+        if (EventUtils.isLockAcquireWrite(event)) {
+            return;
+        }
+
+        // Check for (w->r) backward revisits
+        // Find potential reads that need to be revisited
+        // Additionally, we need to add a blocking label to the writes of the corresponding revisit
+        // reads.
+        // The only reason there are alternative reads to consider is due to two reads
+        // reading from the same exclusive write which is inconsistent but the one-step
+        // inconsistency is needed to ensure we explore the alternative ordering.
+        List<ExecutionGraphNode> potentialReads = executionGraph.getPotentialReads(write);
+        if (potentialReads.isEmpty()) {
+            return;
+        }
+        List<BackwardRevisitView> revisitViews =
+                potentialReads.stream().map((r) -> executionGraph.revisitView(write, r)).toList();
+
+        revisitViews =
+                revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
+
+        for (BackwardRevisitView revisit : revisitViews) {
+            // Block the tasks of the reads that need to be revisited
+            executionGraph.addBlockingLabel(revisit.getRead().getEvent().getTaskId());
+            explorationStack.push(
+                    ExplorationStack.Item.backwardRevisit(
+                            revisit.getWrite(), revisit.getRestrictedGraph()));
+        }
+    }
 
     private void handleLockAwait(Event event) {}
 }

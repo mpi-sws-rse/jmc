@@ -3,6 +3,7 @@ package org.mpisws.strategies.trust;
 import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.HaltTaskException;
 import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.SchedulingChoice;
 import org.mpisws.strategies.TrackActiveTasksStrategy;
 
 import java.util.List;
@@ -33,30 +34,37 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     }
 
     @Override
-    public Long nextTask() {
+    public SchedulingChoice nextTask() {
+        // Always add 1 to the return value the strategy expects 1-indexed tasks but we store
+        // 0-indexed tasks
+
         // If the algorithm has a task to execute, return it
-        Long nextTask = algoInstance.nextTask();
+        SchedulingChoice nextTask = algoInstance.nextTask();
         if (nextTask != null) {
             return nextTask;
         }
 
         // Otherwise, return an active, schedule-able task based on the policy
         Set<Long> activeTasks = getActiveTasks();
-        List<Long> activeScheduleAbleTasks = algoInstance.getSchedulableTasks().stream()
-                .filter(activeTasks::contains)
-                .toList();
+        List<Long> activeScheduleAbleTasks =
+                algoInstance.getSchedulableTasks().stream()
+                        // Adding 1 here for all further uses of the task ID
+                        .map((t) -> t + 1)
+                        .filter(activeTasks::contains)
+                        .toList();
 
         // If the policy is FIFO, return the first active, schedule-able task
-        if (policy == SchedulingPolicy.FIFO) {
-            return activeScheduleAbleTasks.isEmpty() ? null : activeScheduleAbleTasks.get(0);
-        }
-
-        // If the policy is RANDOM, return a random active, schedule-able task
-        int size = activeScheduleAbleTasks.size();
-        if (size == 0) {
-            return null;
-        }
-        return activeScheduleAbleTasks.get(random.nextInt(size));
+        return SchedulingChoice.task(
+                switch (policy) {
+                    case FIFO ->
+                            activeScheduleAbleTasks.isEmpty()
+                                    ? null
+                                    : activeScheduleAbleTasks.get(0);
+                    case RANDOM -> {
+                        int size = activeScheduleAbleTasks.size();
+                        yield size == 0 ? null : activeScheduleAbleTasks.get(random.nextInt(size));
+                    }
+                });
     }
 
     @Override
@@ -81,6 +89,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     }
 
     public enum SchedulingPolicy {
-        FIFO, RANDOM
+        FIFO,
+        RANDOM
     }
 }

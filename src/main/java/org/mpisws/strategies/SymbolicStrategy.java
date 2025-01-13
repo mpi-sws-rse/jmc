@@ -1,6 +1,7 @@
 package org.mpisws.strategies;
 
 import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.SchedulingChoice;
 
 import java.util.Random;
 
@@ -23,8 +24,8 @@ public class SymbolicStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public Long nextTask() {
-        return random.nextLong();
+    public SchedulingChoice nextTask() {
+        return SchedulingChoice.task(random.nextLong());
     }
 
     @Override

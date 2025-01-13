@@ -3,7 +3,12 @@ package org.mpisws.strategies.trust;
 import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.util.aux.LamportVectorClock;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /** Represents a node in the execution graph. */
 public class ExecutionGraphNode {
@@ -29,7 +34,10 @@ public class ExecutionGraphNode {
         this.attributes = new HashMap<>();
         this.edges = new HashMap<>();
         this.backEdges = new HashMap<>();
-        this.vectorClock = new LamportVectorClock(vectorClock, event.getTaskId().intValue());
+        this.vectorClock =
+                event.isInit()
+                        ? new LamportVectorClock(0)
+                        : new LamportVectorClock(vectorClock, event.getTaskId().intValue());
     }
 
     /**

@@ -2,6 +2,7 @@ package org.mpisws.strategies;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpisws.runtime.SchedulingChoice;
 
 import java.util.Random;
 import java.util.Set;
@@ -29,15 +30,15 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
      * @return the next task to be scheduled
      */
     @Override
-    public Long nextTask() {
+    public SchedulingChoice nextTask() {
         Set<Long> activeThreads = getActiveTasks();
         if (activeThreads.isEmpty()) {
             return null;
         }
         if (activeThreads.size() == 1) {
-            return (Long) activeThreads.toArray()[0];
+            return SchedulingChoice.task((Long) activeThreads.toArray()[0]);
         }
         int index = random.nextInt(activeThreads.size());
-        return (Long) activeThreads.toArray()[index];
+        return SchedulingChoice.task((Long) activeThreads.toArray()[index]);
     }
 }

@@ -2,7 +2,6 @@ package org.mpisws.strategies.trust;
 
 import org.mpisws.runtime.HaltExecutionException;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -25,6 +24,10 @@ public class BackwardRevisitView {
 
     public ExecutionGraphNode getWrite() {
         return write;
+    }
+
+    public ExecutionGraphNode getRead() {
+        return read;
     }
 
     // Just marks the node as removed, does not update the graph
@@ -107,7 +110,7 @@ public class BackwardRevisitView {
         // Remove the nodes
         restrictedGraph.restrictByRemoving(removedNodes);
         // Update the reads-from relation
-
+        restrictedGraph.changeReadsFrom(read, write);
         return restrictedGraph;
     }
 }

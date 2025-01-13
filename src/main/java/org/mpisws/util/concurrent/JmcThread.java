@@ -12,6 +12,8 @@ import org.mpisws.runtime.RuntimeEventType;
  * and interrupt events of a thread.
  *
  * <p>The goal is to replace all references to Thread with JmcThread in bytecode instrumentation
+ *
+ * <p>The method to be overridden is now run1 and similarly the method to join is join1
  */
 public class JmcThread extends Thread {
 

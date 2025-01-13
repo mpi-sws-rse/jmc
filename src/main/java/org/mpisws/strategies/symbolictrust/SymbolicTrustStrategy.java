@@ -3,6 +3,7 @@ package org.mpisws.strategies.symbolictrust;
 import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.HaltTaskException;
 import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.SchedulingChoice;
 import org.mpisws.strategies.trust.TrustStrategy;
 
 // TODO: complete this
@@ -21,7 +22,7 @@ public class SymbolicTrustStrategy extends TrustStrategy {
     }
 
     @Override
-    public Long nextTask() {
+    public SchedulingChoice nextTask() {
         return super.nextTask();
     }
 

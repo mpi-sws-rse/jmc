@@ -79,7 +79,7 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
     }
 
     /**
-     * Checks if this vector clock happens before the other vector clock.
+     * Checks if this vector clock happens before the other vector clock. (less than or equal to)
      *
      * @param other The other vector clock.
      * @return True if this vector clock happened before the other vector clock, false otherwise.
@@ -95,7 +95,7 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
             if (i >= other.vector.size()) {
                 other.vector.add(0);
             }
-            if (vector.get(i) < other.vector.get(i)) {
+            if (vector.get(i) <= other.vector.get(i)) {
                 happenedBefore = true;
             } else if (vector.get(i) > other.vector.get(i)) {
                 happenedAfter = true;
@@ -121,11 +121,16 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
         return true;
     }
 
+    /**
+     * Returns the maximum value in the vector clock.
+     *
+     * @return The maximum value in the vector clock.
+     */
     public int max() {
         int max = 0;
-        for (int i = 0; i < vector.size(); i++) {
-            if (vector.get(i) > max) {
-                max = vector.get(i);
+        for (Integer integer : vector) {
+            if (integer > max) {
+                max = integer;
             }
         }
         return max;

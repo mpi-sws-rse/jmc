@@ -154,8 +154,8 @@ public class Event {
         return e;
     }
 
-    public boolean isExclusiveWrite() {
-        return type == Type.WRITE_EX;
+    public boolean hasAttribute(String key) {
+        return attributes.containsKey(key);
     }
 
     /** Represents the type of the event according to the algorithm. */
@@ -163,6 +163,7 @@ public class Event {
         READ,
         READ_EX,
         LOCK_AWAIT,
+        BLOCK,
         INIT,
         WRITE,
         WRITE_EX,
@@ -211,6 +212,9 @@ public class Event {
             }
 
             Key key = (Key) o;
+            if (taskId == null && timestamp == null) {
+                return key.taskId == null && key.timestamp == null;
+            }
 
             if (!taskId.equals(key.taskId)) {
                 return false;
@@ -220,6 +224,9 @@ public class Event {
 
         @Override
         public int hashCode() {
+            if (taskId == null && timestamp == null) {
+                return 0;
+            }
             int result = taskId.hashCode();
             result = 31 * result + timestamp.hashCode();
             return result;

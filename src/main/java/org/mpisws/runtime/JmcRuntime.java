@@ -3,6 +3,8 @@ package org.mpisws.runtime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.ExecutionException;
+
 /**
  * The Runtime environment complete with a scheduler and configuration options used by the model
  * checker.
@@ -89,7 +91,17 @@ public class JmcRuntime {
             LOGGER.error("Yielding an already paused task.");
             System.exit(1);
         }
-        taskManager.wait(currentTask);
+        try {
+            taskManager.wait(currentTask);
+        } catch (ExecutionException | InterruptedException e) {
+            LOGGER.error("Failed to wait for task: {}", currentTask);
+            Throwable cause = e.getCause();
+            if (cause instanceof HaltTaskException) {
+                throw (HaltTaskException) cause;
+            } else {
+                throw HaltExecutionException.error(cause.getMessage());
+            }
+        }
     }
 
     /**
@@ -101,7 +113,7 @@ public class JmcRuntime {
      *
      * @param taskId the ID of the task to be paused
      */
-    public static void yield(Long taskId) {
+    public static void yield(Long taskId) throws HaltTaskException, HaltExecutionException {
         try {
             LOGGER.debug("Yielding task {}", taskId);
             scheduler.yield(taskId);
@@ -109,14 +121,24 @@ public class JmcRuntime {
             LOGGER.error("Yielding an already paused task.");
             System.exit(1);
         }
-        taskManager.wait(taskId);
+        try {
+            taskManager.wait(taskId);
+        } catch (ExecutionException | InterruptedException e) {
+            LOGGER.error("Failed to wait for task: {}", taskId);
+            Throwable cause = e.getCause();
+            if (cause instanceof HaltTaskException) {
+                throw (HaltTaskException) cause;
+            } else {
+                throw HaltExecutionException.error(cause.getMessage());
+            }
+        }
     }
 
     /**
      * Called by the task that spawns a new task to just pause and wait. Everything else is handled
      * in the {@link JmcRuntime#addNewTask()} method.
      */
-    public static void spawn() {
+    public static void spawn() throws HaltTaskException, HaltExecutionException {
         LOGGER.debug("Spawning new task and waiting");
         Long currentTask = scheduler.currentTask();
         try {
@@ -125,7 +147,17 @@ public class JmcRuntime {
             LOGGER.error("Current thread is already paused.");
             System.exit(1);
         }
-        taskManager.wait(currentTask);
+        try {
+            taskManager.wait(currentTask);
+        } catch (ExecutionException | InterruptedException e) {
+            LOGGER.error("Failed to wait for task: {}", currentTask);
+            Throwable cause = e.getCause();
+            if (cause instanceof HaltTaskException) {
+                throw (HaltTaskException) cause;
+            } else {
+                throw HaltExecutionException.error(cause.getMessage());
+            }
+        }
     }
 
     /**

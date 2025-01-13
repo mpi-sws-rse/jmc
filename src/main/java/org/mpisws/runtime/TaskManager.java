@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -131,6 +132,17 @@ public class TaskManager {
         }
     }
 
+    public void error(Long taskId, Exception e) {
+        synchronized (tasksLock) {
+            CompletableFuture<Boolean> future = taskFutures.get(taskId);
+            if (future == null) {
+                return;
+            }
+            future.completeExceptionally(e);
+            taskFutures.remove(taskId);
+        }
+    }
+
     /**
      * Terminates the task with the specified custom ID. The future associated with the task is
      * completed.
@@ -241,7 +253,7 @@ public class TaskManager {
      *
      * @param taskId the custom ID of the task
      */
-    public void wait(Long taskId) {
+    public void wait(Long taskId) throws InterruptedException, ExecutionException {
         CompletableFuture<Boolean> future;
         synchronized (tasksLock) {
             future = taskFutures.get(taskId);
@@ -249,10 +261,18 @@ public class TaskManager {
         if (future == null) {
             return;
         }
-        try {
-            future.get();
-        } catch (Exception e) {
-            LOGGER.error("Error while waiting for task to complete", e);
+        future.get();
+    }
+
+    /** Stop all the tasks in the task pool. */
+    public void stopAll() {
+        synchronized (tasksLock) {
+            for (Map.Entry<Long, CompletableFuture<Boolean>> entry : taskFutures.entrySet()) {
+                entry.getValue()
+                        .completeExceptionally(HaltExecutionException.error("Stopping execution"));
+            }
+            taskFutures.clear();
+            taskStates.clear();
         }
     }
 }

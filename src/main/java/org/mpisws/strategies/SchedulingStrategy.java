@@ -4,6 +4,7 @@ import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.HaltTaskException;
 import org.mpisws.runtime.RuntimeEvent;
+import org.mpisws.runtime.SchedulingChoice;
 
 /**
  * The scheduling strategy is responsible for deciding which thread to schedule next.
@@ -36,15 +37,11 @@ public interface SchedulingStrategy {
      *
      * @return the ID of the next thread to be scheduled.
      */
-    Long nextTask();
+    SchedulingChoice nextTask();
 
-    /**
-     * Resets the strategy for the current Iteration.
-     */
+    /** Resets the strategy for the current Iteration. */
     void resetIteration();
 
-    /**
-     * Teardown the strategy. Allows for releasing resources.
-     */
+    /** Teardown the strategy. Allows for releasing resources. */
     void teardown();
 }

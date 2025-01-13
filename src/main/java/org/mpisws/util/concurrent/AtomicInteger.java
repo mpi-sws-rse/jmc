@@ -18,32 +18,38 @@ public class AtomicInteger {
 
     private void writeOp(int newValue) {
         RuntimeEvent event =
-                new RuntimeEvent(
-                        RuntimeEventType.WRITE_EVENT,
-                        JmcRuntime.currentTask(),
-                        new HashMap<>() {
-                            {
-                                put("newValue", newValue);
-                                put("owner", "org/mpisws/util/concurrent/AtomicInteger");
-                                put("name", "value");
-                                put("descriptor", "I");
-                            }
-                        });
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.WRITE_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .params(
+                                new HashMap<>() {
+                                    {
+                                        put("newValue", newValue);
+                                        put("owner", "org/mpisws/util/concurrent/AtomicInteger");
+                                        put("name", "value");
+                                        put("descriptor", "I");
+                                    }
+                                })
+                        .param("instance", this)
+                        .build();
         JmcRuntime.updateEventAndYield(event);
     }
 
     private void readOp() {
         RuntimeEvent event =
-                new RuntimeEvent(
-                        RuntimeEventType.READ_EVENT,
-                        JmcRuntime.currentTask(),
-                        new HashMap<>() {
-                            {
-                                put("owner", "org/mpisws/util/concurrent/AtomicInteger");
-                                put("name", "value");
-                                put("descriptor", "I");
-                            }
-                        });
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.READ_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .params(
+                                new HashMap<>() {
+                                    {
+                                        put("owner", "org/mpisws/util/concurrent/AtomicInteger");
+                                        put("name", "value");
+                                        put("descriptor", "I");
+                                    }
+                                })
+                        .param("instance", this)
+                        .build();
         JmcRuntime.updateEventAndYield(event);
     }
 

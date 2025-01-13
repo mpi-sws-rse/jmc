@@ -4,9 +4,20 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.runtime.HaltExecutionException;
+import org.mpisws.runtime.SchedulingChoice;
 import org.mpisws.util.aux.LamportVectorClock;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Queue;
+import java.util.Set;
 
 /**
  * Represents an execution graph.
@@ -45,8 +56,8 @@ public class ExecutionGraph {
         this.taskEvents = new ArrayList<>();
     }
 
+    /* Copy constructor */
     private ExecutionGraph(ExecutionGraph graph) {
-
         this.taskEvents = new ArrayList<>();
         for (List<ExecutionGraphNode> taskEvent : graph.taskEvents) {
             List<ExecutionGraphNode> newTaskEvent = new ArrayList<>();
@@ -57,6 +68,11 @@ public class ExecutionGraph {
         }
         this.allEvents = new ArrayList<>();
         for (ExecutionGraphNode node : graph.allEvents) {
+            if (node.getEvent().isInit()) {
+                // Need to clone the init event, so far it has not been added to the task events
+                this.allEvents.add(node.clone());
+                continue;
+            }
             Event.Key nodeKey = node.key();
             this.allEvents.add(
                     this.taskEvents
@@ -68,6 +84,10 @@ public class ExecutionGraph {
             List<ExecutionGraphNode> writes = graph.coherencyOrder.get(location);
             List<ExecutionGraphNode> newWrites = new ArrayList<>();
             for (ExecutionGraphNode write : writes) {
+                if (write.getEvent().isInit()) {
+                    newWrites.add(this.allEvents.get(0));
+                    continue;
+                }
                 Event.Key nodeKey = write.key();
                 newWrites.add(
                         this.taskEvents
@@ -79,12 +99,51 @@ public class ExecutionGraph {
     }
 
     /**
-     * Returns the list of task identifiers in the execution graph using the TO order.
+     * Returns the list of task identifiers in the execution graph based on the topologically sorted
+     * order.
      *
      * @return The list of task identifiers in the execution graph.
      */
-    public List<Long> getTaskSchedule() {
-        return allEvents.stream().map(e -> e.getEvent().getTaskId()).toList();
+    public List<SchedulingChoice> getTaskSchedule() {
+        List<SchedulingChoice> taskSchedule = new ArrayList<>();
+        for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
+            ExecutionGraphNode node = it.next();
+            if (node.getEvent().isInit()) {
+                continue;
+            }
+            // If the event is a blocking label then add the relevant task to the schedule
+            if (EventUtils.isBlockingLabel(node.getEvent())) {
+                Long taskId = node.getEvent().getTaskId();
+                if (taskId == null) {
+                    taskSchedule.add(SchedulingChoice.blockExecution());
+                } else {
+                    taskSchedule.add(SchedulingChoice.blockTask(node.getEvent().getTaskId()));
+                }
+                continue;
+            }
+            taskSchedule.add(SchedulingChoice.task(node.getEvent().getTaskId()));
+        }
+        return taskSchedule;
+    }
+
+    /**
+     * Returns the list of task identifiers in the execution graph where a new event can be added.
+     *
+     * @return The list of task identifiers in the execution graph.
+     */
+    public ArrayList<Integer> getUnblockedTasks() {
+        ArrayList<Integer> unblockedTasks = new ArrayList<>();
+        for (int i = 0; i < taskEvents.size(); i++) {
+            if (taskEvents.get(i).isEmpty()) {
+                unblockedTasks.add(i);
+            } else {
+                ExecutionGraphNode lastNode = taskEvents.get(i).get(taskEvents.get(i).size() - 1);
+                if (!EventUtils.isBlockingLabel(lastNode.getEvent())) {
+                    unblockedTasks.add(i);
+                }
+            }
+        }
+        return unblockedTasks;
     }
 
     /**
@@ -128,19 +187,32 @@ public class ExecutionGraph {
         return new ExecutionGraph(this);
     }
 
+    /**
+     * Returns the event node with the given key.
+     *
+     * @param key The key of the event to get.
+     * @return The event node with the given key.
+     * @throws NoSuchEventException If the event with the given key is not found.
+     */
     public ExecutionGraphNode getEventNode(Event.Key key) throws NoSuchEventException {
         if (key.getTaskId() == null || key.getTimestamp() == null) {
             // Init event
             return allEvents.get(0);
         }
-        int taskID = key.getTaskId().intValue();
+        int taskId = key.getTaskId().intValue();
         Integer timestamp = key.getTimestamp();
-        if (taskID >= taskEvents.size() || timestamp >= taskEvents.get(taskID).size()) {
+        if (taskId >= taskEvents.size() || timestamp >= taskEvents.get(taskId).size()) {
             throw new NoSuchEventException(key);
         }
-        return taskEvents.get(taskID).get(timestamp);
+        return taskEvents.get(taskId).get(timestamp);
     }
 
+    /**
+     * Returns true if the execution graph contains the event with the given key.
+     *
+     * @param key The key of the event to check.
+     * @return True if the execution graph contains the event with the given key.
+     */
     public boolean contains(Event.Key key) {
         if (key.getTaskId() == null || key.getTimestamp() == null) {
             // Init event
@@ -170,7 +242,56 @@ public class ExecutionGraph {
         // create a node)
         int task = Math.toIntExact(event.getTaskId());
         if (task >= taskEvents.size()) {
-            taskEvents.add(new ArrayList<>());
+            // Add empty task events to accommodate for the new task
+            for (int i = taskEvents.size(); i <= task; i++) {
+                taskEvents.add(new ArrayList<>());
+            }
+        }
+        LamportVectorClock vectorClock = new LamportVectorClock(taskEvents.size());
+        // The last event in the PO order (initial event by default)
+        ExecutionGraphNode lastNodePO = allEvents.get(0);
+        if (!taskEvents.get(task).isEmpty()) {
+            lastNodePO = taskEvents.get(task).get(taskEvents.get(task).size() - 1);
+            vectorClock = lastNodePO.getVectorClock();
+        }
+        if (EventUtils.isBlockingLabel(lastNodePO.getEvent())) {
+            throw new HaltCheckerException("A blocking label is followed by an event.");
+        }
+        ExecutionGraphNode node = new ExecutionGraphNode(event, vectorClock);
+        lastNodePO.addEdge(node, Relation.ProgramOrder);
+
+        // Set timestamp to task event size
+        event.setTimestamp(taskEvents.get(task).size());
+        taskEvents.get(task).add(node);
+
+        // Track the event in the TO order
+        allEvents.add(node);
+
+        // Track event location in the coherency order but not the event itself
+        Location location = event.getLocation();
+        if (location != null && !coherencyOrder.containsKey(location)) {
+            // If the location is not already tracked, add the initial event
+            List<ExecutionGraphNode> newWrites = new ArrayList<>();
+            newWrites.add(allEvents.get(0));
+            coherencyOrder.put(location, newWrites);
+        }
+
+        return node;
+    }
+
+    /**
+     * Adds a blocking label to the execution graph.
+     *
+     * @param taskId The task ID to add the blocking label for.
+     */
+    public void addBlockingLabel(Long taskId) {
+        Event event = new Event(taskId, null, Event.Type.BLOCK);
+        int task = Math.toIntExact(event.getTaskId());
+        if (task >= taskEvents.size()) {
+            // Add empty task events to accommodate for the new task
+            for (int i = taskEvents.size(); i <= task; i++) {
+                taskEvents.add(new ArrayList<>());
+            }
         }
         LamportVectorClock vectorClock = new LamportVectorClock(taskEvents.size());
         // The last event in the PO order (initial event by default)
@@ -188,8 +309,6 @@ public class ExecutionGraph {
 
         // Track the event in the TO order
         allEvents.add(node);
-
-        return node;
     }
 
     /**
@@ -235,16 +354,26 @@ public class ExecutionGraph {
      * Returns the alternative writes (in reverse CO order) to the given read event.
      *
      * <p>All writes that are not _porf_-before the given read. (Tied to Sequential consistency
-     * model)
+     * model) ecluding the CO max write.
      *
      * @param read The read event node.
      * @return The alternative writes to the given read event.
      */
     public List<ExecutionGraphNode> getAlternativeWrites(ExecutionGraphNode read) {
-        List<ExecutionGraphNode> allWrites = coherencyOrder.get(read.getEvent().getLocation());
+        Location location = read.getEvent().getLocation();
+        List<ExecutionGraphNode> allWrites =
+                coherencyOrder.get(location).subList(0, coherencyOrder.get(location).size() - 1);
         return splitNodesBefore(read, allWrites);
     }
 
+    /**
+     * Returns the potential alternative reads to the given write event.
+     *
+     * <p>All reads that are not _porf_-before the given write.
+     *
+     * @param write The write event node.
+     * @return The potential reads to the given write event.
+     */
     public List<ExecutionGraphNode> getPotentialReads(ExecutionGraphNode write) {
         List<ExecutionGraphNode> otherWrites = coherencyOrder.get(write.getEvent().getLocation());
         List<ExecutionGraphNode> nonPorfWrites = splitNodesBefore(write, otherWrites);
@@ -278,7 +407,14 @@ public class ExecutionGraph {
         return reads;
     }
 
-    protected BackwardRevisitView revisitView(ExecutionGraphNode write, ExecutionGraphNode read) {
+    /**
+     * Constructs a backward revisit view of the ExecutionGraph.
+     *
+     * @param write The write event
+     * @param read The read event that the write needs to backward revisit
+     * @return The backward revisit view of the ExecutionGraph
+     */
+    public BackwardRevisitView revisitView(ExecutionGraphNode write, ExecutionGraphNode read) {
         // Construct a restricted view of the graph
         BackwardRevisitView restrictedView = new BackwardRevisitView(this, read, write);
         int readTOIndex = getTOIndex(read);
@@ -318,7 +454,7 @@ public class ExecutionGraph {
     public void swapCoherency(ExecutionGraphNode write1, ExecutionGraphNode write2) {
         // Update the coherency order
         Location location = write1.getEvent().getLocation();
-        if (write2.getEvent().getLocation() != location) {
+        if (!write2.getEvent().getLocation().equals(location)) {
             throw new HaltCheckerException("The write events are not to the same location.");
         }
 
@@ -359,6 +495,12 @@ public class ExecutionGraph {
      * @return The coherency placings of the given write event.
      */
     public List<ExecutionGraphNode> getCoherentPlacings(ExecutionGraphNode write) {
+        if (EventUtils.isExclusiveWrite(write.getEvent())) {
+            // Easy path, since the coMax will be PORF before this write.
+            // Based on the assumption that there are no concurrent writes between an exclusive read
+            // and an exclusive write.
+            return new ArrayList<>();
+        }
         List<ExecutionGraphNode> allWrites = coherencyOrder.get(write.getEvent().getLocation());
         List<ExecutionGraphNode> writesAfter = splitNodesBefore(write, allWrites);
         if (writesAfter.isEmpty()) {
@@ -445,9 +587,9 @@ public class ExecutionGraph {
     public void restrictByRemoving(Set<Event.Key> keys) {
         // First recreate task events
         List<List<ExecutionGraphNode>> newTaskEvents = new ArrayList<>();
-        for (int i = 0; i < taskEvents.size(); i++) {
+        for (List<ExecutionGraphNode> taskEvent : taskEvents) {
             List<ExecutionGraphNode> newTaskEvent = new ArrayList<>();
-            for (ExecutionGraphNode node : taskEvents.get(i)) {
+            for (ExecutionGraphNode node : taskEvent) {
                 if (!keys.contains(node.key())) {
                     newTaskEvent.add(node);
                 }
@@ -574,19 +716,16 @@ public class ExecutionGraph {
         allEvents = newAllEvents;
 
         // Remove nodes from coherency tracking
-        for (Location location : coherencyOrder.keySet()) {
-            if (!locationsToKeep.contains(location)) {
-                coherencyOrder.remove(location);
-                continue;
-            }
-            List<ExecutionGraphNode> writes = coherencyOrder.get(location);
+        coherencyOrder.entrySet().removeIf(entry -> !locationsToKeep.contains(entry.getKey()));
+        for (Map.Entry<Location, List<ExecutionGraphNode>> entry : coherencyOrder.entrySet()) {
+            List<ExecutionGraphNode> writes = entry.getValue();
             List<ExecutionGraphNode> newWrites = new ArrayList<>();
             for (ExecutionGraphNode write : writes) {
                 if (write.happensBefore(restrictingNode)) {
                     newWrites.add(write);
                 }
             }
-            coherencyOrder.put(location, newWrites);
+            entry.setValue(newWrites);
         }
     }
 
@@ -603,6 +742,13 @@ public class ExecutionGraph {
     /** Returns true if the graph contains only the initial event. */
     public boolean isEmpty() {
         return allEvents.size() == 1 && allEvents.get(0).getEvent().isInit();
+    }
+
+    /** Clears the execution graph. */
+    public void clear() {
+        allEvents.clear();
+        coherencyOrder.clear();
+        taskEvents.clear();
     }
 
     /**
@@ -638,15 +784,16 @@ public class ExecutionGraph {
 
         @Override
         public ExecutionGraphNode next() {
-            // TODO: start with nodes after init. Should always ignore init?
-            // TODO: insert into queue prioritizing the task number.
             ExecutionGraphNode node = queue.poll();
             if (node == null) {
                 throw new NoSuchElementException();
             }
             try {
                 visited.add(node.key());
-                for (Event.Key child : node.getAllSuccessors()) {
+                for (Event.Key child :
+                        node.getAllSuccessors().stream()
+                                .sorted(Comparator.comparingLong(Event.Key::getTaskId))
+                                .toList()) {
                     ExecutionGraphNode childNode = graph.getEventNode(child);
                     if (visited.containsAll(childNode.getAllPredecessors())) {
                         queue.add(childNode);

@@ -3,6 +3,7 @@ package org.mpisws.checker;
 import org.junit.jupiter.api.Test;
 import org.mpisws.concurrent.programs.atomic.counter.AtomicCounter;
 import org.mpisws.concurrent.programs.complex.counter.ComplexCounter;
+import org.mpisws.concurrent.programs.concurrent.ConcurrentCounter;
 import org.mpisws.concurrent.programs.det.array.DetArray;
 import org.mpisws.concurrent.programs.det.loop.DetLoop;
 import org.mpisws.concurrent.programs.det.loopVariant.DetLoopWithLock;
@@ -222,6 +223,24 @@ public class JmcModelCheckerTest {
                             BuggyCounter.main(new String[0]);
                         });
 
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustConcurrentCounter() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(10)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustBuggyCounter",
+                        () -> {
+                            ConcurrentCounter.main(new String[0]);
+                        });
         jmcModelChecker.check(target);
     }
 }
