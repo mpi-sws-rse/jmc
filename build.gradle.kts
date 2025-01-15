@@ -36,6 +36,16 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.register<Test>("runTrustTestDetLazyListI") {
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+
+    filter {
+        includeTestsMatching("org.mpisws.checker.ModelCheckerTest.trustTestDetLazyListI")
+    }
+}
+
 kotlin {
     jvmToolchain(17)
 }
