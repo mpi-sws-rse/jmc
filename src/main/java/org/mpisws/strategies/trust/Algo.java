@@ -6,6 +6,7 @@ import org.mpisws.runtime.HaltTaskException;
 import org.mpisws.runtime.SchedulingChoice;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -74,9 +75,20 @@ public class Algo {
                 handleBot(event);
                 break;
             case READ:
-                handleRead(event);
+                if (EventUtils.isLockAcquireRead(event)) {
+                    handleLockAcquireRead(event);
+                } else {
+                    handleRead(event);
+                }
                 break;
             case WRITE:
+                if (EventUtils.isLockAcquireWrite(event)) {
+                    handleLockAcquireWrite(event);
+                } else if (EventUtils.isLockReleaseWrite(event)) {
+                    handleLockReleaseWrite(event);
+                } else {
+                    handleWrite(event);
+                }
                 handleWrite(event);
                 break;
             case READ_EX:
@@ -290,6 +302,10 @@ public class Algo {
             return;
         }
 
+        // There will not be any (w->w) forward revisits for exclusive writes.
+        // Because all exclusive writes to the same location are totally ordered by the
+        // happens-before
+
         // Check for (w->r) backward revisits
         // Find potential reads that need to be revisited
         // Additionally, we need to add a blocking label to the writes of the corresponding revisit
@@ -309,12 +325,45 @@ public class Algo {
 
         for (BackwardRevisitView revisit : revisitViews) {
             // Block the tasks of the reads that need to be revisited
-            executionGraph.addBlockingLabel(revisit.getRead().getEvent().getTaskId());
+            executionGraph.addBlockingLabel(revisit.getRead().getEvent().getTaskId(), false);
             explorationStack.push(
                     ExplorationStack.Item.backwardRevisit(
                             revisit.getWrite(), revisit.getRestrictedGraph()));
         }
     }
+
+    private void handleLockAcquireRead(Event event) {
+        if (areWeGuiding()) {
+            return;
+        }
+
+        ExecutionGraphNode read = executionGraph.addEvent(event);
+        ExecutionGraphNode coMaxWrite = executionGraph.getCoMax(event.getLocation());
+        // If reading from acquire write, then add a lock await label after the read
+        if (EventUtils.isLockAcquireWrite(coMaxWrite.getEvent())) {
+            executionGraph.addBlockingLabel(read.getEvent().getTaskId(), true);
+        }
+
+        // Check if there are alternative reads from the same write then block
+        List<ExecutionGraphNode> alternativeReads = new ArrayList<>();
+        for (Event.Key readKey : coMaxWrite.getSuccessors(Relation.ReadsFrom)) {
+            try {
+                alternativeReads.add(executionGraph.getEventNode(readKey));
+            } catch (NoSuchEventException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        if (alternativeReads.size() > 1) {
+            executionGraph.addBlockingLabel(read.getEvent().getTaskId(), true);
+        }
+
+        // Find alternative writes to revisit
+        List<ExecutionGraphNode> alternativeWrites = executionGraph.getAlternativeLockWrite(read);
+    }
+
+    private void handleLockAcquireWrite(Event event) {}
+
+    private void handleLockReleaseWrite(Event event) {}
 
     private void handleLockAwait(Event event) {}
 }

@@ -207,6 +207,16 @@ public class ExecutionGraph {
         return taskEvents.get(taskId).get(timestamp);
     }
 
+    private ExecutionGraphNode unsafeGetEventNode(Event.Key key) {
+        if (key.getTaskId() == null || key.getTimestamp() == null) {
+            // Init event
+            return allEvents.get(0);
+        }
+        int taskId = key.getTaskId().intValue();
+        Integer timestamp = key.getTimestamp();
+        return taskEvents.get(taskId).get(timestamp);
+    }
+
     /**
      * Returns true if the execution graph contains the event with the given key.
      *
@@ -284,8 +294,12 @@ public class ExecutionGraph {
      *
      * @param taskId The task ID to add the blocking label for.
      */
-    public void addBlockingLabel(Long taskId) {
-        Event event = new Event(taskId, null, Event.Type.BLOCK);
+    public void addBlockingLabel(Long taskId, boolean lock_await) {
+        Event.Type eventType = Event.Type.BLOCK;
+        if (lock_await) {
+            eventType = Event.Type.LOCK_AWAIT;
+        }
+        Event event = new Event(taskId, null, eventType);
         int task = Math.toIntExact(event.getTaskId());
         if (task >= taskEvents.size()) {
             // Add empty task events to accommodate for the new task
@@ -306,9 +320,29 @@ public class ExecutionGraph {
         // Set timestamp to task event size
         event.setTimestamp(taskEvents.get(task).size());
         taskEvents.get(task).add(node);
+    }
 
-        // Track the event in the TO order
-        allEvents.add(node);
+    /**
+     * Unblocks the task with the given ID.
+     *
+     * @param taskId The task ID to block.
+     * @throws HaltCheckerException If the task ID is invalid.
+     */
+    public void unBlockTask(Long taskId) throws HaltCheckerException {
+        if (taskId == null || taskId > taskEvents.size()) {
+            throw new HaltCheckerException("Invalid Task ID.");
+        }
+        List<ExecutionGraphNode> curTaskEvents = taskEvents.get(Math.toIntExact(taskId));
+        if (curTaskEvents.isEmpty()) {
+            throw new HaltCheckerException("The task is not blocked.");
+        }
+        ExecutionGraphNode blockNode = curTaskEvents.get(curTaskEvents.size() - 1);
+        if (blockNode.getEvent().getType() != Event.Type.LOCK_AWAIT) {
+            throw new HaltCheckerException("The task cannot be unblocked.");
+        }
+        curTaskEvents.remove(curTaskEvents.size() - 1);
+        ExecutionGraphNode last = curTaskEvents.get(curTaskEvents.size() - 1);
+        last.removeEdge(blockNode, Relation.ProgramOrder);
     }
 
     /**
@@ -364,6 +398,24 @@ public class ExecutionGraph {
         List<ExecutionGraphNode> allWrites =
                 coherencyOrder.get(location).subList(0, coherencyOrder.get(location).size() - 1);
         return splitNodesBefore(read, allWrites);
+    }
+
+    /**
+     * Returns the potential alternative writes to the given lock read.
+     *
+     * <p>Writes that other lock reads are reading from.
+     *
+     * @param read The write event node.
+     * @return The potential writes to the given read event.
+     */
+    public List<ExecutionGraphNode> getAlternativeLockWrite(ExecutionGraphNode read) {
+        Location location = read.getEvent().getLocation();
+        List<ExecutionGraphNode> allWrites = coherencyOrder.get(location).subList(0, coherencyOrder.get(location).size() - 1);
+        return splitNodesBefore(
+                read,
+                allWrites.stream()
+                        .filter((w) -> !EventUtils.isLockAcquireWrite(w.getEvent()))
+                        .toList());
     }
 
     /**
