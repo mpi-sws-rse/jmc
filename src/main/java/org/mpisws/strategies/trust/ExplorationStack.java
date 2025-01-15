@@ -178,6 +178,19 @@ public class ExplorationStack {
         }
 
         /**
+         * Creates a backward revisit item for a lock read revisiting another lock read.
+         *
+         * @param one The read event
+         * @param two The revisited read
+         * @param graph The graph to be used in the case of a backward revisit
+         * @return The created item
+         */
+        public static Item lockBackwardRevisit(
+                ExecutionGraphNode one, ExecutionGraphNode two, ExecutionGraph graph) {
+            return new Item(ItemType.BCK, one, two, graph);
+        }
+
+        /**
          * Sets the inner stack index of the item.
          *
          * @param index The inner stack index
