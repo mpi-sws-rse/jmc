@@ -1,21 +1,22 @@
 package org.mpisws.strategies.trust;
 
 public class LockBackwardRevisitView {
-    private final Event event;
-    private final Event revisitRead;
+    private final ExecutionGraphNode event;
+    private final ExecutionGraphNode revisitRead;
     private final ExecutionGraph graph;
 
-    public LockBackwardRevisitView(Event event, Event revisit, ExecutionGraph graph) {
+    public LockBackwardRevisitView(
+            ExecutionGraphNode event, ExecutionGraphNode revisit, ExecutionGraph graph) {
         this.event = event;
         this.revisitRead = revisit;
         this.graph = graph;
     }
 
-    public Event getEvent() {
+    public ExecutionGraphNode getEvent() {
         return event;
     }
 
-    public Event getRevisitRead() {
+    public ExecutionGraphNode getRevisitRead() {
         return revisitRead;
     }
 

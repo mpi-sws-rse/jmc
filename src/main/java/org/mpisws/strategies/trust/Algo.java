@@ -357,8 +357,19 @@ public class Algo {
             executionGraph.addBlockingLabel(read.getEvent().getTaskId(), true);
         }
 
-        // Find alternative writes to revisit
-        List<ExecutionGraphNode> alternativeWrites = executionGraph.getAlternativeLockWrite(read);
+        // Find alternative lock reads to revisit
+        List<LockBackwardRevisitView> alternativeWrites =
+                executionGraph.getAlternativeLockRevisits(read);
+        if (alternativeWrites.isEmpty()) {
+            return;
+        }
+        for (LockBackwardRevisitView alternativeWrite : alternativeWrites) {
+            explorationStack.push(
+                    ExplorationStack.Item.lockBackwardRevisit(
+                            read,
+                            alternativeWrite.getRevisitRead(),
+                            alternativeWrite.getRestrictedGraph()));
+        }
     }
 
     private void handleLockAcquireWrite(Event event) {}

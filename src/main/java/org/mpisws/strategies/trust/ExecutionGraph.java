@@ -408,14 +408,20 @@ public class ExecutionGraph {
      * @param read The write event node.
      * @return The potential writes to the given read event.
      */
-    public List<ExecutionGraphNode> getAlternativeLockWrite(ExecutionGraphNode read) {
+    public List<LockBackwardRevisitView> getAlternativeLockRevisits(ExecutionGraphNode read) {
         Location location = read.getEvent().getLocation();
-        List<ExecutionGraphNode> allWrites = coherencyOrder.get(location).subList(0, coherencyOrder.get(location).size() - 1);
-        return splitNodesBefore(
-                read,
-                allWrites.stream()
-                        .filter((w) -> !EventUtils.isLockAcquireWrite(w.getEvent()))
-                        .toList());
+        List<ExecutionGraphNode> allWrites =
+                coherencyOrder.get(location).subList(0, coherencyOrder.get(location).size() - 1);
+        List<ExecutionGraphNode> alternativeWrites =
+                splitNodesBefore(
+                        read,
+                        allWrites.stream()
+                                .filter((w) -> !EventUtils.isLockAcquireWrite(w.getEvent()))
+                                .toList());
+
+        //
+        List<LockBackwardRevisitView> lockBackwardRevisitViews = new ArrayList<>();
+        return lockBackwardRevisitViews;
     }
 
     /**
