@@ -38,9 +38,12 @@ tasks.test {
 }
 
 tasks.register<Test>("runTrustTestDetLazyListI") {
+    useJUnitPlatform()
     filter {
         includeTestsMatching("org.mpisws.checker.ModelCheckerTest.trustTestDetLazyListI")
     }
+
+//    gradle-profiler --profile async-profiler-all --project-dir . runTrustTestDetLazyListI
 }
 
 kotlin {
