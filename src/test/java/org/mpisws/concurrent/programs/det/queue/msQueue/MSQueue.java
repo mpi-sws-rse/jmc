@@ -16,7 +16,7 @@ public class MSQueue implements Queue {
 
     public void enq(int x) throws JMCInterruptException {
         Node node = new Node(x);
-        while (true) {
+        /*while (true) {
             Node last = tail.get();
             Node next = last.next.get();
             if (last == tail.get()) {
@@ -29,11 +29,23 @@ public class MSQueue implements Queue {
                     tail.compareAndSet(last, next);
                 }
             }
+        }*/
+        // The unrolled version of the above loop for one iteration
+        Node last = tail.get();
+        Node next = last.next.get();
+        if (last == tail.get()) {
+            if (next == null) {
+                if (last.next.compareAndSet(next, node)) {
+                    tail.compareAndSet(last, node);
+                }
+            } else {
+                tail.compareAndSet(last, next);
+            }
         }
     }
 
     public int deq() throws JMCInterruptException {
-        while (true) {
+        /*while (true) {
             Node first = head.get();
             Node last = tail.get();
             Node next = first.next.get();
@@ -50,6 +62,24 @@ public class MSQueue implements Queue {
                     }
                 }
             }
+        }*/
+        // The unrolled version of the above loop for one iteration
+        Node first = head.get();
+        Node last = tail.get();
+        Node next = first.next.get();
+        if (first == head.get()) {
+            if (first == last) {
+                if (next == null) {
+                    throw new JMCInterruptException();
+                }
+                tail.compareAndSet(last, next);
+            } else {
+                int value = next.value;
+                if (head.compareAndSet(first, next)) {
+                    return value;
+                }
+            }
         }
+        return 0;
     }
 }

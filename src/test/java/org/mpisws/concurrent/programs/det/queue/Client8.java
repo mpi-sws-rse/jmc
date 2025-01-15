@@ -1,14 +1,15 @@
 package org.mpisws.concurrent.programs.det.queue;
 
 import org.mpisws.concurrent.programs.det.queue.msQueue.MSQueue;
+import org.mpisws.concurrent.programs.det.queue.msQueue.MSQueueII;
 
 public class Client8 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 3;
+        int NUM_OPERATIONS = 2;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
-        Queue q = new MSQueue();
+        Queue q = new MSQueueII();
 
         int[] items = new int[NUM_INSERTIONS];
         for (int i = 0; i < NUM_INSERTIONS; i++) {

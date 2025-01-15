@@ -1,14 +1,15 @@
 package org.mpisws.concurrent.programs.det.queue;
 
 import org.mpisws.concurrent.programs.det.queue.msQueue.MSQueue;
+import org.mpisws.concurrent.programs.det.queue.msQueue.MSQueueII;
 
 import java.util.ArrayList;
 
 public class Client7 {
 
     public static void main(String[] args) {
-        Queue q = new MSQueue();
-        int NUM_OPERATIONS = 3;
+        Queue q = new MSQueueII();
+        int NUM_OPERATIONS = 1;
 
         ArrayList items = new ArrayList(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {

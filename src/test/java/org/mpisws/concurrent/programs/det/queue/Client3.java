@@ -7,7 +7,7 @@ import java.util.ArrayList;
 public class Client3 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 6;
+        int NUM_OPERATIONS = 1;
         Queue q = new LBQueue(NUM_OPERATIONS);
 
         ArrayList items = new ArrayList(NUM_OPERATIONS);

@@ -1,6 +1,7 @@
 package org.mpisws.concurrent.programs.nondet.queue;
 
 import org.mpisws.concurrent.programs.nondet.queue.msQueue.MSQueue;
+import org.mpisws.concurrent.programs.nondet.queue.msQueue.MSQueueII;
 import org.mpisws.symbolic.SymbolicInteger;
 
 public class Client8 {
@@ -9,7 +10,7 @@ public class Client8 {
         int NUM_OPERATIONS = 3;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
-        Queue q = new MSQueue();
+        Queue q = new MSQueueII();
 
         SymbolicInteger[] items = new SymbolicInteger[NUM_INSERTIONS];
         for (int i = 0; i < NUM_INSERTIONS; i++) {

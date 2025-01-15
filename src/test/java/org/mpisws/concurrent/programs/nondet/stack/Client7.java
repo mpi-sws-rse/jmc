@@ -9,7 +9,7 @@ import java.util.List;
 public class Client7 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 4;
+        int NUM_OPERATIONS = 1;
         Stack<SymbolicInteger> stack = new AGMStack<>(NUM_OPERATIONS);
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);

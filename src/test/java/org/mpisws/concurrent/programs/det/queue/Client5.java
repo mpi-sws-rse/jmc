@@ -8,7 +8,7 @@ public class Client5 {
 
     public static void main(String[] args) {
         Queue q = new UnboundedQueue();
-        int NUM_OPERATIONS = 6;
+        int NUM_OPERATIONS = 1;
 
         ArrayList items = new ArrayList(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
