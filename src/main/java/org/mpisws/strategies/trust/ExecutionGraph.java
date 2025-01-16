@@ -419,8 +419,25 @@ public class ExecutionGraph {
                                 .filter((w) -> !EventUtils.isLockAcquireWrite(w.getEvent()))
                                 .toList());
 
-        //
         List<LockBackwardRevisitView> lockBackwardRevisitViews = new ArrayList<>();
+        for (ExecutionGraphNode altWrite : alternativeWrites) {
+            // A possible location for the current read to read-from.
+            Set<Event.Key> readKeys = altWrite.getSuccessors(Relation.ReadsFrom);
+            for (Event.Key readKey : readKeys) {
+                try {
+                    ExecutionGraphNode readNode = getEventNode(readKey);
+                    if (EventUtils.isLockAcquireRead(readNode.getEvent())
+                            && readNode.getEvent().getLocation() == location) {
+                        // If there is another lock read to the same location from this write
+                        lockBackwardRevisitViews.add(
+                                new LockBackwardRevisitView(read, readNode, this));
+                    }
+                } catch (NoSuchEventException e) {
+                    throw HaltExecutionException.error("The read event is not found.");
+                }
+            }
+        }
+
         return lockBackwardRevisitViews;
     }
 

@@ -363,6 +363,8 @@ public class Algo {
         if (alternativeWrites.isEmpty()) {
             return;
         }
+        alternativeWrites =
+                alternativeWrites.stream().filter(LockBackwardRevisitView::isRevisitable).toList();
         for (LockBackwardRevisitView alternativeWrite : alternativeWrites) {
             explorationStack.push(
                     ExplorationStack.Item.lockBackwardRevisit(
