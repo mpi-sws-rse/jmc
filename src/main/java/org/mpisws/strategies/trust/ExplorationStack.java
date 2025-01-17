@@ -34,7 +34,7 @@ public class ExplorationStack {
         if (this.stack.isEmpty()) {
             this.stack.add(new InnerStack(item.graph));
         }
-        if (item.getType() == ItemType.BCK) {
+        if (item.getType() == ItemType.BRR || item.getType() == ItemType.BWR) {
             this.stack.add(new InnerStack(null));
         }
         item.setInnerStackIndex(this.stack.size() - 1);
@@ -174,7 +174,7 @@ public class ExplorationStack {
          * @return The created item
          */
         public static Item backwardRevisit(ExecutionGraphNode one, ExecutionGraph graph) {
-            return new Item(ItemType.BCK, one, null, graph);
+            return new Item(ItemType.BWR, one, null, graph);
         }
 
         /**
@@ -187,7 +187,7 @@ public class ExplorationStack {
          */
         public static Item lockBackwardRevisit(
                 ExecutionGraphNode one, ExecutionGraphNode two, ExecutionGraph graph) {
-            return new Item(ItemType.BCK, one, two, graph);
+            return new Item(ItemType.BRR, one, two, graph);
         }
 
         /**
@@ -250,7 +250,7 @@ public class ExplorationStack {
          * @return True if the item is a forward revisit, false otherwise
          */
         public boolean isBackwardRevisit() {
-            return this.type == ItemType.BCK && this.graph != null;
+            return (this.type == ItemType.BRR || this.type == ItemType.BWR) && this.graph != null;
         }
     }
 
@@ -261,7 +261,9 @@ public class ExplorationStack {
         // Forward revisit of write swapping with an alternative write
         FWW,
         // Backward revisit of write reading an alternative read
-        BCK,
+        BWR,
+        // Backward revisit of read revisting an alternative read's read-from
+        BRR,
     }
 
     /** Represents an inner stack in the exploration stack. */

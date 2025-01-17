@@ -15,9 +15,7 @@ public class JmcModelChecker {
 
     private final JmcCheckerConfiguration config;
 
-    /**
-     * Constructs a new JMC model checker with the default configuration.
-     */
+    /** Constructs a new JMC model checker with the default configuration. */
     public JmcModelChecker() {
         this(new JmcCheckerConfiguration.Builder().build());
     }
@@ -51,7 +49,7 @@ public class JmcModelChecker {
                                     .taskId(1L)
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
-                    JmcRuntime.resetIteration();
+                    JmcRuntime.resetIteration(i);
                 } catch (HaltTaskException e) {
                     LOGGER.debug(
                             "Halting execution: {} due to main thread halted: {}",

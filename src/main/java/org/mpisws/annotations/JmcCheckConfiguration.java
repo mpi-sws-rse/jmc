@@ -19,7 +19,7 @@ public @interface JmcCheckConfiguration {
 
     boolean debug() default false;
 
-    String bugsPath() default "build/test-results/jmc-bugs";
+    String reportPath() default "build/test-results/jmc-report";
 
     long seed() default 0;
 }

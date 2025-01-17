@@ -9,7 +9,7 @@ public class JmcRuntimeConfiguration {
 
     private Boolean debug;
 
-    private String bugsPath;
+    private String reportPath;
 
     private JmcRuntimeConfiguration() {}
 
@@ -21,19 +21,19 @@ public class JmcRuntimeConfiguration {
         return debug;
     }
 
-    public String getBugsPath() {
-        return bugsPath;
+    public String getReportPath() {
+        return reportPath;
     }
 
     public static class Builder {
         private SchedulingStrategy strategy;
         private Boolean debug;
-        private String bugsPath;
+        private String reportPath;
 
         public Builder() {
             this.strategy = new RandomSchedulingStrategy(System.nanoTime());
             this.debug = false;
-            this.bugsPath = "build/test-results/jmc-bugs";
+            this.reportPath = "build/test-results/jmc-report";
         }
 
         public Builder strategy(SchedulingStrategy strategy) {
@@ -46,8 +46,8 @@ public class JmcRuntimeConfiguration {
             return this;
         }
 
-        public Builder bugsPath(String bugsPath) {
-            this.bugsPath = bugsPath;
+        public Builder reportPath(String reportPath) {
+            this.reportPath = reportPath;
             return this;
         }
 
@@ -55,7 +55,7 @@ public class JmcRuntimeConfiguration {
             JmcRuntimeConfiguration config = new JmcRuntimeConfiguration();
             config.strategy = strategy;
             config.debug = debug;
-            config.bugsPath = bugsPath;
+            config.reportPath = reportPath;
             return config;
         }
     }

@@ -1,5 +1,6 @@
 package org.mpisws.strategies.trust;
 
+import com.google.gson.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.runtime.HaltCheckerException;
@@ -7,6 +8,7 @@ import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.SchedulingChoice;
 import org.mpisws.util.aux.LamportVectorClock;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -323,6 +325,24 @@ public class ExecutionGraph {
     }
 
     /**
+     * Checks if the task with the given ID is blocked.
+     *
+     * @param taskId The task ID to check.
+     * @return True if the task with the given ID is blocked.
+     */
+    public boolean isTaskBlocked(Long taskId) {
+        if (taskId == null || taskId >= taskEvents.size()) {
+            return false;
+        }
+        List<ExecutionGraphNode> curTaskEvents = taskEvents.get(Math.toIntExact(taskId));
+        if (curTaskEvents.isEmpty()) {
+            return false;
+        }
+        ExecutionGraphNode lastNode = curTaskEvents.get(curTaskEvents.size() - 1);
+        return EventUtils.isBlockingLabel(lastNode.getEvent());
+    }
+
+    /**
      * Unblocks the task with the given ID.
      *
      * @param taskId The task ID to block.
@@ -398,6 +418,44 @@ public class ExecutionGraph {
         List<ExecutionGraphNode> allWrites =
                 coherencyOrder.get(location).subList(0, coherencyOrder.get(location).size() - 1);
         return splitNodesBefore(read, allWrites);
+    }
+
+    /**
+     * Returns the alternative reads to the given write event.
+     *
+     * <p>All reads that are not _porf_-before the given write. Specifically looking for lock
+     * acquire reads. In the search, the concurrent writes do not include lock acquire exclusive
+     * writes.
+     *
+     * @param write The write event node.
+     * @return The alternative reads to the given write event.
+     */
+    public List<ExecutionGraphNode> getAlternativeLockReads(ExecutionGraphNode write) {
+        Location location = write.getEvent().getLocation();
+        List<ExecutionGraphNode> allWrites =
+                coherencyOrder.get(location).subList(0, coherencyOrder.get(location).size() - 1);
+        List<ExecutionGraphNode> alternativeWrites =
+                splitNodesBefore(
+                        write,
+                        allWrites.stream()
+                                .filter((w) -> !EventUtils.isLockAcquireWrite(w.getEvent()))
+                                .toList());
+        List<ExecutionGraphNode> lockReads = new ArrayList<>();
+        for (ExecutionGraphNode altWrite : alternativeWrites) {
+            Set<Event.Key> readKeys = altWrite.getSuccessors(Relation.ReadsFrom);
+            for (Event.Key readKey : readKeys) {
+                try {
+                    ExecutionGraphNode readNode = getEventNode(readKey);
+                    if (EventUtils.isLockAcquireRead(readNode.getEvent())
+                            && readNode.getEvent().getLocation() == location) {
+                        lockReads.add(readNode);
+                    }
+                } catch (NoSuchEventException e) {
+                    throw HaltExecutionException.error("The read event is not found.");
+                }
+            }
+        }
+        return lockReads;
     }
 
     /**
@@ -713,7 +771,8 @@ public class ExecutionGraph {
         recomputeVectorClocks();
     }
 
-    private void recomputeVectorClocks() {
+    /** Recomputes the vector clocks of all nodes in the execution graph. */
+    public void recomputeVectorClocks() {
         for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
             ExecutionGraphNode iterNode = it.next();
             if (iterNode.getAllPredecessors().isEmpty()) {
@@ -824,6 +883,16 @@ public class ExecutionGraph {
         allEvents.clear();
         coherencyOrder.clear();
         taskEvents.clear();
+    }
+
+    public String toJsonString() {
+        JsonObject nodes = new JsonObject();
+        for (ExecutionGraphNode node : allEvents) {
+            nodes.add(node.key().toString(), node.toJson());
+        }
+        JsonObject gson = new JsonObject();
+        gson.add("nodes", nodes);
+        return gson.toString();
     }
 
     /**

@@ -4,6 +4,7 @@ import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.HaltTaskException;
 import org.mpisws.runtime.SchedulingChoice;
+import org.mpisws.util.files.FileUtil;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -75,11 +76,7 @@ public class Algo {
                 handleBot(event);
                 break;
             case READ:
-                if (EventUtils.isLockAcquireRead(event)) {
-                    handleLockAcquireRead(event);
-                } else {
-                    handleRead(event);
-                }
+                handleRead(event);
                 break;
             case WRITE:
                 if (EventUtils.isLockAcquireWrite(event)) {
@@ -89,10 +86,13 @@ public class Algo {
                 } else {
                     handleWrite(event);
                 }
-                handleWrite(event);
                 break;
             case READ_EX:
-                handleRead(event);
+                if (EventUtils.isLockAcquireRead(event)) {
+                    handleLockAcquireRead(event);
+                } else {
+                    handleRead(event);
+                }
                 break;
             case WRITE_EX:
                 handleWriteX(event);
@@ -156,7 +156,10 @@ public class Algo {
                 executionGraph.restrictTo(write2);
                 guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 break;
-            case BCK:
+            case BRR:
+                guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                break;
+            case BWR:
                 // Should not happen. We should have handled this in the resetIteration method.
                 break;
         }
@@ -172,13 +175,17 @@ public class Algo {
         // stack.
         if (!explorationStack.isEmpty() && explorationStack.peek().isBackwardRevisit()) {
             ExplorationStack.Item item = explorationStack.pop();
-            ExecutionGraphNode write = item.getEvent1();
-            ExecutionGraph restrictedGraph = item.getGraph();
+            if (item.getType() == ExplorationStack.ItemType.BWR) {
+                ExecutionGraphNode write = item.getEvent1();
+                ExecutionGraph restrictedGraph = item.getGraph();
 
-            List<ExecutionGraphNode> alternativeWrites = restrictedGraph.getCoherentPlacings(write);
-            for (ExecutionGraphNode alternativeWrite : alternativeWrites) {
-                explorationStack.push(
-                        ExplorationStack.Item.forwardWW(write, alternativeWrite, executionGraph));
+                List<ExecutionGraphNode> alternativeWrites =
+                        restrictedGraph.getCoherentPlacings(write);
+                for (ExecutionGraphNode alternativeWrite : alternativeWrites) {
+                    explorationStack.push(
+                            ExplorationStack.Item.forwardWW(
+                                    write, alternativeWrite, executionGraph));
+                }
             }
         }
     }
@@ -295,13 +302,6 @@ public class Algo {
         ExecutionGraphNode write = executionGraph.addEvent(event);
         executionGraph.trackCoherency(write);
 
-        // If write is a lock acquire, then we don't do any backward revisits for this write with
-        // other reads.
-        // Only the lock release write will be considered.
-        if (EventUtils.isLockAcquireWrite(event)) {
-            return;
-        }
-
         // There will not be any (w->w) forward revisits for exclusive writes.
         // Because all exclusive writes to the same location are totally ordered by the
         // happens-before
@@ -364,7 +364,7 @@ public class Algo {
             return;
         }
         alternativeWrites =
-                alternativeWrites.stream().filter(LockBackwardRevisitView::isRevisitable).toList();
+                alternativeWrites.stream().filter(LockBackwardRevisitView::isRevisitAble).toList();
         for (LockBackwardRevisitView alternativeWrite : alternativeWrites) {
             explorationStack.push(
                     ExplorationStack.Item.lockBackwardRevisit(
@@ -374,9 +374,60 @@ public class Algo {
         }
     }
 
-    private void handleLockAcquireWrite(Event event) {}
+    private void handleLockAcquireWrite(Event event) {
+        if (areWeGuiding()) {
+            return;
+        }
 
-    private void handleLockReleaseWrite(Event event) {}
+        ExecutionGraphNode write = executionGraph.addEvent(event);
+        executionGraph.trackCoherency(write);
+
+        List<ExecutionGraphNode> alternateLockReads = executionGraph.getAlternativeLockReads(write);
+        if (alternateLockReads.isEmpty()) {
+            return;
+        }
+        for (ExecutionGraphNode read : alternateLockReads) {
+            if (!EventUtils.isLockAcquireRead(read.getEvent())) {
+                continue;
+            }
+            Long taskId = read.getEvent().getTaskId();
+            if (!executionGraph.isTaskBlocked(taskId)) {
+                executionGraph.addBlockingLabel(read.getEvent().getTaskId(), true);
+            }
+        }
+    }
+
+    private void handleLockReleaseWrite(Event event) {
+        if (areWeGuiding()) {
+            return;
+        }
+
+        ExecutionGraphNode write = executionGraph.addEvent(event);
+        executionGraph.trackCoherency(write);
+
+        List<ExecutionGraphNode> alternateLockReads = executionGraph.getAlternativeLockReads(write);
+        if (alternateLockReads.isEmpty()) {
+            return;
+        }
+        for (ExecutionGraphNode read : alternateLockReads) {
+            Long taskId = read.getEvent().getTaskId();
+            if (!executionGraph.isTaskBlocked(taskId)) {
+                continue;
+            }
+            executionGraph.unBlockTask(taskId);
+            executionGraph.changeReadsFrom(read, write);
+        }
+    }
 
     private void handleLockAwait(Event event) {}
+
+    /**
+     * Writes the execution graph to a file.
+     *
+     * @param filePath The path to the file to write the execution graph to.
+     */
+    public void writeExecutionGraphToFile(String filePath) {
+        String executionGraphJson = executionGraph.toJsonString();
+        FileUtil.unsafeStoreToFile(filePath, executionGraphJson);
+    }
 }

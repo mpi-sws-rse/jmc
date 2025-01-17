@@ -1,25 +1,39 @@
 package org.mpisws.strategies.trust;
 
+import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.runtime.HaltExecutionException;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 
-// Represents a restricted view of the execution graph.
-// Some nodes are removed and some relations are updated.
+/**
+ * Represents a restricted view of the execution graph. Some nodes are removed and some relations
+ * are updated.
+ */
 public class BackwardRevisitView {
     private final ExecutionGraph graph;
-    private HashSet<Event.Key> removedNodes;
+    private final HashSet<Event.Key> removedNodes;
     private final ExecutionGraphNode read;
     private final ExecutionGraphNode write;
 
+    /**
+     * Creates a new backward revisit view.
+     *
+     * @param graph The execution graph.
+     * @param read The read event.
+     * @param write The write event.
+     */
     public BackwardRevisitView(
             ExecutionGraph graph, ExecutionGraphNode read, ExecutionGraphNode write) {
         this.graph = graph.clone();
         this.removedNodes = new HashSet<>();
-        this.read = read;
-        this.write = write;
+        try {
+            this.read = this.graph.getEventNode(read.key());
+            this.write = this.graph.getEventNode(write.key());
+        } catch (NoSuchEventException ignored) {
+            throw new HaltCheckerException("The read or write event is not found.");
+        }
     }
 
     public ExecutionGraphNode getWrite() {
@@ -30,13 +44,16 @@ public class BackwardRevisitView {
         return read;
     }
 
-    // Just marks the node as removed, does not update the graph
+    /** Just marks the node as removed, does not update the graph */
     public void removeNode(Event.Key key) {
         removedNodes.add(key);
     }
 
-    // Checks if the restricted view is a maximal extension
-    // Meta: Breaks the separation of concerns. Is part of the core logic of the Trust algorithm
+    /**
+     * Checks if the restricted view is a maximal extension
+     *
+     * <p>Meta: Breaks the separation of concerns. Is part of the core logic of the Trust algorithm
+     */
     public boolean isMaximalExtension() {
         HashSet<Event.Key> nodesToCheck = new HashSet<>(this.removedNodes);
         nodesToCheck.add(read.key());
@@ -105,6 +122,11 @@ public class BackwardRevisitView {
         return true;
     }
 
+    /**
+     * Gets the restricted graph.
+     *
+     * @return The restricted graph
+     */
     public ExecutionGraph getRestrictedGraph() {
         ExecutionGraph restrictedGraph = graph.clone();
         // Remove the nodes

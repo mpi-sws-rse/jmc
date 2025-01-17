@@ -6,6 +6,7 @@ import org.mpisws.runtime.RuntimeEvent;
 import org.mpisws.runtime.SchedulingChoice;
 import org.mpisws.strategies.TrackActiveTasksStrategy;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -16,15 +17,21 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     private final SchedulingPolicy policy;
     private final Random random;
 
+    private final boolean debug;
+    private final String reportPath;
+
     public TrustStrategy() {
-        this(System.nanoTime(), SchedulingPolicy.FIFO);
+        this(System.nanoTime(), SchedulingPolicy.FIFO, false, "build/test-results/jmc-report");
     }
 
-    public TrustStrategy(Long randomSeed, SchedulingPolicy policy) {
+    public TrustStrategy(
+            Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath) {
         super(List.of(new TrackTasks()));
         this.random = new Random(randomSeed);
         this.algoInstance = new Algo();
         this.policy = policy;
+        this.debug = debug;
+        this.reportPath = reportPath;
     }
 
     @Override
@@ -77,8 +84,12 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     }
 
     @Override
-    public void resetIteration() {
-        super.resetIteration();
+    public void resetIteration(int iteration) {
+        super.resetIteration(iteration);
+        if (debug) {
+            algoInstance.writeExecutionGraphToFile(
+                    Paths.get(this.reportPath, "iteration-" + iteration + ".json").toString());
+        }
         algoInstance.resetIteration();
     }
 

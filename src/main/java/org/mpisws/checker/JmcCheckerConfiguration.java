@@ -15,14 +15,18 @@ public class JmcCheckerConfiguration {
 
     private boolean debug;
 
-    private String bugsPath;
-
     private Long seed;
+
+    private String reportPath;
 
     private JmcCheckerConfiguration() {}
 
     public Integer getNumIterations() {
         return numIterations;
+    }
+
+    public String getReportPath() {
+        return reportPath;
     }
 
     public String getStrategyType() {
@@ -35,10 +39,6 @@ public class JmcCheckerConfiguration {
 
     public boolean getDebug() {
         return debug;
-    }
-
-    public String getBugsPath() {
-        return bugsPath;
     }
 
     public Long getSeed() {
@@ -54,15 +54,20 @@ public class JmcCheckerConfiguration {
         if (customStrategy != null) {
             strategy = customStrategy;
         } else {
+            SchedulingStrategyConfiguration.Builder strategyConfigurationBuilder =
+                    new SchedulingStrategyConfiguration.Builder().seed(seed);
+            if (debug) {
+                strategyConfigurationBuilder.debug();
+                strategyConfigurationBuilder.reportPath(reportPath);
+            }
             strategy =
                     SchedulingStrategyFactory.createSchedulingStrategy(
-                            strategyType,
-                            new SchedulingStrategyConfiguration.Builder().seed(seed).build());
+                            strategyType, strategyConfigurationBuilder.build());
         }
         return new JmcRuntimeConfiguration.Builder()
                 .strategy(strategy)
                 .debug(debug)
-                .bugsPath(bugsPath)
+                .reportPath(reportPath)
                 .build();
     }
 
@@ -71,11 +76,11 @@ public class JmcCheckerConfiguration {
         if (!SchedulingStrategyFactory.isValidStrategy(annotation.strategy())) {
             throw new InvalidStrategyException("Invalid strategy: " + annotation.strategy());
         }
-        return new JmcCheckerConfiguration.Builder()
+        return new Builder()
                 .numIterations(annotation.numIterations())
                 .strategyType(annotation.strategy())
                 .debug(annotation.debug())
-                .bugsPath(annotation.bugsPath())
+                .reportPath(annotation.reportPath())
                 .seed(annotation.seed())
                 .build();
     }
@@ -88,7 +93,7 @@ public class JmcCheckerConfiguration {
 
         private boolean debug;
 
-        private String bugsPath;
+        private String reportPath;
 
         private Long seed;
 
@@ -97,7 +102,7 @@ public class JmcCheckerConfiguration {
             this.strategyType = "random";
             this.customStrategy = null;
             this.debug = false;
-            this.bugsPath = "build/test-results/jmc-bugs";
+            this.reportPath = "build/test-results/jmc-report";
             this.seed = System.nanoTime();
         }
 
@@ -116,13 +121,13 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
-        public Builder debug(boolean debug) {
-            this.debug = debug;
+        public Builder debug() {
+            this.debug = true;
             return this;
         }
 
-        public Builder bugsPath(String bugsPath) {
-            this.bugsPath = bugsPath;
+        public Builder reportPath(String bugsPath) {
+            this.reportPath = bugsPath;
             return this;
         }
 
@@ -137,7 +142,7 @@ public class JmcCheckerConfiguration {
             config.strategyType = strategyType;
             config.customStrategy = customStrategy;
             config.debug = debug;
-            config.bugsPath = bugsPath;
+            config.reportPath = reportPath;
             config.seed = seed;
             return config;
         }

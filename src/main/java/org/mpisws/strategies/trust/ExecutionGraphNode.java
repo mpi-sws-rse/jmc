@@ -1,5 +1,7 @@
 package org.mpisws.strategies.trust;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.mpisws.runtime.HaltCheckerException;
 import org.mpisws.util.aux.LamportVectorClock;
 
@@ -348,6 +350,26 @@ public class ExecutionGraphNode {
      */
     public Event getEvent() {
         return event;
+    }
+
+    public JsonElement toJson() {
+        JsonObject json = new JsonObject();
+        json.add("event", event.toJson());
+        JsonObject attributesObject = new JsonObject();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            json.addProperty(entry.getKey(), entry.getValue().toString());
+        }
+        json.add("attributes", attributesObject);
+        JsonObject edgesObject = new JsonObject();
+        for (Map.Entry<Relation, List<Event.Key>> entry : edges.entrySet()) {
+            JsonObject edgeObject = new JsonObject();
+            for (Event.Key key : entry.getValue()) {
+                edgeObject.addProperty(key.toString(), key.toString());
+            }
+            edgesObject.add(entry.getKey().toString(), edgeObject);
+        }
+        json.add("edges", edgesObject);
+        return json;
     }
 
     @FunctionalInterface

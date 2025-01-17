@@ -34,7 +34,7 @@ public class SymbolicStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void resetIteration() {
+    public void resetIteration(int ignore) {
         // Do nothing
     }
 

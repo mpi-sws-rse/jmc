@@ -1,5 +1,8 @@
 package org.mpisws.strategies.trust;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 /** Represents a location object used by the events of the algorithm. */
 public record Location(Object sharedObject) {
     @Override
@@ -22,5 +25,12 @@ public record Location(Object sharedObject) {
     @Override
     public String toString() {
         return Integer.toString(sharedObject.hashCode());
+    }
+
+    public JsonElement toJson() {
+        JsonObject json = new JsonObject();
+        json.addProperty("sharedObject", sharedObject.toString());
+        json.addProperty("hashCode", sharedObject.hashCode());
+        return json;
     }
 }

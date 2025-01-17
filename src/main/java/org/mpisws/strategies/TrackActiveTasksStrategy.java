@@ -58,8 +58,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         }
     }
 
-    @Override
-    public void resetIteration() {
+    private void clear() {
         synchronized (tasksLock) {
             activeTasks.clear();
             allTasks.clear();
@@ -70,8 +69,13 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     }
 
     @Override
+    public void resetIteration(int iteration) {
+        clear();
+    }
+
+    @Override
     public void teardown() {
-        resetIteration();
+        clear();
     }
 
     /**

@@ -167,8 +167,8 @@ public class Scheduler {
     }
 
     /** Resets the TaskManager and the scheduling strategy for a new iteration. */
-    public void endIteration() {
-        strategy.resetIteration();
+    public void endIteration(int iteration) {
+        strategy.resetIteration(iteration);
     }
 
     /** Shuts down the scheduler. */

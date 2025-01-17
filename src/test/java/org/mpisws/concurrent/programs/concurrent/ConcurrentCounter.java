@@ -14,6 +14,7 @@ public class ConcurrentCounter {
         }
 
         public void set(int newValue) {
+            count = newValue;
             RuntimeEvent event =
                     new RuntimeEvent.Builder()
                             .type(RuntimeEventType.WRITE_EVENT)
@@ -27,10 +28,10 @@ public class ConcurrentCounter {
                             .param("instance", this)
                             .build();
             JmcRuntime.updateEventAndYield(event);
-            count = newValue;
         }
 
         public int get() {
+            int out = count;
             RuntimeEvent event =
                     new RuntimeEvent.Builder()
                             .type(RuntimeEventType.READ_EVENT)
@@ -43,7 +44,7 @@ public class ConcurrentCounter {
                             .param("instance", this)
                             .build();
             JmcRuntime.updateEventAndYield(event);
-            return count;
+            return out;
         }
 
         public int value() {

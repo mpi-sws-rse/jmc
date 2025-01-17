@@ -73,8 +73,8 @@ public class JmcRuntime {
     }
 
     /** Resets the runtime for a new iteration. */
-    public static void resetIteration() {
-        scheduler.endIteration();
+    public static void resetIteration(int iteration) {
+        scheduler.endIteration(iteration);
         taskManager.reset();
     }
 

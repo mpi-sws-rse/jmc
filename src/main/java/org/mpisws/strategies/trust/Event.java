@@ -1,5 +1,8 @@
 package org.mpisws.strategies.trust;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +37,19 @@ public class Event {
         e.key.setTimestamp(key.getTimestamp());
         e.attributes.putAll(attributes);
         return e;
+    }
+
+    public JsonElement toJson() {
+        JsonObject json = new JsonObject();
+        json.add("key", key.toJson());
+        json.add("location", location.toJson());
+        json.addProperty("type", type.toString());
+        JsonObject attributesJson = new JsonObject();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            attributesJson.addProperty(entry.getKey(), entry.getValue().toString());
+        }
+        json.add("attributes", attributesJson);
+        return json;
     }
 
     /**
@@ -235,6 +251,13 @@ public class Event {
         @Override
         public String toString() {
             return "{" + taskId + ", " + timestamp + '}';
+        }
+
+        public JsonElement toJson() {
+            JsonObject json = new JsonObject();
+            json.addProperty("taskId", taskId);
+            json.addProperty("timestamp", timestamp);
+            return json;
         }
     }
 

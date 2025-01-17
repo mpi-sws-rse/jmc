@@ -32,8 +32,8 @@ public class SymbolicTrustStrategy extends TrustStrategy {
     }
 
     @Override
-    public void resetIteration() {
-        super.resetIteration();
+    public void resetIteration(int iteration) {
+        super.resetIteration(iteration);
     }
 
     @Override

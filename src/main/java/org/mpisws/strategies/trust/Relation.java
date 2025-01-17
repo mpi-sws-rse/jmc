@@ -16,4 +16,9 @@ public enum Relation {
     private Relation(String key) {
         this.key = key;
     }
+
+    @Override
+    public String toString() {
+        return key;
+    }
 }
