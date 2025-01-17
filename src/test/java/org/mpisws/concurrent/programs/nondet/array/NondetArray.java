@@ -11,7 +11,7 @@ public class NondetArray {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 4;
+            int SIZE = 5;
             Array array = new Array(SIZE);
             List<SetterThread> threads = new ArrayList<>(SIZE);
 
@@ -27,7 +27,7 @@ public class NondetArray {
             SymbolicOperation op3 = prop.and(op1, op2);
             SymbolicOperation op4 = formula.gt(n, 0);
             SymbolicOperation op5 = prop.and(op3, op4);
-            Utils.assume(op5); // Assume( n >= SIZE / 2 && n <= SIZE )
+            Utils.assume(op5); // Assume( n >= (SIZE / 2) && n <= SIZE )
 
             int i = 0;
             SymbolicOperation op6 = formula.gt(n, i);

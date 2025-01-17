@@ -137,10 +137,14 @@ src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/treiber/*.class
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/treiber/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/treiber/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/treiber/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/svStack/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/svStack/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/queue/msQueue/*.class
 src/test/java/org/mpisws/concurrent/programs/det/queue/msQueue/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/msQueue/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/msQueue/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/svQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/queue/svQueue/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/pqueue/*.class
 src/test/java/org/mpisws/concurrent/programs/det/pqueue/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/*.class

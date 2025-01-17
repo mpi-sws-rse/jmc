@@ -966,11 +966,50 @@ public class RuntimeEnvironment {
         } else if (allExecutionsFinished) {
             printFinalMessage();
             createFinishObject(FinishedType.SUCCESS);
+            makeResultFile();
+            System.gc();
             throw new HaltExecutionException();
         } else {
             LOGGER.info("Executions finished: {}", numOfExecutions);
             LOGGER.info("Executions blocked: {} ", numOfBlockedExecutions);
             resetRuntimeEnvironment();
+        }
+    }
+
+    private static void makeResultFile() {
+        // Define the directory and file name
+        String directoryPath = "src/main/resources/ObjectStore/";
+        String fileName = "result";
+
+        // Create the directory if it doesn't exist
+        File directory = new File(directoryPath);
+        if (!directory.exists()) {
+            System.out.println("[RuntimeEnvironment] The directory does not exist...");
+            System.exit(0);
+        }
+
+        // Create the file and write to it
+        File file = new File(directoryPath + fileName);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            // Write some lines to the file
+            LOGGER.info("Executions finished: {}", numOfExecutions);
+            LOGGER.info("Executions blocked: {} ", numOfBlockedExecutions);
+            LOGGER.info("The maximum number of the executions is reached");
+            LOGGER.info("Resource Usage:");
+            LOGGER.info("Memory Usage: {} MB", currentMemoryUsageInMegaBytes());
+            LOGGER.info("Elapsed Time: {} nano seconds", elapsedTimeInNanoSeconds());
+            LOGGER.info("Elapsed Time: {} seconds", elapsedTimeInSeconds());
+            LOGGER.info("The number of forward revisits: {}", frCounter);
+            LOGGER.info("The number of backward revisits: {}", brCounter);
+            LOGGER.info("The number of created provers: {}", numOfCreatedProvers);
+            LOGGER.info("The total number of proverId: {}", maxProverId);
+            String res = numOfExecutions + " & " + (numOfExecutions - numOfBlockedExecutions) + " & " + numOfBlockedExecutions + " & " +
+                    elapsedTimeInSeconds() + " & " + frCounter + " & " + brCounter + " & " + numOfCreatedProvers + " & " + maxProverId;
+            writer.write(res);
+            writer.newLine();
+        } catch (IOException e) {
+            System.out.println("[RuntimeEnvironment] An error occurred while writing to the result file.");
+            System.exit(0);
         }
     }
 

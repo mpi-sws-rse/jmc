@@ -7,7 +7,7 @@ public class DetArray {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 2;
+            int SIZE = 3;
             Array array = new Array(SIZE);
             List<SetterThread> threads = new ArrayList<>(SIZE);
 
