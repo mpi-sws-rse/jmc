@@ -13,6 +13,8 @@ src/main/java/org/mpisws/util/concurrent/*.class
 profile-out/*
 profile-out*/*
 gradle-user-home/*
+*_out
+*_out/*
 
 src/test/java/org/mpisws/concurrent/programs/complex/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/complex/counter/*.txt

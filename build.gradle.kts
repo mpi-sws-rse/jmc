@@ -45,13 +45,6 @@ tasks.register<Test>("runTrustTestDetLazyListI") {
     }
 }
 
-tasks.register<Test>("runTrustTestDetLazyListI") {
-    useJUnitPlatform()
-    filter {
-        includeTestsMatching("org.mpisws.checker.ModelCheckerTest.trustTestDetLazyListI")
-    }
-}
-
 tasks.register<Test>("nonDetArray") {
     useJUnitPlatform()
     filter {
