@@ -37,13 +37,33 @@ tasks.test {
     useJUnitPlatform()
 }
 
+//   to run a test in shell: gradle-profiler --profile async-profiler-all --project-dir . runTrustTestDetLazyListI
 tasks.register<Test>("runTrustTestDetLazyListI") {
     useJUnitPlatform()
     filter {
         includeTestsMatching("org.mpisws.checker.ModelCheckerTest.trustTestDetLazyListI")
     }
+}
 
-//    gradle-profiler --profile async-profiler-all --project-dir . runTrustTestDetLazyListI
+tasks.register<Test>("runTrustTestDetLazyListI") {
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching("org.mpisws.checker.ModelCheckerTest.trustTestDetLazyListI")
+    }
+}
+
+tasks.register<Test>("nonDetArray") {
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching("org.mpisws.checker.ModelCheckerTest.trustTestNondetArray")
+    }
+}
+
+tasks.register<Test>("detArray") {
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching("org.mpisws.checker.ModelCheckerTest.trustTestDetArray")
+    }
 }
 
 kotlin {
