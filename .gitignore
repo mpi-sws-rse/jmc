@@ -10,6 +10,9 @@ src/main/java/org/mpisws/runtime/*.class
 src/main/java/org/mpisws/solver/*.class
 src/main/java/org/mpisws/symbolic/*.class
 src/main/java/org/mpisws/util/concurrent/*.class
+profile-out/*
+profile-out*/*
+gradle-user-home/*
 
 src/test/java/org/mpisws/concurrent/programs/complex/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/complex/counter/*.txt
