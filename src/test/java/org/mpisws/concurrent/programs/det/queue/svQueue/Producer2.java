@@ -1,6 +1,5 @@
-package org.mpisws.concurrent.programs.nondet.queue.svQueue;
+package org.mpisws.concurrent.programs.det.queue.svQueue;
 
-import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.ReentrantLock;
 
@@ -8,13 +7,15 @@ public class Producer2 extends Thread {
     private final SVQueue queue;
     private final ReentrantLock lock;
     private final SharedState shared;
+    private final int[] items;
     private final int SIZE;
 
-    public Producer2(SVQueue queue, ReentrantLock lock, int SIZE, SharedState shared) {
+    public Producer2(SVQueue queue, ReentrantLock lock, int SIZE, SharedState shared, int[] items) {
         this.queue = queue;
         this.lock = lock;
         this.SIZE = SIZE;
         this.shared = shared;
+        this.items = items;
     }
 
     @Override
@@ -27,7 +28,7 @@ public class Producer2 extends Thread {
                 lock.lock();
                 if (shared.enqueue) {
                     for (i = 0; i < SIZE; i++) {
-                        SymbolicInteger x = new SymbolicInteger("i" + i, false);
+                        int x = items[i];
                         queue.enq(x);
                         shared.storedElements[0] = x;
                     }

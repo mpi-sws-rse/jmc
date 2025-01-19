@@ -1004,7 +1004,7 @@ public class RuntimeEnvironment {
             LOGGER.info("The number of created provers: {}", numOfCreatedProvers);
             LOGGER.info("The total number of proverId: {}", maxProverId);
             String res = numOfExecutions + " & " + (numOfExecutions - numOfBlockedExecutions) + " & " + numOfBlockedExecutions + " & " +
-                    elapsedTimeInSeconds() + " & " + frCounter + " & " + brCounter + " & " + numOfCreatedProvers + " & " + maxProverId;
+                    elapsedTimeInSeconds() + " & " + elapsedTimeInNanoSeconds() + " & " + frCounter + " & " + brCounter + " & " + numOfCreatedProvers + " & " + maxProverId;
             writer.write(res);
             writer.newLine();
         } catch (IOException e) {

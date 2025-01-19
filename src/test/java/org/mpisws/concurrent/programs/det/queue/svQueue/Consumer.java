@@ -1,6 +1,5 @@
-package org.mpisws.concurrent.programs.nondet.queue.svQueue;
+package org.mpisws.concurrent.programs.det.queue.svQueue;
 
-import org.mpisws.symbolic.*;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.ReentrantLock;
 
@@ -24,20 +23,17 @@ public class Consumer extends Thread {
             for (i = 0; i < SIZE; i++) {
                 lock.lock();
                 if (shared.dequeue) {
-                    AbstractInteger x = queue.deq();
-                    if (x == null) {
+                    int x = queue.deq();
+                    if (x == -1) {
                         //System.out.println("Error: x == null");
                         return;
                     }
-                    AbstractInteger y = shared.storedElements[i];
-                    if (y == null) {
+                    int y = shared.storedElements[i];
+                    if (y == -1) {
                         //System.out.println("Error: y == null");
                         return;
                     }
-                    ArithmeticFormula formula = new ArithmeticFormula();
-                    SymbolicOperation op = formula.neq(x, y);
-                    SymbolicFormula condition = new SymbolicFormula();
-                    if (condition.evaluate(op)) { // if (deq() != storedElements[i])
+                    if (x != y) { // if (deq() != storedElements[i])
                         System.out.println("Error: x != y");
                         return;
                     }

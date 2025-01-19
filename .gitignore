@@ -144,6 +144,8 @@ src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/treiber/*.cla
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/treiber/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/svStack/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/svStack/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/stack/svStack/*.class
+src/test/java/org/mpisws/concurrent/programs/det/stack/svStack/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/queue/msQueue/*.class
 src/test/java/org/mpisws/concurrent/programs/det/queue/msQueue/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/msQueue/*.class
@@ -166,7 +168,8 @@ src/test/java/org/mpisws/concurrent/programs/nondet/queue/hwQueue/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/queue/hwQueue/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/queue/hwQueue/*.class
 src/test/java/org/mpisws/concurrent/programs/det/queue/hwQueue/*.txt
-
+src/test/java/org/mpisws/concurrent/programs/det/queue/svQueue/*.class
+src/test/java/org/mpisws/concurrent/programs/det/queue/svQueue/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

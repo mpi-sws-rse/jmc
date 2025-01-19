@@ -8,7 +8,7 @@ import org.mpisws.util.concurrent.ReentrantLock;
 public class Client13 {
 
     public static void main(String[] args) {
-        int SIZE = 3;
+        int SIZE = 6;
         SVStack stack = new SVStack(SIZE);
         ReentrantLock lock = new ReentrantLock();
         Producer producer = new Producer(stack, SIZE, lock);

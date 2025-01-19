@@ -11,7 +11,7 @@ public class NondetArray {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 5;
+            int SIZE = 6;
             Array array = new Array(SIZE);
             List<SetterThread> threads = new ArrayList<>(SIZE);
 

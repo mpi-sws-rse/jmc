@@ -206,7 +206,7 @@ public class ArithmeticFormula {
             symbolicOperation.setFormula(formula);
             symbolicOperation.setIntegerVariableMap(integerVariableMap);
         } else {
-            System.out.println("[Symbolic Execution] Unsupported type");
+            System.out.println("[Symbolic Execution] Unsupported type for neq");
             System.exit(0);
         }
         symbolicOperation.setJmcFormula(var1, var2, InstructionType.NEQ);
