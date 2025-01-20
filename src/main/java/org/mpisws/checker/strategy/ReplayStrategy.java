@@ -453,7 +453,8 @@ public class ReplayStrategy implements SearchStrategy {
             saveBuggyExecutionTrace();
             System.out.println("******************************************************************************************");
             System.out.println("[*** Resource Usage ***]");
-            RuntimeEnvironment.printFinalMessage();
+            long timeNano = RuntimeEnvironment.elapsedTimeInNanoSeconds();
+            RuntimeEnvironment.printFinalMessage(timeNano);
             System.out.println("******************************************************************************************");
             System.exit(0);
         }

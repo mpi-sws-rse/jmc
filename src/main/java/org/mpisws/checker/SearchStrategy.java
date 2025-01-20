@@ -314,7 +314,8 @@ public interface SearchStrategy {
                 printExecutionTrace();
                 saveBuggyExecutionTrace();
                 LOGGER.error("[*** Resource Usage ***]");
-                RuntimeEnvironment.printFinalMessage();
+                long timeNano = RuntimeEnvironment.elapsedTimeInNanoSeconds();
+                RuntimeEnvironment.printFinalMessage(timeNano);
                 System.exit(0);
                 return null;
             }

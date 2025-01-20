@@ -451,7 +451,6 @@ public class RuntimeEnvironment {
         }
         initReadyThreadCollection();
         initGraphCollection();
-
     }
 
     /**
@@ -482,7 +481,6 @@ public class RuntimeEnvironment {
      */
     public static void init(Thread thread) {
         //initProfiler();
-
         numOfExecutions++;
         LOGGER.info("Initializing Runtime, iteration: {}", numOfExecutions);
         //loadConfig();
@@ -528,6 +526,10 @@ public class RuntimeEnvironment {
 
     public static long elapsedTimeInSeconds() {
         return elapsedTimeInNanoSeconds() / 1_000_000_000;
+    }
+
+    public static long elapsedTimeInSeconds(long nanoSeconds) {
+        return nanoSeconds / 1_000_000_000;
     }
 
     public static void printState() {
@@ -961,12 +963,13 @@ public class RuntimeEnvironment {
 
         if (deadlockHappened) {
             LOGGER.info("The deadlock happened");
-            createFinishObject(FinishedType.DEADLOCK);
+            long timeNano = elapsedTimeInNanoSeconds();
+            createFinishObject(FinishedType.DEADLOCK, timeNano);
             throw new HaltExecutionException();
         } else if (allExecutionsFinished) {
-            printFinalMessage();
-            createFinishObject(FinishedType.SUCCESS);
-            makeResultFile();
+            long timeNano = elapsedTimeInNanoSeconds();
+            printFinalMessage(timeNano);
+            createFinishObject(FinishedType.SUCCESS, timeNano);
             System.gc();
             throw new HaltExecutionException();
         } else {
@@ -976,51 +979,15 @@ public class RuntimeEnvironment {
         }
     }
 
-    private static void makeResultFile() {
-        // Define the directory and file name
-        String directoryPath = "src/main/resources/ObjectStore/";
-        String fileName = "result";
-
-        // Create the directory if it doesn't exist
-        File directory = new File(directoryPath);
-        if (!directory.exists()) {
-            System.out.println("[RuntimeEnvironment] The directory does not exist...");
-            System.exit(0);
-        }
-
-        // Create the file and write to it
-        File file = new File(directoryPath + fileName);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            // Write some lines to the file
-            LOGGER.info("Executions finished: {}", numOfExecutions);
-            LOGGER.info("Executions blocked: {} ", numOfBlockedExecutions);
-            LOGGER.info("The maximum number of the executions is reached");
-            LOGGER.info("Resource Usage:");
-            LOGGER.info("Memory Usage: {} MB", currentMemoryUsageInMegaBytes());
-            LOGGER.info("Elapsed Time: {} nano seconds", elapsedTimeInNanoSeconds());
-            LOGGER.info("Elapsed Time: {} seconds", elapsedTimeInSeconds());
-            LOGGER.info("The number of forward revisits: {}", frCounter);
-            LOGGER.info("The number of backward revisits: {}", brCounter);
-            LOGGER.info("The number of created provers: {}", numOfCreatedProvers);
-            LOGGER.info("The total number of proverId: {}", maxProverId);
-            String res = numOfExecutions + " & " + (numOfExecutions - numOfBlockedExecutions) + " & " + numOfBlockedExecutions + " & " +
-                    elapsedTimeInSeconds() + " & " + elapsedTimeInNanoSeconds() + " & " + frCounter + " & " + brCounter + " & " + numOfCreatedProvers + " & " + maxProverId;
-            writer.write(res);
-            writer.newLine();
-        } catch (IOException e) {
-            System.out.println("[RuntimeEnvironment] An error occurred while writing to the result file.");
-            System.exit(0);
-        }
-    }
-
-    public static void printFinalMessage() {
+    public static void printFinalMessage(long timeNano) {
+        long timeSeconds = elapsedTimeInSeconds(timeNano);
         LOGGER.info("Executions finished: {}", numOfExecutions);
         LOGGER.info("Executions blocked: {} ", numOfBlockedExecutions);
         LOGGER.info("The maximum number of the executions is reached");
         LOGGER.info("Resource Usage:");
-        LOGGER.info("Memory Usage: {} MB", currentMemoryUsageInMegaBytes());
-        LOGGER.info("Elapsed Time: {} nano seconds", elapsedTimeInNanoSeconds());
-        LOGGER.info("Elapsed Time: {} seconds", elapsedTimeInSeconds());
+        //LOGGER.info("Memory Usage: {} MB", currentMemoryUsageInMegaBytes());
+        LOGGER.info("Elapsed Time: {} nano seconds", timeNano);
+        LOGGER.info("Elapsed Time: {} seconds", timeSeconds);
         LOGGER.info("The number of forward revisits: {}", frCounter);
         LOGGER.info("The number of backward revisits: {}", brCounter);
         LOGGER.info("The number of created provers: {}", numOfCreatedProvers);
@@ -2057,8 +2024,12 @@ public class RuntimeEnvironment {
      *
      * @throws RuntimeException if the file is not found or an IOException occurs.
      */
-    private static void createFinishObject(FinishedType finishedType) {
+    private static void createFinishObject(FinishedType finishedType, long timeNano) {
         Finished finished = new Finished(true, finishedType);
+        finished.timeTaken = timeNano;
+        finished.numOfExecutions = numOfExecutions;
+        finished.numOfBlockedExecutions = numOfBlockedExecutions;
+        finished.numOfCompletedExecutions = numOfExecutions - numOfBlockedExecutions;
         try (FileOutputStream fileOut = new FileOutputStream("src/main/resources/finish/finish.obj");
              ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
             out.writeObject(finished);

@@ -1622,6 +1622,9 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 3;
+        checker.configuration.generateSequences(dataDomain, size);
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det SV-StackI Trust Strategy Finished");

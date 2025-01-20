@@ -8,13 +8,14 @@ import org.mpisws.util.concurrent.ReentrantLock;
 public class Client13 {
 
     public static void main(String[] args) {
-        int SIZE = 5;
+        int SIZE = args.length;
         Integer[] arr = new Integer[SIZE]; // Data domain is {0,1,2}
-        arr[0] = 1;
-        arr[1] = 0;
-        arr[2] = 2;
-        arr[3] = 0;
-        arr[4] = 1;
+        // Print the arguments to the program
+        for (int i = 0; i < SIZE; i++) {
+            arr[i] = Integer.parseInt(args[i]);
+            //System.out.println(arr[i]);
+        }
+
         SVStack stack = new SVStack(SIZE);
         ReentrantLock lock = new ReentrantLock();
         Producer producer = new Producer(stack, SIZE, lock, arr);

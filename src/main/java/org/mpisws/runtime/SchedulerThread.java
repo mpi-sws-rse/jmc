@@ -166,7 +166,8 @@ public class SchedulerThread extends Thread {
             LOGGER.error("[*** Assertion Fail ***]");
             LOGGER.error("[*** Number of execution iteration : {} ***]", RuntimeEnvironment.numOfExecutions);
             LOGGER.debug("[*** The SchedulerThread requested to FINISH***]");
-            RuntimeEnvironment.printFinalMessage();
+            long timeNano = RuntimeEnvironment.elapsedTimeInNanoSeconds();
+            RuntimeEnvironment.printFinalMessage(timeNano);
             searchStrategy.saveBuggyExecutionTrace();
             System.exit(0);
         }

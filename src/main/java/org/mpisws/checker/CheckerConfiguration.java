@@ -84,6 +84,8 @@ public final class CheckerConfiguration implements Serializable {
 
     public SchedulingPolicy schedulingPolicy;
 
+    public int[][] inputIntegers;
+
     /**
      * The following constructor is used to initialize the configuration with default values.
      * <br>
@@ -106,6 +108,7 @@ public final class CheckerConfiguration implements Serializable {
         graphExploration = builder.graphExploration;
         solverApproach = builder.solverApproach;
         schedulingPolicy = builder.schedulingPolicy;
+        inputIntegers = builder.inputIntegers;
     }
 
     /**
@@ -122,6 +125,58 @@ public final class CheckerConfiguration implements Serializable {
         } catch (IOException e) {
             throw new RuntimeException("Failed to generate bytes", e);
         }
+    }
+
+    // This method gets two inputs. First is an array of integers and second is an integer value. The first
+    // input ia 1D array which each element is member of data domain. Thus  if the array is a[0] = 0, a[1] = 1, a[2] = 2
+    // then the data domain is {0, 1, 2}. The second input indicates the of each possible sequence of the data domain.
+    // Thus if the size is 3 then there are 3^3 = 27 possible sequences. The method should fill the 2D array inputIntegers
+    // with all possible sequences of the data domain. The method should return the 2D array inputIntegers.
+    @Deprecated
+    public void fillInputIntegers(int[] dataDomain, int size) {
+        int[][] inputIntegers = new int[(int) Math.pow(dataDomain.length, size)][size];
+        int index = 0;
+        for (int i = 0; i < dataDomain.length; i++) {
+            for (int j = 0; j < dataDomain.length; j++) {
+                for (int k = 0; k < dataDomain.length; k++) {
+                    inputIntegers[index][0] = dataDomain[i];
+                    inputIntegers[index][1] = dataDomain[j];
+                    inputIntegers[index][2] = dataDomain[k];
+                    index++;
+                }
+            }
+        }
+        this.inputIntegers = inputIntegers;
+    }
+
+    public void generateSequences(int[] dataDomain, int size) {
+        int numOfSequences = (int) Math.pow(dataDomain.length, size);
+        int[][] inputIntegers = new int[numOfSequences][size];
+
+        generate(inputIntegers, dataDomain, size, 0, new int[size]);
+
+        this.inputIntegers = inputIntegers;
+    }
+
+    private void generate(int[][] inputIntegers, int[] array, int length, int index, int[] current) {
+        if (index == length) {
+            // Copy current sequence into the 2D array
+            System.arraycopy(current, 0, inputIntegers[generateIndex(array.length, current)], 0, length);
+            return;
+        }
+
+        for (int i = 0; i < array.length; i++) {
+            current[index] = array[i];
+            generate(inputIntegers, array, length, index + 1, current);
+        }
+    }
+
+    private int generateIndex(int base, int[] current) {
+        int index = 0;
+        for (int i = 0; i < current.length; i++) {
+            index = index * base + current[i];
+        }
+        return index;
     }
 
     /**
@@ -162,6 +217,7 @@ public final class CheckerConfiguration implements Serializable {
         public GraphExploration graphExploration = GraphExploration.DFS;
         public SolverApproach solverApproach = SolverApproach.NO_SOLVER;
         public SchedulingPolicy schedulingPolicy = SchedulingPolicy.FIFO;
+        public int[][] inputIntegers = null;
 
         public ConfigurationBuilder() {
         }
@@ -237,6 +293,11 @@ public final class CheckerConfiguration implements Serializable {
 
         public ConfigurationBuilder withSchedulingPolicy(SchedulingPolicy schedulingPolicy) {
             this.schedulingPolicy = schedulingPolicy;
+            return this;
+        }
+
+        public ConfigurationBuilder withInputIntegers(int[][] inputIntegers) {
+            this.inputIntegers = inputIntegers;
             return this;
         }
     }

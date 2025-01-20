@@ -2,20 +2,12 @@ package org.mpisws.manager;
 
 //import java.io.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import javax.tools.JavaCompiler;
@@ -296,6 +288,7 @@ public class ByteCodeManager {
                 }
             }
             state(finished);
+            makeResultFile(finished);
         } catch (IOException e) {
             LOGGER.error("Error reading bytecode file: {}", e.getMessage());
             e.printStackTrace();
@@ -311,6 +304,112 @@ public class ByteCodeManager {
         } catch (IllegalAccessException e) {
             LOGGER.error("Error accessing the main method: {}", e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    public void invokeMainMethod(Map<String, byte[]> allBytecode, String packageName, int[][] inputIntegers) {
+        if (allBytecode == null || packageName == null) {
+            throw new IllegalArgumentException("Bytecode map and package name must not be null");
+        }
+        try {
+            int numOfExecutions = 0;
+            int numOfBlockedExecutions = 0;
+            int numOfCompletedExecutions = 0;
+            long timeTaken = 0L;
+            // Read the size of the first dimension of the inputIntegers array
+            int size = inputIntegers.length;
+            int index = 0;
+            // Invoke the main method
+            Finished finished = null;
+            while (index < size) {
+                finished = saveFinishObject();
+                // Custom class loader to load the modified .class files
+                ClassLoader customClassLoader = new ByteMapLoader(allBytecode);
+                // Load the class with the main method using the custom class loader
+                Class<?> mainClass = customClassLoader.loadClass(packageName + "." + mainClassName);
+                // Get the main method of the loaded class
+                Method mainMethod = mainClass.getMethod("main", String[].class);
+                // Prepare arguments for the main method
+                String[] mainMethodArgs = Arrays.stream(inputIntegers[index])
+                        .mapToObj(String::valueOf)
+                        .toArray(String[]::new); // Add any required arguments here
+                while (!finished.terminate) {
+                    try {
+                        mainMethod.invoke(null, (Object) mainMethodArgs);
+                        finished = loadFinishObject();
+                    } catch (InvocationTargetException e) {
+                        if (e.getTargetException() instanceof HaltExecutionException) {
+                            LOGGER.error("The Halt Execution Exception happened");
+                            finished = loadFinishObject();
+                        } else {
+                            // Handle other exceptions
+                            LOGGER.error("Error invoking the main method: {}", e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                numOfExecutions += finished.numOfExecutions;
+                numOfBlockedExecutions += finished.numOfBlockedExecutions;
+                numOfCompletedExecutions += finished.numOfCompletedExecutions;
+                timeTaken += finished.timeTaken;
+                index++;
+            }
+            Finished finishResult = new Finished();
+            finishResult.numOfExecutions = numOfExecutions;
+            finishResult.numOfBlockedExecutions = numOfBlockedExecutions;
+            finishResult.numOfCompletedExecutions = numOfCompletedExecutions;
+            finishResult.timeTaken = timeTaken;
+            if (finished != null) {
+                state(finished);
+                makeResultFile(finishResult);
+            } else {
+                LOGGER.error("Finished object is null");
+                System.exit(0);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Error reading bytecode file: {}", e.getMessage());
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("Invalid argument provided: {}", e.getMessage());
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            LOGGER.error("Error loading the class: {}", e.getMessage());
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            LOGGER.error("Error getting the main method: {}", e.getMessage());
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            LOGGER.error("Error accessing the main method: {}", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static void makeResultFile(Finished finished) {
+        // Define the directory and file name
+        String directoryPath = "src/main/resources/ObjectStore/";
+        String fileName = "result";
+
+        // Create the directory if it doesn't exist
+        File directory = new File(directoryPath);
+        if (!directory.exists()) {
+            System.out.println("[RuntimeEnvironment] The directory does not exist...");
+            System.exit(0);
+        }
+
+        // Create the file and write to it
+        File file = new File(directoryPath + fileName);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            // Write some lines to the file
+            LOGGER.info("Executions finished: {}", finished.numOfExecutions);
+            LOGGER.info("Executions blocked: {} ", finished.numOfBlockedExecutions);
+            LOGGER.info("Elapsed Time: {} nano seconds", finished.timeTaken);
+            LOGGER.info("Elapsed Time: {} seconds", finished.timeTaken / 1_000_000_000);
+            String res = finished.numOfExecutions + " $ " + finished.numOfCompletedExecutions + " $ " + finished.numOfBlockedExecutions + " $ " + finished.timeTaken;
+            writer.write(res);
+            writer.newLine();
+        } catch (IOException e) {
+            System.out.println("[RuntimeEnvironment] An error occurred while writing to the result file.");
+            System.exit(0);
         }
     }
 
@@ -334,6 +433,21 @@ public class ByteCodeManager {
         return null;
     }
 
+    public Finished saveFinishObject(int i) {
+        Finished finished = new Finished();
+        // Serialize the Boolean object
+        try (FileOutputStream fileOut = new FileOutputStream("src/main/resources/finish/finish" + i + ".obj");
+             ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
+            out.writeObject(finished);
+            return finished;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("File not found");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      * Load the finished object from a file
      *
@@ -341,6 +455,16 @@ public class ByteCodeManager {
      */
     public Finished loadFinishObject() {
         try (FileInputStream fileIn = new FileInputStream("src/main/resources/finish/finish.obj");
+             ObjectInputStream in = new ObjectInputStream(fileIn)) {
+            return (Finished) in.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Finished loadFinishObject(int i) {
+        try (FileInputStream fileIn = new FileInputStream("src/main/resources/finish/finish" + i + ".obj");
              ObjectInputStream in = new ObjectInputStream(fileIn)) {
             return (Finished) in.readObject();
         } catch (IOException | ClassNotFoundException e) {

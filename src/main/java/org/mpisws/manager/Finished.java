@@ -19,6 +19,14 @@ public class Finished implements Serializable {
      */
     public FinishedType type;
 
+    public int numOfExecutions = 0;
+
+    public int numOfBlockedExecutions = 0;
+
+    public int numOfCompletedExecutions = 0;
+
+    public long timeTaken = 0;
+
     /**
      * The default constructor initializes the class with a terminate flag set to false
      */
