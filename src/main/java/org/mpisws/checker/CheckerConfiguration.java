@@ -149,34 +149,26 @@ public final class CheckerConfiguration implements Serializable {
         this.inputIntegers = inputIntegers;
     }
 
-    public void generateSequences(int[] dataDomain, int size) {
-        int numOfSequences = (int) Math.pow(dataDomain.length, size);
-        int[][] inputIntegers = new int[numOfSequences][size];
+    public void generateSequences(int[] array, int length) {
+        int numOfSequences = (int) Math.pow(array.length, length);
+        int[][] inputIntegers = new int[numOfSequences][length];
 
-        generate(inputIntegers, dataDomain, size, 0, new int[size]);
+        generate(inputIntegers, array, length, 0, new int[length], 0);
 
         this.inputIntegers = inputIntegers;
     }
 
-    private void generate(int[][] inputIntegers, int[] array, int length, int index, int[] current) {
+    private void generate(int[][] inputIntegers, int[] array, int length, int index, int[] current, int position) {
         if (index == length) {
-            // Copy current sequence into the 2D array
-            System.arraycopy(current, 0, inputIntegers[generateIndex(array.length, current)], 0, length);
+            // Store the current sequence in the 2D array
+            inputIntegers[position] = current.clone(); // Use clone to avoid reference issues
             return;
         }
 
         for (int i = 0; i < array.length; i++) {
             current[index] = array[i];
-            generate(inputIntegers, array, length, index + 1, current);
+            generate(inputIntegers, array, length, index + 1, current, position * array.length + i);
         }
-    }
-
-    private int generateIndex(int base, int[] current) {
-        int index = 0;
-        for (int i = 0; i < current.length; i++) {
-            index = index * base + current[i];
-        }
-        return index;
     }
 
     /**

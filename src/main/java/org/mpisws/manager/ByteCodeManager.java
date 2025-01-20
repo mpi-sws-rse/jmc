@@ -404,7 +404,7 @@ public class ByteCodeManager {
             LOGGER.info("Executions blocked: {} ", finished.numOfBlockedExecutions);
             LOGGER.info("Elapsed Time: {} nano seconds", finished.timeTaken);
             LOGGER.info("Elapsed Time: {} seconds", finished.timeTaken / 1_000_000_000);
-            String res = finished.numOfExecutions + " $ " + finished.numOfCompletedExecutions + " $ " + finished.numOfBlockedExecutions + " $ " + finished.timeTaken;
+            String res = finished.numOfExecutions + " & " + finished.numOfCompletedExecutions + " & " + finished.numOfBlockedExecutions + " & " + finished.timeTaken;
             writer.write(res);
             writer.newLine();
         } catch (IOException e) {

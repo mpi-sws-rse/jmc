@@ -1623,8 +1623,8 @@ class ModelCheckerTest {
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         int[] dataDomain = {0, 1, 2};
-        int size = 3;
-        checker.configuration.generateSequences(dataDomain, size);
+        int size = 4;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det SV-StackI Trust Strategy Finished");
@@ -1706,7 +1706,58 @@ class ModelCheckerTest {
         System.gc();
     }
 
+    /*
+     *                                 DET COARSE COUNTER
+     */
 
+    @Test
+    @DisplayName("Det Coarse Counter")
+    void trustTestDetCoarseCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.counter",
+                "Client1",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/counter"
+        );
+        System.out.println("Det Coarse Counter Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {1, 2, 3};
+        int size = 3;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Coarse Counter Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 NONDET COARSE COUNTER
+     */
+
+    @Test
+    @DisplayName("NonDet Coarse Counter")
+    void trustTestNonDetCoarseCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.counter",
+                "Client1",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/counter"
+        );
+        System.out.println("NonDet Coarse Counter Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Coarse Counter Trust Strategy Finished");
+        System.gc();
+    }
 
     /*
      *                                 DET ARRAY
