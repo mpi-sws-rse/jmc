@@ -1,13 +1,11 @@
-package org.mpisws.concurrent.programs.det.counter.coarse;
-
-import org.mpisws.util.concurrent.JMCInterruptException;
+package org.mpisws.concurrent.programs.det.counter.fine;
 
 public class DecThread extends Thread {
 
-    public CCounter counter;
+    public FCounter counter;
     public int id;
 
-    public DecThread(CCounter counter, int id) {
+    public DecThread(FCounter counter, int id) {
         this.counter = counter;
         this.id = id;
     }
@@ -16,13 +14,13 @@ public class DecThread extends Thread {
         if (id % 2 == 0) {
             try {
                 counter.dec1();
-            } catch (JMCInterruptException e) {
+            } catch (Exception e) {
 
             }
         } else {
             try {
                 counter.dec2();
-            } catch (JMCInterruptException e) {
+            } catch (Exception e) {
 
             }
         }

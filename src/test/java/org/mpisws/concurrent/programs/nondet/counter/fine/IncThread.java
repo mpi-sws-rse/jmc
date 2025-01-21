@@ -1,15 +1,15 @@
-package org.mpisws.concurrent.programs.nondet.counter.coarse;
+package org.mpisws.concurrent.programs.nondet.counter.fine;
 
 import org.mpisws.symbolic.*;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class IncThread extends Thread {
 
-    public CCounter counter;
+    public FCounter counter;
     public SymbolicInteger id;
     public String name;
 
-    public IncThread(CCounter counter, String name) {
+    public IncThread(FCounter counter, String name) {
         this.counter = counter;
         this.id = new SymbolicInteger(name, false);
         this.name = name;

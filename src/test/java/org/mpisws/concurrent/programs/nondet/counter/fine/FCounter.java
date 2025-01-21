@@ -1,38 +1,39 @@
-package org.mpisws.concurrent.programs.nondet.counter.coarse;
+package org.mpisws.concurrent.programs.nondet.counter.fine;
 
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.ReentrantLock;
 
-public class CCounter {
+public class FCounter {
 
-    int c1 = 0;
-    int c2 = 0;
-    ReentrantLock lock = new ReentrantLock();
+    public int c1 = 0;
+    public int c2 = 0;
+    public ReentrantLock lock1 = new ReentrantLock();
+    public ReentrantLock lock2 = new ReentrantLock();
 
-    public CCounter() {
+    public FCounter() {
     }
 
     public void inc1() throws JMCInterruptException {
-        lock.lock();
+        lock1.lock();
         c1 = c1 + 1;
-        lock.unlock();
+        lock1.unlock();
     }
 
     public void inc2() throws JMCInterruptException {
-        lock.lock();
+        lock2.lock();
         c2 = c2 + 1;
-        lock.unlock();
+        lock2.unlock();
     }
 
     public void dec1() throws JMCInterruptException {
-        lock.lock();
+        lock1.lock();
         c1 = c1 - 1;
-        lock.unlock();
+        lock1.unlock();
     }
 
     public void dec2() throws JMCInterruptException {
-        lock.lock();
+        lock2.lock();
         c2 = c2 - 1;
-        lock.unlock();
+        lock2.unlock();
     }
 }

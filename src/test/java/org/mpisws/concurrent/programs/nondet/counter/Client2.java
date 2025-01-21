@@ -1,13 +1,13 @@
 package org.mpisws.concurrent.programs.nondet.counter;
 
-import org.mpisws.concurrent.programs.nondet.counter.coarse.CCounter;
-import org.mpisws.concurrent.programs.nondet.counter.coarse.DecThread;
-import org.mpisws.concurrent.programs.nondet.counter.coarse.IncThread;
+import org.mpisws.concurrent.programs.nondet.counter.fine.DecThread;
+import org.mpisws.concurrent.programs.nondet.counter.fine.FCounter;
+import org.mpisws.concurrent.programs.nondet.counter.fine.IncThread;
 
-public class Client1 {
+public class Client2 {
 
     public static void main(String[] args) {
-        CCounter counter = new CCounter();
+        FCounter counter = new FCounter();
         int SIZE = 6;
         int NUM_INSERTIONS = (int) Math.ceil(SIZE / 2.0);
         int NUM_DELETIONS = (int) Math.floor(SIZE / 2.0);

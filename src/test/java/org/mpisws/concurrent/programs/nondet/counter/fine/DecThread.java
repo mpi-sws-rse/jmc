@@ -1,15 +1,15 @@
-package org.mpisws.concurrent.programs.nondet.counter.coarse;
+package org.mpisws.concurrent.programs.nondet.counter.fine;
 
 import org.mpisws.symbolic.*;
 import org.mpisws.util.concurrent.JMCInterruptException;
 
-public class IncThread extends Thread {
+public class DecThread extends Thread {
 
-    public CCounter counter;
+    public FCounter counter;
     public SymbolicInteger id;
     public String name;
 
-    public IncThread(CCounter counter, String name) {
+    public DecThread(FCounter counter, String name) {
         this.counter = counter;
         this.id = new SymbolicInteger(name, false);
         this.name = name;
@@ -25,13 +25,13 @@ public class IncThread extends Thread {
         SymbolicFormula sf = new SymbolicFormula();
         if (sf.evaluate(op)) { // id is even
             try {
-                counter.inc1();
+                counter.dec1();
             } catch (JMCInterruptException e) {
 
             }
         } else { // id is odd
             try {
-                counter.inc2();
+                counter.dec2();
             } catch (JMCInterruptException e) {
 
             }

@@ -1,13 +1,13 @@
-package org.mpisws.concurrent.programs.det.counter.coarse;
+package org.mpisws.concurrent.programs.det.counter.fine;
 
 import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class IncThread extends Thread {
 
-    public CCounter counter;
-    public int id;
+    FCounter counter;
+    int id;
 
-    public IncThread(CCounter counter, int id) {
+    public IncThread(FCounter counter, int id) {
         this.counter = counter;
         this.id = id;
     }

@@ -1,6 +1,7 @@
 package org.mpisws.concurrent.programs.nondet.counter.coarse;
 
 import org.mpisws.symbolic.*;
+import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class DecThread extends Thread {
 
@@ -23,9 +24,17 @@ public class DecThread extends Thread {
         SymbolicOperation op = af.eq(cond, 0); // cond == 0
         SymbolicFormula sf = new SymbolicFormula();
         if (sf.evaluate(op)) { // id is even
-            counter.dec1();
+            try {
+                counter.dec1();
+            } catch (JMCInterruptException e) {
+
+            }
         } else { // id is odd
-            counter.dec2();
+            try {
+                counter.dec2();
+            } catch (JMCInterruptException e) {
+
+            }
         }
     }
 }

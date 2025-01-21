@@ -889,6 +889,9 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 9;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det SV-QueueI Trust Strategy Finished");
@@ -989,6 +992,9 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 5;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det SV-QueueIII Trust Strategy Finished");
@@ -1725,8 +1731,8 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
-        int[] dataDomain = {1, 2, 3};
-        int size = 3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 5;
         checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";

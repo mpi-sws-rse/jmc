@@ -174,10 +174,14 @@ src/test/java/org/mpisws/concurrent/programs/det/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/det/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/counter/coarse/*.class
 src/test/java/org/mpisws/concurrent/programs/det/counter/coarse/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/counter/fine/*.class
+src/test/java/org/mpisws/concurrent/programs/det/counter/fine/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/counter/coarse/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/counter/coarse/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/counter/fine/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/counter/fine/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
