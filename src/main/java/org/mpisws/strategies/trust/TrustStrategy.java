@@ -5,6 +5,7 @@ import org.mpisws.runtime.HaltTaskException;
 import org.mpisws.runtime.RuntimeEvent;
 import org.mpisws.runtime.SchedulingChoice;
 import org.mpisws.strategies.TrackActiveTasksStrategy;
+import org.mpisws.util.files.FileUtil;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -32,6 +33,9 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
         this.policy = policy;
         this.debug = debug;
         this.reportPath = reportPath;
+        if (debug) {
+            FileUtil.unsafeEnsurePath(reportPath);
+        }
     }
 
     @Override
@@ -63,10 +67,9 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
         // If the policy is FIFO, return the first active, schedule-able task
         return SchedulingChoice.task(
                 switch (policy) {
-                    case FIFO ->
-                            activeScheduleAbleTasks.isEmpty()
-                                    ? null
-                                    : activeScheduleAbleTasks.get(0);
+                    case FIFO -> activeScheduleAbleTasks.isEmpty()
+                            ? null
+                            : activeScheduleAbleTasks.get(0);
                     case RANDOM -> {
                         int size = activeScheduleAbleTasks.size();
                         yield size == 0 ? null : activeScheduleAbleTasks.get(random.nextInt(size));

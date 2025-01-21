@@ -12,8 +12,8 @@ public class SymbolicTrustStrategy extends TrustStrategy {
         super();
     }
 
-    public SymbolicTrustStrategy(Long randomSeed, SchedulingPolicy policy) {
-        super(randomSeed, policy);
+    public SymbolicTrustStrategy(Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath) {
+        super(randomSeed, policy, debug, reportPath);
     }
 
     @Override

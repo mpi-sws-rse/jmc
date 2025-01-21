@@ -155,3 +155,10 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Python ###
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+venv/

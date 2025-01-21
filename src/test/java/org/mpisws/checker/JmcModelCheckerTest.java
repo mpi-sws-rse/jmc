@@ -232,7 +232,7 @@ public class JmcModelCheckerTest {
                 new JmcCheckerConfiguration.Builder()
                         .strategyType("trust")
                         .numIterations(10)
-                        .debug()
+                        .debug(true)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 

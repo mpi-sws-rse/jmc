@@ -1,0 +1,56 @@
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+#graph {
+    background-color: #f8f9fa;
+}
+
+.node {
+    cursor: pointer;
+}
+
+.node circle {
+    stroke: #fff;
+    stroke-width: 2px;
+}
+
+.link {
+    stroke-opacity: 0.6;
+}
+
+.node text {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.tooltip {
+    position: absolute;
+    padding: 8px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 12px;
+}
+
+/*Add style for graph list elements*/
+#graph-list {
+    list-style-type: none;
+    padding: 0 0 0 2em;
+    margin: 0;
+}
+
+#graph-list-header {
+    margin: 0;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
+
+#graph-list li {
+    padding: 8px;
+    cursor: pointer;
+}

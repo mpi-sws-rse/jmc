@@ -19,7 +19,8 @@ public class JmcCheckerConfiguration {
 
     private String reportPath;
 
-    private JmcCheckerConfiguration() {}
+    private JmcCheckerConfiguration() {
+    }
 
     public Integer getNumIterations() {
         return numIterations;
@@ -121,8 +122,8 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
-        public Builder debug() {
-            this.debug = true;
+        public Builder debug(boolean debug) {
+            this.debug = debug;
             return this;
         }
 

@@ -1,5 +1,6 @@
 package org.mpisws.strategies.trust;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.mpisws.runtime.HaltCheckerException;
@@ -12,16 +13,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Represents a node in the execution graph. */
+/**
+ * Represents a node in the execution graph.
+ */
 public class ExecutionGraphNode {
     // The event that this node represents.
     private final Event event;
     // The attributes of this node.
     private Map<String, Object> attributes;
     // Forward edges from this node. Grouped by edge relation.
-    private final Map<Relation, List<Event.Key>> edges;
+    private final Map<Relation, Set<Event.Key>> edges;
     // Back edges to this node. Grouped by edge relation.
-    private final Map<Relation, List<Event.Key>> backEdges;
+    private final Map<Relation, Set<Event.Key>> backEdges;
 
     // The vector clock of this node (Used to track only PORF relation)
     private LamportVectorClock vectorClock;
@@ -51,17 +54,19 @@ public class ExecutionGraphNode {
         this.event = node.event;
         this.attributes = new HashMap<>(node.attributes);
         this.edges = new HashMap<>();
-        for (Map.Entry<Relation, List<Event.Key>> entry : node.edges.entrySet()) {
-            this.edges.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        for (Map.Entry<Relation, Set<Event.Key>> entry : node.edges.entrySet()) {
+            this.edges.put(entry.getKey(), new HashSet<>(entry.getValue()));
         }
         this.backEdges = new HashMap<>();
-        for (Map.Entry<Relation, List<Event.Key>> entry : node.backEdges.entrySet()) {
-            this.backEdges.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        for (Map.Entry<Relation, Set<Event.Key>> entry : node.backEdges.entrySet()) {
+            this.backEdges.put(entry.getKey(), new HashSet<>(entry.getValue()));
         }
         this.vectorClock = new LamportVectorClock(node.vectorClock.getVector());
     }
 
-    /** Constructs a new {@link ExecutionGraphNode} copying the given node. */
+    /**
+     * Constructs a new {@link ExecutionGraphNode} copying the given node.
+     */
     public ExecutionGraphNode clone() {
         return new ExecutionGraphNode(this);
     }
@@ -83,12 +88,12 @@ public class ExecutionGraphNode {
      * Adds an edge to this node. The edge is directed from this node to the given node with the
      * given adjacency.
      *
-     * @param to The node to which the edge is directed.
+     * @param to        The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void addEdge(ExecutionGraphNode to, Relation adjacency) {
         if (!edges.containsKey(adjacency)) {
-            edges.put(adjacency, new ArrayList<>());
+            edges.put(adjacency, new HashSet<>());
         }
         edges.get(adjacency).add(to.key());
         to.addBackEdge(this, adjacency);
@@ -99,7 +104,7 @@ public class ExecutionGraphNode {
      * given adjacency. The vector clock of this node is updated with the vector clock of the given
      * node (only if the relation is not CO).
      *
-     * @param from The node from which the edge is directed.
+     * @param from      The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void addBackEdge(ExecutionGraphNode from, Relation adjacency) {
@@ -107,7 +112,7 @@ public class ExecutionGraphNode {
             vectorClock.update(from.getVectorClock());
         }
         if (!backEdges.containsKey(adjacency)) {
-            backEdges.put(adjacency, new ArrayList<>());
+            backEdges.put(adjacency, new HashSet<>());
         }
         backEdges.get(adjacency).add(from.key());
     }
@@ -127,7 +132,7 @@ public class ExecutionGraphNode {
      * <p>Note that removing an edge invalidates the vector clock of all descendants. The concern of
      * fixing the vector clocks is passed to the calling function.
      *
-     * @param to The node to which the edge is directed.
+     * @param to        The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void removeEdge(ExecutionGraphNode to, Relation adjacency) {
@@ -182,7 +187,7 @@ public class ExecutionGraphNode {
     /**
      * Removes the predecessor with the given adjacency from this node.
      *
-     * @param from The node from which the edge is directed.
+     * @param from      The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void removePredecessor(ExecutionGraphNode from, Relation adjacency) {
@@ -212,7 +217,7 @@ public class ExecutionGraphNode {
     /**
      * Removes the back edge with the given adjacency from this node.
      *
-     * @param from The node from which the edge is directed.
+     * @param from      The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void removeBackEdge(ExecutionGraphNode from, Relation adjacency) {
@@ -229,7 +234,7 @@ public class ExecutionGraphNode {
      */
     public Set<Event.Key> getAllSuccessors() {
         Set<Event.Key> neighbors = new HashSet<>();
-        for (List<Event.Key> edge : edges.values()) {
+        for (Set<Event.Key> edge : edges.values()) {
             neighbors.addAll(edge);
         }
         return neighbors;
@@ -255,7 +260,7 @@ public class ExecutionGraphNode {
      */
     public Set<Event.Key> getAllPredecessors() {
         Set<Event.Key> neighbors = new HashSet<>();
-        for (List<Event.Key> edge : backEdges.values()) {
+        for (Set<Event.Key> edge : backEdges.values()) {
             neighbors.addAll(edge);
         }
         return neighbors;
@@ -324,7 +329,7 @@ public class ExecutionGraphNode {
     /**
      * Adds an attribute to this node.
      *
-     * @param key The key of the attribute.
+     * @param key   The key of the attribute.
      * @param value The value of the attribute.
      */
     public void addAttribute(String key, Object value) {
@@ -361,12 +366,12 @@ public class ExecutionGraphNode {
         }
         json.add("attributes", attributesObject);
         JsonObject edgesObject = new JsonObject();
-        for (Map.Entry<Relation, List<Event.Key>> entry : edges.entrySet()) {
-            JsonObject edgeObject = new JsonObject();
+        for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+            JsonArray edgeArray = new JsonArray();
             for (Event.Key key : entry.getValue()) {
-                edgeObject.addProperty(key.toString(), key.toString());
+                edgeArray.add(key.toString());
             }
-            edgesObject.add(entry.getKey().toString(), edgeObject);
+            edgesObject.add(entry.getKey().toString(), edgeArray);
         }
         json.add("edges", edgesObject);
         return json;

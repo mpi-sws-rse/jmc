@@ -6,7 +6,9 @@ import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Represents an event object used by the algorithm. */
+/**
+ * Represents an event object used by the algorithm.
+ */
 public class Event {
     private final Location location;
     private final Key key;
@@ -16,9 +18,9 @@ public class Event {
     /**
      * Creates a new event with the given task ID, location, and type.
      *
-     * @param taskId The task ID.
+     * @param taskId   The task ID.
      * @param location The location.
-     * @param type The type.
+     * @param type     The type.
      */
     public Event(Long taskId, Location location, Type type) {
         this.location = location;
@@ -42,7 +44,9 @@ public class Event {
     public JsonElement toJson() {
         JsonObject json = new JsonObject();
         json.add("key", key.toJson());
-        json.add("location", location.toJson());
+        if (location != null) {
+            json.add("location", location.toJson());
+        }
         json.addProperty("type", type.toString());
         JsonObject attributesJson = new JsonObject();
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
@@ -69,7 +73,7 @@ public class Event {
     /**
      * Sets the attribute of the event with the given key and value.
      *
-     * @param key The key of the attribute.
+     * @param key   The key of the attribute.
      * @param value The value of the attribute.
      */
     public void setAttribute(String key, Object value) {
@@ -174,7 +178,9 @@ public class Event {
         return attributes.containsKey(key);
     }
 
-    /** Represents the type of the event according to the algorithm. */
+    /**
+     * Represents the type of the event according to the algorithm.
+     */
     public enum Type {
         READ,
         READ_EX,
@@ -188,7 +194,9 @@ public class Event {
         NOOP,
     }
 
-    /** Unique key for the event. */
+    /**
+     * Unique key for the event.
+     */
     public static class Key {
         // The task to which the event belongs to
         private final Long taskId;
@@ -198,7 +206,7 @@ public class Event {
         /**
          * Creates a new key with the given task ID and timestamp.
          *
-         * @param taskId The task ID.
+         * @param taskId    The task ID.
          * @param timestamp The timestamp.
          */
         public Key(Long taskId, Integer timestamp) {
@@ -275,7 +283,9 @@ public class Event {
         return "Event" + key;
     }
 
-    /** A generic event predicate. */
+    /**
+     * A generic event predicate.
+     */
     @FunctionalInterface
     public interface EventPredicate {
         /**

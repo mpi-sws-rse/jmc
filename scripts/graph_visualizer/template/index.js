@@ -1,0 +1,176 @@
+function plot_graph(graphData) {
+    // Transform data for D3\
+    const links = [];
+    const nodeMap = new Map();
+    const edgeTypes = new Set();
+    const nodeTypes = new Set();
+    var num_tasks = 0;
+    var max_timestamp = 0;
+
+    // Create nodes
+    Object.entries(graphData.nodes).forEach(([id, data]) => {
+        const node = {
+            id,
+            type: data.event.type,
+            taskId: data.event.key.taskId,
+            timestamp: data.event.key.timestamp,
+            location: data.event.location?.sharedObject,
+        };
+        if (node.taskId > num_tasks) {
+            num_tasks = node.taskId;
+        }
+        if (node.timestamp > max_timestamp) {
+            max_timestamp = node.timestamp;
+        }
+        nodeTypes.add(node.type);
+        nodeMap.set(id, node);
+    });
+
+    // Create links
+    Object.entries(graphData.nodes).forEach(([sourceId, data]) => {
+        if (data.edges) {
+            Object.entries(data.edges).forEach(([edgeType, targets]) => {
+                edgeTypes.add(edgeType);
+                targets.forEach(targetId => {
+                    links.push({
+                        source: sourceId,
+                        target: targetId,
+                        type: edgeType
+                    });
+                })
+            })
+        }
+    });
+
+    // Set up the SVG
+    const width = window.innerWidth * 0.6;
+    const height = window.innerHeight * 0.9;
+
+    const svg = d3.select("#graph")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    // Add zoom behavior
+    const g = svg.append("g");
+    svg.call(d3.zoom()
+        .scaleExtent([0.1, 4])
+        .on("zoom", (event) => {
+            g.attr("transform", event.transform);
+        }));
+
+    // Color scale for edge types
+    const edgeColorScale = d3.scaleOrdinal(edgeTypes.keys(), d3.schemeTableau10);
+    const nodeColorScale = d3.scaleOrdinal(nodeTypes.keys(), d3.schemeSet1);
+
+    // Create arrow markers for different edge types
+    svg.append("defs").selectAll("marker")
+        .data(edgeTypes.keys())
+        .enter().append("marker")
+        .attr("id", d => `arrow-${d}`)
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 20)
+        .attr("refY", 0)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+        .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+        .attr("fill", d => edgeColorScale(d));
+
+    // Create tooltip
+    const tooltip = d3.select("body")
+        .append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    // Create the force simulation
+    // const simulation = d3.forceSimulation(nodes)
+    //     .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+    //     .force("charge", d3.forceManyBody().strength(-300))
+    //     .force("center", d3.forceCenter(width / 2, height / 2))
+    //     .force("x", d3.forceX(width / 2).strength(0.1))
+    //     .force("y", d3.forceY(height / 2).strength(0.1));
+
+    const xOffset = Math.max(width / (num_tasks + 1), 100);
+    const yOffset = Math.max((height - 100) / (max_timestamp + 1), 100);
+
+    const xScale = (taskId) => taskId == null ? (width / 2) : (taskId * xOffset + 10);
+    const yScale = (timestamp) => timestamp == null ? 10 : (timestamp * yOffset + 100);
+    // Draw links
+    const link = g.selectAll(".link")
+        .data(links)
+        .enter().append("line")
+        .attr("class", "link")
+        .attr("stroke", d => edgeColorScale(d.type))
+        .attr("marker-end", d => `url(#arrow-${d.type})`)
+        .attr("x1", d => xScale(nodeMap.get(d.source).taskId))
+        .attr("y1", d => yScale(nodeMap.get(d.source).timestamp))
+        .attr("x2", d => xScale(nodeMap.get(d.target).taskId))
+        .attr("y2", d => yScale(nodeMap.get(d.target).timestamp))
+
+
+    // Draw nodes
+    const node = g.selectAll(".node")
+        .data(nodeMap.values())
+        .enter().append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${xScale(d.taskId)}, ${yScale(d.timestamp)})`);
+
+    node.append("circle")
+        .attr("r", 10)
+        .attr("fill", d => nodeColorScale(d.type));
+
+    node.append("text")
+        .attr("dx", 12)
+        .attr("dy", ".35em")
+        .text(d => `${d.type} (${d.taskId}, ${d.timestamp})`);
+
+    // Add hover effects
+    node.on("mouseover", function (event, d) {
+        tooltip.transition()
+            .duration(200)
+            .style("opacity", .9);
+        tooltip.html(`
+                Type: ${d.type}<br/>
+                Task ID: ${d.taskId}<br/>
+                Timestamp: ${d.timestamp}<br/>
+                ${d.location ? `Location: ${d.location}` : ''}
+            `)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 28) + "px");
+    })
+        .on("mouseout", function (d) {
+            tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        });
+
+}
+
+function load_graph(graphName) {
+    fetch(`/api/graph/${graphName}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("graph").innerHTML = '';
+            plot_graph(data);
+        });
+}
+
+// Load graph list and display as items
+function load_graphs() {
+    const graphList = document.getElementById("graph-list");
+    fetch('/api/graphs')
+        .then(response => response.json())
+        .then(data => {
+            data.sort(d3.ascending).forEach(graph => {
+                const item = document.createElement("li");
+                item.innerHTML = `<a href="#" onclick="load_graph('${graph}')">${graph}</a>`;
+                graphList.appendChild(item);
+            });
+        });
+}
+
+$(() => {
+    load_graphs();
+})
