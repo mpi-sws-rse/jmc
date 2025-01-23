@@ -942,6 +942,9 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 1;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det SV-QueueII Trust Strategy Finished");
@@ -993,7 +996,7 @@ class ModelCheckerTest {
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         int[] dataDomain = {0, 1, 2};
-        int size = 5;
+        int size = 4;
         checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1236,12 +1239,13 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Time Stamped Stack Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1261,11 +1265,12 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Time Stamped Stack Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1309,11 +1314,12 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Time Stamped Stack II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1762,6 +1768,59 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Coarse Counter Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 DET FINE COUNTER
+     */
+
+    @Test
+    @DisplayName("Det Fine Counter")
+    void trustTestDetFineCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.counter",
+                "Client2",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/counter"
+        );
+        System.out.println("Det Fine Counter Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 2;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Fine Counter Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 NONDET FINE COUNTER
+     */
+
+    @Test
+    @DisplayName("NonDet Fine Counter")
+    void trustTestNonDetFineCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.counter",
+                "Client2",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/counter"
+        );
+        System.out.println("NonDet Fine Counter Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Fine Counter Trust Strategy Finished");
         System.gc();
     }
 

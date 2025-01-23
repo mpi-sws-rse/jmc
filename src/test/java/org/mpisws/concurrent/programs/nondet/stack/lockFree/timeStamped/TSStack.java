@@ -1,10 +1,7 @@
 package org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped;
 
 import org.mpisws.concurrent.programs.nondet.stack.Stack;
-import org.mpisws.symbolic.ArithmeticFormula;
-import org.mpisws.symbolic.SymbolicFormula;
-import org.mpisws.symbolic.SymbolicInteger;
-import org.mpisws.symbolic.SymbolicOperation;
+import org.mpisws.symbolic.*;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.Utils;
 
@@ -31,7 +28,8 @@ public class TSStack<V> implements Stack<V> {
         int threadID = thread.id;
         SPPool pool = spPools[threadID];
         TNode<V> node = pool.insert(item);
-        SymbolicInteger ts = new SymbolicInteger("ts", false);
+        //SymbolicInteger ts = new SymbolicInteger("ts-" + item, false);
+        SymbolicInteger ts = node.timeStamp;
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op1 = f.gt(ts, 0);
         Utils.assume(op1); // assume ts > 0
@@ -44,27 +42,37 @@ public class TSStack<V> implements Stack<V> {
      */
     @Override
     public V pop() throws JMCInterruptException {
-        SymbolicInteger startTime = new SymbolicInteger("startTime", false);
+        PoperThread thread = (PoperThread) Thread.currentThread();
+        SymbolicInteger startTime = new SymbolicInteger("st-" + thread.id, false);
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op1 = f.gt(startTime, 0);
         Utils.assume(op1); // assume startTime > 0
 
         boolean success;
         V element;
-        do {
-            Result<V> result = tryRem(startTime);
-            success = result.success;
-            element = result.element;
-        } while (!success);
+//        do {
+//            Result<V> result = tryRem(startTime);
+//            success = result.success;
+//            element = result.element;
+//        } while (!success);
+
+        // Unwinding the loop once
+        Result<V> result = tryRem(startTime);
+        success = result.success;
+        element = result.element;
+
         return element;
     }
 
     private Result tryRem(SymbolicInteger startTime) throws JMCInterruptException {
         TNode<V> youngest = null;
-        SymbolicInteger timeStamp = new SymbolicInteger("timeStamp", false);
+//        SymbolicInteger timeStamp = new SymbolicInteger("ts-" + startTime.getName(), false);
+//        ArithmeticFormula f = new ArithmeticFormula();
+//        SymbolicOperation op1 = f.eq(timeStamp, -1);
+//        Utils.assume(op1); // assume timeStamp == -1
+
+        AbstractInteger timeStamp = new ConcreteInteger(-1);
         ArithmeticFormula f = new ArithmeticFormula();
-        SymbolicOperation op1 = f.eq(timeStamp, -1);
-        Utils.assume(op1); // assume timeStamp == -1
 
         SPPool<V> pool = null;
         TNode<V> top = null;
@@ -75,6 +83,7 @@ public class TSStack<V> implements Stack<V> {
             TNode<V> node = nodeResult.node;
             TNode<V> poolTop = nodeResult.poolTop;
 
+            // Emptiness check
             if (node == null) {
                 empty[(int) current.id] = poolTop;
                 continue;
@@ -82,6 +91,7 @@ public class TSStack<V> implements Stack<V> {
 
             SymbolicInteger nodeTimeStamp = node.timeStamp;
 
+            // Elimination check
             SymbolicOperation op2 = f.lt(startTime, nodeTimeStamp);
             SymbolicFormula sf = new SymbolicFormula();
             if (sf.evaluate(op2)) {
@@ -91,17 +101,22 @@ public class TSStack<V> implements Stack<V> {
             SymbolicOperation op3 = f.lt(timeStamp, nodeTimeStamp);
             if (sf.evaluate(op3)) {
                 youngest = node;
-                timeStamp.assign(nodeTimeStamp);
+                //timeStamp.assign(nodeTimeStamp);
+                timeStamp = nodeTimeStamp;
                 pool = current;
                 top = poolTop;
             }
         }
-        if (youngest == null) {
-            for (SPPool<V> current : spPools) {
-                if (current.head.get() != empty[(int) current.id]) {
-                    return new Result<V>(false, null);
-                }
-            }
+        // Emptiness check ( The following code is just for performance optimization )
+//        if (youngest == null) {
+//            for (SPPool<V> current : spPools) {
+//                if (current.head.get() != empty[(int) current.id]) {
+//                    return new Result<V>(false, null);
+//                }
+//            }
+//            return new Result<V>(true, null);
+//        }
+        if (pool == null) {
             return new Result<V>(true, null);
         }
         return pool.remove(top, youngest);

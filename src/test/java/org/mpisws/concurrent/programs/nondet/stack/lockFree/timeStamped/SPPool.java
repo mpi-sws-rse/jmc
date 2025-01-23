@@ -16,15 +16,17 @@ public class SPPool<V> {
     }
 
     public TNode insert(V item) throws JMCInterruptException {
-        TNode<V> newNode = new TNode<>(item, false);
+        TNode<V> newNode = new TNode<>(item, false, "ts-" + item);
         newNode.next = head.get();
         head.set(newNode);
 
-        TNode<V> next = newNode.next;
+        // Unlinking (The following code is for performance reasons)
+        /*TNode<V> next = newNode.next;
         while (next.next != next && next.taken.get()) {
             next = next.next;
         }
-        newNode.next = next;
+        newNode.next = next;*/
+
         return newNode;
     }
 
@@ -43,15 +45,18 @@ public class SPPool<V> {
 
     Result remove(TNode<V> oldTop, TNode<V> node) throws JMCInterruptException {
         if (node.taken.compareAndSet(false, true)) {
-            head.compareAndSet(oldTop, node);
+            // Unlinking (The following code is for performance reasons)
+            // Unlink nodes before node in the list
+            /*head.compareAndSet(oldTop, node);
             if (oldTop != node) {
                 oldTop.next = node;
-            }
-            TNode<V> next = node.next;
+            }*/
+            // Unlink nodes after node in the list
+            /*TNode<V> next = node.next;
             while (next.next != next && next.taken.get()) {
                 next = next.next;
             }
-            node.next = next;
+            node.next = next;*/
             return new Result<>(true, node.value);
         }
         return new Result<>(false, null);

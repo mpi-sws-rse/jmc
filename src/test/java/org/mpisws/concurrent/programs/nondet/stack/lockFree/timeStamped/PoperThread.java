@@ -6,10 +6,12 @@ import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class PoperThread extends Thread {
 
-    public Stack<SymbolicInteger> stack;
+    public Stack<Integer> stack;
+    public int id;
 
-    public PoperThread(Stack<SymbolicInteger> stack) {
+    public PoperThread(Stack<Integer> stack, int id) {
         this.stack = stack;
+        this.id = id;
     }
 
     public PoperThread() {
@@ -20,7 +22,7 @@ public class PoperThread extends Thread {
         try {
             stack.pop();
         } catch (JMCInterruptException e) {
-            System.out.println("Interrupted");
+
         }
     }
 }

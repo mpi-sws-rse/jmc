@@ -15,4 +15,11 @@ public class TNode<V> {
         this.taken = new AtomicBoolean(taken);
         this.next = null;
     }
+
+    public TNode(V value, boolean taken, String name) {
+        this.value = value;
+        this.taken = new AtomicBoolean(taken);
+        this.next = null;
+        timeStamp = new SymbolicInteger(name, false);
+    }
 }
