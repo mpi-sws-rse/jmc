@@ -44,11 +44,11 @@ public class Client6 {
             try {
                 pusherThreads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
 
-        System.out.println("Insertion Finished");
+        //System.out.println("Insertion Finished");
 
         List<PoperThread> poperThreads = new ArrayList<>(NUM_POPS);
         for (int i = 0; i < NUM_POPS; i++) {
@@ -65,10 +65,10 @@ public class Client6 {
             try {
                 poperThreads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
 
-        System.out.println("Deletion Finished");
+        //System.out.println("Deletion Finished");
     }
 }

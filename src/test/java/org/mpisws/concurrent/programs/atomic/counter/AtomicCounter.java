@@ -1,6 +1,7 @@
 package org.mpisws.concurrent.programs.atomic.counter;
 
 import org.mpisws.util.concurrent.AtomicInteger;
+import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class AtomicCounter {
 
@@ -16,6 +17,10 @@ public class AtomicCounter {
         } catch (InterruptedException e) {
             System.out.println("Interrupted");
         }
-        System.out.println("Counter value: " + counter.get());
+        try {
+            System.out.println("Counter value: " + counter.get());
+        } catch (JMCInterruptException e) {
+
+        }
     }
 }

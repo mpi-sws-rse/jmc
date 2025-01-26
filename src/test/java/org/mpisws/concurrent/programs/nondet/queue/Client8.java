@@ -1,6 +1,5 @@
 package org.mpisws.concurrent.programs.nondet.queue;
 
-import org.mpisws.concurrent.programs.nondet.queue.msQueue.MSQueue;
 import org.mpisws.concurrent.programs.nondet.queue.msQueue.MSQueueII;
 import org.mpisws.symbolic.SymbolicInteger;
 

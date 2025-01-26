@@ -11,12 +11,13 @@ public class HWQueue implements Queue {
     public AtomicReference[] items;
     public AtomicInteger tail;
     public final int CAPACITY;
+    public final SymbolicInteger NULL = new SymbolicInteger("NULL", false);
 
     public HWQueue(int capacity) {
         CAPACITY = capacity;
         items = new AtomicReference[CAPACITY];
         for (int i = 0; i < CAPACITY; i++) {
-            items[i] = new AtomicReference<SymbolicInteger>(null);
+            items[i] = new AtomicReference<SymbolicInteger>(NULL);
         }
         tail = new AtomicInteger(0);
     }
@@ -27,7 +28,7 @@ public class HWQueue implements Queue {
     }
 
     public SymbolicInteger deq() throws JMCInterruptException {
-        while (true) {
+        /*while (true) {
             int range = tail.get();
             for (int i = 0; i < range; i++) {
                 SymbolicInteger value = (SymbolicInteger) items[i].getAndSet(null);
@@ -35,6 +36,17 @@ public class HWQueue implements Queue {
                     return value;
                 }
             }
+        }*/
+
+        // Unwind the loop for the first iteration
+        int range = tail.get();
+        for (int i = 0; i < range; i++) {
+
+            SymbolicInteger value = (SymbolicInteger) items[i].getAndSet(NULL);
+            if (value != NULL) {
+                return value;
+            }
         }
+        return NULL;
     }
 }

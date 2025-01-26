@@ -12,7 +12,7 @@ import java.util.List;
 public class Client6 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 5;
+        int NUM_OPERATIONS = 4;
         long[] threadIds = new long[NUM_OPERATIONS];
         int NUM_PUSHES = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_POPS = (int) Math.floor(NUM_OPERATIONS / 2.0);

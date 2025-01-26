@@ -66,26 +66,26 @@ public class TSStack<V> implements Stack<V> {
 
     private Result tryRem(SymbolicInteger startTime) throws JMCInterruptException {
         TNode<V> youngest = null;
-//        SymbolicInteger timeStamp = new SymbolicInteger("ts-" + startTime.getName(), false);
-//        ArithmeticFormula f = new ArithmeticFormula();
-//        SymbolicOperation op1 = f.eq(timeStamp, -1);
-//        Utils.assume(op1); // assume timeStamp == -1
-
-        AbstractInteger timeStamp = new ConcreteInteger(-1);
+        SymbolicInteger timeStamp = new SymbolicInteger("ts-" + startTime.getName(), false);
         ArithmeticFormula f = new ArithmeticFormula();
+        SymbolicOperation op1 = f.eq(timeStamp, -1);
+        Utils.assume(op1); // assume timeStamp == -1
+
+//        AbstractInteger timeStamp = new ConcreteInteger(-1);
+//        ArithmeticFormula f = new ArithmeticFormula();
 
         SPPool<V> pool = null;
         TNode<V> top = null;
-        TNode<V>[] empty = new TNode[maxThreads];
+        //TNode<V>[] empty = new TNode[maxThreads];
 
         for (SPPool<V> current : spPools) {
             Result<V> nodeResult = current.getYoungest();
             TNode<V> node = nodeResult.node;
             TNode<V> poolTop = nodeResult.poolTop;
 
-            // Emptiness check
+            // Emptiness check ( The following code is just for performance optimization )
             if (node == null) {
-                empty[(int) current.id] = poolTop;
+                //empty[(int) current.id] = poolTop;
                 continue;
             }
 
@@ -101,8 +101,8 @@ public class TSStack<V> implements Stack<V> {
             SymbolicOperation op3 = f.lt(timeStamp, nodeTimeStamp);
             if (sf.evaluate(op3)) {
                 youngest = node;
-                //timeStamp.assign(nodeTimeStamp);
-                timeStamp = nodeTimeStamp;
+                timeStamp.assign(nodeTimeStamp);
+                //timeStamp = nodeTimeStamp;
                 pool = current;
                 top = poolTop;
             }

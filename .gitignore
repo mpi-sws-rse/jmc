@@ -182,6 +182,14 @@ src/test/java/org/mpisws/concurrent/programs/nondet/counter/coarse/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/counter/coarse/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/counter/fine/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/counter/fine/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/filter/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/filter/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/filter/bloom/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/filter/bloom/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/filter/*.class
+src/test/java/org/mpisws/concurrent/programs/det/filter/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/filter/bloom/*.class
+src/test/java/org/mpisws/concurrent/programs/det/filter/bloom/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

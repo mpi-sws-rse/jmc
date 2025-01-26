@@ -6,7 +6,7 @@ import org.mpisws.symbolic.SymbolicInteger;
 public class Client2 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 2;
+        int NUM_OPERATIONS = 5;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
         Queue q = new HWQueue(NUM_INSERTIONS);
@@ -16,7 +16,7 @@ public class Client2 {
             items[i] = new SymbolicInteger("k" + i, false);
         }
 
-        InsertionThread[] insertionThreads = new InsertionThread[NUM_OPERATIONS];
+        InsertionThread[] insertionThreads = new InsertionThread[NUM_INSERTIONS];
         for (int i = 0; i < NUM_INSERTIONS; i++) {
             SymbolicInteger item = items[i];
             InsertionThread thread = new InsertionThread(q, item);

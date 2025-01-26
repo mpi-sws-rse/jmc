@@ -452,7 +452,6 @@ class ModelCheckerTest {
      */
 
     @Test
-    @Disabled("This test is disabled because the HWQueue is a blocking queue and the model checker is not able to handle it")
     @DisplayName("Det Herlihy-Wing Queue II")
     void trustTestDetHerlihyWingQueueII() {
         var t = new TestTarget("org.mpisws.concurrent.programs.det.queue",
@@ -464,12 +463,13 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Herlihy-Wing Queue II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -513,12 +513,13 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Lock-Based Queue II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -702,7 +703,6 @@ class ModelCheckerTest {
      */
 
     @Test
-    @Disabled("This test is disabled because the HWQueue is a blocking queue and the model checker is not able to handle it")
     @DisplayName("NonDet Herlihy-Wing Queue II")
     void trustTestNonDetHerlihyWingQueueII() {
         var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
@@ -715,11 +715,12 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Herlihy-Wing Queue II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -753,7 +754,7 @@ class ModelCheckerTest {
 
     @Test
     @DisplayName("NonDet Lock-Based Queue II")
-    void trustTestNonDetLockFreeQueueII() {
+    void trustTestNonDetLockBasedQueueII() {
         var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
                 "Client4",
                 "main",
@@ -764,11 +765,12 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Lock-Based Queue II Trust Strategy Finished");
+        System.gc();
     }
 
 
@@ -1344,6 +1346,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Afek-Gafni-Morrison Stack Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1393,6 +1396,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Afek-Gafni-Morrison Stack Trust Strategy Finished");
+        System.gc();
     }
 
     /*

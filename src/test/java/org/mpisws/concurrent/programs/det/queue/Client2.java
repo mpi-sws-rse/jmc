@@ -5,6 +5,7 @@ import org.mpisws.concurrent.programs.det.queue.hwQueue.HWQueue;
 public class Client2 {
 
     public static void main(String[] args) {
+
         int NUM_OPERATIONS = 2;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
@@ -15,7 +16,7 @@ public class Client2 {
             items[i] = i + 1;
         }
 
-        InsertionThread[] insertionThreads = new InsertionThread[NUM_OPERATIONS];
+        InsertionThread[] insertionThreads = new InsertionThread[NUM_INSERTIONS];
         for (int i = 0; i < NUM_INSERTIONS; i++) {
             int item = items[i];
             InsertionThread thread = new InsertionThread(q, item);

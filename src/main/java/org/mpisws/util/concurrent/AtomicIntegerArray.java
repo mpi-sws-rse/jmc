@@ -1,22 +1,22 @@
 package org.mpisws.util.concurrent;
 
-public class AtomicReferenceArray<V> {
+public class AtomicIntegerArray {
 
-    public V[] array;
+    public int[] array;
 
     ReentrantLock lock = new ReentrantLock();
 
-    public AtomicReferenceArray(int length) {
-        array = (V[]) new Object[length];
+    public AtomicIntegerArray(int length) {
+        array = new int[length];
     }
 
-    public V getAndSet(int index, V newValue) throws JMCInterruptException {
+    public int getAndSet(int index, int newValue) throws JMCInterruptException {
         lock.lock();
         try {
             if (index < 0 || index >= array.length) {
                 throw new ArrayIndexOutOfBoundsException(index);
             } else {
-                V oldValue = array[index];
+                int oldValue = array[index];
                 array[index] = newValue;
                 return oldValue;
             }
@@ -25,7 +25,7 @@ public class AtomicReferenceArray<V> {
         }
     }
 
-    public void set(int index, V newValue) throws JMCInterruptException {
+    public void set(int index, int newValue) throws JMCInterruptException {
         lock.lock();
         try {
             if (index < 0 || index >= array.length) {
@@ -38,7 +38,7 @@ public class AtomicReferenceArray<V> {
         }
     }
 
-    public V get(int index) throws JMCInterruptException {
+    public int get(int index) throws JMCInterruptException {
         lock.lock();
         try {
             if (index < 0 || index >= array.length) {

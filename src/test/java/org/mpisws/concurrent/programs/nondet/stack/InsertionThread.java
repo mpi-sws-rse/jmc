@@ -21,7 +21,7 @@ public class InsertionThread extends Thread {
         try {
             stack.push(item);
         } catch (JMCInterruptException e) {
-            System.out.println("Interrupted");
+            //System.out.println("Interrupted");
         }
     }
 }
