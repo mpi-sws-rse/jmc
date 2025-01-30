@@ -51,7 +51,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
             localActiveTasks.retainAll(tracker.updateEvent(event));
         }
 
-        LOGGER.debug("Active tasks: {}", localActiveTasks);
+        LOGGER.debug("Active tasks: {}", new HashSet<>(localActiveTasks));
         synchronized (tasksLock) {
             this.activeTasks.clear();
             this.activeTasks.addAll(localActiveTasks);

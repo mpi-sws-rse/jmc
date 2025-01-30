@@ -9,6 +9,7 @@ import logging
 app = FastAPI(title="Graph Visualization Server")
 
 graph_files = {}
+log_files = {}
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
@@ -35,16 +36,34 @@ async def get_graph(graph: int):
 @app.get("/api/graphs")
 async def get_graphs():
     """Get all the graph data"""
-    return JSONResponse(content=[k for k in graph_files.keys()])
+    max_graph = max(graph_files.keys())
+    min_graph = min(graph_files.keys())
+    return JSONResponse(content={"min_graph": min_graph, "max_graph": max_graph})
+
+@app.get("/api/log/{graph:int}")
+async def get_log(graph: int):
+    """Return the log data"""
+    if (graph < 0)  or (graph not in log_files):
+        raise HTTPException(status_code=404, detail="Log not found")
+    try:
+        with open(log_files[graph]) as f:
+            return JSONResponse(content={"log": f.readlines()})
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail="Log data not found")
 
 def read_graphs(graph_files_path: str):
     """Read the graph files from the given path"""
     global graph_files
     graph_files = {}
+    global log_files
+    log_files = {}
     for file in os.listdir(graph_files_path):
         if file.endswith(".json"):
             file_id = int(file.split(".")[0].split("-")[1])
             graph_files[file_id] = os.path.join(graph_files_path,file)
+        elif file.endswith(".log"):
+            file_id = int(file.split(".")[0].split("-")[2])
+            log_files[file_id] = os.path.join(graph_files_path,file)
 
 if __name__ == "__main__":
     if (len(sys.argv) != 2):

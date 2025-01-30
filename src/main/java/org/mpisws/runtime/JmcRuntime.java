@@ -1,7 +1,15 @@
 package org.mpisws.runtime;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.appender.FileAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
+import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
+import org.apache.logging.log4j.core.layout.JsonLayout;
 
 import java.util.concurrent.ExecutionException;
 
@@ -45,6 +53,25 @@ public class JmcRuntime {
         scheduler.shutdown();
     }
 
+    private static void updateLoggerFile(int iteration) {
+        String fileName = config.getReportPath() + "/jmc-runtime-" + iteration + ".log";
+        ConfigurationBuilder<BuiltConfiguration> builder =
+                ConfigurationBuilderFactory.newConfigurationBuilder();
+        Configuration configuration =
+                builder.add(
+                                builder.newAppender("FILE", "File")
+                                        .addAttribute("fileName", fileName)
+                                        .addAttribute("append", false)
+                                        .add(
+                                                builder.newLayout("PatternLayout")
+                                                        .addAttribute(
+                                                                "pattern",
+                                                                "%d [%t] %5p %c{1.} - %m%n")))
+                        .add(builder.newRootLogger(Level.DEBUG).add(builder.newAppenderRef("FILE")))
+                        .build(false);
+        Configurator.reconfigure(configuration);
+    }
+
     /**
      * Initializes the runtime with the main thread for a given iteration.
      *
@@ -54,6 +81,9 @@ public class JmcRuntime {
      */
     public static void initIteration(int iteration) {
         LOGGER = LogManager.getLogger(JmcRuntime.class.getName() + " Iteration=" + iteration);
+        if (config.getDebug()) {
+            updateLoggerFile(iteration);
+        }
         LOGGER.info("Initializing iteration");
         scheduler.initIteration(iteration);
         Long mainThreadId = taskManager.addNextTask();
@@ -74,7 +104,7 @@ public class JmcRuntime {
 
     /** Resets the runtime for a new iteration. */
     public static void resetIteration(int iteration) {
-        scheduler.endIteration(iteration);
+        scheduler.resetIteration(iteration);
         taskManager.reset();
     }
 
