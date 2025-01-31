@@ -157,15 +157,28 @@ function load_graph(graphName) {
         });
 }
 
+function load_log(graphName) {
+    fetch(`/api/log/${graphName}`)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById("log").innerHTML = data.log.join('\n');
+        });
+}
+
 // Load graph list and display as items
 function load_graphs() {
-    const graphList = document.getElementById("graph-list");
+    const graphList = document.getElementById("graphs");
+    $(graphList).onchange = function () {
+        load_graph(this.value);
+        load_log(this.value);
+    }
     fetch('/api/graphs')
         .then(response => response.json())
         .then(data => {
             data.sort(d3.ascending).forEach(graph => {
-                const item = document.createElement("li");
-                item.innerHTML = `<a href="#" onclick="load_graph('${graph}')">${graph}</a>`;
+                const item = document.createElement("option");
+                item.setAttribute("value", graph);
+                item.innerHTML = `${graph}`;
                 graphList.appendChild(item);
             });
         });
