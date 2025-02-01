@@ -7,6 +7,7 @@ import executionGraph.operations.GraphOp;
 import executionGraph.operations.GraphOpType;
 import org.mpisws.runtime.RuntimeEnvironment;
 import org.mpisws.solver.ProverState;
+import org.mpisws.symbolic.SymArrayVariable;
 import org.mpisws.symbolic.SymBoolVariable;
 import org.mpisws.symbolic.SymIntVariable;
 import org.sosy_lab.java_smt.api.BooleanFormula;
@@ -136,6 +137,9 @@ public class OptTrustStrategy extends OptDPORStrategy {
                 }
                 for (Map.Entry<String, SymBoolVariable> entry : solver.symBoolVariableMap.entrySet()) {
                     prover.symBoolVariableMap.put(entry.getKey(), entry.getValue().deepCopy());
+                }
+                for (Map.Entry<String, SymArrayVariable> entry : solver.symArrayVariableMap.entrySet()) {
+                    prover.symArrayVariableHashMap.put(entry.getKey(), entry.getValue().deepCopy());
                 }
                 //prover.symBoolVariableMap.putAll(solver.symBoolVariableMap);
                 int newProverId = RuntimeEnvironment.maxProverId;

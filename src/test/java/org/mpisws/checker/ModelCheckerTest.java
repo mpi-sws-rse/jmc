@@ -491,6 +491,9 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {1, 2, 3};
+        int size = 5;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Lock-Based Queue Trust Strategy Finished");
@@ -569,6 +572,81 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Unbounded Queue II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  DET CLASSIC MICHAEL-SCOTT QUEUE I
+     */
+
+    @Test
+    @DisplayName("Det Classic Michael-Scott Queue")
+    void trustTestDetClassicMichaelScottQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.queue",
+                "Client12",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/queue/"
+        );
+        System.out.println("Det Classic Michael-Scott Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Classic Michael-Scott Queue Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  DET CLASSIC MICHAEL-SCOTT QUEUE II
+     */
+
+    @Test
+    @DisplayName("Det Classic Michael-Scott Queue II")
+    void trustTestDetClassicMichaelScottQueueII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.queue",
+                "Client13",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/queue/"
+        );
+        System.out.println("Det Classic Michael-Scott Queue II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Classic Michael-Scott Queue II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  NONDET CLASSIC MICHAEL-SCOTT QUEUE I
+     */
+
+    @Test
+    @DisplayName("NonDet Classic Michael-Scott Queue")
+    void trustTestNonDetClassicMichaelScottQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
+                "Client12",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/queue/"
+        );
+        System.out.println("NonDet Classic Michael-Scott Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Classic Michael-Scott Queue Trust Strategy Finished");
         System.gc();
     }
 
@@ -1145,12 +1223,16 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2, 3};
+        int size = 4;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Elimination Backoff Stack Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1170,11 +1252,12 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Elimination Backoff Stack Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1193,12 +1276,16 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1};
+        int size = 4;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Elimination Backoff Stack II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1218,11 +1305,12 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Elimination Backoff Stack II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1291,12 +1379,38 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Time Stamped Stack II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  DET TIME STAMPED STACK III
+     */
+
+    @Test
+    @DisplayName("Det Time Stamped Stack III")
+    void trustTestDetTimeStampedStackIII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.stack",
+                "Client15",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/stack/"
+        );
+        System.out.println("Det Time Stamped Stack III Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Time Stamped Stack III Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1592,6 +1706,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Treiber Stack Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -1996,6 +2111,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Coarse List I Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2020,6 +2136,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Coarse List II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2043,6 +2160,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Fine List I Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2066,6 +2184,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Fine List II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2089,6 +2208,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Optimist List I Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2112,6 +2232,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Optimist List II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2135,6 +2256,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Lazy List I Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2158,6 +2280,7 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Lazy List II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2179,9 +2302,13 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 5;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Coarse List I Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2202,10 +2329,14 @@ class ModelCheckerTest {
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 3;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Coarse List II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2225,10 +2356,14 @@ class ModelCheckerTest {
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 5;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Fine List I Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2248,10 +2383,14 @@ class ModelCheckerTest {
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 3;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Fine List II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2272,6 +2411,9 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 3;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Optimist List I Trust Strategy Finished");
@@ -2295,10 +2437,14 @@ class ModelCheckerTest {
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 2;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Optimist List II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2319,6 +2465,9 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 4;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Lazy List I Trust Strategy Finished");
@@ -2342,10 +2491,14 @@ class ModelCheckerTest {
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 2;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Lazy List II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2364,12 +2517,44 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2, 3, 4};
+        int size = 5;
+        checker.configuration.generateSequences(dataDomain, size);
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Lock-Based Array-Based Bounded Priority Queue Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  DET LOCK-BASED ARRAY-BASED BOUNDED PRIORITY QUEUE II
+     */
+
+    @Test
+    @DisplayName("Det Lock-Based Array-Based Bounded Priority Queue II")
+    void trustTestDetLockBasedArrayBasedBoundedPriorityQueueII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.pqueue",
+                "Client2",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/pqueue/"
+        );
+        System.out.println("Det Lock-Based Array-Based Bounded Priority Queue II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 3;
+        checker.configuration.generateSequences(dataDomain, size);
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Det Lock-Based Array-Based Bounded Priority Queue II Trust Strategy Finished");
+        System.gc();
     }
 
     /*
@@ -2389,11 +2574,62 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.FIFO;
-        checker.configuration.solverType = SMTSolverTypes.PRINCESS;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Lock-Based Array-Based Bounded Priority Queue Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  NOTDET LOCK-BASED ARRAY-BASED BOUNDED PRIORITY QUEUE II
+     */
+
+    @Test
+    @DisplayName("NonDet Lock-Based Array-Based Bounded Priority Queue II")
+    void trustTestNonDetLockBasedArrayBasedBoundedPriorityQueueII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.pqueue",
+                "Client2",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/pqueue/"
+        );
+        System.out.println("NonDet Lock-Based Array-Based Bounded Priority Queue II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Lock-Based Array-Based Bounded Priority Queue II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  NOTDET CONCURRENT MAP I
+     */
+
+    @Test
+    @DisplayName("NonDet Concurrent Map I")
+    void trustTestNonDetConcurrentMapI() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.map",
+                "Client1",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/map/"
+        );
+        System.out.println("NonDet Concurrent Map I Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Concurrent Map I Trust Strategy Finished");
+        System.gc();
     }
 
 

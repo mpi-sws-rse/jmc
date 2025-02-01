@@ -3,8 +3,7 @@ package org.mpisws.concurrent.programs.nondet.stack;
 import org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped.PoperThread;
 import org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped.PusherThread;
 import org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped.TSStack;
-import org.mpisws.symbolic.SymbolicInteger;
-import scala.Int;
+
 
 import java.util.ArrayList;
 import java.util.List;

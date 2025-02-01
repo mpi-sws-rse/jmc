@@ -1,5 +1,6 @@
 package org.mpisws.solver;
 
+import org.mpisws.symbolic.SymArrayVariable;
 import org.mpisws.symbolic.SymBoolVariable;
 import org.mpisws.symbolic.SymIntVariable;
 import org.sosy_lab.java_smt.api.ProverEnvironment;
@@ -12,6 +13,7 @@ public class ProverState {
     public ProverEnvironment prover;
     public HashMap<String, SymIntVariable> symIntVariableMap = new HashMap<>();
     public HashMap<String, SymBoolVariable> symBoolVariableMap = new HashMap<>();
+    public HashMap<String, SymArrayVariable> symArrayVariableHashMap = new HashMap<>();
 
     public ProverState(ProverEnvironment prover) {
         this.prover = prover;
@@ -20,5 +22,6 @@ public class ProverState {
     public void clear() {
         symIntVariableMap.clear();
         symBoolVariableMap.clear();
+        symArrayVariableHashMap.clear();
     }
 }

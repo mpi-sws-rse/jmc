@@ -15,7 +15,7 @@ public class Client1 {
     public static void main(String[] args) {
         try {
             Set set = new CoarseList();
-            int NUM_OPERATIONS = 5;
+            int NUM_OPERATIONS = 6;
 
             List<Element> items = new ArrayList<>(NUM_OPERATIONS);
             List<AbstractInteger> keys = new ArrayList<>(NUM_OPERATIONS);
@@ -51,11 +51,11 @@ public class Client1 {
                 try {
                     threads.get(i).join();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
             }
         } catch (JMCInterruptException e) {
-            System.out.println("Program Skipped");
+            //System.out.println("Program Skipped");
         }
     }
 }

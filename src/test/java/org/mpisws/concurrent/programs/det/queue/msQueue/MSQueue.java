@@ -9,7 +9,7 @@ public class MSQueue implements Queue {
     AtomicReference<Node> head, tail;
 
     public MSQueue() {
-        Node node = new Node(0);
+        Node node = new Node(-1);
         head = new AtomicReference<Node>(node);
         tail = new AtomicReference<Node>(node);
     }
@@ -70,7 +70,7 @@ public class MSQueue implements Queue {
         if (first == head.get()) {
             if (first == last) {
                 if (next == null) {
-                    throw new JMCInterruptException();
+                    return -1;
                 }
                 tail.compareAndSet(last, next);
             } else {
@@ -80,6 +80,6 @@ public class MSQueue implements Queue {
                 }
             }
         }
-        return 0;
+        return -1;
     }
 }

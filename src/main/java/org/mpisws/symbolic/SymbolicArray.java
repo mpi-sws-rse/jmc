@@ -1,59 +1,56 @@
 package org.mpisws.symbolic;
 
-import org.mpisws.util.concurrent.JMCInterruptException;
-import org.mpisws.util.concurrent.Utils;
+import org.mpisws.runtime.RuntimeEnvironment;
 
-public class SymbolicArray<T> {
+public class SymbolicArray extends AbstractArray {
 
-    public T[] array;
-    public int length;
+    private final String name;
+    private final boolean isShared;
 
-    public SymbolicArray(int length) {
-        this.length = length;
-        this.array = (T[]) new Object[length];
+    public SymbolicArray(String name, boolean isShared) {
+        long id = RuntimeEnvironment.threadIdMap.get(Thread.currentThread().getId());
+        this.name = "SymbolicInteger@" + name + "_" + id;
+        this.isShared = isShared;
+        write();
     }
 
-    public void set(int index, T value) throws JMCInterruptException {
-        if (index >= 0 && index < length) {
-            array[index] = value;
-        } else {
-            Utils.assertion(false, "Symbolic array index out of bounds");
+    public void store(AbstractInteger index, AbstractInteger value) {
+
+    }
+
+    public AbstractInteger select(AbstractInteger index) {
+        return null;
+    }
+
+    /**
+     * Makes a deep copy of the integer.
+     *
+     * @return a deep copy of the integer.
+     */
+    @Override
+    AbstractArray deepCopy() {
+        return null;
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public AbstractArray read() {
+        return null;
+    }
+
+    /**
+     * @param value
+     */
+    @Override
+    public void write(AbstractArray value) {
+
+    }
+
+    private void write() {
+        if (isShared) {
+            // TODO
         }
     }
-
-    public T get(int index) throws JMCInterruptException {
-        if (index >= 0 && index < length) {
-            return array[index];
-        } else {
-            Utils.assertion(false, "Symbolic array index out of bounds");
-            return null;
-        }
-    }
-
-    public int length() {
-        return length;
-    }
-
-    public T get(SymbolicInteger index) {
-        ArithmeticFormula a = new ArithmeticFormula();
-        SymbolicOperation op1 = a.geq(index, 0);
-        SymbolicOperation op2 = a.lt(index, length);
-        PropositionalFormula prop = new PropositionalFormula();
-        SymbolicOperation op3 = prop.and(op1, op2);
-        Utils.assertion(op3, "Array index out of bounds");
-        int i = enumerateIndex(0, index);
-        return array[i];
-    }
-
-    private int enumerateIndex(int i, SymbolicInteger index) {
-        ArithmeticFormula a = new ArithmeticFormula();
-        SymbolicOperation op1 = a.eq(index, i);
-        SymbolicFormula f = new SymbolicFormula();
-        if (f.evaluate(op1)) {
-            return i;
-        } else {
-            return enumerateIndex(i + 1, index);
-        }
-    }
-
 }

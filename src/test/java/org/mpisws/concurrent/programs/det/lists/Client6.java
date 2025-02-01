@@ -11,14 +11,21 @@ import java.util.List;
 public class Client6 {
 
     public static void main(String[] args) {
+        int NUM_THREADS = 4;
+        int SIZE = args.length;
+        int[] arr = new int[SIZE]; // Data domain is {0,1,2}
+        for (int i = 0; i < SIZE; i++) {
+            arr[i] = Integer.parseInt(args[i]);
+        }
+
         Set set = new OptimisticList();
-        int NUM_OPERATIONS = 5;
-        int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
-        int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
+
+        int NUM_INSERTIONS = (int) Math.ceil(NUM_THREADS / 2.0);
+        int NUM_DELETIONS = (int) Math.floor(NUM_THREADS / 2.0);
 
         List<SymbolicInteger> items = new ArrayList<>(NUM_INSERTIONS);
         for (int i = 0; i < NUM_INSERTIONS; i++) {
-            items.add(new SymbolicInteger(false, i));
+            items.add(new SymbolicInteger(false, arr[i]));
         }
 
         List<InsertionThread> threads = new ArrayList<>(NUM_INSERTIONS);
@@ -45,7 +52,7 @@ public class Client6 {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
 
@@ -53,7 +60,7 @@ public class Client6 {
             try {
                 deleteThreads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
         }
 

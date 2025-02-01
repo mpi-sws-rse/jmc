@@ -19,7 +19,7 @@ public class DeletionThread extends Thread {
         try {
             set.remove(item);
         } catch (JMCInterruptException e) {
-            System.out.println("Deletion Interrupted");
+            //System.out.println("Deletion Interrupted");
         }
     }
 }

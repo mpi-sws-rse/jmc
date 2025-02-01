@@ -74,7 +74,7 @@ public class MSQueue implements Queue {
         if (first == head.get()) {
             if (first == last) {
                 if (next == null) {
-                    throw new JMCInterruptException();
+                    return null;
                 }
                 tail.compareAndSet(last, next);
             } else {

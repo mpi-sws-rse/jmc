@@ -14,9 +14,9 @@ public class LockFreeExchanger<V> {
 
     AtomicStampedReference<V> slot = new AtomicStampedReference<V>(null, EMPTY);
 
-    public V exchange(V myItem, SymbolicInteger timeout) throws JMCInterruptException, TimeoutException {
+    public V exchange(V myItem) throws JMCInterruptException {
         int[] stampHolder = {EMPTY};
-        while (true) {
+        /*while (true) {
             SymbolicInteger timeBound = new SymbolicInteger("timeBound", false);
             ArithmeticStatement as = new ArithmeticStatement();
             as.add(timeout, (int) System.nanoTime());
@@ -59,6 +59,45 @@ public class LockFreeExchanger<V> {
                     break;
                 default: // impossible
             }
+        }*/
+        // Unwinding the loop for one iteration
+        V yrItem = slot.get(stampHolder);
+        int stamp = stampHolder[0];
+        switch (stamp) {
+            case EMPTY:
+                if (slot.compareAndSet(yrItem, myItem, EMPTY, WAITING)) {
+                    /*while (sf.evaluate(op2)) {
+                        yrItem = slot.get(stampHolder);
+                        if (stampHolder[0] == BUSY) {
+                            slot.set(null, EMPTY);
+                            return yrItem;
+                        }
+                        op2 = f.gt(timeout, (int) System.nanoTime());
+                    }*/
+                    // Unwinding the loop for one iteration
+                    yrItem = slot.get(stampHolder);
+                    if (stampHolder[0] == BUSY) {
+                        slot.set(null, EMPTY);
+                        return yrItem;
+                    }
+                    if (slot.compareAndSet(myItem, null, WAITING, EMPTY)) {
+                        //throw new TimeoutException();
+                    } else {
+                        yrItem = slot.get(stampHolder);
+                        slot.set(null, EMPTY);
+                        return yrItem;
+                    }
+                }
+                break;
+            case WAITING:
+                if (slot.compareAndSet(yrItem, myItem, WAITING, BUSY)) {
+                    return yrItem;
+                }
+                break;
+            case BUSY:
+                break;
+            default: // impossible
         }
+        return null;
     }
 }

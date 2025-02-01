@@ -27,6 +27,8 @@ public class Finished implements Serializable {
 
     public long timeTaken = 0;
 
+    public long solverTime = 0;
+
     /**
      * The default constructor initializes the class with a terminate flag set to false
      */

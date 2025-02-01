@@ -14,15 +14,15 @@ public class Client1 {
 
     public static void main(String[] args) {
         try {
-            int NUM_OPERATIONS = 5;
+            int NUM_OPERATIONS = 1;
             PQueue pqueue = new LockBasedLinear(NUM_OPERATIONS);
 
             ArrayList<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
             ArrayList<SymbolicInteger> scores = new ArrayList<>(NUM_OPERATIONS);
             for (int i = 0; i < NUM_OPERATIONS; i++) {
-                SymbolicInteger item = new SymbolicInteger("item", false);
+                SymbolicInteger item = new SymbolicInteger("item-" + i, false);
                 items.add(item);
-                SymbolicInteger score = new SymbolicInteger("score", false);
+                SymbolicInteger score = new SymbolicInteger("score-" + i, false);
                 ArithmeticFormula f = new ArithmeticFormula();
                 SymbolicOperation op1 = f.geq(score, 0);
                 SymbolicOperation op2 = f.lt(score, NUM_OPERATIONS);

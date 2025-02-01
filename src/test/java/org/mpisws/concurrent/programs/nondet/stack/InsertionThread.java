@@ -7,6 +7,7 @@ public class InsertionThread extends Thread {
 
     public Stack<SymbolicInteger> stack;
     public SymbolicInteger item;
+    public SymbolicInteger index = null;
 
     public InsertionThread(Stack<SymbolicInteger> stack, SymbolicInteger item) {
         this.stack = stack;

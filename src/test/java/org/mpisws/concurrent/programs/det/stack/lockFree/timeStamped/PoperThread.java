@@ -19,7 +19,7 @@ public class PoperThread extends Thread {
         try {
             stack.pop();
         } catch (JMCInterruptException e) {
-            System.out.println("Interrupted");
+            //System.out.println("Interrupted");
         }
     }
 }

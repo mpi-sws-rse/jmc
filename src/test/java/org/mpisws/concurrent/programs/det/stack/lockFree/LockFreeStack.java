@@ -7,10 +7,10 @@ import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class LockFreeStack<V> implements Stack<V> {
 
-    public final int MIN_DELAY = 1;
-    public final int MAX_DELAY = 10;
+    //public final int MIN_DELAY = 1;
+    //public final int MAX_DELAY = 10;
     public AtomicReference<Node<V>> top = new AtomicReference<>(null);
-    public Backoff backoff = new Backoff(MIN_DELAY, MAX_DELAY);
+    //public Backoff backoff = new Backoff(MIN_DELAY, MAX_DELAY);
 
     protected boolean tryPush(Node<V> node) throws JMCInterruptException {
         Node<V> oldTop = top.get();
@@ -21,9 +21,11 @@ public class LockFreeStack<V> implements Stack<V> {
     @Override
     public void push(V value) throws JMCInterruptException {
         Node<V> node = new Node<>(value);
-        while (!tryPush(node)) {
+        /*while (!tryPush(node)) {
             backoff.backoff();
-        }
+        }*/
+        // Unwinding the loop for one iteration
+        tryPush(node);
     }
 
     protected Node<V> tryPop() throws JMCInterruptException {
@@ -41,13 +43,20 @@ public class LockFreeStack<V> implements Stack<V> {
 
     @Override
     public V pop() throws JMCInterruptException {
-        while (true) {
+        /*while (true) {
             Node<V> returnNode = tryPop();
             if (returnNode != null) {
                 return returnNode.value;
             } else {
-                backoff.backoff();
+                //backoff.backoff();
             }
+        }*/
+        // Unwinding the loop for one iteration
+        Node<V> returnNode = tryPop();
+        if (returnNode != null) {
+            return returnNode.value;
+        } else {
+            return null;
         }
     }
 

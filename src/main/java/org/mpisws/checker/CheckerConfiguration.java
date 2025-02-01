@@ -154,7 +154,6 @@ public final class CheckerConfiguration implements Serializable {
         int[][] inputIntegers = new int[numOfSequences][length];
 
         generate(inputIntegers, array, length, 0, new int[length], 0);
-
         this.inputIntegers = inputIntegers;
     }
 

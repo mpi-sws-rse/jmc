@@ -76,9 +76,9 @@ public class Client2 {
                 }
             }
 
-            System.out.println("Deletion Finished");
+            //System.out.println("Deletion Finished");
         } catch (JMCInterruptException e) {
-            System.out.println("Program Skipped");
+            //System.out.println("Program Skipped");
         }
     }
 }

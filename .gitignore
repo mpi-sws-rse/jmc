@@ -190,6 +190,14 @@ src/test/java/org/mpisws/concurrent/programs/det/filter/*.class
 src/test/java/org/mpisws/concurrent/programs/det/filter/*.txt
 src/test/java/org/mpisws/concurrent/programs/det/filter/bloom/*.class
 src/test/java/org/mpisws/concurrent/programs/det/filter/bloom/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/map/*.class
+src/test/java/org/mpisws/concurrent/programs/det/map/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/map/coarse/*.class
+src/test/java/org/mpisws/concurrent/programs/det/map/coarse/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/map/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/map/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/map/coarse/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/map/coarse/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

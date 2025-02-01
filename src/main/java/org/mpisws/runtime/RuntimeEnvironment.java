@@ -51,6 +51,8 @@ public class RuntimeEnvironment {
 
     private static long startTime = System.nanoTime();
 
+    private static long solverTime = 0L;
+
     private static long endTime;
 
     private static long memoryAfter;
@@ -539,6 +541,10 @@ public class RuntimeEnvironment {
         }
         LOGGER.debug("Ready Thread statuses");
         readyThread.printThreadStatus();
+    }
+
+    public static void incSolverTime(long time) {
+        solverTime += time;
     }
 
     /**
@@ -2030,6 +2036,7 @@ public class RuntimeEnvironment {
         finished.numOfExecutions = numOfExecutions;
         finished.numOfBlockedExecutions = numOfBlockedExecutions;
         finished.numOfCompletedExecutions = numOfExecutions - numOfBlockedExecutions;
+        finished.solverTime = solverTime;
         try (FileOutputStream fileOut = new FileOutputStream("src/main/resources/finish/finish.obj");
              ObjectOutputStream out = new ObjectOutputStream(fileOut)) {
             out.writeObject(finished);

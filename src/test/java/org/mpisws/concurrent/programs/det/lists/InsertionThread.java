@@ -19,7 +19,7 @@ public class InsertionThread extends Thread {
         try {
             set.add(item);
         } catch (JMCInterruptException e) {
-            System.out.println("Insertion interrupted");
+            //System.out.println("Insertion interrupted");
         }
     }
 }

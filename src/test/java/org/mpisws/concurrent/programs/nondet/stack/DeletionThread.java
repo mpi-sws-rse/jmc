@@ -6,6 +6,7 @@ import org.mpisws.util.concurrent.JMCInterruptException;
 public class DeletionThread extends Thread {
 
     public Stack<SymbolicInteger> stack;
+    public SymbolicInteger index = null;
 
     public DeletionThread(Stack<SymbolicInteger> stack) {
         this.stack = stack;

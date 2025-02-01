@@ -10,7 +10,7 @@ import java.util.List;
 public class Client6 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 3;
+        int NUM_OPERATIONS = 2;
         long[] threadIds = new long[NUM_OPERATIONS];
         int NUM_PUSHES = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_POPS = (int) Math.floor(NUM_OPERATIONS / 2.0);
@@ -36,8 +36,19 @@ public class Client6 {
             pusherThreads.get(i).stack = stack;
         }
 
+        List<PoperThread> poperThreads = new ArrayList<>(NUM_POPS);
+        for (int i = 0; i < NUM_POPS; i++) {
+            PoperThread poperThread = new PoperThread();
+            poperThread.stack = stack;
+            poperThreads.add(poperThread);
+        }
+
         for (int i = 0; i < NUM_PUSHES; i++) {
             pusherThreads.get(i).start();
+        }
+
+        for (int i = 0; i < NUM_POPS; i++) {
+            poperThreads.get(i).start();
         }
 
         for (int i = 0; i < NUM_PUSHES; i++) {
@@ -46,19 +57,6 @@ public class Client6 {
             } catch (InterruptedException e) {
                 //e.printStackTrace();
             }
-        }
-
-        //System.out.println("Insertion Finished");
-
-        List<PoperThread> poperThreads = new ArrayList<>(NUM_POPS);
-        for (int i = 0; i < NUM_POPS; i++) {
-            PoperThread poperThread = new PoperThread();
-            poperThread.stack = stack;
-            poperThreads.add(poperThread);
-        }
-
-        for (int i = 0; i < NUM_POPS; i++) {
-            poperThreads.get(i).start();
         }
 
         for (int i = 0; i < NUM_POPS; i++) {

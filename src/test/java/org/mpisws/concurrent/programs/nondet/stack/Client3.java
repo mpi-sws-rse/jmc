@@ -12,12 +12,12 @@ public class Client3 {
     public static void main(String[] args) {
 
         try {
-            Stack<SymbolicInteger> stack = new EliminationBackoffStack();
             int NUM_OPERATIONS = 2;
+            Stack<SymbolicInteger> stack = new EliminationBackoffStack(NUM_OPERATIONS);
 
             List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);
             for (int i = 0; i < NUM_OPERATIONS; i++) {
-                items.add(new SymbolicInteger("item" + i, false));
+                items.add(new SymbolicInteger("item-" + i, false));
             }
 
             List<InsertionThread> threads = new ArrayList<>(NUM_OPERATIONS);
@@ -26,6 +26,7 @@ public class Client3 {
                 InsertionThread thread = new InsertionThread();
                 thread.stack = stack;
                 thread.item = item;
+                thread.index = new SymbolicInteger("Iindex-" + i, false);
                 threads.add(thread);
             }
 
@@ -37,13 +38,13 @@ public class Client3 {
                 try {
                     threads.get(i).join();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
             }
 
-            System.out.println("Insertion Finished");
+            //System.out.println("Insertion Finished");
         } catch (JMCInterruptException e) {
-            System.out.println("JMCInterruptException in main");
+            //System.out.println("JMCInterruptException in main");
         }
     }
 }

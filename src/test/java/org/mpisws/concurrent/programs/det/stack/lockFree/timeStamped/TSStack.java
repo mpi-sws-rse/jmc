@@ -40,11 +40,16 @@ public class TSStack<V> implements Stack<V> {
         TimeStamp startTime = ts_cas.newStamp();
         boolean success;
         V element;
-        do {
+        /*do {
             Result<V> result = tryRem(startTime);
             success = result.success;
             element = result.element;
-        } while (!success);
+        } while (!success);*/
+
+        // Unwinding the loop once
+        Result<V> result = tryRem(startTime);
+        success = result.success;
+        element = result.element;
         return element;
     }
 
@@ -53,7 +58,7 @@ public class TSStack<V> implements Stack<V> {
         TimeStamp timeStamp = new TimeStamp(-1);
         SPPool<V> pool = null;
         TNode<V> top = null;
-        TNode<V>[] empty = new TNode[maxThreads];
+        //TNode<V>[] empty = new TNode[maxThreads];
         for (SPPool<V> current : spPools) {
 
 
@@ -61,13 +66,15 @@ public class TSStack<V> implements Stack<V> {
             TNode<V> node = nodeResult.node;
             TNode<V> poolTop = nodeResult.poolTop;
 
+            // Emptiness check ( The following code is just for performance optimization )
             if (node == null) {
-                empty[(int) current.id] = poolTop;
+                //empty[(int) current.id] = poolTop;
                 continue;
             }
 
             TimeStamp nodeTimeStamp = node.timeStamp;
 
+            // Elimination check
             if (startTime.compareTo(nodeTimeStamp) < 0) {
                 return current.remove(poolTop, node);
             }
@@ -79,13 +86,17 @@ public class TSStack<V> implements Stack<V> {
                 top = poolTop;
             }
         }
+        // Emptiness check ( The following code is just for performance optimization )
 
-        if (youngest == null) {
+        /*if (youngest == null) {
             for (SPPool<V> current : spPools) {
                 if (current.head.get() != empty[(int) current.id]) {
                     return new Result<V>(false, null);
                 }
             }
+            return new Result<V>(true, null);
+        }*/
+        if (pool == null) {
             return new Result<V>(true, null);
         }
         return pool.remove(top, youngest);

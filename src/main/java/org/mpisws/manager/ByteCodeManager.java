@@ -404,7 +404,12 @@ public class ByteCodeManager {
             LOGGER.info("Executions blocked: {} ", finished.numOfBlockedExecutions);
             LOGGER.info("Elapsed Time: {} nano seconds", finished.timeTaken);
             LOGGER.info("Elapsed Time: {} seconds", finished.timeTaken / 1_000_000_000);
-            String res = finished.numOfExecutions + " & " + finished.numOfCompletedExecutions + " & " + finished.numOfBlockedExecutions + " & " + finished.timeTaken;
+            LOGGER.info("Solver Time: {} nano seconds", finished.solverTime);
+            LOGGER.info("Solver Time: {} seconds", finished.solverTime / 1_000_000_000);
+            LOGGER.info("DPOR Time: {} nano seconds", finished.timeTaken - finished.solverTime);
+            LOGGER.info("DPOR Time: {} seconds", (finished.timeTaken - finished.solverTime) / 1_000_000_000);
+            String res = finished.numOfExecutions + " & " + finished.numOfCompletedExecutions + " & " + finished.numOfBlockedExecutions + " & " + finished.timeTaken
+                    + " & " + finished.solverTime + " & " + (finished.timeTaken - finished.solverTime);
             writer.write(res);
             writer.newLine();
         } catch (IOException e) {
