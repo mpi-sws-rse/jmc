@@ -12,13 +12,14 @@
 <body class="bg-gray-100 p-6">
 <div class="grid grid-cols-3 gap-4 max-w-6xl mx-auto">
     <!-- First Column -->
-    <div class="col-span-1 bg-white p-4 shadow rounded-lg">
+    <div class="col-span-1 bg-white p-4 shadow rounded-lg box-sizing">
         <h3 class="graph-list-header">Graphs</h3>
         <div>
             <label for="graphs" class="block text-sm font-medium text-gray-900"> Select Graph </label>
             <select
                     name="Graphs"
                     id="graphs"
+                    onchange="update_graph_selection(this)"
                     class="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
             >
             </select>

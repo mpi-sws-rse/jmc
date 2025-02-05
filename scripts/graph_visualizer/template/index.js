@@ -106,7 +106,13 @@ function plot_graph(graphData) {
         .attr("marker-end", d => `url(#arrow-${d.type})`)
         .attr("x1", d => xScale(nodeMap.get(d.source).taskId))
         .attr("y1", d => yScale(nodeMap.get(d.source).timestamp))
-        .attr("x2", d => xScale(nodeMap.get(d.target).taskId))
+        .attr("x2", d => {
+            let targetNode = nodeMap.get(d.target);
+            if (targetNode == null) {
+                console.log("Target node is null", d);
+            }
+            return xScale(nodeMap.get(d.target).taskId);
+        })
         .attr("y2", d => yScale(nodeMap.get(d.target).timestamp))
 
 
@@ -159,23 +165,27 @@ function load_graph(graphName) {
 
 function load_log(graphName) {
     fetch(`/api/log/${graphName}`)
-        .then(response => response.text())
+        .then(response => response.json())
         .then(data => {
-            document.getElementById("log").innerHTML = data.log.join('\n');
+            d3.select('#log').selectAll("p").data(data.log).enter().append("p").text(d => d);
         });
+}
+
+function update_graph_selection(selectElement) {
+    const graphName = selectElement.value;
+    load_graph(graphName);
+    load_log(graphName);
 }
 
 // Load graph list and display as items
 function load_graphs() {
     const graphList = document.getElementById("graphs");
-    $(graphList).onchange = function () {
-        load_graph(this.value);
-        load_log(this.value);
-    }
     fetch('/api/graphs')
         .then(response => response.json())
         .then(data => {
-            data.sort(d3.ascending).forEach(graph => {
+            let minGraph = data.min_graph;
+            let maxGraph = data.max_graph;
+            [...Array(maxGraph-minGraph).keys()].map(i => i + minGraph).forEach(graph => {
                 const item = document.createElement("option");
                 item.setAttribute("value", graph);
                 item.innerHTML = `${graph}`;
