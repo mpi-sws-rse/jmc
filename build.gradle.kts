@@ -29,9 +29,9 @@ dependencies {
     implementation("org.ow2.asm:asm-commons:9.7")
     //implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.9.22") // 1.9.22
     implementation("commons-cli:commons-cli:1.6.0")
-    implementation("org.apache.logging.log4j:log4j-api:2.22.1")
+    implementation("org.apache.logging.log4j:log4j-api:2.24.3")
     implementation("org.apache.logging.log4j:log4j-api-kotlin:1.5.0")
-    implementation("org.apache.logging.log4j:log4j-core:2.22.1")
+    implementation("org.apache.logging.log4j:log4j-core:2.24.3")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
 }
 
