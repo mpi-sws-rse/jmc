@@ -1,5 +1,7 @@
 package org.mpisws.strategies.trust;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.runtime.HaltExecutionException;
 import org.mpisws.runtime.HaltTaskException;
 import org.mpisws.runtime.RuntimeEvent;
@@ -13,6 +15,8 @@ import java.util.Random;
 import java.util.Set;
 
 public class TrustStrategy extends TrackActiveTasksStrategy {
+
+    private final Logger LOGGER = LogManager.getLogger(TrustStrategy.class);
 
     private final Algo algoInstance;
     private final SchedulingPolicy policy;
@@ -82,6 +86,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
         super.updateEvent(event);
         List<Event> trustEvents = EventFactory.fromRuntimeEvent(event);
         for (Event e : trustEvents) {
+            LOGGER.debug("Received event: {}", e);
             algoInstance.updateEvent(e);
         }
     }

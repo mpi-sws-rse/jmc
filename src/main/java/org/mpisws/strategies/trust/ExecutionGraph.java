@@ -261,9 +261,9 @@ public class ExecutionGraph {
                 taskEvents.add(new ArrayList<>());
             }
         }
-        LamportVectorClock vectorClock = new LamportVectorClock(taskEvents.size());
         // The last event in the PO order (initial event by default)
         ExecutionGraphNode lastNodePO = allEvents.get(0);
+        LamportVectorClock vectorClock = lastNodePO.getVectorClock();
         if (!taskEvents.get(task).isEmpty()) {
             lastNodePO = taskEvents.get(task).get(taskEvents.get(task).size() - 1);
             vectorClock = lastNodePO.getVectorClock();
@@ -619,6 +619,8 @@ public class ExecutionGraph {
 
         // Update the edges
         for (ExecutionGraphNode write : writes) {
+            // TODO: fix this. We have to remove specific edges in the case of the init node which has
+            //  many co edges to different locations
             write.removeEdge(Relation.Coherency);
         }
         for (int i = 0; i < writes.size() - 1; i++) {

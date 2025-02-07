@@ -54,3 +54,9 @@ body {
     padding: 8px;
     cursor: pointer;
 }
+
+#log p {
+    width: 100%;
+    border-bottom: 1px solid grey;
+    margin-bottom: 2px;
+}

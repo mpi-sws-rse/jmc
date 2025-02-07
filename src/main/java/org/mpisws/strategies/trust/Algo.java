@@ -48,7 +48,11 @@ public class Algo {
         if (guidingTaskSchedule == null || guidingTaskSchedule.isEmpty()) {
             return null;
         }
-        return guidingTaskSchedule.pop();
+        SchedulingChoice out = guidingTaskSchedule.pop();
+        if (guidingTaskSchedule.isEmpty()) {
+            isGuiding = false;
+        }
+        return out;
     }
 
     /**
@@ -153,6 +157,8 @@ public class Algo {
                 ExecutionGraphNode write2 = item.getEvent2();
 
                 executionGraph.swapCoherency(write1, write2);
+                // TODO: bug here. When restricting, we need to include the CO edges here.
+                //  unlike with the rw revisit.
                 executionGraph.restrictTo(write2);
                 guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 break;

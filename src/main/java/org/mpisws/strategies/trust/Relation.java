@@ -5,6 +5,7 @@ public enum Relation {
     Coherency("coherency"),
     ProgramOrder("programOrder"),
     ThreadCreation("threadCreation"),
+    ThreadJoin("threadJoin"),
     ;
 
     private final String key;

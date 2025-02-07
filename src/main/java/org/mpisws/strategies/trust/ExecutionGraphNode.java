@@ -108,7 +108,7 @@ public class ExecutionGraphNode {
      * @param adjacency The adjacency of the edge.
      */
     private void addBackEdge(ExecutionGraphNode from, Relation adjacency) {
-        if (adjacency == Relation.ReadsFrom || adjacency == Relation.ProgramOrder) {
+        if (adjacency != Relation.Coherency) {
             vectorClock.update(from.getVectorClock());
         }
         if (!backEdges.containsKey(adjacency)) {
@@ -291,6 +291,8 @@ public class ExecutionGraphNode {
         try {
             Set<Event.Key> porfPredecessors = getPredecessors(Relation.ProgramOrder);
             porfPredecessors.addAll(getPredecessors(Relation.ReadsFrom));
+            porfPredecessors.addAll(getPredecessors(Relation.ThreadJoin));
+            porfPredecessors.addAll(getPredecessors(Relation.ThreadCreation));
 
             for (Event.Key key : porfPredecessors) {
                 if (key.equals(poBeforeNode.key())) {

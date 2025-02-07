@@ -153,16 +153,6 @@ public class Event {
     }
 
     /**
-     * Creates a no-op event. This is used to indicate that no operation is to be performed by
-     * Trust.
-     *
-     * @return A no-op event {@link Event}.
-     */
-    public static Event noop() {
-        return new Event(null, null, Type.NOOP);
-    }
-
-    /**
      * Creates a new error event with the given message.
      *
      * @param message The message of the error.
@@ -280,7 +270,7 @@ public class Event {
 
     @Override
     public String toString() {
-        return "Event" + key;
+        return "Event("+ type.toString() +")" + key;
     }
 
     /**

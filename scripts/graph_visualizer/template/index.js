@@ -43,7 +43,7 @@ function plot_graph(graphData) {
     });
 
     // Set up the SVG
-    const width = window.innerWidth * 0.6;
+    const width = d3.select("#graph").node().getBoundingClientRect().width;
     const height = window.innerHeight * 0.9;
 
     const svg = d3.select("#graph")
@@ -167,7 +167,7 @@ function load_log(graphName) {
     fetch(`/api/log/${graphName}`)
         .then(response => response.json())
         .then(data => {
-            d3.select('#log').selectAll("p").data(data.log).enter().append("p").text(d => d);
+            d3.select('#log').selectAll("p").data(data.log).enter().append("p").attr("class", "box-content").text(d => d);
         });
 }
 
