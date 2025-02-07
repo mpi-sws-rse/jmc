@@ -124,7 +124,9 @@ public class ExecutionGraph {
                 }
                 continue;
             }
-            taskSchedule.add(SchedulingChoice.task(node.getEvent().getTaskId()));
+            // Adding 1 to the task ID since the task ID is 0-indexed inside Trust but 1-indexed in
+            // JMC
+            taskSchedule.add(SchedulingChoice.task(node.getEvent().getTaskId()+1));
         }
         return taskSchedule;
     }
@@ -261,9 +263,10 @@ public class ExecutionGraph {
                 taskEvents.add(new ArrayList<>());
             }
         }
+
+        LamportVectorClock vectorClock = new LamportVectorClock(taskEvents.size());
         // The last event in the PO order (initial event by default)
         ExecutionGraphNode lastNodePO = allEvents.get(0);
-        LamportVectorClock vectorClock = lastNodePO.getVectorClock();
         if (!taskEvents.get(task).isEmpty()) {
             lastNodePO = taskEvents.get(task).get(taskEvents.get(task).size() - 1);
             vectorClock = lastNodePO.getVectorClock();
@@ -293,6 +296,46 @@ public class ExecutionGraph {
         }
 
         return node;
+    }
+
+    /**
+     * Tracks thread join events in the execution graph. Adds a thread join edge from the last event of the
+     * joined task to the thread join event.
+     *
+     * @param node The node representing the thread join event.
+     */
+    public void trackThreadJoins(ExecutionGraphNode node) {
+        if(!EventUtils.isThreadJoin(node.getEvent())) {
+            // Silent return if the event is not a thread join
+            return;
+        }
+
+        // Adding a thread edge from the last event of the joinedTask to this event
+        // Affects porf and happens before
+        int joinedTask = EventUtils.getJoinedTask(node.getEvent());
+        ExecutionGraphNode lastEventJoinedTask = taskEvents.get(joinedTask).get(taskEvents.get(joinedTask).size() - 1);
+        lastEventJoinedTask.addEdge(node, Relation.ThreadJoin);
+    }
+
+    /**
+     * Tracks the thread starts in the execution graph as a total order
+     *
+     * <p>Internally, it uses a special location in the coherency Order to maintain the total order.
+     * Additionally, the relation is part of _porf_ and is reflected in the happens before.</p>
+     *
+     * @param node The node representing the thread start event.
+     */
+    public void trackThreadStarts(ExecutionGraphNode node) {
+        if(!EventUtils.isThreadStart(node.getEvent())) {
+            // Silent return if the event is not a thread start
+            return;
+        }
+
+        // Tracking thread starts in the coherency order with a special static location object.
+        List<ExecutionGraphNode> threadStarts = coherencyOrder.get(EventFactory.ThreadLocation);
+        ExecutionGraphNode lastThreadStart = threadStarts.get(threadStarts.size() - 1);
+        lastThreadStart.addEdge(node, Relation.ThreadCreation);
+        coherencyOrder.get(EventFactory.ThreadLocation).add(node);
     }
 
     /**

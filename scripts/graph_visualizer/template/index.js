@@ -15,6 +15,7 @@ function plot_graph(graphData) {
             taskId: data.event.key.taskId,
             timestamp: data.event.key.timestamp,
             location: data.event.location?.sharedObject,
+            attributes: data.event.attributes,
         };
         if (node.taskId > num_tasks) {
             num_tasks = node.taskId;
@@ -130,7 +131,19 @@ function plot_graph(graphData) {
     node.append("text")
         .attr("dx", 12)
         .attr("dy", ".35em")
-        .text(d => `${d.type} (${d.taskId}, ${d.timestamp})`);
+        .text(d => {
+            let node_type = d.type;
+            if(node_type === "NOOP"){
+                if(Object.hasOwn(d.attributes, "thread_start")) {
+                    node_type = "THREAD_START";
+                } else if(Object.hasOwn(d.attributes, "thread_finish")) {
+                    node_type = "THREAD_END";
+                } else if(Object.hasOwn(d.attributes, "thread_join")) {
+                    node_type = "THREAD_JOIN";
+                }
+            }
+            return `${node_type} (${d.taskId}, ${d.timestamp})`
+        });
 
     // Add hover effects
     node.on("mouseover", function (event, d) {

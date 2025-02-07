@@ -8,6 +8,7 @@ public enum RuntimeEventType {
 
     // Thread join events
     JOIN_REQUEST_EVENT,
+    JOIN_COMPLETE_EVENT,
 
     // Thread park and un-park events
     PARK_EVENT,

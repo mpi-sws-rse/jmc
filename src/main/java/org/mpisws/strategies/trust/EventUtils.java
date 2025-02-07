@@ -37,6 +37,26 @@ public class EventUtils {
         return event.getType() == Event.Type.READ_EX;
     }
 
+    public static boolean isThreadStart(Event event) {
+        return event.hasAttribute("thread_start");
+    }
+
+    public static boolean isThreadFinish(Event event) {
+        return event.hasAttribute("thread_finish");
+    }
+
+    public static boolean isThreadJoin(Event event) {
+        return event.hasAttribute("thread_join");
+    }
+
+    public static int getJoinedTask(Event event) {
+        Long joinedTask = event.getAttribute("joined_task");
+        if (joinedTask == null) {
+            return -1;
+        }
+        return Math.toIntExact(joinedTask);
+    }
+
     public static void makeUnRevistable(Event event) {
         event.setAttribute("revisit", false);
     }

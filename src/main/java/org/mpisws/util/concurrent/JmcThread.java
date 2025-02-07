@@ -120,17 +120,28 @@ public class JmcThread extends Thread {
     /** Replacing the Thread join to intercept the join Event. */
     public void join1() throws InterruptedException {
         Long requestingTask = JmcRuntime.currentTask();
-        RuntimeEvent event =
+        RuntimeEvent requestEvent =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEventType.JOIN_REQUEST_EVENT)
                         .taskId(requestingTask)
                         .param("waitingTask", jmcThreadId)
                         .build();
         try {
-            JmcRuntime.updateEventAndYield(event);
+            JmcRuntime.updateEventAndYield(requestEvent);
         } catch (HaltTaskException e) {
             LOGGER.error("Failed to join task : {}", e.getMessage());
         }
         super.join();
+        RuntimeEvent completedEvent =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.JOIN_COMPLETE_EVENT)
+                        .taskId(requestingTask)
+                        .param("joinedTask", jmcThreadId)
+                        .build();
+        try {
+            JmcRuntime.updateEventAndYield(completedEvent);
+        } catch (HaltTaskException e) {
+            LOGGER.error("Failed to complete join task : {}", e.getMessage());
+        }
     }
 }

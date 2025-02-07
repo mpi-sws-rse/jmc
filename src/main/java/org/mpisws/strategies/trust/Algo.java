@@ -108,7 +108,17 @@ public class Algo {
                 if (areWeGuiding()) {
                     return;
                 }
-                this.executionGraph.addEvent(event);
+                handleNoop(event);
+        }
+    }
+
+    public void handleNoop(Event event) {
+        ExecutionGraphNode eventNode = this.executionGraph.addEvent(event);
+        // Maintain total order among thread start events
+        if (EventUtils.isThreadStart(event)) {
+            this.executionGraph.trackThreadStarts(eventNode);
+        } else if(EventUtils.isThreadJoin(event)) {
+            this.executionGraph.trackThreadJoins(eventNode);
         }
     }
 
