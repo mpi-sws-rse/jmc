@@ -159,7 +159,7 @@ public class ExecutionGraphNode {
      * Removes all edges to the given node.
      *
      * <p> There might be dangling references to this node from other nodes that are not handled.
-     * Additionally, the vector clock is invalidated
+     * Additionally, the vector clock is invalidated unless the edge is CO.
      *
      * @param to The node to which the edges are directed.
      */

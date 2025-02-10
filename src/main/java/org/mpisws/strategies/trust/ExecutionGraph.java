@@ -641,7 +641,8 @@ public class ExecutionGraph {
             throw new HaltCheckerException("The write events are not to the same location.");
         }
 
-        List<ExecutionGraphNode> writes = coherencyOrder.get(location);
+        List<ExecutionGraphNode> oldWrites = coherencyOrder.get(location);
+        List<ExecutionGraphNode> writes = new ArrayList<>(oldWrites);
 
         int write1Index = writes.indexOf(write1);
         int write2Index = writes.indexOf(write2);
@@ -661,14 +662,14 @@ public class ExecutionGraph {
         writes.add(earlierIndex, laterWrite);
 
         // Update the edges
-        for (ExecutionGraphNode write : writes) {
-            // TODO: fix this. We have to remove specific edges in the case of the init node which has
-            //  many co edges to different locations
-            write.removeEdge(Relation.Coherency);
+        for (int i=0; i < oldWrites.size()-1; i++) {
+            oldWrites.get(i).removeEdge(oldWrites.get(i+1), Relation.Coherency);
         }
         for (int i = 0; i < writes.size() - 1; i++) {
             writes.get(i).addEdge(writes.get(i + 1), Relation.Coherency);
         }
+
+        coherencyOrder.put(location, writes);
     }
 
     /**

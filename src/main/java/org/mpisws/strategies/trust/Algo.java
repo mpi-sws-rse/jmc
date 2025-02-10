@@ -167,9 +167,7 @@ public class Algo {
                 ExecutionGraphNode write2 = item.getEvent2();
 
                 executionGraph.swapCoherency(write1, write2);
-                // TODO: bug here. When restricting, we need to include the CO edges here.
-                //  unlike with the rw revisit.
-                executionGraph.restrictTo(write2);
+                executionGraph.restrictTo(write1);
                 guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 break;
             case BRR:
