@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.pool.counter;
+package org.mpisws.concurrent.programs.pool.counter.correct;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,8 @@ import java.util.concurrent.*;
 public class PoolCounter {
 
     public static void main(String[] args) {
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        CThreadFact cThreadFact = new CThreadFact();
+        ExecutorService executorService = Executors.newFixedThreadPool(2, cThreadFact);
 
         List<Future<Integer>> futures = new ArrayList<>();
 
@@ -15,8 +16,7 @@ public class PoolCounter {
 
         for (int i = 0; i < 4; i++) {
             Callable<Integer> task = () -> {
-                counter.inc();
-                return counter.value;
+                return counter.inc();
             };
             futures.add(executorService.submit(task));
         }
@@ -26,7 +26,7 @@ public class PoolCounter {
                 Integer res = future.get();
                 System.out.println("Counter value is: " + res);
             } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+
             }
         }
 

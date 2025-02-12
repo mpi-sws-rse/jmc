@@ -15,6 +15,7 @@ public class JMCDependantStarterThread extends JMCStarterThread {
 
     @Override
     public void run() {
+        this.hasTask = true;
         RuntimeEnvironment.waitRequest(userThread);
         userThread.run();
         try {

@@ -5,6 +5,7 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * The ByteCodeModifier class is responsible for modifying the bytecode of the user's program to integrate with the
@@ -251,64 +252,68 @@ public class ByteCodeModifier {
         threadClassCandidate.add(mainClassName);
         while (!threadClassCandidate.isEmpty()) {
             String newClassName = threadClassCandidate.remove(threadClassCandidate.size() - 1);
-            byte[] byteCode = allByteCode.get(newClassName);
-            byte[] modifiedByteCode;
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-            ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
-                @Override
-                public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
-                                                 String[] exceptions) {
-                    MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
-                    methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
-                        private boolean isNew = false;
+            if (!isCastableToThreadFactory(newClassName)) {
+                //System.out.println("Class " + newClassName + " is not castable to ThreadFactory");
+                byte[] byteCode = allByteCode.get(newClassName);
+                byte[] modifiedByteCode;
+                ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+                ClassVisitor classVisitor = new ClassVisitor(Opcodes.ASM9, cw) {
+                    // Check if the class is castable to ThreadFactory
+                    @Override
+                    public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                                     String[] exceptions) {
+                        MethodVisitor methodVisitor = cv.visitMethod(access, name, descriptor, signature, exceptions);
+                        methodVisitor = new MethodVisitor(Opcodes.ASM9, methodVisitor) {
+                            private boolean isNew = false;
 
-                        @Override
-                        public void visitTypeInsn(int opcode, String type) {
-                            if (opcode == Opcodes.NEW && isCastableToThread(type)) {
-                                resetFlags();
-                                isNew = true;
-                                super.visitTypeInsn(opcode, type);
-                                mv.visitInsn(Opcodes.DUP);
-                            } else {
-                                resetFlags();
-                                super.visitTypeInsn(opcode, type);
+                            @Override
+                            public void visitTypeInsn(int opcode, String type) {
+                                if (opcode == Opcodes.NEW && isCastableToThread(type)) {
+                                    resetFlags();
+                                    isNew = true;
+                                    super.visitTypeInsn(opcode, type);
+                                    mv.visitInsn(Opcodes.DUP);
+                                } else {
+                                    resetFlags();
+                                    super.visitTypeInsn(opcode, type);
+                                }
                             }
-                        }
 
-                        @Override
-                        public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
-                                                    boolean isInterface) {
-                            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && isNew) {
-                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
-                                mv.visitMethodInsn(
-                                        Opcodes.INVOKESTATIC,
-                                        "org/mpisws/runtime/RuntimeEnvironment",
-                                        "addThread",
-                                        "(Ljava/lang/Thread;)V",
-                                        false
-                                );
-                            } else {
-                                resetFlags();
-                                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                            @Override
+                            public void visitMethodInsn(int opcode, String owner, String name, String descriptor,
+                                                        boolean isInterface) {
+                                if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && isNew) {
+                                    super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                                    mv.visitMethodInsn(
+                                            Opcodes.INVOKESTATIC,
+                                            "org/mpisws/runtime/RuntimeEnvironment",
+                                            "addThread",
+                                            "(Ljava/lang/Thread;)V",
+                                            false
+                                    );
+                                } else {
+                                    resetFlags();
+                                    super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                                }
+                                String ownerClassName = owner.replace("/", ".");
+                                if (!ownerClassName.equals(newClassName) && !threadClassCandidate.contains(ownerClassName) &&
+                                        allByteCode.containsKey(ownerClassName)) {
+                                    threadClassCandidate.add(ownerClassName);
+                                }
                             }
-                            String ownerClassName = owner.replace("/", ".");
-                            if (!ownerClassName.equals(newClassName) && !threadClassCandidate.contains(ownerClassName) &&
-                                    allByteCode.containsKey(ownerClassName)) {
-                                threadClassCandidate.add(ownerClassName);
-                            }
-                        }
 
-                        private void resetFlags() {
-                            isNew = false;
-                        }
-                    };
-                    return methodVisitor;
-                }
-            };
-            ClassReader cr = new ClassReader(byteCode);
-            cr.accept(classVisitor, 0);
-            modifiedByteCode = cw.toByteArray();
-            allByteCode.put(newClassName, modifiedByteCode);
+                            private void resetFlags() {
+                                isNew = false;
+                            }
+                        };
+                        return methodVisitor;
+                    }
+                };
+                ClassReader cr = new ClassReader(byteCode);
+                cr.accept(classVisitor, 0);
+                modifiedByteCode = cw.toByteArray();
+                allByteCode.put(newClassName, modifiedByteCode);
+            }
         }
     }
 
@@ -1086,7 +1091,7 @@ public class ByteCodeModifier {
                             mv.visitTryCatchBlock(label2, label3, label2, null);
                             mv.visitLabel(label4);
                             if (isStatic) {
-                                System.out.println("Static Method : " + className + "." + name + " : " + descriptor);
+                                //System.out.println("Static Method : " + className + "." + name + " : " + descriptor);
                                 mv.visitLdcInsn(className);
                                 mv.visitLdcInsn(name);
                                 mv.visitLdcInsn(descriptor);
@@ -1099,7 +1104,7 @@ public class ByteCodeModifier {
                                 );
                                 mv.visitInsn(Opcodes.DUP);
                             } else {
-                                System.out.println("Instance Method : " + className + "." + name + " : " + descriptor);
+                                //System.out.println("Instance Method : " + className + "." + name + " : " + descriptor);
                                 mv.visitIntInsn(Opcodes.ALOAD, 0);
                                 mv.visitLdcInsn(name);
                                 mv.visitLdcInsn(descriptor);
@@ -1594,7 +1599,7 @@ public class ByteCodeModifier {
      */
     public void modifySymbolicEval() {
         for (String className : allByteCode.keySet()) {
-            System.out.println(className);
+            //System.out.println(className);
             byte[] byteCode = allByteCode.get(className);
             byte[] modifiedByteCode;
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
@@ -1657,6 +1662,25 @@ public class ByteCodeModifier {
         while (clazz != null) {
             if (clazz.equals(Thread.class)) {
                 return true;
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return false;
+    }
+
+    private boolean isCastableToThreadFactory(String className) {
+        Class<?> clazz;
+        try {
+            clazz = Class.forName(className.replace("/", "."));
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        // Needed to check if the clazz or one of its ancestor implements ThreadFactory interface
+        while (clazz != null) {
+            for (Class<?> interf : clazz.getInterfaces()) {
+                if (interf.equals(ThreadFactory.class)) {
+                    return true;
+                }
             }
             clazz = clazz.getSuperclass();
         }

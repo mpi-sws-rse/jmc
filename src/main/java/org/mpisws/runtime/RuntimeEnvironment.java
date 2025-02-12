@@ -728,8 +728,8 @@ public class RuntimeEnvironment {
             createdThreadList.add(thread);
             mcThreadSerialNumber.put(threadIdMap.get(thread.getId()).intValue(), 0);
             threadParkingPermit.put(threadIdMap.get(thread.getId()), false);
-            //LOGGER.debug("{} added to the createdThreadList", thread.getName());
-            //LOGGER.debug("{} has the {} state", thread.getName(), thread.getState());
+            //LOGGER.error("{} added to the createdThreadList", thread.getName());
+            //LOGGER.error("{} has the {} state", thread.getName(), thread.getState());
         } else {
             LOGGER.warn("{} is already in the createdThreadList", thread.getName());
         }
@@ -754,13 +754,13 @@ public class RuntimeEnvironment {
      */
     public static void threadStart(Thread thread, Thread currentThread) {
         if (createdThreadList.contains(thread) && !readyThread.contains(thread)) {
-            LOGGER.debug("{} requested to run through {}", thread.getName(), currentThread.getName());
+            //LOGGER.error("{} requested to run through {}", thread.getName(), currentThread.getName());
             readyThread.add(thread);
-            LOGGER.debug("{} added to the readyThread list", thread.getName());
+            //LOGGER.error("{} added to the readyThread list", thread.getName());
             threadStartReq = thread;
             waitRequest(currentThread);
         } else {
-            LOGGER.debug("thread-{} not in createdThreadList", threadIdMap.get(thread.getId()));
+            LOGGER.error("thread-{} not in createdThreadList", threadIdMap.get(thread.getId()));
         }
     }
 
@@ -1288,13 +1288,21 @@ public class RuntimeEnvironment {
      * @throws JMCInterruptException
      */
     public static void acquireLockReq(Object lock, Thread thread) throws JMCInterruptException {
-        LOGGER.debug("{} requested to acquire the {} lock", thread.getName(), lock.toString());
-        casWithAssume(lock, thread);
+        if (strategyType == StrategyType.RANDOM) {
+            enterMonitor(lock, thread);
+        } else {
+            LOGGER.debug("{} requested to acquire the {} lock", thread.getName(), lock.toString());
+            casWithAssume(lock, thread);
+        }
     }
 
     public static void acquiredLock(Object lock, Thread thread) {
-        LOGGER.debug("{} acquired the {} lock", thread.getName(), lock.toString());
-        lockAvailMap.get(lock).acquire();
+        if (strategyType == StrategyType.RANDOM) {
+            acquiredMonitor(lock, thread);
+        } else {
+            LOGGER.debug("{} acquired the {} lock", thread.getName(), lock.toString());
+            lockAvailMap.get(lock).acquire();
+        }
     }
 
     public static void casWithAssume(Object lock, Thread thread) throws JMCInterruptException {
@@ -1351,16 +1359,24 @@ public class RuntimeEnvironment {
     }
 
     public static void releaseLockReq(Object lock, Thread thread) {
-        LOGGER.debug("{} requested to release the {} lock", thread.getName(), lock.toString());
-        lockAvailMap.get(lock).release();
+        if (strategyType == StrategyType.RANDOM) {
+            exitMonitor(lock, thread);
+        } else {
+            LOGGER.debug("{} requested to release the {} lock", thread.getName(), lock.toString());
+            lockAvailMap.get(lock).release();
+        }
     }
 
     public static void releasedLock(Object lock, Thread thread) {
-        LOGGER.debug("{} released the {} lock", thread.getName(), lock.toString());
-        Location location = createLocation(lockAvailMap.get(lock), "org/mpisws/util/concurrent/JMCLock", "permits", "I");
-        WriteEvent writeEvent = createWriteEvent(thread, location, 0);
-        writeEventReq = writeEvent;
-        waitRequest(thread);
+        if (strategyType == StrategyType.RANDOM) {
+            releasedMonitor(lock, thread);
+        } else {
+            LOGGER.debug("{} released the {} lock", thread.getName(), lock.toString());
+            Location location = createLocation(lockAvailMap.get(lock), "org/mpisws/util/concurrent/JMCLock", "permits", "I");
+            WriteEvent writeEvent = createWriteEvent(thread, location, 0);
+            writeEventReq = writeEvent;
+            waitRequest(thread);
+        }
     }
 
     public static void initLock(Object lock, Thread thread) {
@@ -1408,7 +1424,8 @@ public class RuntimeEnvironment {
      * @param message The failure message associated with the assert statement.
      */
     public static void assertOperation(String message) {
-        LOGGER.debug("Assertion message : {}", message);
+        //LOGGER.debug("Assertion message : {}", message);
+        LOGGER.error("Assertion violation: {}", message);
         if (isExecutionBlocked) {
             LOGGER.debug("The execution is blocked. Ignoring assertion message");
         }

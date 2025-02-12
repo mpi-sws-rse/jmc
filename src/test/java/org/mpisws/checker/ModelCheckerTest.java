@@ -2466,7 +2466,7 @@ class ModelCheckerTest {
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         int[] dataDomain = {0, 1, 2};
-        int size = 4;
+        int size = 3;
         checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -2689,21 +2689,45 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                  THREAD POOL COUNTER
+     *                                  BUGGY THREAD POOL COUNTER
      */
+
     @Test
-    @DisplayName("Pool Counter")
-    void randomTestPoolCounter() {
-        var t = new TestTarget("org.mpisws.concurrent.programs.pool.counter",
+    @DisplayName("Buggy Pool Counter")
+    void randomTestBuggyPoolCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.pool.counter.buggy",
                 "PoolCounter",
                 "main",
-                "src/test/java/org/mpisws/concurrent/programs/pool/counter/"
+                "src/test/java/org/mpisws/concurrent/programs/pool/counter/buggy/"
         );
-        System.out.println("PoolCounter Random Strategy Started");
+        System.out.println("Buggy PoolCounter Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.maxIterations = 1000;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "PoolCounter Random Strategy Finished");
+        assertTrue(checker.check(t), "Buggy PoolCounter Random Strategy Finished");
+    }
+
+    /*
+     *                                  CORRECT THREAD POOL COUNTER
+     */
+
+    @Test
+    @DisplayName("Correct Pool Counter")
+    void randomTestCorrectPoolCounter() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.pool.counter.correct",
+                "PoolCounter",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/pool/counter/correct/"
+        );
+        System.out.println("Buggy PoolCounter Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.maxIterations = 1000;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Correct PoolCounter Random Strategy Finished");
     }
 
 

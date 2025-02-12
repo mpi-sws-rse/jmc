@@ -413,7 +413,7 @@ public interface SearchStrategy {
             LOGGER.debug("The monitor {} is available", monitor);
             RuntimeEnvironment.monitorRequest.remove(thread, monitor);
             LOGGER.debug("The request of {} to enter the monitor {} is removed from the monitorRequest", thread.getName(), monitor);
-            handleCachedCASEvent(RuntimeEnvironment.threadIdMap.get(thread.getId()).intValue());
+            //handleCachedCASEvent(RuntimeEnvironment.threadIdMap.get(thread.getId()).intValue());
             return thread;
         }
     }

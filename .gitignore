@@ -54,6 +54,10 @@ src/test/java/org/mpisws/concurrent/programs/message/counter/*.txt
 src/test/java/org/mpisws/concurrent/programs/message/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/pool/counter/*.class
 src/test/java/org/mpisws/concurrent/programs/pool/counter/*.txt
+src/test/java/org/mpisws/concurrent/programs/pool/counter/buggy/*.class
+src/test/java/org/mpisws/concurrent/programs/pool/counter/buggy/*.txt
+src/test/java/org/mpisws/concurrent/programs/pool/counter/correct/*.class
+src/test/java/org/mpisws/concurrent/programs/pool/counter/correct/*.txt
 src/test/java/org/mpisws/concurrent/programs/symbolic/gcd/*.class
 src/test/java/org/mpisws/concurrent/programs/symbolic/gcd/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/array/*.class
@@ -198,6 +202,10 @@ src/test/java/org/mpisws/concurrent/programs/nondet/map/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/map/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/map/coarse/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/map/coarse/*.txt
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/simpleTSStack/*.class
+src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/simpleTSStack/*.txt
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/simpleTSStack/*.class
+src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/simpleTSStack/*.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

@@ -1,4 +1,4 @@
-package org.mpisws.concurrent.programs.pool.counter;
+package org.mpisws.concurrent.programs.pool.counter.buggy;
 
 public class Counter {
 
