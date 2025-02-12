@@ -6,11 +6,9 @@ import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Represents an event object used by the algorithm.
- */
+/** Represents an event object used by the algorithm. */
 public class Event {
-    private final Location location;
+    private Integer location;
     private final Key key;
     private final Type type;
     private final Map<String, Object> attributes;
@@ -18,14 +16,14 @@ public class Event {
     /**
      * Creates a new event with the given task ID, location, and type.
      *
-     * @param taskId   The task ID.
+     * @param taskId The task ID.
      * @param location The location.
-     * @param type     The type.
+     * @param type The type.
      */
-    public Event(Long taskId, Location location, Type type) {
+    public Event(Long taskId, Integer location, Type type) {
         this.location = location;
         this.type = type;
-        this.key = new Key(taskId, null);
+        this.key = new Key(taskId);
         this.attributes = new HashMap<>();
     }
 
@@ -45,7 +43,7 @@ public class Event {
         JsonObject json = new JsonObject();
         json.add("key", key.toJson());
         if (location != null) {
-            json.add("location", location.toJson());
+            json.addProperty("location", location);
         }
         json.addProperty("type", type.toString());
         JsonObject attributesJson = new JsonObject();
@@ -73,7 +71,7 @@ public class Event {
     /**
      * Sets the attribute of the event with the given key and value.
      *
-     * @param key   The key of the attribute.
+     * @param key The key of the attribute.
      * @param value The value of the attribute.
      */
     public void setAttribute(String key, Object value) {
@@ -92,10 +90,14 @@ public class Event {
     /**
      * Returns the location of the event.
      *
-     * @return The location of type {@link Location}.
+     * @return The location of the event.
      */
-    public Location getLocation() {
+    public Integer getLocation() {
         return location;
+    }
+
+    public void setLocation(Integer location) {
+        this.location = location;
     }
 
     /**
@@ -135,6 +137,24 @@ public class Event {
     }
 
     /**
+     * Returns the total order timestamp of the event.
+     *
+     * @return The total order timestamp of the event.
+     */
+    public Integer getToStamp() {
+        return key.getToStamp();
+    }
+
+    /**
+     * Sets the total order timestamp of the event.
+     *
+     * @param toStamp The total order timestamp of the event.
+     */
+    public void setToStamp(Integer toStamp) {
+        this.key.setToStamp(toStamp);
+    }
+
+    /**
      * Creates an init event.
      *
      * @return An init event {@link Event}.
@@ -168,9 +188,7 @@ public class Event {
         return attributes.containsKey(key);
     }
 
-    /**
-     * Represents the type of the event according to the algorithm.
-     */
+    /** Represents the type of the event according to the algorithm. */
     public enum Type {
         READ,
         READ_EX,
@@ -184,24 +202,24 @@ public class Event {
         NOOP,
     }
 
-    /**
-     * Unique key for the event.
-     */
+    /** Unique key for the event. */
     public static class Key {
         // The task to which the event belongs to
         private final Long taskId;
         // The index of the event in that task. Assuming deterministic executions here.
         private Integer timestamp;
+        // The index of the event in the total order
+        private Integer toStamp;
 
         /**
          * Creates a new key with the given task ID and timestamp.
          *
-         * @param taskId    The task ID.
-         * @param timestamp The timestamp.
+         * @param taskId The task ID.
          */
-        public Key(Long taskId, Integer timestamp) {
+        public Key(Long taskId) {
             this.taskId = taskId;
-            this.timestamp = timestamp;
+            this.timestamp = null;
+            this.toStamp = null;
         }
 
         public Long getTaskId() {
@@ -214,6 +232,14 @@ public class Event {
 
         public void setTimestamp(Integer timestamp) {
             this.timestamp = timestamp;
+        }
+
+        public Integer getToStamp() {
+            return toStamp;
+        }
+
+        public void setToStamp(Integer toStamp) {
+            this.toStamp = toStamp;
         }
 
         @Override
@@ -270,12 +296,10 @@ public class Event {
 
     @Override
     public String toString() {
-        return "Event("+ type.toString() +")" + key;
+        return "Event(" + type.toString() + ")" + key;
     }
 
-    /**
-     * A generic event predicate.
-     */
+    /** A generic event predicate. */
     @FunctionalInterface
     public interface EventPredicate {
         /**

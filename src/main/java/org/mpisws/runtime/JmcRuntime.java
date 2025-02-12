@@ -93,6 +93,7 @@ public class JmcRuntime {
                     new RuntimeEvent.Builder()
                             .type(RuntimeEventType.START_EVENT)
                             .taskId(mainThreadId)
+                            .param("startedBy", 1L)
                             .build());
         } catch (HaltTaskException ignored) {
             LOGGER.error("Failed to start main thread.");

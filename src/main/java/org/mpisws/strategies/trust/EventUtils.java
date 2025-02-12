@@ -33,6 +33,10 @@ public class EventUtils {
         return event.getType() == Event.Type.BLOCK || event.getType() == Event.Type.LOCK_AWAIT;
     }
 
+    public static Long getStartedBy(Event event) {
+        return event.getAttribute("started_by");
+    }
+
     public static boolean isExclusiveRead(Event event) {
         return event.getType() == Event.Type.READ_EX;
     }

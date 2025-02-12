@@ -7,11 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EventFactory {
-
-    // A special Location to represent thread events. This is used to track total order between thread start events
-    // Essentially, thread starts are writes on the thread location
-    public static final Location ThreadLocation = new Location("thread");
-
     /**
      * Creates a new event mapping the runtime event to the trust event.
      *
@@ -25,15 +20,21 @@ public class EventFactory {
         switch (runtimeEvent.getType()) {
             case START_EVENT -> {
                 // Update EventUtils::isThreadStart if anything changes here
-                Event event = new Event(runtimeEvent.getTaskId() - 1, ThreadLocation, Event.Type.NOOP);
+                Event event =
+                        new Event(
+                                runtimeEvent.getTaskId() - 1,
+                                LocationStore.ThreadLocation,
+                                Event.Type.NOOP);
                 event.setAttribute("thread_start", true);
+                Long startedBy = runtimeEvent.getParam("startedBy");
+                event.setAttribute("started_by", startedBy - 1);
                 return List.of(event);
             }
             case WRITE_EVENT -> {
                 Event event =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                new Location(runtimeEvent.getParam("instance")),
+                                runtimeEvent.getParam("instance").hashCode(),
                                 Event.Type.WRITE);
                 return List.of(event);
             }
@@ -41,7 +42,7 @@ public class EventFactory {
                 Event event =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                new Location(runtimeEvent.getParam("instance")),
+                                runtimeEvent.getParam("instance").hashCode(),
                                 Event.Type.READ);
                 return List.of(event);
             }
@@ -50,7 +51,7 @@ public class EventFactory {
                 Event event =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                ThreadLocation,
+                                LocationStore.ThreadLocation,
                                 Event.Type.NOOP);
                 event.setAttribute("thread_finish", true);
                 return List.of(event);
@@ -60,11 +61,11 @@ public class EventFactory {
                 Event event =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                ThreadLocation,
+                                LocationStore.ThreadLocation,
                                 Event.Type.NOOP);
                 Long joinedTask = runtimeEvent.getParam("joinedTask");
                 event.setAttribute("thread_join", true);
-                event.setAttribute("joined_task", joinedTask -1);
+                event.setAttribute("joined_task", joinedTask - 1);
                 return List.of(event);
             }
         }

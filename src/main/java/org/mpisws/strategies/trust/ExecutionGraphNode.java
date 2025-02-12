@@ -117,15 +117,6 @@ public class ExecutionGraphNode {
         backEdges.get(adjacency).add(from.key());
     }
 
-    /*
-     * Removes all edges from this node.
-     * <p> There might be dangling references to this node from other nodes that are not handled.
-     */
-    public void clearAllEdges() {
-        this.edges.clear();
-        this.backEdges.clear();
-    }
-
     /**
      * Removes the edge with the given adjacency from this node.
      *

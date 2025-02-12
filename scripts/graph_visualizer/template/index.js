@@ -133,12 +133,12 @@ function plot_graph(graphData) {
         .attr("dy", ".35em")
         .text(d => {
             let node_type = d.type;
-            if(node_type === "NOOP"){
-                if(Object.hasOwn(d.attributes, "thread_start")) {
+            if (node_type === "NOOP") {
+                if (Object.hasOwn(d.attributes, "thread_start")) {
                     node_type = "THREAD_START";
-                } else if(Object.hasOwn(d.attributes, "thread_finish")) {
+                } else if (Object.hasOwn(d.attributes, "thread_finish")) {
                     node_type = "THREAD_END";
-                } else if(Object.hasOwn(d.attributes, "thread_join")) {
+                } else if (Object.hasOwn(d.attributes, "thread_join")) {
                     node_type = "THREAD_JOIN";
                 }
             }
@@ -198,7 +198,7 @@ function load_graphs() {
         .then(data => {
             let minGraph = data.min_graph;
             let maxGraph = data.max_graph;
-            [...Array(maxGraph-minGraph).keys()].map(i => i + minGraph).forEach(graph => {
+            [...Array(maxGraph - minGraph + 1).keys()].map(i => i + minGraph).forEach(graph => {
                 const item = document.createElement("option");
                 item.setAttribute("value", graph);
                 item.innerHTML = `${graph}`;

@@ -9,6 +9,7 @@ import org.mpisws.util.files.FileUtil;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Contains the core Trust algorithm implementation. (<a
@@ -25,10 +26,12 @@ import java.util.List;
 public class Algo {
     // The sequence of tasks to be scheduled. This is kept in sync with the execution graph that we
     // are currently visiting.
-    private ArrayDeque<SchedulingChoice> guidingTaskSchedule;
+    private ArrayDeque<SchedulingChoiceWrapper> guidingTaskSchedule;
     private ExecutionGraph executionGraph;
     private boolean isGuiding;
     private final ExplorationStack explorationStack;
+
+    private final LocationStore locationStore;
 
     /** Creates a new instance of the Trust algorithm. */
     public Algo() {
@@ -36,6 +39,7 @@ public class Algo {
         this.isGuiding = false;
         this.executionGraph = new ExecutionGraph();
         this.explorationStack = new ExplorationStack();
+        this.locationStore = new LocationStore();
 
         this.executionGraph.addEvent(Event.init());
     }
@@ -48,11 +52,40 @@ public class Algo {
         if (guidingTaskSchedule == null || guidingTaskSchedule.isEmpty()) {
             return null;
         }
-        SchedulingChoice out = guidingTaskSchedule.pop();
+        SchedulingChoice out = guidingTaskSchedule.pop().choice();
         if (guidingTaskSchedule.isEmpty()) {
             isGuiding = false;
         }
         return out;
+    }
+
+    private void handleGuidedEvent(Event event) {
+        SchedulingChoiceWrapper choiceW = guidingTaskSchedule.peek();
+        SchedulingChoice choice = choiceW.choice();
+        if (choice.isBlockTask()) {
+            throw new HaltTaskException(choice.getTaskId());
+        } else if (choice.isBlockExecution()) {
+            throw HaltExecutionException.error("Encountered a block label");
+        } else if (choice.isEnd()) {
+            // We have observed all the events in the guiding trace, pop the end event
+            guidingTaskSchedule.pop();
+            if (guidingTaskSchedule.isEmpty()) {
+                isGuiding = false;
+            }
+        }
+        if (choiceW.hasLocation()) {
+            Integer location = choiceW.location();
+            if (event.getLocation() == null) {
+                throw HaltExecutionException.error(
+                        "Expected location with event but it contains none");
+            }
+            if (Objects.equals(event.getLocation(), location)) {
+                return;
+            }
+            if (!locationStore.containsAlias(event.getLocation())) {
+                locationStore.addAlias(location, event.getLocation());
+            }
+        }
     }
 
     /**
@@ -67,11 +100,17 @@ public class Algo {
     @SuppressWarnings({"checkstyle:MissingSwitchDefault", "checkstyle:LeftCurly"})
     public void updateEvent(Event event) throws HaltTaskException, HaltExecutionException {
         if (areWeGuiding()) {
-            SchedulingChoice choice = guidingTaskSchedule.peek();
-            if (choice.isBlockTask()) {
-                throw new HaltTaskException(choice.getTaskId());
-            } else if (choice.isBlockExecution()) {
-                throw HaltExecutionException.error("Encountered a block label");
+            handleGuidedEvent(event);
+            return;
+        }
+
+        // Need to assign the right location value to the event. Check aliases and update the event
+        // location accordingly.
+        if (event.getLocation() != null) {
+            if (locationStore.containsAlias(event.getLocation())) {
+                event.setLocation(locationStore.getAlias(event.getLocation()));
+            } else {
+                locationStore.addLocation(event.getLocation());
             }
         }
 
@@ -112,16 +151,28 @@ public class Algo {
         }
     }
 
+    /**
+     * Handles the NOOP event. This is a special case where we do not need to update the execution
+     * graph.
+     *
+     * @param event The NOOP event.
+     */
     public void handleNoop(Event event) {
         ExecutionGraphNode eventNode = this.executionGraph.addEvent(event);
         // Maintain total order among thread start events
         if (EventUtils.isThreadStart(event)) {
             this.executionGraph.trackThreadStarts(eventNode);
-        } else if(EventUtils.isThreadJoin(event)) {
+        } else if (EventUtils.isThreadJoin(event)) {
             this.executionGraph.trackThreadJoins(eventNode);
         }
     }
 
+    /**
+     * Initializes the iteration. This method is called at the beginning of each iteration of the
+     * algorithm.
+     *
+     * @param iteration The iteration number.
+     */
     public void initIteration(int iteration) {
         // Check if we are guiding the execution and construct the task schedule accordingly!
         if (iteration == 0) {
@@ -134,6 +185,10 @@ public class Algo {
             throw new HaltCheckerException();
         }
 
+        // Clear location aliases. By this point, we have replaced all the locations in the
+        // execution graph with the latest ones.
+        // TODO: need to check this properly
+        locationStore.clearAliases();
         // We are guiding
         isGuiding = true;
         ExplorationStack.Item item = explorationStack.pop();
@@ -212,6 +267,8 @@ public class Algo {
         // Clean up the execution graph and the task schedule.
         this.executionGraph.clear();
         this.explorationStack.clear();
+        this.locationStore.clearAliases();
+        this.locationStore.clear();
     }
 
     public List<Long> getSchedulableTasks() {

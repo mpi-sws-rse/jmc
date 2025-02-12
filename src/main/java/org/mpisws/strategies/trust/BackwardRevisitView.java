@@ -60,7 +60,10 @@ public class BackwardRevisitView {
         try {
             for (Event.Key key : nodesToCheck) {
                 ExecutionGraphNode node = graph.getEventNode(key);
-                int nodeTOIndex = graph.getTOIndex(node);
+                Integer nodeTOIndex = node.getEvent().getToStamp();
+                if (nodeTOIndex == null) {
+                    throw HaltExecutionException.error("The event does not have a TO index.");
+                }
                 Predicate<Event.Key> previous =
                         (k) -> {
                             try {

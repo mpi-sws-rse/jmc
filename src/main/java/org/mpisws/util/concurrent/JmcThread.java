@@ -21,6 +21,7 @@ public class JmcThread extends Thread {
 
     public boolean hasTask = false;
     private Long jmcThreadId;
+    private Long createdBy;
 
     // TODO: extend to all constructors of Thread and handle ThreadGroups, also all join methods
     //      Should be a drop in replacement for all possible ways to use Threads
@@ -39,6 +40,7 @@ public class JmcThread extends Thread {
     public JmcThread(Long jmcThreadId) {
         super();
         this.jmcThreadId = jmcThreadId;
+        this.createdBy = JmcRuntime.currentTask();
         super.setUncaughtExceptionHandler(this::handleInterrupt);
         LOGGER = LogManager.getLogger(JmcThread.class.getName() + " Task=" + jmcThreadId);
     }
@@ -47,6 +49,7 @@ public class JmcThread extends Thread {
     public JmcThread(Runnable r, Long jmcThreadId) {
         super(r);
         this.jmcThreadId = jmcThreadId;
+        this.createdBy = JmcRuntime.currentTask();
         super.setUncaughtExceptionHandler(this::handleInterrupt);
         LOGGER = LogManager.getLogger(JmcThread.class.getName() + " Task=" + jmcThreadId);
     }
@@ -58,6 +61,7 @@ public class JmcThread extends Thread {
                 new RuntimeEvent.Builder()
                         .type(RuntimeEventType.START_EVENT)
                         .taskId(jmcThreadId)
+                        .param("startedBy", createdBy)
                         .build();
         try {
             JmcRuntime.updateEvent(event);
