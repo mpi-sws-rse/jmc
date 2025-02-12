@@ -12,8 +12,8 @@ public class AtomicInteger {
     public ReentrantLock lock = new ReentrantLock();
 
     public AtomicInteger(int initialValue) {
-        writeOp(initialValue);
         value = initialValue;
+        writeOp(initialValue);
     }
 
     private void writeOp(int newValue) {
@@ -54,15 +54,16 @@ public class AtomicInteger {
     }
 
     public AtomicInteger() {
-        writeOp(0);
         value = 0;
+        writeOp(0);
     }
 
     public int get() {
         try {
             lock.lock();
+            int val = value;
             readOp();
-            return value;
+            return val;
         } finally {
             lock.unlock();
         }
@@ -71,8 +72,8 @@ public class AtomicInteger {
     public void set(int newValue) {
         try {
             lock.lock();
-            writeOp(newValue);
             value = newValue;
+            writeOp(newValue);
         } finally {
             lock.unlock();
         }
@@ -81,10 +82,11 @@ public class AtomicInteger {
     public boolean compareAndSet(int expectedValue, int newValue) throws JMCInterruptException {
         lock.lock();
         try {
+            int val = value;
             readOp();
-            if (value == expectedValue) {
-                writeOp(newValue);
+            if (val == expectedValue) {
                 value = newValue;
+                writeOp(newValue);
                 return true;
             }
             return false;
@@ -96,10 +98,10 @@ public class AtomicInteger {
     public int getAndIncrement() throws JMCInterruptException {
         lock.lock();
         try {
-            readOp();
             int result = value;
-            writeOp(result + 1);
+            readOp();
             value = result + 1;
+            writeOp(result + 1);
             return result;
         } finally {
             lock.unlock();
