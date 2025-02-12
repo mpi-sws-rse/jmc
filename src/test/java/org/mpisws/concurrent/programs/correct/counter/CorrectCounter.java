@@ -10,10 +10,10 @@ public class CorrectCounter extends JmcThread {
     Counter counter;
 
     public CorrectCounter(Counter counter, ReentrantLock lock) {
+        super();
         this.counter = counter;
         this.lock = lock;
     }
-
 
     @Override
     public void run1() throws JMCInterruptException {
@@ -23,24 +23,22 @@ public class CorrectCounter extends JmcThread {
     }
 
     public static void main(String[] args) {
+        Counter counter = new Counter();
+        ReentrantLock lock = new ReentrantLock();
+        CorrectCounter thread1 = new CorrectCounter(counter, lock);
+        CorrectCounter thread2 = new CorrectCounter(counter, lock);
+        CorrectCounter thread3 = new CorrectCounter(counter, lock);
+        thread1.start();
+        thread2.start();
+        thread3.start();
         try {
-            Counter counter = new Counter();
-            ReentrantLock lock = new ReentrantLock();
-            CorrectCounter thread1 = new CorrectCounter(counter, lock);
-            CorrectCounter thread2 = new CorrectCounter(counter, lock);
-            CorrectCounter thread3 = new CorrectCounter(counter, lock);
-            thread1.start();
-            thread2.start();
-            thread3.start();
             thread1.join1();
             thread2.join1();
             thread3.join1();
-            Utils.assertion(
-                    counter.count == 3,
-                    " ***The assert did not pass, the counter value is " + counter.count + "***");
+            assert counter.count == 3;
             System.out.println(
                     "[Correct Counter message] : If you see this message, the assert passed. The"
-                        + " counter value is "
+                            + " counter value is "
                             + counter.count);
         } catch (InterruptedException e) {
             System.out.println("JMCInterruptException thrown");

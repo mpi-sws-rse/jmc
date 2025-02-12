@@ -120,17 +120,7 @@ public class JmcRuntime {
             LOGGER.error("Yielding an already paused task.");
             System.exit(1);
         }
-        try {
-            taskManager.wait(currentTask);
-        } catch (ExecutionException | InterruptedException e) {
-            LOGGER.error("Failed to wait for task: {}", currentTask);
-            Throwable cause = e.getCause();
-            if (cause instanceof HaltTaskException) {
-                throw (HaltTaskException) cause;
-            } else {
-                throw HaltExecutionException.error(cause.getMessage());
-            }
-        }
+        wait(currentTask);
     }
 
     /**
@@ -164,22 +154,29 @@ public class JmcRuntime {
     }
 
     /**
-     * Called by the task that spawns a new task to just pause and wait. Everything else is handled
-     * in the {@link JmcRuntime#addNewTask()} method.
+     * Pauses the task.
+     *
+     * @param taskId the ID of the task to be paused
      */
-    public static void spawn() throws HaltTaskException, HaltExecutionException {
-        LOGGER.debug("Spawning new task and waiting");
-        Long currentTask = scheduler.currentTask();
+    public static void pause(Long taskId) {
         try {
-            taskManager.pause(currentTask);
+            taskManager.pause(taskId);
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Current thread is already paused.");
             System.exit(1);
         }
+    }
+
+    /**
+     * Waits for the task with the given ID to be resumed.
+     *
+     * @param taskId the ID of the task to wait for.
+     */
+    public static void wait(Long taskId) {
         try {
-            taskManager.wait(currentTask);
+            taskManager.wait(taskId);
         } catch (ExecutionException | InterruptedException e) {
-            LOGGER.error("Failed to wait for task: {}", currentTask);
+            LOGGER.error("Failed to wait for task: {}", taskId);
             Throwable cause = e.getCause();
             if (cause instanceof HaltTaskException) {
                 throw (HaltTaskException) cause;

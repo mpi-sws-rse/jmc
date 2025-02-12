@@ -99,8 +99,10 @@ public class JmcThread extends Thread {
 
     @Override
     public void start() {
+        Long taskId = JmcRuntime.currentTask();
+        JmcRuntime.pause(taskId);
         super.start();
-        JmcRuntime.spawn();
+        JmcRuntime.wait(taskId);
     }
 
     /** This method is overridden by the user. */
