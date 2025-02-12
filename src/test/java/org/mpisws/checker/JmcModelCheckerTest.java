@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.mpisws.concurrent.programs.atomic.counter.AtomicCounter;
 import org.mpisws.concurrent.programs.complex.counter.ComplexCounter;
 import org.mpisws.concurrent.programs.concurrent.ConcurrentCounter;
+import org.mpisws.concurrent.programs.correct.counter.CorrectCounter;
 import org.mpisws.concurrent.programs.det.array.DetArray;
 import org.mpisws.concurrent.programs.det.loop.DetLoop;
 import org.mpisws.concurrent.programs.det.loopVariant.DetLoopWithLock;
@@ -29,6 +30,23 @@ public class JmcModelCheckerTest {
                         "RandomAtomicCounter",
                         () -> {
                             AtomicCounter.main(new String[0]);
+                        });
+
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testRandomCorrectCounter() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(1000).build();
+
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomCorrectCounter",
+                        () -> {
+                            CorrectCounter.main(new String[0]);
                         });
 
         jmcModelChecker.check(target);

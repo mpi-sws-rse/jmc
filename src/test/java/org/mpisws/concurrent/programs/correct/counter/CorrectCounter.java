@@ -1,34 +1,28 @@
 package org.mpisws.concurrent.programs.correct.counter;
 
 import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.JmcThread;
 import org.mpisws.util.concurrent.ReentrantLock;
 import org.mpisws.util.concurrent.Utils;
 
-public class CorrectCounter extends Thread {
-    Object lock;
+public class CorrectCounter extends JmcThread {
+    ReentrantLock lock;
     Counter counter;
 
-    public CorrectCounter(Counter counter, Object lock) {
+    public CorrectCounter(Counter counter, ReentrantLock lock) {
         this.counter = counter;
         this.lock = lock;
     }
 
+
     @Override
-    public void run() {
-        try {
-            run2();
-        } catch (JMCInterruptException e) {
-
-        }
+    public void run1() throws JMCInterruptException {
+        lock.lock();
+        counter.count = counter.count + 1;
+        lock.unlock();
     }
 
-    public void run2() throws JMCInterruptException {
-        synchronized (lock) {
-            counter.count = counter.count + 1;
-        }
-    }
-
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         try {
             Counter counter = new Counter();
             ReentrantLock lock = new ReentrantLock();
@@ -38,9 +32,9 @@ public class CorrectCounter extends Thread {
             thread1.start();
             thread2.start();
             thread3.start();
-            thread1.join();
-            thread2.join();
-            thread3.join();
+            thread1.join1();
+            thread2.join1();
+            thread3.join1();
             Utils.assertion(
                     counter.count == 3,
                     " ***The assert did not pass, the counter value is " + counter.count + "***");
@@ -48,7 +42,7 @@ public class CorrectCounter extends Thread {
                     "[Correct Counter message] : If you see this message, the assert passed. The"
                         + " counter value is "
                             + counter.count);
-        } catch (JMCInterruptException e) {
+        } catch (InterruptedException e) {
             System.out.println("JMCInterruptException thrown");
         }
     }
