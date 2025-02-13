@@ -49,11 +49,7 @@ public class Philosopher extends JmcThread {
 
     @Override
     public void run1() {
-        try {
-            think();
-            tryToEat();
-        } catch (JMCInterruptException e) {
-
-        }
+        think();
+        tryToEat();
     }
 }

@@ -17,6 +17,9 @@ import org.mpisws.concurrent.programs.det.stack.Client6;
 import org.mpisws.concurrent.programs.dining.DiningPhilosophers;
 import org.mpisws.concurrent.programs.wrong.counter.BuggyCounter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class JmcModelCheckerTest {
 
     @Test
@@ -38,7 +41,7 @@ public class JmcModelCheckerTest {
     @Test
     void testRandomCorrectCounter() {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(1000).build();
+                new JmcCheckerConfiguration.Builder().numIterations(100000).build();
 
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
@@ -215,7 +218,7 @@ public class JmcModelCheckerTest {
     @Test
     void testRandomDiningPhilosophers() {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).build();
+                new JmcCheckerConfiguration.Builder().numIterations(100).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
@@ -226,6 +229,28 @@ public class JmcModelCheckerTest {
                         });
 
         jmcModelChecker.check(target);
+    }
+
+    @Test
+    void benchmarkRandomDiningPhilosophers() {
+        List<Integer> iterations = List.of(100, 1000, 10000, 30000, 60000, 100000);
+        List<JmcModelCheckerReport> reports = new ArrayList<>();
+        for (int i : iterations) {
+            JmcCheckerConfiguration config =
+                    new JmcCheckerConfiguration.Builder().numIterations(i).build();
+            JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+            JmcTestTarget target =
+                    new JmcFunctionalTestTarget(
+                            "RandomDiningPhilosophers",
+                            () -> {
+                                DiningPhilosophers.main(new String[0]);
+                            });
+
+            reports.add(jmcModelChecker.check(target));
+        }
+        System.out.println(
+                reports.stream().map(JmcModelCheckerReport::getTotalTimeMillis).toList());
     }
 
     @Test
