@@ -4,19 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "27551a664a29fb95",
+        "id": "126dc3ae5ad58ca4",
         "type": "tabs",
         "children": [
           {
-            "id": "fd7107b0524182b7",
+            "id": "eb5fe70b3da4c3fd",
             "type": "leaf",
             "state": {
-              "type": "release-notes",
-              "state": {
-                "currentVersion": "1.8.4"
-              },
-              "icon": "lucide-book-up",
-              "title": "Release Notes 1.8.4"
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
             }
           }
         ]
@@ -158,15 +156,15 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "fd7107b0524182b7",
+  "active": "eb5fe70b3da4c3fd",
   "lastOpenFiles": [
+    "JMC Overview.md",
     "Scheduler.md",
     "Runtime.md",
     "Backlog.md",
     "Symbolic execution engine.md",
     "Concurrent primitives.md",
     "Developing.md",
-    "JMC Overview.md",
     "Byte code Instrumentation/Park and Unpark Instrumentation.md",
     "Byte code Instrumentation/Assert Instrumentation.md",
     "Byte code Modifier.md",

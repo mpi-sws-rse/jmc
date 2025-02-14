@@ -2,7 +2,6 @@ package org.mpisws.concurrent.programs.nondet.lists;
 
 import org.mpisws.concurrent.programs.nondet.lists.list.Element;
 import org.mpisws.concurrent.programs.nondet.lists.list.Set;
-import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class InsertionThread extends Thread {
 
@@ -16,10 +15,10 @@ public class InsertionThread extends Thread {
 
     @Override
     public void run() {
-        try {
+//        try {
             set.add(item);
-        } catch (JMCInterruptException e) {
-            System.out.println("Insertion interrupted");
-        }
+//        } catch (JMCInterruptException e) {
+//            System.out.println("Insertion interrupted");
+//        }
     }
 }

@@ -1,7 +1,5 @@
 package org.mpisws.concurrent.programs.nondet.stack;
 
-import org.mpisws.util.concurrent.JMCInterruptException;
-
 public class DeletionThread extends Thread {
 
     public Stack<Integer> stack;
@@ -14,10 +12,10 @@ public class DeletionThread extends Thread {
 
     @Override
     public void run() {
-        try {
+//        try {
             stack.pop();
-        } catch (JMCInterruptException e) {
-            System.out.println("Interrupted");
-        }
+//        } catch (JMCInterruptException e) {
+//            System.out.println("Interrupted");
+//        }
     }
 }

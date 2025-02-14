@@ -1,22 +1,20 @@
 package org.mpisws.concurrent.programs.correct.counter;
 
-import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.JmcThread;
-import org.mpisws.util.concurrent.ReentrantLock;
-import org.mpisws.util.concurrent.Utils;
+import org.mpisws.util.concurrent.JmcReentrantLock;
 
 public class CorrectCounter extends JmcThread {
-    ReentrantLock lock;
+    JmcReentrantLock lock;
     Counter counter;
 
-    public CorrectCounter(Counter counter, ReentrantLock lock) {
+    public CorrectCounter(Counter counter, JmcReentrantLock lock) {
         super();
         this.counter = counter;
         this.lock = lock;
     }
 
     @Override
-    public void run1() throws JMCInterruptException {
+    public void run1()  {
         lock.lock();
         counter.count = counter.count + 1;
         lock.unlock();
@@ -24,7 +22,7 @@ public class CorrectCounter extends JmcThread {
 
     public static void main(String[] args) {
         Counter counter = new Counter();
-        ReentrantLock lock = new ReentrantLock();
+        JmcReentrantLock lock = new JmcReentrantLock();
         CorrectCounter thread1 = new CorrectCounter(counter, lock);
         CorrectCounter thread2 = new CorrectCounter(counter, lock);
         CorrectCounter thread3 = new CorrectCounter(counter, lock);

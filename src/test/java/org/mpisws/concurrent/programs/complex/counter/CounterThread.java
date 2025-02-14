@@ -1,14 +1,13 @@
 package org.mpisws.concurrent.programs.complex.counter;
 
-import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.JmcThread;
-import org.mpisws.util.concurrent.ReentrantLock;
+import org.mpisws.util.concurrent.JmcReentrantLock;
 
 public class CounterThread extends JmcThread {
     Counter counter;
-    ReentrantLock lock;
+    JmcReentrantLock lock;
 
-    public CounterThread(Counter counter, ReentrantLock lock) {
+    public CounterThread(Counter counter, JmcReentrantLock lock) {
         super();
         this.counter = counter;
         this.lock = lock;
@@ -16,14 +15,14 @@ public class CounterThread extends JmcThread {
 
     @Override
     public void run1() {
-        try {
+//        try {
             lock.lock();
             counter.count = counter.count + 1;
             lock.unlock();
-        } catch (JMCInterruptException e) {
-            System.out.println(
-                    "[" + this.getName() + " message] : " + "The thread was interrupted.");
-        }
+//        } catch (JMCInterruptException e) {
+//            System.out.println(
+//                    "[" + this.getName() + " message] : " + "The thread was interrupted.");
+//        }
     }
 
     public void exe() {

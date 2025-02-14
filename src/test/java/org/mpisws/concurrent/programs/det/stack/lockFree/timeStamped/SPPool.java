@@ -1,18 +1,17 @@
 package org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped;
 
-import org.mpisws.util.concurrent.AtomicReference;
-import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.JmcAtomicReference;
 
 public class SPPool<V> {
     public final long id;
-    public final AtomicReference<TNode<V>> head;
+    public final JmcAtomicReference<TNode<V>> head;
 
     public SPPool(long id) {
         this.id = id;
         TNode<V> sentinel = new TNode<>(null, true);
         sentinel.next = sentinel;
         sentinel.timeStamp = new TimeStamp(-1);
-        this.head = new AtomicReference<>(sentinel);
+        this.head = new JmcAtomicReference<>(sentinel);
     }
 
     public TNode insert(V item) {
@@ -41,7 +40,7 @@ public class SPPool<V> {
         }
     }
 
-    Result remove(TNode<V> oldTop, TNode<V> node) throws JMCInterruptException {
+    Result remove(TNode<V> oldTop, TNode<V> node) {
         if (node.taken.compareAndSet(false, true)) {
             head.compareAndSet(oldTop, node);
             if (oldTop != node) {

@@ -1,6 +1,7 @@
 package org.mpisws.concurrent.programs.complex.counter;
 
-import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.runtime.HaltExecutionException;
+import org.mpisws.runtime.HaltTaskException;
 
 /**
  * This is a simple concurrent counter program with complex structure. The predicted verdict is that
@@ -12,7 +13,7 @@ public class ComplexCounter {
         try {
             Dummy dummy = new Dummy();
             dummy.exe();
-        } catch (JMCInterruptException | InterruptedException e) {
+        } catch (InterruptedException | HaltExecutionException | HaltTaskException e) {
             System.out.println("JMCInterruptException thrown");
         }
     }

@@ -2,14 +2,13 @@ package org.mpisws.concurrent.programs.det.stack.lockFree;
 
 import org.mpisws.concurrent.programs.det.stack.Backoff;
 import org.mpisws.concurrent.programs.det.stack.Stack;
-import org.mpisws.util.concurrent.AtomicReference;
-import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.JmcAtomicReference;
 
 public class LockFreeStack<V> implements Stack<V> {
 
     public final int MIN_DELAY = 1;
     public final int MAX_DELAY = 10;
-    public AtomicReference<Node<V>> top = new AtomicReference<>(null);
+    public JmcAtomicReference<Node<V>> top = new JmcAtomicReference<>(null);
     public Backoff backoff = new Backoff(MIN_DELAY, MAX_DELAY);
 
     protected boolean tryPush(Node<V> node) {

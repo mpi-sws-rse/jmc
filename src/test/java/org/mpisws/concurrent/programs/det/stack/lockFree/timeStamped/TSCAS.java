@@ -1,17 +1,16 @@
 package org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped;
 
-import org.mpisws.util.concurrent.AtomicInteger;
-import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.JmcAtomicInteger;
 
 public class TSCAS {
 
-    public AtomicInteger counter;
+    public JmcAtomicInteger counter;
 
     public TSCAS() {
-        this.counter = new AtomicInteger(1);
+        this.counter = new JmcAtomicInteger(1);
     }
 
-    public TimeStamp newStamp() throws JMCInterruptException {
+    public TimeStamp newStamp() {
         int timeStamp = counter.get();
         // Delay is omitted
         int newTimeStamp = counter.get();

@@ -1,7 +1,6 @@
 package org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped;
 
 import org.mpisws.concurrent.programs.det.stack.Stack;
-import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class TSStack<V> implements Stack<V> {
 
@@ -20,10 +19,10 @@ public class TSStack<V> implements Stack<V> {
 
     /**
      * @param item
-     * @throws JMCInterruptException
+     * @
      */
     @Override
-    public void push(V item) throws JMCInterruptException {
+    public void push(V item)  {
         PusherThread thread = (PusherThread) Thread.currentThread();
         int threadID = thread.id;
         SPPool pool = spPools[threadID];
@@ -33,10 +32,10 @@ public class TSStack<V> implements Stack<V> {
 
     /**
      * @return
-     * @throws JMCInterruptException
+     * @
      */
     @Override
-    public V pop() throws JMCInterruptException {
+    public V pop()  {
         TimeStamp startTime = ts_cas.newStamp();
         boolean success;
         V element;
@@ -48,7 +47,7 @@ public class TSStack<V> implements Stack<V> {
         return element;
     }
 
-    private Result tryRem(TimeStamp startTime) throws JMCInterruptException {
+    private Result tryRem(TimeStamp startTime)  {
         TNode<V> youngest = null;
         TimeStamp timeStamp = new TimeStamp(-1);
         SPPool<V> pool = null;

@@ -1,16 +1,15 @@
 package org.mpisws.concurrent.programs.det.loopVariant;
 
-import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.JmcThread;
-import org.mpisws.util.concurrent.ReentrantLock;
+import org.mpisws.util.concurrent.JmcReentrantLock;
 
 public class IncThread extends JmcThread {
 
     Numbers numbers;
-    public ReentrantLock lock;
+    public JmcReentrantLock lock;
     int k;
 
-    public IncThread(ReentrantLock lock, Numbers numbers, int k) {
+    public IncThread(JmcReentrantLock lock, Numbers numbers, int k) {
         super();
         this.numbers = numbers;
         this.lock = lock;
@@ -19,7 +18,7 @@ public class IncThread extends JmcThread {
 
     @Override
     public void run1() {
-        try {
+//        try {
             int t;
             lock.lock();
             t = numbers.x;
@@ -27,8 +26,8 @@ public class IncThread extends JmcThread {
                 numbers.x = t + 1;
             }
             lock.unlock();
-        } catch (JMCInterruptException e) {
-
-        }
+//        } catch (JMCInterruptException e) {
+//
+//        }
     }
 }

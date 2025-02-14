@@ -1,7 +1,6 @@
 package org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped;
 
 import org.mpisws.concurrent.programs.nondet.stack.Stack;
-import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class PusherThread extends Thread {
 
@@ -19,10 +18,10 @@ public class PusherThread extends Thread {
 
     @Override
     public void run() {
-        try {
+//        try {
             stack.push(item);
-        } catch (JMCInterruptException e) {
-            System.out.println("Interrupted");
-        }
+//        } catch (JMCInterruptException e) {
+//            System.out.println("Interrupted");
+//        }
     }
 }

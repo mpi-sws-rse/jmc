@@ -1,6 +1,6 @@
 package org.mpisws.concurrent.programs.det.loopVariant;
 
-import org.mpisws.util.concurrent.ReentrantLock;
+import org.mpisws.util.concurrent.JmcReentrantLock;
 
 import java.util.ArrayList;
 
@@ -15,7 +15,7 @@ public class DetLoopWithLock {
         //        AssertThread assertThread1 = new AssertThread(numbers);
         //        assertThread1.start();
 
-        ReentrantLock lock = new ReentrantLock();
+        JmcReentrantLock lock = new JmcReentrantLock();
         ArrayList<IncThread> threads = new ArrayList<>(SIZE);
         for (int i = 0; i < SIZE; i++) {
             threads.add(new IncThread(lock, numbers, i + 1));

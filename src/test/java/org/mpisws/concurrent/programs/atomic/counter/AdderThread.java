@@ -1,13 +1,14 @@
 package org.mpisws.concurrent.programs.atomic.counter;
 
-import org.mpisws.util.concurrent.AtomicInteger;
-import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.runtime.HaltCheckerException;
+import org.mpisws.runtime.HaltTaskException;
+import org.mpisws.util.concurrent.JmcAtomicInteger;
 import org.mpisws.util.concurrent.JmcThread;
 
 public class AdderThread extends JmcThread {
-    private final AtomicInteger counter;
+    private final JmcAtomicInteger counter;
 
-    public AdderThread(AtomicInteger counter) {
+    public AdderThread(JmcAtomicInteger counter) {
         super();
         this.counter = counter;
     }
@@ -16,7 +17,7 @@ public class AdderThread extends JmcThread {
     public void run1() {
         try {
             counter.compareAndSet(0, 1);
-        } catch (JMCInterruptException e) {
+        } catch (HaltTaskException | HaltCheckerException e) {
             System.out.println("Interrupted");
         }
     }

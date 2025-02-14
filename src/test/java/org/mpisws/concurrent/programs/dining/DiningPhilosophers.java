@@ -1,6 +1,6 @@
 package org.mpisws.concurrent.programs.dining;
 
-import org.mpisws.util.concurrent.ReentrantLock;
+import org.mpisws.util.concurrent.JmcReentrantLock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,15 +12,15 @@ public class DiningPhilosophers {
         final int NUM_PHILOSOPHERS = 3;
 
         List<Philosopher> philosophers = new ArrayList<>(NUM_PHILOSOPHERS);
-        List<ReentrantLock> sticks = new ArrayList<>(NUM_PHILOSOPHERS);
+        List<JmcReentrantLock> sticks = new ArrayList<>(NUM_PHILOSOPHERS);
 
         for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
-            sticks.add(new ReentrantLock());
+            sticks.add(new JmcReentrantLock());
         }
 
         for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
-            ReentrantLock leftFork = sticks.get(i);
-            ReentrantLock rightFork = sticks.get((i + 1) % NUM_PHILOSOPHERS);
+            JmcReentrantLock leftFork = sticks.get(i);
+            JmcReentrantLock rightFork = sticks.get((i + 1) % NUM_PHILOSOPHERS);
             philosophers.add(new Philosopher(i, leftFork, rightFork));
         }
 

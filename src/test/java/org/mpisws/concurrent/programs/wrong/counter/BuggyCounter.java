@@ -2,9 +2,8 @@ package org.mpisws.concurrent.programs.wrong.counter;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.JmcThread;
-import org.mpisws.util.concurrent.ReentrantLock;
+import org.mpisws.util.concurrent.JmcReentrantLock;
 
 /**
  * This is simple concurrent counter program that demonstrates a deadlock between two threads over
@@ -16,11 +15,11 @@ public class BuggyCounter extends JmcThread {
 
     Counter counter1;
     Counter counter2;
-    ReentrantLock lock1;
-    ReentrantLock lock2;
+    JmcReentrantLock lock1;
+    JmcReentrantLock lock2;
 
     public BuggyCounter(
-            Counter counter1, Counter counter2, ReentrantLock lock1, ReentrantLock lock2) {
+            Counter counter1, Counter counter2, JmcReentrantLock lock1, JmcReentrantLock lock2) {
         super();
         this.counter1 = counter1;
         this.counter2 = counter2;
@@ -30,26 +29,26 @@ public class BuggyCounter extends JmcThread {
 
     @Override
     public void run1() {
-        try {
+//        try {
             lock1.lock();
             this.counter1.count++;
             lock2.lock();
             this.counter2.count++;
             lock2.unlock();
             lock1.unlock();
-        } catch (JMCInterruptException e) {
-            System.out.println(
-                    "["
-                            + Thread.currentThread().getName()
-                            + " message] : The thread is interrupted");
-        }
+//        } catch (JMCInterruptException e) {
+//            System.out.println(
+//                    "["
+//                            + Thread.currentThread().getName()
+//                            + " message] : The thread is interrupted");
+//        }
     }
 
     public static void main(String[] args) {
         Counter counter1 = new Counter();
         Counter counter2 = new Counter();
-        ReentrantLock lock1 = new ReentrantLock();
-        ReentrantLock lock2 = new ReentrantLock();
+        JmcReentrantLock lock1 = new JmcReentrantLock();
+        JmcReentrantLock lock2 = new JmcReentrantLock();
 
         BuggyCounter thread1 = new BuggyCounter(counter1, counter2, lock1, lock2);
         BuggyCounter thread2 = new BuggyCounter(counter2, counter1, lock2, lock1);

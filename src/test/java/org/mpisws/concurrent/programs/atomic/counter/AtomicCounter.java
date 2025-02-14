@@ -1,11 +1,11 @@
 package org.mpisws.concurrent.programs.atomic.counter;
 
-import org.mpisws.util.concurrent.AtomicInteger;
+import org.mpisws.util.concurrent.JmcAtomicInteger;
 
 public class AtomicCounter {
 
     public static void main(String[] args) {
-        AtomicInteger counter = new AtomicInteger();
+        JmcAtomicInteger counter = new JmcAtomicInteger();
         AdderThread adder1 = new AdderThread(counter);
         AdderThread adder2 = new AdderThread(counter);
         adder1.start();

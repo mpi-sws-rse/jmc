@@ -1,7 +1,6 @@
 package org.mpisws.concurrent.programs.nondet.stack.lockFree.timeStamped;
 
 import org.mpisws.concurrent.programs.nondet.stack.Stack;
-import org.mpisws.util.concurrent.JMCInterruptException;
 
 public class PoperThread extends Thread {
 
@@ -15,10 +14,10 @@ public class PoperThread extends Thread {
 
     @Override
     public void run() {
-        try {
+//        try {
             stack.pop();
-        } catch (JMCInterruptException e) {
-            System.out.println("Interrupted");
-        }
+//        } catch (JMCInterruptException e) {
+//            System.out.println("Interrupted");
+//        }
     }
 }

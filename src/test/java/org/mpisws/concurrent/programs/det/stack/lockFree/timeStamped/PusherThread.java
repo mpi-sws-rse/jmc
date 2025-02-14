@@ -1,7 +1,6 @@
 package org.mpisws.concurrent.programs.det.stack.lockFree.timeStamped;
 
 import org.mpisws.concurrent.programs.det.stack.Stack;
-import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.JmcThread;
 
 public class PusherThread extends JmcThread {
@@ -23,10 +22,10 @@ public class PusherThread extends JmcThread {
 
     @Override
     public void run1() {
-        try {
+//        try {
             stack.push(item);
-        } catch (JMCInterruptException e) {
-            System.out.println("Interrupted");
-        }
+//        } catch (JMCInterruptException e) {
+//            System.out.println("Interrupted");
+//        }
     }
 }

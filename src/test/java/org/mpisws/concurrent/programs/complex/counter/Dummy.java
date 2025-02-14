@@ -1,13 +1,12 @@
 package org.mpisws.concurrent.programs.complex.counter;
 
-import org.mpisws.util.concurrent.JMCInterruptException;
-import org.mpisws.util.concurrent.ReentrantLock;
+import org.mpisws.util.concurrent.JmcReentrantLock;
 
 public class Dummy {
 
-    public void exe() throws InterruptedException, JMCInterruptException {
+    public void exe() throws InterruptedException {
         Counter counter = new Counter();
-        ReentrantLock lock = new ReentrantLock();
+        JmcReentrantLock lock = new JmcReentrantLock();
         CounterThread thread1 = new CounterThread(counter, lock);
         CounterThread thread2 = new CounterThread(counter, lock);
         thread1.exe();

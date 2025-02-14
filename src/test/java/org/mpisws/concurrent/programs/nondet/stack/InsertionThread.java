@@ -1,7 +1,5 @@
 package org.mpisws.concurrent.programs.nondet.stack;
 
-import org.mpisws.util.concurrent.JMCInterruptException;
-
 public class InsertionThread extends Thread {
 
     public Stack<Integer> stack;
@@ -16,10 +14,10 @@ public class InsertionThread extends Thread {
 
     @Override
     public void run() {
-        try {
+//        try {
             stack.push(item);
-        } catch (JMCInterruptException e) {
-            System.out.println("Interrupted");
-        }
+//        } catch (JMCInterruptException e) {
+//            System.out.println("Interrupted");
+//        }
     }
 }
