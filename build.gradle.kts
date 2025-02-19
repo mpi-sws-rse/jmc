@@ -24,6 +24,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("net.bytebuddy:byte-buddy:1.17.1")
+    implementation("net.bytebuddy:byte-buddy-agent:1.17.1")
     implementation("org.ow2.asm:asm:9.7")
     implementation("org.ow2.asm:asm-util:9.7")
     implementation("org.ow2.asm:asm-commons:9.7")

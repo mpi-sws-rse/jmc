@@ -4,7 +4,17 @@ import org.mpisws.runtime.JmcRuntime;
 import org.mpisws.runtime.RuntimeEvent;
 import org.mpisws.runtime.RuntimeEventType;
 
+/**
+ * A reentrant lock that can be used to synchronize access to shared resources.
+ *
+ * <p>Replacement for java.util.concurrent.ReentrantLock</p>
+ * <p>Yields control to the runtime for lock and unlock.
+ */
 public class JmcReentrantLock {
+
+    /**
+     * Acquires the lock.
+     */
     public void lock() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
@@ -24,6 +34,9 @@ public class JmcReentrantLock {
         JmcRuntime.updateEvent(event);
     }
 
+    /**
+     * Releases the lock.
+     */
     public void unlock() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()

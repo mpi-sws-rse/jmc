@@ -5,6 +5,7 @@ import org.mpisws.concurrent.programs.atomic.counter.AtomicCounter;
 import org.mpisws.concurrent.programs.complex.counter.ComplexCounter;
 import org.mpisws.concurrent.programs.concurrent.ConcurrentCounter;
 import org.mpisws.concurrent.programs.correct.counter.CorrectCounter;
+import org.mpisws.concurrent.programs.correct.counter.CorrectCounterKt;
 import org.mpisws.concurrent.programs.det.array.DetArray;
 import org.mpisws.concurrent.programs.det.loop.DetLoop;
 import org.mpisws.concurrent.programs.det.loopVariant.DetLoopWithLock;
@@ -264,6 +265,23 @@ public class JmcModelCheckerTest {
                         "RandomBuggyCounter",
                         () -> {
                             BuggyCounter.main(new String[0]);
+                        });
+
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testRandomCorrectCounterKt() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(100).build();
+
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomCorrectCounterKt",
+                        () -> {
+                            CorrectCounterKt.main();
                         });
 
         jmcModelChecker.check(target);
