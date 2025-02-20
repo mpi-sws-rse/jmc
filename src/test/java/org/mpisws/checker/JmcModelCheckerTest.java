@@ -16,6 +16,7 @@ import org.mpisws.concurrent.programs.det.stack.Client4;
 import org.mpisws.concurrent.programs.det.stack.Client5;
 import org.mpisws.concurrent.programs.det.stack.Client6;
 import org.mpisws.concurrent.programs.dining.DiningPhilosophers;
+import org.mpisws.concurrent.programs.futures.SimpleFuture;
 import org.mpisws.concurrent.programs.wrong.counter.BuggyCounter;
 
 import java.util.ArrayList;
@@ -282,6 +283,23 @@ public class JmcModelCheckerTest {
                         "RandomCorrectCounterKt",
                         () -> {
                             CorrectCounterKt.main();
+                        });
+
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testRandomFutureSimple() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(10).build();
+
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomFutureSimple",
+                        () -> {
+                            SimpleFuture.main(new String[0]);
                         });
 
         jmcModelChecker.check(target);
