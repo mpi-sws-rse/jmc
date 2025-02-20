@@ -12,6 +12,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * An executor service that runs tasks in new threads.
+ *
+ * <p>Currently, the executor service does not support stopping tasks.
+ */
 public class JmcExecutorService implements ExecutorService {
 
     /** Stops the executor service. Currently not supported. */
