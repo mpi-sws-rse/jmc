@@ -7,11 +7,13 @@ import org.mpisws.checker.JmcTestTarget;
 public class InstrumentationTest {
     @Test
     public void testInstrumentation() {
-        JmcTestTarget target = new JmcFunctionalTestTarget("TestTarget", () -> {
-                System.out.println("Invoking target");
-            }
-        );
-        target = Instrumentor.instrument(target);
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TestTarget",
+                        () -> {
+                            System.out.println("Invoking target");
+                        });
+        target = Instrumentor.instrumentLoaded(target);
         target.invoke();
     }
 }

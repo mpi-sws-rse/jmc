@@ -26,11 +26,8 @@ public class InstrumentedTarget implements JmcTestTarget {
         return "Instrumented_" + baseTarget.name();
     }
 
-    /**
-     * Invokes the target, implementing JmcTestTarget interface.
-     */
+    /** Invokes the target, implementing JmcTestTarget interface. */
     public void invoke() {
         baseTarget.invoke();
     }
-
 }

@@ -44,7 +44,7 @@ public class JmcModelChecker {
      * @return the instrumented target
      */
     public JmcTestTarget instrument(JmcTestTarget target) {
-        return Instrumentor.instrument(target);
+        return Instrumentor.instrumentLoaded(target);
     }
 
     /**
