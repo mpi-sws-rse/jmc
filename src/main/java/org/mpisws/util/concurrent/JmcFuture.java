@@ -19,6 +19,9 @@ public class JmcFuture<T> implements Future<T> {
     private Long taskId;
     private JmcThread thread;
 
+    // TODO: Add a constructor that has a particular result value to return.
+    // TODO: Add a constructor to take in a runnable and check if the runnable is already a
+    //   JmcThread, reuse the taskId in that case.
     public JmcFuture(Callable<T> function, Long taskId) {
         this.future = new CompletableFuture<>();
         this.taskId = taskId;

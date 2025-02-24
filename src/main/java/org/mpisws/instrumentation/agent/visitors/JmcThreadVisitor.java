@@ -35,7 +35,7 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
             MethodList<?> methodList,
             int i,
             int i1) {
-        return null;
+        return new ThreadClassVisitor(new ThreadCallReplacerClassVisitor(classVisitor));
     }
 
     private static class ThreadClassVisitor extends ClassVisitor {
@@ -109,7 +109,7 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
                 Class<?> ownerClass =
                         Class.forName(fqcn, false, Thread.currentThread().getContextClassLoader());
                 // Check if owner class is not JmcThread and is a subclass of Thread.
-                
+
                 return Thread.class.isAssignableFrom(ownerClass);
             } catch (ClassNotFoundException e) {
                 // If the class is not found, we conservatively return false.
