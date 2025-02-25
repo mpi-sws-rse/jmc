@@ -41,6 +41,7 @@ dependencies {
 }
 
 task("agentJar", ShadowJar::class) {
+    archiveVersion.set("")
     archiveClassifier.set("agent")
     from(sourceSets.main.get().output) {
         include("org/mpisws/instrumentation/agent/**")

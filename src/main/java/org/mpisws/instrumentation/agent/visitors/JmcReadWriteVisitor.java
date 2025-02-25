@@ -9,6 +9,7 @@ import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.jar.asm.ClassVisitor;
 import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.jar.asm.Opcodes;
+import net.bytebuddy.jar.asm.Type;
 import net.bytebuddy.pool.TypePool;
 
 public class JmcReadWriteVisitor implements AsmVisitorWrapper {
@@ -51,42 +52,58 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
 
     public static class ReadWriteMethodVisitor extends MethodVisitor {
 
-        public ReadWriteMethodVisitor(MethodVisitor mv) {
+        private final String owner;
+
+        public ReadWriteMethodVisitor(MethodVisitor mv, String owner) {
             super(Opcodes.ASM9, mv);
+            this.owner = owner;
         }
 
-        /** Instrument field instructions (read or write). */
-        @Override
-        public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
-            // Insert a call to MyLogger.logAccess() before the field access.
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "MyLogger", "logAccess", "()V", false);
-            super.visitFieldInsn(opcode, owner, name, descriptor);
-        }
-
-        /** Instrument local variable load and store instructions. */
-        @Override
-        public void visitVarInsn(int opcode, int var) {
-            // Opcodes for loads (ILOAD, LLOAD, FLOAD, DLOAD, ALOAD) and stores (ISTORE, LSTORE,
-            // FSTORE, DSTORE, ASTORE)
-            if ((opcode >= Opcodes.ILOAD && opcode <= Opcodes.ALOAD)
-                    || (opcode >= Opcodes.ISTORE && opcode <= Opcodes.ASTORE)) {
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "MyLogger", "logAccess", "()V", false);
+        private void insertUpdateEventCall(
+                String owner, boolean isWrite, String name, String descriptor) {
+            if (!isWrite) {
+                VisitorHelper.insertRead(mv, owner, name, descriptor);
+            } else {
+                VisitorHelper.insertWrite(mv, owner, name, descriptor);
             }
-            super.visitVarInsn(opcode, var);
         }
 
         /**
-         * Instrument array access instructions. These opcodes include array loads (IALOAD, LALOAD,
-         * FALOAD, DALOAD, AALOAD, BALOAD, CALOAD, SALOAD) and array stores (IASTORE, LASTORE,
-         * FASTORE, DASTORE, AASTORE, BASTORE, CASTORE, SASTORE).
+         * Instrument field accesses. GETFIELD and GETSTATIC are considered "Read" accesses,
+         * PUTFIELD and PUTSTATIC are considered "Write" accesses.
+         *
+         * <p>For put instructions the top of the stack is duplicated based on the type of the
+         * field.
          */
         @Override
-        public void visitInsn(int opcode) {
-            if ((opcode >= Opcodes.IALOAD && opcode <= Opcodes.SALOAD)
-                    || (opcode >= Opcodes.IASTORE && opcode <= Opcodes.SASTORE)) {
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "MyLogger", "logAccess", "()V", false);
+        public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
+            boolean shouldInstrument = false;
+            boolean isWrite = false;
+            Type fieldType = Type.getType(descriptor);
+            boolean isWide = fieldType.getSize() == 2;
+            if (opcode == Opcodes.GETFIELD || opcode == Opcodes.GETSTATIC) {
+                shouldInstrument = true;
+            } else if (opcode == Opcodes.PUTFIELD) {
+                shouldInstrument = true;
+                isWrite = true;
+                if (isWide) {
+                    mv.visitInsn(Opcodes.DUP2_X1);
+                } else {
+                    mv.visitInsn(Opcodes.DUP_X1);
+                }
+            } else if (opcode == Opcodes.PUTSTATIC) {
+                shouldInstrument = true;
+                isWrite = true;
+                if (isWide) {
+                    mv.visitInsn(Opcodes.DUP2);
+                } else {
+                    mv.visitInsn(Opcodes.DUP);
+                }
             }
-            super.visitInsn(opcode);
+            super.visitFieldInsn(opcode, owner, name, descriptor);
+            if (shouldInstrument) {
+                insertUpdateEventCall(owner, isWrite, name, descriptor);
+            }
         }
     }
 }
