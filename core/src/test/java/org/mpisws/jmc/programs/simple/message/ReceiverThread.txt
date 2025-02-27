@@ -1,0 +1,32 @@
+// class version 61.0 (61)
+// access flags 0x21
+public class org/mpisws/concurrent/programs/simple/message/ReceiverThread extends org/mpisws/util/concurrent/JMCThread {
+
+  // compiled from: ReceiverThread.java
+
+  // access flags 0x1
+  public <init>()V
+   L0
+    LINENUMBER 6 L0
+    ALOAD 0
+    INVOKESPECIAL org/mpisws/util/concurrent/JMCThread.<init> ()V
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 1
+
+  // access flags 0x1
+  public run()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L0
+    LINENUMBER 10 L0
+    INVOKESTATIC org/mpisws/util/concurrent/MessageServer.recv_msg ()Ljava/lang/Object;
+    POP
+   L1
+    LINENUMBER 11 L1
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 1
+}

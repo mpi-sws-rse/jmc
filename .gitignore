@@ -5,7 +5,7 @@ build/
 !**/src/test/**/build/
 src/main/java/org/mpisws/checker/*.class
 src/main/java/org/mpisws/checker/strategy/*.class
-src/main/resources/
+core/src/main/resources/
 src/main/java/org/mpisws/runtime/*.class
 src/main/java/org/mpisws/solver/*.class
 src/main/java/org/mpisws/symbolic/*.class

@@ -323,7 +323,7 @@ violates the assertion. The trust strategy employed by JMC will eventually ident
 execution
 graphs that leads to the assertion violation which is found by JMC for for the SimpleCounter is as follows:
 
-![Graph Visualization](../sampleGraph.png)
+![Graph Visualization](sampleGraph.png)
 
 Also, JMC will store the found buggy trace by the trust strategy, and it is possible to replay the buggy trace and debug
 the program.
@@ -544,7 +544,7 @@ deadlock. One of the execution graphs that leads to the deadlock which is found 
 with `NUM_PHILOSOPHERS =3`
 is as follows:
 
-![Graph Visualization](../sampleGraph2.png)
+![Graph Visualization](sampleGraph2.png)
 
 Indeed, JMC will store the found buggy trace by the trust strategy, and it is possible to replay the buggy trace and
 debug the program.

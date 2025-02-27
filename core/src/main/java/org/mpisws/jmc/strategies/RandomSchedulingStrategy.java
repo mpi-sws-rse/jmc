@@ -1,0 +1,44 @@
+package org.mpisws.jmc.strategies;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.mpisws.jmc.runtime.SchedulingChoice;
+
+import java.util.Random;
+import java.util.Set;
+
+/** A random scheduling strategy that selects the next thread to be scheduled randomly. */
+public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
+
+    private static final Logger LOGGER = LogManager.getLogger(RandomSchedulingStrategy.class);
+
+    private final Random random;
+
+    /**
+     * Constructs a new RandomSchedulingStrategy object.
+     *
+     * @param seed the seed for the random number generator
+     */
+    public RandomSchedulingStrategy(Long seed) {
+        this.random = new Random(seed);
+    }
+
+    /**
+     * Returns the next task to be scheduled. The task is picked randomly from the set of active
+     * tasks.
+     *
+     * @return the next task to be scheduled
+     */
+    @Override
+    public SchedulingChoice nextTask() {
+        Set<Long> activeThreads = getActiveTasks();
+        if (activeThreads.isEmpty()) {
+            return null;
+        }
+        if (activeThreads.size() == 1) {
+            return SchedulingChoice.task((Long) activeThreads.toArray()[0]);
+        }
+        int index = random.nextInt(activeThreads.size());
+        return SchedulingChoice.task((Long) activeThreads.toArray()[index]);
+    }
+}
