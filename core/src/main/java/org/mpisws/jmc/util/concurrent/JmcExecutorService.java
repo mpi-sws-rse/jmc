@@ -1,6 +1,5 @@
 package org.mpisws.jmc.util.concurrent;
 
-import org.jetbrains.annotations.NotNull;
 import org.mpisws.jmc.runtime.JmcRuntime;
 
 import java.util.Collection;
@@ -24,7 +23,6 @@ public class JmcExecutorService implements ExecutorService {
     public void shutdown() {}
 
     /** Stops the executor service. Currently not supported. */
-    @NotNull
     @Override
     public List<Runnable> shutdownNow() {
         return List.of();
@@ -44,23 +42,20 @@ public class JmcExecutorService implements ExecutorService {
 
     /** Waits for the executor service to terminate. */
     @Override
-    public boolean awaitTermination(long l, @NotNull TimeUnit timeUnit)
-            throws InterruptedException {
+    public boolean awaitTermination(long l, TimeUnit timeUnit) throws InterruptedException {
         return false;
     }
 
     /** Submits a callable task to the executor service. */
-    @NotNull
     @Override
-    public <T> Future<T> submit(@NotNull Callable<T> callable) {
+    public <T> Future<T> submit(Callable<T> callable) {
         JmcFuture<T> future = new JmcFuture<>(callable, JmcRuntime.addNewTask());
         future.run();
         return future;
     }
 
-    @NotNull
     @Override
-    public <T> Future<T> submit(@NotNull Runnable runnable, T t) {
+    public <T> Future<T> submit(Runnable runnable, T t) {
         JmcFuture<T> future =
                 new JmcFuture<>(
                         () -> {
@@ -72,9 +67,8 @@ public class JmcExecutorService implements ExecutorService {
         return future;
     }
 
-    @NotNull
     @Override
-    public Future<?> submit(@NotNull Runnable runnable) {
+    public Future<?> submit(Runnable runnable) {
         JmcFuture<?> future =
                 new JmcFuture<>(
                         () -> {
@@ -86,9 +80,8 @@ public class JmcExecutorService implements ExecutorService {
         return future;
     }
 
-    @NotNull
     @Override
-    public <T> List<Future<T>> invokeAll(@NotNull Collection<? extends Callable<T>> collection)
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> collection)
             throws InterruptedException {
         // Map each callable to a future and run them
         return collection.stream()
@@ -102,12 +95,9 @@ public class JmcExecutorService implements ExecutorService {
                 .toList();
     }
 
-    @NotNull
     @Override
     public <T> List<Future<T>> invokeAll(
-            @NotNull Collection<? extends Callable<T>> collection,
-            long l,
-            @NotNull TimeUnit timeUnit)
+            Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit)
             throws InterruptedException {
         return collection.stream()
                 .map(
@@ -120,18 +110,14 @@ public class JmcExecutorService implements ExecutorService {
                 .toList();
     }
 
-    @NotNull
     @Override
-    public <T> T invokeAny(@NotNull Collection<? extends Callable<T>> collection)
+    public <T> T invokeAny(Collection<? extends Callable<T>> collection)
             throws InterruptedException, ExecutionException {
         return null;
     }
 
     @Override
-    public <T> T invokeAny(
-            @NotNull Collection<? extends Callable<T>> collection,
-            long l,
-            @NotNull TimeUnit timeUnit)
+    public <T> T invokeAny(Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit)
             throws InterruptedException, ExecutionException, TimeoutException {
         // Currently we do not support timeouts, therefore the timeout here is ignored
         List<JmcFuture<T>> futures =
@@ -158,7 +144,7 @@ public class JmcExecutorService implements ExecutorService {
     }
 
     @Override
-    public void execute(@NotNull Runnable runnable) {
+    public void execute(Runnable runnable) {
         JmcThread thread = new JmcThread(runnable, JmcRuntime.addNewTask());
         thread.start();
     }

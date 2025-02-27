@@ -4,7 +4,7 @@ plugins {
     id("java")
     id("checkstyle")
     id("com.gradleup.shadow") version "9.0.0-beta9"
-    kotlin("jvm") version "1.9.22"
+    id("maven-publish")
 }
 
 repositories {
@@ -16,9 +16,17 @@ checkstyle {
     toolVersion = "10.19.0"
 }
 
+dependencies {
+    implementation("net.bytebuddy:byte-buddy:1.17.1")
+    implementation("net.bytebuddy:byte-buddy-agent:1.17.1")
+    implementation("org.ow2.asm:asm:9.7")
+    implementation("org.ow2.asm:asm-util:9.7")
+    implementation("org.ow2.asm:asm-commons:9.7")
+}
+
 task("agentJar", ShadowJar::class) {
     archiveVersion.set("")
-    archiveClassifier.set("agent")
+    archiveClassifier.set("")
 
     configurations.add(project.configurations.getByName("runtimeClasspath"))
 
@@ -30,6 +38,23 @@ task("agentJar", ShadowJar::class) {
 tasks.test {
     useJUnitPlatform()
 }
-kotlin {
-    jvmToolchain(17)
+
+// Create a publication for the agent jar
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            pom {
+                name = "JMC Agent"
+                description = "A Java agent for instrumenting Java programs"
+                url = "github.com/mpi-sws-rse/jmc"
+            }
+            groupId = "org.mpisws"
+            artifactId = "jmc-agent"
+            version = "0.1.0"
+            artifact(tasks["agentJar"])
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
 }

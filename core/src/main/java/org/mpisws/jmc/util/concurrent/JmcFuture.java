@@ -1,7 +1,5 @@
 package org.mpisws.jmc.util.concurrent;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -71,7 +69,7 @@ public class JmcFuture<T> implements Future<T> {
     }
 
     @Override
-    public T get(long l, @NotNull TimeUnit timeUnit)
+    public T get(long l, TimeUnit timeUnit)
             throws InterruptedException, ExecutionException, TimeoutException {
         // Currently we do not support timeouts, therefore the timeout here is ignored
         thread.join1();

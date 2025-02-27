@@ -1,19 +1,17 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
     id("java")
     id("checkstyle")
-    id("com.gradleup.shadow") version "9.0.0-beta9"
-    kotlin("jvm") version "1.9.22"
+    id("maven-publish")
+    id("java-library")
 }
 
 group = "org.mpisws"
-version = "0.1-SNAPSHOT"
+version = "0.1.0"
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
-
 
 checkstyle {
     toolVersion = "10.19.0"
@@ -26,23 +24,42 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation("com.google.code.gson:gson:2.10.1")
-    implementation("net.bytebuddy:byte-buddy:1.17.1")
-    implementation("net.bytebuddy:byte-buddy-agent:1.17.1")
-    implementation("org.ow2.asm:asm:9.7")
-    implementation("org.ow2.asm:asm-util:9.7")
-    implementation("org.ow2.asm:asm-commons:9.7")
     //implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.9.22") // 1.9.22
     implementation("commons-cli:commons-cli:1.6.0")
     implementation("org.apache.logging.log4j:log4j-api:2.24.3")
     implementation("org.apache.logging.log4j:log4j-api-kotlin:1.5.0")
     implementation("org.apache.logging.log4j:log4j-core:2.24.3")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
+}
 
+java {
+    withSourcesJar()
+}
+
+tasks.withType<Jar> {
+    archiveClassifier.set("sources")
 }
 
 tasks.test {
     useJUnitPlatform()
 }
-kotlin {
-    jvmToolchain(17)
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            pom {
+                name = "JMC Model Checker"
+                description = "A generic model checker for Java programs"
+                url = "github.com/mpi-sws-rse/jmc"
+            }
+            groupId = "org.mpisws"
+            artifactId = "jmc"
+            version = "0.1.0"
+            from(components["java"])
+        }
+    }
+
+    repositories {
+        mavenLocal()
+    }
 }

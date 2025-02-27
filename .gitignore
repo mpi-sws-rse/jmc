@@ -124,6 +124,7 @@ src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/*.tx
 .idea/copilot
 .idea/vcs.xml
 .idea/workspace.xml
+.idea/kotlinc.xml
 *.iws
 *.iml
 *.ipr

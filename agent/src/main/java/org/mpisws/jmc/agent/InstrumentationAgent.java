@@ -1,6 +1,10 @@
 package org.mpisws.jmc.agent;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
+import org.mpisws.jmc.agent.visitors.JmcFutureVisitor;
+import org.mpisws.jmc.agent.visitors.JmcReadWriteVisitor;
+import org.mpisws.jmc.agent.visitors.JmcReentrantLockVisitor;
+import org.mpisws.jmc.agent.visitors.JmcThreadVisitor;
 
 import java.lang.instrument.Instrumentation;
 

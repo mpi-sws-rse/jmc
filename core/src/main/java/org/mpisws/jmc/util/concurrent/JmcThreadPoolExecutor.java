@@ -1,7 +1,5 @@
 package org.mpisws.jmc.util.concurrent;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
@@ -18,8 +16,8 @@ public class JmcThreadPoolExecutor extends ThreadPoolExecutor {
             int corePoolSize,
             int maximumPoolSize,
             long keepAliveTime,
-            @NotNull TimeUnit unit,
-            @NotNull BlockingQueue<Runnable> workQueue) {
+            TimeUnit unit,
+            BlockingQueue<Runnable> workQueue) {
         super(
                 corePoolSize,
                 maximumPoolSize,
@@ -33,9 +31,9 @@ public class JmcThreadPoolExecutor extends ThreadPoolExecutor {
             int corePoolSize,
             int maximumPoolSize,
             long keepAliveTime,
-            @NotNull TimeUnit unit,
-            @NotNull BlockingQueue<Runnable> workQueue,
-            @NotNull ThreadFactory threadFactory) {
+            TimeUnit unit,
+            BlockingQueue<Runnable> workQueue,
+            ThreadFactory threadFactory) {
         super(
                 corePoolSize,
                 maximumPoolSize,
@@ -49,9 +47,9 @@ public class JmcThreadPoolExecutor extends ThreadPoolExecutor {
             int corePoolSize,
             int maximumPoolSize,
             long keepAliveTime,
-            @NotNull TimeUnit unit,
-            @NotNull BlockingQueue<Runnable> workQueue,
-            @NotNull RejectedExecutionHandler handler) {
+            TimeUnit unit,
+            BlockingQueue<Runnable> workQueue,
+            RejectedExecutionHandler handler) {
         super(
                 corePoolSize,
                 maximumPoolSize,
@@ -66,10 +64,10 @@ public class JmcThreadPoolExecutor extends ThreadPoolExecutor {
             int corePoolSize,
             int maximumPoolSize,
             long keepAliveTime,
-            @NotNull TimeUnit unit,
-            @NotNull BlockingQueue<Runnable> workQueue,
-            @NotNull ThreadFactory threadFactory,
-            @NotNull RejectedExecutionHandler handler) {
+            TimeUnit unit,
+            BlockingQueue<Runnable> workQueue,
+            ThreadFactory threadFactory,
+            RejectedExecutionHandler handler) {
         super(
                 corePoolSize,
                 maximumPoolSize,
