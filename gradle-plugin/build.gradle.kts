@@ -14,6 +14,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":agent"))
 }
 
 tasks.test {

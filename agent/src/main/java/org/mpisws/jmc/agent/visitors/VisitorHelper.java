@@ -2,8 +2,21 @@ package org.mpisws.jmc.agent.visitors;
 
 import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.jar.asm.Opcodes;
+import net.bytebuddy.jar.asm.Type;
 
+/**
+ * Helper class for inserting instrumentation to generate RuntimeEvents for field read and write
+ * operations.
+ */
 public class VisitorHelper {
+    /**
+     * Inserts instrumentation to generate a RuntimeEvent for a field read operation.
+     *
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param owner The internal name of the class containing the field.
+     * @param name The name of the field.
+     * @param descriptor The descriptor of the field.
+     */
     public static void insertRead(MethodVisitor mv, String owner, String name, String descriptor) {
         mv.visitTypeInsn(Opcodes.NEW, "org/mpisws/runtime/RuntimeEvent$Builder");
         mv.visitInsn(Opcodes.DUP);
@@ -119,11 +132,22 @@ public class VisitorHelper {
                 false);
     }
 
-    public static void insertWrite(MethodVisitor mv, String owner, String name, String descriptor) {
+    /**
+     * Inserts instrumentation to generate a RuntimeEvent for a field write operation.
+     *
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param owner The internal name of the class containing the field.
+     * @param name The name of the field.
+     * @param descriptor The descriptor of the field.
+     * @param localVarIndex The index of the local variable that holds the new value of the field.
+     */
+    public static void insertWrite(
+            MethodVisitor mv, String owner, String name, String descriptor, int localVarIndex) {
         // Assign the top of the stack to a local variable to be used as the 'newValue' parameter
         // in the RuntimeEvent.Builder constructor.
-        int newValueLocal = 1;
-        mv.visitVarInsn(Opcodes.ASTORE, newValueLocal);
+        int newValueLocal = localVarIndex;
+        Type fieldType = Type.getType(descriptor);
+        mv.visitVarInsn(getStoreOpcode(fieldType), newValueLocal);
 
         mv.visitTypeInsn(Opcodes.NEW, "org/mpisws/runtime/RuntimeEvent$Builder");
         mv.visitInsn(Opcodes.DUP);
@@ -163,12 +187,10 @@ public class VisitorHelper {
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
         // Populate the map:
-        // put("newValue", newValue)  <-- if this is a write, load the value from the local
-        // variable;
-        // otherwise use null.
+        // put("newValue", newValue)
         mv.visitInsn(Opcodes.DUP);
         mv.visitLdcInsn("newValue");
-        // The value to be written is on the stack
+        mv.visitVarInsn(getLoadOpcode(fieldType), newValueLocal);
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
@@ -188,7 +210,7 @@ public class VisitorHelper {
                 "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
                 false);
         mv.visitInsn(Opcodes.POP);
-        // put("name", "value")
+        // put("name", name)
         mv.visitInsn(Opcodes.DUP);
         mv.visitLdcInsn("name");
         mv.visitLdcInsn(name);
@@ -199,7 +221,7 @@ public class VisitorHelper {
                 "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
                 false);
         mv.visitInsn(Opcodes.POP);
-        // put("descriptor", "Z")
+        // put("descriptor", descriptor)
         mv.visitInsn(Opcodes.DUP);
         mv.visitLdcInsn("descriptor");
         mv.visitLdcInsn(descriptor);
@@ -219,7 +241,7 @@ public class VisitorHelper {
                 false);
         // .param("instance", this)
         mv.visitLdcInsn("instance");
-        mv.visitVarInsn(Opcodes.ALOAD, 0); // 'this'
+        mv.visitVarInsn(Opcodes.ALOAD, 0); // 'this' (Problematic. Not always a this)
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
                 "org/mpisws/runtime/RuntimeEvent$Builder",
@@ -240,5 +262,43 @@ public class VisitorHelper {
                 "updateEventAndYield",
                 "(Lorg/mpisws/runtime/RuntimeEvent;)V",
                 false);
+    }
+
+    private static int getLoadOpcode(Type type) {
+        switch (type.getSort()) {
+            case Type.BOOLEAN:
+            case Type.CHAR:
+            case Type.BYTE:
+            case Type.SHORT:
+            case Type.INT:
+                return Opcodes.ILOAD;
+            case Type.FLOAT:
+                return Opcodes.FLOAD;
+            case Type.LONG:
+                return Opcodes.LLOAD;
+            case Type.DOUBLE:
+                return Opcodes.DLOAD;
+            default:
+                return Opcodes.ALOAD;
+        }
+    }
+
+    private static int getStoreOpcode(Type type) {
+        switch (type.getSort()) {
+            case Type.BOOLEAN:
+            case Type.CHAR:
+            case Type.BYTE:
+            case Type.SHORT:
+            case Type.INT:
+                return Opcodes.ISTORE;
+            case Type.FLOAT:
+                return Opcodes.FSTORE;
+            case Type.LONG:
+                return Opcodes.LSTORE;
+            case Type.DOUBLE:
+                return Opcodes.DSTORE;
+            default:
+                return Opcodes.ASTORE;
+        }
     }
 }

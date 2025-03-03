@@ -8,6 +8,10 @@ import org.mpisws.jmc.agent.visitors.JmcThreadVisitor;
 
 import java.lang.instrument.Instrumentation;
 
+/**
+ * The InstrumentationAgent class is the entry point for the instrumentation agent. It is used to
+ * set up the agent and install the instrumentation on the target application.
+ */
 public class InstrumentationAgent {
 
     /** The AgentArgs class is used to parse the agent arguments. */
