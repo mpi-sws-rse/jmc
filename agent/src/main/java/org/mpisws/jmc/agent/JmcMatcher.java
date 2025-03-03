@@ -17,8 +17,29 @@ public class JmcMatcher implements AgentBuilder.RawMatcher {
             TypeDescription typeDescription,
             ClassLoader classLoader,
             JavaModule javaModule,
-            Class<?> aClass,
+            Class<?> aclass,
             ProtectionDomain protectionDomain) {
-        return classLoader != null;
+        if (classLoader == null) {
+            return false;
+        }
+        String classLoaderName = classLoader.getClass().getName();
+        if (classLoaderName.contains("Gradle")
+                || classLoaderName.contains("Maven")
+                || classLoaderName.contains("Ant")
+                || classLoaderName.contains("sbt")) {
+            return false;
+        }
+        String typeName = typeDescription.getName();
+        return !typeName.startsWith("java.")
+                && !typeName.startsWith("javax.")
+                && !typeName.startsWith("sun.")
+                && !typeName.startsWith("com.sun.")
+                && !typeName.startsWith("jdk.")
+                && !typeName.startsWith("kotlin.")
+                && !typeName.startsWith("kotlinx.")
+                && !typeName.startsWith("org.gradle.")
+                && !typeName.startsWith("org.slf4j.")
+                && !typeName.startsWith("worker.org.gradle.")
+                && !typeName.startsWith("org.junit.");
     }
 }

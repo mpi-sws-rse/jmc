@@ -17,6 +17,10 @@ dependencies {
     implementation(project(":agent"))
 }
 
+tasks.named("build") {
+    dependsOn(":agent:publishToMavenLocal")
+}
+
 tasks.test {
     useJUnitPlatform()
 }

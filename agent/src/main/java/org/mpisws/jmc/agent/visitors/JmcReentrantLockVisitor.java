@@ -33,6 +33,6 @@ public class JmcReentrantLockVisitor implements AsmVisitorWrapper {
             MethodList<?> methodList,
             int i,
             int i1) {
-        return null;
+        return classVisitor;
     }
 }

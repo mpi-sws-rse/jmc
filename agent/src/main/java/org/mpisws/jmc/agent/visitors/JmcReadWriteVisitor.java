@@ -12,6 +12,10 @@ import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.jar.asm.Type;
 import net.bytebuddy.pool.TypePool;
 
+/**
+ * Represents a JMC read-write visitor. Adds instrumentation to change field accesses to
+ * JmcReadWrite calls.
+ */
 public class JmcReadWriteVisitor implements AsmVisitorWrapper {
     @Override
     public int mergeWriter(int i) {
@@ -36,8 +40,14 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
         return new ReadWriteClassVisitor(classVisitor);
     }
 
+    /** Class visitor for JMC read-write visitor. */
     public static class ReadWriteClassVisitor extends ClassVisitor {
 
+        /**
+         * Constructor.
+         *
+         * @param cv The underlying ClassVisitor
+         */
         public ReadWriteClassVisitor(ClassVisitor cv) {
             super(Opcodes.ASM9, cv);
         }
@@ -50,8 +60,16 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
         }
     }
 
+    /** Method visitor for JMC read-write visitor. */
     public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor {
 
+        /**
+         * Constructor.
+         *
+         * @param mv The underlying MethodVisitor
+         * @param access The method's access flags
+         * @param descriptor The method descriptor (e.g., "(I)V")
+         */
         public ReadWriteMethodVisitor(MethodVisitor mv, int access, String descriptor) {
             super(Opcodes.ASM9, mv, access, descriptor);
         }

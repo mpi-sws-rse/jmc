@@ -67,7 +67,7 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
-            // If the class extends Thread and we find a run method with no arguments and no return
+            // If the class extends Thread, and we find a run method with no arguments and no return
             // value.
             if (isExtendingThread && "run".equals(name) && "()V".equals(descriptor)) {
                 // Rename it to "run1" by passing the new name into the visitMethod call.
@@ -78,8 +78,17 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
         }
     }
 
+    /**
+     * ClassVisitor that replaces calls to "run" and "join" on objects that extend Thread with calls
+     * to "run1" and "join1" respectively.
+     */
     public class ThreadCallReplacerClassVisitor extends ClassVisitor {
 
+        /**
+         * Constructor.
+         *
+         * @param cv The underlying ClassVisitor
+         */
         public ThreadCallReplacerClassVisitor(ClassVisitor cv) {
             super(Opcodes.ASM9, cv);
         }
@@ -92,6 +101,10 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
         }
     }
 
+    /**
+     * MethodVisitor that replaces calls to "run" and "join" on objects that extend Thread with
+     * calls to "run1" and "join1" respectively.
+     */
     class ThreadCallReplacerMethodVisitor extends MethodVisitor {
 
         public ThreadCallReplacerMethodVisitor(MethodVisitor mv) {

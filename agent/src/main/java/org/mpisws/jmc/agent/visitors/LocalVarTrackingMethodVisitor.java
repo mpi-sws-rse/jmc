@@ -5,11 +5,13 @@ import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.jar.asm.Type;
 
+/**
+ * A MethodVisitor that tracks local variable indices and updates the maxLocals value in the
+ * visitMaxs method.
+ */
 public class LocalVarTrackingMethodVisitor extends MethodVisitor {
     // Next available local variable index.
     private int nextLocal;
-    // Indicates whether the method is static.
-    private final boolean isStatic;
 
     /**
      * Constructor.
@@ -22,7 +24,8 @@ public class LocalVarTrackingMethodVisitor extends MethodVisitor {
     public LocalVarTrackingMethodVisitor(int api, MethodVisitor mv, int access, String methodDesc) {
         super(api, mv);
         // For non-static methods, index 0 is reserved for 'this'
-        this.isStatic = (access & Opcodes.ACC_STATIC) != Opcodes.ACC_STATIC;
+        // Indicates whether the method is static.
+        boolean isStatic = (access & Opcodes.ACC_STATIC) != Opcodes.ACC_STATIC;
         nextLocal = isStatic ? 0 : 1;
 
         // Compute the initial nextLocal based on the method's arguments.

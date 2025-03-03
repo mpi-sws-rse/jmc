@@ -9,7 +9,7 @@ import net.bytebuddy.implementation.Implementation;
 import net.bytebuddy.jar.asm.ClassVisitor;
 import net.bytebuddy.pool.TypePool;
 
-/** Adds instrumentation to change Future calls to JmcFuture calls */
+/** Adds instrumentation to change Future calls to JmcFuture calls. */
 public class JmcFutureVisitor implements AsmVisitorWrapper {
     @Override
     public int mergeWriter(int i) {
@@ -31,6 +31,6 @@ public class JmcFutureVisitor implements AsmVisitorWrapper {
             MethodList<?> methodList,
             int i,
             int i1) {
-        return null;
+        return classVisitor;
     }
 }

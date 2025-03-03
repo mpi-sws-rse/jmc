@@ -7,10 +7,16 @@ import net.bytebuddy.utility.JavaModule;
 
 import java.io.File;
 
+/** Listener that saves transformed classes to disk. */
 public class DebugListener implements AgentBuilder.Listener {
 
     private final File outputDir;
 
+    /**
+     * Creates a new DebugListener.
+     *
+     * @param outputDir the directory to save transformed classes to
+     */
     public DebugListener(String outputDir) {
         this.outputDir = new File(outputDir);
         // Create the output directory if it does not exist.
@@ -51,7 +57,10 @@ public class DebugListener implements AgentBuilder.Listener {
             ClassLoader classLoader,
             JavaModule javaModule,
             boolean b,
-            Throwable throwable) {}
+            Throwable throwable) {
+        System.out.println("Error transforming: " + s + " " + throwable);
+        throwable.printStackTrace();
+    }
 
     @Override
     public void onComplete(String s, ClassLoader classLoader, JavaModule javaModule, boolean b) {}

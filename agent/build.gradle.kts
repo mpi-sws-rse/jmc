@@ -19,9 +19,9 @@ checkstyle {
 dependencies {
     implementation("net.bytebuddy:byte-buddy:1.17.1")
     implementation("net.bytebuddy:byte-buddy-agent:1.17.1")
-    implementation("org.ow2.asm:asm:9.7")
-    implementation("org.ow2.asm:asm-util:9.7")
-    implementation("org.ow2.asm:asm-commons:9.7")
+    implementation("org.junit.platform:junit-platform-engine:1.11.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
 }
 
 task("agentJar", ShadowJar::class) {
@@ -29,14 +29,23 @@ task("agentJar", ShadowJar::class) {
     archiveClassifier.set("")
 
     configurations.add(project.configurations.getByName("runtimeClasspath"))
+    from(sourceSets["main"].output)
 
     manifest {
-        attributes["Premain-Class"] = "org.mpisws.instrumentation.agent.InstrumentationAgent"
+        attributes["Premain-Class"] = "org.mpisws.jmc.agent.InstrumentationAgent"
     }
+}
+
+tasks.build {
+    dependsOn("agentJar")
 }
 
 tasks.test {
     useJUnitPlatform()
+    dependsOn("agentJar")
+    val agentJar = tasks["agentJar"].outputs.files.singleFile
+    val agentArg = "-javaagent:$agentJar=debug"
+    jvmArgs(agentArg)
 }
 
 // Create a publication for the agent jar
