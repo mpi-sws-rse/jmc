@@ -17,7 +17,7 @@ public class VisitorHelper {
      * @param name The name of the field.
      * @param descriptor The descriptor of the field.
      */
-    public static void insertRead(MethodVisitor mv, String owner, String name, String descriptor) {
+    public static void insertRead(LocalVarTrackingMethodVisitor mv, String owner, String name, String descriptor) {
         mv.visitTypeInsn(Opcodes.NEW, "org/mpisws/runtime/RuntimeEvent$Builder");
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(
@@ -51,13 +51,17 @@ public class VisitorHelper {
                 "taskId",
                 "(Ljava/lang/Object;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
                 false);
+        int builderVarIndex = mv.newLocal();
+        mv.visitVarInsn(Opcodes.ASTORE, builderVarIndex);
         // .params(new HashMap<>() { ... })
         mv.visitTypeInsn(Opcodes.NEW, "java/util/HashMap");
         mv.visitInsn(Opcodes.DUP);
+        int hashMapVarIndex = mv.newLocal();
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
+        mv.visitVarInsn(Opcodes.ASTORE, hashMapVarIndex);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         // Now populate the HashMap with entries:
         // put("newValue", newValue) -> using ACONST_NULL as a placeholder for newValue
-        mv.visitInsn(Opcodes.DUP);
         mv.visitLdcInsn("newValue");
         mv.visitInsn(Opcodes.ACONST_NULL);
         mv.visitMethodInsn(
@@ -68,7 +72,7 @@ public class VisitorHelper {
                 false);
         mv.visitInsn(Opcodes.POP);
         // put("owner", owner)
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitLdcInsn("owner");
         mv.visitLdcInsn(owner);
         mv.visitMethodInsn(
@@ -79,7 +83,7 @@ public class VisitorHelper {
                 false);
         mv.visitInsn(Opcodes.POP);
         // put("name", value)
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitLdcInsn("name");
         mv.visitLdcInsn(name);
         mv.visitMethodInsn(

@@ -82,9 +82,10 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
                 int newLocalVarIndex) {
             if (!isWrite) {
                 VisitorHelper.insertRead(mv, owner, name, descriptor);
-            } else {
-                VisitorHelper.insertWrite(mv, owner, name, descriptor, newLocalVarIndex);
             }
+//            else {
+//                VisitorHelper.insertWrite(mv, owner, name, descriptor, newLocalVarIndex);
+//            }
         }
 
         /**

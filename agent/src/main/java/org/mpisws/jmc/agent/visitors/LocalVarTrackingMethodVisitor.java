@@ -47,6 +47,12 @@ public class LocalVarTrackingMethodVisitor extends MethodVisitor {
         return index;
     }
 
+    public int newLocal() {
+        int index = nextLocal;
+        nextLocal++;
+        return index;
+    }
+
     /** Override visitLocalVariable to capture local variable declarations. */
     @Override
     public void visitLocalVariable(

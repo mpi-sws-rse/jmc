@@ -29,13 +29,37 @@ public class JmcAtomicBoolean {
         } finally {
             lock.unlock();
         }
-        readOp();
-        return value;
+        boolean out = value;
+        RuntimeEvent.Builder eventBuilder =
+                (new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.READ_EVENT)
+                        .taskId(JmcRuntime.currentTask()));
+        HashMap<String, Object> eventParams = new HashMap<>();
+        eventParams.put("owner", "org/mpisws/jmc/util/concurrent/AtomicBoolean");
+        eventParams.put("name", "value");
+        eventParams.put("descriptor", "Z");
+        JmcRuntime.updateEventAndYield(eventBuilder.params(eventParams).param("instance", this).build());
+        return out;
     }
 
     public void set(boolean newValue) {
-        writeOp(newValue);
         value = newValue;
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.WRITE_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .params(
+                                new HashMap<>() {
+                                    {
+                                        put("newValue", newValue);
+                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicBoolean");
+                                        put("name", "value");
+                                        put("descriptor", "Z");
+                                    }
+                                })
+                        .param("instance", this)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
     }
 
     public boolean compareAndSet(boolean expectedValue, boolean newValue) {

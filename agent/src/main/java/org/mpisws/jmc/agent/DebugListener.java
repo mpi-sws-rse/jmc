@@ -34,7 +34,7 @@ public class DebugListener implements AgentBuilder.Listener {
             boolean b,
             DynamicType dynamicType) {
         System.out.println("Transformed: " + typeDescription.getName());
-        String relativePath = typeDescription.getCanonicalName().replace(".", "/");
+        String relativePath = typeDescription.getName().replace(".", "/");
         File outputFile = new File(outputDir, relativePath + ".class");
         outputFile.getParentFile().mkdirs();
         try {
