@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Program Execution Graph</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="template/index.js"></script>
+    <!-- Add tailwind css -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="template/index.css">
+</head>
+<body class="bg-gray-100 p-6">
+<div class="grid grid-cols-3 gap-4 max-w-6xl mx-auto">
+    <!-- First Column -->
+    <div class="col-span-1 bg-white p-4 shadow rounded-lg box-sizing">
+        <h3 class="graph-list-header">Graphs</h3>
+        <div>
+            <label for="graphs" class="block text-sm font-medium text-gray-900"> Select Graph </label>
+            <select
+                    name="Graphs"
+                    id="graphs"
+                    onchange="update_graph_selection(this)"
+                    class="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
+            >
+            </select>
+        </div>
+    </div>
+
+    <!-- Second Column -->
+    <div class="col-span-2 bg-white p-4 shadow rounded-lg">
+        <div>
+            <div class="flex border-b">
+                <button id="tab-graph" class="px-4 py-2 text-blue-600 border-b-2 border-blue-600">Graph</button>
+                <button id="tab-log" class="px-4 py-2 text-gray-600">Log</button>
+            </div>
+            <div id="graph" class="p-4">
+
+            </div>
+            <div id="log" class="p-4 hidden overflow-x-scroll">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('tab-graph').addEventListener('click', function () {
+        document.getElementById('graph').classList.remove('hidden');
+        document.getElementById('log').classList.add('hidden');
+        this.classList.add('text-blue-600', 'border-blue-600');
+        document.getElementById('tab-log').classList.remove('text-blue-600', 'border-blue-600');
+    });
+
+    document.getElementById('tab-log').addEventListener('click', function () {
+        document.getElementById('log').classList.remove('hidden');
+        document.getElementById('graph').classList.add('hidden');
+        this.classList.add('text-blue-600', 'border-blue-600');
+        document.getElementById('tab-graph').classList.remove('text-blue-600', 'border-blue-600');
+    });
+</script>
+</body>
+</html>

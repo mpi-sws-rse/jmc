@@ -1,0 +1,184 @@
+// class version 61.0 (61)
+// access flags 0x21
+public class org/mpisws/concurrent/programs/dining/DiningPhilosophers {
+
+  // compiled from: DiningPhilosophers.java
+
+  // access flags 0x1
+  public <init>()V
+   L0
+    LINENUMBER 11 L0
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 1
+
+  // access flags 0x9
+  public static main([Ljava/lang/String;)V
+    TRYCATCHBLOCK L0 L1 L2 java/lang/InterruptedException
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.init (Ljava/lang/Thread;)V
+    NEW org/mpisws/runtime/SchedulerThread
+    DUP
+    INVOKESPECIAL org/mpisws/runtime/SchedulerThread.<init> ()V
+    ASTORE 6
+    ALOAD 6
+    LDC "SchedulerThread"
+    INVOKEVIRTUAL org/mpisws/runtime/SchedulerThread.setName (Ljava/lang/String;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    ALOAD 6
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.initSchedulerThread (Ljava/lang/Thread;Ljava/lang/Thread;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.mainThreadStart (Ljava/lang/Thread;)V
+   L3
+    LINENUMBER 16 L3
+    NEW java/util/ArrayList
+    DUP
+    ICONST_3
+    INVOKESPECIAL java/util/ArrayList.<init> (I)V
+    ASTORE 1
+   L4
+    LINENUMBER 17 L4
+    NEW java/util/ArrayList
+    DUP
+    ICONST_3
+    INVOKESPECIAL java/util/ArrayList.<init> (I)V
+    ASTORE 2
+   L5
+    LINENUMBER 19 L5
+    ICONST_0
+    ISTORE 3
+   L6
+   FRAME FULL [[Ljava/lang/String; java/util/ArrayList java/util/ArrayList I T T org/mpisws/runtime/SchedulerThread] []
+    ILOAD 3
+    ICONST_3
+    IF_ICMPGE L7
+   L8
+    LINENUMBER 20 L8
+    ALOAD 2
+    NEW org/mpisws/util/concurrent/ReentrantLock
+    DUP
+    INVOKESPECIAL org/mpisws/util/concurrent/ReentrantLock.<init> ()V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L9
+    LINENUMBER 19 L9
+    IINC 3 1
+    GOTO L6
+   L7
+    LINENUMBER 23 L7
+   FRAME SAME
+    ICONST_0
+    ISTORE 3
+   L10
+   FRAME SAME
+    ILOAD 3
+    ICONST_3
+    IF_ICMPGE L11
+   L12
+    LINENUMBER 24 L12
+    ALOAD 2
+    ILOAD 3
+    INVOKEINTERFACE java/util/List.get (I)Ljava/lang/Object; (itf)
+    CHECKCAST org/mpisws/util/concurrent/ReentrantLock
+    ASTORE 4
+   L13
+    LINENUMBER 25 L13
+    ALOAD 2
+    ILOAD 3
+    ICONST_1
+    IADD
+    ICONST_3
+    IREM
+    INVOKEINTERFACE java/util/List.get (I)Ljava/lang/Object; (itf)
+    CHECKCAST org/mpisws/util/concurrent/ReentrantLock
+    ASTORE 5
+   L14
+    LINENUMBER 26 L14
+    ALOAD 1
+    NEW org/mpisws/concurrent/programs/dining/Philosopher
+    DUP
+    DUP
+    ILOAD 3
+    ALOAD 4
+    ALOAD 5
+    INVOKESPECIAL org/mpisws/concurrent/programs/dining/Philosopher.<init> (ILorg/mpisws/util/concurrent/ReentrantLock;Lorg/mpisws/util/concurrent/ReentrantLock;)V
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.addThread (Ljava/lang/Thread;)V
+    INVOKEINTERFACE java/util/List.add (Ljava/lang/Object;)Z (itf)
+    POP
+   L15
+    LINENUMBER 23 L15
+    IINC 3 1
+    GOTO L10
+   L11
+    LINENUMBER 29 L11
+   FRAME SAME
+    ALOAD 1
+    INVOKEINTERFACE java/util/List.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 3
+   L16
+   FRAME FULL [[Ljava/lang/String; java/util/ArrayList java/util/ArrayList java/util/Iterator T T org/mpisws/runtime/SchedulerThread] []
+    ALOAD 3
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L17
+    ALOAD 3
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    CHECKCAST org/mpisws/concurrent/programs/dining/Philosopher
+    ASTORE 4
+   L18
+    LINENUMBER 30 L18
+    ALOAD 4
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadStart (Ljava/lang/Thread;Ljava/lang/Thread;)V
+   L19
+    LINENUMBER 31 L19
+    GOTO L16
+   L17
+    LINENUMBER 33 L17
+   FRAME SAME
+    ALOAD 1
+    INVOKEINTERFACE java/util/List.iterator ()Ljava/util/Iterator; (itf)
+    ASTORE 3
+   L20
+   FRAME SAME
+    ALOAD 3
+    INVOKEINTERFACE java/util/Iterator.hasNext ()Z (itf)
+    IFEQ L21
+    ALOAD 3
+    INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object; (itf)
+    CHECKCAST org/mpisws/concurrent/programs/dining/Philosopher
+    ASTORE 4
+   L0
+    LINENUMBER 35 L0
+    ALOAD 4
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.threadJoin (Ljava/lang/Thread;Ljava/lang/Thread;)V
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/dining/Philosopher.join ()V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L1
+    LINENUMBER 38 L1
+    GOTO L22
+   L2
+    LINENUMBER 36 L2
+   FRAME FULL [[Ljava/lang/String; java/util/ArrayList java/util/ArrayList java/util/Iterator org/mpisws/concurrent/programs/dining/Philosopher T org/mpisws/runtime/SchedulerThread] [java/lang/InterruptedException]
+    ASTORE 5
+   L23
+    LINENUMBER 37 L23
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKEVIRTUAL java/lang/Thread.interrupt ()V
+   L22
+    LINENUMBER 39 L22
+   FRAME SAME
+    GOTO L20
+   L21
+    LINENUMBER 40 L21
+   FRAME FULL [[Ljava/lang/String; java/util/ArrayList java/util/ArrayList java/util/Iterator T T org/mpisws/runtime/SchedulerThread] []
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+    MAXSTACK = 7
+    MAXLOCALS = 7
+}
