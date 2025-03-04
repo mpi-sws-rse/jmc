@@ -9,6 +9,25 @@ import net.bytebuddy.jar.asm.Type;
  * operations.
  */
 public class VisitorHelper {
+
+    /** Interface for creating new local variables. */
+    public interface LocalVarFetcher {
+        /**
+         * Allocates a new local variable of the standard size.
+         *
+         * @return the index of the newly allocated local variable.
+         */
+        int newLocal();
+
+        /**
+         * Allocates a new local variable of the given type.
+         *
+         * @param type the ASM Type of the new local variable.
+         * @return the index of the newly allocated local variable.
+         */
+        int newLocal(Type type);
+    }
+
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field read operation.
      *
@@ -17,7 +36,12 @@ public class VisitorHelper {
      * @param name The name of the field.
      * @param descriptor The descriptor of the field.
      */
-    public static void insertRead(LocalVarTrackingMethodVisitor mv, String owner, String name, String descriptor) {
+    public static void insertRead(
+            MethodVisitor mv,
+            String owner,
+            String name,
+            String descriptor,
+            LocalVarFetcher localVarFetcher) {
         mv.visitTypeInsn(Opcodes.NEW, "org/mpisws/runtime/RuntimeEvent$Builder");
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(
@@ -51,12 +75,12 @@ public class VisitorHelper {
                 "taskId",
                 "(Ljava/lang/Object;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
                 false);
-        int builderVarIndex = mv.newLocal();
+        int builderVarIndex = localVarFetcher.newLocal();
         mv.visitVarInsn(Opcodes.ASTORE, builderVarIndex);
         // .params(new HashMap<>() { ... })
         mv.visitTypeInsn(Opcodes.NEW, "java/util/HashMap");
         mv.visitInsn(Opcodes.DUP);
-        int hashMapVarIndex = mv.newLocal();
+        int hashMapVarIndex = localVarFetcher.newLocal();
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
         mv.visitVarInsn(Opcodes.ASTORE, hashMapVarIndex);
         mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
@@ -94,7 +118,7 @@ public class VisitorHelper {
                 false);
         mv.visitInsn(Opcodes.POP);
         // put("descriptor", descriptor)
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitLdcInsn("descriptor");
         mv.visitLdcInsn(descriptor);
         mv.visitMethodInsn(
@@ -105,6 +129,8 @@ public class VisitorHelper {
                 false);
         mv.visitInsn(Opcodes.POP);
         // Call builder.params(map)
+        mv.visitVarInsn(Opcodes.ALOAD, builderVarIndex);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
                 "org/mpisws/runtime/RuntimeEvent$Builder",
@@ -143,14 +169,17 @@ public class VisitorHelper {
      * @param owner The internal name of the class containing the field.
      * @param name The name of the field.
      * @param descriptor The descriptor of the field.
-     * @param localVarIndex The index of the local variable that holds the new value of the field.
      */
     public static void insertWrite(
-            MethodVisitor mv, String owner, String name, String descriptor, int localVarIndex) {
+            MethodVisitor mv,
+            String owner,
+            String name,
+            String descriptor,
+            LocalVarFetcher localVarFetcher) {
         // Assign the top of the stack to a local variable to be used as the 'newValue' parameter
         // in the RuntimeEvent.Builder constructor.
-        int newValueLocal = localVarIndex;
         Type fieldType = Type.getType(descriptor);
+        int newValueLocal = localVarFetcher.newLocal(fieldType);
         mv.visitVarInsn(getStoreOpcode(fieldType), newValueLocal);
 
         mv.visitTypeInsn(Opcodes.NEW, "org/mpisws/runtime/RuntimeEvent$Builder");
@@ -186,16 +215,19 @@ public class VisitorHelper {
                 "taskId",
                 "(Ljava/lang/Object;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
                 false);
+        int builderVarIndex = localVarFetcher.newLocal();
+        mv.visitVarInsn(Opcodes.ASTORE, builderVarIndex);
         // .params(new HashMap<>())
         mv.visitTypeInsn(Opcodes.NEW, "java/util/HashMap");
         mv.visitInsn(Opcodes.DUP);
+        int hashMapVarIndex = localVarFetcher.newLocal();
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/HashMap", "<init>", "()V", false);
+        mv.visitVarInsn(Opcodes.ASTORE, hashMapVarIndex);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         // Populate the map:
         // put("newValue", newValue)
-        mv.visitInsn(Opcodes.DUP);
         mv.visitLdcInsn("newValue");
         mv.visitVarInsn(getLoadOpcode(fieldType), newValueLocal);
-        mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
                 "java/util/HashMap",
@@ -204,7 +236,7 @@ public class VisitorHelper {
                 false);
         mv.visitInsn(Opcodes.POP);
         // put("owner", classCanonicalName)
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitLdcInsn("owner");
         mv.visitLdcInsn(owner);
         mv.visitMethodInsn(
@@ -215,7 +247,7 @@ public class VisitorHelper {
                 false);
         mv.visitInsn(Opcodes.POP);
         // put("name", name)
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitLdcInsn("name");
         mv.visitLdcInsn(name);
         mv.visitMethodInsn(
@@ -226,7 +258,7 @@ public class VisitorHelper {
                 false);
         mv.visitInsn(Opcodes.POP);
         // put("descriptor", descriptor)
-        mv.visitInsn(Opcodes.DUP);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitLdcInsn("descriptor");
         mv.visitLdcInsn(descriptor);
         mv.visitMethodInsn(
@@ -237,6 +269,8 @@ public class VisitorHelper {
                 false);
         mv.visitInsn(Opcodes.POP);
         // End of map population. Call builder.params(map)
+        mv.visitVarInsn(Opcodes.ALOAD, builderVarIndex);
+        mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
                 "org/mpisws/runtime/RuntimeEvent$Builder",

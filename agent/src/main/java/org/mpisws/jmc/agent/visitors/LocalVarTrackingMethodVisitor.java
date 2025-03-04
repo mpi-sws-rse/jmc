@@ -25,7 +25,7 @@ public class LocalVarTrackingMethodVisitor extends MethodVisitor {
         super(api, mv);
         // For non-static methods, index 0 is reserved for 'this'
         // Indicates whether the method is static.
-        boolean isStatic = (access & Opcodes.ACC_STATIC) != Opcodes.ACC_STATIC;
+        boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
         nextLocal = isStatic ? 0 : 1;
 
         // Compute the initial nextLocal based on the method's arguments.

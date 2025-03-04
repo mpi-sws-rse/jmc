@@ -61,7 +61,10 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
     }
 
     /** Method visitor for JMC read-write visitor. */
-    public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor {
+    public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor
+            implements VisitorHelper.LocalVarFetcher {
+
+        private boolean instrumented;
 
         /**
          * Constructor.
@@ -72,20 +75,17 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
          */
         public ReadWriteMethodVisitor(MethodVisitor mv, int access, String descriptor) {
             super(Opcodes.ASM9, mv, access, descriptor);
+            this.instrumented = false;
         }
 
         private void insertUpdateEventCall(
-                String owner,
-                boolean isWrite,
-                String name,
-                String descriptor,
-                int newLocalVarIndex) {
+                String owner, boolean isWrite, String name, String descriptor) {
+            instrumented = true;
             if (!isWrite) {
-                VisitorHelper.insertRead(mv, owner, name, descriptor);
+                VisitorHelper.insertRead(mv, owner, name, descriptor, this);
+            } else {
+                VisitorHelper.insertWrite(mv, owner, name, descriptor, this);
             }
-//            else {
-//                VisitorHelper.insertWrite(mv, owner, name, descriptor, newLocalVarIndex);
-//            }
         }
 
         /**
@@ -122,11 +122,16 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
             }
             super.visitFieldInsn(opcode, owner, name, descriptor);
             if (shouldInstrument) {
-                int newLocalVarIndex = -1;
-                if (isWrite) {
-                    newLocalVarIndex = newLocal(fieldType);
-                }
-                insertUpdateEventCall(owner, isWrite, name, descriptor, newLocalVarIndex);
+                insertUpdateEventCall(owner, isWrite, name, descriptor);
+            }
+        }
+
+        @Override
+        public void visitMaxs(int maxStack, int maxLocals) {
+            if (instrumented) {
+                super.visitMaxs(maxStack + 3, maxLocals);
+            } else {
+                super.visitMaxs(maxStack, maxLocals);
             }
         }
     }
