@@ -42,38 +42,38 @@ public class VisitorHelper {
             String name,
             String descriptor,
             LocalVarFetcher localVarFetcher) {
-        mv.visitTypeInsn(Opcodes.NEW, "org/mpisws/runtime/RuntimeEvent$Builder");
+        mv.visitTypeInsn(Opcodes.NEW, "org/mpisws/jmc/runtime/RuntimeEvent$Builder");
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(
                 Opcodes.INVOKESPECIAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "<init>",
                 "()V",
                 false);
         // .type( ... )
         mv.visitFieldInsn(
                 Opcodes.GETSTATIC,
-                "org/mpisws/runtime/RuntimeEventType",
+                "org/mpisws/jmc/runtime/RuntimeEventType",
                 "READ_EVENT",
-                "Lorg/mpisws/runtime/RuntimeEventType;");
+                "Lorg/mpisws/jmc/runtime/RuntimeEventType;");
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "type",
-                "(Lorg/mpisws/runtime/RuntimeEventType;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
+                "(Lorg/mpisws/jmc/runtime/RuntimeEventType;)Lorg/mpisws/jmc/runtime/RuntimeEvent$Builder;",
                 false);
         // .taskId(JmcRuntime.currentTask())
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/runtime/JmcRuntime",
+                "org/mpisws/jmc/runtime/JmcRuntime",
                 "currentTask",
                 "()Ljava/lang/Object;",
                 false);
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "taskId",
-                "(Ljava/lang/Object;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
+                "(Ljava/lang/Object;)Lorg/mpisws/jmc/runtime/RuntimeEvent$Builder;",
                 false);
         int builderVarIndex = localVarFetcher.newLocal();
         mv.visitVarInsn(Opcodes.ASTORE, builderVarIndex);
@@ -133,32 +133,32 @@ public class VisitorHelper {
         mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "params",
-                "(Ljava/util/Map;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
+                "(Ljava/util/Map;)Lorg/mpisws/jmc/runtime/RuntimeEvent$Builder;",
                 false);
         // .param("instance", this)
         mv.visitLdcInsn("instance");
         mv.visitVarInsn(Opcodes.ALOAD, 0); // 'this'
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "param",
-                "(Ljava/lang/String;Ljava/lang/Object;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
+                "(Ljava/lang/String;Ljava/lang/Object;)Lorg/mpisws/jmc/runtime/RuntimeEvent$Builder;",
                 false);
         // .build()
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "build",
-                "()Lorg/mpisws/runtime/RuntimeEvent;",
+                "()Lorg/mpisws/jmc/runtime/RuntimeEvent;",
                 false);
         // Call: JmcRuntime.updateEventAndYield(event)
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/runtime/JmcRuntime",
+                "org/mpisws/jmc/runtime/JmcRuntime",
                 "updateEventAndYield",
-                "(Lorg/mpisws/runtime/RuntimeEvent;)V",
+                "(Lorg/mpisws/jmc/runtime/RuntimeEvent;)V",
                 false);
     }
 
@@ -182,38 +182,38 @@ public class VisitorHelper {
         int newValueLocal = localVarFetcher.newLocal(fieldType);
         mv.visitVarInsn(getStoreOpcode(fieldType), newValueLocal);
 
-        mv.visitTypeInsn(Opcodes.NEW, "org/mpisws/runtime/RuntimeEvent$Builder");
+        mv.visitTypeInsn(Opcodes.NEW, "org/mpisws/jmc/runtime/RuntimeEvent$Builder");
         mv.visitInsn(Opcodes.DUP);
         mv.visitMethodInsn(
                 Opcodes.INVOKESPECIAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "<init>",
                 "()V",
                 false);
         // .type(...)
         mv.visitFieldInsn(
                 Opcodes.GETSTATIC,
-                "org/mpisws/runtime/RuntimeEventType",
+                "org/mpisws/jmc/runtime/RuntimeEventType",
                 "WRITE_EVENT",
-                "Lorg/mpisws/runtime/RuntimeEventType;");
+                "Lorg/mpisws/jmc/runtime/RuntimeEventType;");
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "type",
-                "(Lorg/mpisws/runtime/RuntimeEventType;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
+                "(Lorg/mpisws/jmc/runtime/RuntimeEventType;)Lorg/mpisws/jmc/runtime/RuntimeEvent$Builder;",
                 false);
         // .taskId(JmcRuntime.currentTask())
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/runtime/JmcRuntime",
+                "org/mpisws/jmc/runtime/JmcRuntime",
                 "currentTask",
                 "()Ljava/lang/Object;",
                 false);
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "taskId",
-                "(Ljava/lang/Object;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
+                "(Ljava/lang/Object;)Lorg/mpisws/jmc/runtime/RuntimeEvent$Builder;",
                 false);
         int builderVarIndex = localVarFetcher.newLocal();
         mv.visitVarInsn(Opcodes.ASTORE, builderVarIndex);
@@ -273,32 +273,32 @@ public class VisitorHelper {
         mv.visitVarInsn(Opcodes.ALOAD, hashMapVarIndex);
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "params",
-                "(Ljava/util/Map;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
+                "(Ljava/util/Map;)Lorg/mpisws/jmc/runtime/RuntimeEvent$Builder;",
                 false);
         // .param("instance", this)
         mv.visitLdcInsn("instance");
         mv.visitVarInsn(Opcodes.ALOAD, 0); // 'this' (Problematic. Not always a this)
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "param",
-                "(Ljava/lang/String;Ljava/lang/Object;)Lorg/mpisws/runtime/RuntimeEvent$Builder;",
+                "(Ljava/lang/String;Ljava/lang/Object;)Lorg/mpisws/jmc/runtime/RuntimeEvent$Builder;",
                 false);
         // .build()
         mv.visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
-                "org/mpisws/runtime/RuntimeEvent$Builder",
+                "org/mpisws/jmc/runtime/RuntimeEvent$Builder",
                 "build",
-                "()Lorg/mpisws/runtime/RuntimeEvent;",
+                "()Lorg/mpisws/jmc/runtime/RuntimeEvent;",
                 false);
         // Call: JmcRuntime.updateEventAndYield(event)
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/runtime/JmcRuntime",
+                "org/mpisws/jmc/runtime/JmcRuntime",
                 "updateEventAndYield",
-                "(Lorg/mpisws/runtime/RuntimeEvent;)V",
+                "(Lorg/mpisws/jmc/runtime/RuntimeEvent;)V",
                 false);
     }
 

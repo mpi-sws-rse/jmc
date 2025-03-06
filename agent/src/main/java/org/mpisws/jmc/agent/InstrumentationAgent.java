@@ -1,12 +1,18 @@
 package org.mpisws.jmc.agent;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.utility.JavaModule;
 import org.mpisws.jmc.agent.visitors.JmcFutureVisitor;
 import org.mpisws.jmc.agent.visitors.JmcReadWriteVisitor;
 import org.mpisws.jmc.agent.visitors.JmcReentrantLockVisitor;
 import org.mpisws.jmc.agent.visitors.JmcThreadVisitor;
 
 import java.lang.instrument.Instrumentation;
+import java.security.ProtectionDomain;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The InstrumentationAgent class is the entry point for the instrumentation agent. It is used to
@@ -18,8 +24,10 @@ public class InstrumentationAgent {
     private static class AgentArgs {
         private static final String DEBUG_FLAG = "debug";
         private static final String DEBUG_PATH_FLAG = "debugSavePath";
+        private static final String INSTRUMENTING_PKG_FLAG = "instrumentingPackages";
         private boolean debug = false;
         private String debugSavePath = "build/generated/instrumented";
+        private List<String> instrumentingPackages;
 
         public AgentArgs(String agentArgs) {
             if (agentArgs != null) {
@@ -31,6 +39,8 @@ public class InstrumentationAgent {
                             debug = Boolean.parseBoolean(parts[1]);
                         } else if (parts[0].equals(DEBUG_PATH_FLAG)) {
                             debugSavePath = parts[1];
+                        } else if (parts[0].equals(INSTRUMENTING_PKG_FLAG)) {
+                            instrumentingPackages = List.of(parts[1].split(";"));
                         }
                     } else {
                         if (arg.equals(DEBUG_FLAG)) {
@@ -48,6 +58,10 @@ public class InstrumentationAgent {
         public String getDebugSavePath() {
             return debugSavePath;
         }
+
+        public List<String> getInstrumentingPackages() {
+            return instrumentingPackages;
+        }
     }
 
     /**
@@ -64,13 +78,17 @@ public class InstrumentationAgent {
             agentBuilder = agentBuilder.with(new DebugListener(args.getDebugSavePath()));
         }
         agentBuilder
-                .type(new JmcMatcher())
-                .transform(
-                        (builder, typeDescription, classLoader, module, protectionDomain) ->
-                                builder.visit(new JmcThreadVisitor())
-                                        .visit(new JmcReadWriteVisitor())
-                                        .visit(new JmcReentrantLockVisitor())
-                                        .visit(new JmcFutureVisitor()))
+                .with(AgentBuilder.InjectionStrategy.UsingReflection.INSTANCE)
+                .type(new JmcMatcher(args.getInstrumentingPackages()))
+                .transform(new AgentBuilder.Transformer() {
+                    @Override
+                    public DynamicType.Builder<?> transform(DynamicType.Builder<?> builder, TypeDescription typeDescription, ClassLoader classLoader, JavaModule javaModule, ProtectionDomain protectionDomain) {
+                        return builder.visit(new JmcThreadVisitor())
+                                .visit(new JmcReadWriteVisitor())
+                                .visit(new JmcReentrantLockVisitor())
+                                .visit(new JmcFutureVisitor());
+                    }
+                })
                 .installOn(inst);
     }
 }

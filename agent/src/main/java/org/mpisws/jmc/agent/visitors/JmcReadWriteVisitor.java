@@ -55,6 +55,10 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
+            if (name.equals("<clinit>") || name.equals("<init>")) {
+                // Ignore static initializer and the constructor.
+                return super.visitMethod(access, name, descriptor, signature, exceptions);
+            }
             MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
             return new ReadWriteMethodVisitor(mv, access, descriptor);
         }

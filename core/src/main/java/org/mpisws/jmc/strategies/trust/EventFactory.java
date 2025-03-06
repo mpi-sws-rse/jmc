@@ -33,7 +33,7 @@ public class EventFactory {
                 Event event =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                runtimeEvent.getParam("instance").hashCode(),
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.WRITE);
                 return List.of(event);
             }
@@ -41,7 +41,7 @@ public class EventFactory {
                 Event event =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                runtimeEvent.getParam("instance").hashCode(),
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.READ);
                 return List.of(event);
             }

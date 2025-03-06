@@ -6,7 +6,7 @@ plugins {
     id("java-library")
 }
 
-group = "org.mpisws"
+group = "org.mpisws.jmc"
 version = "0.1.0"
 
 repositories {
@@ -53,9 +53,7 @@ tasks.test {
         if (shouldApplyInstrumentation) {
             val agent = project(":agent")
             val agentJar = agent.tasks.getByName("agentJar").outputs.files.singleFile
-            // Print agentJar path for debugging
-            println("Agent jar path: $agentJar")
-            val agentArg = "-javaagent:$agentJar=debug"
+            val agentArg = "-javaagent:$agentJar=debug,instrumentingPackage=org.mpisws.jmc"
             jvmArgs(agentArg)
         }
     }

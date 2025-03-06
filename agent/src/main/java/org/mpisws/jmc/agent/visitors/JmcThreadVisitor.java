@@ -6,6 +6,7 @@ import net.bytebuddy.description.field.FieldList;
 import net.bytebuddy.description.method.MethodList;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.implementation.Implementation;
+import net.bytebuddy.jar.asm.AnnotationVisitor;
 import net.bytebuddy.jar.asm.ClassVisitor;
 import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.jar.asm.Opcodes;
@@ -58,7 +59,7 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
             if ("java/lang/Thread".equals(superName)) {
                 isExtendingThread = true;
                 // Replace the superclass with JmcThread (ensure the internal name is correct)
-                superName = "JmcThread";
+                superName = "org/mpisws/jmc/util/concurrent/JmcThread";
             }
             // Continue visiting with the possibly modified superclass.
             super.visit(version, access, name, signature, superName, interfaces);
@@ -71,7 +72,10 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
             // value.
             if (isExtendingThread && "run".equals(name) && "()V".equals(descriptor)) {
                 // Rename it to "run1" by passing the new name into the visitMethod call.
-                return super.visitMethod(access, "run1", descriptor, signature, exceptions);
+                MethodVisitor mv = super.visitMethod(access, "run1", descriptor, signature, exceptions);
+                AnnotationVisitor av = mv.visitAnnotation("Override", true);
+                av.visitEnd();
+                return mv;
             }
             // Otherwise, leave the method as is.
             return super.visitMethod(access, name, descriptor, signature, exceptions);

@@ -22,8 +22,18 @@ class JmcPlugin : Plugin<Project> {
 
                 if (shouldApplyAgent(testTask)) {
                     val agentArg = "-javaagent:$agentJar"
+                    var addArgs = ""
                     if (extension.debug) {
-                        agentArg += "=debug,debugSavePath=${extension.debugPath}"
+                        addArgs += "debug,debugSavePath=${extension.debugPath}"
+                    }
+                    if (extension.instrumentingPackage.isNotEmpty()) {
+                        if (addArgs.isNotEmpty()) {
+                            addArgs += ","
+                        }
+                        addArgs += "instrumentingPackages=${extension.instrumentingPackage.joinToString(";")}"
+                    }
+                    if (addArgs.isNotEmpty()) {
+                        agentArg += "=$addArgs"
                     }
                     jvmArgs(agentArg)
                 }
@@ -46,4 +56,5 @@ open class JmcExtension {
     var libraryJar: String = "org.mpisws:jmc"
     var debug: Boolean = false
     var debugPath: String = "build/generated/instrumented"
+    var instrumentingPackage: List<String> = new ArrayList()
 }

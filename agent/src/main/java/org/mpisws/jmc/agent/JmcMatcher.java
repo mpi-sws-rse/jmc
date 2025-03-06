@@ -5,6 +5,8 @@ import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.utility.JavaModule;
 
 import java.security.ProtectionDomain;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Matcher for JMC agent.
@@ -12,6 +14,13 @@ import java.security.ProtectionDomain;
  * <p>Currently filters out classes loaded by built-in class loader.
  */
 public class JmcMatcher implements AgentBuilder.RawMatcher {
+
+    private List<String> matchingPackages;
+
+    public JmcMatcher(List<String> matchingPackages) {
+        this.matchingPackages = matchingPackages;
+    }
+
     @Override
     public boolean matches(
             TypeDescription typeDescription,
@@ -30,16 +39,28 @@ public class JmcMatcher implements AgentBuilder.RawMatcher {
             return false;
         }
         String typeName = typeDescription.getName();
-        return !typeName.startsWith("java.")
-                && !typeName.startsWith("javax.")
-                && !typeName.startsWith("sun.")
-                && !typeName.startsWith("com.sun.")
-                && !typeName.startsWith("jdk.")
-                && !typeName.startsWith("kotlin.")
-                && !typeName.startsWith("kotlinx.")
-                && !typeName.startsWith("org.gradle.")
-                && !typeName.startsWith("org.slf4j.")
-                && !typeName.startsWith("worker.org.gradle.")
-                && !typeName.startsWith("org.junit.");
+        if (typeName.startsWith("java.")
+                || typeName.startsWith("javax.")
+                || typeName.startsWith("sun.")
+                || typeName.startsWith("com.sun.")
+                || typeName.startsWith("jdk.")
+                || typeName.startsWith("kotlin.")
+                || typeName.startsWith("kotlinx.")
+                || typeName.startsWith("org.gradle.")
+                || typeName.startsWith("org.slf4j.")
+                || typeName.startsWith("worker.org.gradle.")
+                || typeName.startsWith("org.junit.")) {
+            return false;
+        }
+        if (!matchingPackages.isEmpty()) {
+            boolean out = matchingPackages.stream().anyMatch(typeName::startsWith);
+            if (out) {
+                System.out.println("Matched: " + typeName);
+            }
+            return out;
+        } else {
+            System.out.println("Matched: " + typeName);
+            return true;
+        }
     }
 }

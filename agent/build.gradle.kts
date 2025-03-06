@@ -18,21 +18,22 @@ checkstyle {
 
 dependencies {
     implementation("net.bytebuddy:byte-buddy:1.17.1")
-    implementation("net.bytebuddy:byte-buddy-agent:1.17.1")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
+    testImplementation("org.mpisws:jmc:0.1.0")
 }
 
 task("agentJar", ShadowJar::class) {
     archiveVersion.set("")
     archiveClassifier.set("")
-
     configurations.add(project.configurations.getByName("runtimeClasspath"))
     from(sourceSets["main"].output)
 
     manifest {
         attributes["Premain-Class"] = "org.mpisws.jmc.agent.InstrumentationAgent"
+        attributes["Can-Redefine-Classes"] = "true"
+        attributes["Can-Retransform-Classes"] = "true"
     }
 }
 
@@ -42,9 +43,10 @@ tasks.build {
 
 tasks.test {
     useJUnitPlatform()
+    dependsOn(":core:publishToMavenLocal")
     dependsOn("agentJar")
     val agentJar = tasks["agentJar"].outputs.files.singleFile
-    val agentArg = "-javaagent:$agentJar=debug"
+    val agentArg = "-javaagent:$agentJar=debug,instrumentingPackages=org.mpisws.jmc.agent"
     jvmArgs(agentArg)
 }
 
