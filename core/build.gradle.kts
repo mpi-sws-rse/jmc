@@ -33,30 +33,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.22")
 }
 
-java {
-    withSourcesJar()
-}
-
-tasks.withType<Jar> {
-    archiveClassifier.set("sources")
-}
-
 tasks.test {
     useJUnitPlatform()
-    dependsOn(":agent:build")
-    doFirst {
-        val shouldApplyInstrumentation = testClassesDirs.files.any { classDir ->
-            classDir.walkTopDown().any { file ->
-                file.extension == "class" && file.readText().contains("@JmcCheck")
-            }
-        }
-        if (shouldApplyInstrumentation) {
-            val agent = project(":agent")
-            val agentJar = agent.tasks.getByName("agentJar").outputs.files.singleFile
-            val agentArg = "-javaagent:$agentJar=debug,instrumentingPackage=org.mpisws.jmc"
-            jvmArgs(agentArg)
-        }
-    }
 }
 
 publishing {
