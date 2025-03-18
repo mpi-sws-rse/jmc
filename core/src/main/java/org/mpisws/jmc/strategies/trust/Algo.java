@@ -308,22 +308,36 @@ public class Algo {
         // label after the read to block the thread.
 
         if (coMaxWrite.happensBefore(read)) {
-            // Easy case. No concurrent write to revisit.
+            // Easy case. No concurrent write to revisit. [Note that this is an optimization for
+            // sequential consistency model. If we are exploring relaxed memory models in the future,
+            // we need to remove this optimization.]
             executionGraph.setReadsFrom(read, coMaxWrite);
             return;
         }
-        List<ExecutionGraphNode> alternativeWrites = executionGraph.getAlternativeWrites(read);
         // Set the reads-from relation
         executionGraph.setReadsFrom(read, coMaxWrite);
+
+        List<ExecutionGraphNode> alternativeWrites = executionGraph.getAlternativeWrites(read);
         if (alternativeWrites.isEmpty()) {
             // No alternative writes to revisit.
             return;
         }
         // We have alternative writes to revisit.
-        for (ExecutionGraphNode alternativeWrite : alternativeWrites) {
+
+        // The following code needs to be modified in a way that alternative writes get pushed to the
+        // exploration stack in a right to left order. Moreover, there is no need to clone the
+        // execution graph here.
+        /*for (ExecutionGraphNode alternativeWrite : alternativeWrites) {
             explorationStack.push(
                     ExplorationStack.Item.forwardRW(
                             read, alternativeWrite, this.executionGraph.clone()));
+        }*/
+
+        // The modified code is as follows:
+        for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
+            explorationStack.push(
+                    ExplorationStack.Item.forwardRW(
+                            read, alternativeWrites.get(i), this.executionGraph));
         }
     }
 
@@ -340,9 +354,17 @@ public class Algo {
         if (!concurrentWrites.isEmpty()) {
             // We have concurrent writes to revisit.
             // If flag is set, write race warning
-            for (ExecutionGraphNode concurrentWrite : concurrentWrites) {
+            // The following code needs to be modified in a way that concurrent writes get pushed to
+            // the exploration stack in a right to left order.
+            /*for (ExecutionGraphNode concurrentWrite : concurrentWrites) {
                 explorationStack.push(
                         ExplorationStack.Item.forwardWW(write, concurrentWrite, executionGraph));
+            }*/
+
+            // The modified code is as follows:
+            for (int i = concurrentWrites.size() - 1; i >= 0; i--) {
+                explorationStack.push(
+                        ExplorationStack.Item.forwardWW(write, concurrentWrites.get(i), executionGraph));
             }
         }
 
@@ -358,10 +380,19 @@ public class Algo {
         revisitViews =
                 revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
 
-        for (BackwardRevisitView revisit : revisitViews) {
+        // The following code needs to be modified in a way that revisit views get pushed to the
+        // exploration stack in a right to left order.
+        /*for (BackwardRevisitView revisit : revisitViews) {
             explorationStack.push(
                     ExplorationStack.Item.backwardRevisit(
                             revisit.getWrite(), revisit.getRestrictedGraph()));
+        }*/
+
+        // The modified code is as follows:
+        for (int i = revisitViews.size() - 1; i >= 0; i--) {
+            explorationStack.push(
+                    ExplorationStack.Item.backwardRevisit(
+                            revisitViews.get(i).getWrite(), revisitViews.get(i).getRestrictedGraph()));
         }
     }
 

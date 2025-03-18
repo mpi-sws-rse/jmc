@@ -569,10 +569,11 @@ public class ExecutionGraph {
         return lockBackwardRevisitViews;
     }
 
+    // TODO :: We need to check the correctness of this method
     /**
      * Returns the potential alternative reads to the given write event.
      *
-     * <p>All reads that are not _porf_-before the given write.
+     * <p>All reads that are not _porf_-before the given write. (Tied to Sequential consistency model)
      *
      * @param write The write event node.
      * @return The potential reads to the given write event.
@@ -628,7 +629,19 @@ public class ExecutionGraph {
             throw new HaltCheckerException("The read event is not found in the TO order.");
         }
 
-        for (int i = readToIndex; i < allEvents.size(); i++) {
+        // The following loop computes the elements of the deleted set.
+
+        // This loop includes the recently added write and the targeted read events to the deleted set which
+        // is incorrect.
+        /*for (int i = readToIndex; i < allEvents.size(); i++) {
+            ExecutionGraphNode node = allEvents.get(i);
+            if (!node.happensBefore(write)) {
+                restrictedView.removeNode(node.key());
+            }
+        }*/
+
+        // The following is the corrected loop
+        for (int i = readToIndex + 1 ; i < allEvents.size() - 1 ; i++) {
             ExecutionGraphNode node = allEvents.get(i);
             if (!node.happensBefore(write)) {
                 restrictedView.removeNode(node.key());
@@ -698,7 +711,7 @@ public class ExecutionGraph {
     /**
      * Returns the coherency placings of the given write event under sequential consistency.
      *
-     * <p>Writes that are not _porf_-before the given write event.
+     * <p>Writes that are not _porf_-before the given write event. (Tied to Sequential consistency model)
      *
      * @param write The write event.
      * @return The coherency placings of the given write event.
@@ -716,7 +729,7 @@ public class ExecutionGraph {
             // Bug! There should at least be the init
             throw new HaltCheckerException("No writes after the given write event.");
         }
-        writesAfter.remove(writesAfter.size() - 1);
+        writesAfter.remove(writesAfter.size() - 1); // removing the only porf-prefix write
         if (writesAfter.isEmpty()) {
             // No writes after the given write event
             return writesAfter;

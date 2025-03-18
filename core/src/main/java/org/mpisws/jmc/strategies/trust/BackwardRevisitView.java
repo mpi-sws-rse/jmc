@@ -4,6 +4,7 @@ import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -68,8 +69,16 @@ public class BackwardRevisitView {
                         (k) -> {
                             try {
                                 ExecutionGraphNode kNode = graph.getEventNode(k);
+                                // Based on the definition of previous set in the TruSt paper,
+                                // we need to check if the event TO-prefix of the node or it is
+                                // in the porf-prefix of the given write event. Thus, the following
+                                // is wrong:
+                                /*return graph.getTOIndex(k) <= nodeTOIndex
+                                        || kNode.happensBefore(node);*/
+
+                                // The following is correct
                                 return graph.getTOIndex(k) <= nodeTOIndex
-                                        || kNode.happensBefore(node);
+                                        || kNode.happensBefore(write);
                             } catch (NoSuchEventException e) {
                                 return false;
                             }
@@ -80,10 +89,17 @@ public class BackwardRevisitView {
                     Set<Event.Key> reads = node.getSuccessors(Relation.ReadsFrom);
                     for (Event.Key readKey : reads) {
                         // Check if in previous
-                        if (previous.test(readKey)) {
+                        // The following is wrong. We need to check if the read event is in the
+                        // previous set. If it is, it must return false. Otherwise, it must continue
+                        /*if (previous.test(readKey)) {
                             continue;
                         }
                         if (!removedNodes.contains(readKey) && graph.contains(readKey)) {
+                            return false;
+                        }*/
+
+                        // The following is correct
+                        if (previous.test(readKey)) {
                             return false;
                         }
                     }
@@ -104,7 +120,8 @@ public class BackwardRevisitView {
                 // Now node is a write event for sure
                 // We only need to check if the CO after events for the same location are in
                 // previous
-                boolean check = false;
+                // The following code is a bit complex and inefficient but it is correct
+                /*boolean check = false;
                 for (ExecutionGraphNode locationWrite :
                         graph.getWrites(nodeWrite.getEvent().getLocation())) {
                     if (locationWrite.equals(nodeWrite)) {
@@ -117,7 +134,19 @@ public class BackwardRevisitView {
                     if (previous.test(locationWrite.key())) {
                         return false;
                     }
+                }*/
+
+                // The following code is correct and more efficient
+                List<ExecutionGraphNode> writes =  graph.getWrites(nodeWrite.getEvent().getLocation());
+                int index = writes.indexOf(nodeWrite);
+                if (index < writes.size() - 1) {
+                    for (int i = index + 1; i < writes.size(); i++) {
+                        if (previous.test(writes.get(i).key())) {
+                            return false;
+                        }
+                    }
                 }
+                return true;
             }
         } catch (NoSuchEventException e) {
             throw HaltExecutionException.error("The event is not found.");
@@ -131,7 +160,9 @@ public class BackwardRevisitView {
      * @return The restricted graph
      */
     public ExecutionGraph getRestrictedGraph() {
-        ExecutionGraph restrictedGraph = graph.clone();
+        // The following clone is redundant
+        // ExecutionGraph restrictedGraph = graph.clone();
+        ExecutionGraph restrictedGraph = graph;
         // Remove the nodes
         restrictedGraph.restrictByRemoving(removedNodes);
         // Update the reads-from relation
