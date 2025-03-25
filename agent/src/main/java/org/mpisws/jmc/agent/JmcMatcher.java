@@ -28,6 +28,26 @@ public class JmcMatcher implements AgentBuilder.RawMatcher {
             JavaModule javaModule,
             Class<?> aclass,
             ProtectionDomain protectionDomain) {
+        return matches(
+                typeDescription.getName(), classLoader, javaModule, aclass, protectionDomain);
+    }
+
+    /**
+     * Matches the class name.
+     *
+     * @param className the class name
+     * @param classLoader the class loader
+     * @param javaModule the Java module
+     * @param aclass the class
+     * @param protectionDomain the protection domain
+     * @return true if the class name matches
+     */
+    public boolean matches(
+            String className,
+            ClassLoader classLoader,
+            JavaModule javaModule,
+            Class<?> aclass,
+            ProtectionDomain protectionDomain) {
         if (classLoader == null) {
             return false;
         }
@@ -38,7 +58,7 @@ public class JmcMatcher implements AgentBuilder.RawMatcher {
                 || classLoaderName.contains("sbt")) {
             return false;
         }
-        String typeName = typeDescription.getName();
+        String typeName = className.replace("/", ".");
         if (typeName.startsWith("java.")
                 || typeName.startsWith("javax.")
                 || typeName.startsWith("sun.")
@@ -53,13 +73,8 @@ public class JmcMatcher implements AgentBuilder.RawMatcher {
             return false;
         }
         if (!matchingPackages.isEmpty()) {
-            boolean out = matchingPackages.stream().anyMatch(typeName::startsWith);
-            if (out) {
-                System.out.println("Matched: " + typeName);
-            }
-            return out;
+            return matchingPackages.stream().anyMatch(typeName::startsWith);
         } else {
-            System.out.println("Matched: " + typeName);
             return true;
         }
     }

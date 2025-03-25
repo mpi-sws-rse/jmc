@@ -1,7 +1,7 @@
-package org.mpisws.jmc.agent;
+package org.mpisws.jmc.agent.test;
 
 import org.junit.jupiter.api.Test;
-import org.mpisws.jmc.agent.programs.CorrectCounter;
+import org.mpisws.jmc.agent.test.programs.CorrectCounter;
 
 /** The AgentIntegrationTest class is used to test the agent. */
 public class AgentIntegrationTest {

@@ -1,4 +1,4 @@
-package org.mpisws.jmc.agent.programs;
+package org.mpisws.jmc.agent.test.programs;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -48,6 +48,7 @@ public class CorrectCounter extends Thread {
             }
         }
         assert (counter.counter == 3);
+        System.out.println("All good!");
     }
 
     /** The Counter class is used to store the counter. */

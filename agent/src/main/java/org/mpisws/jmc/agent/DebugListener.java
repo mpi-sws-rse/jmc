@@ -45,8 +45,7 @@ public class DebugListener implements AgentBuilder.Listener {
             TypeDescription typeDescription,
             ClassLoader classLoader,
             JavaModule javaModule,
-            boolean b) {
-    }
+            boolean b) {}
 
     @Override
     public void onError(
@@ -60,6 +59,5 @@ public class DebugListener implements AgentBuilder.Listener {
     }
 
     @Override
-    public void onComplete(String s, ClassLoader classLoader, JavaModule javaModule, boolean b) {
-    }
+    public void onComplete(String s, ClassLoader classLoader, JavaModule javaModule, boolean b) {}
 }

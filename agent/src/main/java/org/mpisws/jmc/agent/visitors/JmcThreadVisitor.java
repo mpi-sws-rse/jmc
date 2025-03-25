@@ -39,7 +39,7 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
         return new ThreadClassVisitor(new ThreadCallReplacerClassVisitor(classVisitor));
     }
 
-    private static class ThreadClassVisitor extends ClassVisitor {
+    public static class ThreadClassVisitor extends ClassVisitor {
         // Flag to indicate that the class being visited extends Thread.
         private boolean isExtendingThread = false;
 
@@ -72,7 +72,8 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
             // value.
             if (isExtendingThread && "run".equals(name) && "()V".equals(descriptor)) {
                 // Rename it to "run1" by passing the new name into the visitMethod call.
-                MethodVisitor mv = super.visitMethod(access, "run1", descriptor, signature, exceptions);
+                MethodVisitor mv =
+                        super.visitMethod(access, "run1", descriptor, signature, exceptions);
                 AnnotationVisitor av = mv.visitAnnotation("Override", true);
                 av.visitEnd();
                 return mv;
@@ -86,7 +87,7 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
      * ClassVisitor that replaces calls to "run" and "join" on objects that extend Thread with calls
      * to "run1" and "join1" respectively.
      */
-    public class ThreadCallReplacerClassVisitor extends ClassVisitor {
+    public static class ThreadCallReplacerClassVisitor extends ClassVisitor {
 
         /**
          * Constructor.
@@ -109,7 +110,7 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
      * MethodVisitor that replaces calls to "run" and "join" on objects that extend Thread with
      * calls to "run1" and "join1" respectively.
      */
-    class ThreadCallReplacerMethodVisitor extends MethodVisitor {
+    public static class ThreadCallReplacerMethodVisitor extends MethodVisitor {
 
         public ThreadCallReplacerMethodVisitor(MethodVisitor mv) {
             super(Opcodes.ASM9, mv);

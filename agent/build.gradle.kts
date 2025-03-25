@@ -16,12 +16,9 @@ checkstyle {
     toolVersion = "10.19.0"
 }
 
-val agentDependencies by configurations.creating
-
 dependencies {
     implementation("net.bytebuddy:byte-buddy:1.17.1")
     implementation("org.mpisws:jmc:0.1.0")
-    agentDependencies("org.mpisws:jmc:0.1.0")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
@@ -43,25 +40,6 @@ task("agentJar", ShadowJar::class) {
 
 tasks.build {
     dependsOn("agentJar")
-}
-
-tasks.register<Copy>("copyJar") {
-    from(agentDependencies.filter { it.name.contains("jmc-0.1.0") })
-    into("src/main/resources/lib")
-}
-
-tasks.processResources {
-    dependsOn("copyJar")
-}
-
-tasks.test {
-    useJUnitPlatform()
-    dependsOn(":core:publishToMavenLocal")
-    dependsOn("agentJar")
-    systemProperty("net.bytebuddy.nexus.disabled", "true")
-    val agentJar = tasks["agentJar"].outputs.files.singleFile
-    val agentArg = "-javaagent:$agentJar=debug,instrumentingPackages=org.mpisws.jmc.agent"
-    jvmArgs(agentArg)
 }
 
 // Create a publication for the agent jar

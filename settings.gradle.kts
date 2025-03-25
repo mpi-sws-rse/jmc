@@ -5,3 +5,4 @@ rootProject.name = "jmc"
 include("gradle-plugin")
 include("agent")
 include("core")
+include("integration-test")
