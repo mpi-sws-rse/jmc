@@ -34,7 +34,6 @@ task("agentJar", ShadowJar::class) {
     manifest {
         attributes["Premain-Class"] = "org.mpisws.jmc.agent.InstrumentationAgent"
         attributes["Can-Redefine-Classes"] = "true"
-        attributes["Can-Retransform-Classes"] = "true"
     }
 }
 

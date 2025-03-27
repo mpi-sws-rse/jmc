@@ -592,7 +592,7 @@ public class ExecutionGraph {
         }
 
         // Following the sequential consistency model, we only consider non-exclusive writes
-        nonPorfWrites.removeIf((w) -> !EventUtils.isExclusiveWrite(w.getEvent()));
+        nonPorfWrites.removeIf((w) -> EventUtils.isExclusiveWrite(w.getEvent()));
 
         List<ExecutionGraphNode> reads = new ArrayList<>();
         for (ExecutionGraphNode alternativeWrite : nonPorfWrites) {

@@ -49,41 +49,34 @@ public class InstrumentationAgent {
     public static void premain(String agentArgs, Instrumentation inst) {
         loadDependencyJars(inst);
         AgentArgs args = new AgentArgs(agentArgs);
-        if (args.isDebug()) {
-            System.out.println("Loaded classes");
-            for (Class clazz : inst.getAllLoadedClasses()) {
-                System.out.println(clazz.getName());
-            }
-        }
 
         // Without byte buddy
-        Instrumentor instrumentor = new Instrumentor(args);
-        inst.addTransformer(instrumentor, true);
+        //        Instrumentor instrumentor = new Instrumentor(args);
+        //        inst.addTransformer(instrumentor, true);
 
-        //        // With byte buddy
-        //        AgentBuilder agentBuilder = new AgentBuilder.Default();
-        //        if (args.isDebug()) {
-        //            agentBuilder = agentBuilder.with(new DebugListener(args.getDebugSavePath()));
-        //        }
-        //        agentBuilder
-        //                .with(AgentBuilder.Listener.StreamWriting.toSystemOut())
-        //                .with(AgentBuilder.RedefinitionStrategy.DISABLED)
-        //                .type(new JmcMatcher(args.getInstrumentingPackages()))
-        //                .transform(
-        //                        new AgentBuilder.Transformer() {
-        //                            @Override
-        //                            public DynamicType.Builder<?> transform(
-        //                                    DynamicType.Builder<?> builder,
-        //                                    TypeDescription typeDescription,
-        //                                    ClassLoader classLoader,
-        //                                    JavaModule javaModule,
-        //                                    ProtectionDomain protectionDomain) {
-        //                                return builder.visit(new JmcThreadVisitor())
-        //                                        .visit(new JmcReadWriteVisitor())
-        //                                        .visit(new JmcReentrantLockVisitor())
-        //                                        .visit(new JmcFutureVisitor());
-        //                            }
-        //                        })
-        //                .installOn(inst);
+        // With byte buddy
+        AgentBuilder agentBuilder = new AgentBuilder.Default();
+        if (args.isDebug()) {
+            agentBuilder = agentBuilder.with(new DebugListener(args.getDebugSavePath()));
+        }
+        agentBuilder
+                .with(AgentBuilder.RedefinitionStrategy.REDEFINITION)
+                .type(new JmcMatcher(args.getInstrumentingPackages()))
+                .transform(
+                        new AgentBuilder.Transformer() {
+                            @Override
+                            public DynamicType.Builder<?> transform(
+                                    DynamicType.Builder<?> builder,
+                                    TypeDescription typeDescription,
+                                    ClassLoader classLoader,
+                                    JavaModule javaModule,
+                                    ProtectionDomain protectionDomain) {
+                                return builder.visit(new JmcThreadVisitor())
+                                        .visit(new JmcReadWriteVisitor())
+                                        .visit(new JmcReentrantLockVisitor())
+                                        .visit(new JmcFutureVisitor());
+                            }
+                        })
+                .installOn(inst);
     }
 }

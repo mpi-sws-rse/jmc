@@ -68,6 +68,7 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
     public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor
             implements VisitorHelper.LocalVarFetcher {
 
+        private boolean isStatic;
         private boolean instrumented;
 
         /**
@@ -80,15 +81,16 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
         public ReadWriteMethodVisitor(MethodVisitor mv, int access, String descriptor) {
             super(Opcodes.ASM9, mv, access, descriptor);
             this.instrumented = false;
+            this.isStatic = (access & Opcodes.ACC_STATIC) != 0;
         }
 
         private void insertUpdateEventCall(
                 String owner, boolean isWrite, String name, String descriptor) {
             instrumented = true;
             if (!isWrite) {
-                VisitorHelper.insertRead(mv, owner, name, descriptor, this);
+                VisitorHelper.insertRead(mv, isStatic, owner, name, descriptor, this);
             } else {
-                VisitorHelper.insertWrite(mv, owner, name, descriptor, this);
+                VisitorHelper.insertWrite(mv, isStatic, owner, name, descriptor, this);
             }
         }
 

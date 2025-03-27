@@ -3,9 +3,9 @@ package org.mpisws.jmc.agent.test.programs;
 import java.util.concurrent.locks.ReentrantLock;
 
 /** The CorrectCounter class is used to test the agent. */
-public class CorrectCounter extends Thread {
+public class CorrectCounterITest extends Thread {
     ReentrantLock lock;
-    Counter counter;
+    CounterITest counter;
 
     /**
      * The CorrectCounter constructor is used to initialize the lock and counter.
@@ -13,7 +13,7 @@ public class CorrectCounter extends Thread {
      * @param lock the lock
      * @param counter the counter
      */
-    public CorrectCounter(ReentrantLock lock, Counter counter) {
+    public CorrectCounterITest(ReentrantLock lock, CounterITest counter) {
         this.lock = lock;
         this.counter = counter;
     }
@@ -32,10 +32,10 @@ public class CorrectCounter extends Thread {
      */
     public static void main(String[] args) {
         ReentrantLock lock = new ReentrantLock();
-        Counter counter = new Counter();
-        CorrectCounter[] threads = new CorrectCounter[3];
+        CounterITest counter = new CounterITest();
+        CorrectCounterITest[] threads = new CorrectCounterITest[3];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new CorrectCounter(lock, counter);
+            threads[i] = new CorrectCounterITest(lock, counter);
         }
         for (int i = 0; i < threads.length; i++) {
             threads[i].start();
@@ -49,10 +49,5 @@ public class CorrectCounter extends Thread {
         }
         assert (counter.counter == 3);
         System.out.println("All good!");
-    }
-
-    /** The Counter class is used to store the counter. */
-    public static class Counter {
-        int counter = 0;
     }
 }
