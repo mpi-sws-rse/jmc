@@ -65,6 +65,9 @@ public class BackwardRevisitView {
                 if (nodeTOIndex == null) {
                     throw HaltExecutionException.error("The event does not have a TO index.");
                 }
+                if (node.getEvent().getType() == Event.Type.NOOP) {
+                    continue;
+                }
                 Predicate<Event.Key> previous =
                         (k) -> {
                             try {
@@ -137,16 +140,27 @@ public class BackwardRevisitView {
                 }*/
 
                 // The following code is correct and more efficient
-                List<ExecutionGraphNode> writes =  graph.getWrites(nodeWrite.getEvent().getLocation());
-                int index = writes.indexOf(nodeWrite);
-                if (index < writes.size() - 1) {
-                    for (int i = index + 1; i < writes.size(); i++) {
-                        if (previous.test(writes.get(i).key())) {
+                List<ExecutionGraphNode> writes;
+                // We need to check if the nodeWrite is init or not
+                if (nodeWrite.getEvent().getType() == Event.Type.INIT) {
+                    // TODO :: This is not an efficient implementation
+                    writes = graph.getAllWrites();
+                    for (ExecutionGraphNode writeNode : writes) {
+                        if (previous.test(writeNode.key())) {
                             return false;
                         }
                     }
+                } else {
+                    writes = graph.getWrites(nodeWrite.getEvent().getLocation());
+                    int index = writes.indexOf(nodeWrite);
+                    if (index < writes.size() - 1) {
+                        for (int i = index + 1; i < writes.size(); i++) {
+                            if (previous.test(writes.get(i).key())) {
+                                return false;
+                            }
+                        }
+                    }
                 }
-                return true;
             }
         } catch (NoSuchEventException e) {
             throw HaltExecutionException.error("The event is not found.");
@@ -163,10 +177,11 @@ public class BackwardRevisitView {
         // The following clone is redundant
         // ExecutionGraph restrictedGraph = graph.clone();
         ExecutionGraph restrictedGraph = graph;
-        // Remove the nodes
-        restrictedGraph.restrictByRemoving(removedNodes);
         // Update the reads-from relation
         restrictedGraph.changeReadsFrom(read, write);
+        // Remove the nodes
+        //restrictedGraph.restrictByRemoving(removedNodes);
+        restrictedGraph.restrictBySet(removedNodes);
         return restrictedGraph;
     }
 }

@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Represents an execution graph.
@@ -443,6 +444,8 @@ public class ExecutionGraph {
      */
     public ExecutionGraphNode getCoMax(Integer location) {
         List<ExecutionGraphNode> writes = coherencyOrder.get(location);
+        // TODO :: For debugging
+        System.out.println("[Exec Graph debug] : the size of the writes list is " + writes.size());
         if (writes == null || writes.isEmpty()) {
             // No writes to the location, therefore return the initial event
             return allEvents.get(0);
@@ -452,7 +455,7 @@ public class ExecutionGraph {
 
     /**
      * Returns the nodes that are not _porf_-before the given node except the last node in the
-     * returned list. Assumes that the given nodes are ordered in CO order.
+     * returned list. Assumes that the given nodes are ordered in reverse CO order.
      *
      * @param node The node to split before.
      * @param nodes The nodes to split.
@@ -580,7 +583,12 @@ public class ExecutionGraph {
      */
     public List<ExecutionGraphNode> getPotentialReads(ExecutionGraphNode write) {
         List<ExecutionGraphNode> otherWrites = coherencyOrder.get(write.getEvent().getLocation());
+
+        // Drop the recently added write ( We fixed this by updating the CO as the last step of the write handling proc)
+        //otherWrites.remove(otherWrites.size() - 1);
+
         List<ExecutionGraphNode> nonPorfWrites = splitNodesBefore(write, otherWrites);
+
         if (nonPorfWrites.isEmpty()) {
             // No writes after the given write event
             // Should not happen. There should at least be the init.
@@ -593,7 +601,7 @@ public class ExecutionGraph {
         }
 
         // Following the sequential consistency model, we only consider non-exclusive writes
-        nonPorfWrites.removeIf((w) -> !EventUtils.isExclusiveWrite(w.getEvent()));
+        nonPorfWrites.removeIf((w) -> EventUtils.isExclusiveWrite(w.getEvent()));
 
         List<ExecutionGraphNode> reads = new ArrayList<>();
         for (ExecutionGraphNode alternativeWrite : nonPorfWrites) {
@@ -606,6 +614,46 @@ public class ExecutionGraph {
                 }
             }
         }
+        reads =
+                reads.stream()
+                        // Filter out reads that are _porf_-before the write
+                        .filter((r) -> !r.happensBefore(write))
+                        .toList();
+        return reads;
+    }
+
+    /**
+     * Returns the same-location reads to the given write event.
+     *
+     * <p>All reads that are not _porf_-before the given write. (Tied to Sequential consistency model)
+     *
+     * @param write The write event node.
+     * @return The same-location reads to the given write event.
+     */
+    public List<ExecutionGraphNode> getNonPorfReads(ExecutionGraphNode write) {
+        List<ExecutionGraphNode> otherWrites = coherencyOrder.get(write.getEvent().getLocation());
+
+        otherWrites.remove(otherWrites.size() - 1);
+        if (otherWrites.isEmpty()) {
+            // Easy case, no other reads to revisit
+            return otherWrites;
+        }
+
+        // Following the sequential consistency model, we only consider non-exclusive writes
+        otherWrites.removeIf((w) -> !EventUtils.isExclusiveWrite(w.getEvent()));
+
+        List<ExecutionGraphNode> reads = new ArrayList<>();
+        for (ExecutionGraphNode alternativeWrite : otherWrites) {
+            Set<Event.Key> readKeys = alternativeWrite.getSuccessors(Relation.ReadsFrom);
+            for (Event.Key readKey : readKeys) {
+                try {
+                    reads.add(getEventNode(readKey));
+                } catch (NoSuchEventException e) {
+                    throw HaltExecutionException.error("The read event is not found.");
+                }
+            }
+        }
+
         reads =
                 reads.stream()
                         // Filter out reads that are _porf_-before the write
@@ -658,6 +706,23 @@ public class ExecutionGraph {
      */
     public List<ExecutionGraphNode> getWrites(Integer location) {
         return coherencyOrder.get(location);
+    }
+
+    /**
+     * Returns all the writes in the execution graph.
+     *
+     * @return All the writes in the execution graph.
+     */
+    public List<ExecutionGraphNode> getAllWrites() {
+        List<ExecutionGraphNode> allWrites = new ArrayList<>();
+        for (Integer location : coherencyOrder.keySet()) {
+            for (ExecutionGraphNode write : coherencyOrder.get(location)) {
+                if (write.getEvent().isWrite()) {
+                    allWrites.add(write);
+                }
+            }
+        }
+        return allWrites;
     }
 
     /**
@@ -723,7 +788,9 @@ public class ExecutionGraph {
             // and an exclusive write.
             return new ArrayList<>();
         }
+
         List<ExecutionGraphNode> allWrites = coherencyOrder.get(write.getEvent().getLocation());
+
         List<ExecutionGraphNode> writesAfter = splitNodesBefore(write, allWrites);
         if (writesAfter.isEmpty()) {
             // Bug! There should at least be the init
@@ -805,6 +872,55 @@ public class ExecutionGraph {
         previousWrite.addEdge(write, Relation.Coherency);
     }
 
+    public void restrictBySet(Set<Event.Key> set) {
+        for (Event.Key key : set) {
+            // Collect and remove the event in the allEvents which it holds the key
+            ExecutionGraphNode node = null;
+            for (ExecutionGraphNode event : allEvents) {
+                if (event.key().equals(key)) {
+                    node = event;
+                    break;
+                }
+            }
+            if (node == null) {
+                throw new HaltCheckerException("The restricting node is not in all events");
+            }
+            allEvents.removeIf((event) -> event.key().equals(key));
+
+            // Each event is the taskEvents which holds the key must be removed
+            int task = Math.toIntExact(key.getTaskId());
+            if (task >= taskEvents.size()) {
+                throw new HaltCheckerException("The restricting node is not in task events");
+            }
+            taskEvents.get(task).removeIf((event) -> event.key().equals(key));
+
+            // Each event in the coherencyOrder which holds the key must be removed
+            Integer location = node.getEvent().getLocation();
+            if (!coherencyOrder.containsKey(location)) {
+                throw new HaltCheckerException("The restricting node is not in coherency order");
+            }
+            coherencyOrder.get(location).removeIf((e) -> e.key() == key);
+        }
+
+        // Remove dangling edges
+        for (ExecutionGraphNode node : allEvents) {
+            Set<Event.Key> successors = node.getAllSuccessors();
+            for (Event.Key successor : successors) {
+                if (set.contains(successor)) {
+                    node.removeAllEdgesTo(successor);
+                }
+            }
+            Set<Event.Key> predecessors = node.getAllPredecessors();
+            for (Event.Key predecessor : predecessors) {
+                if (set.contains(predecessor)) {
+                    node.removeAllEdgesFrom(predecessor);
+                }
+            }
+        }
+
+        recomputeVectorClocks();
+    }
+
     /**
      * Restricts the execution graph by removing the nodes with the given keys.
      *
@@ -883,6 +999,54 @@ public class ExecutionGraph {
                 throw new HaltCheckerException(e.getMessage());
             }
         }
+    }
+
+    public void restrict(ExecutionGraphNode restrictingNode) {
+        // Removing and storing all inserted events after the restricting node from allEvents ( Insertion order )
+        int indexRestrictingNode = allEvents.indexOf(restrictingNode);
+        if (indexRestrictingNode == -1) {
+            throw new HaltCheckerException("The restricting node is not found.");
+        }
+        List<ExecutionGraphNode> removedNodes = allEvents.subList(indexRestrictingNode + 1, allEvents.size());
+        allEvents = allEvents.subList(0, indexRestrictingNode + 1);
+
+        // Iterating over these nodes and remove them from the taskEvents and coherencyOrder
+        for (ExecutionGraphNode node : removedNodes) {
+            // Removing from coherencyOrder
+            Integer location = node.getEvent().getLocation();
+
+            if (!coherencyOrder.containsKey(location)) {
+                throw new HaltCheckerException("The restricting node is not in coherency order");
+            }
+
+            coherencyOrder.get(location).removeIf((e) -> e.key() == node.key());
+
+            // Removing from taskEvents
+            int task = Math.toIntExact(node.getEvent().getTaskId());
+            if (task >= taskEvents.size()) {
+                throw new HaltCheckerException("The restricting node is not in task events");
+            }
+            taskEvents.get(task).removeIf((e) -> e.key() == node.key());
+        }
+
+        // Removing dangling edges
+        Set<Event.Key> removedKeys = removedNodes.stream().map(ExecutionGraphNode::key).collect(Collectors.toSet());
+        for (ExecutionGraphNode node : allEvents) {
+            Set<Event.Key> successors = node.getAllSuccessors();
+            for (Event.Key successor : successors) {
+                if (removedKeys.contains(successor)) {
+                    node.removeAllEdgesTo(successor);
+                }
+            }
+            Set<Event.Key> predecessors = node.getAllPredecessors();
+            for (Event.Key predecessor : predecessors) {
+                if (removedKeys.contains(predecessor)) {
+                    node.removeAllEdgesFrom(predecessor);
+                }
+            }
+        }
+
+        recomputeVectorClocks();
     }
 
     /**
@@ -1021,6 +1185,16 @@ public class ExecutionGraph {
         JsonObject gson = new JsonObject();
         gson.add("nodes", nodes);
         return gson.toString();
+    }
+
+    // TODO :: For debugging
+    public void printCO() {
+        for (Integer loc : coherencyOrder.keySet()) {
+            System.out.println("[Exec Graph debug]: printCO " + loc);
+            for (ExecutionGraphNode write : coherencyOrder.get(loc)) {
+                System.out.println("[Exec Graph debug]: the writes " + write.getEvent().toString());
+            }
+        }
     }
 
     /**

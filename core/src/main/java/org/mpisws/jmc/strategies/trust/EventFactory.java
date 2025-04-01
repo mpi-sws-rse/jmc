@@ -67,6 +67,18 @@ public class EventFactory {
                 event.setAttribute("joined_task", joinedTask - 1);
                 return List.of(event);
             }
+            case JOIN_REQUEST_EVENT -> {
+                // Update EventUtils::isThreadJoin if anything changes here
+                Event event =
+                        new Event(
+                                runtimeEvent.getTaskId() - 1,
+                                LocationStore.ThreadLocation,
+                                Event.Type.NOOP);
+                Long joinedTask = runtimeEvent.getParam("waitingTask");
+                event.setAttribute("thread_join_request", true);
+                event.setAttribute("waitingTask", joinedTask - 1);
+                return List.of(event);
+            }
         }
 
         return new ArrayList<>();

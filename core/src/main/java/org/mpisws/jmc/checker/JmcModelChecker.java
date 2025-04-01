@@ -58,6 +58,8 @@ public class JmcModelChecker {
                                     .taskId(1L)
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
+                    // TODO :: For debugging
+                    System.out.println("[JMC MC] : The " + i + "th iteration is completed");
                     JmcRuntime.resetIteration(i);
                 } catch (HaltTaskException e) {
                     LOGGER.debug(
@@ -77,7 +79,9 @@ public class JmcModelChecker {
             if (e.isOkay()) {
                 LOGGER.info("Model checking completed successfully.");
             } else {
-                LOGGER.error("Model checking failed: {}", e.getMessage());
+                LOGGER.info("Model checking failed: {}", e.getMessage());
+                // TODO :: For debugging
+                System.out.println("[JMC MC] : Model checking failed: " + e.getMessage());
                 System.exit(1);
             }
         } finally {

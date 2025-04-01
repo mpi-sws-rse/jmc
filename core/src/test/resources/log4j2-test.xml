@@ -13,7 +13,7 @@
 
     <Loggers>
         <Logger name="org.mpisws" level="INFO"/>
-        <Root level="DEBUG">
+        <Root level="INFO">
             <AppenderRef ref="CONSOLE"/>
         </Root>
     </Loggers>

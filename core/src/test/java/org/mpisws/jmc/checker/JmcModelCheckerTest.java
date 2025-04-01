@@ -310,7 +310,7 @@ public class JmcModelCheckerTest {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
                         .strategyType("trust")
-                        .numIterations(10)
+                        .numIterations(100)
                         .debug(true)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);

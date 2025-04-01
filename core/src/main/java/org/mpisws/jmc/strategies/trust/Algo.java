@@ -71,6 +71,8 @@ public class Algo {
             guidingTaskSchedule.pop();
             if (guidingTaskSchedule.isEmpty()) {
                 isGuiding = false;
+                // TODO :: For debugging
+                System.out.println("[Algo Debug]: The guiding task schedule is empty");
             }
         }
         if (choiceW.hasLocation()) {
@@ -99,6 +101,8 @@ public class Algo {
      */
     @SuppressWarnings({"checkstyle:MissingSwitchDefault", "checkstyle:LeftCurly"})
     public void updateEvent(Event event) throws HaltTaskException, HaltExecutionException {
+        // TODO :: For debugging
+        System.out.println("[Algo Debug]: Updating event " + event);
         if (areWeGuiding()) {
             handleGuidedEvent(event);
             return;
@@ -149,6 +153,8 @@ public class Algo {
                 }
                 handleNoop(event);
         }
+        // TODO :: For debugging
+        System.out.println("[Algo Debug]: Handling event " + event + " location " + event.getLocation());
     }
 
     /**
@@ -176,10 +182,14 @@ public class Algo {
     public void initIteration(int iteration) {
         // Check if we are guiding the execution and construct the task schedule accordingly!
         if (iteration == 0) {
+            // TODO :: For debugging
+            System.out.println("[Algo Debug]: Initializing iteration");
             return;
         }
 
         if (explorationStack.isEmpty()) {
+            // TODO :: For debugging
+            System.out.println("[Algo Debug]: Exploration stack is empty.");
             // We have reached the end of the exploration stack.
             // We should not be guiding the execution
             throw new HaltCheckerException();
@@ -191,6 +201,8 @@ public class Algo {
         locationStore.clearAliases();
         // We are guiding
         isGuiding = true;
+        // TODO :: For debugging
+        System.out.println("[Algo Debug]: Initializing the " + iteration + "th iteration");
         ExplorationStack.Item item = explorationStack.pop();
         resetWith(item);
     }
@@ -213,7 +225,8 @@ public class Algo {
                 ExecutionGraphNode write = item.getEvent2();
 
                 executionGraph.changeReadsFrom(read, write);
-                executionGraph.restrictTo(read);
+                //executionGraph.restrictTo(read);
+                executionGraph.restrict(read);
                 guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 break;
             case FWW:
@@ -222,7 +235,8 @@ public class Algo {
                 ExecutionGraphNode write2 = item.getEvent2();
 
                 executionGraph.swapCoherency(write1, write2);
-                executionGraph.restrictTo(write1);
+                //executionGraph.restrictTo(write1);
+                executionGraph.restrict(write1);
                 guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 break;
             case BRR:
@@ -231,9 +245,36 @@ public class Algo {
             case BWR:
                 // Should not happen. We should have handled this in the resetIteration method.
                 break;
+            case FLW:
+                // Forward revisit of w -> lw (max-co)
+                ExecutionGraphNode w = item.getEvent1();
+                // set the co
+                executionGraph.trackCoherency(w);
+                executionGraph.restrict(w);
+                guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                // TODO :: For debugging
+                System.out.println("[Algo Debug]: Forward revisit of w -> lw");
+                break;
         }
+        // TODO :: For debugging
+        System.out.println("[Algo Debug]: Resetting the iteration with item " + item);
+        printGuidingTaskSchedule();
     }
 
+    // TODO :: For debugging
+    public void printGuidingTaskSchedule() {
+        if (guidingTaskSchedule == null) {
+            System.out.println("Guiding task schedule is null");
+            return;
+        }
+        System.out.println("Guiding task schedule:");
+        for (SchedulingChoiceWrapper choice : guidingTaskSchedule) {
+            System.out.print(choice.choice().getTaskId() + " - ");
+        }
+        System.out.println();
+    }
+
+    // TODO: Try to find a better name for this method
     /**
      * Resets the iteration. This method is called at the end of each iteration of the algorithm.
      */
@@ -245,16 +286,33 @@ public class Algo {
         if (!explorationStack.isEmpty() && explorationStack.peek().isBackwardRevisit()) {
             ExplorationStack.Item item = explorationStack.pop();
             if (item.getType() == ExplorationStack.ItemType.BWR) {
+                // TODO :: For debugging
+                System.out.println("[Algo Debug]: Processing the BWR of the exploration stack");
                 ExecutionGraphNode write = item.getEvent1();
                 ExecutionGraph restrictedGraph = item.getGraph();
 
                 List<ExecutionGraphNode> alternativeWrites =
                         restrictedGraph.getCoherentPlacings(write);
-                for (ExecutionGraphNode alternativeWrite : alternativeWrites) {
+                // The following code needs to be modified in a way that concurrent writes get pushed to
+                // the exploration stack in a right to left order.
+                /*for (ExecutionGraphNode alternativeWrite : alternativeWrites) {
                     explorationStack.push(
                             ExplorationStack.Item.forwardWW(
                                     write, alternativeWrite, executionGraph));
+                }*/
+
+                // The modified code is as follows:
+                if (!alternativeWrites.isEmpty()) {
+                    for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
+                        explorationStack.push(
+                                ExplorationStack.Item.forwardWW(
+                                        write, alternativeWrites.get(i), restrictedGraph));
+                    }
                 }
+
+                // Pushing the max-co write forward revisit
+                explorationStack.push(
+                        ExplorationStack.Item.forwardLW(write, restrictedGraph));
             }
         }
     }
@@ -308,6 +366,9 @@ public class Algo {
         // label after the read to block the thread.
 
         if (coMaxWrite.happensBefore(read)) {
+            // TODO :: For debugging
+            System.out.println("[Algo Debug]: Read is before the coMaxWrite");
+            System.out.println("[Algo Debug]: the CoMaxWrite is " + coMaxWrite.getEvent());
             // Easy case. No concurrent write to revisit. [Note that this is an optimization for
             // sequential consistency model. If we are exploring relaxed memory models in the future,
             // we need to remove this optimization.]
@@ -319,10 +380,14 @@ public class Algo {
 
         List<ExecutionGraphNode> alternativeWrites = executionGraph.getAlternativeWrites(read);
         if (alternativeWrites.isEmpty()) {
+            // TODO :: For debugging
+            System.out.println("[Algo Debug]: No alternative writes to revisit");
             // No alternative writes to revisit.
             return;
         }
         // We have alternative writes to revisit.
+        // TODO :: For debugging
+        System.out.println("[Algo Debug]: Found alternative writes to revisit");
 
         // The following code needs to be modified in a way that alternative writes get pushed to the
         // exploration stack in a right to left order. Moreover, there is no need to clone the
@@ -350,7 +415,7 @@ public class Algo {
 
         // Check for (w->w) coherent forward revisits (VisitCO)
         List<ExecutionGraphNode> concurrentWrites = executionGraph.getCoherentPlacings(write);
-        executionGraph.trackCoherency(write);
+
         if (!concurrentWrites.isEmpty()) {
             // We have concurrent writes to revisit.
             // If flag is set, write race warning
@@ -370,8 +435,14 @@ public class Algo {
 
         // Check for (w->r) backward revisits
         // Find potential reads that need to be revisited
+        // TODO :: I'm not sure the way `getPotentialReads` method is ordering the reads is correct.
         List<ExecutionGraphNode> potentialReads = executionGraph.getPotentialReads(write);
+        //List<ExecutionGraphNode> potentialReads = executionGraph.getNonPorfReads(write);
         if (potentialReads.isEmpty()) {
+            System.out.println("[Algo Debug]: No potential reads to revisit");
+            // After batching the forward revisits, since there is no backward revisit, we need to
+            // continue the exploration by adding the recently added write as the CO max.
+            executionGraph.trackCoherency(write);
             return;
         }
         List<BackwardRevisitView> revisitViews =
@@ -394,6 +465,10 @@ public class Algo {
                     ExplorationStack.Item.backwardRevisit(
                             revisitViews.get(i).getWrite(), revisitViews.get(i).getRestrictedGraph()));
         }
+
+        // After batching the backward and forward revisits, we need to continue the exploration by adding the recently
+        // added write as the CO max.
+        executionGraph.trackCoherency(write);
     }
 
     private void handleWriteX(Event event) {

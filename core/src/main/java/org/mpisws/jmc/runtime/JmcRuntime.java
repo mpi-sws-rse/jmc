@@ -115,9 +115,13 @@ public class JmcRuntime {
         Long currentTask = scheduler.currentTask();
         try {
             LOGGER.debug("Yielding task {}", currentTask);
+            // TODO :: For debugging
+            System.out.println("[JMCRuntime debug] : Yielding the current task " + currentTask);
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
-            LOGGER.error("Yielding an already paused task.");
+            LOGGER.info("Yielding an already paused task.");
+            // TODO :: For debugging
+            System.out.println("[JmcRuntime debug] : Yielding an already paused task.");
             System.exit(1);
         }
         wait(currentTask);
@@ -135,6 +139,8 @@ public class JmcRuntime {
     public static void yield(Long taskId) throws HaltTaskException, HaltExecutionException {
         try {
             LOGGER.debug("Yielding task {}", taskId);
+            // TODO :: For debugging
+            System.out.println("[JmcRuntime debug] : Yielding by id of task " + taskId);
             scheduler.yield(taskId);
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Yielding an already paused task.");
@@ -195,6 +201,8 @@ public class JmcRuntime {
     public static void join(Long taskId) {
         LOGGER.debug("Joining task {}", taskId);
         try {
+            // TODO :: For debugging
+            System.out.println("[JmcRuntime debug] : Joining task " + taskId);
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Joining an already paused task.");
@@ -225,6 +233,8 @@ public class JmcRuntime {
     public static void updateEvent(RuntimeEvent event) throws HaltTaskException {
         LOGGER.debug("Updating event: {}", event);
         try {
+            // TODO :: For debugging
+            System.out.println("[JmcRuntime debug] : The updating event " + event);
             scheduler.updateEvent(event);
         } catch (HaltTaskException e) {
             LOGGER.error("Failed to update event: {}", event);

@@ -372,4 +372,11 @@ public class ExecutionGraphNode {
     public interface NodeProvider {
         ExecutionGraphNode get(Event.Key key) throws NoSuchEventException;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ExecutionGraphNode that = (ExecutionGraphNode) obj;
+        return that.key().equals(this.key());
+    }
 }

@@ -36,6 +36,9 @@ public class SchedulingChoice {
     }
 
     public static SchedulingChoice task(Long taskId) {
+        if (taskId == null) {
+            throw new IllegalArgumentException("Task ID cannot be null");
+        }
         return new SchedulingChoice(taskId, false, false);
     }
 
@@ -43,5 +46,14 @@ public class SchedulingChoice {
     // a scheduling choice, the guiding schedule needs to end with a dummy event that is popped in the end.
     public static SchedulingChoice end() {
         return new SchedulingChoice(null, false, false);
+    }
+
+    @Override
+    public String toString() {
+        return "SchedulingChoice{" +
+                "taskId=" + taskId +
+                ", isBlockTask=" + isBlockTask +
+                ", isBlockExecution=" + isBlockExecution +
+                '}';
     }
 }
