@@ -1,43 +1,18 @@
 package org.mpisws.jmc.agent.visitors;
 
-import net.bytebuddy.asm.AsmVisitorWrapper;
-import net.bytebuddy.description.field.FieldDescription;
-import net.bytebuddy.description.field.FieldList;
-import net.bytebuddy.description.method.MethodList;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.implementation.Implementation;
-import net.bytebuddy.jar.asm.AnnotationVisitor;
-import net.bytebuddy.jar.asm.ClassVisitor;
-import net.bytebuddy.jar.asm.MethodVisitor;
-import net.bytebuddy.jar.asm.Opcodes;
-import net.bytebuddy.pool.TypePool;
+import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Represents a JMC thread visitor. Adds instrumentation to change Thread calls to JmcThread calls
  */
-public class JmcThreadVisitor implements AsmVisitorWrapper {
-    @Override
-    public int mergeWriter(int i) {
-        return i;
-    }
-
-    @Override
-    public int mergeReader(int i) {
-        return i;
-    }
-
-    @Override
-    public ClassVisitor wrap(
-            TypeDescription typeDescription,
-            ClassVisitor classVisitor,
-            Implementation.Context context,
-            TypePool typePool,
-            FieldList<FieldDescription.InDefinedShape> fieldList,
-            MethodList<?> methodList,
-            int i,
-            int i1) {
-        return new ThreadClassVisitor(new ThreadCallReplacerClassVisitor(classVisitor));
-    }
+public class JmcThreadVisitor {
 
     public static class ThreadClassVisitor extends ClassVisitor {
         // Flag to indicate that the class being visited extends Thread.
@@ -68,9 +43,13 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
-            // If the class extends Thread, and we find a run method with no arguments and no return
-            // value.
-            if (isExtendingThread && "run".equals(name) && "()V".equals(descriptor)) {
+
+            // Only instrument if the class extends Thread and this is a constructor
+            if (isExtendingThread && "<init>".equals(name)) {
+                MethodVisitor mv =
+                        super.visitMethod(access, name, descriptor, signature, exceptions);
+                return new ThreadInitMethodVisitor(mv);
+            } else if (isExtendingThread && "run".equals(name) && "()V".equals(descriptor)) {
                 // Rename it to "run1" by passing the new name into the visitMethod call.
                 MethodVisitor mv =
                         super.visitMethod(access, "run1", descriptor, signature, exceptions);
@@ -78,8 +57,34 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
                 av.visitEnd();
                 return mv;
             }
-            // Otherwise, leave the method as is.
             return super.visitMethod(access, name, descriptor, signature, exceptions);
+        }
+
+        // Nested MethodVisitor to modify constructor calls
+        private static class ThreadInitMethodVisitor extends MethodVisitor {
+            public ThreadInitMethodVisitor(MethodVisitor mv) {
+                super(Opcodes.ASM9, mv);
+            }
+
+            @Override
+            public void visitMethodInsn(
+                    int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                // Check if this is a call to Thread's constructor
+                if (opcode == Opcodes.INVOKESPECIAL
+                        && "java/lang/Thread".equals(owner)
+                        && "<init>".equals(name)) {
+                    // Replace with call to JmcThread's constructor
+                    super.visitMethodInsn(
+                            Opcodes.INVOKESPECIAL,
+                            "org/mpisws/jmc/util/concurrent/JmcThread",
+                            name,
+                            descriptor,
+                            isInterface);
+                } else {
+                    // Pass through unchanged
+                    super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                }
+            }
         }
     }
 
@@ -112,43 +117,46 @@ public class JmcThreadVisitor implements AsmVisitorWrapper {
      */
     public static class ThreadCallReplacerMethodVisitor extends MethodVisitor {
 
+        /**
+         * Constructor.
+         *
+         * @param mv The underlying MethodVisitor
+         */
         public ThreadCallReplacerMethodVisitor(MethodVisitor mv) {
             super(Opcodes.ASM9, mv);
         }
 
         /**
-         * Helper method to check if the given owner (internal name) represents a class that extends
-         * java.lang.Thread.
-         */
-        private boolean ownerExtendsThread(String ownerInternalName) {
-            // Convert internal name (e.g. "com/example/MyThread") to fully qualified class name.
-            String fqcn = ownerInternalName.replace('/', '.');
-            try {
-                Class<?> ownerClass =
-                        Class.forName(fqcn, false, Thread.currentThread().getContextClassLoader());
-                // Check if owner class is not JmcThread and is a subclass of Thread.
-
-                return Thread.class.isAssignableFrom(ownerClass);
-            } catch (ClassNotFoundException e) {
-                // If the class is not found, we conservatively return false.
-                return false;
-            }
-        }
-
-        /**
-         * Visit method invocation instructions. If the instruction is a call to either "run" or
-         * "join" on an object whose class extends Thread, replace it with a call to "run1" or
-         * "join1" respectively.
+         * Visit method invocation instructions. If the instruction is a call "join" on an object
+         * whose class extends Thread, replace it with a call to "join1".
          */
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
-            if (("run".equals(name) || "join".equals(name)) && ownerExtendsThread(owner)) {
-                String newName = "run".equals(name) ? "run1" : "join1";
-                super.visitMethodInsn(opcode, owner, newName, descriptor, isInterface);
+            if ("join".equals(name) && ownerExtendsThread(owner)) {
+                super.visitMethodInsn(opcode, owner, "join1", descriptor, isInterface);
             } else {
                 super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
             }
+        }
+    }
+
+    /**
+     * Helper method to check if the given owner (internal name) represents a class that extends
+     * java.lang.Thread.
+     */
+    private static boolean ownerExtendsThread(String ownerInternalName) {
+        // Convert internal name (e.g. "com/example/MyThread") to fully qualified class name.
+        String fqcn = ownerInternalName.replace('/', '.');
+        try {
+            Class<?> ownerClass =
+                    Class.forName(fqcn, false, Thread.currentThread().getContextClassLoader());
+            // Check if owner class is not JmcThread and is a subclass of Thread.
+            return Thread.class.isAssignableFrom(ownerClass)
+                    && !JmcThread.class.isAssignableFrom(ownerClass);
+        } catch (ClassNotFoundException e) {
+            // If the class is not found, we conservatively return false.
+            return false;
         }
     }
 }

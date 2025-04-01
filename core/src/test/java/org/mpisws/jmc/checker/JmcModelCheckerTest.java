@@ -18,6 +18,7 @@ import org.mpisws.jmc.programs.det.stack.Client6;
 import org.mpisws.jmc.programs.dining.DiningPhilosophers;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
+import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -309,7 +310,7 @@ public class JmcModelCheckerTest {
     void testTrustConcurrentCounter() {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
-                        .strategyType("trust")
+                        .customStrategy(new TrustStrategy())
                         .numIterations(10)
                         .debug(true)
                         .build();

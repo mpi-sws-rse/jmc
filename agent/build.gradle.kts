@@ -17,7 +17,8 @@ checkstyle {
 }
 
 dependencies {
-    implementation("net.bytebuddy:byte-buddy:1.17.1")
+    implementation("org.ow2.asm:asm:9.8")
+    testImplementation("org.ow2.asm:asm-util:9.8")
     implementation("org.mpisws:jmc:0.1.0")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -32,13 +33,20 @@ task("agentJar", ShadowJar::class) {
     from(sourceSets["main"].output)
 
     manifest {
+        attributes["Agent-Class"] = "org.mpisws.jmc.agent.InstrumentationAgent"
         attributes["Premain-Class"] = "org.mpisws.jmc.agent.InstrumentationAgent"
         attributes["Can-Redefine-Classes"] = "true"
+        attributes["Can-Retransform-Classes"] = "true"
     }
 }
 
 tasks.build {
     dependsOn("agentJar")
+}
+
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 // Create a publication for the agent jar

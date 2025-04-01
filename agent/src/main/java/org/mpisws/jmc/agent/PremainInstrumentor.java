@@ -1,20 +1,22 @@
 package org.mpisws.jmc.agent;
 
-import net.bytebuddy.jar.asm.ClassReader;
-import net.bytebuddy.jar.asm.ClassVisitor;
-import net.bytebuddy.jar.asm.ClassWriter;
+import org.mpisws.jmc.agent.visitors.JmcReadWriteVisitor;
 import org.mpisws.jmc.agent.visitors.JmcThreadVisitor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 
 import java.io.File;
 import java.lang.instrument.ClassFileTransformer;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
+import java.util.Arrays;
 
-public class Instrumentor implements ClassFileTransformer {
+public class PremainInstrumentor implements ClassFileTransformer {
     private AgentArgs agentArgs;
     private JmcMatcher matcher;
 
-    public Instrumentor(AgentArgs agentArgs) {
+    public PremainInstrumentor(AgentArgs agentArgs) {
         this.agentArgs = agentArgs;
         this.matcher = new JmcMatcher(agentArgs.getInstrumentingPackages());
     }
@@ -25,17 +27,19 @@ public class Instrumentor implements ClassFileTransformer {
             Class<?> classBeingRedefined,
             ProtectionDomain protectionDomain,
             byte[] classfileBuffer) {
-        if (!matcher.matches(className, loader, null, classBeingRedefined, protectionDomain)) {
-            return classfileBuffer;
+        String finalClassName = className.replace("/", ".");
+        byte[] copiedClassBuffer = Arrays.copyOf(classfileBuffer, classfileBuffer.length);
+        if (!this.matcher.matches(finalClassName, loader)) {
+            return copiedClassBuffer;
         }
-        System.out.println("Transforming " + className);
-        ClassReader cr = new ClassReader(classfileBuffer);
+        System.out.println("Transforming class: " + finalClassName);
+        ClassReader cr = new ClassReader(copiedClassBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-
-        ClassVisitor visitor =
-                new JmcThreadVisitor.ThreadClassVisitor(
-                        new JmcThreadVisitor.ThreadCallReplacerClassVisitor(cw));
-        cr.accept(visitor, 0);
+        ClassVisitor cv =
+                new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
+                        new JmcThreadVisitor.ThreadClassVisitor(
+                                new JmcReadWriteVisitor.ReadWriteClassVisitor(cw)));
+        cr.accept(cv, 0);
         if (this.agentArgs.isDebug()) {
             byte[] transformed = cw.toByteArray();
             record(className, transformed);

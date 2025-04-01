@@ -47,6 +47,6 @@ tasks.test {
     systemProperty("net.bytebuddy.nexus.disabled", "true")
     val agentJar = agentDependencies.find { it.name.contains("jmc-agent-0.1.0") }?.absolutePath
 
-    val agentArg = "-javaagent:$agentJar=debug,instrumentingPackages=org.mpisws.jmc.agent.test"
+    val agentArg = "-javaagent:$agentJar=debug,instrumentingPackages=org.mpisws.jmc.test"
     jvmArgs(agentArg)
 }

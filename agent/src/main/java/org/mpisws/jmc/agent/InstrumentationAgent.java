@@ -1,21 +1,12 @@
 package org.mpisws.jmc.agent;
 
-import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.utility.JavaModule;
-import org.mpisws.jmc.agent.visitors.JmcFutureVisitor;
-import org.mpisws.jmc.agent.visitors.JmcReadWriteVisitor;
-import org.mpisws.jmc.agent.visitors.JmcReentrantLockVisitor;
-import org.mpisws.jmc.agent.visitors.JmcThreadVisitor;
-
 import java.io.File;
 import java.io.InputStream;
+import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.security.ProtectionDomain;
-import java.util.List;
+import java.util.Set;
 import java.util.jar.JarFile;
 
 /**
@@ -40,6 +31,19 @@ public class InstrumentationAgent {
     }
 
     /**
+     * The agentmain method is called when the agent is attached to the target application. It is
+     * used to set up the instrumentation agent.
+     *
+     * @param agentArgs the agent arguments
+     * @param inst the instrumentation object
+     */
+    public static void agentmain(String agentArgs, Instrumentation inst) {
+        AgentArgs args = new AgentArgs(agentArgs);
+        AgentMainInstrumentor agentMainInstrumentor = new AgentMainInstrumentor(args);
+        inst.addTransformer(agentMainInstrumentor);
+    }
+
+    /**
      * The premain method is called before the application's main method is called. It is used to
      * set up the instrumentation agent.
      *
@@ -50,33 +54,7 @@ public class InstrumentationAgent {
         loadDependencyJars(inst);
         AgentArgs args = new AgentArgs(agentArgs);
 
-        // Without byte buddy
-        //        Instrumentor instrumentor = new Instrumentor(args);
-        //        inst.addTransformer(instrumentor, true);
-
-        // With byte buddy
-        AgentBuilder agentBuilder = new AgentBuilder.Default();
-        if (args.isDebug()) {
-            agentBuilder = agentBuilder.with(new DebugListener(args.getDebugSavePath()));
-        }
-        agentBuilder
-                .with(AgentBuilder.RedefinitionStrategy.REDEFINITION)
-                .type(new JmcMatcher(args.getInstrumentingPackages()))
-                .transform(
-                        new AgentBuilder.Transformer() {
-                            @Override
-                            public DynamicType.Builder<?> transform(
-                                    DynamicType.Builder<?> builder,
-                                    TypeDescription typeDescription,
-                                    ClassLoader classLoader,
-                                    JavaModule javaModule,
-                                    ProtectionDomain protectionDomain) {
-                                return builder.visit(new JmcThreadVisitor())
-                                        .visit(new JmcReadWriteVisitor())
-                                        .visit(new JmcReentrantLockVisitor())
-                                        .visit(new JmcFutureVisitor());
-                            }
-                        })
-                .installOn(inst);
+        PremainInstrumentor instrumentor = new PremainInstrumentor(args);
+        inst.addTransformer(instrumentor, true);
     }
 }

@@ -2,7 +2,7 @@ package org.mpisws.jmc.runtime;
 
 import java.util.HashMap;
 
-public class RuntimeEventBuilderHelper {
+public class RuntimeUtils {
     public static void readEvent(String owner, String name, String descriptor, Object instance) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
         builder.type(RuntimeEventType.READ_EVENT).taskId(JmcRuntime.currentTask());
@@ -27,4 +27,6 @@ public class RuntimeEventBuilderHelper {
         var2.put("descriptor", descriptor);
         JmcRuntime.updateEventAndYield(builder.params(var2).param("instance", instance).build());
     }
+
+    public static void joinRequestEvent() {}
 }
