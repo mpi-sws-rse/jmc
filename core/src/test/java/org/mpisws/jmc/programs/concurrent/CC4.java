@@ -5,7 +5,8 @@ import org.mpisws.jmc.runtime.RuntimeEvent;
 import org.mpisws.jmc.runtime.RuntimeEventType;
 import org.mpisws.jmc.util.concurrent.JmcThread;
 
-public class ConcurrentCounter {
+public class CC4 {
+
     public static class Value {
         public int count = 0;
 
@@ -53,7 +54,7 @@ public class ConcurrentCounter {
     }
 
     public static void main(String[] args) {
-        Value counter = new Value();
+        CC0.Value counter = new CC0.Value();
         JmcThread thread1 =
                 new JmcThread(
                         () -> {
