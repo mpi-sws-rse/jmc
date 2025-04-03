@@ -8,17 +8,7 @@ import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.SchedulingChoice;
 import org.mpisws.jmc.util.aux.LamportVectorClock;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -1160,9 +1150,91 @@ public class ExecutionGraph {
         return new TopologicalIterator(this);
     }
 
-    public boolean isConsistent() {
-        // TODO: Implement this method
-        return true;
+    public boolean isSequentialConsistent() {
+        boolean r = topologicalSort().isEmpty();
+        // TODO :: For debugging
+        if (r) {
+            System.out.println("[Exec Graph debug]: The graph is not sequentially consistent");
+        } else {
+            System.out.println("[Exec Graph debug]: The graph is sequentially consistent");
+        }
+        return !r;
+    }
+
+    public ArrayList<ExecutionGraphNode> topologicalSort() {
+        LinkedHashSet<ExecutionGraphNode> visited = new LinkedHashSet<>();
+        HashSet<ExecutionGraphNode> recStack = new HashSet<>();
+        ArrayList<ExecutionGraphNode> topoSort = new ArrayList<>();
+
+        for (ExecutionGraphNode node : allEvents) {
+            if (dfsTopoSort(node, recStack, topoSort, visited)) {
+                // Cycle detected
+                return new ArrayList<>();
+            }
+        }
+
+        Collections.reverse(topoSort);
+        return topoSort;
+    }
+
+    private boolean dfsTopoSort(ExecutionGraphNode node, HashSet<ExecutionGraphNode> recStack,
+                                ArrayList<ExecutionGraphNode> topoSort, LinkedHashSet<ExecutionGraphNode> visited) {
+        if (recStack.contains(node)) {
+            return true;
+        }
+
+        if (visited.contains(node)) {
+            return false;
+        }
+
+        visited.add(node);
+        recStack.add(node);
+
+        // Exploring successors ( PO + RF + CO + Thread Coherence + Join Coherence )
+        for (Event.Key successor : node.getAllSuccessors()) {
+            try {
+                ExecutionGraphNode childNode = getEventNode(successor);
+                if (dfsTopoSort(childNode, recStack, topoSort, visited)) {
+                    return true;
+                }
+            } catch (NoSuchEventException e) {
+                // Should not be possible technically
+                e.printStackTrace();
+            }
+        }
+
+        // Exploring predecessors ( FR = RF^{-1};CO)
+        if (node.getEvent().isRead() || node.getEvent().isReadEx()) {
+            Set<Event.Key> predecessors = node.getPredecessors(Relation.ReadsFrom);
+            if (predecessors.isEmpty()) {
+                // No read event can have null read-from predecessor
+                throw new HaltCheckerException("The read event has no read-from predecessor");
+            }
+
+            if (predecessors.size() > 1) {
+                // A read event can have only one read-from predecessor
+                throw new HaltCheckerException("The read event has more than one read-from predecessor");
+            }
+
+            Event.Key predecessor = predecessors.iterator().next();
+            try {
+                ExecutionGraphNode rfNode = getEventNode(predecessor);
+                Set<Event.Key> fr = rfNode.getSuccessors(Relation.Coherency);
+                for (Event.Key frkey : fr) {
+                    ExecutionGraphNode frNode = getEventNode(frkey);
+                    if (dfsTopoSort(frNode, recStack, topoSort, visited)) {
+                        return true;
+                    }
+                }
+            } catch (NoSuchEventException e) {
+                // Should not be possible technically
+                e.printStackTrace();
+            }
+        }
+
+        recStack.remove(node);
+        topoSort.add(node);
+        return false;
     }
 
     /** Returns true if the graph contains only the initial event. */

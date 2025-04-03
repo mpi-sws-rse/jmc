@@ -212,6 +212,7 @@ public class Algo {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
     }
 
+    // TODO : Complete this method
     private void resetWith(ExplorationStack.Item item) {
         // Reset based on the kind of item in the schedule
         ExecutionGraph newGraph = explorationStack.getGraph(item);
@@ -227,7 +228,9 @@ public class Algo {
                 executionGraph.changeReadsFrom(read, write);
                 //executionGraph.restrictTo(read);
                 executionGraph.restrict(read);
-                guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                if (executionGraph.isSequentialConsistent()) {
+                    guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                }
                 break;
             case FWW:
                 // Forward revisit of w -> w (alternative coherence placing)
@@ -237,10 +240,14 @@ public class Algo {
                 executionGraph.swapCoherency(write1, write2);
                 //executionGraph.restrictTo(write1);
                 executionGraph.restrict(write1);
-                guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                if (executionGraph.isSequentialConsistent()) {
+                    guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                }
                 break;
             case BRR:
-                guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                if (executionGraph.isSequentialConsistent()) {
+                    guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                }
                 break;
             case BWR:
                 // Should not happen. We should have handled this in the resetIteration method.
@@ -251,7 +258,9 @@ public class Algo {
                 // set the co
                 executionGraph.trackCoherency(w);
                 executionGraph.restrict(w);
-                guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                if (executionGraph.isSequentialConsistent()) {
+                    guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+                }
                 // TODO :: For debugging
                 System.out.println("[Algo Debug]: Forward revisit of w -> lw");
                 break;
