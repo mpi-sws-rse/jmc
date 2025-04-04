@@ -339,7 +339,7 @@ public class ExecutionGraph {
      *
      * @param node The node representing the thread start event.
      */
-    public void trackThreadStarts(ExecutionGraphNode node) {
+    public void trackThreadCreates(ExecutionGraphNode node) {
         if (!EventUtils.isThreadStart(node.getEvent())) {
             // Silent return if the event is not a thread start
             return;
@@ -350,6 +350,27 @@ public class ExecutionGraph {
         ExecutionGraphNode lastThreadStart = threadStarts.get(threadStarts.size() - 1);
         lastThreadStart.addEdge(node, Relation.ThreadCreation);
         coherencyOrder.get(LocationStore.ThreadLocation).add(node);
+    }
+
+    public void trackThreadStarts(ExecutionGraphNode node) {
+        if (!EventUtils.isThreadStart(node.getEvent())) {
+            // Silent return if the event is not a thread start
+            return;
+        }
+
+        // Adding a thread edge from the last event of the started task to this event
+        // Affects porf and happens before
+        Long startedBy = EventUtils.getStartedBy(node.getEvent());
+        if (startedBy == null) {
+            // No any ThreadStart event can be started by null. It is a bug in the code.
+            throw new RuntimeException( // TODO : Replace with better exception
+                    "The event is not started by any task.");
+        }
+
+        int startedByTask = Math.toIntExact(startedBy);
+        ExecutionGraphNode lastEventStartedBy =
+                taskEvents.get(startedByTask).get(taskEvents.get(startedByTask).size() - 1);
+        lastEventStartedBy.addEdge(node, Relation.ThreadStart);
     }
 
     /**

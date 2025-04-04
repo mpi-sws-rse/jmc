@@ -11,6 +11,19 @@ public class CC0 {
 
         public Value() {
             count = 0;
+            RuntimeEvent event =
+                    new RuntimeEvent.Builder()
+                            .type(RuntimeEventType.WRITE_EVENT)
+                            .taskId(JmcRuntime.currentTask())
+                            .param("newValue", 0)
+                            .param(
+                                    "owner",
+                                    "org/mpisws/jmc/programs/concurrent/Counter$Value")
+                            .param("name", "count")
+                            .param("descriptor", "I")
+                            .param("instance", this)
+                            .build();
+            JmcRuntime.updateEventAndYield(event);
         }
 
         public void set(int newValue) {

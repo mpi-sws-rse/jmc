@@ -282,6 +282,7 @@ public class ExecutionGraphNode {
             porfPredecessors.addAll(getPredecessors(Relation.ReadsFrom));
             porfPredecessors.addAll(getPredecessors(Relation.ThreadJoin));
             porfPredecessors.addAll(getPredecessors(Relation.ThreadCreation));
+            porfPredecessors.addAll(getPredecessors(Relation.ThreadStart));
 
             for (Event.Key key : porfPredecessors) {
                 if (key.equals(poBeforeNode.key())) {
