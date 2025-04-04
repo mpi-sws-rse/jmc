@@ -13,8 +13,8 @@ import java.security.ProtectionDomain;
 import java.util.Arrays;
 
 public class PremainInstrumentor implements ClassFileTransformer {
-    private AgentArgs agentArgs;
-    private JmcMatcher matcher;
+    private final AgentArgs agentArgs;
+    private final JmcMatcher matcher;
 
     public PremainInstrumentor(AgentArgs agentArgs) {
         this.agentArgs = agentArgs;
@@ -26,13 +26,12 @@ public class PremainInstrumentor implements ClassFileTransformer {
             String className,
             Class<?> classBeingRedefined,
             ProtectionDomain protectionDomain,
-            byte[] classfileBuffer) {
+            byte[] classFileBuffer) {
         String finalClassName = className.replace("/", ".");
-        byte[] copiedClassBuffer = Arrays.copyOf(classfileBuffer, classfileBuffer.length);
+        byte[] copiedClassBuffer = Arrays.copyOf(classFileBuffer, classFileBuffer.length);
         if (!this.matcher.matches(finalClassName, loader)) {
             return copiedClassBuffer;
         }
-        System.out.println("Transforming class: " + finalClassName);
         ClassReader cr = new ClassReader(copiedClassBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         ClassVisitor cv =
@@ -47,12 +46,12 @@ public class PremainInstrumentor implements ClassFileTransformer {
         return cw.toByteArray();
     }
 
-    public void record(String className, byte[] classfileBuffer) {
+    public void record(String className, byte[] classFileBuffer) {
         String outputDir = this.agentArgs.getDebugSavePath();
         File outFile = new File(outputDir + "/" + className + ".class");
         try {
             outFile.getParentFile().mkdirs();
-            Files.write(outFile.toPath(), classfileBuffer);
+            Files.write(outFile.toPath(), classFileBuffer);
         } catch (Exception e) {
             System.out.println("Error writing to file: " + outFile.getAbsolutePath() + " " + e);
         }
