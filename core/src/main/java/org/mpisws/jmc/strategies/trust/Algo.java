@@ -187,6 +187,7 @@ public class Algo {
             return;
         }
 
+        // Check if the exploration stack is empty. If so, we are done with the exploration.
         if (explorationStack.isEmpty()) {
             // TODO :: For debugging
             System.out.println("[Algo Debug]: Exploration stack is empty.");
@@ -195,21 +196,77 @@ public class Algo {
             throw new HaltCheckerException();
         }
 
+        /** Prepare guiding phase **/
+
         // Clear location aliases. By this point, we have replaced all the locations in the
         // execution graph with the latest ones.
         // TODO: need to check this properly
         locationStore.clearAliases();
+
         // We are guiding
         isGuiding = true;
+
         // TODO :: For debugging
         System.out.println("[Algo Debug]: Initializing the " + iteration + "th iteration");
-        ExplorationStack.Item item = explorationStack.pop();
-        resetWith(item);
+
+        //ExplorationStack.Item item = explorationStack.pop();
+        //resetWith(item);
+        findNextExplorationChoice();
     }
 
     /** Checks if we are guiding the execution. */
     private boolean areWeGuiding() {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
+    }
+
+    private void findNextExplorationChoice() {
+        if (explorationStack.isEmpty()) {
+            // This must not happen. We should have handled this in the resetIteration method.
+            throw new RuntimeException( // TODO : We need to define a better exception for this case.
+                    "Exploration stack is empty. We should have handled this in the resetIteration method.");
+        }
+
+        // The main loop of the procedure
+        boolean foundScGraph = false;
+        while (!foundScGraph) {
+
+            if (explorationStack.isEmpty()) {
+                // We have reached the end of the exploration stack.
+                throw new HaltCheckerException();
+            }
+
+            // Get the next exploration choice from the exploration stack.
+            ExplorationStack.Item item = explorationStack.pop();
+
+            // Check if the item is a backward revisit.
+            if (item.isBackwardRevisit()) { // TODO : Is any backward revisit type allowed? or only BWR?
+                processBWR(item);
+                continue;
+            }
+
+            // Handle the forward revisit
+            ExecutionGraph newGraph = explorationStack.getGraph(item);
+            if (newGraph == null) {
+                // It is not possible for an item to have a null graph. This must be a bug in the
+                // exploration stack.
+                throw new RuntimeException(  // TODO : We need to define a better exception for this case.
+                        "The exploration stack item has a null graph. This must be a bug in the exploration stack.");
+            } else {
+                executionGraph = newGraph;
+            }
+
+            switch (item.getType()) {
+                case FRW -> foundScGraph = processFRW(item);
+                case FWW -> foundScGraph = processFWW(item);
+                case FLW -> foundScGraph = processFLW(item);
+                default -> throw new RuntimeException(
+                        "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
+            }
+        }
+
+        // The SC graph is found. We need to set the guiding task schedule.
+        // TODO : To increase efficiency, we can use the topological sort which
+        guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
     }
 
     // TODO : Complete this method
@@ -326,6 +383,57 @@ public class Algo {
         }
     }
 
+    private void processBWR(ExplorationStack.Item item) {
+
+        ExecutionGraphNode write = item.getEvent1();
+        ExecutionGraph restrictedGraph = item.getGraph();
+
+        List<ExecutionGraphNode> alternativeWrites =
+                restrictedGraph.getCoherentPlacings(write);
+
+        if (!alternativeWrites.isEmpty()) {
+            for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
+                explorationStack.push(
+                        ExplorationStack.Item.forwardWW(
+                                write, alternativeWrites.get(i), restrictedGraph));
+            }
+        }
+
+        explorationStack.push(
+                ExplorationStack.Item.forwardLW(write, restrictedGraph));
+    }
+
+    private boolean processFRW(ExplorationStack.Item item) {
+        // Forward revisit of w -> r
+        ExecutionGraphNode read = item.getEvent1();
+        ExecutionGraphNode write = item.getEvent2();
+
+        executionGraph.changeReadsFrom(read, write);
+        executionGraph.restrict(read);
+
+        return executionGraph.isSequentialConsistent();
+    }
+
+    private boolean processFWW(ExplorationStack.Item item) {
+        // Forward revisit of w -> w (alternative coherence placing)
+        ExecutionGraphNode write1 = item.getEvent1();
+        ExecutionGraphNode write2 = item.getEvent2();
+
+        executionGraph.swapCoherency(write1, write2);
+        executionGraph.restrict(write1);
+        return executionGraph.isSequentialConsistent();
+    }
+
+    private boolean processFLW(ExplorationStack.Item item) {
+        // Forward revisit of w -> lw (max-co)
+        ExecutionGraphNode w = item.getEvent1();
+
+        // set the co
+        executionGraph.trackCoherency(w);
+        executionGraph.restrict(w);
+        return executionGraph.isSequentialConsistent();
+    }
+
     /**
      * Cleans up the execution graph and the task schedule. This method is called at the end of the
      * exploration.
@@ -422,7 +530,7 @@ public class Algo {
         // Add the write event to the execution graph
         ExecutionGraphNode write = executionGraph.addEvent(event);
 
-        // Check for (w->w) coherent forward revisits (VisitCO)
+        /** Check for (w->w) coherent forward revisits **/
         List<ExecutionGraphNode> concurrentWrites = executionGraph.getCoherentPlacings(write);
 
         if (!concurrentWrites.isEmpty()) {
@@ -442,7 +550,7 @@ public class Algo {
             }
         }
 
-        // Check for (w->r) backward revisits
+        /** Check for (w->r) backward revisits **/
         // Find potential reads that need to be revisited
         // TODO :: I'm not sure the way `getPotentialReads` method is ordering the reads is correct.
         List<ExecutionGraphNode> potentialReads = executionGraph.getPotentialReads(write);

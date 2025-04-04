@@ -100,7 +100,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
             algoInstance.writeExecutionGraphToFile(
                     Paths.get(this.reportPath, "iteration-" + iteration + ".json").toString());
         }
-        algoInstance.resetIteration();
+        //algoInstance.resetIteration();
     }
 
     @Override
