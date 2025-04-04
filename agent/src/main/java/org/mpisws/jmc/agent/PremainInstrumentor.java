@@ -1,6 +1,7 @@
 package org.mpisws.jmc.agent;
 
 import org.mpisws.jmc.agent.visitors.JmcReadWriteVisitor;
+import org.mpisws.jmc.agent.visitors.JmcReentrantLockVisitor;
 import org.mpisws.jmc.agent.visitors.JmcThreadVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -35,9 +36,10 @@ public class PremainInstrumentor implements ClassFileTransformer {
         ClassReader cr = new ClassReader(copiedClassBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         ClassVisitor cv =
-                new JmcThreadVisitor.ThreadClassVisitor(
-                        new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
-                                new JmcReadWriteVisitor.ReadWriteClassVisitor(cw)));
+                new JmcReentrantLockVisitor(
+                        new JmcThreadVisitor.ThreadClassVisitor(
+                                new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
+                                        new JmcReadWriteVisitor.ReadWriteClassVisitor(cw))));
         cr.accept(cv, 0);
         if (this.agentArgs.isDebug()) {
             byte[] transformed = cw.toByteArray();

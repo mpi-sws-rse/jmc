@@ -135,7 +135,7 @@ public class JmcThreadVisitor {
                 mv.visitInsn(Opcodes.DUP);
 
                 // Call RuntimeUtils.shouldInstrumentJoin(<top of stack>)
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/RuntimeUtils", "shouldInstrumentJoin", "(Ljava/lang/Object;)Z", false);
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/RuntimeUtils", "shouldInstrumentThreadCall", "(Ljava/lang/Object;)Z", false);
 
                 // Create the if-else block
                 Label originalCall = new Label();
@@ -149,6 +149,30 @@ public class JmcThreadVisitor {
                 mv.visitJumpInsn(Opcodes.GOTO, end);
 
                 // Original join() method call
+                mv.visitLabel(originalCall);
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+
+                // End label
+                mv.visitLabel(end);
+            } else if (name.equals("yield") && opcode == Opcodes.INVOKEVIRTUAL) {
+                // Duplicate top of the stack (the object on which join() is called)
+                mv.visitInsn(Opcodes.DUP);
+
+                // Call RuntimeUtils.shouldInstrumentJoin(<top of stack>)
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/RuntimeUtils", "shouldInstrumentThreadCall", "(Ljava/lang/Object;)Z", false);
+
+                // Create the if-else block
+                Label originalCall = new Label();
+                mv.visitJumpInsn(Opcodes.IFEQ, originalCall);
+
+                // Call JmcRuntime.yield()
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/JmcRuntime", "yield", "()V", false);
+
+                // Skip the original call
+                Label end = new Label();
+                mv.visitJumpInsn(Opcodes.GOTO, end);
+
+                // Original yield() method call
                 mv.visitLabel(originalCall);
                 super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
 

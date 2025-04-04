@@ -114,6 +114,9 @@ src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/elimination/*.tx
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/*.class
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/timeStamped/*.txt
 
+### Source code ###
+integration-test/src/main/resources/lib/
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 /.idea/workspace.xml

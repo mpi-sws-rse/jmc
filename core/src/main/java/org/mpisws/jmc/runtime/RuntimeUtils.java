@@ -56,7 +56,7 @@ public class RuntimeUtils {
         jmcThread.join1(millis);
     }
 
-    public static boolean shouldInstrumentJoin(Object t) {
+    public static boolean shouldInstrumentThreadCall(Object t) {
         return JmcThread.class.isAssignableFrom(t.getClass());
     }
 }

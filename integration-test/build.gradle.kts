@@ -20,10 +20,13 @@ val agentDependencies by configurations.creating
 
 dependencies {
     implementation("net.bytebuddy:byte-buddy:1.17.1")
+    implementation("org.apache.logging.log4j:log4j-api:2.24.3")
+    implementation("org.apache.logging.log4j:log4j-core:2.24.3")
     agentDependencies("org.mpisws:jmc:0.1.0")
     agentDependencies("org.mpisws:jmc-agent:0.1.0")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(project(":core"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
 }
 

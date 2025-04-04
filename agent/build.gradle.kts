@@ -19,7 +19,7 @@ checkstyle {
 dependencies {
     implementation("org.ow2.asm:asm:9.8")
     testImplementation("org.ow2.asm:asm-util:9.8")
-    implementation("org.mpisws:jmc:0.1.0")
+    implementation(project(":core"))
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
