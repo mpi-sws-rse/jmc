@@ -1,13 +1,10 @@
 package org.mpisws.jmc.agent.visitors;
 
-import org.mpisws.jmc.util.concurrent.JmcThread;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-
-import java.util.HashSet;
-import java.util.Set;
+import org.objectweb.asm.Label;
 
 /**
  * Represents a JMC thread visitor. Adds instrumentation to change Thread calls to JmcThread calls
@@ -133,30 +130,42 @@ public class JmcThreadVisitor {
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
-            if ("join".equals(name) && ownerExtendsThread(owner)) {
-                super.visitMethodInsn(opcode, owner, "join1", descriptor, isInterface);
+            if (name.equals("join") && opcode == Opcodes.INVOKEVIRTUAL) {
+                // Duplicate top of the stack (the object on which join() is called)
+                mv.visitInsn(Opcodes.DUP);
+
+                // Call RuntimeUtils.shouldInstrumentJoin(<top of stack>)
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/RuntimeUtils", "shouldInstrumentJoin", "(Ljava/lang/Object;)Z", false);
+
+                // Create the if-else block
+                Label originalCall = new Label();
+                mv.visitJumpInsn(Opcodes.IFEQ, originalCall);
+
+                // Call RuntimeUtils.join()
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/RuntimeUtils", "join", matchDescriptor(descriptor), false);
+
+                // Skip the original call
+                Label end = new Label();
+                mv.visitJumpInsn(Opcodes.GOTO, end);
+
+                // Original join() method call
+                mv.visitLabel(originalCall);
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+
+                // End label
+                mv.visitLabel(end);
             } else {
                 super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
             }
         }
-    }
 
-    /**
-     * Helper method to check if the given owner (internal name) represents a class that extends
-     * java.lang.Thread.
-     */
-    private static boolean ownerExtendsThread(String ownerInternalName) {
-        // Convert internal name (e.g. "com/example/MyThread") to fully qualified class name.
-        String fqcn = ownerInternalName.replace('/', '.');
-        try {
-            Class<?> ownerClass =
-                    Class.forName(fqcn, false, Thread.currentThread().getContextClassLoader());
-            // Check if owner class is not JmcThread and is a subclass of Thread.
-            return Thread.class.isAssignableFrom(ownerClass)
-                    && !JmcThread.class.isAssignableFrom(ownerClass);
-        } catch (ClassNotFoundException e) {
-            // If the class is not found, we conservatively return false.
-            return false;
+        private String matchDescriptor(String descriptor) {
+            if (descriptor.equals("()V")) {
+                return "(Ljava/lang/Thread;)V";
+            } else if (descriptor.equals("(J)V")) {
+                return "(Ljava/lang/Thread;J)V";
+            }
+            return "(Ljava/lang/Thread;JI)V";
         }
     }
 }

@@ -1,7 +1,12 @@
 package org.mpisws.jmc.runtime;
 
+import org.mpisws.jmc.util.concurrent.JmcThread;
+
 import java.util.HashMap;
 
+// Wrapper methods to create events and make JmcRuntime calls at Runtime
+// These methods are invoked mainly through bytecode instrumentation and
+// not meant to be used within the codebase.
 public class RuntimeUtils {
     public static void readEvent(String owner, String name, String descriptor, Object instance) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
@@ -28,5 +33,30 @@ public class RuntimeUtils {
         JmcRuntime.updateEventAndYield(builder.params(var2).param("instance", instance).build());
     }
 
-    public static void joinRequestEvent() {}
+    // Join calls used by the instrumentation to replace existing join calls.
+    // Why do these exist?
+    // While bytecode instrumentation allows us to change base class, we cannot
+    // control the order in which the classes are loaded. So blindly replacing calls to join
+    // join1 doesn't work and hence we need to do it at runtime.
+    // These calls are added instead of thread.join calls at runtime.
+    public static void join(Thread t) throws InterruptedException {
+        join(t, 0L);
+    }
+
+    public static void join(Thread t, long millis) throws InterruptedException {
+        JmcThread jmcThread = (JmcThread) t;
+        jmcThread.join1(millis);
+    }
+
+    public static void join(Thread t, long millis, int nanos) throws InterruptedException {
+        if (nanos > 0 && millis < Long.MAX_VALUE) {
+            millis++;
+        }
+        JmcThread jmcThread = (JmcThread) t;
+        jmcThread.join1(millis);
+    }
+
+    public static boolean shouldInstrumentJoin(Object t) {
+        return JmcThread.class.isAssignableFrom(t.getClass());
+    }
 }

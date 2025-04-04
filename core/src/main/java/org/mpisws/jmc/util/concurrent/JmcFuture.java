@@ -64,7 +64,7 @@ public class JmcFuture<T> implements Future<T> {
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
-        thread.join1();
+        thread.join1(0L);
         return future.get();
     }
 
@@ -72,7 +72,7 @@ public class JmcFuture<T> implements Future<T> {
     public T get(long l, TimeUnit timeUnit)
             throws InterruptedException, ExecutionException, TimeoutException {
         // Currently we do not support timeouts, therefore the timeout here is ignored
-        thread.join1();
+        thread.join1(0L);
         return future.get(l, timeUnit);
     }
 

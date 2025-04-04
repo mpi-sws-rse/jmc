@@ -34,10 +34,10 @@ public class PremainInstrumentor implements ClassFileTransformer {
         }
         System.out.println("Transforming class: " + finalClassName);
         ClassReader cr = new ClassReader(copiedClassBuffer);
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         ClassVisitor cv =
-                new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
-                        new JmcThreadVisitor.ThreadClassVisitor(
+                new JmcThreadVisitor.ThreadClassVisitor(
+                        new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
                                 new JmcReadWriteVisitor.ReadWriteClassVisitor(cw)));
         cr.accept(cv, 0);
         if (this.agentArgs.isDebug()) {
