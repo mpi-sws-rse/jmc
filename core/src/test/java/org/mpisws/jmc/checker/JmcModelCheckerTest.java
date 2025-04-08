@@ -292,7 +292,7 @@ public class JmcModelCheckerTest {
     @Test
     void testRandomFutureSimple() {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).build();
+                new JmcCheckerConfiguration.Builder().numIterations(100).build();
 
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 

@@ -1,25 +1,25 @@
 package org.mpisws.jmc.util.concurrent;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.concurrent.*;
 
 /**
  * A future that runs a callable function in a new thread.
  *
+ * <p>TODO: Need to handle cancel
+ *
  * @param <T> The return type of the callable function.
  */
-public class JmcFuture<T> implements Future<T> {
+public class JmcFuture<T> implements RunnableFuture<T> {
+
+    private static final Logger LOGGER = LogManager.getLogger(JmcFuture.class);
+
     private CompletableFuture<T> future;
     private Long taskId;
     private JmcThread thread;
 
-    // TODO: Add a constructor that has a particular result value to return.
-    // TODO: Add a constructor to take in a runnable and check if the runnable is already a
-    //   JmcThread, reuse the taskId in that case.
     public JmcFuture(Callable<T> function, Long taskId) {
         this.future = new CompletableFuture<>();
         this.taskId = taskId;
@@ -33,6 +33,60 @@ public class JmcFuture<T> implements Future<T> {
                             }
                         },
                         taskId);
+    }
+
+    public JmcFuture(Runnable runnable, Long taskId) {
+        this.future = new CompletableFuture<>();
+        this.taskId = taskId;
+        this.thread =
+                new JmcThread(
+                        () -> {
+                            try {
+                                runnable.run();
+                                set(null);
+                            } catch (Exception e) {
+                                future.completeExceptionally(e);
+                            }
+                        },
+                        taskId);
+    }
+
+    public JmcFuture(Runnable runnable, T result, Long taskId) {
+        this.future = new CompletableFuture<>();
+        this.taskId = taskId;
+        this.thread =
+                new JmcThread(
+                        () -> {
+                            try {
+                                runnable.run();
+                                set(result);
+                            } catch (Exception e) {
+                                future.completeExceptionally(e);
+                            }
+                        },
+                        taskId);
+    }
+
+    public JmcFuture(JmcThread thread, T result) {
+        this.future = new CompletableFuture<>();
+        this.taskId = thread.getTaskId();
+        this.thread =
+                new JmcThread(
+                        () -> {
+                            try {
+                                thread.run1();
+                                set(result);
+                            } catch (Exception e) {
+                                future.completeExceptionally(e);
+                            }
+                        },
+                        taskId);
+    }
+
+    public JmcFuture(JmcThread thread) {
+        this.future = new CompletableFuture<>();
+        this.taskId = thread.getTaskId();
+        this.thread = thread;
     }
 
     public Long getTaskId() {
@@ -64,6 +118,7 @@ public class JmcFuture<T> implements Future<T> {
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
+        LOGGER.debug("Waiting on future: {}", thread.getTaskId());
         thread.join1(0L);
         return future.get();
     }
@@ -72,7 +127,9 @@ public class JmcFuture<T> implements Future<T> {
     public T get(long l, TimeUnit timeUnit)
             throws InterruptedException, ExecutionException, TimeoutException {
         // Currently we do not support timeouts, therefore the timeout here is ignored
-        thread.join1(0L);
+        long waitTime = timeUnit.toMillis(l);
+        LOGGER.debug("Waiting on future {} with timeout: {}ms", thread.getTaskId(), waitTime);
+        thread.join1(waitTime);
         return future.get(l, timeUnit);
     }
 
@@ -82,6 +139,7 @@ public class JmcFuture<T> implements Future<T> {
 
     /** Run the underlying callable function in a new thread. */
     public void run() {
-        thread.start();
+        LOGGER.debug("Starting future: {}", thread.getTaskId());
+        thread.runWithoutJoin();
     }
 }

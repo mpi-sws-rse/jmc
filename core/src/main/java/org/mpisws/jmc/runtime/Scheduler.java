@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.strategies.SchedulingStrategy;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 
 /**
@@ -40,9 +41,11 @@ public class Scheduler {
      *
      * @param strategy the scheduling strategy
      */
-    public Scheduler(SchedulingStrategy strategy) {
+    public Scheduler(
+            SchedulingStrategy strategy, int schedulerTries, long schedulerTrySleepTimeNanos) {
         this.strategy = strategy;
-        this.schedulerThread = new SchedulerThread(this, strategy);
+        this.schedulerThread =
+                new SchedulerThread(this, strategy, schedulerTries, schedulerTrySleepTimeNanos);
         this.currentTask = 0L;
     }
 
@@ -192,7 +195,11 @@ public class Scheduler {
          * A queue used to enable the scheduler thread. Adding a boolean value to the queue enables
          * the scheduler to run one iteration, while adding a true value shuts down the scheduler.
          */
-        private final SynchronousQueue<Boolean> enablingQueue;
+        private final LinkedBlockingQueue<Boolean> enablingQueue;
+
+        private final int schedulerTries;
+
+        private final long schedulerTrySleepTimeNanos;
 
         /**
          * Constructs a new SchedulerThread object.
@@ -200,10 +207,16 @@ public class Scheduler {
          * @param scheduler the scheduler instance
          * @param strategy the scheduling strategy
          */
-        public SchedulerThread(Scheduler scheduler, SchedulingStrategy strategy) {
+        public SchedulerThread(
+                Scheduler scheduler,
+                SchedulingStrategy strategy,
+                int schedulerTries,
+                long schedulerTrySleepTimeNanos) {
             this.scheduler = scheduler;
             this.strategy = strategy;
-            this.enablingQueue = new SynchronousQueue<>();
+            this.enablingQueue = new LinkedBlockingQueue<>();
+            this.schedulerTries = schedulerTries;
+            this.schedulerTrySleepTimeNanos = schedulerTrySleepTimeNanos;
         }
 
         /** Enables the scheduler. */
@@ -238,11 +251,25 @@ public class Scheduler {
                         break;
                     }
                     LOGGER.debug("Scheduler thread enabled.");
-                    SchedulingChoice nextTask = strategy.nextTask();
+                    // Repeat until the task is not null. Error out after trying x times.
+                    // It is possible that the scheduler is enabled but no task is available.
+                    // The solution is to just wait for something to become available. and throw an
+                    // error otherwise.
+                    SchedulingChoice nextTask = null;
+                    for (int i = 0; i < schedulerTries; i++) {
+                        nextTask = strategy.nextTask();
+                        if (nextTask != null) {
+                            break;
+                        }
+                        if (schedulerTrySleepTimeNanos > 0) {
+                            Thread.sleep(schedulerTrySleepTimeNanos);
+                        }
+                    }
                     if (nextTask != null) {
                         scheduler.scheduleTask(nextTask);
                     } else {
-                        LOGGER.debug("No task to schedule.");
+                        LOGGER.error("No task to schedule.");
+                        System.exit(1);
                     }
                 } catch (Exception e) {
                     LOGGER.error("Scheduler thread threw an exception: {}", e.getMessage());

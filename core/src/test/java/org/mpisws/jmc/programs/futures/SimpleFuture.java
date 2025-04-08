@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
 public class SimpleFuture {
     /** A calculator that increments a count. */
     public static class CountIncrementorCalculator {
-        ExecutorService executor = new JmcExecutorService();
+        ExecutorService executor = new JmcExecutorService(1);
         JmcReentrantLock lock = new JmcReentrantLock();
         int count = 0;
 

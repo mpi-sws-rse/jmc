@@ -141,11 +141,13 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     public static class TrackTasks implements Tracker {
         private final Set<Long> activeTasks;
         private final Map<Long, Set<Long>> waitingTasks;
+        private final Set<Long> completedTasks;
         private final Object tasksLock = new Object();
 
         /** Constructs a new TrackTasks object. */
         public TrackTasks() {
             this.activeTasks = new HashSet<>();
+            this.completedTasks = new HashSet<>();
             this.waitingTasks = new ConcurrentHashMap<>();
         }
 
@@ -159,6 +161,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                 Long eventTask = event.getTaskId();
                 synchronized (tasksLock) {
                     activeTasks.remove(eventTask);
+                    completedTasks.add(eventTask);
                     Set<Long> waitingList = waitingTasks.get(eventTask);
                     if (waitingList != null) {
                         activeTasks.addAll(waitingList);
@@ -170,13 +173,17 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                 Long requestedTask = event.getParam("waitingTask");
 
                 synchronized (tasksLock) {
-                    // If the requested task is active, mark the requesting task as waiting
-                    if (activeTasks.contains(requestedTask)) {
+                    // If the requested task is active or not completed, mark the requesting task as
+                    // waiting
+                    if (activeTasks.contains(requestedTask)
+                            || !completedTasks.contains(requestedTask)) {
                         Set<Long> waitingList =
                                 waitingTasks.computeIfAbsent(requestedTask, k -> new HashSet<>());
                         waitingList.add(requestingTask);
                         activeTasks.remove(requestingTask);
                     }
+                    // else nothing to do. The task to wait on is already completed and hence the
+                    // scheduler can continue picking the current task
                 }
             }
             return getActiveTasks();
@@ -193,6 +200,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
             synchronized (tasksLock) {
                 activeTasks.clear();
                 waitingTasks.clear();
+                completedTasks.clear();
             }
         }
     }
