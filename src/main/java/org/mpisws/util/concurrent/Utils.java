@@ -33,14 +33,13 @@ public class Utils {
         throw new JMCInterruptException();
     }
 
-    public static void assertion(SymbolicOperation op, String message) {
+    public static void assertion(SymbolicOperation op, String message) throws JMCInterruptException {
         RuntimeEnvironment.symAssertOperation(message, op, Thread.currentThread());
     }
 
     public static void assertion(boolean b, String message) throws JMCInterruptException {
         if (!b) {
             RuntimeEnvironment.assertOperation(message);
-            throw new JMCInterruptException();
         }
     }
 }

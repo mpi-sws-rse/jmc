@@ -4,16 +4,17 @@ import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.ReentrantLock;
 
-public class Producer2 extends Thread {
+public class Producer5 extends Thread {
+
     private final SVQueue queue;
     private final ReentrantLock lock;
     private final SharedState shared;
     private final int SIZE;
 
-    public Producer2(SVQueue queue, ReentrantLock lock, int SIZE, SharedState shared) {
+    public Producer5(SVQueue queue, ReentrantLock lock, SharedState shared, int size) {
         this.queue = queue;
         this.lock = lock;
-        this.SIZE = SIZE;
+        this.SIZE = size;
         this.shared = shared;
     }
 
@@ -31,10 +32,10 @@ public class Producer2 extends Thread {
                         queue.enq(x);
                         shared.storedElements[i] = x;
                     }
-                    shared.enqueue = false;
-                    shared.dequeue = true;
                 }
                 lock.unlock();
+                shared.enqueue = false;
+                shared.dequeue = true;
             } catch (JMCInterruptException e) {
 
             }

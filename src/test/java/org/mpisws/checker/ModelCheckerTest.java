@@ -979,18 +979,18 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                  NONDET SV-QUEUEI
+     *                                  NONDET SV-QUEUEI CORRECT
      */
 
     @Test
-    @DisplayName("NonDet SV-QueueI")
-    void trustNonDetSVQueueI() {
+    @DisplayName("NonDet Correct SV-QueueI")
+    void trustNonDetSVQueueIC() {
         var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
                 "Client9",
                 "main",
                 "src/test/java/org/mpisws/concurrent/programs/nondet/queue/"
         );
-        System.out.println("NonDet SV-QueueI Trust Strategy Started");
+        System.out.println("NonDet Correct SV-QueueI Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
@@ -999,7 +999,32 @@ class ModelCheckerTest {
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "NonDet SV-QueueI Trust Strategy Finished");
+        assertTrue(checker.check(t), "NonDet Correct SV-QueueI Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  NONDET SV-QUEUEI BUGGY
+     */
+
+    @Test
+    @DisplayName("NonDet Buggy SV-QueueI")
+    void trustNonDetSVQueueIB() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
+                "Client14",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/queue/"
+        );
+        System.out.println("NonDet Buggy SV-QueueI Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Buggy SV-QueueI Trust Strategy Finished");
         System.gc();
     }
 
@@ -1032,18 +1057,18 @@ class ModelCheckerTest {
     }
 
     /*
-     *                                  NONDET SV-QUEUEII
+     *                                  NONDET SV-QUEUEII CORRECT
      */
 
     @Test
-    @DisplayName("NonDet SV-QueueII")
-    void trustNonDetSVQueueII() {
+    @DisplayName("NonDet Correct SV-QueueII")
+    void trustNonDetSVQueueIIC() {
         var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
                 "Client10",
                 "main",
                 "src/test/java/org/mpisws/concurrent/programs/nondet/queue/"
         );
-        System.out.println("NonDet SV-QueueII Trust Strategy Started");
+        System.out.println("NonDet Correct SV-QueueII Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
@@ -1052,7 +1077,32 @@ class ModelCheckerTest {
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
-        assertTrue(checker.check(t), "NonDet SV-QueueII Trust Strategy Finished");
+        assertTrue(checker.check(t), "NonDet Correct SV-QueueII Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  NONDET SV-QUEUEII BUGGY
+     */
+
+    @Test
+    @DisplayName("NonDet Buggy SV-QueueII")
+    void trustNonDetSVQueueIIB() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
+                "Client15",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/queue/"
+        );
+        System.out.println("NonDet Buggy SV-QueueII Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "NonDet Buggy SV-QueueII Trust Strategy Finished");
         System.gc();
     }
 
@@ -1754,7 +1804,7 @@ class ModelCheckerTest {
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         int[] dataDomain = {0, 1, 2};
-        int size = 4;
+        int size = 5;
         checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1806,6 +1856,9 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
+        int[] dataDomain = {0, 1, 2};
+        int size = 5;
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det SV-StackII Trust Strategy Finished");

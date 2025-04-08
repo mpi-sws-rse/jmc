@@ -3,6 +3,7 @@ package org.mpisws.concurrent.programs.nondet.queue.svQueue;
 import org.mpisws.concurrent.programs.nondet.queue.Queue;
 import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
+import org.mpisws.util.concurrent.Utils;
 
 public class SVQueue implements Queue {
 
@@ -31,9 +32,7 @@ public class SVQueue implements Queue {
      */
     @Override
     public void enq(SymbolicInteger x) throws JMCInterruptException {
-        if (isFull()) {
-            return;
-        }
+        Utils.assertion(!isFull(), "Error: amount == SIZE");
         element[tail] = x;
         tail = (tail + 1) % SIZE;
         amount++;
@@ -45,9 +44,7 @@ public class SVQueue implements Queue {
      */
     @Override
     public SymbolicInteger deq() throws JMCInterruptException {
-        if (isEmpty()) {
-            return null;
-        }
+        Utils.assertion(!isEmpty(), "Error: head == tail");
         SymbolicInteger x = element[head];
         head = (head + 1) % SIZE;
         amount--;

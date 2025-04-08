@@ -1423,17 +1423,20 @@ public class RuntimeEnvironment {
      *
      * @param message The failure message associated with the assert statement.
      */
-    public static void assertOperation(String message) {
+    public static void assertOperation(String message) throws JMCInterruptException {
         //LOGGER.debug("Assertion message : {}", message);
         LOGGER.error("Assertion violation: {}", message);
         if (isExecutionBlocked) {
             LOGGER.debug("The execution is blocked. Ignoring assertion message");
+            throw new JMCInterruptException();
+        } else {
+            assertFlag = true;
+            waitRequest(Thread.currentThread());
         }
-        assertFlag = true;
-        waitRequest(Thread.currentThread());
+
     }
 
-    public static void symAssertOperation(String meesage, SymbolicOperation sym, Thread thread) {
+    public static void symAssertOperation(String meesage, SymbolicOperation sym, Thread thread) throws JMCInterruptException {
         LOGGER.debug("Thread-{} requested to execute a symbolic assert operation with the formula of {}", threadIdMap.get(thread.getId()), sym.getFormula());
         symAssertEvent = sym;
         waitRequest(Thread.currentThread());

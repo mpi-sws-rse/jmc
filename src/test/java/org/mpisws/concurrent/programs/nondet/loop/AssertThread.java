@@ -2,6 +2,7 @@ package org.mpisws.concurrent.programs.nondet.loop;
 
 import org.mpisws.symbolic.ArithmeticFormula;
 import org.mpisws.symbolic.SymbolicOperation;
+import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.Utils;
 
 public class AssertThread extends Thread {
@@ -14,9 +15,13 @@ public class AssertThread extends Thread {
 
     @Override
     public void run() {
-        ArithmeticFormula f = new ArithmeticFormula();
-        //SymbolicOperation op = f.gt(numbers.n, numbers.x);
-        SymbolicOperation op = f.geq(numbers.n, numbers.x);
-        Utils.assertion(op, "AssertThread failed");
+        try {
+            ArithmeticFormula f = new ArithmeticFormula();
+            //SymbolicOperation op = f.gt(numbers.n, numbers.x);
+            SymbolicOperation op = f.geq(numbers.n, numbers.x);
+            Utils.assertion(op, "AssertThread failed");
+        } catch (JMCInterruptException e) {
+
+        }
     }
 }

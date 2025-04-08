@@ -29,8 +29,6 @@ public class Consumer extends Thread {
                 lock.unlock();
             }
         } catch (JMCInterruptException e) {
-        } finally {
-            lock.unlock();
         }
     }
 }

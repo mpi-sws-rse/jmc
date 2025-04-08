@@ -6,7 +6,7 @@ import org.mpisws.util.concurrent.ReentrantLock;
 public class Client14 {
 
     public static void main(String[] args) {
-        int SIZE = 6;
+        int SIZE = 8;
         SVStack stack = new SVStack(SIZE);
         ReentrantLock lock = new ReentrantLock();
         Shared shared = new Shared();

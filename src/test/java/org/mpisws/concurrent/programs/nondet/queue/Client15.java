@@ -3,16 +3,16 @@ package org.mpisws.concurrent.programs.nondet.queue;
 import org.mpisws.concurrent.programs.nondet.queue.svQueue.*;
 import org.mpisws.util.concurrent.ReentrantLock;
 
-public class Client10 {
+public class Client15 {
 
     public static void main(String[] args) {
-        int SIZE = 3;
+        int SIZE = 2;
         SVQueue q = new SVQueue(SIZE);
         SharedState sharedState = new SharedState(SIZE);
         ReentrantLock lock = new ReentrantLock();
 
-        Producer2 producer = new Producer2(q, lock, SIZE, sharedState);
-        Consumer2 consumer = new Consumer2(q, lock, SIZE, sharedState);
+        Producer5 producer = new Producer5(q, lock, sharedState, SIZE);
+        Consumer5 consumer = new Consumer5(q, lock, sharedState, SIZE);
 
         producer.start();
         consumer.start();

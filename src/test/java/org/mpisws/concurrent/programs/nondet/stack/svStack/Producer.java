@@ -33,8 +33,6 @@ public class Producer extends Thread {
                 lock.unlock();
             }
         } catch (JMCInterruptException e) {
-        } finally {
-            lock.unlock();
         }
     }
 }
