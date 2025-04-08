@@ -17,6 +17,7 @@ import org.mpisws.jmc.programs.det.stack.Client5;
 import org.mpisws.jmc.programs.det.stack.Client6;
 import org.mpisws.jmc.programs.dining.DiningPhilosophers;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
+import org.mpisws.jmc.programs.kafka.ShareConsumerTest;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
 
 import java.util.ArrayList;
@@ -321,6 +322,23 @@ public class JmcModelCheckerTest {
                         () -> {
                             ConcurrentCounter.main(new String[0]);
                         });
+        jmcModelChecker.check(target);
+    }
+
+
+    @Test
+    void testAcquisitionLockTimeoutOnConsumer() throws InterruptedException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(10).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomKafkaTest",
+                        () -> {
+                            ShareConsumerTest.main(new String[0]);
+                        });
+
         jmcModelChecker.check(target);
     }
 }
