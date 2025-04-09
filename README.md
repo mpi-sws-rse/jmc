@@ -92,6 +92,23 @@ public class CorrectCounter {
 
 we can verify that the assertion will never fail by exploring all possible interleavings of the threads.
 
+## Running integration tests
+
+To run the tests, you can use the following command:
+
+```bash
+./gradlew clean
+./gradlew :core:publish
+./gradlew :integration-test:test --tests org.mpisws.jmc.test.<test name>
+```
+
+An integration test brings together the different components to effectively test the system using JMC.
+The different components are
+
+1. **Instrumentation Agent** - Located in `agent` directory and build using `./gradlew :agent:agentJar`. The resulting Jar should be passed as an `-agent` argument to the JVM.
+2. **JMC Model Checker** - Located in `core` directory and build using `./gradlew :core:publish`. The resulting Jar should be passed as a dependency to the test.
+3. **JMC Test Target** - Located in `integration-test` directory and build using `./gradlew :integration-test:test`
+
 ## Concurrent primitives supported
 
 As evident in the example, we provide support for concurrent primitives by extending the Thread and ReentrantLock
