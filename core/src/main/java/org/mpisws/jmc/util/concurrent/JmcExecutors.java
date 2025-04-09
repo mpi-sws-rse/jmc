@@ -1,13 +1,17 @@
 package org.mpisws.jmc.util.concurrent;
 
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 /**
  * A replacement for java.util.concurrent.Executor. Currently only supports a
  * `newSingleThreadExecutor`.
  */
 public class JmcExecutors {
-    public static JmcExecutorService newSingleThreadExecutor() {
+    public static ExecutorService newSingleThreadExecutor() {
         return new JmcExecutorService(1);
+    }
+
+    public static ExecutorService newFixedThreadPool(int nThreads) {
+        return new JmcExecutorService(nThreads);
     }
 }

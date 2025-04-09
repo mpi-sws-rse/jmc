@@ -265,10 +265,10 @@ public class JmcExecutorService implements ExecutorService {
                     LOGGER.debug("Received task {} in worker {}", task.getTaskId(), id);
                     workCounter.incrementAndGet();
                     task.run();
+                    workCounter.decrementAndGet();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } finally {
-                    workCounter.decrementAndGet();
                     if (task != null) {
                         if (queue.isEmpty()) {
                             JmcRuntime.join(task.getTaskId());

@@ -1,6 +1,7 @@
 package org.mpisws.jmc.agent.test;
 
 import org.junit.jupiter.api.Test;
+import org.mpisws.jmc.agent.visitors.JmcFutureVisitor;
 import org.mpisws.jmc.agent.visitors.JmcThreadVisitor;
 
 public class AgentThreadInstrumentationTest {
@@ -8,16 +9,16 @@ public class AgentThreadInstrumentationTest {
     @Test
     public void testThreadWrapper() {
         String originalTestClass =
-                "src/test/java/org/mpisws/jmc/agent/test/programs/OriginalTestThread.class";
+                "src/test/java/org/mpisws/jmc/agent/test/programs/FutureCounter.class";
         String expectedTestClass =
-                "src/test/java/org/mpisws/jmc/agent/test/programs/ExpectedTestThread.class";
+                "src/test/java/org/mpisws/jmc/agent/test/programs/ExpectedFutureCounter.class";
 
         try {
-            AgentTestUtil.check(
+            AgentTestUtil.translateAndStore(
                     originalTestClass,
                     expectedTestClass,
                     cw ->
-                            new JmcThreadVisitor.ThreadClassWrapperVisitor(
+                            new JmcFutureVisitor.JmcExecutorsClassVisitor(
                                     new JmcThreadVisitor.ThreadCallReplacerClassVisitor(cw)));
         } catch (Exception e) {
             throw new RuntimeException("Failed to check class", e);
