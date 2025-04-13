@@ -12,6 +12,7 @@ public class JmcCheckerConfiguration {
 
     private String strategyType;
     private SchedulingStrategy customStrategy;
+    private SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor;
 
     private boolean debug;
 
@@ -91,6 +92,7 @@ public class JmcCheckerConfiguration {
 
         private String strategyType;
         private SchedulingStrategy customStrategy;
+        private SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor;
 
         private boolean debug;
 
