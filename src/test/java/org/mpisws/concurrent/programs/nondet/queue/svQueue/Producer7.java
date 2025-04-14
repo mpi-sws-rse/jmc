@@ -1,22 +1,22 @@
-package org.mpisws.concurrent.programs.det.queue.svQueue;
+package org.mpisws.concurrent.programs.nondet.queue.svQueue;
 
+import org.mpisws.symbolic.SymbolicInteger;
 import org.mpisws.util.concurrent.JMCInterruptException;
 import org.mpisws.util.concurrent.ReentrantLock;
 import org.mpisws.util.concurrent.Utils;
 
-public class Producer extends Thread {
+public class Producer7 extends Thread {
+
     private final SVQueue queue;
     private final ReentrantLock lock;
     private final SharedState shared;
-    private final int[] items;
     private final int SIZE;
 
-    public Producer(SVQueue queue, ReentrantLock lock, int SIZE, SharedState shared, int[] items) {
+    public Producer7(SVQueue queue, ReentrantLock lock, int SIZE, SharedState shared) {
         this.queue = queue;
         this.lock = lock;
         this.SIZE = SIZE;
         this.shared = shared;
-        this.items = items;
     }
 
     @Override
@@ -24,20 +24,17 @@ public class Producer extends Thread {
         int i = 0;
         try {
             lock.lock();
-            int x = items[i];
+            SymbolicInteger x = new SymbolicInteger("init" + i, false);
             queue.enq(x);
             shared.storedElements[0] = x;
-            if (queue.isEmpty()) {
-                lock.unlock();
-                return;
-            }
+            Utils.assertion(!queue.isEmpty(), "Error: queue is empty");
             lock.unlock();
-            for (i = 0; i < (SIZE - 1); i++) {
+            for (i = 0; i < SIZE; i++) {
                 lock.lock();
                 if (shared.enqueue) {
-                    x = items[i + 1];
-                    queue.enq(x);
-                    shared.storedElements[i + 1] = x;
+                    SymbolicInteger y = new SymbolicInteger("i" + i, false);
+                    queue.enq(y);
+                    shared.storedElements[i + 1] = y;
                     shared.enqueue = false;
                     shared.dequeue = true;
                 }

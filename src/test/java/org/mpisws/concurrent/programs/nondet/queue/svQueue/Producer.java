@@ -28,6 +28,7 @@ public class Producer extends Thread {
             shared.storedElements[0] = x;
 
             if (queue.isEmpty()) {
+                lock.unlock();
                 return;
             }
 
@@ -45,8 +46,6 @@ public class Producer extends Thread {
             }
         } catch (JMCInterruptException e) {
 
-        } finally {
-            lock.unlock();
         }
     }
 }

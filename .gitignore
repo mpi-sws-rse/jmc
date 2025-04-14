@@ -206,7 +206,16 @@ src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/simpleTSStack/*.
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/simpleTSStack/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/simpleTSStack/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/simpleTSStack/*.txt
-
+src/test/java/org/mpisws/concurrent/programs/bigShot/*.class
+src/test/java/org/mpisws/concurrent/programs/bigShot/*.txt
+src/test/java/org/mpisws/concurrent/programs/fibBench/*.class
+src/test/java/org/mpisws/concurrent/programs/fibBench/*.txt
+src/test/java/org/mpisws/concurrent/programs/lazy01/*.class
+src/test/java/org/mpisws/concurrent/programs/lazy01/*.txt
+src/test/java/org/mpisws/concurrent/programs/sigma/*.class
+src/test/java/org/mpisws/concurrent/programs/sigma/*.txt
+src/test/java/org/mpisws/concurrent/programs/singleton/*.class
+src/test/java/org/mpisws/concurrent/programs/singleton/*.txt
 ### IntelliJ IDEA ###
 .idea/modules.xml
 /.idea/workspace.xml

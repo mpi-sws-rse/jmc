@@ -32,7 +32,6 @@ public class SVQueue implements Queue {
      */
     @Override
     public void enq(SymbolicInteger x) throws JMCInterruptException {
-        Utils.assertion(!isFull(), "Error: amount == SIZE");
         element[tail] = x;
         tail = (tail + 1) % SIZE;
         amount++;
@@ -44,7 +43,6 @@ public class SVQueue implements Queue {
      */
     @Override
     public SymbolicInteger deq() throws JMCInterruptException {
-        Utils.assertion(!isEmpty(), "Error: head == tail");
         SymbolicInteger x = element[head];
         head = (head + 1) % SIZE;
         amount--;

@@ -1126,7 +1126,7 @@ class ModelCheckerTest {
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         int[] dataDomain = {0, 1, 2};
-        int size = 4;
+        int size = 6;
         checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1993,6 +1993,256 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Fine Counter Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 BIGSHOT-P (SV-COMP)
+     */
+
+    @Test
+    @DisplayName("Bigshot P")
+    void trustTestBigshotP() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.bigShot",
+                "BigShotP",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/bigShot"
+        );
+        System.out.println("BigShotP Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "BigShotP Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 BIGSHOT-S (SV-COMP)
+     */
+
+    @Test
+    @DisplayName("Bigshot S")
+    void trustTestBigshotS() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.bigShot",
+                "BigShotS",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/bigShot"
+        );
+        System.out.println("BigShotS Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "BigShotS Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 BIGSHOT-S2 (SV-COMP)
+     */
+
+    @Test
+    @DisplayName("Bigshot S2")
+    void trustTestBigshotSII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.bigShot",
+                "BigShotSII",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/bigShot"
+        );
+        System.out.println("BigShotS2 Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "BigShotS2 Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 FibBench-1 (SV-COMP)
+     */
+
+    @Test
+    @DisplayName("FibBench 1")
+    void trustTestFibBench1() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.fibBench",
+                "FibBench1",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/fibBench"
+        );
+        System.out.println("FibBench 1 Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "FibBench 1 Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 FibBench-2 (SV-COMP)
+     */
+
+    @Test
+    @DisplayName("FibBench 2")
+    void trustTestFibBench2() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.fibBench",
+                "FibBench2",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/fibBench"
+        );
+        System.out.println("FibBench 2 Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "FibBench 2 Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 LAZY-01 (SV-COMP)
+     */
+
+    @Test
+    @DisplayName("Lazy 01")
+    void trustTestLazy01() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.lazy01",
+                "Lazy01",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/lazy01"
+        );
+        System.out.println("Lazy 01 Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Lazy 01 Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 QUEUE (SV-COMP)
+     */
+
+    @Test
+    @DisplayName("Queue")
+    void trustTestQueue() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.nondet.queue",
+                "Client16",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/nondet/queue"
+        );
+        System.out.println("Queue Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Queue Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 SIGMA (SV-COMP)
+     */
+
+    @Test
+    @DisplayName("Sigma")
+    void trustTestSigma() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.sigma",
+                "Sigma",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/sigma"
+        );
+        System.out.println("Sigma Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Sigma Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 SINGLETON (SV-COMP)
+     */
+
+    @Test
+    @DisplayName("Singleton")
+    void trustTestSingleton() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.singleton",
+                "Singleton",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/singleton"
+        );
+        System.out.println("singleton Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "singleton Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                 SINGLETON WITH UNINIT PROBLEMS(SV-COMP)
+     */
+
+    @Test
+    @DisplayName("Singleton with Uninit Problems")
+    void trustTestSingletonWUP() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.singleton",
+                "SingletonWUP",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/singleton"
+        );
+        System.out.println("singleton with Uninit Problems Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "singleton with Uninit Problems Trust Strategy Finished");
         System.gc();
     }
 
