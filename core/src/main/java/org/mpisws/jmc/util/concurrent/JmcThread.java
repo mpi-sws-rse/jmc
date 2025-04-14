@@ -19,7 +19,6 @@ public class JmcThread extends Thread {
 
     private static Logger LOGGER = LogManager.getLogger(JmcThread.class);
 
-    public boolean hasTask = false;
     private Long jmcThreadId;
     private Long createdBy;
 
@@ -54,9 +53,17 @@ public class JmcThread extends Thread {
         LOGGER = LogManager.getLogger(JmcThread.class.getName() + " Task=" + jmcThreadId);
     }
 
+    /**
+     * Returns the task ID of this thread.
+     *
+     * @return The task ID of this thread.
+     */
+    public Long getTaskId() {
+        return jmcThreadId;
+    }
+
     @Override
     public void run() {
-        this.hasTask = true;
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEventType.START_EVENT)
@@ -97,6 +104,52 @@ public class JmcThread extends Thread {
         }
     }
 
+    /**
+     * Used to run just the function in a wrapped thread and not as a separate thred.
+     *
+     * <p>Used internally by the Executor service that will invoke threads in a larger thread
+     * context.
+     */
+    public void runWithoutJoin() {
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEventType.START_EVENT)
+                        .taskId(jmcThreadId)
+                        .param("startedBy", createdBy)
+                        .build();
+        try {
+            JmcRuntime.updateEvent(event);
+        } catch (HaltTaskException e) {
+            LOGGER.error("Failed to start task: {}", e.getMessage());
+        }
+        JmcRuntime.yield(jmcThreadId);
+        try {
+            run1();
+        } catch (HaltTaskException e) {
+            event =
+                    new RuntimeEvent.Builder()
+                            .type(RuntimeEventType.HALT_EVENT)
+                            .taskId(jmcThreadId)
+                            .build();
+            try {
+                JmcRuntime.updateEvent(event);
+            } catch (HaltTaskException ex) {
+                LOGGER.error("Failed to halt task : {}", ex.getMessage());
+            }
+        } finally {
+            event =
+                    new RuntimeEvent.Builder()
+                            .type(RuntimeEventType.FINISH_EVENT)
+                            .taskId(jmcThreadId)
+                            .build();
+            try {
+                JmcRuntime.updateEvent(event);
+            } catch (HaltTaskException e) {
+                LOGGER.error("Failed to finish task : {}", e.getMessage());
+            }
+        }
+    }
+
     @Override
     public void start() {
         Long taskId = JmcRuntime.currentTask();
@@ -129,8 +182,17 @@ public class JmcThread extends Thread {
                         + e.getMessage());
     }
 
-    /** Replacing the Thread join to intercept the join Event. */
+    /**
+     * Replacing the thread join to intercept the join Event
+     *
+     * @throws InterruptedException when the underlying join call fails
+     */
     public void join1() throws InterruptedException {
+        join1(0L);
+    }
+
+    /** Replacing the Thread join to intercept the join Event. */
+    public void join1(Long millis) throws InterruptedException {
         Long requestingTask = JmcRuntime.currentTask();
         RuntimeEvent requestEvent =
                 new RuntimeEvent.Builder()
@@ -143,7 +205,7 @@ public class JmcThread extends Thread {
         } catch (HaltTaskException e) {
             LOGGER.error("Failed to join task : {}", e.getMessage());
         }
-        super.join();
+        super.join(millis);
         RuntimeEvent completedEvent =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEventType.JOIN_COMPLETE_EVENT)

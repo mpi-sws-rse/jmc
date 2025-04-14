@@ -43,7 +43,8 @@ public class SchedulingChoice {
     }
 
     // Used to indicate the end of the task schedule. Since the events occur prior to
-    // a scheduling choice, the guiding schedule needs to end with a dummy event that is popped in the end.
+    // a scheduling choice, the guiding schedule needs to end with a dummy event that is popped in
+    // the end.
     public static SchedulingChoice end() {
         return new SchedulingChoice(null, false, false);
     }

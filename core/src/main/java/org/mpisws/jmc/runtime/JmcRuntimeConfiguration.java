@@ -11,6 +11,10 @@ public class JmcRuntimeConfiguration {
 
     private String reportPath;
 
+    private int schedulerTries = 10;
+
+    private long schedulerTrySleepTimeNanos = 100;
+
     private JmcRuntimeConfiguration() {}
 
     public SchedulingStrategy getStrategy() {
@@ -25,15 +29,27 @@ public class JmcRuntimeConfiguration {
         return reportPath;
     }
 
+    public int getSchedulerTries() {
+        return schedulerTries;
+    }
+
+    public long getSchedulerTrySleepTimeNanos() {
+        return schedulerTrySleepTimeNanos;
+    }
+
     public static class Builder {
         private SchedulingStrategy strategy;
         private Boolean debug;
         private String reportPath;
+        private int schedulerTries;
+        private long schedulerTrySleepTimeNanos;
 
         public Builder() {
             this.strategy = new RandomSchedulingStrategy(System.nanoTime());
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
+            this.schedulerTries = 10;
+            this.schedulerTrySleepTimeNanos = 100;
         }
 
         public Builder strategy(SchedulingStrategy strategy) {
@@ -51,11 +67,23 @@ public class JmcRuntimeConfiguration {
             return this;
         }
 
+        public Builder schedulerTries(int schedulerTries) {
+            this.schedulerTries = schedulerTries;
+            return this;
+        }
+
+        public Builder schedulerTrySleepTimeNanos(long schedulerTrySleepTimeNanos) {
+            this.schedulerTrySleepTimeNanos = schedulerTrySleepTimeNanos;
+            return this;
+        }
+
         public JmcRuntimeConfiguration build() {
             JmcRuntimeConfiguration config = new JmcRuntimeConfiguration();
             config.strategy = strategy;
             config.debug = debug;
             config.reportPath = reportPath;
+            config.schedulerTries = schedulerTries;
+            config.schedulerTrySleepTimeNanos = schedulerTrySleepTimeNanos;
             return config;
         }
     }

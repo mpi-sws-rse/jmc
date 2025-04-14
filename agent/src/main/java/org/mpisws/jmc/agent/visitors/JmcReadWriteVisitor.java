@@ -1,44 +1,15 @@
 package org.mpisws.jmc.agent.visitors;
 
-import net.bytebuddy.asm.AsmVisitorWrapper;
-import net.bytebuddy.description.field.FieldDescription;
-import net.bytebuddy.description.field.FieldList;
-import net.bytebuddy.description.method.MethodList;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.implementation.Implementation;
-import net.bytebuddy.jar.asm.ClassVisitor;
-import net.bytebuddy.jar.asm.MethodVisitor;
-import net.bytebuddy.jar.asm.Opcodes;
-import net.bytebuddy.jar.asm.Type;
-import net.bytebuddy.pool.TypePool;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 /**
  * Represents a JMC read-write visitor. Adds instrumentation to change field accesses to
  * JmcReadWrite calls.
  */
-public class JmcReadWriteVisitor implements AsmVisitorWrapper {
-    @Override
-    public int mergeWriter(int i) {
-        return 0;
-    }
-
-    @Override
-    public int mergeReader(int i) {
-        return 0;
-    }
-
-    @Override
-    public ClassVisitor wrap(
-            TypeDescription typeDescription,
-            ClassVisitor classVisitor,
-            Implementation.Context context,
-            TypePool typePool,
-            FieldList<FieldDescription.InDefinedShape> fieldList,
-            MethodList<?> methodList,
-            int i,
-            int i1) {
-        return new ReadWriteClassVisitor(classVisitor);
-    }
+public class JmcReadWriteVisitor {
 
     /** Class visitor for JMC read-write visitor. */
     public static class ReadWriteClassVisitor extends ClassVisitor {
@@ -68,6 +39,7 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
     public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor
             implements VisitorHelper.LocalVarFetcher {
 
+        private boolean isStatic;
         private boolean instrumented;
 
         /**
@@ -80,15 +52,16 @@ public class JmcReadWriteVisitor implements AsmVisitorWrapper {
         public ReadWriteMethodVisitor(MethodVisitor mv, int access, String descriptor) {
             super(Opcodes.ASM9, mv, access, descriptor);
             this.instrumented = false;
+            this.isStatic = (access & Opcodes.ACC_STATIC) != 0;
         }
 
         private void insertUpdateEventCall(
                 String owner, boolean isWrite, String name, String descriptor) {
             instrumented = true;
             if (!isWrite) {
-                VisitorHelper.insertRead(mv, owner, name, descriptor, this);
+                VisitorHelper.insertRead(mv, isStatic, owner, name, descriptor, this);
             } else {
-                VisitorHelper.insertWrite(mv, owner, name, descriptor, this);
+                VisitorHelper.insertWrite(mv, isStatic, owner, name, descriptor, this);
             }
         }
 

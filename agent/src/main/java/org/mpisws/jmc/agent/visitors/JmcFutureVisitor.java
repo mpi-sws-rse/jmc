@@ -1,36 +1,110 @@
 package org.mpisws.jmc.agent.visitors;
 
-import net.bytebuddy.asm.AsmVisitorWrapper;
-import net.bytebuddy.description.field.FieldDescription;
-import net.bytebuddy.description.field.FieldList;
-import net.bytebuddy.description.method.MethodList;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.implementation.Implementation;
-import net.bytebuddy.jar.asm.ClassVisitor;
-import net.bytebuddy.pool.TypePool;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
+import java.util.HashMap;
+import java.util.Set;
 
 /** Adds instrumentation to change Future calls to JmcFuture calls. */
-public class JmcFutureVisitor implements AsmVisitorWrapper {
-    @Override
-    public int mergeWriter(int i) {
-        return 0;
+public class JmcFutureVisitor {
+    // A visitor to replace calls to Executors with JmcExecutors
+    public static class JmcExecutorsClassVisitor extends ClassVisitor {
+
+        public JmcExecutorsClassVisitor(ClassVisitor classVisitor) {
+            super(Opcodes.ASM9, classVisitor);
+        }
+
+        @Override
+        public MethodVisitor visitMethod(
+                int access, String name, String descriptor, String signature, String[] exceptions) {
+            return new JmcExecutorsMethodVisitor(
+                    super.visitMethod(access, name, descriptor, signature, exceptions));
+        }
     }
 
-    @Override
-    public int mergeReader(int i) {
-        return 0;
-    }
+    // A visitor to replace calls to Executors with JmcExecutors
+    public static class JmcExecutorsMethodVisitor extends MethodVisitor {
+        // Set of valid method names and descriptors that can be replaced
+        private static final HashMap<String, Set<String>> SUPPORTED_METHODS = new HashMap<>();
 
-    @Override
-    public ClassVisitor wrap(
-            TypeDescription typeDescription,
-            ClassVisitor classVisitor,
-            Implementation.Context context,
-            TypePool typePool,
-            FieldList<FieldDescription.InDefinedShape> fieldList,
-            MethodList<?> methodList,
-            int i,
-            int i1) {
-        return classVisitor;
+        static {
+            SUPPORTED_METHODS.put(
+                    "newSingleThreadExecutor", Set.of("()Ljava/util/concurrent/ExecutorService;"));
+            SUPPORTED_METHODS.put(
+                    "newFixedThreadPool", Set.of("(I)Ljava/util/concurrent/ExecutorService;"));
+        }
+
+        public JmcExecutorsMethodVisitor(MethodVisitor methodVisitor) {
+            super(Opcodes.ASM9, methodVisitor);
+        }
+
+        @Override
+        public void visitMethodInsn(
+                int opcode, String owner, String name, String descriptor, boolean isInterface) {
+            if (owner.equals("java/util/concurrent/Executors")) {
+                if (!SUPPORTED_METHODS.containsKey(name)
+                        || !SUPPORTED_METHODS.get(name).contains(descriptor)) {
+                    throw new RuntimeException(
+                            "Unsupported method: " + name + " with descriptor: " + descriptor);
+                }
+                // Replace the call to Executors with a call to JmcExecutors
+                super.visitMethodInsn(
+                        opcode,
+                        "org/mpisws/jmc/util/concurrent/JmcExecutors",
+                        name,
+                        descriptor,
+                        isInterface);
+            } else {
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+            }
+        }
+        //
+        //        @Override
+        //        public void visitFieldInsn(int opcode, String owner, String name, String
+        // descriptor) {
+        //            // Replace field references
+        //            if (descriptor.equals("Ljava/util/concurrent/ExecutorService;")) {
+        //                super.visitFieldInsn(
+        //                        opcode, owner, name,
+        // "Lorg/mpisws/jmc/util/concurrent/JmcExecutorService;");
+        //            } else {
+        //                super.visitFieldInsn(opcode, owner, name, descriptor);
+        //            }
+        //        }
+        //
+        //        @Override
+        //        public void visitLocalVariable(
+        //                String name,
+        //                String descriptor,
+        //                String signature,
+        //                Label start,
+        //                Label end,
+        //                int index) {
+        //            if (descriptor.equals("Ljava/util/concurrent/ExecutorService;")) {
+        //                super.visitLocalVariable(
+        //                        name,
+        //                        "Lorg/mpisws/jmc/util/concurrent/JmcExecutorService;",
+        //                        signature,
+        //                        start,
+        //                        end,
+        //                        index);
+        //            } else {
+        //                super.visitLocalVariable(name, descriptor, signature, start, end, index);
+        //            }
+        //        }
+        //
+        //        @Override
+        //        public void visitTypeInsn(int opcode, String type) {
+        //            // Replace NEW ReentrantLock with JmcReentrantLock
+        //            if (opcode == Opcodes.NEW &&
+        // type.equals("java/util/concurrent/ExecutorService")) {
+        //                super.visitTypeInsn(opcode,
+        // "org/mpisws/jmc/util/concurrent/JmcExecutorService");
+        //            } else {
+        //                super.visitTypeInsn(opcode, type);
+        //            }
+        //        }
     }
 }

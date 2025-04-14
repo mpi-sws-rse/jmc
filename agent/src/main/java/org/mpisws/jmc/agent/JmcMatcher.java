@@ -1,19 +1,13 @@
 package org.mpisws.jmc.agent;
 
-import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.description.type.TypeDescription;
-import net.bytebuddy.utility.JavaModule;
-
-import java.security.ProtectionDomain;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Matcher for JMC agent.
  *
  * <p>Currently filters out classes loaded by built-in class loader.
  */
-public class JmcMatcher implements AgentBuilder.RawMatcher {
+public class JmcMatcher {
 
     private List<String> matchingPackages;
 
@@ -21,24 +15,18 @@ public class JmcMatcher implements AgentBuilder.RawMatcher {
         this.matchingPackages = matchingPackages;
     }
 
-    @Override
-    public boolean matches(
-            TypeDescription typeDescription,
-            ClassLoader classLoader,
-            JavaModule javaModule,
-            Class<?> aclass,
-            ProtectionDomain protectionDomain) {
-        if (classLoader == null) {
-            return false;
-        }
-        String classLoaderName = classLoader.getClass().getName();
-        if (classLoaderName.contains("Gradle")
-                || classLoaderName.contains("Maven")
-                || classLoaderName.contains("Ant")
-                || classLoaderName.contains("sbt")) {
-            return false;
-        }
-        String typeName = typeDescription.getName();
+    /**
+     * Matches the class name.
+     *
+     * @param className the class name
+     * @param classLoader the class loader
+     * @return true if the class name matches
+     */
+    public boolean matches(String className, ClassLoader classLoader) {
+        //        if (classLoader == null) {
+        //            return false;
+        //        }
+        String typeName = className.replace("/", ".");
         if (typeName.startsWith("java.")
                 || typeName.startsWith("javax.")
                 || typeName.startsWith("sun.")
@@ -52,14 +40,13 @@ public class JmcMatcher implements AgentBuilder.RawMatcher {
                 || typeName.startsWith("org.junit.")) {
             return false;
         }
+        // Exclude instrumentation classes.
+        if (typeName.startsWith("org.mpisws.jmc.agent.")) {
+            return false;
+        }
         if (!matchingPackages.isEmpty()) {
-            boolean out = matchingPackages.stream().anyMatch(typeName::startsWith);
-            if (out) {
-                System.out.println("Matched: " + typeName);
-            }
-            return out;
+            return matchingPackages.stream().anyMatch(typeName::startsWith);
         } else {
-            System.out.println("Matched: " + typeName);
             return true;
         }
     }

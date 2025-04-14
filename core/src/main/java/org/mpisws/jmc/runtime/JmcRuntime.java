@@ -40,7 +40,11 @@ public class JmcRuntime {
     public static void setup(JmcRuntimeConfiguration config) {
         LOGGER.debug("Setting up!");
         JmcRuntime.config = config;
-        scheduler = new Scheduler(config.getStrategy());
+        scheduler =
+                new Scheduler(
+                        config.getStrategy(),
+                        config.getSchedulerTries(),
+                        config.getSchedulerTrySleepTimeNanos());
         scheduler.start();
     }
 
@@ -241,6 +245,16 @@ public class JmcRuntime {
             taskManager.terminate(event.getTaskId());
             throw e;
         }
+    }
+
+    /**
+     * Terminates the task with the given ID.
+     *
+     * @param taskId the ID of the task to be terminated
+     */
+    public static void terminate(Long taskId) {
+        LOGGER.debug("Terminating task {}", taskId);
+        taskManager.terminate(taskId);
     }
 
     /**
