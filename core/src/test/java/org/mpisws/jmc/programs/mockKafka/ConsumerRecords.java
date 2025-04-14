@@ -1,4 +1,4 @@
-package org.mpisws.jmc.programs.kafka;
+package org.mpisws.jmc.programs.mockKafka;
 
 import java.util.Iterator;
 import java.util.List;
