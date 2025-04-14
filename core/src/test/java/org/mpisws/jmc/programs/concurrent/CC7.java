@@ -1,5 +1,6 @@
 package org.mpisws.jmc.programs.concurrent;
 
+import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 import org.mpisws.jmc.runtime.RuntimeEventType;
@@ -7,25 +8,30 @@ import org.mpisws.jmc.util.concurrent.JmcThread;
 
 import java.util.ArrayList;
 
-public class CC0 {
+public class CC7 {
+
     public static class Value {
-        public int count = 0;
+        public int count;
 
         public Value() {
             count = 0;
-            RuntimeEvent event =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.WRITE_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param("newValue", 0)
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/concurrent/Counter$Value")
-                            .param("name", "count")
-                            .param("descriptor", "I")
-                            .param("instance", this)
-                            .build();
-            JmcRuntime.updateEventAndYield(event);
+            try {
+                RuntimeEvent event =
+                        new RuntimeEvent.Builder()
+                                .type(RuntimeEventType.WRITE_EVENT)
+                                .taskId(JmcRuntime.currentTask())
+                                .param("newValue", 0)
+                                .param(
+                                        "owner",
+                                        "org/mpisws/jmc/programs/concurrent/Counter$Value")
+                                .param("name", "count")
+                                .param("descriptor", "I")
+                                .param("instance", this)
+                                .build();
+                JmcRuntime.updateEventAndYield(event);
+            } catch (HaltTaskException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         public void set(int newValue) {
@@ -68,50 +74,34 @@ public class CC0 {
     }
 
     public static void main(String[] args) {
-        int size = args.length > 0 ? Integer.parseInt(args[0]) : 1;
-        Value counter = new Value();
-        ArrayList<JmcThread> getters = new ArrayList<>(size);
-        ArrayList<JmcThread> setters = new ArrayList<>(size);
-
+        // Read the integer value form the args
+        int size = args.length > 0 ? Integer.parseInt(args[0]) : 2;
+        CC0.Value counter = new CC0.Value();
+        ArrayList<JmcThread> threads = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            getters.add(
+            JmcThread thread =
                     new JmcThread(
                             () -> {
                                 try {
                                     counter.get();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }));
-            setters.add(
-                    new JmcThread(
-                            () -> {
-                                try {
                                     counter.set(1);
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
-                            }));
+                            });
+            threads.add(thread);
         }
 
-        for (JmcThread thread : getters) {
-            thread.start();
-        }
-
-        for (JmcThread thread : setters) {
+        for (JmcThread thread : threads) {
             thread.start();
         }
 
         try {
-            for (JmcThread thread : getters) {
-                thread.join1();
-            }
-            for (JmcThread thread : setters) {
+            for (JmcThread thread : threads) {
                 thread.join1();
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assert counter.value() != 0;
     }
 }

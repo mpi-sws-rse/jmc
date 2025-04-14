@@ -72,7 +72,7 @@ public class Algo {
             if (guidingTaskSchedule.isEmpty()) {
                 isGuiding = false;
                 // TODO :: For debugging
-                System.out.println("[Algo Debug]: The guiding task schedule is empty");
+                /*System.out.println("[Algo Debug]: The guiding task schedule is empty");*/
             }
         }
         if (choiceW.hasLocation()) {
@@ -102,7 +102,7 @@ public class Algo {
     @SuppressWarnings({"checkstyle:MissingSwitchDefault", "checkstyle:LeftCurly"})
     public void updateEvent(Event event) throws HaltTaskException, HaltExecutionException {
         // TODO :: For debugging
-        System.out.println("[Algo Debug]: Updating event " + event);
+        /*System.out.println("[Algo Debug]: Updating event " + event);*/
         if (areWeGuiding()) {
             handleGuidedEvent(event);
             return;
@@ -154,7 +154,7 @@ public class Algo {
                 handleNoop(event);
         }
         // TODO :: For debugging
-        System.out.println("[Algo Debug]: Handling event " + event + " location " + event.getLocation());
+        /*System.out.println("[Algo Debug]: Handling event " + event + " location " + event.getLocation());*/
     }
 
     /**
@@ -186,14 +186,14 @@ public class Algo {
         // Check if we are guiding the execution and construct the task schedule accordingly!
         if (iteration == 0) {
             // TODO :: For debugging
-            System.out.println("[Algo Debug]: Initializing iteration");
+            /*System.out.println("[Algo Debug]: Initializing iteration");*/
             return;
         }
 
         // Check if the exploration stack is empty. If so, we are done with the exploration.
         if (explorationStack.isEmpty()) {
             // TODO :: For debugging
-            System.out.println("[Algo Debug]: Exploration stack is empty.");
+            /*System.out.println("[Algo Debug]: Exploration stack is empty.");*/
             // We have reached the end of the exploration stack.
             // We should not be guiding the execution
             throw new HaltCheckerException();
@@ -210,7 +210,7 @@ public class Algo {
         isGuiding = true;
 
         // TODO :: For debugging
-        System.out.println("[Algo Debug]: Initializing the " + iteration + "th iteration");
+        /*System.out.println("[Algo Debug]: Initializing the " + iteration + "th iteration");*/
 
         //ExplorationStack.Item item = explorationStack.pop();
         //resetWith(item);
@@ -230,8 +230,8 @@ public class Algo {
         }
 
         // The main loop of the procedure
-        boolean foundScGraph = false;
-        while (!foundScGraph) {
+        ArrayList<ExecutionGraphNode> foundScGraph = new ArrayList<>();
+        while (foundScGraph.isEmpty()) {
 
             if (explorationStack.isEmpty()) {
                 // We have reached the end of the exploration stack.
@@ -267,9 +267,23 @@ public class Algo {
             }
         }
 
+        // TODO :: For debugging
+        /*System.out.println("[Algo Debug]: Found the SC graph");
+        for (ExecutionGraphNode node : foundScGraph) {
+            System.out.print(node.getEvent() + " - ");
+        }
+        System.out.println();*/
+
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
-        guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
+        guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule(foundScGraph));
+
+        // TODO :: For debugging
+        /*System.out.println("[Algo Debug]: Scheduling choices : " );
+        for (SchedulingChoiceWrapper choice : guidingTaskSchedule) {
+            System.out.print(choice.choice().getTaskId() + " - ");
+        }
+        System.out.println();*/
     }
 
     // TODO : Complete this method
@@ -288,7 +302,7 @@ public class Algo {
                 executionGraph.changeReadsFrom(read, write);
                 //executionGraph.restrictTo(read);
                 executionGraph.restrict(read);
-                if (executionGraph.isSequentialConsistent()) {
+                if (!executionGraph.isSequentialConsistent().isEmpty()) {
                     guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 }
                 break;
@@ -300,12 +314,12 @@ public class Algo {
                 executionGraph.swapCoherency(write1, write2);
                 //executionGraph.restrictTo(write1);
                 executionGraph.restrict(write1);
-                if (executionGraph.isSequentialConsistent()) {
+                if (!executionGraph.isSequentialConsistent().isEmpty()) {
                     guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 }
                 break;
             case BRR:
-                if (executionGraph.isSequentialConsistent()) {
+                if (!executionGraph.isSequentialConsistent().isEmpty()) {
                     guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 }
                 break;
@@ -318,16 +332,16 @@ public class Algo {
                 // set the co
                 executionGraph.trackCoherency(w);
                 executionGraph.restrict(w);
-                if (executionGraph.isSequentialConsistent()) {
+                if (!executionGraph.isSequentialConsistent().isEmpty()) {
                     guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
                 }
                 // TODO :: For debugging
-                System.out.println("[Algo Debug]: Forward revisit of w -> lw");
+                /*System.out.println("[Algo Debug]: Forward revisit of w -> lw");*/
                 break;
         }
         // TODO :: For debugging
-        System.out.println("[Algo Debug]: Resetting the iteration with item " + item);
-        printGuidingTaskSchedule();
+        /*System.out.println("[Algo Debug]: Resetting the iteration with item " + item);
+        printGuidingTaskSchedule();*/
     }
 
     // TODO :: For debugging
@@ -406,7 +420,7 @@ public class Algo {
                 ExplorationStack.Item.forwardLW(write, restrictedGraph));
     }
 
-    private boolean processFRW(ExplorationStack.Item item) {
+    private ArrayList<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {
         // Forward revisit of w -> r
         ExecutionGraphNode read = item.getEvent1();
         ExecutionGraphNode write = item.getEvent2();
@@ -417,7 +431,7 @@ public class Algo {
         return executionGraph.isSequentialConsistent();
     }
 
-    private boolean processFWW(ExplorationStack.Item item) {
+    private ArrayList<ExecutionGraphNode> processFWW(ExplorationStack.Item item) {
         // Forward revisit of w -> w (alternative coherence placing)
         ExecutionGraphNode write1 = item.getEvent1();
         ExecutionGraphNode write2 = item.getEvent2();
@@ -427,7 +441,7 @@ public class Algo {
         return executionGraph.isSequentialConsistent();
     }
 
-    private boolean processFLW(ExplorationStack.Item item) {
+    private ArrayList<ExecutionGraphNode> processFLW(ExplorationStack.Item item) {
         // Forward revisit of w -> lw (max-co)
         ExecutionGraphNode w = item.getEvent1();
 
@@ -487,8 +501,8 @@ public class Algo {
 
         if (coMaxWrite.happensBefore(read)) {
             // TODO :: For debugging
-            System.out.println("[Algo Debug]: Read is before the coMaxWrite");
-            System.out.println("[Algo Debug]: the CoMaxWrite is " + coMaxWrite.getEvent());
+            /*System.out.println("[Algo Debug]: Read is before the coMaxWrite");
+            System.out.println("[Algo Debug]: the CoMaxWrite is " + coMaxWrite.getEvent());*/
             // Easy case. No concurrent write to revisit. [Note that this is an optimization for
             // sequential consistency model. If we are exploring relaxed memory models in the future,
             // we need to remove this optimization.]
@@ -501,13 +515,13 @@ public class Algo {
         List<ExecutionGraphNode> alternativeWrites = executionGraph.getAlternativeWrites(read);
         if (alternativeWrites.isEmpty()) {
             // TODO :: For debugging
-            System.out.println("[Algo Debug]: No alternative writes to revisit");
+            /*System.out.println("[Algo Debug]: No alternative writes to revisit");*/
             // No alternative writes to revisit.
             return;
         }
         // We have alternative writes to revisit.
         // TODO :: For debugging
-        System.out.println("[Algo Debug]: Found alternative writes to revisit");
+        /*System.out.println("[Algo Debug]: Found alternative writes to revisit");*/
 
         // The following code needs to be modified in a way that alternative writes get pushed to the
         // exploration stack in a right to left order. Moreover, there is no need to clone the
@@ -559,7 +573,8 @@ public class Algo {
         List<ExecutionGraphNode> potentialReads = executionGraph.getPotentialReads(write);
         //List<ExecutionGraphNode> potentialReads = executionGraph.getNonPorfReads(write);
         if (potentialReads.isEmpty()) {
-            System.out.println("[Algo Debug]: No potential reads to revisit");
+            // TODO :: For debugging
+            /*System.out.println("[Algo Debug]: No potential reads to revisit");*/
             // After batching the forward revisits, since there is no backward revisit, we need to
             // continue the exploration by adding the recently added write as the CO max.
             executionGraph.trackCoherency(write);

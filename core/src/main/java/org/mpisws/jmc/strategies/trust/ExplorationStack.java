@@ -31,7 +31,8 @@ public class ExplorationStack {
      * @param item The item to push onto the stack
      */
     public void push(Item item) {
-        System.out.println("[Explo Stack Debug]: Adding item " + item.getType() /*+ "(" + item.event1.key().toString() + ":" + item.event2.key().toString() + ")"*/);
+        // TODO :: For debugging
+        /*System.out.println("[Explo Stack Debug]: Adding item " + item.getType() *//*+ "(" + item.event1.key().toString() + ":" + item.event2.key().toString() + ")"*//*);*/
         if (this.stack.isEmpty()) {
             this.stack.add(new InnerStack(item.graph));
         }
@@ -63,7 +64,8 @@ public class ExplorationStack {
      * @return The item popped from the stack
      */
     public Item pop() {
-        System.out.println("[Explo Stack Debug]: Removing item " + peek() + " from stack");
+        // TODO :: For debugging
+        /*System.out.println("[Explo Stack Debug]: Removing item " + peek() + " from stack");*/
         // Note that we clean before popping. This was when an inner stack is popped to empty any
         // pushes will still go to that stack.
         // This is helpful when we pop a BCK item and then push a FRW item.

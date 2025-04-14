@@ -310,8 +310,8 @@ public class JmcModelCheckerTest {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
                         .strategyType("trust")
-                        .numIterations(100)
-                        .debug(true)
+                        .numIterations(1000000)
+                        .debug(false)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
@@ -319,7 +319,8 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "TrustCC0",
                         () -> {
-                            CC0.main(new String[0]);
+                            int size = 1;
+                            CC0.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -415,6 +416,26 @@ public class JmcModelCheckerTest {
                         "TrustCC5",
                         () -> {
                             CC5.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC7() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC7",
+                        () -> {
+                            int size = 4;
+                            CC7.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }

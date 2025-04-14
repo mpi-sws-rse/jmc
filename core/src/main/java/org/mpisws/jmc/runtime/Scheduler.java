@@ -113,7 +113,7 @@ public class Scheduler {
             } catch (TaskNotExists e) {
                 LOGGER.info("Resuming a non existent task: {}", e.getMessage());
                 // TODO :: For debugging
-                System.out.println("[Scheduler debug] : Resuming a non existent task: " + e.getMessage());
+                /*System.out.println("[Scheduler debug] : Resuming a non existent task: " + e.getMessage());*/
                 System.exit(1);
             }
         }
@@ -242,7 +242,7 @@ public class Scheduler {
                     LOGGER.debug("Scheduler thread enabled.");
                     SchedulingChoice nextTask = strategy.nextTask();
                     // TODO :: For debugging
-                    System.out.println("[Scheduler debug] : The next task to be scheduled is: " + nextTask);
+                    /*System.out.println("[Scheduler debug] : The next task to be scheduled is: " + nextTask);*/
                     if (nextTask != null) {
                         scheduler.scheduleTask(nextTask);
                     } else {

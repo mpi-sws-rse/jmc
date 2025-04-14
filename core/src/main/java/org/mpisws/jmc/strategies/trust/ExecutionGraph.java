@@ -90,6 +90,45 @@ public class ExecutionGraph {
         }
     }
 
+    public List<SchedulingChoiceWrapper> getTaskSchedule(List<ExecutionGraphNode> taskEvents) {
+        List<SchedulingChoiceWrapper> result = new ArrayList<>();
+        taskEvents.remove(0); // Remove the init event
+        taskEvents.remove(0); // Remove the first event of the main thread
+
+        Integer oldLocation = null;
+        for (ExecutionGraphNode node : taskEvents) {
+            Integer newLocation = node.getEvent().getLocation();
+            // If the event is a blocking label then add the relevant task to the schedule
+            if (EventUtils.isBlockingLabel(node.getEvent())) {
+                Long taskId = node.getEvent().getTaskId();
+                if (taskId == null) {
+                    result.add(
+                            new SchedulingChoiceWrapper(
+                                    SchedulingChoice.blockExecution(), oldLocation));
+                } else {
+                    result.add(
+                            new SchedulingChoiceWrapper(
+                                    SchedulingChoice.blockTask(node.getEvent().getTaskId()),
+                                    oldLocation));
+                }
+            } else if (EventUtils.isThreadStart(node.getEvent())) {
+                result.add(
+                        new SchedulingChoiceWrapper(
+                                SchedulingChoice.task(EventUtils.getStartedBy(node.getEvent()) + 1),
+                                oldLocation));
+            } else {
+                // Adding 1 to the task ID since the task ID is 0-indexed inside Trust but 1-indexed
+                // in JMC
+                Long taskId = node.getEvent().getTaskId() + 1;
+                result.add(
+                        new SchedulingChoiceWrapper(SchedulingChoice.task(taskId), oldLocation));
+            }
+            oldLocation = newLocation;
+        }
+        result.add(new SchedulingChoiceWrapper(SchedulingChoice.end(), oldLocation));
+        return result;
+    }
+
     /**
      * Returns the list of task identifiers in the execution graph based on the topologically sorted
      * order.
@@ -456,7 +495,7 @@ public class ExecutionGraph {
     public ExecutionGraphNode getCoMax(Integer location) {
         List<ExecutionGraphNode> writes = coherencyOrder.get(location);
         // TODO :: For debugging
-        System.out.println("[Exec Graph debug] : the size of the writes list is " + writes.size());
+        /*System.out.println("[Exec Graph debug] : the size of the writes list is " + writes.size());*/
         if (writes == null || writes.isEmpty()) {
             // No writes to the location, therefore return the initial event
             return allEvents.get(0);
@@ -884,6 +923,23 @@ public class ExecutionGraph {
     }
 
     public void restrictBySet(Set<Event.Key> set) {
+        /*for (Event.Key key : set) {
+            ExecutionGraphNode node = null;
+            for (ExecutionGraphNode event : allEvents) {
+                if (event.key().equals(key)) {
+                    node = event;
+                    break;
+                }
+            }
+            if (node == null) {
+                throw new HaltCheckerException("The restricting node is not in all events");
+            }
+
+            if (node.getEvent().isWrite() || node.getEvent().isWriteEx()) {
+                updateCoEdge(node);
+            }
+        }*/
+
         for (Event.Key key : set) {
             // Collect and remove the event in the allEvents which it holds the key
             ExecutionGraphNode node = null;
@@ -896,6 +952,7 @@ public class ExecutionGraph {
             if (node == null) {
                 throw new HaltCheckerException("The restricting node is not in all events");
             }
+
             allEvents.removeIf((event) -> event.key().equals(key));
 
             // Each event is the taskEvents which holds the key must be removed
@@ -930,6 +987,58 @@ public class ExecutionGraph {
         }
 
         recomputeVectorClocks();
+    }
+
+    private void updateCoEdge(ExecutionGraphNode node) {
+        Set<Event.Key> nexts = node.getSuccessors(Relation.Coherency);
+        if (nexts.size() > 1) {
+            throw new HaltCheckerException("A write has more than one coherency edge.");
+        } else if (nexts.size() == 0) {
+            // No coherency edge, nothing to do
+            return;
+        }
+        Set<Event.Key> prevs = node.getPredecessors(Relation.Coherency);
+        if (prevs.size() != 1) {
+            // TODO :: For Debugging
+            for (Event.Key prev : prevs) {
+                System.out.println("[Exec Graph debug] : The previous event is: " + prev);
+            }
+            System.out.println("[Exec Graph debug] : The write event is: " + node.getEvent());
+            throw new HaltCheckerException("A write has more than one or no coherency edge.");
+        }
+
+        Event.Key nextKey = nexts.iterator().next();
+        Event.Key prevKey = prevs.iterator().next();
+        ExecutionGraphNode next = null;
+        ExecutionGraphNode prev = null;
+        for (ExecutionGraphNode event : allEvents) {
+            if (event.key().equals(nextKey)) {
+                next = event;
+            } else if (event.key().equals(prevKey)) {
+                prev = event;
+            }
+        }
+        if (next == null) {
+            throw new HaltCheckerException("The next event is not in all events : " + nextKey);
+        }
+        if (prev == null) {
+            throw new HaltCheckerException("The previous event is not in all events : " + prevKey);
+        }
+        // TODO :: For debugging
+        System.out.println(
+                "[Exec Graph debug] : The write event is : " + node.getEvent());
+        System.out.println(
+                "[Exec Graph debug] : The next event is : " + next.getEvent());
+        System.out.println(
+                "[Exec Graph debug] : The prev event is : " + prev.getEvent());
+        node.removeEdge(next, Relation.Coherency);
+        prev.removeEdge(node, Relation.Coherency);
+        prev.addEdge(next, Relation.Coherency);
+        // TODO :: For debugging
+        System.out.println(
+                "[Exec Graph debug] : The prev coherency edge is: " + prev.getSuccessors(Relation.Coherency).iterator().next());
+        System.out.println(
+                "[Exec Graph debug] : The next coherency edge is: " + next.getPredecessors(Relation.Coherency).iterator().next());
     }
 
     /**
@@ -1171,15 +1280,8 @@ public class ExecutionGraph {
         return new TopologicalIterator(this);
     }
 
-    public boolean isSequentialConsistent() {
-        boolean r = topologicalSort().isEmpty();
-        // TODO :: For debugging
-        if (r) {
-            System.out.println("[Exec Graph debug]: The graph is not sequentially consistent");
-        } else {
-            System.out.println("[Exec Graph debug]: The graph is sequentially consistent");
-        }
-        return !r;
+    public ArrayList<ExecutionGraphNode> isSequentialConsistent() {
+        return topologicalSort();
     }
 
     public ArrayList<ExecutionGraphNode> topologicalSort() {
