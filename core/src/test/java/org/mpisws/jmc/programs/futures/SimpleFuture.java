@@ -3,6 +3,7 @@ package org.mpisws.jmc.programs.futures;
 import org.mpisws.jmc.util.concurrent.JmcExecutorService;
 import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
