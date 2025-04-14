@@ -12,7 +12,7 @@ else
     source venv/bin/activate
 fi
 
-GRAPH_DIR="../../build/test-results/jmc-report"
+GRAPH_DIR="../../core/build/test-results/jmc-report"
 
 # Run the visualizer
 python3 web_server.py $GRAPH_DIR

@@ -328,7 +328,13 @@ public class JmcModelCheckerTest {
     void testTrustConcurrentCounter() {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
-                        .customStrategy(new TrustStrategy())
+                        .strategyConstructor(
+                                (sConfig) ->
+                                        new TrustStrategy(
+                                                sConfig.getSeed(),
+                                                sConfig.getTrustSchedulingPolicy(),
+                                                sConfig.getDebug(),
+                                                sConfig.getReportPath()))
                         .numIterations(10)
                         .debug(true)
                         .build();
