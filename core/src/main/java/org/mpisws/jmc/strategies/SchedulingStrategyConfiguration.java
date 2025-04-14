@@ -8,7 +8,8 @@ public class SchedulingStrategyConfiguration {
     private String reportPath;
     private boolean debug;
 
-    private SchedulingStrategyConfiguration() {}
+    private SchedulingStrategyConfiguration() {
+    }
 
     public Long getSeed() {
         return seed;
@@ -67,5 +68,10 @@ public class SchedulingStrategyConfiguration {
             config.debug = this.debug;
             return config;
         }
+    }
+
+    @FunctionalInterface
+    public interface SchedulingStrategyConstructor {
+        SchedulingStrategy create(SchedulingStrategyConfiguration config);
     }
 }
