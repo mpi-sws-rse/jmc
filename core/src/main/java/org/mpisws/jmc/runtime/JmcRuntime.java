@@ -118,14 +118,14 @@ public class JmcRuntime {
     public static void yield() {
         Long currentTask = scheduler.currentTask();
         try {
-            LOGGER.debug("Yielding task {}", currentTask);
             // TODO :: For debugging
+            LOGGER.info("Yielding task {}", currentTask);
             /*System.out.println("[JMCRuntime debug] : Yielding the current task " + currentTask);*/
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
-            LOGGER.info("Yielding an already paused task.");
             // TODO :: For debugging
-            System.out.println("[JmcRuntime debug] : Yielding an already paused task.");
+            LOGGER.info("Yielding an already paused task.");
+            /*System.out.println("[JmcRuntime debug] : Yielding an already paused task.");*/
             System.exit(1);
         }
         wait(currentTask);
@@ -142,8 +142,8 @@ public class JmcRuntime {
      */
     public static void yield(Long taskId) throws HaltTaskException, HaltExecutionException {
         try {
-            LOGGER.debug("Yielding task {}", taskId);
             // TODO :: For debugging
+            LOGGER.info("Yielding task {}", taskId);
             /*System.out.println("[JmcRuntime debug] : Yielding by id of task " + taskId);*/
             scheduler.yield(taskId);
         } catch (TaskAlreadyPaused e) {
@@ -203,9 +203,9 @@ public class JmcRuntime {
      * @param taskId the ID of the task to be terminated
      */
     public static void join(Long taskId) {
+        // TODO :: For debugging
         LOGGER.debug("Joining task {}", taskId);
         try {
-            // TODO :: For debugging
             /*System.out.println("[JmcRuntime debug] : Joining task " + taskId);*/
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
@@ -235,9 +235,9 @@ public class JmcRuntime {
      * @param event to be added
      */
     public static void updateEvent(RuntimeEvent event) throws HaltTaskException {
-        LOGGER.debug("Updating event: {}", event);
+        // TODO :: For debugging
+        LOGGER.info("Updating event: {}", event);
         try {
-            // TODO :: For debugging
             /*System.out.println("[JmcRuntime debug] : The updating event " + event);*/
             scheduler.updateEvent(event);
         } catch (HaltTaskException e) {

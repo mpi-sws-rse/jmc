@@ -111,7 +111,8 @@ public class Scheduler {
             Long taskId = choice.getTaskId();
             setCurrentTask(taskId);
             try {
-                LOGGER.debug("Resuming task: {}", taskId);
+                // TODO :: For debugging
+                LOGGER.info("Resuming task: {}", taskId);
                 taskManager.resume(taskId);
             } catch (TaskNotExists e) {
                 LOGGER.error("Resuming a non existent task: {}", e.getMessage());
@@ -266,6 +267,8 @@ public class Scheduler {
                         }
                     }
                     if (nextTask != null) {
+                        // TODO :: For debugging
+                        LOGGER.info("Scheduling task: {}", nextTask.getTaskId());
                         scheduler.scheduleTask(nextTask);
                     } else {
                         LOGGER.error("No task to schedule.");
