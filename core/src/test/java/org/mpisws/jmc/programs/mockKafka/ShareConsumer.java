@@ -1,8 +1,6 @@
-package org.mpisws.jmc.programs.kafka;
+package org.mpisws.jmc.programs.mockKafka;
 
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
+
 
 import java.time.Duration;
 import java.util.*;
@@ -14,16 +12,6 @@ public class ShareConsumer<K, V> {
     private final Set<String> subscribedTopics = new HashSet<>();
     private long lastPollTime = 0;
     private static final long ACQUISITION_LOCK_TIMEOUT = 15000; // 15 seconds
-
-    public ShareConsumer(Consumer<Object, Object> consumer) {
-    }
-
-    public ShareConsumer(Map<String, Object> consumerProps, StringSerializer stringSerializer, StringDeserializer stringDeserializer) {
-    }
-
-    public ShareConsumer() {
-
-    }
 
     public void subscribe(Set<String> topics) {
         subscribedTopics.addAll(topics);
@@ -51,4 +39,3 @@ public class ShareConsumer<K, V> {
         return new ConsumerRecords<>(records);
     }
 }
-

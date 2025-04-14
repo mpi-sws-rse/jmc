@@ -1,6 +1,5 @@
-package org.mpisws.jmc.programs.kafka;
+package org.mpisws.jmc.programs.mockKafka;
 
-import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.Set;
 

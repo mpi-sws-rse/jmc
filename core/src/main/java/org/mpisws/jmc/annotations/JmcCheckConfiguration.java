@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 public @interface JmcCheckConfiguration {
     String strategy() default "random";
 
-    Class<? extends SchedulingStrategy> customStrategy() default RandomSchedulingStrategy.class;
+//    SchedulingStrategy customStrategy() default RandomSchedulingStrategy.class;
 
     int numIterations() default 10;
 

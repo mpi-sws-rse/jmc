@@ -1,4 +1,4 @@
-package org.mpisws.jmc.programs.kafka;
+package org.mpisws.jmc.programs.mockKafka;
 
 
 public class ProducerRecord<K, V> {
