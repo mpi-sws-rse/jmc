@@ -5,7 +5,6 @@ import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.RuntimeEventType;
 
 /**
  * This class is a wrapper around the Java Thread class. It is used to intercept the start, finish,
@@ -25,17 +24,23 @@ public class JmcThread extends Thread {
     // TODO: extend to all constructors of Thread and handle ThreadGroups, also all join methods
     //      Should be a drop in replacement for all possible ways to use Threads
 
-    /** Constructs a new JmcThread object. */
+    /**
+     * Constructs a new JmcThread object.
+     */
     public JmcThread() {
         this(JmcRuntime.addNewTask());
     }
 
-    /** Constructs a new JmcThread object with the given Runnable. */
+    /**
+     * Constructs a new JmcThread object with the given Runnable.
+     */
     public JmcThread(Runnable r) {
         this(r, JmcRuntime.addNewTask());
     }
 
-    /** Constructs a new JmcThread object with the given JMC thread ID. */
+    /**
+     * Constructs a new JmcThread object with the given JMC thread ID.
+     */
     public JmcThread(Long jmcThreadId) {
         super();
         this.jmcThreadId = jmcThreadId;
@@ -44,7 +49,9 @@ public class JmcThread extends Thread {
         LOGGER = LogManager.getLogger(JmcThread.class.getName() + " Task=" + jmcThreadId);
     }
 
-    /** Constructs a new JmcThread object with the given Runnable and JMC thread ID. */
+    /**
+     * Constructs a new JmcThread object with the given Runnable and JMC thread ID.
+     */
     public JmcThread(Runnable r, Long jmcThreadId) {
         super(r);
         this.jmcThreadId = jmcThreadId;
@@ -66,7 +73,7 @@ public class JmcThread extends Thread {
     public void run() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.START_EVENT)
+                        .type(RuntimeEvent.Type.START_EVENT)
                         .taskId(jmcThreadId)
                         .param("startedBy", createdBy)
                         .build();
@@ -81,7 +88,7 @@ public class JmcThread extends Thread {
         } catch (HaltTaskException e) {
             event =
                     new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.HALT_EVENT)
+                            .type(RuntimeEvent.Type.HALT_EVENT)
                             .taskId(jmcThreadId)
                             .build();
             try {
@@ -92,7 +99,7 @@ public class JmcThread extends Thread {
         } finally {
             event =
                     new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.FINISH_EVENT)
+                            .type(RuntimeEvent.Type.FINISH_EVENT)
                             .taskId(jmcThreadId)
                             .build();
             try {
@@ -113,7 +120,7 @@ public class JmcThread extends Thread {
     public void runWithoutJoin() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.START_EVENT)
+                        .type(RuntimeEvent.Type.START_EVENT)
                         .taskId(jmcThreadId)
                         .param("startedBy", createdBy)
                         .build();
@@ -128,7 +135,7 @@ public class JmcThread extends Thread {
         } catch (HaltTaskException e) {
             event =
                     new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.HALT_EVENT)
+                            .type(RuntimeEvent.Type.HALT_EVENT)
                             .taskId(jmcThreadId)
                             .build();
             try {
@@ -139,7 +146,7 @@ public class JmcThread extends Thread {
         } finally {
             event =
                     new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.FINISH_EVENT)
+                            .type(RuntimeEvent.Type.FINISH_EVENT)
                             .taskId(jmcThreadId)
                             .build();
             try {
@@ -158,7 +165,9 @@ public class JmcThread extends Thread {
         JmcRuntime.wait(taskId);
     }
 
-    /** This method is overridden by the user. */
+    /**
+     * This method is overridden by the user.
+     */
     public void run1() throws HaltTaskException {
         super.run();
     }
@@ -166,7 +175,7 @@ public class JmcThread extends Thread {
     private void handleInterrupt(Thread t, Throwable e) {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.HALT_EVENT)
+                        .type(RuntimeEvent.Type.HALT_EVENT)
                         .taskId(jmcThreadId)
                         .build();
         try {
@@ -185,12 +194,14 @@ public class JmcThread extends Thread {
         join1(0L);
     }
 
-    /** Replacing the Thread join to intercept the join Event. */
+    /**
+     * Replacing the Thread join to intercept the join Event.
+     */
     public void join1(Long millis) throws InterruptedException {
         Long requestingTask = JmcRuntime.currentTask();
         RuntimeEvent requestEvent =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.JOIN_REQUEST_EVENT)
+                        .type(RuntimeEvent.Type.JOIN_REQUEST_EVENT)
                         .taskId(requestingTask)
                         .param("waitingTask", jmcThreadId)
                         .build();
@@ -202,7 +213,7 @@ public class JmcThread extends Thread {
         super.join(millis);
         RuntimeEvent completedEvent =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.JOIN_COMPLETE_EVENT)
+                        .type(RuntimeEvent.Type.JOIN_COMPLETE_EVENT)
                         .taskId(requestingTask)
                         .param("joinedTask", jmcThreadId)
                         .build();

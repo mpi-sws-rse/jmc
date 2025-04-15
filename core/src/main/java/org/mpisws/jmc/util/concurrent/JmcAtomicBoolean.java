@@ -2,7 +2,6 @@ package org.mpisws.jmc.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.RuntimeEventType;
 
 import java.util.HashMap;
 
@@ -32,7 +31,7 @@ public class JmcAtomicBoolean {
         boolean out = value;
         RuntimeEvent.Builder eventBuilder =
                 (new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.READ_EVENT)
+                        .type(RuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask()));
         HashMap<String, Object> eventParams = new HashMap<>();
         eventParams.put("owner", "org/mpisws/jmc/util/concurrent/AtomicBoolean");
@@ -46,7 +45,7 @@ public class JmcAtomicBoolean {
         value = newValue;
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.WRITE_EVENT)
+                        .type(RuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .params(
                                 new HashMap<>() {
@@ -80,7 +79,7 @@ public class JmcAtomicBoolean {
     private void writeOp(boolean newValue) {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.WRITE_EVENT)
+                        .type(RuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .params(
                                 new HashMap<>() {
@@ -99,7 +98,7 @@ public class JmcAtomicBoolean {
     private void readOp() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.READ_EVENT)
+                        .type(RuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .params(
                                 new HashMap<>() {

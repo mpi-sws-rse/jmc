@@ -2,7 +2,6 @@ package org.mpisws.jmc.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.RuntimeEventType;
 
 public class JmcAtomicStampedReference<V> {
 
@@ -78,7 +77,7 @@ public class JmcAtomicStampedReference<V> {
     private void readOp() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.READ_EVENT)
+                        .type(RuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/jmc/util/concurrent/AtomicStampedReference")
                         .param("name", "value")
@@ -92,7 +91,7 @@ public class JmcAtomicStampedReference<V> {
     private void writeOp(V newValue, int newStamp) {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.WRITE_EVENT)
+                        .type(RuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/jmc/util/concurrent/AtomicStampedReference")
                         .param("name", "value")

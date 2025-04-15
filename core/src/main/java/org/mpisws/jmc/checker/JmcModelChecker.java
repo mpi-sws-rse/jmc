@@ -8,7 +8,6 @@ import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.JmcRuntimeConfiguration;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.RuntimeEventType;
 
 /**
  * The JmcModelChecker class is responsible for managing the model checking process. It uses a
@@ -21,7 +20,9 @@ public class JmcModelChecker {
 
     private final JmcCheckerConfiguration config;
 
-    /** Constructs a new JMC model checker with the default configuration. */
+    /**
+     * Constructs a new JMC model checker with the default configuration.
+     */
     public JmcModelChecker() {
         this(new JmcCheckerConfiguration.Builder().build());
     }
@@ -54,7 +55,7 @@ public class JmcModelChecker {
                     target.invoke();
                     RuntimeEvent mainEndEvent =
                             new RuntimeEvent.Builder()
-                                    .type(RuntimeEventType.FINISH_EVENT)
+                                    .type(RuntimeEvent.Type.FINISH_EVENT)
                                     .taskId(1L)
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);

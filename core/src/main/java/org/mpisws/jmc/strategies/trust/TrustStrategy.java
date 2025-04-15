@@ -49,12 +49,12 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     }
 
     @Override
-    public SchedulingChoice nextTask() {
+    public SchedulingChoice<?> nextTask() {
         // Always add 1 to the return value the strategy expects 1-indexed tasks but we store
         // 0-indexed tasks
 
         // If the algorithm has a task to execute, return it
-        SchedulingChoice nextTask = algoInstance.nextTask();
+        SchedulingChoice<?> nextTask = algoInstance.nextTask();
         if (nextTask != null) {
             return nextTask;
         }

@@ -10,9 +10,9 @@ import java.util.HashMap;
 public class RuntimeUtils {
     public static void readEvent(String owner, String name, String descriptor, Object instance) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
-        builder.type(RuntimeEventType.READ_EVENT).taskId(JmcRuntime.currentTask());
+        builder.type(RuntimeEvent.Type.READ_EVENT).taskId(JmcRuntime.currentTask());
 
-        HashMap var2 = new HashMap();
+        HashMap<String, Object> var2 = new HashMap<>();
         var2.put("newValue", (Object) null);
         var2.put("owner", owner);
         var2.put("name", name);
@@ -23,9 +23,9 @@ public class RuntimeUtils {
     public static void writeEvent(
             Object value, String owner, String name, String descriptor, Object instance) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
-        builder.type(RuntimeEventType.READ_EVENT).taskId(JmcRuntime.currentTask());
+        builder.type(RuntimeEvent.Type.READ_EVENT).taskId(JmcRuntime.currentTask());
 
-        HashMap var2 = new HashMap();
+        HashMap<String, Object> var2 = new HashMap<>();
         var2.put("newValue", value);
         var2.put("owner", owner);
         var2.put("name", name);

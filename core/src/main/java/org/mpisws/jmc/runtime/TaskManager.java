@@ -30,16 +30,22 @@ public class TaskManager {
         TERMINATED,
     }
 
-    /** Stores a set of custom IDs used by the Runtime. */
+    /**
+     * Stores a set of custom IDs used by the Runtime.
+     */
     private Long idCounter;
 
     private final Object idCounterLock = new Object();
 
-    /** Stores the state of each task. */
+    /**
+     * Stores the state of each task.
+     */
     private final Map<Long, TaskState> taskStates;
 
-    /** Stores the future of blocked tasks. */
-    private final Map<Long, CompletableFuture<Boolean>> taskFutures;
+    /**
+     * Stores the future of blocked tasks.
+     */
+    private final Map<Long, CompletableFuture<?>> taskFutures;
 
     private final Object tasksLock = new Object();
 
@@ -56,22 +62,26 @@ public class TaskManager {
         }
     }
 
-    /** Constructs a new TaskManager object. */
+    /**
+     * Constructs a new TaskManager object.
+     */
     public TaskManager() {
         this.idCounter = 1L;
         this.taskStates = new HashMap<>();
         this.taskFutures = new HashMap<>();
     }
 
-    /** Resets the TaskManager object. */
+    /**
+     * Resets the TaskManager object.
+     */
     public void reset() {
         synchronized (idCounterLock) {
             idCounter = 1L;
         }
         synchronized (tasksLock) {
             taskStates.clear();
-            for (CompletableFuture<Boolean> future : taskFutures.values()) {
-                future.complete(true);
+            for (CompletableFuture<?> future : taskFutures.values()) {
+                future.complete(null);
             }
             taskFutures.clear();
         }
@@ -100,8 +110,8 @@ public class TaskManager {
      * @return a future that completes when the task is resumed
      * @throws TaskAlreadyPaused if the task with the specified custom ID is already paused
      */
-    public CompletableFuture<Boolean> pause(Long taskId) throws TaskAlreadyPaused {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
+    public <T> CompletableFuture<T> pause(Long taskId) throws TaskAlreadyPaused {
+        CompletableFuture<T> future = new CompletableFuture<>();
         synchronized (tasksLock) {
             if (taskFutures.containsKey(taskId)) {
                 throw new TaskAlreadyPaused();
@@ -121,20 +131,41 @@ public class TaskManager {
      */
     public void resume(Long taskId) throws TaskNotExists {
         synchronized (tasksLock) {
-            CompletableFuture<Boolean> future = taskFutures.get(taskId);
+            CompletableFuture<?> future = taskFutures.get(taskId);
             if (future == null) {
                 // The task is not paused or has been completed.
                 throw new TaskNotExists(taskId);
             }
-            future.complete(true);
+            future.complete(null);
             taskFutures.remove(taskId);
             taskStates.put(taskId, TaskState.RUNNING);
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> void resume(Long taskId, T value) throws TaskNotExists {
+        CompletableFuture<?> future;
+        synchronized (tasksLock) {
+            future = taskFutures.get(taskId);
+            if (future == null) {
+                // The task is not paused or has been completed.
+                throw new TaskNotExists(taskId);
+            }
+            taskFutures.remove(taskId);
+            taskStates.put(taskId, TaskState.RUNNING);
+        }
+        try {
+            CompletableFuture<T> castedFuture = (CompletableFuture<T>) future;
+            castedFuture.complete(value);
+        } catch (ClassCastException e) {
+            LOGGER.error("Failed to cast future for task: {}", taskId);
+            throw new TaskNotExists(taskId);
+        }
+    }
+
     public void error(Long taskId, Exception e) {
         synchronized (tasksLock) {
-            CompletableFuture<Boolean> future = taskFutures.get(taskId);
+            CompletableFuture<?> future = taskFutures.get(taskId);
             if (future == null) {
                 return;
             }
@@ -152,11 +183,11 @@ public class TaskManager {
     public void terminate(Long taskId) {
         synchronized (tasksLock) {
             taskStates.put(taskId, TaskState.TERMINATED);
-            CompletableFuture<Boolean> future = taskFutures.get(taskId);
+            CompletableFuture<?> future = taskFutures.get(taskId);
             if (future == null) {
                 return;
             }
-            future.complete(true);
+            future.complete(null);
             taskFutures.remove(taskId);
         }
     }
@@ -176,7 +207,7 @@ public class TaskManager {
      * Update the state of the task with the specified custom ID.
      *
      * @param taskId the custom ID of the task
-     * @param state the new state of the task
+     * @param state  the new state of the task
      */
     public void markStatus(Long taskId, TaskState state) {
         synchronized (tasksLock) {
@@ -236,7 +267,7 @@ public class TaskManager {
      * provided.
      *
      * @param taskId the custom ID of the task
-     * @param state the state of the task
+     * @param state  the state of the task
      * @return true if the task exists with status
      */
     public boolean isTaskOfStatus(Long taskId, TaskState state) {
@@ -253,21 +284,30 @@ public class TaskManager {
      *
      * @param taskId the custom ID of the task
      */
-    public void wait(Long taskId) throws InterruptedException, ExecutionException {
-        CompletableFuture<Boolean> future;
+    @SuppressWarnings("unchecked")
+    public <T> T wait(Long taskId) throws InterruptedException, ExecutionException {
+        CompletableFuture<?> future;
         synchronized (tasksLock) {
             future = taskFutures.get(taskId);
         }
         if (future == null) {
-            return;
+            return null;
         }
-        future.get();
+        try {
+            CompletableFuture<T> castedFuture = (CompletableFuture<T>) future;
+            return castedFuture.get();
+        } catch (Exception e) {
+            LOGGER.error("Failed to cast future for task: {}", taskId);
+            throw new ExecutionException(e);
+        }
     }
 
-    /** Stop all the tasks in the task pool. */
+    /**
+     * Stop all the tasks in the task pool.
+     */
     public void stopAll() {
         synchronized (tasksLock) {
-            for (Map.Entry<Long, CompletableFuture<Boolean>> entry : taskFutures.entrySet()) {
+            for (Map.Entry<Long, CompletableFuture<?>> entry : taskFutures.entrySet()) {
                 entry.getValue()
                         .completeExceptionally(HaltExecutionException.error("Stopping execution"));
             }

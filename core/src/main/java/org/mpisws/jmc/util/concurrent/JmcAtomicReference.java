@@ -2,7 +2,6 @@ package org.mpisws.jmc.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.RuntimeEventType;
 
 import java.util.HashMap;
 
@@ -45,7 +44,7 @@ public class JmcAtomicReference<V> {
     private void writeOp(V newValue) {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.WRITE_EVENT)
+                        .type(RuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .params(
                                 new HashMap<>() {
@@ -64,7 +63,7 @@ public class JmcAtomicReference<V> {
     private void readOp() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.READ_EVENT)
+                        .type(RuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .params(
                                 new HashMap<>() {

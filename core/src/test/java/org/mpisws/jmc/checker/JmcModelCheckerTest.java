@@ -18,6 +18,7 @@ import org.mpisws.jmc.programs.det.stack.Client6;
 import org.mpisws.jmc.programs.dining.DiningPhilosophers;
 import org.mpisws.jmc.programs.futures.CompletableFutureP;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
+import org.mpisws.jmc.programs.random.counter.RandomCounterIncr;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
@@ -319,6 +320,22 @@ public class JmcModelCheckerTest {
                         "CompletableFuture",
                         () -> {
                             CompletableFutureP.main(new String[0]);
+                        });
+
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testRandomCounter() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(10).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomReactiveCounter",
+                        () -> {
+                            RandomCounterIncr.main(new String[0]);
                         });
 
         jmcModelChecker.check(target);
