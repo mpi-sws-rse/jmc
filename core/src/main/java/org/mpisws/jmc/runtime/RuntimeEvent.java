@@ -228,7 +228,7 @@ public class RuntimeEvent {
         THREAD_POOL_CREATED,
         TASK_CREATED_EVENT,
 
-        // Reactive Event
+        // Reactive Event (Events that require information from the strategy, upto the strategy to deal with it)
         REACTIVE_EVENT_RANDOM_VALUE,
 
         // Related to assertions in the code
