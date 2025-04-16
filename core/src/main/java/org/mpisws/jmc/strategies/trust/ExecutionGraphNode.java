@@ -372,4 +372,38 @@ public class ExecutionGraphNode {
     public interface NodeProvider {
         ExecutionGraphNode get(Event.Key key) throws NoSuchEventException;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ExecutionGraphNode that)) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
+        return this.event.equals(that.event);
+    }
+
+    public boolean equalsEdges(ExecutionGraphNode other) {
+        if (this == other) {
+            return true;
+        }
+        if (this.edges.size() != other.edges.size()) {
+            return false;
+        }
+        for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+            if (!other.edges.containsKey(entry.getKey())) {
+                return false;
+            }
+            if (entry.getValue().size() != other.edges.get(entry.getKey()).size()) {
+                return false;
+            }
+            for (Event.Key key : entry.getValue()) {
+                if (!other.edges.get(entry.getKey()).contains(key)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }

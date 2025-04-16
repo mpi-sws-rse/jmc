@@ -8,6 +8,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
 import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 
 import java.util.concurrent.ExecutionException;
 
@@ -83,13 +84,13 @@ public class JmcRuntime {
      *
      * @param iteration the iteration number
      */
-    public static void initIteration(int iteration) {
+    public static void initIteration(int iteration, JmcModelCheckerReport report) {
         LOGGER = LogManager.getLogger(JmcRuntime.class.getName() + " Iteration=" + iteration);
         if (config.getDebug()) {
             updateLoggerFile(iteration);
         }
         LOGGER.info("Initializing iteration");
-        scheduler.initIteration(iteration);
+        scheduler.initIteration(iteration, report);
         Long mainThreadId = taskManager.addNextTask();
         taskManager.markStatus(mainThreadId, TaskManager.TaskState.BLOCKED);
 

@@ -47,6 +47,10 @@ public class JmcCheckerConfiguration {
         return seed;
     }
 
+    public void setSeed(Long seed) {
+        this.seed = seed;
+    }
+
     public boolean isCustomStrategy() {
         return customStrategy != null;
     }
@@ -94,6 +98,9 @@ public class JmcCheckerConfiguration {
                 .build();
     }
 
+    /**
+     * Builder for JmcCheckerConfiguration
+     */
     public static class Builder {
         private Integer numIterations;
 

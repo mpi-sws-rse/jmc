@@ -2,6 +2,7 @@ package org.mpisws.jmc.runtime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.strategies.SchedulingStrategy;
 
 import java.util.concurrent.CompletableFuture;
@@ -80,8 +81,8 @@ public class Scheduler {
      *
      * @param iteration the number of the iteration
      */
-    public void initIteration(int iteration) throws HaltCheckerException {
-        strategy.initIteration(iteration);
+    public void initIteration(int iteration, JmcModelCheckerReport report) throws HaltCheckerException {
+        strategy.initIteration(iteration, report);
     }
 
     /**

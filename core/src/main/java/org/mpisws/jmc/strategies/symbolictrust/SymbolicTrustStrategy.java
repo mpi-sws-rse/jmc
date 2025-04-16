@@ -1,5 +1,6 @@
 package org.mpisws.jmc.strategies.symbolictrust;
 
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
@@ -17,8 +18,8 @@ public class SymbolicTrustStrategy extends TrustStrategy {
     }
 
     @Override
-    public void initIteration(int iteration) {
-        super.initIteration(iteration);
+    public void initIteration(int iteration, JmcModelCheckerReport report) {
+        super.initIteration(iteration, report);
     }
 
     @Override

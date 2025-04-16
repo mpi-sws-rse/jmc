@@ -8,17 +8,7 @@ import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.SchedulingChoice;
 import org.mpisws.jmc.util.aux.LamportVectorClock;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Represents an execution graph.
@@ -50,7 +40,9 @@ public class ExecutionGraph {
     // All events in the execution graph. This is the TO order
     private List<ExecutionGraphNode> allEvents;
 
-    /** Initializes a new execution graph. */
+    /**
+     * Initializes a new execution graph.
+     */
     public ExecutionGraph() {
         this.allEvents = new ArrayList<>();
         this.coherencyOrder = new HashMap<>();
@@ -454,7 +446,7 @@ public class ExecutionGraph {
      * Returns the nodes that are not _porf_-before the given node except the last node in the
      * returned list. Assumes that the given nodes are ordered in CO order.
      *
-     * @param node The node to split before.
+     * @param node  The node to split before.
      * @param nodes The nodes to split.
      * @return The nodes that are not _porf_-before the given node.
      */
@@ -617,7 +609,7 @@ public class ExecutionGraph {
      * Constructs a backward revisit view of the ExecutionGraph.
      *
      * @param write The write event
-     * @param read The read event that the write needs to backward revisit
+     * @param read  The read event that the write needs to backward revisit
      * @return The backward revisit view of the ExecutionGraph
      */
     public BackwardRevisitView revisitView(ExecutionGraphNode write, ExecutionGraphNode read) {
@@ -737,7 +729,7 @@ public class ExecutionGraph {
      * <p>Invalidates the total order and the vector clocks of events in the graph. The concern of
      * fixing the total order and the vector clocks is passed to the calling function.
      *
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public void changeReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
@@ -759,7 +751,7 @@ public class ExecutionGraph {
      *
      * <p>Does not validate if there is an existing reads-from edge to the corresponding read
      *
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public void setReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
@@ -851,7 +843,9 @@ public class ExecutionGraph {
         recomputeVectorClocks();
     }
 
-    /** Recomputes the vector clocks of all nodes in the execution graph. */
+    /**
+     * Recomputes the vector clocks of all nodes in the execution graph.
+     */
     public void recomputeVectorClocks() {
         for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
             ExecutionGraphNode iterNode = it.next();
@@ -971,14 +965,16 @@ public class ExecutionGraph {
                 }
                 if (!taskEventSizes.containsKey(predecessor.getTaskId())
                         || predecessor.getTimestamp()
-                                >= taskEventSizes.get(predecessor.getTaskId())) {
+                        >= taskEventSizes.get(predecessor.getTaskId())) {
                     node.removeAllEdgesFrom(predecessor);
                 }
             }
         }
     }
 
-    /** Returns an iterator walking through the nodes in a topological sort order. */
+    /**
+     * Returns an iterator walking through the nodes in a topological sort order.
+     */
     public Iterator<ExecutionGraphNode> iterator() {
         return new TopologicalIterator(this);
     }
@@ -988,12 +984,16 @@ public class ExecutionGraph {
         return true;
     }
 
-    /** Returns true if the graph contains only the initial event. */
+    /**
+     * Returns true if the graph contains only the initial event.
+     */
     public boolean isEmpty() {
         return allEvents.size() == 1 && allEvents.get(0).getEvent().isInit();
     }
 
-    /** Clears the execution graph. */
+    /**
+     * Clears the execution graph.
+     */
     public void clear() {
         allEvents.clear();
         coherencyOrder.clear();
@@ -1008,6 +1008,49 @@ public class ExecutionGraph {
         JsonObject gson = new JsonObject();
         gson.add("nodes", nodes);
         return gson.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ExecutionGraph that)) return false;
+
+        // Check if the two graphs have the same number of events
+        if (this.allEvents.size() != that.allEvents.size()) return false;
+
+        // Check if the two graphs have the same events in topological order
+        ArrayList<ExecutionGraphNode> curNodes = new ArrayList<>();
+        for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
+            ExecutionGraphNode node = it.next();
+            curNodes.add(node);
+        }
+
+        ArrayList<ExecutionGraphNode> thatNodes = new ArrayList<>();
+        for (Iterator<ExecutionGraphNode> it = that.iterator(); it.hasNext(); ) {
+            ExecutionGraphNode node = it.next();
+            thatNodes.add(node);
+        }
+
+        for (int i = 0; i < curNodes.size(); i++) {
+            if (!curNodes.get(i).equals(thatNodes.get(i))) {
+                return false;
+            }
+        }
+
+        // Check edges between the nodes
+        for (int i = 0; i < curNodes.size(); i++) {
+            if (!curNodes.get(i).equalsEdges(thatNodes.get(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        // Need to implement this
+        return Objects.hash(allEvents, taskEvents, coherencyOrder);
     }
 
     /**

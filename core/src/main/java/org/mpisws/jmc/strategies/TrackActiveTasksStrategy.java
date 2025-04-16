@@ -2,6 +2,7 @@ package org.mpisws.jmc.strategies;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 
 import java.util.HashSet;
@@ -43,7 +44,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void initIteration(int iteration) {
+    public void initIteration(int iteration, JmcModelCheckerReport report) {
     }
 
     @Override

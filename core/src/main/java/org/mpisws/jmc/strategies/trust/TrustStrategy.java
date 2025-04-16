@@ -2,6 +2,7 @@ package org.mpisws.jmc.strategies.trust;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
@@ -43,8 +44,8 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     }
 
     @Override
-    public void initIteration(int iteration) {
-        super.initIteration(iteration);
+    public void initIteration(int iteration, JmcModelCheckerReport report) {
+        super.initIteration(iteration, report);
         algoInstance.initIteration(iteration);
     }
 

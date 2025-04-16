@@ -33,7 +33,9 @@ public class Algo {
 
     private final LocationStore locationStore;
 
-    /** Creates a new instance of the Trust algorithm. */
+    /**
+     * Creates a new instance of the Trust algorithm.
+     */
     public Algo() {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
@@ -44,15 +46,17 @@ public class Algo {
         this.executionGraph.addEvent(Event.init());
     }
 
-    /** Returns the next task to be scheduled according to the execution graph set in place. */
-    public SchedulingChoice nextTask() {
+    /**
+     * Returns the next task to be scheduled according to the execution graph set in place.
+     */
+    public SchedulingChoice<?> nextTask() {
         if (!isGuiding) {
             return null;
         }
         if (guidingTaskSchedule == null || guidingTaskSchedule.isEmpty()) {
             return null;
         }
-        SchedulingChoice out = guidingTaskSchedule.pop().choice();
+        SchedulingChoice<?> out = guidingTaskSchedule.pop().choice();
         if (guidingTaskSchedule.isEmpty()) {
             isGuiding = false;
         }
@@ -61,7 +65,7 @@ public class Algo {
 
     private void handleGuidedEvent(Event event) {
         SchedulingChoiceWrapper choiceW = guidingTaskSchedule.peek();
-        SchedulingChoice choice = choiceW.choice();
+        SchedulingChoice<?> choice = choiceW.choice();
         if (choice.isBlockTask()) {
             throw new HaltTaskException(choice.getTaskId());
         } else if (choice.isBlockExecution()) {
@@ -195,7 +199,9 @@ public class Algo {
         resetWith(item);
     }
 
-    /** Checks if we are guiding the execution. */
+    /**
+     * Checks if we are guiding the execution.
+     */
     private boolean areWeGuiding() {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
     }
@@ -490,7 +496,8 @@ public class Algo {
         }
     }
 
-    private void handleLockAwait(Event event) {}
+    private void handleLockAwait(Event event) {
+    }
 
     /**
      * Writes the execution graph to a file.
