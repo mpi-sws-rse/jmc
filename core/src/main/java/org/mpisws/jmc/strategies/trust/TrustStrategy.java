@@ -2,6 +2,7 @@ package org.mpisws.jmc.strategies.trust;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jline.utils.Log;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
@@ -93,14 +94,12 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
 
     @Override
     public void resetIteration(int iteration) {
-        // TODO :: For debugging
-        /*System.out.println("[TrustStrategy debug] : resetIteration(" + iteration + ")");*/
+        LOGGER.info("Resetting iteration {}", iteration);
         super.resetIteration(iteration);
         if (debug) {
             algoInstance.writeExecutionGraphToFile(
                     Paths.get(this.reportPath, "iteration-" + iteration + ".json").toString());
         }
-        //algoInstance.resetIteration();
     }
 
     @Override

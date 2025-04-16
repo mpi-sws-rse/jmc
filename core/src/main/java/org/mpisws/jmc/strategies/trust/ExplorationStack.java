@@ -1,5 +1,8 @@
 package org.mpisws.jmc.strategies.trust;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +14,7 @@ import java.util.List;
  * <p>The stack is a list of inner stacks. Each inner stack is created for a backward revisit.
  */
 public class ExplorationStack {
-
+    private static Logger LOGGER = LogManager.getLogger(ExplorationStack.class);
     private final List<InnerStack> stack;
 
     /** Creates a new exploration stack. */
@@ -31,8 +34,7 @@ public class ExplorationStack {
      * @param item The item to push onto the stack
      */
     public void push(Item item) {
-        // TODO :: For debugging
-        /*System.out.println("[Explo Stack Debug]: Adding item " + item.getType() *//*+ "(" + item.event1.key().toString() + ":" + item.event2.key().toString() + ")"*//*);*/
+        LOGGER.debug("Adding item " + item.getType() + " to stack");
         if (this.stack.isEmpty()) {
             this.stack.add(new InnerStack(item.graph));
         }
@@ -64,8 +66,7 @@ public class ExplorationStack {
      * @return The item popped from the stack
      */
     public Item pop() {
-        // TODO :: For debugging
-        /*System.out.println("[Explo Stack Debug]: Removing item " + peek() + " from stack");*/
+        LOGGER.debug("Removing item " + peek() + " from stack");
         // Note that we clean before popping. This was when an inner stack is popped to empty any
         // pushes will still go to that stack.
         // This is helpful when we pop a BCK item and then push a FRW item.

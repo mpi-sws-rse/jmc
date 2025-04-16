@@ -86,7 +86,8 @@ public class CC7 {
                                     counter.get();
                                     counter.set(1);
                                 } catch (Exception e) {
-                                    e.printStackTrace();
+                                    System.err.println("Error: " + e);
+                                    System.exit(1);
                                 }
                             });
             threads.add(thread);
@@ -101,7 +102,7 @@ public class CC7 {
                 thread.join1();
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+
         }
     }
 }

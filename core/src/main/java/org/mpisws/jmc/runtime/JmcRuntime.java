@@ -86,7 +86,6 @@ public class JmcRuntime {
         if (config.getDebug()) {
             updateLoggerFile(iteration);
         }
-        //LOGGER.info("Initializing iteration");
         scheduler.initIteration(iteration);
         Long mainThreadId = taskManager.addNextTask();
         taskManager.markStatus(mainThreadId, TaskManager.TaskState.BLOCKED);
@@ -118,14 +117,10 @@ public class JmcRuntime {
     public static void yield() {
         Long currentTask = scheduler.currentTask();
         try {
-            // TODO :: For debugging
-            LOGGER.info("Yielding task {}", currentTask);
-            /*System.out.println("[JMCRuntime debug] : Yielding the current task " + currentTask);*/
+            LOGGER.info("Yielding the current task {}", currentTask);
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
-            // TODO :: For debugging
-            LOGGER.info("Yielding an already paused task.");
-            /*System.out.println("[JmcRuntime debug] : Yielding an already paused task.");*/
+            LOGGER.error("Yielding an already paused task.");
             System.exit(1);
         }
         wait(currentTask);
@@ -142,9 +137,7 @@ public class JmcRuntime {
      */
     public static void yield(Long taskId) throws HaltTaskException, HaltExecutionException {
         try {
-            // TODO :: For debugging
-            LOGGER.info("Yielding task {}", taskId);
-            /*System.out.println("[JmcRuntime debug] : Yielding by id of task " + taskId);*/
+            LOGGER.info("Yielding by id of task task {}", taskId);
             scheduler.yield(taskId);
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Yielding an already paused task.");
@@ -204,9 +197,8 @@ public class JmcRuntime {
      */
     public static void join(Long taskId) {
         // TODO :: For debugging
-        LOGGER.debug("Joining task {}", taskId);
+        LOGGER.info("Joining task {}", taskId);
         try {
-            /*System.out.println("[JmcRuntime debug] : Joining task " + taskId);*/
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Joining an already paused task.");
@@ -236,9 +228,8 @@ public class JmcRuntime {
      */
     public static void updateEvent(RuntimeEvent event) throws HaltTaskException {
         // TODO :: For debugging
-        LOGGER.info("Updating event: {}", event);
+        LOGGER.info("The updating event: {}", event);
         try {
-            /*System.out.println("[JmcRuntime debug] : The updating event " + event);*/
             scheduler.updateEvent(event);
         } catch (HaltTaskException e) {
             LOGGER.error("Failed to update event: {}", event);

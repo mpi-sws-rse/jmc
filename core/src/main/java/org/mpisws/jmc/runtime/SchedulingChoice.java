@@ -1,6 +1,10 @@
 package org.mpisws.jmc.runtime;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class SchedulingChoice {
+    private static Logger LOGGER = LogManager.getLogger(SchedulingChoice.class);
     private Long taskId;
     private boolean isBlockTask;
     private boolean isBlockExecution;
@@ -37,7 +41,8 @@ public class SchedulingChoice {
 
     public static SchedulingChoice task(Long taskId) {
         if (taskId == null) {
-            throw new IllegalArgumentException("Task ID cannot be null");
+            LOGGER.error("taskId is null");
+            System.exit(1);
         }
         return new SchedulingChoice(taskId, false, false);
     }

@@ -6,7 +6,6 @@ import org.mpisws.jmc.strategies.SchedulingStrategy;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
 
 /**
  * The scheduler is responsible for managing the execution of threads.
@@ -267,7 +266,6 @@ public class Scheduler {
                         }
                     }
                     if (nextTask != null) {
-                        // TODO :: For debugging
                         LOGGER.info("Scheduling task: {}", nextTask.getTaskId());
                         scheduler.scheduleTask(nextTask);
                     } else {

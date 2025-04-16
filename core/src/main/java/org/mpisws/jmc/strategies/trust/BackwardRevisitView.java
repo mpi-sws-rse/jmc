@@ -1,5 +1,7 @@
 package org.mpisws.jmc.strategies.trust;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 
@@ -13,6 +15,7 @@ import java.util.function.Predicate;
  * are updated.
  */
 public class BackwardRevisitView {
+    private static Logger LOGGER = LogManager.getLogger(BackwardRevisitView.class);
     private final ExecutionGraph graph;
     private final HashSet<Event.Key> removedNodes;
     private final ExecutionGraphNode read;
@@ -56,11 +59,13 @@ public class BackwardRevisitView {
      * <p>Meta: Breaks the separation of concerns. Is part of the core logic of the Trust algorithm
      */
     public boolean isMaximalExtension() {
+        LOGGER.debug("Checking if the restricted view is a maximal extension");
         HashSet<Event.Key> nodesToCheck = new HashSet<>(this.removedNodes);
         nodesToCheck.add(read.key());
         try {
             for (Event.Key key : nodesToCheck) {
                 ExecutionGraphNode node = graph.getEventNode(key);
+                LOGGER.debug("Checking if the node is a maximal extension: " + node.getEvent());
                 Integer nodeTOIndex = node.getEvent().getToStamp();
                 if (nodeTOIndex == null) {
                     throw HaltExecutionException.error("The event does not have a TO index.");
@@ -73,13 +78,8 @@ public class BackwardRevisitView {
                             try {
                                 ExecutionGraphNode kNode = graph.getEventNode(k);
                                 // Based on the definition of previous set in the TruSt paper,
-                                // we need to check if the event TO-prefix of the node or it is
-                                // in the porf-prefix of the given write event. Thus, the following
-                                // is wrong:
-                                /*return graph.getTOIndex(k) <= nodeTOIndex
-                                        || kNode.happensBefore(node);*/
-
-                                // The following is correct
+                                // we need to check if the event TO-prefix of the node, or it is
+                                // in the porf-prefix of the given write event.
                                 return graph.getTOIndex(k) <= nodeTOIndex
                                         || kNode.happensBefore(write);
                             } catch (NoSuchEventException e) {
@@ -92,17 +92,8 @@ public class BackwardRevisitView {
                     Set<Event.Key> reads = node.getSuccessors(Relation.ReadsFrom);
                     for (Event.Key readKey : reads) {
                         // Check if in previous
-                        // The following is wrong. We need to check if the read event is in the
-                        // previous set. If it is, it must return false. Otherwise, it must continue
-                        /*if (previous.test(readKey)) {
-                            continue;
-                        }
-                        if (!removedNodes.contains(readKey) && graph.contains(readKey)) {
-                            return false;
-                        }*/
-
-                        // The following is correct
                         if (previous.test(readKey)) {
+                            LOGGER.debug("The read event is in the previous set");
                             return false;
                         }
                     }
@@ -116,37 +107,24 @@ public class BackwardRevisitView {
                                 "The read event does not have a valid rf event.");
                     }
                     nodeWrite = graph.getEventNode(writes.iterator().next());
+                    LOGGER.debug("Checking if the write event is CO maximal: " + nodeWrite.getEvent());
                 }
                 if (!previous.test(nodeWrite.key())) {
+                    LOGGER.debug("The write event is not in the previous set");
                     return false;
                 }
                 // Now node is a write event for sure
                 // We only need to check if the CO after events for the same location are in
                 // previous
-                // The following code is a bit complex and inefficient but it is correct
-                /*boolean check = false;
-                for (ExecutionGraphNode locationWrite :
-                        graph.getWrites(nodeWrite.getEvent().getLocation())) {
-                    if (locationWrite.equals(nodeWrite)) {
-                        check = true;
-                        continue;
-                    }
-                    if (!check) {
-                        continue;
-                    }
-                    if (previous.test(locationWrite.key())) {
-                        return false;
-                    }
-                }*/
 
-                // The following code is correct and more efficient
                 List<ExecutionGraphNode> writes;
                 // We need to check if the nodeWrite is init or not
                 if (nodeWrite.getEvent().getType() == Event.Type.INIT) {
-                    // TODO :: This is not an efficient implementation
+                    // TODO :: This is not an efficient implementation. We need to optimize this
                     writes = graph.getAllWrites();
                     for (ExecutionGraphNode writeNode : writes) {
                         if (previous.test(writeNode.key())) {
+                            LOGGER.debug("The write event is in the previous set");
                             return false;
                         }
                     }
@@ -156,6 +134,7 @@ public class BackwardRevisitView {
                     if (index < writes.size() - 1) {
                         for (int i = index + 1; i < writes.size(); i++) {
                             if (previous.test(writes.get(i).key())) {
+                                LOGGER.debug("The write event is in the previous set");
                                 return false;
                             }
                         }
@@ -165,6 +144,7 @@ public class BackwardRevisitView {
         } catch (NoSuchEventException e) {
             throw HaltExecutionException.error("The event is not found.");
         }
+        LOGGER.debug("The restricted view is a maximal extension");
         return true;
     }
 
@@ -174,13 +154,10 @@ public class BackwardRevisitView {
      * @return The restricted graph
      */
     public ExecutionGraph getRestrictedGraph() {
-        // The following clone is redundant
-        // ExecutionGraph restrictedGraph = graph.clone();
         ExecutionGraph restrictedGraph = graph;
         // Update the reads-from relation
         restrictedGraph.changeReadsFrom(read, write);
         // Remove the nodes
-        //restrictedGraph.restrictByRemoving(removedNodes);
         restrictedGraph.restrictBySet(removedNodes);
         return restrictedGraph;
     }

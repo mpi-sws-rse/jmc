@@ -242,6 +242,10 @@ public class ExecutionGraphNode {
         return new HashSet<>(edges.get(adjacency));
     }
 
+    public Map<Relation, Set<Event.Key>> getEdges() {
+        return edges;
+    }
+
     /**
      * Returns all the predecessors of this node.
      *
@@ -253,6 +257,10 @@ public class ExecutionGraphNode {
             neighbors.addAll(edge);
         }
         return neighbors;
+    }
+
+    public Map<Relation, Set<Event.Key>> getBackEdges() {
+        return backEdges;
     }
 
     /**

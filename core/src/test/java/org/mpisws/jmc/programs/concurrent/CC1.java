@@ -8,7 +8,7 @@ import org.mpisws.jmc.util.concurrent.JmcThread;
 public class CC1 {
 
     public static class Value {
-        public int count = 0;
+        public int count;
 
         public Value() {
             count = 0;

@@ -47,7 +47,7 @@ public class JmcModelChecker {
         JmcModelCheckerReport report = new JmcModelCheckerReport();
         Long startTime = System.nanoTime();
         int numIterations = config.getNumIterations();
-        int g = 0;
+        int numExecutions = 0;
         try {
             for (int i = 0; i < numIterations; i++) {
                 try {
@@ -59,10 +59,9 @@ public class JmcModelChecker {
                                     .taskId(1L)
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
-                    // TODO :: For debugging
-                    /*System.out.println("[JMC MC] : The " + i + "th iteration is completed");*/
+                    LOGGER.info("The {}th iteration is completed", i);
                     JmcRuntime.resetIteration(i);
-                    g++;
+                    numExecutions++;
                 } catch (HaltTaskException e) {
                     LOGGER.debug(
                             "Halting execution: {} due to main thread halted: {}",
@@ -89,9 +88,8 @@ public class JmcModelChecker {
         } finally {
             Long endTime = System.nanoTime();
             JmcRuntime.tearDown();
-            // TODO :: For debugging
-            System.out.println("[JMC MC] : The model checking time is: " + (endTime - startTime));
-            System.out.println("[JMC MC] : The number of graphs : " + g);
+            LOGGER.info("The model checking time is: " + (endTime - startTime));
+            LOGGER.info("The number of explored executions: " + numExecutions);
             report.setTotalTimeMillis(endTime - startTime);
         }
         return report;
