@@ -1,33 +1,28 @@
 package org.mpisws.jmc.integrations.junit5.descriptors;
 
-import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
-import org.junit.platform.engine.support.descriptor.MethodSource;
+import org.junit.platform.engine.support.descriptor.ClassSource;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
-import org.mpisws.jmc.checker.JmcFunctionalTestTarget;
-import org.mpisws.jmc.checker.JmcModelChecker;
-import org.mpisws.jmc.checker.JmcTestTarget;
+import org.mpisws.jmc.integrations.junit5.engine.JmcTestExecutor;
 
-import java.lang.reflect.InvocationTargetException;
+
 import java.lang.reflect.Method;
 
-public class JmcMethodTestDescriptor extends AbstractTestDescriptor {
+public class JmcMethodTestDescriptor extends AbstractTestDescriptor implements JmcExecutableTestDescriptor {
 
     private final Method testMethod;
+    private final JmcCheckerConfiguration classConfig;
 
-    protected JmcMethodTestDescriptor(UniqueId uniqueId, Class<?> testClass, Method testMethod) {
-        super(uniqueId, JmcEngineDescriptor.ENGINE_DISPLAY_NAME);
-        this.testMethod = testMethod;
-    }
 
-    public JmcMethodTestDescriptor(Method testMethod, JmcClassTestDescriptor parent) {
+    public JmcMethodTestDescriptor(Method testMethod, JmcClassTestDescriptor parent, JmcCheckerConfiguration classConfig) {
         super(
                 parent.getUniqueId().append("method", testMethod.getName()),
                 testMethod.getName(),
-                MethodSource.from(testMethod.getDeclaringClass(), testMethod)
+                ClassSource.from(testMethod.getDeclaringClass())
         );
         this.testMethod = testMethod;
+        this.classConfig = classConfig;
         setParent(parent);
     }
 
@@ -40,8 +35,17 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor {
         Object instance = testMethod.getDeclaringClass().getDeclaredConstructor().newInstance();
         testMethod.setAccessible(true);
 
-        if (testMethod.isAnnotationPresent(JmcCheckConfiguration.class)) {
         JmcCheckConfiguration annotation = testMethod.getAnnotation(JmcCheckConfiguration.class);
+
+        if (annotation == null) {
+            annotation = testMethod.getDeclaringClass().getAnnotation(JmcCheckConfiguration.class);
+        }
+
+        if (annotation == null) {
+            System.out.println("No configuration found — invoking method directly.");
+            testMethod.invoke(instance);
+            return;
+        }
 
         JmcCheckerConfiguration config = new JmcCheckerConfiguration.Builder()
                 .numIterations(annotation.numIterations())
@@ -50,21 +54,8 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor {
                 .reportPath(annotation.reportPath())
                 .strategyType(annotation.strategy())
                 .build();
-        JmcModelChecker checker = new JmcModelChecker(config);
-        JmcTestTarget target = new JmcFunctionalTestTarget(
-                testMethod.getName(),
-                () -> {
-                    try {
-                        testMethod.invoke(instance);
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-        );
-        checker.check(target);
 
-        } else {
-            testMethod.invoke(instance);
-        }
+        JmcTestExecutor.execute(testMethod, instance, config);
+
     }
 }

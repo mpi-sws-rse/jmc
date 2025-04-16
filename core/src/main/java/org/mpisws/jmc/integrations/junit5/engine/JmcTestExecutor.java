@@ -1,30 +1,29 @@
 package org.mpisws.jmc.integrations.junit5.engine;
 
-import org.junit.platform.engine.EngineExecutionListener;
-import org.junit.platform.engine.TestDescriptor;
-import org.junit.platform.engine.TestExecutionResult;
-import org.mpisws.jmc.integrations.junit5.descriptors.JmcMethodTestDescriptor;
+
+import org.mpisws.jmc.checker.JmcCheckerConfiguration;
+import org.mpisws.jmc.checker.JmcFunctionalTestTarget;
+import org.mpisws.jmc.checker.JmcModelChecker;
+import org.mpisws.jmc.checker.JmcTestTarget;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class JmcTestExecutor {
 
-    public void execute(TestDescriptor descriptor, EngineExecutionListener listener) {
-        listener.executionStarted(descriptor);
-
-        try {
-            if (descriptor.isContainer()) {
-                for (TestDescriptor child : descriptor.getChildren()) {
-                    execute(child, listener);
+    public static void execute(Method testMethod, Object instance, JmcCheckerConfiguration config) {
+        JmcModelChecker checker = new JmcModelChecker(config);
+        JmcTestTarget target = new JmcFunctionalTestTarget(
+                testMethod.getName(),
+                () -> {
+                    try {
+                        testMethod.invoke(instance);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-            } else if (descriptor instanceof JmcMethodTestDescriptor methodTestDescriptor) {
-                methodTestDescriptor.execute();
-            }
-            listener.executionFinished(descriptor, TestExecutionResult.successful());
-        } catch (Throwable t) {
-            listener.executionFinished(
-                    descriptor,
-                    TestExecutionResult.failed(t)
-            );
-        }
+        );
+        checker.check(target);
     }
 
 }

@@ -38,17 +38,46 @@ public class JmcClassTestDescriptor extends AbstractTestDescriptor {
         );
         this.testClass = testClass;
         setParent(parent);
-        addAllChildren();
+
+        //Resolving class level configuration
+        JmcCheckConfiguration annotation = testClass.getAnnotation(JmcCheckConfiguration.class);
+        if (annotation != null) {
+            this.config = JmcCheckerConfiguration.fromAnnotation(annotation);
+        }
+
+        discoverChildren();
     }
 
-    private void addAllChildren() {
-        Predicate<Method> isTestMethod = method -> AnnotationUtils.isAnnotated(method, JmcCheckConfiguration.class);
+//    private void addAllChildren() {
+//        Predicate<Method> isTestMethod = method -> AnnotationUtils.isAnnotated(method, JmcCheckConfiguration.class);
+//
+//        ReflectionUtils
+//                .findMethods(testClass, isTestMethod, TOP_DOWN)
+//                .stream()
+//                .map(method -> new JmcMethodTestDescriptor(method, this))
+//                .forEach(this::addChild);
+//
+//    }
+
+    private void discoverChildren() {
+        JmcCheckConfiguration classAnnotation = testClass.getAnnotation(JmcCheckConfiguration.class);
+        boolean classHasAnnotation = classAnnotation != null;
 
         ReflectionUtils
-                .findMethods(testClass, isTestMethod, TOP_DOWN)
-                .stream()
-                .map(method -> new JmcMethodTestDescriptor(method, this))
-                .forEach(this::addChild);
+                .findMethods(testClass,
+                        method ->  method.isAnnotationPresent(JmcCheckConfiguration.class) || classHasAnnotation,
+                        TOP_DOWN)
+                .forEach(method -> {
+                    JmcCheckConfiguration methodAnnotation = method.getAnnotation(JmcCheckConfiguration.class);
+                    JmcCheckerConfiguration effectiveConfig;
+                    if (methodAnnotation != null) {
+                        effectiveConfig = JmcCheckerConfiguration.fromAnnotation(methodAnnotation);
+                    } else {
+                        effectiveConfig = JmcCheckerConfiguration.fromAnnotation(classAnnotation);
+                    }
+
+                    addChild(new JmcMethodTestDescriptor(method, this, effectiveConfig));
+                    });
 
     }
 

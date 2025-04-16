@@ -6,8 +6,10 @@ import org.junit.platform.engine.*;
 import org.junit.platform.engine.discovery.ClassSelector;
 import org.junit.platform.engine.discovery.ClasspathRootSelector;
 import org.junit.platform.engine.discovery.PackageSelector;
+import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcClassTestDescriptor;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcEngineDescriptor;
+import org.mpisws.jmc.integrations.junit5.descriptors.JmcExecutableTestDescriptor;
 
 import java.net.URI;
 import java.util.function.Predicate;
@@ -15,7 +17,7 @@ import java.util.function.Predicate;
 public class JmcTestEngine implements TestEngine {
 
     private static final Predicate<Class<?>> IS_JMC_TEST_CONTAINER
-            = classCandidate -> AnnotationSupport.isAnnotated(classCandidate, JmcTest.class);
+            = classCandidate -> AnnotationSupport.isAnnotated(classCandidate, JmcCheckConfiguration.class);
 
     @Override
     public String getId() {
@@ -24,7 +26,7 @@ public class JmcTestEngine implements TestEngine {
 
     @Override
     public TestDescriptor discover(EngineDiscoveryRequest request, UniqueId uniqueId) {
-        TestDescriptor engineDescriptor = new JmcEngineDescriptor(uniqueId);
+        JmcEngineDescriptor engineDescriptor = new JmcEngineDescriptor(uniqueId);
 
         request.getSelectorsByType(ClasspathRootSelector.class).forEach(selector -> {
             appendTestsInClasspathRoot(selector.getClasspathRoot(), engineDescriptor);
@@ -56,7 +58,7 @@ public class JmcTestEngine implements TestEngine {
     }
 
     private void appendTestsInClass(Class<?> javaClass, TestDescriptor engineDescriptor) {
-        if (AnnotationSupport.isAnnotated(javaClass, JmcTest.class)) {
+        if (AnnotationSupport.isAnnotated(javaClass, JmcCheckConfiguration.class)) {
             engineDescriptor.addChild(new JmcClassTestDescriptor(javaClass, engineDescriptor));
         }
     }
@@ -66,8 +68,30 @@ public class JmcTestEngine implements TestEngine {
     @Override
     public void execute(ExecutionRequest request) {
         TestDescriptor root = request.getRootTestDescriptor();
-        EngineExecutionListener listener = request.getEngineExecutionListener();
+        request.getEngineExecutionListener().executionStarted(root);
 
-        new JmcTestExecutor().execute(root, listener);
+        for (TestDescriptor child : root.getChildren()) {
+            executeDescriptor(request.getEngineExecutionListener(), child);
+        }
+
+        request.getEngineExecutionListener().executionFinished(root, TestExecutionResult.successful());
+    }
+
+    private void executeDescriptor(EngineExecutionListener listener, TestDescriptor descriptor) {
+        listener.executionStarted(descriptor);
+
+        if(descriptor instanceof JmcExecutableTestDescriptor exec) {
+            try {
+                exec.execute();
+                listener.executionFinished(descriptor, TestExecutionResult.successful());
+            } catch (Throwable t) {
+                listener.executionFinished(descriptor, TestExecutionResult.failed(t));
+            }
+        } else {
+            for (TestDescriptor child : descriptor.getChildren()) {
+                executeDescriptor(listener, child);
+            }
+            listener.executionFinished(descriptor, TestExecutionResult.successful());
+        }
     }
 }

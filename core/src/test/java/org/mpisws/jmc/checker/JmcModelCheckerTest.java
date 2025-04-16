@@ -17,7 +17,7 @@ import org.mpisws.jmc.programs.det.stack.Client5;
 import org.mpisws.jmc.programs.det.stack.Client6;
 import org.mpisws.jmc.programs.dining.DiningPhilosophers;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
-import org.mpisws.jmc.programs.kafka.ShareConsumerTest;
+import org.mpisws.jmc.programs.mockKafka.ShareConsumerTest;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
