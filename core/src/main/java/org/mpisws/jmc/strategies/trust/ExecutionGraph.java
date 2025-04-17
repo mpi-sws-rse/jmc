@@ -657,11 +657,6 @@ public class ExecutionGraph {
             throw HaltExecutionException.error("No writes after the given write event.");
         }
 
-        if (nonPorfWrites.isEmpty()) {
-            // Easy case, no other reads to revisit
-            return nonPorfWrites;
-        }
-
         // Following the sequential consistency model, we only consider non-exclusive writes
         nonPorfWrites.removeIf((w) -> EventUtils.isExclusiveWrite(w.getEvent()));
 
