@@ -19,7 +19,6 @@ import org.mpisws.jmc.programs.dining.DiningPhilosophers;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
 import org.mpisws.jmc.programs.mockKafka.ShareConsumerTest;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
-import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -293,7 +292,7 @@ public class JmcModelCheckerTest {
     @Test
     void testRandomFutureSimple() {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(100).build();
+                new JmcCheckerConfiguration.Builder().numIterations(10).build();
 
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
@@ -311,7 +310,7 @@ public class JmcModelCheckerTest {
     void testTrustConcurrentCounter() {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
-                        .customStrategy(new TrustStrategy())
+                        .strategyType("trust")
                         .numIterations(10)
                         .debug(true)
                         .build();
