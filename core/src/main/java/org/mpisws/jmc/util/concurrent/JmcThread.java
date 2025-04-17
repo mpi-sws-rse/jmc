@@ -183,6 +183,7 @@ public class JmcThread extends Thread {
         } catch (HaltTaskException ex) {
             LOGGER.error("Failed to halt task on interrupt : {}", ex.getMessage());
         }
+        LOGGER.info("thread " + t.getName() + " interrupted with exception: " + e.getMessage());
     }
 
     /**

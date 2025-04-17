@@ -94,12 +94,12 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
 
     @Override
     public void resetIteration(int iteration) {
+        LOGGER.info("Resetting iteration {}", iteration);
         super.resetIteration(iteration);
         if (debug) {
             algoInstance.writeExecutionGraphToFile(
                     Paths.get(this.reportPath, "iteration-" + iteration + ".json").toString());
         }
-        algoInstance.resetIteration();
     }
 
     @Override

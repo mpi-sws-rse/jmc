@@ -73,7 +73,8 @@ public class LockBackwardRevisitView {
      */
     public ExecutionGraph getRestrictedGraph() {
         // Remove all events before the read and then add the revisit read, blocking the task
-        this.graph.restrictTo(this.event);
+        //this.graph.restrictTo(this.event);
+        this.graph.restrict(this.event);
         this.graph.addEvent(this.revisitRead.getEvent());
         return this.graph;
     }

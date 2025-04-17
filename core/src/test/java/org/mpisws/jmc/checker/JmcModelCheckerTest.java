@@ -3,7 +3,7 @@ package org.mpisws.jmc.checker;
 import org.junit.jupiter.api.Test;
 import org.mpisws.jmc.programs.atomic.counter.AtomicCounter;
 import org.mpisws.jmc.programs.complex.counter.ComplexCounter;
-import org.mpisws.jmc.programs.concurrent.ConcurrentCounter;
+import org.mpisws.jmc.programs.concurrent.*;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounter;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounterKt;
 import org.mpisws.jmc.programs.det.array.DetArray;
@@ -342,26 +342,136 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testTrustConcurrentCounter() {
+    void testTrustCC0() {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
-                        .strategyConstructor(
-                                (sConfig) ->
-                                        new TrustStrategy(
-                                                sConfig.getSeed(),
-                                                sConfig.getTrustSchedulingPolicy(),
-                                                sConfig.getDebug(),
-                                                sConfig.getReportPath()))
-                        .numIterations(10)
+                        .strategyType("trust")
+                        .numIterations(1000000)
                         .debug(true)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
                 new JmcFunctionalTestTarget(
-                        "TrustBuggyCounter",
+                        "TrustCC0",
                         () -> {
-                            ConcurrentCounter.main(new String[0]);
+                            int size = 1;
+                            CC0.main(new String[] {String.valueOf(size)});
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC1() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC1",
+                        () -> {
+                            CC1.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC2() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC2",
+                        () -> {
+                            CC2.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC3() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC3",
+                        () -> {
+                            CC3.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC4() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC4",
+                        () -> {
+                            CC4.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC5() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC5",
+                        () -> {
+                            CC5.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC7() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC7",
+                        () -> {
+                            int size = 3;
+                            CC7.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }

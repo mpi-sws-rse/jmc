@@ -313,6 +313,22 @@ public class Event {
         return type == Type.INIT;
     }
 
+    public boolean isRead() {
+        return type == Type.READ;
+    }
+
+    public boolean isWrite() {
+        return type == Type.WRITE;
+    }
+
+    public boolean isReadEx() {
+        return type == Type.READ_EX;
+    }
+
+    public boolean isWriteEx() {
+        return type == Type.WRITE_EX;
+    }
+
     @Override
     public String toString() {
         return "Event(" + type.toString() + ")" + key;

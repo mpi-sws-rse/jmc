@@ -45,8 +45,8 @@ public class JmcModelChecker {
     public JmcModelCheckerReport check(JmcTestTarget target) {
         JmcRuntimeConfiguration runtimeConfig = config.toRuntimeConfiguration();
         JmcModelCheckerReport report = new JmcModelCheckerReport();
+        Long startTime = System.nanoTime();
         JmcRuntime.setup(runtimeConfig);
-        Long startTime = System.currentTimeMillis();
         int numIterations = config.getNumIterations();
         try {
             for (int i = 0; i < numIterations; i++) {
@@ -88,7 +88,7 @@ public class JmcModelChecker {
                 System.exit(1);
             }
         } finally {
-            Long endTime = System.currentTimeMillis();
+            Long endTime = System.nanoTime();
             JmcRuntime.tearDown();
             report.setTotalTimeMillis(endTime - startTime);
         }

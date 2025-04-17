@@ -1,9 +1,13 @@
 package org.mpisws.jmc.runtime;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class SchedulingChoice<T> {
-    private final Long taskId;
-    private final boolean isBlockTask;
-    private final boolean isBlockExecution;
+    private static Logger LOGGER = LogManager.getLogger(SchedulingChoice.class);
+    private Long taskId;
+    private boolean isBlockTask;
+    private boolean isBlockExecution;
     private final T value;
 
     private SchedulingChoice(Long taskId, boolean isBlockTask, boolean isBlockExecution) {
@@ -61,5 +65,14 @@ public class SchedulingChoice<T> {
     // the end.
     public static SchedulingChoice<?> end() {
         return new SchedulingChoice<>(null, false, false);
+    }
+
+    @Override
+    public String toString() {
+        return "SchedulingChoice{" +
+                "taskId=" + taskId +
+                ", isBlockTask=" + isBlockTask +
+                ", isBlockExecution=" + isBlockExecution +
+                '}';
     }
 }

@@ -1,5 +1,8 @@
 package org.mpisws.jmc.strategies.trust;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +14,7 @@ import java.util.List;
  * <p>The stack is a list of inner stacks. Each inner stack is created for a backward revisit.
  */
 public class ExplorationStack {
-
+    private static Logger LOGGER = LogManager.getLogger(ExplorationStack.class);
     private final List<InnerStack> stack;
 
     /** Creates a new exploration stack. */
@@ -31,6 +34,7 @@ public class ExplorationStack {
      * @param item The item to push onto the stack
      */
     public void push(Item item) {
+        LOGGER.debug("Adding item " + item.getType() + " to stack");
         if (this.stack.isEmpty()) {
             this.stack.add(new InnerStack(item.graph));
         }
@@ -62,6 +66,7 @@ public class ExplorationStack {
      * @return The item popped from the stack
      */
     public Item pop() {
+        LOGGER.debug("Removing item " + peek() + " from stack");
         // Note that we clean before popping. This was when an inner stack is popped to empty any
         // pushes will still go to that stack.
         // This is helpful when we pop a BCK item and then push a FRW item.
@@ -113,6 +118,15 @@ public class ExplorationStack {
         this.stack.clear();
     }
 
+    /**
+     * Gets the size of the stack.
+     *
+     * @return The size of the stack
+     */
+    public int size() {
+        return this.stack.get(0).size();
+    }
+
     /** Represents an item in the exploration stack. */
     public static class Item {
         private int innerStackIndex;
@@ -123,8 +137,8 @@ public class ExplorationStack {
         // - (w ->(rf) r), event1 is r and event2 is w
         // - (w1 ->(co) w2), event1 is w1 and event2 is w2
         // In the case of a backward revisit, event1 is the write event and event2 is null
-        private final ExecutionGraphNode event1;
-        private final ExecutionGraphNode event2;
+        private final ExecutionGraphNode event1; // TODO: Since they are graph nodes, we must use a better name
+        private final ExecutionGraphNode event2; // TODO: Since they are graph nodes, we must use a better name
 
         // Graph is used only in the case of a backward revisit
         private final ExecutionGraph graph;
@@ -164,6 +178,11 @@ public class ExplorationStack {
         public static Item forwardWW(
                 ExecutionGraphNode one, ExecutionGraphNode two, ExecutionGraph graph) {
             return new Item(ItemType.FWW, one, two, graph);
+        }
+
+        public static Item forwardLW(
+                ExecutionGraphNode one, ExecutionGraph graph) {
+            return new Item(ItemType.FLW, one, null, graph);
         }
 
         /**
@@ -252,6 +271,14 @@ public class ExplorationStack {
         public boolean isBackwardRevisit() {
             return (this.type == ItemType.BRR || this.type == ItemType.BWR) && this.graph != null;
         }
+
+        @Override
+        public String toString() {
+            // return a string representation of the item type and the events. If the event2 is null,
+            // then just return the event1.
+            return this.type + "(" + (this.event1 != null ? ":" + this.event1.getEvent() : "") +
+                    (this.event2 != null ? ":" + this.event2.getEvent() : "") + ")";
+        }
     }
 
     /** Represents the item type in the exploration stack. */
@@ -260,6 +287,8 @@ public class ExplorationStack {
         FRW,
         // Forward revisit of write swapping with an alternative write
         FWW,
+        // Forward revisit of write putting it in the maximal position of the coherent order
+        FLW,
         // Backward revisit of write reading an alternative read
         BWR,
         // Backward revisit of read revisting an alternative read's read-from
@@ -298,6 +327,10 @@ public class ExplorationStack {
 
         public void setGraph(ExecutionGraph graph) {
             this.graph = graph;
+        }
+
+        public int size() {
+            return this.items.size();
         }
     }
 }

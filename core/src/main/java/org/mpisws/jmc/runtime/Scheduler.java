@@ -300,7 +300,6 @@ public class Scheduler {
                         scheduler.scheduleTask(nextTask);
                     } else {
                         LOGGER.error("No task to schedule.");
-                        System.exit(1);
                     }
                 } catch (Exception e) {
                     LOGGER.error("Scheduler thread threw an exception: {}", e.getMessage());
