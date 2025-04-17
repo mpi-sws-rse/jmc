@@ -2,14 +2,16 @@ package org.mpisws.jmc.strategies.trust;
 
 import org.mpisws.jmc.runtime.SchedulingChoice;
 
-/** Represents a scheduling choice with an optional location. */
-public record SchedulingChoiceWrapper(SchedulingChoice choice, Integer location) {
+/**
+ * Represents a scheduling choice with an optional location.
+ */
+public record SchedulingChoiceWrapper(SchedulingChoice<?> choice, Integer location) {
     /**
      * Creates a new scheduling choice with the given choice and empty location.
      *
      * @param choice The choice.
      */
-    public SchedulingChoiceWrapper(SchedulingChoice choice) {
+    public SchedulingChoiceWrapper(SchedulingChoice<?> choice) {
         this(choice, null);
     }
 

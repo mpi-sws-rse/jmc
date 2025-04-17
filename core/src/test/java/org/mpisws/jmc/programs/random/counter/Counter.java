@@ -15,4 +15,8 @@ public class Counter {
     void increment() {
         this.value++;
     }
+
+    void update(int delta) {
+        this.value += delta;
+    }
 }

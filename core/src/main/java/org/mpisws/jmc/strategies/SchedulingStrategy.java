@@ -1,5 +1,6 @@
 package org.mpisws.jmc.strategies;
 
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.Scheduler;
 import org.mpisws.jmc.runtime.HaltCheckerException;
@@ -25,7 +26,7 @@ public interface SchedulingStrategy {
      *
      * @param iteration the number of the iteration.
      */
-    void initIteration(int iteration) throws HaltCheckerException;
+    void initIteration(int iteration, JmcModelCheckerReport report) throws HaltCheckerException;
 
     /**
      * Updates the strategy with the event that has occurred.
@@ -39,11 +40,15 @@ public interface SchedulingStrategy {
      *
      * @return the ID of the next thread to be scheduled.
      */
-    SchedulingChoice nextTask();
+    SchedulingChoice<?> nextTask();
 
-    /** Resets the strategy for the current Iteration. */
+    /**
+     * Resets the strategy for the current Iteration.
+     */
     void resetIteration(int iteration);
 
-    /** Teardown the strategy. Allows for releasing resources. */
+    /**
+     * Teardown the strategy. Allows for releasing resources.
+     */
     void teardown();
 }

@@ -47,6 +47,10 @@ public class JmcCheckerConfiguration {
         return seed;
     }
 
+    public void setSeed(Long seed) {
+        this.seed = seed;
+    }
+
     public boolean isCustomStrategy() {
         return customStrategy != null;
     }
@@ -62,9 +66,16 @@ public class JmcCheckerConfiguration {
                 strategyConfigurationBuilder.debug();
                 strategyConfigurationBuilder.reportPath(reportPath);
             }
-            strategy =
-                    SchedulingStrategyFactory.createSchedulingStrategy(
-                            strategyType, strategyConfigurationBuilder.build());
+            if (strategyConstructor != null) {
+                strategy = strategyConstructor.create(strategyConfigurationBuilder.build());
+            } else {
+                strategy =
+                        SchedulingStrategyFactory.createSchedulingStrategy(
+                                strategyType, strategyConfigurationBuilder.build());
+            }
+        }
+        if (strategy == null) {
+            throw new InvalidStrategyException("Strategy is null");
         }
         return new JmcRuntimeConfiguration.Builder()
                 .strategy(strategy)
@@ -87,6 +98,9 @@ public class JmcCheckerConfiguration {
                 .build();
     }
 
+    /**
+     * Builder for JmcCheckerConfiguration
+     */
     public static class Builder {
         private Integer numIterations;
 
@@ -124,6 +138,11 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
+        public Builder strategyConstructor(SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor) {
+            this.strategyConstructor = strategyConstructor;
+            return this;
+        }
+
         public Builder debug(boolean debug) {
             this.debug = debug;
             return this;
@@ -144,6 +163,7 @@ public class JmcCheckerConfiguration {
             config.numIterations = numIterations;
             config.strategyType = strategyType;
             config.customStrategy = customStrategy;
+            config.strategyConstructor = strategyConstructor;
             config.debug = debug;
             config.reportPath = reportPath;
             config.seed = seed;

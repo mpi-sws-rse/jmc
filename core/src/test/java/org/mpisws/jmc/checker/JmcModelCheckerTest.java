@@ -16,9 +16,12 @@ import org.mpisws.jmc.programs.det.stack.Client4;
 import org.mpisws.jmc.programs.det.stack.Client5;
 import org.mpisws.jmc.programs.det.stack.Client6;
 import org.mpisws.jmc.programs.dining.DiningPhilosophers;
+import org.mpisws.jmc.programs.futures.CompletableFutureP;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
+import org.mpisws.jmc.programs.random.counter.RandomCounterIncr;
 import org.mpisws.jmc.programs.mockKafka.ShareConsumerTest;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
+import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -292,7 +295,7 @@ public class JmcModelCheckerTest {
     @Test
     void testRandomFutureSimple() {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).build();
+                new JmcCheckerConfiguration.Builder().numIterations(100).build();
 
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
@@ -307,10 +310,49 @@ public class JmcModelCheckerTest {
     }
 
     @Test
+    void testCompletableFuture() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(100).build();
+
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "CompletableFuture",
+                        () -> {
+                            CompletableFutureP.main(new String[0]);
+                        });
+
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testRandomCounter() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(10).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomReactiveCounter",
+                        () -> {
+                            RandomCounterIncr.main(new String[0]);
+                        });
+
+        jmcModelChecker.check(target);
+    }
+
+    @Test
     void testTrustConcurrentCounter() {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
-                        .strategyType("trust")
+                        .strategyConstructor(
+                                (sConfig) ->
+                                        new TrustStrategy(
+                                                sConfig.getSeed(),
+                                                sConfig.getTrustSchedulingPolicy(),
+                                                sConfig.getDebug(),
+                                                sConfig.getReportPath()))
                         .numIterations(10)
                         .debug(true)
                         .build();
