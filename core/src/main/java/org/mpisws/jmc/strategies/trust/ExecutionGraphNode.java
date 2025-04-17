@@ -290,7 +290,6 @@ public class ExecutionGraphNode {
             porfPredecessors.addAll(getPredecessors(Relation.ReadsFrom));
             porfPredecessors.addAll(getPredecessors(Relation.ThreadJoin));
             porfPredecessors.addAll(getPredecessors(Relation.ThreadCreation));
-            porfPredecessors.addAll(getPredecessors(Relation.ThreadStart));
 
             for (Event.Key key : porfPredecessors) {
                 if (key.equals(poBeforeNode.key())) {
@@ -384,8 +383,35 @@ public class ExecutionGraphNode {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || getClass() != obj.getClass()) return false;
-        ExecutionGraphNode that = (ExecutionGraphNode) obj;
-        return that.key().equals(this.key());
+        if (!(obj instanceof ExecutionGraphNode that)) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
+        return this.event.equals(that.event);
+    }
+
+    public boolean equalsEdges(ExecutionGraphNode other) {
+        if (this == other) {
+            return true;
+        }
+        if (this.edges.size() != other.edges.size()) {
+            return false;
+        }
+        for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+            if (!other.edges.containsKey(entry.getKey())) {
+                return false;
+            }
+            if (entry.getValue().size() != other.edges.get(entry.getKey()).size()) {
+                return false;
+            }
+            for (Event.Key key : entry.getValue()) {
+                if (!other.edges.get(entry.getKey()).contains(key)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

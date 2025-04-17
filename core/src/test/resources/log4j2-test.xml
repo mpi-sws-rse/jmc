@@ -6,14 +6,14 @@
                        https://logging.apache.org/xml/ns/log4j-config-2.xsd">
 
     <Appenders>
-        <Console name="CONSOLE" level="INFO">
+        <Console name="CONSOLE" level="DEBUG">
             <PatternLayout pattern="%d [%t] %5p %c{1.} - %m%n"/>
         </Console>
     </Appenders>
 
     <Loggers>
-        <Logger name="org.mpisws" level="INFO"/>
-        <Root level="INFO">
+        <Logger name="org.mpisws" level="DEBUG"/>
+        <Root level="DEBUG">
             <AppenderRef ref="CONSOLE"/>
         </Root>
     </Loggers>

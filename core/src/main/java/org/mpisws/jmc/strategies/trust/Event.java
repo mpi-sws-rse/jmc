@@ -6,7 +6,9 @@ import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Represents an event object used by the algorithm. */
+/**
+ * Represents an event object used by the algorithm.
+ */
 public class Event {
     private Integer location;
     private final Key key;
@@ -16,9 +18,9 @@ public class Event {
     /**
      * Creates a new event with the given task ID, location, and type.
      *
-     * @param taskId The task ID.
+     * @param taskId   The task ID.
      * @param location The location.
-     * @param type The type.
+     * @param type     The type.
      */
     public Event(Long taskId, Integer location, Type type) {
         this.location = location;
@@ -61,6 +63,7 @@ public class Event {
      * @param <T> The type of the attribute.
      * @return The attribute with the given key.
      */
+    @SuppressWarnings("unchecked")
     public <T> T getAttribute(String key) {
         if (!attributes.containsKey(key)) {
             return null;
@@ -68,10 +71,22 @@ public class Event {
         return (T) attributes.get(key);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof Event that)) {
+            return false;
+        }
+        return this.key.equals(that.key) && this.type == that.type
+                && this.location.equals(that.location);
+    }
+    
     /**
      * Sets the attribute of the event with the given key and value.
      *
-     * @param key The key of the attribute.
+     * @param key   The key of the attribute.
      * @param value The value of the attribute.
      */
     public void setAttribute(String key, Object value) {
@@ -188,7 +203,9 @@ public class Event {
         return attributes.containsKey(key);
     }
 
-    /** Represents the type of the event according to the algorithm. */
+    /**
+     * Represents the type of the event according to the algorithm.
+     */
     public enum Type {
         READ,
         READ_EX,
@@ -202,7 +219,9 @@ public class Event {
         NOOP,
     }
 
-    /** Unique key for the event. */
+    /**
+     * Unique key for the event.
+     */
     public static class Key {
         // The task to which the event belongs to
         private final Long taskId;
@@ -315,7 +334,9 @@ public class Event {
         return "Event(" + type.toString() + ")" + key;
     }
 
-    /** A generic event predicate. */
+    /**
+     * A generic event predicate.
+     */
     @FunctionalInterface
     public interface EventPredicate {
         /**

@@ -1,11 +1,14 @@
 package org.mpisws.jmc.strategies;
 
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 import org.mpisws.jmc.runtime.SchedulingChoice;
 
 import java.util.Random;
 
-/** A scheduling strategy that generates random tasks. */
+/**
+ * A scheduling strategy that generates random tasks.
+ */
 public class SymbolicStrategy implements SchedulingStrategy {
 
     private Random random;
@@ -19,7 +22,7 @@ public class SymbolicStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void initIteration(int iteration) {
+    public void initIteration(int iteration, JmcModelCheckerReport report) {
         // Do nothing
     }
 

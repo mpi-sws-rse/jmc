@@ -8,6 +8,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
 import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 
 import java.util.concurrent.ExecutionException;
 
@@ -48,7 +49,9 @@ public class JmcRuntime {
         scheduler.start();
     }
 
-    /** Tears down the runtime by shutting down the scheduler adn clearing the task manager. */
+    /**
+     * Tears down the runtime by shutting down the scheduler adn clearing the task manager.
+     */
     public static void tearDown() {
         LOGGER.debug("Tearing down!");
         taskManager.reset();
@@ -81,12 +84,13 @@ public class JmcRuntime {
      *
      * @param iteration the iteration number
      */
-    public static void initIteration(int iteration) {
+    public static void initIteration(int iteration, JmcModelCheckerReport report) {
         LOGGER = LogManager.getLogger(JmcRuntime.class.getName() + " Iteration=" + iteration);
         if (config.getDebug()) {
             updateLoggerFile(iteration);
         }
-        scheduler.initIteration(iteration);
+        LOGGER.info("Initializing iteration");
+        scheduler.initIteration(iteration, report);
         Long mainThreadId = taskManager.addNextTask();
         taskManager.markStatus(mainThreadId, TaskManager.TaskState.BLOCKED);
 
@@ -94,7 +98,7 @@ public class JmcRuntime {
         try {
             scheduler.updateEvent(
                     new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.START_EVENT)
+                            .type(RuntimeEvent.Type.START_EVENT)
                             .taskId(mainThreadId)
                             .param("startedBy", 1L)
                             .build());
@@ -104,7 +108,9 @@ public class JmcRuntime {
         JmcRuntime.yield();
     }
 
-    /** Resets the runtime for a new iteration. */
+    /**
+     * Resets the runtime for a new iteration.
+     */
     public static void resetIteration(int iteration) {
         scheduler.resetIteration(iteration);
         taskManager.reset();
@@ -114,16 +120,16 @@ public class JmcRuntime {
      * Pauses the current task that invokes this method and yields the control to the scheduler. The
      * call returns only when the task that invoked this method is resumed.
      */
-    public static void yield() {
+    public static <T> T yield() {
         Long currentTask = scheduler.currentTask();
         try {
-            LOGGER.info("Yielding the current task {}", currentTask);
+            LOGGER.debug("Yielding task {}", currentTask);
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Yielding an already paused task.");
             System.exit(1);
         }
-        wait(currentTask);
+        return wait(currentTask);
     }
 
     /**
@@ -137,23 +143,13 @@ public class JmcRuntime {
      */
     public static void yield(Long taskId) throws HaltTaskException, HaltExecutionException {
         try {
-            LOGGER.info("Yielding by id of task task {}", taskId);
+            LOGGER.debug("Yielding task explicitly {}", taskId);
             scheduler.yield(taskId);
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Yielding an already paused task.");
             System.exit(1);
         }
-        try {
-            taskManager.wait(taskId);
-        } catch (ExecutionException | InterruptedException e) {
-            LOGGER.error("Failed to wait for task: {}", taskId);
-            Throwable cause = e.getCause();
-            if (cause instanceof HaltTaskException) {
-                throw (HaltTaskException) cause;
-            } else {
-                throw HaltExecutionException.error(cause.getMessage());
-            }
-        }
+        wait(taskId);
     }
 
     /**
@@ -170,14 +166,10 @@ public class JmcRuntime {
         }
     }
 
-    /**
-     * Waits for the task with the given ID to be resumed.
-     *
-     * @param taskId the ID of the task to wait for.
-     */
-    public static void wait(Long taskId) {
+
+    public static <T> T wait(Long taskId) {
         try {
-            taskManager.wait(taskId);
+            return taskManager.wait(taskId);
         } catch (ExecutionException | InterruptedException e) {
             LOGGER.error("Failed to wait for task: {}", taskId);
             Throwable cause = e.getCause();
@@ -196,8 +188,7 @@ public class JmcRuntime {
      * @param taskId the ID of the task to be terminated
      */
     public static void join(Long taskId) {
-        // TODO :: For debugging
-        LOGGER.info("Joining task {}", taskId);
+        LOGGER.debug("Joining task {}", taskId);
         try {
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
@@ -227,8 +218,7 @@ public class JmcRuntime {
      * @param event to be added
      */
     public static void updateEvent(RuntimeEvent event) throws HaltTaskException {
-        // TODO :: For debugging
-        LOGGER.info("The updating event: {}", event);
+        LOGGER.debug("Updating event: {}", event);
         try {
             scheduler.updateEvent(event);
         } catch (HaltTaskException e) {
@@ -253,9 +243,9 @@ public class JmcRuntime {
      *
      * @param event the new event
      */
-    public static void updateEventAndYield(RuntimeEvent event) throws HaltTaskException {
+    public static <T> T updateEventAndYield(RuntimeEvent event) throws HaltTaskException {
         updateEvent(event);
-        JmcRuntime.yield();
+        return JmcRuntime.yield();
     }
 
     /**

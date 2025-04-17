@@ -5,7 +5,9 @@ import org.objectweb.asm.*;
 import java.util.HashMap;
 import java.util.Set;
 
-/** Adds instrumentation to change Future calls to JmcFuture calls. */
+/**
+ * Adds instrumentation to change Future calls to JmcFuture calls.
+ */
 public class JmcFutureVisitor {
     // A visitor to replace calls to Executors with JmcExecutors
     public static class JmcExecutorsClassVisitor extends ClassVisitor {
@@ -152,7 +154,7 @@ public class JmcFutureVisitor {
 
             @Override
             public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
-                // Replace CompletableFuture constructor calls
+                // Replace CompletableFuture calls with JmcCompletableFuture calls
                 descriptor = replaceDescriptor(descriptor);
                 if (owner.equals("java/util/concurrent/CompletableFuture")) {
                     super.visitMethodInsn(opcode,

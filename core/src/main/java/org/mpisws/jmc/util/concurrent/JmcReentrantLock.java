@@ -2,7 +2,6 @@ package org.mpisws.jmc.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.RuntimeEventType;
 
 /**
  * A reentrant lock that can be used to synchronize access to shared resources.
@@ -18,7 +17,7 @@ public class JmcReentrantLock {
     public void lock() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.LOCK_ACQUIRE_EVENT)
+                        .type(RuntimeEvent.Type.LOCK_ACQUIRE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
                         .param("lock", this)
@@ -26,7 +25,7 @@ public class JmcReentrantLock {
         JmcRuntime.updateEventAndYield(event);
         event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.LOCK_ACQUIRED_EVENT)
+                        .type(RuntimeEvent.Type.LOCK_ACQUIRED_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
                         .param("lock", this)
@@ -40,7 +39,7 @@ public class JmcReentrantLock {
     public void unlock() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
-                        .type(RuntimeEventType.LOCK_RELEASE_EVENT)
+                        .type(RuntimeEvent.Type.LOCK_RELEASE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
                         .param("lock", this)

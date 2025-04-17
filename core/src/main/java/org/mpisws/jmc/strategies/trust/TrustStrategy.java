@@ -2,7 +2,7 @@ package org.mpisws.jmc.strategies.trust;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jline.utils.Log;
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
@@ -44,18 +44,18 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     }
 
     @Override
-    public void initIteration(int iteration) {
-        super.initIteration(iteration);
+    public void initIteration(int iteration, JmcModelCheckerReport report) {
+        super.initIteration(iteration, report);
         algoInstance.initIteration(iteration);
     }
 
     @Override
-    public SchedulingChoice nextTask() {
+    public SchedulingChoice<?> nextTask() {
         // Always add 1 to the return value the strategy expects 1-indexed tasks but we store
         // 0-indexed tasks
 
         // If the algorithm has a task to execute, return it
-        SchedulingChoice nextTask = algoInstance.nextTask();
+        SchedulingChoice<?> nextTask = algoInstance.nextTask();
         if (nextTask != null) {
             return nextTask;
         }
