@@ -84,7 +84,7 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
      * of the default Random class.
      */
     private static class ExtRandom extends Random {
-        private final AtomicLong seed;
+        private AtomicLong seed;
 
         private static final long multiplier = 0x5DEECE66DL;
         private static final long addend = 0xBL;
@@ -92,7 +92,6 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
 
         public ExtRandom(long seed) {
             super(seed);
-            this.seed = new AtomicLong();
         }
 
         private static long initialScramble(long seed) {
@@ -100,9 +99,9 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
         }
 
         @Override
-        public void setSeed(long seed) {
+        public synchronized void setSeed(long seed) {
             super.setSeed(seed);
-            this.seed.set(initialScramble(seed));
+            this.seed = new AtomicLong(initialScramble(seed));
         }
 
         public Long getSeed() {

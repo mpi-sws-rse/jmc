@@ -13,7 +13,7 @@ public class CC4 {
             count = 0;
             RuntimeEvent event =
                     new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.WRITE_EVENT)
+                            .type(RuntimeEvent.Type.WRITE_EVENT)
                             .taskId(JmcRuntime.currentTask())
                             .param("newValue", 0)
                             .param(

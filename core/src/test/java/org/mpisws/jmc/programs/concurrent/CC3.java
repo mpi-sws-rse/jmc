@@ -2,7 +2,6 @@ package org.mpisws.jmc.programs.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.RuntimeEventType;
 import org.mpisws.jmc.util.concurrent.JmcThread;
 
 public class CC3 {
@@ -14,7 +13,7 @@ public class CC3 {
             count = 0;
             RuntimeEvent event =
                     new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.WRITE_EVENT)
+                            .type(RuntimeEvent.Type.WRITE_EVENT)
                             .taskId(JmcRuntime.currentTask())
                             .param("newValue", 0)
                             .param(
@@ -31,7 +30,7 @@ public class CC3 {
             count = newValue;
             RuntimeEvent event =
                     new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.WRITE_EVENT)
+                            .type(RuntimeEvent.Type.WRITE_EVENT)
                             .taskId(JmcRuntime.currentTask())
                             .param("newValue", newValue)
                             .param(
@@ -48,7 +47,7 @@ public class CC3 {
             int out = count;
             RuntimeEvent event =
                     new RuntimeEvent.Builder()
-                            .type(RuntimeEventType.READ_EVENT)
+                            .type(RuntimeEvent.Type.READ_EVENT)
                             .taskId(JmcRuntime.currentTask())
                             .param(
                                     "owner",
