@@ -6,21 +6,20 @@ import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
 import org.mpisws.jmc.integrations.junit5.engine.JmcTestExecutor;
 
-
 import java.lang.reflect.Method;
 
-public class JmcMethodTestDescriptor extends AbstractTestDescriptor implements JmcExecutableTestDescriptor {
+public class JmcMethodTestDescriptor extends AbstractTestDescriptor
+        implements JmcExecutableTestDescriptor {
 
     private final Method testMethod;
     private final JmcCheckerConfiguration classConfig;
 
-
-    public JmcMethodTestDescriptor(Method testMethod, JmcClassTestDescriptor parent, JmcCheckerConfiguration classConfig) {
+    public JmcMethodTestDescriptor(
+            Method testMethod, JmcClassTestDescriptor parent, JmcCheckerConfiguration classConfig) {
         super(
                 parent.getUniqueId().append("method", testMethod.getName()),
                 testMethod.getName(),
-                ClassSource.from(testMethod.getDeclaringClass())
-        );
+                ClassSource.from(testMethod.getDeclaringClass()));
         this.testMethod = testMethod;
         this.classConfig = classConfig;
         setParent(parent);
@@ -47,15 +46,15 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor implements J
             return;
         }
 
-        JmcCheckerConfiguration config = new JmcCheckerConfiguration.Builder()
-                .numIterations(annotation.numIterations())
-                .debug(annotation.debug())
-                .seed(annotation.seed())
-                .reportPath(annotation.reportPath())
-                .strategyType(annotation.strategy())
-                .build();
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .numIterations(annotation.numIterations())
+                        .debug(annotation.debug())
+                        .seed(annotation.seed())
+                        .reportPath(annotation.reportPath())
+                        .strategyType(annotation.strategy())
+                        .build();
 
         JmcTestExecutor.execute(testMethod, instance, config);
-
     }
 }

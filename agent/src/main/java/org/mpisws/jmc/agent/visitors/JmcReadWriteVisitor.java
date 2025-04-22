@@ -5,6 +5,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.util.Objects;
+
 /**
  * Represents a JMC read-write visitor. Adds instrumentation to change field accesses to
  * JmcReadWrite calls.
@@ -57,6 +59,10 @@ public class JmcReadWriteVisitor {
 
         private void insertUpdateEventCall(
                 String owner, boolean isWrite, String name, String descriptor) {
+            if (Objects.equals(owner, "java/lang/System")) {
+                // Ignore System calls
+                return;
+            }
             instrumented = true;
             if (!isWrite) {
                 VisitorHelper.insertRead(mv, isStatic, owner, name, descriptor, this);

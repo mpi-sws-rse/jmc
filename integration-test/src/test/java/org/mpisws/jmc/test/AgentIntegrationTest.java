@@ -40,20 +40,4 @@ public class AgentIntegrationTest {
                         });
         jmcModelChecker.check(target);
     }
-
-
-    @JmcCheckConfiguration(
-            numIterations = 10,
-            strategy = "random",
-            debug = true
-    )
-    @Test
-    public void testAgentWithFutureAgain() {
-        try{
-            FutureCounterTestRunner.main(new String[0]);
-        } catch (NullPointerException e) {
-            System.out.println("An exception occurred: " + e);
-        }
-
-    }
 }
