@@ -2,8 +2,6 @@ package org.mpisws.jmc.util.concurrent;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinTask;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class JmcCompletableFuture<T> extends CompletableFuture<T> {
@@ -13,10 +11,10 @@ public class JmcCompletableFuture<T> extends CompletableFuture<T> {
 
     public JmcCompletableFuture() {
         super();
+        this.underlyingFuture = null;
     }
 
-    private JmcCompletableFuture(JmcFuture<T> underlyingFuture) {
-        super();
+    public void setUnderlyingFuture(JmcFuture<T> underlyingFuture) {
         this.underlyingFuture = underlyingFuture;
     }
 
@@ -34,114 +32,76 @@ public class JmcCompletableFuture<T> extends CompletableFuture<T> {
         return asyncSupplyStage(executor, supplier);
     }
 
-    public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier, Executor executor) {
-        return asyncSupplyStage(executor, supplier);
-    }
-
     public static CompletableFuture<Void> runAsync(Runnable runnable) {
         return runAsync(runnable, executor);
     }
 
-    public static CompletableFuture<Void> runAsync(Runnable runnable, Executor executor) {
-        return asyncRunStage(executor, runnable);
-    }
+    public static class JmcAsyncRunnable<T> implements Runnable {
+        private final Supplier<? extends T> supplier;
+        private final JmcCompletableFuture<T> future;
+        private final Runnable runnable;
 
-    @SuppressWarnings("serial")
-    static final class AsyncSupply<T> extends ForkJoinTask<Void>
-            implements Runnable, AsynchronousCompletionTask {
-        JmcCompletableFuture<T> dep;
-        Supplier<? extends T> fn;
-
-        AsyncSupply(JmcCompletableFuture<T> dep, Supplier<? extends T> fn) {
-            this.dep = dep;
-            this.fn = fn;
+        public JmcAsyncRunnable(Supplier<? extends T> supplier, JmcCompletableFuture<T> future) {
+            this.supplier = supplier;
+            this.future = future;
+            this.runnable = null;
         }
 
-        public final Void getRawResult() {
-            return null;
+        public void setUnderlyingFuture(JmcFuture<T> underlyingFuture) {
+            this.future.setUnderlyingFuture(underlyingFuture);
         }
 
-        public final void setRawResult(Void v) {
-        }
-
-        public final boolean exec() {
-            run();
-            return false;
-        }
-
+        @Override
         public void run() {
-            CompletableFuture<T> d;
-            Supplier<? extends T> f;
-            if ((d = dep) != null && (f = fn) != null) {
-                dep = null;
-                fn = null;
-                try {
-                    d.complete(f.get());
-                } catch (Throwable ex) {
-                    d.completeExceptionally(ex);
+            try {
+                if (supplier == null) {
+                    runnable.run();
+                    future.complete(null);
+                } else {
+                    future.complete(supplier.get());
                 }
+            } catch (Throwable ex) {
+                future.completeExceptionally(ex);
             }
         }
     }
 
-    static <U> CompletableFuture<U> asyncSupplyStage(Executor e,
-                                                     Supplier<U> f) {
+    static <U> CompletableFuture<U> asyncSupplyStage(JmcExecutorService e, Supplier<U> f) {
         if (f == null) throw new NullPointerException();
         JmcCompletableFuture<U> d = new JmcCompletableFuture<>();
-        e.execute(new AsyncSupply<U>(d, f));
+        JmcFuture underlyingFuture =
+                e.submit(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    d.complete(f.get());
+                                } catch (Throwable ex) {
+                                    d.completeExceptionally(ex);
+                                }
+                            }
+                        });
+        d.setUnderlyingFuture(underlyingFuture);
         return d;
-    }
-
-    @SuppressWarnings("serial")
-    static final class AsyncRun extends ForkJoinTask<Void>
-            implements Runnable, AsynchronousCompletionTask {
-        JmcCompletableFuture<Void> dep;
-        Runnable fn;
-
-        AsyncRun(JmcCompletableFuture<Void> dep, Runnable fn) {
-            this.dep = dep;
-            this.fn = fn;
-        }
-
-        public final Void getRawResult() {
-            return null;
-        }
-
-        public final void setRawResult(Void v) {
-        }
-
-        public final boolean exec() {
-            run();
-            return false;
-        }
-
-        public void run() {
-            CompletableFuture<Void> d;
-            Runnable f;
-            if ((d = dep) != null && (f = fn) != null) {
-                dep = null;
-                fn = null;
-                try {
-                    f.run();
-                    d.complete(null);
-                } catch (Throwable ex) {
-                    d.completeExceptionally(ex);
-                }
-            }
-        }
     }
 
     static CompletableFuture<Void> asyncRunStage(JmcExecutorService e, Runnable f) {
         if (f == null) throw new NullPointerException();
         JmcCompletableFuture<Void> d = new JmcCompletableFuture<>();
-        e.execute();
+        JmcFuture underlyingFuture =
+                e.submit(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    f.run();
+                                    d.complete(null);
+                                } catch (Throwable ex) {
+                                    d.completeExceptionally(ex);
+                                }
+                            }
+                        });
+        d.setUnderlyingFuture(underlyingFuture);
         return d;
     }
-
-    @Override
-    public CompletableFuture<Void> thenAccept(Consumer<? super T> action) {
-
-        return super.thenAcceptAsync(action, executor);
-    }
-
 }

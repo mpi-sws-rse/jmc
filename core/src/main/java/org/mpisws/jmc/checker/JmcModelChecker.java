@@ -20,9 +20,7 @@ public class JmcModelChecker {
 
     private final JmcCheckerConfiguration config;
 
-    /**
-     * Constructs a new JMC model checker with the default configuration.
-     */
+    /** Constructs a new JMC model checker with the default configuration. */
     public JmcModelChecker() {
         this(new JmcCheckerConfiguration.Builder().build());
     }
@@ -73,7 +71,10 @@ public class JmcModelChecker {
                     break;
                 } catch (AssertionError e) {
                     report.setErrorIteration(i);
-                    report.setErrorMessage(String.format("Halting execution: %d due to assertion error: %s", i, e.getMessage()));
+                    report.setErrorMessage(
+                            String.format(
+                                    "Halting execution: %d due to assertion error: %s",
+                                    i, e.getMessage()));
                     LOGGER.error("Assertion error in iteration {}: {}", i, e.getMessage());
                     break;
                 }
@@ -87,6 +88,11 @@ public class JmcModelChecker {
                 LOGGER.error("Model checking failed: {}", e.getMessage());
                 System.exit(1);
             }
+        } catch (Exception e) {
+            report.setErrorIteration(-1);
+            report.setErrorMessage(String.format("Model checking failed: %s", e.getMessage()));
+            LOGGER.error("Model checking failed: {}", e.getMessage());
+            System.exit(1);
         } finally {
             Long endTime = System.nanoTime();
             JmcRuntime.tearDown();
@@ -112,14 +118,13 @@ public class JmcModelChecker {
             JmcRuntime.updateEvent(mainEndEvent);
             JmcRuntime.resetIteration(iteration);
         } catch (HaltTaskException e) {
-            LOGGER.debug(
-                    "Halting execution: due to main thread halted: {}",
-                    e.getMessage());
+            LOGGER.debug("Halting execution: due to main thread halted: {}", e.getMessage());
         } catch (HaltExecutionException e) {
             report.setErrorMessage(e.getMessage());
             LOGGER.error("Halting execution: due to exception: {}", e.getMessage());
         } catch (AssertionError e) {
-            report.setErrorMessage(String.format("Halting execution due to assertion error: %s", e.getMessage()));
+            report.setErrorMessage(
+                    String.format("Halting execution due to assertion error: %s", e.getMessage()));
             LOGGER.error("Assertion error: {}", e.getMessage());
         } catch (HaltCheckerException e) {
             if (e.isOkay()) {

@@ -10,6 +10,7 @@ public class ExecutionGraphSimulator {
 
     public ExecutionGraphSimulator() {
         this.executionGraph = new ExecutionGraph();
+        this.executionGraph.addEvent(Event.init());
     }
 
     public ExecutionGraph getExecutionGraph() {
@@ -31,10 +32,10 @@ public class ExecutionGraphSimulator {
                     handleWrite(trustEvent);
                     break;
                 case READ_EX:
-                    handleReadEx(trustEvent);
+                    handleRead(trustEvent);
                     break;
                 case WRITE_EX:
-                    handleWriteEx(trustEvent);
+                    handleWrite(trustEvent);
                     break;
                 case LOCK_AWAIT:
                     handleLockAwait(trustEvent);
@@ -48,33 +49,36 @@ public class ExecutionGraphSimulator {
 
     public void reset() {
         this.executionGraph = new ExecutionGraph();
+        this.executionGraph.addEvent(Event.init());
     }
 
     public void handleBot(Event event) {
+        executionGraph.addEvent(event);
     }
 
     public void handleRead(Event event) {
-        executionGraph.addEvent(event);
+        ExecutionGraphNode read = executionGraph.addEvent(event);
+        ExecutionGraphNode coMaxWrite = executionGraph.getCoMax(event.getLocation());
+        executionGraph.setReadsFrom(read, coMaxWrite);
     }
 
     public void handleWrite(Event event) {
-        executionGraph.addEvent(event);
+        ExecutionGraphNode write = executionGraph.addEvent(event);
+        executionGraph.trackCoherency(write);
     }
 
     public void handleReadEx(Event event) {
-        executionGraph.addEvent(event);
+        ExecutionGraphNode write = executionGraph.addEvent(event);
+        executionGraph.trackCoherency(write);
     }
 
     public void handleWriteEx(Event event) {
         executionGraph.addEvent(event);
     }
 
-    public void handleLockAwait(Event event) {
-        executionGraph.addEvent(event);
-    }
+    public void handleLockAwait(Event event) {}
 
     public void handleNoop(Event event) {
         executionGraph.addEvent(event);
     }
-
 }
