@@ -11,8 +11,10 @@ import org.mpisws.jmc.integrations.junit5.descriptors.JmcClassTestDescriptor;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcEngineDescriptor;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcExecutableTestDescriptor;
 
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.function.Predicate;
+
 
 public class JmcTestEngine implements TestEngine {
 
@@ -70,8 +72,18 @@ public class JmcTestEngine implements TestEngine {
     private void appendTestsInClass(Class<?> javaClass, TestDescriptor engineDescriptor) {
         if (AnnotationSupport.isAnnotated(javaClass, JmcCheckConfiguration.class)) {
             engineDescriptor.addChild(new JmcClassTestDescriptor(javaClass, engineDescriptor));
+        } else {
+            Method[] methodList = javaClass.getMethods();
+            for (Method method : methodList) {
+                if (method.getAnnotation(JmcCheckConfiguration.class) != null) {
+                    engineDescriptor.addChild(new JmcClassTestDescriptor(javaClass, engineDescriptor));
+                }
+
+            }
+
         }
     }
+
 
     @Override
     public void execute(ExecutionRequest request) {
