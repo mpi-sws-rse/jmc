@@ -918,7 +918,7 @@ public class ExecutionGraph {
     }
 
     public void restrictBySet(Set<Event.Key> set) {
-        // We use the following set to track the modified locations of write events.
+        // We use the following map to track the modified locations of write events.
         // It is used to update the CO-edges.
         Map<Integer, List<ExecutionGraphNode>> modifiedLocations = new HashMap<>();
         for (Event.Key key : set) {
@@ -1124,6 +1124,10 @@ public class ExecutionGraph {
     }
 
     public void restrict(ExecutionGraphNode restrictingNode) {
+        // We use the following map to track the modified locations of write events.
+        // It is used to update the CO-edges.
+        Map<Integer, List<ExecutionGraphNode>> modifiedLocations = new HashMap<>();
+
         // Removing and storing all inserted events after the restricting node from allEvents (
         // Insertion order )
         int indexRestrictingNode = allEvents.indexOf(restrictingNode);
@@ -1136,6 +1140,14 @@ public class ExecutionGraph {
 
         // Iterating over these nodes and remove them from the taskEvents and coherencyOrder
         for (ExecutionGraphNode node : removedNodes) {
+
+            if (node.getEvent().isWrite() || node.getEvent().isWriteEx()) {
+                Integer location = node.getEvent().getLocation();
+                if (!modifiedLocations.keySet().contains(location)) {
+                    modifiedLocations.put(location, new ArrayList<>(coherencyOrder.get(location)));
+                }
+            }
+
             // Removing from coherencyOrder
             Integer location = node.getEvent().getLocation();
 
@@ -1169,6 +1181,13 @@ public class ExecutionGraph {
                     node.removeAllEdgesFrom(predecessor);
                 }
             }
+        }
+
+        // Recompute the co-edges
+        // TODO :: This approach is not efficient and must be revisited
+        for (Map.Entry<Integer, List<ExecutionGraphNode>> entry :
+                modifiedLocations.entrySet()) {
+            recomputeCoEdges(entry.getKey(), entry.getValue());
         }
 
         recomputeVectorClocks();
@@ -1554,4 +1573,40 @@ public class ExecutionGraph {
         }
         System.out.println();
     }
+
+    public boolean isCoConsistent() {
+        // First collect the location of write events.
+        Set<Integer> locations = new HashSet<>();
+        for (ExecutionGraphNode node : allEvents) {
+            if (node.getEvent().isWrite()) {
+                locations.add(node.getEvent().getLocation());
+            }
+        }
+
+        // For each location we have to check if between any ith and i+1th write, the is co edges.
+        for (Integer location : locations) {
+            List<ExecutionGraphNode> writes = coherencyOrder.get(location);
+            for (int i = 0 ; i < writes.size() -1 ; i++) {
+                if (!(writes.get(i).getSuccessors(Relation.Coherency).contains(writes.get(i+1).key())
+                        && writes.get(i+1).getPredecessors(Relation.Coherency).contains(writes.get(i).key()))){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean isRfConsistent() {
+        // For each read event, check if the read-from edge is present
+        for (ExecutionGraphNode node : allEvents) {
+            if (node.getEvent().isRead()) {
+                Set<Event.Key> writes = node.getPredecessors(Relation.ReadsFrom);
+                if (writes != null && writes.size() != 1) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
 }
