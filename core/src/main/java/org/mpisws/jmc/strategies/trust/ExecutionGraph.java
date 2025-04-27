@@ -1005,103 +1005,6 @@ public class ExecutionGraph {
         }
     }
 
-    // TODO :: Remove this method
-    private void updateCoEdge(ExecutionGraphNode node) {
-        Set<Event.Key> nexts = node.getSuccessors(Relation.Coherency);
-        if (nexts.size() > 1) {
-            throw new HaltCheckerException("A write has more than one coherency edge.");
-        } else if (nexts.size() == 0) {
-            // No coherency edge, nothing to do
-            return;
-        }
-        Set<Event.Key> prevs = node.getPredecessors(Relation.Coherency);
-        if (prevs.size() != 1) {
-            throw new HaltCheckerException("A write has more than one or no coherency edge.");
-        }
-
-        Event.Key nextKey = nexts.iterator().next();
-        Event.Key prevKey = prevs.iterator().next();
-        ExecutionGraphNode next = null;
-        ExecutionGraphNode prev = null;
-        for (ExecutionGraphNode event : allEvents) {
-            if (event.key().equals(nextKey)) {
-                next = event;
-            } else if (event.key().equals(prevKey)) {
-                prev = event;
-            }
-        }
-        if (next == null) {
-            throw new HaltCheckerException("The next event is not in all events : " + nextKey);
-        }
-        if (prev == null) {
-            throw new HaltCheckerException("The previous event is not in all events : " + prevKey);
-        }
-
-        node.removeEdge(next, Relation.Coherency);
-        prev.removeEdge(node, Relation.Coherency);
-        prev.addEdge(next, Relation.Coherency);
-    }
-
-    // TODO :: Remove this method
-    /**
-     * Restricts the execution graph by removing the nodes with the given keys.
-     *
-     * @param keys The keys of the nodes to be removed
-     */
-    public void restrictByRemoving(Set<Event.Key> keys) {
-        // First recreate task events
-        List<List<ExecutionGraphNode>> newTaskEvents = new ArrayList<>();
-        for (List<ExecutionGraphNode> taskEvent : taskEvents) {
-            List<ExecutionGraphNode> newTaskEvent = new ArrayList<>();
-            for (ExecutionGraphNode node : taskEvent) {
-                if (!keys.contains(node.key())) {
-                    newTaskEvent.add(node);
-                }
-            }
-            newTaskEvents.add(newTaskEvent);
-        }
-        taskEvents = newTaskEvents;
-        for (Integer location : coherencyOrder.keySet()) {
-            List<ExecutionGraphNode> writes = coherencyOrder.get(location);
-            List<ExecutionGraphNode> newWrites = new ArrayList<>();
-            for (ExecutionGraphNode write : writes) {
-                if (!keys.contains(write.key())) {
-                    newWrites.add(write);
-                }
-            }
-            coherencyOrder.put(location, newWrites);
-        }
-        List<ExecutionGraphNode> newAllEvents = new ArrayList<>();
-        for (ExecutionGraphNode node : allEvents) {
-            if (!keys.contains(node.key())) {
-                newAllEvents.add(node);
-            }
-        }
-
-        allEvents = newAllEvents;
-
-        // Now remove dangling edges using the total order
-        for (ExecutionGraphNode node : allEvents) {
-            Set<Event.Key> successors = node.getAllSuccessors();
-            for (Event.Key successor : successors) {
-                if (keys.contains(successor)) {
-                    node.removeAllEdgesTo(successor);
-                }
-            }
-            Set<Event.Key> predecessors = node.getAllPredecessors();
-            for (Event.Key predecessor : predecessors) {
-                if (keys.contains(predecessor)) {
-                    node.removeAllEdgesFrom(predecessor);
-                }
-            }
-        }
-
-        // Note, apparently there won't be any dangling reads. Need to verify this.
-
-        // Recompute the vector clocks.
-        recomputeVectorClocks();
-    }
-
     /** Recomputes the vector clocks of all nodes in the execution graph. */
     public void recomputeVectorClocks() {
         for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
@@ -1168,6 +1071,22 @@ public class ExecutionGraph {
                 if (removedKeys.contains(predecessor)) {
                     node.removeAllEdgesFrom(predecessor);
                 }
+            }
+        }
+
+        // Recomputing the co-edges
+        for (Integer location : modifiedLocation) {
+
+            if (!coherencyOrder.containsKey(location)) {
+                // Coherency order is not tracked for this location
+                continue;
+            }
+
+            List<ExecutionGraphNode> writes = coherencyOrder.get(location);
+
+            if (writes.size() <= 1) {
+                // No need to recompute the edges
+                continue;
             }
         }
 
@@ -1396,7 +1315,12 @@ public class ExecutionGraph {
 
     public String toJsonStringIgnoreLocation() {
         JsonObject nodes = new JsonObject();
-        for (ExecutionGraphNode node : allEvents) {
+        List<ExecutionGraphNode> sortedEvents = new ArrayList<>(allEvents);
+        sortedEvents.sort(
+                (o1, o2) -> {
+                    return o1.getEvent().key().compareTo(o2.getEvent().key());
+                });
+        for (ExecutionGraphNode node : sortedEvents) {
             nodes.add(node.key().toString(), node.toJsonIgnoreLocation());
         }
         JsonObject gson = new JsonObject();
@@ -1416,11 +1340,17 @@ public class ExecutionGraph {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ExecutionGraph that)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ExecutionGraph that)) {
+            return false;
+        }
 
         // Check if the two graphs have the same number of events
-        if (this.allEvents.size() != that.allEvents.size()) return false;
+        if (this.allEvents.size() != that.allEvents.size()) {
+            return false;
+        }
 
         // Check if the two graphs have the same events in topological order
         ArrayList<ExecutionGraphNode> curNodes = new ArrayList<>();
@@ -1448,6 +1378,23 @@ public class ExecutionGraph {
             }
         }
 
+        return true;
+    }
+
+    public boolean checkCoherencyEdges() {
+        for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : coherencyOrder.entrySet()) {
+            if (Objects.equals(entry.getKey(), LocationStore.ThreadLocation)) {
+                // Skip the thread location
+                continue;
+            }
+            List<ExecutionGraphNode> writes = entry.getValue();
+            for (int i = 0; i < writes.size() - 1; i++) {
+                if (!writes.get(i)
+                        .hasEdge(writes.get(i + 1).getEvent().key(), Relation.Coherency)) {
+                    return false;
+                }
+            }
+        }
         return true;
     }
 

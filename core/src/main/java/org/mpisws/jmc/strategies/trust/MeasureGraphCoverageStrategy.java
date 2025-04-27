@@ -22,19 +22,19 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
     private final SchedulingStrategy schedulingStrategy;
 
-    private final boolean record;
+    private final boolean debug;
     private final String recordPath;
 
     public MeasureGraphCoverageStrategy(
-            SchedulingStrategy schedulingStrategy, boolean record, String recordPath) {
+            SchedulingStrategy schedulingStrategy, boolean debug, String recordPath) {
         this.schedulingStrategy = schedulingStrategy;
         this.simulator = new ExecutionGraphSimulator();
         this.visitedGraphs = new HashMap<>();
         this.coverages = new ArrayList<>();
-        this.record = record;
         this.recordPath = recordPath;
+        this.debug = debug;
 
-        if (record) {
+        if (recordPath != null && !recordPath.isEmpty()) {
             FileUtil.unsafeEnsurePath(recordPath);
         }
     }
@@ -59,7 +59,15 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
     @Override
     public void resetIteration(int iteration) {
+        this.schedulingStrategy.resetIteration(iteration);
         ExecutionGraph executionGraph = simulator.getExecutionGraph();
+        if (schedulingStrategy.getClass() == TrustStrategy.class) {
+            ExecutionGraph underlyingExecutionGraph =
+                    ((TrustStrategy) schedulingStrategy).getExecutionGraph();
+            if (!executionGraph.equals(underlyingExecutionGraph)) {
+                executionGraph.equals(underlyingExecutionGraph);
+            }
+        }
         String json = executionGraph.toJsonStringIgnoreLocation();
         try {
             String hash = StringUtil.sha256Hash(json);
@@ -69,7 +77,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
                 visitedGraphs.put(hash, 1);
             }
             this.coverages.add(visitedGraphs.size());
-            if (record) {
+            if (debug) {
                 FileUtil.unsafeStoreToFile(Paths.get(recordPath, hash + ".json").toString(), json);
             }
         } catch (Exception e) {
@@ -81,7 +89,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     public void teardown() {
         simulator.reset();
         schedulingStrategy.teardown();
-        if (record) {
+        if (recordPath != null && !recordPath.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (HashMap.Entry<String, Integer> entry : visitedGraphs.entrySet()) {
                 sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");

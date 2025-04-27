@@ -5,10 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.runtime.*;
 import org.mpisws.jmc.util.files.FileUtil;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Contains the core Trust algorithm implementation. (<a
@@ -33,9 +30,7 @@ public class Algo {
 
     private final LocationStore locationStore;
 
-    /**
-     * Creates a new instance of the Trust algorithm.
-     */
+    /** Creates a new instance of the Trust algorithm. */
     public Algo() {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
@@ -46,9 +41,7 @@ public class Algo {
         this.executionGraph.addEvent(Event.init());
     }
 
-    /**
-     * Returns the next task to be scheduled according to the execution graph set in place.
-     */
+    /** Returns the next task to be scheduled according to the execution graph set in place. */
     public SchedulingChoice<?> nextTask() {
         if (!isGuiding) {
             return null;
@@ -158,6 +151,10 @@ public class Algo {
         LOGGER.debug("Handled event: {}", event);
     }
 
+    public boolean checkCoherencyEdges() {
+        return executionGraph.checkCoherencyEdges();
+    }
+
     /**
      * Handles the NOOP event. This is a special case where we do not need to update the execution
      * graph.
@@ -198,7 +195,7 @@ public class Algo {
             throw new HaltCheckerException();
         }
 
-        /** Prepare guiding phase **/
+        /** Prepare guiding phase * */
 
         // Clear location aliases. By this point, we have replaced all the locations in the
         // execution graph with the latest ones.
@@ -212,9 +209,7 @@ public class Algo {
         findNextExplorationChoice();
     }
 
-    /**
-     * Checks if we are guiding the execution.
-     */
+    /** Checks if we are guiding the execution. */
     private boolean areWeGuiding() {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
     }
@@ -222,7 +217,8 @@ public class Algo {
     private void findNextExplorationChoice() {
         if (explorationStack.isEmpty()) {
             // This must not happen. We should have handled this in the resetIteration method.
-            throw new RuntimeException( // TODO : We need to define a better exception for this case.
+            throw new RuntimeException( // TODO : We need to define a better exception for this
+                    // case.
                     "Exploration stack is empty. We should have handled this in the resetIteration method.");
         }
 
@@ -239,7 +235,8 @@ public class Algo {
             ExplorationStack.Item item = explorationStack.pop();
 
             // Check if the item is a backward revisit.
-            if (item.isBackwardRevisit()) { // TODO : Is any backward revisit type allowed? or only BWR?
+            if (item.isBackwardRevisit()) { // TODO : Is any backward revisit type allowed? or only
+                // BWR?
                 processBWR(item);
                 continue;
             }
@@ -249,7 +246,8 @@ public class Algo {
             if (newGraph == null) {
                 // It is not possible for an item to have a null graph. This must be a bug in the
                 // exploration stack.
-                throw new RuntimeException(  // TODO : We need to define a better exception for this case.
+                throw new RuntimeException( // TODO : We need to define a better exception for this
+                        // case.
                         "The exploration stack item has a null graph. This must be a bug in the exploration stack.");
             } else {
                 executionGraph = newGraph;
@@ -259,8 +257,9 @@ public class Algo {
                 case FRW -> nextGraphSchedule = processFRW(item);
                 case FWW -> nextGraphSchedule = processFWW(item);
                 case FLW -> nextGraphSchedule = processFLW(item);
-                default -> throw new RuntimeException(
-                        "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
+                default ->
+                        throw new RuntimeException(
+                                "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
         }
 
@@ -268,57 +267,6 @@ public class Algo {
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
         guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule(nextGraphSchedule));
-    }
-
-    // TODO : Remove this method
-    private void resetWith(ExplorationStack.Item item) {
-        // Reset based on the kind of item in the schedule
-        ExecutionGraph newGraph = explorationStack.getGraph(item);
-        if (newGraph != null) {
-            executionGraph = newGraph;
-        }
-        switch (item.getType()) {
-            case FRW:
-                // Forward revisit of w -> r
-                ExecutionGraphNode read = item.getEvent1();
-                ExecutionGraphNode write = item.getEvent2();
-
-                executionGraph.changeReadsFrom(read, write);
-                executionGraph.restrict(read);
-                if (!executionGraph.checkConsistencyAndTopologicallySort().isEmpty()) {
-                    guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
-                }
-                break;
-            case FWW:
-                // Forward revisit of w -> w (alternative coherence placing)
-                ExecutionGraphNode write1 = item.getEvent1();
-                ExecutionGraphNode write2 = item.getEvent2();
-
-                executionGraph.swapCoherency(write1, write2);
-                executionGraph.restrict(write1);
-                if (!executionGraph.checkConsistencyAndTopologicallySort().isEmpty()) {
-                    guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
-                }
-                break;
-            case BRR:
-                if (!executionGraph.checkConsistencyAndTopologicallySort().isEmpty()) {
-                    guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
-                }
-                break;
-            case BWR:
-                // Should not happen. We should have handled this in the resetIteration method.
-                break;
-            case FLW:
-                // Forward revisit of w -> lw (max-co)
-                ExecutionGraphNode w = item.getEvent1();
-                // set the co
-                executionGraph.trackCoherency(w);
-                executionGraph.restrict(w);
-                if (!executionGraph.checkConsistencyAndTopologicallySort().isEmpty()) {
-                    guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule());
-                }
-                break;
-        }
     }
 
     // For debugging
@@ -334,46 +282,12 @@ public class Algo {
         System.out.println();
     }
 
-    // TODO: Remove this method
-    /**
-     * Resets the iteration. This method is called at the end of each iteration of the algorithm.
-     */
-    public void resetIteration() {
-        // Reset the task schedule and the execution graph.
-        // Check if the top of the exploration stack is a backward revisit.
-        // If so, copy the graph from the backward revisit and push all forward revisits to the
-        // stack.
-        if (!explorationStack.isEmpty() && explorationStack.peek().isBackwardRevisit()) {
-            ExplorationStack.Item item = explorationStack.pop();
-            if (item.getType() == ExplorationStack.ItemType.BWR) {
-                ExecutionGraphNode write = item.getEvent1();
-                ExecutionGraph restrictedGraph = item.getGraph();
-
-                List<ExecutionGraphNode> alternativeWrites =
-                        restrictedGraph.getCoherentPlacings(write);
-
-                if (!alternativeWrites.isEmpty()) {
-                    for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
-                        explorationStack.push(
-                                ExplorationStack.Item.forwardWW(
-                                        write, alternativeWrites.get(i), restrictedGraph));
-                    }
-                }
-
-                // Pushing the max-co write forward revisit
-                explorationStack.push(
-                        ExplorationStack.Item.forwardLW(write, restrictedGraph));
-            }
-        }
-    }
-
     private void processBWR(ExplorationStack.Item item) {
 
         ExecutionGraphNode write = item.getEvent1();
         ExecutionGraph restrictedGraph = item.getGraph();
 
-        List<ExecutionGraphNode> alternativeWrites =
-                restrictedGraph.getCoherentPlacings(write);
+        List<ExecutionGraphNode> alternativeWrites = restrictedGraph.getCoherentPlacings(write);
 
         if (!alternativeWrites.isEmpty()) {
             for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
@@ -383,8 +297,7 @@ public class Algo {
             }
         }
 
-        explorationStack.push(
-                ExplorationStack.Item.forwardLW(write, restrictedGraph));
+        explorationStack.push(ExplorationStack.Item.forwardLW(write, restrictedGraph));
     }
 
     private ArrayList<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {
@@ -471,7 +384,8 @@ public class Algo {
             LOGGER.debug("Read is before the coMaxWrite");
             LOGGER.debug("The coMaxWrite is " + coMaxWrite.getEvent());
             // Easy case. No concurrent write to revisit. [Note that this is an optimization for
-            // sequential consistency model. If we are exploring relaxed memory models in the future,
+            // sequential consistency model. If we are exploring relaxed memory models in the
+            // future,
             // we need to remove this optimization.]
             executionGraph.setReadsFrom(read, coMaxWrite);
             return;
@@ -503,7 +417,7 @@ public class Algo {
         // Add the write event to the execution graph
         ExecutionGraphNode write = executionGraph.addEvent(event);
 
-        /** Check for (w->w) coherent forward revisits **/
+        /** Check for (w->w) coherent forward revisits * */
         List<ExecutionGraphNode> concurrentWrites = executionGraph.getCoherentPlacings(write);
 
         if (!concurrentWrites.isEmpty()) {
@@ -513,13 +427,14 @@ public class Algo {
             // If flag is set, write race warning
             for (int i = concurrentWrites.size() - 1; i >= 0; i--) {
                 explorationStack.push(
-                        ExplorationStack.Item.forwardWW(write, concurrentWrites.get(i), executionGraph));
+                        ExplorationStack.Item.forwardWW(
+                                write, concurrentWrites.get(i), executionGraph));
             }
         } else {
             LOGGER.debug("No concurrent writes to revisit");
         }
 
-        /** Check for (w->r) backward revisits **/
+        /** Check for (w->r) backward revisits * */
         // Find potential reads that need to be revisited
         // TODO :: I'm not sure the way `getPotentialReads` method is ordering the reads is correct.
         List<ExecutionGraphNode> potentialReads = executionGraph.getPotentialReads(write);
@@ -541,10 +456,12 @@ public class Algo {
         for (int i = revisitViews.size() - 1; i >= 0; i--) {
             explorationStack.push(
                     ExplorationStack.Item.backwardRevisit(
-                            revisitViews.get(i).getWrite(), revisitViews.get(i).getRestrictedGraph()));
+                            revisitViews.get(i).getWrite(),
+                            revisitViews.get(i).getRestrictedGraph()));
         }
 
-        // After batching the backward and forward revisits, we need to continue the exploration by adding the recently
+        // After batching the backward and forward revisits, we need to continue the exploration by
+        // adding the recently
         // added write as the CO max.
         executionGraph.trackCoherency(write);
     }
@@ -674,8 +591,7 @@ public class Algo {
         }
     }
 
-    private void handleLockAwait(Event event) {
-    }
+    private void handleLockAwait(Event event) {}
 
     /**
      * Writes the execution graph to a file.
@@ -685,5 +601,9 @@ public class Algo {
     public void writeExecutionGraphToFile(String filePath) {
         String executionGraphJson = executionGraph.toJsonString();
         FileUtil.unsafeStoreToFile(filePath, executionGraphJson);
+    }
+
+    public ExecutionGraph getExecutionGraph() {
+        return executionGraph;
     }
 }

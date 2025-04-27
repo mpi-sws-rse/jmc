@@ -242,6 +242,13 @@ public class ExecutionGraphNode {
         return edges;
     }
 
+    public boolean hasEdge(Event.Key to, Relation adjacency) {
+        if (!edges.containsKey(adjacency)) {
+            return false;
+        }
+        return edges.get(adjacency).contains(to);
+    }
+
     /**
      * Returns all the predecessors of this node.
      *
@@ -382,6 +389,9 @@ public class ExecutionGraphNode {
         json.add("attributes", attributesObject);
         JsonObject edgesObject = new JsonObject();
         for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+            if (entry.getValue().isEmpty()) {
+                continue;
+            }
             JsonArray edgeArray = new JsonArray();
             for (Event.Key key : entry.getValue()) {
                 edgeArray.add(key.toString());
@@ -412,10 +422,16 @@ public class ExecutionGraphNode {
         if (this == other) {
             return true;
         }
-        if (this.edges.size() != other.edges.size()) {
-            return false;
-        }
         for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+            if (entry.getValue().isEmpty()) {
+                if (!other.edges.containsKey(entry.getKey())) {
+                    continue;
+                }
+                Set<Event.Key> otherEdges = other.edges.get(entry.getKey());
+                if (!otherEdges.isEmpty()) {
+                    return false;
+                }
+            }
             if (!other.edges.containsKey(entry.getKey())) {
                 return false;
             }

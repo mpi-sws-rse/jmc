@@ -73,12 +73,21 @@ public class ExecutionGraphSimulator {
     }
 
     public void handleWriteEx(Event event) {
-        executionGraph.addEvent(event);
+        ExecutionGraphNode writeNode = executionGraph.addEvent(event);
+        executionGraph.trackCoherency(writeNode);
     }
 
     public void handleLockAwait(Event event) {}
 
     public void handleNoop(Event event) {
-        executionGraph.addEvent(event);
+        ExecutionGraphNode eventNode = executionGraph.addEvent(event);
+        if (EventUtils.isThreadStart(event)) {
+            executionGraph.trackThreadCreates(eventNode);
+            if (event.getTaskId() != 0) { // Skip the main thread
+                executionGraph.trackThreadStarts(eventNode);
+            }
+        } else if (EventUtils.isThreadJoin(event)) {
+            executionGraph.trackThreadJoins(eventNode);
+        }
     }
 }

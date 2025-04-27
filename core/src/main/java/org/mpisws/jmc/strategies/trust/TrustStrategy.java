@@ -72,9 +72,10 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
         // If the policy is FIFO, return the first active, schedule-able task
         return SchedulingChoice.task(
                 switch (policy) {
-                    case FIFO -> activeScheduleAbleTasks.isEmpty()
-                            ? null
-                            : activeScheduleAbleTasks.get(0);
+                    case FIFO ->
+                            activeScheduleAbleTasks.isEmpty()
+                                    ? null
+                                    : activeScheduleAbleTasks.get(0);
                     case RANDOM -> {
                         int size = activeScheduleAbleTasks.size();
                         yield size == 0 ? null : activeScheduleAbleTasks.get(random.nextInt(size));
@@ -100,6 +101,10 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
             algoInstance.writeExecutionGraphToFile(
                     Paths.get(this.reportPath, "iteration-" + iteration + ".json").toString());
         }
+    }
+
+    public ExecutionGraph getExecutionGraph() {
+        return algoInstance.getExecutionGraph();
     }
 
     @Override

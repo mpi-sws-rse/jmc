@@ -461,7 +461,7 @@ public class JmcModelCheckerTest {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
                         .strategyType("trust")
-                        .numIterations(100)
+                        .numIterations(1000)
                         .debug(false)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -470,7 +470,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "TrustCC7",
                         () -> {
-                            int size = 3;
+                            int size = 4;
                             CC7.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
