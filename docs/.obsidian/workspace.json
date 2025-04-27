@@ -30,9 +30,21 @@
               "icon": "lucide-book-up",
               "title": "Release Notes 1.8.9"
             }
+          },
+          {
+            "id": "fd52ca546eec657e",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.8.10"
+              },
+              "icon": "lucide-book-up",
+              "title": "Release Notes 1.8.10"
+            }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -171,7 +183,7 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "a5fd928d7ed9b2df",
+  "active": "fd52ca546eec657e",
   "lastOpenFiles": [
     "JMC Overview.md",
     "Scheduler.md",

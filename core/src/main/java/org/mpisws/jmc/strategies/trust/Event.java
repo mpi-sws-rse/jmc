@@ -89,9 +89,7 @@ public class Event {
         if (!(obj instanceof Event that)) {
             return false;
         }
-        return this.key.equals(that.key)
-                && this.type == that.type
-                && this.location.equals(that.location);
+        return this.key.equals(that.key) && this.type == that.type;
     }
 
     /**
@@ -308,6 +306,32 @@ public class Event {
             json.addProperty("taskId", taskId);
             json.addProperty("timestamp", timestamp);
             return json;
+        }
+
+        public int compareTo(Key key) {
+            if (taskId == null && key.taskId == null) {
+                return 0;
+            }
+            if (taskId == null) {
+                return -1;
+            }
+            if (key.taskId == null) {
+                return 1;
+            }
+            int cmp = taskId.compareTo(key.taskId);
+            if (cmp != 0) {
+                return cmp;
+            }
+            if (timestamp == null && key.timestamp == null) {
+                return 0;
+            }
+            if (timestamp == null) {
+                return -1;
+            }
+            if (key.timestamp == null) {
+                return 1;
+            }
+            return timestamp.compareTo(key.timestamp);
         }
     }
 

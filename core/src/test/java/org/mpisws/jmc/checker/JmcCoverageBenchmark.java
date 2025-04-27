@@ -1,7 +1,7 @@
 package org.mpisws.jmc.checker;
 
 import org.junit.jupiter.api.Test;
-import org.mpisws.jmc.programs.concurrent.CC1;
+import org.mpisws.jmc.programs.concurrent.CC7;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.trust.MeasureGraphCoverageStrategy;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
@@ -9,30 +9,35 @@ import org.mpisws.jmc.strategies.trust.TrustStrategy;
 public class JmcCoverageBenchmark {
     @Test
     public void benchmarkCorrectCounterTrust() {
-        JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder()
-                        .strategyConstructor(
-                                (sConfig) ->
-                                        new MeasureGraphCoverageStrategy(
-                                                new TrustStrategy(
-                                                        sConfig.getSeed(),
-                                                        sConfig.getTrustSchedulingPolicy(),
-                                                        sConfig.getDebug(),
-                                                        sConfig.getReportPath()),
-                                                sConfig.getDebug(),
-                                                sConfig.getReportPath() + "/trust"))
-                        .numIterations(100)
-                        .debug(true)
-                        .build();
-        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+        for (int i = 4; i < 5; i++) {
+            int finalI = i;
+            System.out.println("Running with i = " + i);
+            //            int iterations = (int) Math.pow(2, 2 * i + 1) + 10;
+            JmcCheckerConfiguration config =
+                    new JmcCheckerConfiguration.Builder()
+                            .strategyConstructor(
+                                    (sConfig) ->
+                                            new MeasureGraphCoverageStrategy(
+                                                    new TrustStrategy(
+                                                            sConfig.getSeed(),
+                                                            sConfig.getTrustSchedulingPolicy(),
+                                                            sConfig.getDebug(),
+                                                            sConfig.getReportPath()),
+                                                    false,
+                                                    sConfig.getReportPath() + "/trust-" + finalI))
+                            .numIterations(1000)
+                            .debug(false)
+                            .build();
+            JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
-        JmcTestTarget target =
-                new JmcFunctionalTestTarget(
-                        "TrustCC1",
-                        () -> {
-                            CC1.main(new String[0]);
-                        });
-        jmcModelChecker.check(target);
+            JmcTestTarget target =
+                    new JmcFunctionalTestTarget(
+                            "TrustCC1",
+                            () -> {
+                                CC7.main(new String[] {String.valueOf(finalI)});
+                            });
+            jmcModelChecker.check(target);
+        }
     }
 
     @Test
@@ -43,10 +48,10 @@ public class JmcCoverageBenchmark {
                                 (sConfig) ->
                                         new MeasureGraphCoverageStrategy(
                                                 new RandomSchedulingStrategy(sConfig.getSeed()),
-                                                sConfig.getDebug(),
+                                                false,
                                                 sConfig.getReportPath() + "/random"))
-                        .numIterations(100)
-                        .debug(true)
+                        .numIterations(1000)
+                        .debug(false)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
@@ -54,7 +59,7 @@ public class JmcCoverageBenchmark {
                 new JmcFunctionalTestTarget(
                         "TrustCC1",
                         () -> {
-                            CC1.main(new String[0]);
+                            CC7.main(new String[] {"4"});
                         });
         jmcModelChecker.check(target);
     }
