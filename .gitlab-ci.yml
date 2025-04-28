@@ -1,4 +1,4 @@
-image: gradle:alpine
+image: gradle:jdk17-alpine
 
 before_script:
   - GRADLE_USER_HOME="$(pwd)/.gradle"
