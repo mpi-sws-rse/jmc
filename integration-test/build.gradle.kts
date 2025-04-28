@@ -30,11 +30,9 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
 }
 
-tasks.build {
-    dependsOn(":agent:publishToMavenLocal")
-}
-
 tasks.register<Copy>("copyJar") {
+    dependsOn(":core:publishToMavenLocal")
+    dependsOn(":agent:publishToMavenLocal")
     from(agentDependencies.filter { it.name.contains("jmc-0.1.0") })
     into("src/main/resources/lib")
 }

@@ -24,9 +24,10 @@ public class SchedulingStrategyFactory {
      * @return the scheduling strategy
      */
     public static SchedulingStrategy createSchedulingStrategy(
-            String name, SchedulingStrategyConfiguration config) {
+            String name, SchedulingStrategyConfiguration config)
+            throws JmcInvalidStrategyException {
         if (!isValidStrategy(name)) {
-            throw new InvalidStrategyException("Invalid strategy: " + name);
+            throw new JmcInvalidStrategyException("Invalid strategy: " + name);
         }
         if (name.equals("random")) {
             return new RandomSchedulingStrategy(config.getSeed());

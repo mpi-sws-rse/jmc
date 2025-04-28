@@ -1,6 +1,7 @@
 package org.mpisws.jmc.checker;
 
 import org.junit.jupiter.api.Test;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.programs.atomic.counter.AtomicCounter;
 import org.mpisws.jmc.programs.complex.counter.ComplexCounter;
 import org.mpisws.jmc.programs.concurrent.*;
@@ -20,7 +21,6 @@ import org.mpisws.jmc.programs.futures.CompletableFutureP;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
 import org.mpisws.jmc.programs.random.counter.RandomCounterIncr;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
-import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.time.Duration;
 import java.util.ArrayList;

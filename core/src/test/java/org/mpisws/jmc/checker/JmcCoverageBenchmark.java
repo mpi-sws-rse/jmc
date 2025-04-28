@@ -1,7 +1,8 @@
 package org.mpisws.jmc.checker;
 
-import org.jetbrains.kotlin.ir.expressions.IrConstKind.Int;
 import org.junit.jupiter.api.Test;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerTimeoutException;
 import org.mpisws.jmc.programs.concurrent.CC7;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.trust.MeasureGraphCoverageStrategy;
@@ -47,6 +48,8 @@ public class JmcCoverageBenchmark {
                             });
             try {
                 jmcModelChecker.check(target);
+            } catch (JmcCheckerTimeoutException ignored) {
+
             } catch (JmcCheckerException e) {
                 System.out.println("Error: " + e.getMessage());
             }
@@ -71,7 +74,11 @@ public class JmcCoverageBenchmark {
                                             new MeasureGraphCoverageStrategy(
                                                     new RandomSchedulingStrategy(sConfig.getSeed()),
                                                     false,
-                                                    sConfig.getReportPath() + "/random-" + localI + "-" + timeout.toString(),
+                                                    sConfig.getReportPath()
+                                                            + "/random-"
+                                                            + localI
+                                                            + "-"
+                                                            + timeout.toString(),
                                                     Duration.of(5, ChronoUnit.MILLIS)))
                             .timeout(timeout)
                             .debug(false)
