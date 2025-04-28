@@ -130,7 +130,7 @@ public class JmcCheckerConfiguration {
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
             this.seed = System.nanoTime();
-            this.timeout = Duration.ofMinutes(10);
+            this.timeout = null;
         }
 
         public Builder numIterations(Integer numIterations) {

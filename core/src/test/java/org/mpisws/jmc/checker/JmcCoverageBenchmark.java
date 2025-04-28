@@ -14,7 +14,7 @@ import java.util.HashMap;
 
 public class JmcCoverageBenchmark {
     @Test
-    public void benchmarkCorrectCounterTrust() {
+    public void benchmarkCorrectCounterTrust() throws JmcCheckerException {
         HashMap<Integer, Duration> timeoutMap = new HashMap<>();
         timeoutMap.put(6, Duration.of(3, ChronoUnit.MINUTES));
         timeoutMap.put(7, Duration.of(10, ChronoUnit.MINUTES));
@@ -57,7 +57,7 @@ public class JmcCoverageBenchmark {
     }
 
     @Test
-    public void benchmarkCorrectCounterRandom() {
+    public void benchmarkCorrectCounterRandom() throws JmcCheckerException {
         HashMap<Integer, Duration> timeoutMap = new HashMap<>();
         timeoutMap.put(6, Duration.of(3, ChronoUnit.MINUTES));
         timeoutMap.put(7, Duration.of(10, ChronoUnit.MINUTES));
