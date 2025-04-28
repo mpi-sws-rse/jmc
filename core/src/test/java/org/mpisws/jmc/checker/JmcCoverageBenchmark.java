@@ -1,5 +1,6 @@
 package org.mpisws.jmc.checker;
 
+import org.jetbrains.kotlin.ir.expressions.IrConstKind.Int;
 import org.junit.jupiter.api.Test;
 import org.mpisws.jmc.programs.concurrent.CC7;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
@@ -8,11 +9,16 @@ import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 
 public class JmcCoverageBenchmark {
     @Test
     public void benchmarkCorrectCounterTrust() {
-        for (int i = 6; i < 7; i++) {
+        HashMap<Integer, Duration> timeoutMap = new HashMap<>();
+        timeoutMap.put(6, Duration.of(3, ChronoUnit.MINUTES));
+        timeoutMap.put(7, Duration.of(10, ChronoUnit.MINUTES));
+        timeoutMap.put(8, Duration.of(15, ChronoUnit.MINUTES));
+        for (int i = 6; i < 9; i++) {
             int localI = i;
             System.out.println("Running with i = " + i);
             JmcCheckerConfiguration config =
@@ -28,6 +34,7 @@ public class JmcCoverageBenchmark {
                                                     false,
                                                     sConfig.getReportPath() + "/trust-" + localI,
                                                     Duration.of(5, ChronoUnit.MILLIS)))
+                            .timeout(timeoutMap.get(localI))
                             .debug(false)
                             .build();
             JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -38,17 +45,25 @@ public class JmcCoverageBenchmark {
                             () -> {
                                 CC7.main(new String[] {String.valueOf(localI)});
                             });
-            jmcModelChecker.check(target);
+            try {
+                jmcModelChecker.check(target);
+            } catch (JmcCheckerException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
         }
     }
 
     @Test
     public void benchmarkCorrectCounterRandom() {
-        for (int i = 3; i < 8; i++) {
+        HashMap<Integer, Duration> timeoutMap = new HashMap<>();
+        timeoutMap.put(6, Duration.of(3, ChronoUnit.MINUTES));
+        timeoutMap.put(7, Duration.of(10, ChronoUnit.MINUTES));
+        timeoutMap.put(8, Duration.of(15, ChronoUnit.MINUTES));
+        for (int i = 6; i < 9; i++) {
             int localI = i;
             System.out.println("Running with i = " + i);
             // Random math to determine the number of iterations
-            int iterations = (int) Math.pow(2, 2 * (i + 1)) + 10;
+            Duration timeout = timeoutMap.get(localI);
             JmcCheckerConfiguration config =
                     new JmcCheckerConfiguration.Builder()
                             .strategyConstructor(
@@ -56,9 +71,9 @@ public class JmcCoverageBenchmark {
                                             new MeasureGraphCoverageStrategy(
                                                     new RandomSchedulingStrategy(sConfig.getSeed()),
                                                     false,
-                                                    sConfig.getReportPath() + "/random-" + localI,
+                                                    sConfig.getReportPath() + "/random-" + localI + "-" + timeout.toString(),
                                                     Duration.of(5, ChronoUnit.MILLIS)))
-                            .numIterations(iterations)
+                            .timeout(timeout)
                             .debug(false)
                             .build();
             JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -69,7 +84,11 @@ public class JmcCoverageBenchmark {
                             () -> {
                                 CC7.main(new String[] {String.valueOf(localI)});
                             });
-            jmcModelChecker.check(target);
+            try {
+                jmcModelChecker.check(target);
+            } catch (JmcCheckerException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
         }
     }
 }

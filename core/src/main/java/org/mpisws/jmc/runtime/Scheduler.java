@@ -130,7 +130,7 @@ public class Scheduler {
                 }
             } catch (TaskNotExists e) {
                 LOGGER.error("Resuming a non existent task: {}", e.getMessage());
-                System.exit(1);
+                throw HaltExecutionException.error(e.getMessage());
             }
         }
     }

@@ -123,7 +123,7 @@ public class JmcRuntime {
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Yielding an already paused task.");
-            System.exit(1);
+            throw HaltExecutionException.error("Yielding an already paused task.");
         }
         return wait(currentTask);
     }
@@ -143,7 +143,7 @@ public class JmcRuntime {
             scheduler.yield(taskId);
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Yielding an already paused task.");
-            System.exit(1);
+            throw HaltExecutionException.error("Yielding an already paused task.");
         }
         wait(taskId);
     }
@@ -158,7 +158,7 @@ public class JmcRuntime {
             taskManager.pause(taskId);
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Current thread is already paused.");
-            System.exit(1);
+            throw HaltExecutionException.error("Current thread is already paused.");
         }
     }
 
@@ -188,7 +188,7 @@ public class JmcRuntime {
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Joining an already paused task.");
-            System.exit(1);
+            throw HaltExecutionException.error("Joining an already paused task.");
         }
         taskManager.terminate(taskId);
     }
@@ -202,7 +202,7 @@ public class JmcRuntime {
         Long currentTask = scheduler.currentTask();
         if (currentTask == null) {
             LOGGER.error("No current task.");
-            System.exit(1);
+            throw HaltExecutionException.error("No current task.");
         }
         return currentTask;
     }
