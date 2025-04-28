@@ -7,6 +7,8 @@ import org.mpisws.jmc.strategies.SchedulingStrategy;
 import org.mpisws.jmc.strategies.SchedulingStrategyConfiguration;
 import org.mpisws.jmc.strategies.SchedulingStrategyFactory;
 
+import java.time.Duration;
+
 public class JmcCheckerConfiguration {
     private Integer numIterations;
 
@@ -20,8 +22,9 @@ public class JmcCheckerConfiguration {
 
     private String reportPath;
 
-    private JmcCheckerConfiguration() {
-    }
+    private Duration timeout;
+
+    private JmcCheckerConfiguration() {}
 
     public Integer getNumIterations() {
         return numIterations;
@@ -49,6 +52,10 @@ public class JmcCheckerConfiguration {
 
     public void setSeed(Long seed) {
         this.seed = seed;
+    }
+
+    public Duration getTimeout() {
+        return timeout;
     }
 
     public boolean isCustomStrategy() {
@@ -98,9 +105,7 @@ public class JmcCheckerConfiguration {
                 .build();
     }
 
-    /**
-     * Builder for JmcCheckerConfiguration
-     */
+    /** Builder for JmcCheckerConfiguration */
     public static class Builder {
         private Integer numIterations;
 
@@ -111,6 +116,8 @@ public class JmcCheckerConfiguration {
         private boolean debug;
 
         private String reportPath;
+
+        private Duration timeout;
 
         private Long seed;
 
@@ -138,7 +145,8 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
-        public Builder strategyConstructor(SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor) {
+        public Builder strategyConstructor(
+                SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor) {
             this.strategyConstructor = strategyConstructor;
             return this;
         }
@@ -158,6 +166,11 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
+        public Builder timeout(Duration timeout) {
+            this.timeout = timeout;
+            return this;
+        }
+
         public JmcCheckerConfiguration build() {
             JmcCheckerConfiguration config = new JmcCheckerConfiguration();
             config.numIterations = numIterations;
@@ -167,6 +180,7 @@ public class JmcCheckerConfiguration {
             config.debug = debug;
             config.reportPath = reportPath;
             config.seed = seed;
+            config.timeout = timeout;
             return config;
         }
     }

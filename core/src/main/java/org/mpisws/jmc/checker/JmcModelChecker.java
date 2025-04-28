@@ -43,7 +43,11 @@ public class JmcModelChecker {
     public JmcModelCheckerReport check(JmcTestTarget target) {
         JmcRuntimeConfiguration runtimeConfig = config.toRuntimeConfiguration();
         JmcModelCheckerReport report = new JmcModelCheckerReport();
-        Long startTime = System.nanoTime();
+        Long startTime = System.currentTimeMillis();
+        Long timeoutMarker = 0L;
+        if (config.getTimeout() != null) {
+            timeoutMarker = startTime + config.getTimeout().toMillis();
+        }
         JmcRuntime.setup(runtimeConfig);
         int numIterations = config.getNumIterations();
         try {
@@ -77,6 +81,16 @@ public class JmcModelChecker {
                                     i, e.getMessage()));
                     LOGGER.error("Assertion error in iteration {}: {}", i, e.getMessage());
                     break;
+                } finally {
+                    long curTime = System.currentTimeMillis();
+                    if (timeoutMarker != 0L && curTime > timeoutMarker) {
+                        report.setErrorIteration(i);
+                        String errorMessage =
+                                String.format("Halting execution: %d due to timeout", i);
+                        report.setErrorMessage(errorMessage);
+                        LOGGER.debug(errorMessage);
+                        throw new HaltCheckerException(errorMessage);
+                    }
                 }
             }
         } catch (HaltCheckerException e) {

@@ -2,6 +2,7 @@ package org.mpisws.jmc.strategies.trust;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.*;
 import org.mpisws.jmc.strategies.SchedulingStrategy;
@@ -9,6 +10,7 @@ import org.mpisws.jmc.util.StringUtil;
 import org.mpisws.jmc.util.files.FileUtil;
 
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,8 +27,13 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     private final boolean debug;
     private final String recordPath;
 
+    private long timeStart;
+
     public MeasureGraphCoverageStrategy(
-            SchedulingStrategy schedulingStrategy, boolean debug, String recordPath) {
+            SchedulingStrategy schedulingStrategy,
+            boolean debug,
+            String recordPath,
+            Duration measuringFrequency) {
         this.schedulingStrategy = schedulingStrategy;
         this.simulator = new ExecutionGraphSimulator();
         this.visitedGraphs = new HashMap<>();
@@ -42,6 +49,9 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     @Override
     public void initIteration(int iteration, JmcModelCheckerReport report)
             throws HaltCheckerException {
+        if (iteration == 0) {
+            this.timeStart = System.currentTimeMillis();
+        }
         this.simulator.reset();
         this.schedulingStrategy.initIteration(iteration, report);
     }
@@ -61,13 +71,6 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     public void resetIteration(int iteration) {
         this.schedulingStrategy.resetIteration(iteration);
         ExecutionGraph executionGraph = simulator.getExecutionGraph();
-        if (schedulingStrategy.getClass() == TrustStrategy.class) {
-            ExecutionGraph underlyingExecutionGraph =
-                    ((TrustStrategy) schedulingStrategy).getExecutionGraph();
-            if (!executionGraph.equals(underlyingExecutionGraph)) {
-                executionGraph.equals(underlyingExecutionGraph);
-            }
-        }
         String json = executionGraph.toJsonStringIgnoreLocation();
         try {
             String hash = StringUtil.sha256Hash(json);
@@ -87,6 +90,8 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
     @Override
     public void teardown() {
+        Long timeDiff = System.currentTimeMillis() - timeStart;
+        Duration d = Duration.ofMillis(timeDiff);
         simulator.reset();
         schedulingStrategy.teardown();
         if (recordPath != null && !recordPath.isEmpty()) {
@@ -101,7 +106,10 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             for (int coverage : coverages) {
                 jsonArray.add(coverage);
             }
-            String json = gson.toJson(jsonArray);
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("time", d.toMillis());
+            jsonObject.add("coverage", jsonArray);
+            String json = gson.toJson(jsonObject);
             FileUtil.unsafeStoreToFile(Paths.get(recordPath, "coverage.json").toString(), json);
         }
     }

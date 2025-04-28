@@ -6,13 +6,16 @@ import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.trust.MeasureGraphCoverageStrategy;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
 public class JmcCoverageBenchmark {
     @Test
     public void benchmarkCorrectCounterTrust() {
-        for (int i = 4; i < 5; i++) {
-            int finalI = i;
+        for (int i = 3; i < 8; i++) {
+            int localI = i;
             System.out.println("Running with i = " + i);
-            //            int iterations = (int) Math.pow(2, 2 * i + 1) + 10;
+            int iterations = (int) Math.pow(2, 2 * (i + 1)) + 10;
             JmcCheckerConfiguration config =
                     new JmcCheckerConfiguration.Builder()
                             .strategyConstructor(
@@ -24,8 +27,9 @@ public class JmcCoverageBenchmark {
                                                             sConfig.getDebug(),
                                                             sConfig.getReportPath()),
                                                     false,
-                                                    sConfig.getReportPath() + "/trust-" + finalI))
-                            .numIterations(1000)
+                                                    sConfig.getReportPath() + "/trust-" + localI,
+                                                    Duration.of(5, ChronoUnit.MILLIS)))
+                            .numIterations(iterations)
                             .debug(false)
                             .build();
             JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -34,7 +38,7 @@ public class JmcCoverageBenchmark {
                     new JmcFunctionalTestTarget(
                             "TrustCC1",
                             () -> {
-                                CC7.main(new String[] {String.valueOf(finalI)});
+                                CC7.main(new String[] {String.valueOf(localI)});
                             });
             jmcModelChecker.check(target);
         }
@@ -42,25 +46,32 @@ public class JmcCoverageBenchmark {
 
     @Test
     public void benchmarkCorrectCounterRandom() {
-        JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder()
-                        .strategyConstructor(
-                                (sConfig) ->
-                                        new MeasureGraphCoverageStrategy(
-                                                new RandomSchedulingStrategy(sConfig.getSeed()),
-                                                false,
-                                                sConfig.getReportPath() + "/random"))
-                        .numIterations(1000)
-                        .debug(false)
-                        .build();
-        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+        for (int i = 3; i < 8; i++) {
+            int localI = i;
+            System.out.println("Running with i = " + i);
+            // Random math to determine the number of iterations
+            int iterations = (int) Math.pow(2, 2 * (i + 1)) + 10;
+            JmcCheckerConfiguration config =
+                    new JmcCheckerConfiguration.Builder()
+                            .strategyConstructor(
+                                    (sConfig) ->
+                                            new MeasureGraphCoverageStrategy(
+                                                    new RandomSchedulingStrategy(sConfig.getSeed()),
+                                                    false,
+                                                    sConfig.getReportPath() + "/random-" + localI,
+                                                    Duration.of(5, ChronoUnit.MILLIS)))
+                            .numIterations(iterations)
+                            .debug(false)
+                            .build();
+            JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
-        JmcTestTarget target =
-                new JmcFunctionalTestTarget(
-                        "TrustCC1",
-                        () -> {
-                            CC7.main(new String[] {"4"});
-                        });
-        jmcModelChecker.check(target);
+            JmcTestTarget target =
+                    new JmcFunctionalTestTarget(
+                            "TrustCC1",
+                            () -> {
+                                CC7.main(new String[] {String.valueOf(localI)});
+                            });
+            jmcModelChecker.check(target);
+        }
     }
 }
