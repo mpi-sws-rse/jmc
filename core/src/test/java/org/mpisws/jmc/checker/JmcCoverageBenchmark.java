@@ -12,10 +12,9 @@ import java.time.temporal.ChronoUnit;
 public class JmcCoverageBenchmark {
     @Test
     public void benchmarkCorrectCounterTrust() {
-        for (int i = 3; i < 8; i++) {
+        for (int i = 6; i < 7; i++) {
             int localI = i;
             System.out.println("Running with i = " + i);
-            int iterations = (int) Math.pow(2, 2 * (i + 1)) + 10;
             JmcCheckerConfiguration config =
                     new JmcCheckerConfiguration.Builder()
                             .strategyConstructor(
@@ -29,7 +28,6 @@ public class JmcCoverageBenchmark {
                                                     false,
                                                     sConfig.getReportPath() + "/trust-" + localI,
                                                     Duration.of(5, ChronoUnit.MILLIS)))
-                            .numIterations(iterations)
                             .debug(false)
                             .build();
             JmcModelChecker jmcModelChecker = new JmcModelChecker(config);

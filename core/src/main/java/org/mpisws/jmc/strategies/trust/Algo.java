@@ -192,7 +192,7 @@ public class Algo {
             LOGGER.debug("Exploration stack is empty. We are done with the exploration.");
             // We have reached the end of the exploration stack.
             // We should not be guiding the execution
-            throw new HaltCheckerException();
+            throw HaltCheckerException.ok();
         }
 
         /** Prepare guiding phase * */
@@ -228,7 +228,7 @@ public class Algo {
 
             if (explorationStack.isEmpty()) {
                 // We have reached the end of the exploration stack.
-                throw new HaltCheckerException();
+                throw HaltCheckerException.ok();
             }
 
             // Get the next exploration choice from the exploration stack.

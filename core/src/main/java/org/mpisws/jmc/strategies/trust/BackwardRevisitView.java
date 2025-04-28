@@ -36,7 +36,7 @@ public class BackwardRevisitView {
             this.read = this.graph.getEventNode(read.key());
             this.write = this.graph.getEventNode(write.key());
         } catch (NoSuchEventException ignored) {
-            throw new HaltCheckerException("The read or write event is not found.");
+            throw HaltCheckerException.error("The read or write event is not found.");
         }
     }
 
@@ -107,7 +107,8 @@ public class BackwardRevisitView {
                                 "The read event does not have a valid rf event.");
                     }
                     nodeWrite = graph.getEventNode(writes.iterator().next());
-                    LOGGER.debug("Checking if the write event is CO maximal: " + nodeWrite.getEvent());
+                    LOGGER.debug(
+                            "Checking if the write event is CO maximal: " + nodeWrite.getEvent());
                 }
                 if (!previous.test(nodeWrite.key())) {
                     LOGGER.debug("The write event is not in the previous set");

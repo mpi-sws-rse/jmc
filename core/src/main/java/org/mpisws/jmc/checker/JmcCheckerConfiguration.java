@@ -122,7 +122,7 @@ public class JmcCheckerConfiguration {
         private Long seed;
 
         public Builder() {
-            this.numIterations = 1;
+            this.numIterations = 0;
             this.strategyType = "random";
             this.customStrategy = null;
             this.debug = false;

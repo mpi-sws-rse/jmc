@@ -27,7 +27,7 @@ public class LockBackwardRevisitView {
             this.event = this.graph.getEventNode(event.key());
             this.revisitRead = this.graph.getEventNode(revisit.key());
         } catch (NoSuchEventException ignored) {
-            throw new HaltCheckerException("The event or revisit read is not found.");
+            throw HaltCheckerException.error("The event or revisit read is not found.");
         }
     }
 
@@ -54,14 +54,14 @@ public class LockBackwardRevisitView {
         // Note: not sure if this is sufficient, need to verify
         Set<Event.Key> writes = this.revisitRead.getPredecessors(Relation.ReadsFrom);
         if (writes.size() != 1) {
-            throw new HaltCheckerException("The read event does not have a valid rf event.");
+            throw HaltCheckerException.error("The read event does not have a valid rf event.");
         }
         try {
             ExecutionGraphNode write = this.graph.getEventNode(writes.iterator().next());
             this.graph.changeReadsFrom(this.event, write);
             this.graph.recomputeVectorClocks();
         } catch (NoSuchEventException e) {
-            throw new HaltCheckerException("The write of the revisit read is not found.");
+            throw HaltCheckerException.error("The write of the revisit read is not found.");
         }
         return !this.revisitRead.happensBefore(this.event);
     }
@@ -73,7 +73,7 @@ public class LockBackwardRevisitView {
      */
     public ExecutionGraph getRestrictedGraph() {
         // Remove all events before the read and then add the revisit read, blocking the task
-        //this.graph.restrictTo(this.event);
+        // this.graph.restrictTo(this.event);
         this.graph.restrict(this.event);
         this.graph.addEvent(this.revisitRead.getEvent());
         return this.graph;

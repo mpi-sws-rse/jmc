@@ -22,6 +22,7 @@ import org.mpisws.jmc.programs.random.counter.RandomCounterIncr;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -472,6 +473,26 @@ public class JmcModelCheckerTest {
                         () -> {
                             int size = 4;
                             CC7.main(new String[] {String.valueOf(size)});
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTimeout() {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("random")
+                        .numIterations(1000)
+                        .debug(true)
+                        .timeout(Duration.ofSeconds(1))
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "Timeout",
+                        () -> {
+                            CC7.main(new String[] {"6"});
                         });
         jmcModelChecker.check(target);
     }

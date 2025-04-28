@@ -51,9 +51,12 @@ public class JmcModelChecker {
         JmcRuntime.setup(runtimeConfig);
         int numIterations = config.getNumIterations();
         try {
-            for (int i = 0; i < numIterations; i++) {
+            int iteration = 0;
+            LOGGER.info("JMC checker started");
+            while (true) {
                 try {
-                    JmcRuntime.initIteration(i, report);
+                    LOGGER.info("Running iteration {}", iteration);
+                    JmcRuntime.initIteration(iteration, report);
                     target.invoke();
                     RuntimeEvent mainEndEvent =
                             new RuntimeEvent.Builder()
@@ -61,35 +64,42 @@ public class JmcModelChecker {
                                     .taskId(1L)
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
-                    JmcRuntime.resetIteration(i);
+                    JmcRuntime.resetIteration(iteration);
                 } catch (HaltTaskException e) {
                     LOGGER.debug(
                             "Halting execution: {} due to main thread halted: {}",
-                            i,
+                            iteration,
                             e.getMessage());
                     break;
                 } catch (HaltExecutionException e) {
-                    report.setErrorIteration(i);
+                    report.setErrorIteration(iteration);
                     report.setErrorMessage(e.getMessage());
-                    LOGGER.error("Halting execution: {} due to exception: {}", i, e.getMessage());
+                    LOGGER.error(
+                            "Halting execution: {} due to exception: {}",
+                            iteration,
+                            e.getMessage());
                     break;
                 } catch (AssertionError e) {
-                    report.setErrorIteration(i);
+                    report.setErrorIteration(iteration);
                     report.setErrorMessage(
                             String.format(
                                     "Halting execution: %d due to assertion error: %s",
-                                    i, e.getMessage()));
-                    LOGGER.error("Assertion error in iteration {}: {}", i, e.getMessage());
+                                    iteration, e.getMessage()));
+                    LOGGER.error("Assertion error in iteration {}: {}", iteration, e.getMessage());
                     break;
                 } finally {
+                    iteration++;
+                    if (numIterations != 0 && iteration >= numIterations) {
+                        throw HaltCheckerException.ok();
+                    }
                     long curTime = System.currentTimeMillis();
                     if (timeoutMarker != 0L && curTime > timeoutMarker) {
-                        report.setErrorIteration(i);
+                        report.setErrorIteration(iteration);
                         String errorMessage =
-                                String.format("Halting execution: %d due to timeout", i);
+                                String.format("Halting execution: %d due to timeout", iteration);
                         report.setErrorMessage(errorMessage);
                         LOGGER.debug(errorMessage);
-                        throw new HaltCheckerException(errorMessage);
+                        throw HaltCheckerException.error(errorMessage);
                     }
                 }
             }

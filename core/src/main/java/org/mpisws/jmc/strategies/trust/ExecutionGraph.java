@@ -335,7 +335,7 @@ public class ExecutionGraph {
             vectorClock = lastNodePO.getVectorClock();
         }
         if (EventUtils.isBlockingLabel(lastNodePO.getEvent())) {
-            throw new HaltCheckerException("A blocking label is followed by an event.");
+            throw HaltCheckerException.error("A blocking label is followed by an event.");
         }
         ExecutionGraphNode node = new ExecutionGraphNode(event, vectorClock);
 
@@ -483,15 +483,15 @@ public class ExecutionGraph {
      */
     public void unBlockTask(Long taskId) throws HaltCheckerException {
         if (taskId == null || taskId > taskEvents.size()) {
-            throw new HaltCheckerException("Invalid Task ID.");
+            throw HaltCheckerException.error("Invalid Task ID.");
         }
         List<ExecutionGraphNode> curTaskEvents = taskEvents.get(Math.toIntExact(taskId));
         if (curTaskEvents.isEmpty()) {
-            throw new HaltCheckerException("The task is not blocked.");
+            throw HaltCheckerException.error("The task is not blocked.");
         }
         ExecutionGraphNode blockNode = curTaskEvents.get(curTaskEvents.size() - 1);
         if (blockNode.getEvent().getType() != Event.Type.LOCK_AWAIT) {
-            throw new HaltCheckerException("The task cannot be unblocked.");
+            throw HaltCheckerException.error("The task cannot be unblocked.");
         }
         curTaskEvents.remove(curTaskEvents.size() - 1);
         ExecutionGraphNode last = curTaskEvents.get(curTaskEvents.size() - 1);
@@ -730,7 +730,7 @@ public class ExecutionGraph {
         BackwardRevisitView restrictedView = new BackwardRevisitView(this, read, write);
         Integer readToIndex = read.getEvent().getToStamp();
         if (readToIndex == null) {
-            throw new HaltCheckerException("The read event is not found in the TO order.");
+            throw HaltCheckerException.error("The read event is not found in the TO order.");
         }
 
         // The following loop computes the elements of the deleted set.
@@ -784,7 +784,7 @@ public class ExecutionGraph {
         // Update the coherency order
         Integer location = write1.getEvent().getLocation();
         if (!write2.getEvent().getLocation().equals(location)) {
-            throw new HaltCheckerException("The write events are not to the same location.");
+            throw HaltCheckerException.error("The write events are not to the same location.");
         }
 
         List<ExecutionGraphNode> oldWrites = coherencyOrder.get(location);
@@ -839,7 +839,7 @@ public class ExecutionGraph {
         List<ExecutionGraphNode> writesAfter = splitNodesBefore(write, allWrites);
         if (writesAfter.isEmpty()) {
             // Bug! There should at least be the init
-            throw new HaltCheckerException("No writes after the given write event.");
+            throw HaltCheckerException.error("No writes after the given write event.");
         }
         writesAfter.remove(writesAfter.size() - 1); // removing the only porf-prefix write
         if (writesAfter.isEmpty()) {
@@ -868,14 +868,14 @@ public class ExecutionGraph {
     public void changeReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
         Set<Event.Key> writes = read.getPredecessors(Relation.ReadsFrom);
         if (writes.size() != 1) {
-            throw new HaltCheckerException("A read has more than one RF back edge.");
+            throw HaltCheckerException.error("A read has more than one RF back edge.");
         }
         try {
             ExecutionGraphNode previousWrite = getEventNode(writes.iterator().next());
             previousWrite.removeEdge(read, Relation.ReadsFrom);
             write.addEdge(read, Relation.ReadsFrom);
         } catch (NoSuchEventException e) {
-            throw new HaltCheckerException("The previous write event is not found.");
+            throw HaltCheckerException.error("The previous write event is not found.");
         }
     }
 
@@ -931,7 +931,7 @@ public class ExecutionGraph {
                 }
             }
             if (node == null) {
-                throw new HaltCheckerException("The restricting node is not in all events");
+                throw HaltCheckerException.error("The restricting node is not in all events");
             }
 
             // Collect the location of the write event
@@ -947,14 +947,14 @@ public class ExecutionGraph {
             // Each event is the taskEvents which holds the key must be removed
             int task = Math.toIntExact(key.getTaskId());
             if (task >= taskEvents.size()) {
-                throw new HaltCheckerException("The restricting node is not in task events");
+                throw HaltCheckerException.error("The restricting node is not in task events");
             }
             taskEvents.get(task).removeIf((event) -> event.key().equals(key));
 
             // Each event in the coherencyOrder which holds the key must be removed
             Integer location = node.getEvent().getLocation();
             if (!coherencyOrder.containsKey(location)) {
-                throw new HaltCheckerException("The restricting node is not in coherency order");
+                throw HaltCheckerException.error("The restricting node is not in coherency order");
             }
             coherencyOrder.get(location).removeIf((e) -> e.key() == key);
         }
@@ -986,7 +986,7 @@ public class ExecutionGraph {
 
     private void recomputeCoEdges(Integer location, List<ExecutionGraphNode> oldWrites) {
         if (!coherencyOrder.containsKey(location)) {
-            throw new HaltCheckerException("The location is not in the coherency order");
+            throw HaltCheckerException.error("The location is not in the coherency order");
         }
 
         if (coherencyOrder.get(location).size() == 1) {
@@ -1015,13 +1015,13 @@ public class ExecutionGraph {
             }
             Set<Event.Key> poPredecessors = iterNode.getPredecessors(Relation.ProgramOrder);
             if (poPredecessors.size() != 1) {
-                throw new HaltCheckerException("A node has more than one or no PO predecessor");
+                throw HaltCheckerException.error("A node has more than one or no PO predecessor");
             }
             try {
                 ExecutionGraphNode lastPONode = getEventNode(poPredecessors.iterator().next());
                 iterNode.recomputeVectorClock(lastPONode, this::getEventNode);
             } catch (NoSuchEventException e) {
-                throw new HaltCheckerException(e.getMessage());
+                throw HaltCheckerException.error(e.getMessage());
             }
         }
     }
@@ -1035,7 +1035,7 @@ public class ExecutionGraph {
         // Insertion order )
         int indexRestrictingNode = allEvents.indexOf(restrictingNode);
         if (indexRestrictingNode == -1) {
-            throw new HaltCheckerException("The restricting node is not found.");
+            throw HaltCheckerException.error("The restricting node is not found.");
         }
         List<ExecutionGraphNode> removedNodes =
                 allEvents.subList(indexRestrictingNode + 1, allEvents.size());
@@ -1055,7 +1055,7 @@ public class ExecutionGraph {
             Integer location = node.getEvent().getLocation();
 
             if (!coherencyOrder.containsKey(location)) {
-                throw new HaltCheckerException("The restricting node is not in coherency order");
+                throw HaltCheckerException.error("The restricting node is not in coherency order");
             }
 
             coherencyOrder.get(location).removeIf((e) -> e.key() == node.key());
@@ -1063,7 +1063,7 @@ public class ExecutionGraph {
             // Removing from taskEvents
             int task = Math.toIntExact(node.getEvent().getTaskId());
             if (task >= taskEvents.size()) {
-                throw new HaltCheckerException("The restricting node is not in task events");
+                throw HaltCheckerException.error("The restricting node is not in task events");
             }
             taskEvents.get(task).removeIf((e) -> e.key() == node.key());
         }
@@ -1088,8 +1088,7 @@ public class ExecutionGraph {
 
         // Recompute the co-edges
         // TODO :: This approach is not efficient and must be revisited
-        for (Map.Entry<Integer, List<ExecutionGraphNode>> entry :
-                modifiedLocations.entrySet()) {
+        for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : modifiedLocations.entrySet()) {
             recomputeCoEdges(entry.getKey(), entry.getValue());
         }
 
@@ -1264,12 +1263,12 @@ public class ExecutionGraph {
             Set<Event.Key> predecessors = node.getPredecessors(Relation.ReadsFrom);
             if (predecessors.isEmpty()) {
                 // No read event can have null read-from predecessor
-                throw new HaltCheckerException("The read event has no read-from predecessor");
+                throw HaltCheckerException.error("The read event has no read-from predecessor");
             }
 
             if (predecessors.size() > 1) {
                 // A read event can have only one read-from predecessor
-                throw new HaltCheckerException(
+                throw HaltCheckerException.error(
                         "The read event has more than one read-from predecessor");
             }
 

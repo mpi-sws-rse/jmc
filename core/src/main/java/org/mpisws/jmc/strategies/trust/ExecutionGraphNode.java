@@ -303,7 +303,7 @@ public class ExecutionGraphNode {
             }
             vectorClock = newVectorClock;
         } catch (NoSuchEventException e) {
-            throw new HaltCheckerException(e.getMessage());
+            throw HaltCheckerException.error(e.getMessage());
         }
     }
 
