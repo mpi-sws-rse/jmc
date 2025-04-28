@@ -12,6 +12,7 @@ import org.mpisws.jmc.strategies.SchedulingStrategy;
 import org.mpisws.jmc.util.StringUtil;
 import org.mpisws.jmc.util.files.FileUtil;
 
+import java.io.FileOutputStream;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -22,8 +23,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
-    private static final Logger LOGGER =
-            LogManager.getLogger(MeasureGraphCoverageStrategy.class);
+    private static final Logger LOGGER = LogManager.getLogger(MeasureGraphCoverageStrategy.class);
 
     private final ExecutionGraphSimulator simulator;
 
@@ -34,6 +34,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
     private final boolean debug;
     private final String recordPath;
+    private final boolean recordGraphs;
 
     private long timeStart;
 
@@ -41,13 +42,14 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             SchedulingStrategy schedulingStrategy,
             boolean debug,
             String recordPath,
+            boolean recordGraphs,
             Duration measuringFrequency) {
         this.schedulingStrategy = schedulingStrategy;
         this.simulator = new ExecutionGraphSimulator();
         this.visitedGraphs = new ConcurrentHashMap<>();
-        this.measuringThread =
-                new MeasuringThread(this, measuringFrequency);
+        this.measuringThread = new MeasuringThread(this, measuringFrequency);
         this.recordPath = recordPath;
+        this.recordGraphs = recordGraphs;
         this.debug = debug;
 
         if (recordPath != null && !recordPath.isEmpty()) {
@@ -62,8 +64,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         private final List<Integer> coverages;
         private final CompletableFuture<Void> future;
 
-        public MeasuringThread(
-                MeasureGraphCoverageStrategy strategy, Duration measuringFrequency) {
+        public MeasuringThread(MeasureGraphCoverageStrategy strategy, Duration measuringFrequency) {
             this.strategy = strategy;
             this.measuringFrequency = measuringFrequency;
             this.coverages = new ArrayList<>();
@@ -147,12 +148,25 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         simulator.reset();
         schedulingStrategy.teardown();
         if (recordPath != null && !recordPath.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            for (HashMap.Entry<String, Integer> entry : visitedGraphs.entrySet()) {
-                sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+            if (recordGraphs) {
+                FileOutputStream fileOutputStream =
+                        FileUtil.unsafeCreateFile(
+                                Paths.get(recordPath, "hash_coverage.txt").toString());
+                for (HashMap.Entry<String, Integer> entry : visitedGraphs.entrySet()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+                    try {
+                        fileOutputStream.write(sb.toString().getBytes());
+                    } catch (Exception e) {
+                        LOGGER.error("Error while writing to file", e);
+                    }
+                }
+                try {
+                    fileOutputStream.close();
+                } catch (Exception e) {
+                    LOGGER.error("Error while closing file output stream", e);
+                }
             }
-            FileUtil.unsafeStoreToFile(
-                    Paths.get(recordPath, "hash_coverage.txt").toString(), sb.toString());
             Gson gson = new Gson();
             List<Integer> coverages = measuringThread.getCoverages();
             JsonArray jsonArray = new JsonArray();

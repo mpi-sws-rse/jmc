@@ -34,6 +34,7 @@ public class JmcCoverageBenchmark {
                                                             sConfig.getReportPath()),
                                                     false,
                                                     sConfig.getReportPath() + "/trust-" + localI,
+                                                    false,
                                                     Duration.of(5, ChronoUnit.MILLIS)))
                             .timeout(timeoutMap.get(localI))
                             .debug(false)
@@ -79,6 +80,7 @@ public class JmcCoverageBenchmark {
                                                             + localI
                                                             + "-"
                                                             + timeout.toString(),
+                                                    true,
                                                     Duration.of(5, ChronoUnit.MILLIS)))
                             .timeout(timeout)
                             .debug(false)
