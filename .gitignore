@@ -259,4 +259,4 @@ bin/
 *.pyd
 __pycache__/
 venv/
-scripts/graph_vizualizer/http
+http/
