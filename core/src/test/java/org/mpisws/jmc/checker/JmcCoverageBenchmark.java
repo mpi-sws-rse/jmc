@@ -48,7 +48,7 @@ public class JmcCoverageBenchmark {
                                                                         + "/trust-"
                                                                         + threads)
                                                         .withFrequency(
-                                                                Duration.of(100, ChronoUnit.MILLIS))
+                                                                Duration.of(1, ChronoUnit.SECONDS))
                                                         .build()))
                         .timeout(timeout)
                         .debug(false)
@@ -89,7 +89,7 @@ public class JmcCoverageBenchmark {
                                                                         + "-"
                                                                         + timeout.toString())
                                                         .withFrequency(
-                                                                Duration.of(100, ChronoUnit.MILLIS))
+                                                                Duration.of(1, ChronoUnit.SECONDS))
                                                         .build()))
                         .timeout(timeout)
                         .debug(false)

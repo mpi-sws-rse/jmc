@@ -62,6 +62,7 @@ public class JmcModelChecker {
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
                     JmcRuntime.resetIteration(iteration);
+                    System.gc();
                 } catch (HaltTaskException e) {
                     LOGGER.debug(
                             "Halting execution: {} due to main thread halted: {}",
