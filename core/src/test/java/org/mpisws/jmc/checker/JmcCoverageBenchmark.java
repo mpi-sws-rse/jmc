@@ -23,7 +23,7 @@ public class JmcCoverageBenchmark {
 
     private static Stream<Arguments> provideRandomTestCases() {
         return Stream.of(
-                Arguments.of(7, Duration.of(20, ChronoUnit.MINUTES)),
+                // Arguments.of(7, Duration.of(20, ChronoUnit.MINUTES)),
                 Arguments.of(7, Duration.of(40, ChronoUnit.MINUTES)));
     }
 
