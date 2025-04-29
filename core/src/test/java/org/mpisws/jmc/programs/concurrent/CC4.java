@@ -4,12 +4,26 @@ import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 import org.mpisws.jmc.util.concurrent.JmcThread;
 
-public class ConcurrentCounter {
+public class CC4 {
+
     public static class Value {
         public int count = 0;
 
         public Value() {
             count = 0;
+            RuntimeEvent event =
+                    new RuntimeEvent.Builder()
+                            .type(RuntimeEvent.Type.WRITE_EVENT)
+                            .taskId(JmcRuntime.currentTask())
+                            .param("newValue", 0)
+                            .param(
+                                    "owner",
+                                    "org/mpisws/jmc/programs/concurrent/Counter$Value")
+                            .param("name", "count")
+                            .param("descriptor", "I")
+                            .param("instance", this)
+                            .build();
+            JmcRuntime.updateEventAndYield(event);
         }
 
         public void set(int newValue) {
@@ -52,7 +66,7 @@ public class ConcurrentCounter {
     }
 
     public static void main(String[] args) {
-        Value counter = new Value();
+        CC0.Value counter = new CC0.Value();
         JmcThread thread1 =
                 new JmcThread(
                         () -> {

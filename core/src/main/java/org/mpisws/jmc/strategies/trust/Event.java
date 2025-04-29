@@ -6,9 +6,7 @@ import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Represents an event object used by the algorithm.
- */
+/** Represents an event object used by the algorithm. */
 public class Event {
     private Integer location;
     private final Key key;
@@ -18,9 +16,9 @@ public class Event {
     /**
      * Creates a new event with the given task ID, location, and type.
      *
-     * @param taskId   The task ID.
+     * @param taskId The task ID.
      * @param location The location.
-     * @param type     The type.
+     * @param type The type.
      */
     public Event(Long taskId, Integer location, Type type) {
         this.location = location;
@@ -56,6 +54,18 @@ public class Event {
         return json;
     }
 
+    public JsonElement toJsonIgnoreLocation() {
+        JsonObject json = new JsonObject();
+        json.add("key", key.toJson());
+        json.addProperty("type", type.toString());
+        JsonObject attributesJson = new JsonObject();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            attributesJson.addProperty(entry.getKey(), entry.getValue().toString());
+        }
+        json.add("attributes", attributesJson);
+        return json;
+    }
+
     /**
      * Returns the attribute of the event with the given key in the type T.
      *
@@ -79,14 +89,13 @@ public class Event {
         if (!(obj instanceof Event that)) {
             return false;
         }
-        return this.key.equals(that.key) && this.type == that.type
-                && this.location.equals(that.location);
+        return this.key.equals(that.key) && this.type == that.type;
     }
-    
+
     /**
      * Sets the attribute of the event with the given key and value.
      *
-     * @param key   The key of the attribute.
+     * @param key The key of the attribute.
      * @param value The value of the attribute.
      */
     public void setAttribute(String key, Object value) {
@@ -203,9 +212,7 @@ public class Event {
         return attributes.containsKey(key);
     }
 
-    /**
-     * Represents the type of the event according to the algorithm.
-     */
+    /** Represents the type of the event according to the algorithm. */
     public enum Type {
         READ,
         READ_EX,
@@ -219,9 +226,7 @@ public class Event {
         NOOP,
     }
 
-    /**
-     * Unique key for the event.
-     */
+    /** Unique key for the event. */
     public static class Key {
         // The task to which the event belongs to
         private final Long taskId;
@@ -302,6 +307,32 @@ public class Event {
             json.addProperty("timestamp", timestamp);
             return json;
         }
+
+        public int compareTo(Key key) {
+            if (taskId == null && key.taskId == null) {
+                return 0;
+            }
+            if (taskId == null) {
+                return -1;
+            }
+            if (key.taskId == null) {
+                return 1;
+            }
+            int cmp = taskId.compareTo(key.taskId);
+            if (cmp != 0) {
+                return cmp;
+            }
+            if (timestamp == null && key.timestamp == null) {
+                return 0;
+            }
+            if (timestamp == null) {
+                return -1;
+            }
+            if (key.timestamp == null) {
+                return 1;
+            }
+            return timestamp.compareTo(key.timestamp);
+        }
     }
 
     /**
@@ -313,14 +344,28 @@ public class Event {
         return type == Type.INIT;
     }
 
+    public boolean isRead() {
+        return type == Type.READ;
+    }
+
+    public boolean isWrite() {
+        return type == Type.WRITE;
+    }
+
+    public boolean isReadEx() {
+        return type == Type.READ_EX;
+    }
+
+    public boolean isWriteEx() {
+        return type == Type.WRITE_EX;
+    }
+
     @Override
     public String toString() {
         return "Event(" + type.toString() + ")" + key;
     }
 
-    /**
-     * A generic event predicate.
-     */
+    /** A generic event predicate. */
     @FunctionalInterface
     public interface EventPredicate {
         /**

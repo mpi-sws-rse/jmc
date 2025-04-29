@@ -99,7 +99,7 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
         }
 
         @Override
-        public void setSeed(long seed) {
+        public synchronized void setSeed(long seed) {
             super.setSeed(seed);
             this.seed = new AtomicLong(initialScramble(seed));
         }

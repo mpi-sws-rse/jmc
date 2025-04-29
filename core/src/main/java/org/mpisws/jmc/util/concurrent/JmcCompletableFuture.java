@@ -5,10 +5,17 @@ import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 public class JmcCompletableFuture<T> extends CompletableFuture<T> {
-    static final Executor executor = new JmcExecutorService(2);
+    private static final JmcExecutorService executor = new JmcExecutorService(2);
+
+    private JmcFuture<T> underlyingFuture;
 
     public JmcCompletableFuture() {
         super();
+        this.underlyingFuture = null;
+    }
+
+    public void setUnderlyingFuture(JmcFuture<T> underlyingFuture) {
+        this.underlyingFuture = underlyingFuture;
     }
 
     @Override
@@ -22,17 +29,79 @@ public class JmcCompletableFuture<T> extends CompletableFuture<T> {
     }
 
     public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
-        return CompletableFuture.supplyAsync(supplier, executor);
+        return asyncSupplyStage(executor, supplier);
     }
 
     public static CompletableFuture<Void> runAsync(Runnable runnable) {
-        return CompletableFuture.runAsync(runnable, executor);
+        return runAsync(runnable, executor);
     }
 
-    // TODO: This is a realistic use case of time in executing tasks. Need to figure out how
-    //    to handle this.
-    //
-    //    public static Executor delayedExecutor() {
-    //        return new JmcExecutorService(2);
-    //    }
+    public static class JmcAsyncRunnable<T> implements Runnable {
+        private final Supplier<? extends T> supplier;
+        private final JmcCompletableFuture<T> future;
+        private final Runnable runnable;
+
+        public JmcAsyncRunnable(Supplier<? extends T> supplier, JmcCompletableFuture<T> future) {
+            this.supplier = supplier;
+            this.future = future;
+            this.runnable = null;
+        }
+
+        public void setUnderlyingFuture(JmcFuture<T> underlyingFuture) {
+            this.future.setUnderlyingFuture(underlyingFuture);
+        }
+
+        @Override
+        public void run() {
+            try {
+                if (supplier == null) {
+                    runnable.run();
+                    future.complete(null);
+                } else {
+                    future.complete(supplier.get());
+                }
+            } catch (Throwable ex) {
+                future.completeExceptionally(ex);
+            }
+        }
+    }
+
+    static <U> CompletableFuture<U> asyncSupplyStage(JmcExecutorService e, Supplier<U> f) {
+        if (f == null) throw new NullPointerException();
+        JmcCompletableFuture<U> d = new JmcCompletableFuture<>();
+        JmcFuture underlyingFuture =
+                e.submit(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    d.complete(f.get());
+                                } catch (Throwable ex) {
+                                    d.completeExceptionally(ex);
+                                }
+                            }
+                        });
+        d.setUnderlyingFuture(underlyingFuture);
+        return d;
+    }
+
+    static CompletableFuture<Void> asyncRunStage(JmcExecutorService e, Runnable f) {
+        if (f == null) throw new NullPointerException();
+        JmcCompletableFuture<Void> d = new JmcCompletableFuture<>();
+        JmcFuture underlyingFuture =
+                e.submit(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    f.run();
+                                    d.complete(null);
+                                } catch (Throwable ex) {
+                                    d.completeExceptionally(ex);
+                                }
+                            }
+                        });
+        d.setUnderlyingFuture(underlyingFuture);
+        return d;
+    }
 }

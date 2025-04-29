@@ -1,9 +1,10 @@
 package org.mpisws.jmc.checker;
 
 import org.junit.jupiter.api.Test;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.programs.atomic.counter.AtomicCounter;
 import org.mpisws.jmc.programs.complex.counter.ComplexCounter;
-import org.mpisws.jmc.programs.concurrent.ConcurrentCounter;
+import org.mpisws.jmc.programs.concurrent.*;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounter;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounterKt;
 import org.mpisws.jmc.programs.det.array.DetArray;
@@ -21,15 +22,15 @@ import org.mpisws.jmc.programs.futures.SimpleFuture;
 import org.mpisws.jmc.programs.random.counter.RandomCounterIncr;
 import org.mpisws.jmc.programs.mockKafka.ShareConsumerTest;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
-import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 public class JmcModelCheckerTest {
 
     @Test
-    void testRandomAtomicCounter() {
+    void testRandomAtomicCounter() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -45,7 +46,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomCorrectCounter() {
+    void testRandomCorrectCounter() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(100000).build();
 
@@ -62,7 +63,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomComplexCounter() {
+    void testRandomComplexCounter() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -78,7 +79,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDetArray() {
+    void testRandomDetArray() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -94,7 +95,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDetLoop() {
+    void testRandomDetLoop() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -110,7 +111,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDetLoopWithLock() {
+    void testRandomDetLoopWithLock() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -126,7 +127,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDetStack1() {
+    void testRandomDetStack1() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -142,7 +143,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDetStack2() {
+    void testRandomDetStack2() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -158,7 +159,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDetStack3() {
+    void testRandomDetStack3() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -174,7 +175,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDetStack14() {
+    void testRandomDetStack14() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -190,7 +191,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDetStack5() {
+    void testRandomDetStack5() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -206,7 +207,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDetStack6() {
+    void testRandomDetStack6() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -222,7 +223,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomDiningPhilosophers() {
+    void testRandomDiningPhilosophers() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(100).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -238,7 +239,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void benchmarkRandomDiningPhilosophers() {
+    void benchmarkRandomDiningPhilosophers() throws JmcCheckerException {
         List<Integer> iterations = List.of(100, 1000, 10000, 30000, 60000, 100000);
         List<JmcModelCheckerReport> reports = new ArrayList<>();
         for (int i : iterations) {
@@ -260,7 +261,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomBuggyCounter() {
+    void testRandomBuggyCounter() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -276,7 +277,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomCorrectCounterKt() {
+    void testRandomCorrectCounterKt() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(100).build();
 
@@ -293,7 +294,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomFutureSimple() {
+    void testRandomFutureSimple() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(100).build();
 
@@ -310,7 +311,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testCompletableFuture() {
+    void testCompletableFuture() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(100).build();
 
@@ -327,7 +328,7 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testRandomCounter() {
+    void testRandomCounter() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -343,26 +344,156 @@ public class JmcModelCheckerTest {
     }
 
     @Test
-    void testTrustConcurrentCounter() {
+    void testTrustCC0() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
-                        .strategyConstructor(
-                                (sConfig) ->
-                                        new TrustStrategy(
-                                                sConfig.getSeed(),
-                                                sConfig.getTrustSchedulingPolicy(),
-                                                sConfig.getDebug(),
-                                                sConfig.getReportPath()))
-                        .numIterations(10)
+                        .strategyType("trust")
+                        .numIterations(1000000)
                         .debug(true)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
                 new JmcFunctionalTestTarget(
-                        "TrustBuggyCounter",
+                        "TrustCC0",
                         () -> {
-                            ConcurrentCounter.main(new String[0]);
+                            int size = 1;
+                            CC0.main(new String[] {String.valueOf(size)});
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC1() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC1",
+                        () -> {
+                            CC1.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC2() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC2",
+                        () -> {
+                            CC2.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC3() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC3",
+                        () -> {
+                            CC3.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC4() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC4",
+                        () -> {
+                            CC4.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC5() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100)
+                        .debug(true)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC5",
+                        () -> {
+                            CC5.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCC7() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(1000)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCC7",
+                        () -> {
+                            int size = 4;
+                            CC7.main(new String[] {String.valueOf(size)});
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTimeout() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("random")
+                        .numIterations(1000)
+                        .debug(true)
+                        .timeout(Duration.ofSeconds(1))
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "Timeout",
+                        () -> {
+                            CC7.main(new String[] {"6"});
                         });
         jmcModelChecker.check(target);
     }

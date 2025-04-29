@@ -11,9 +11,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Represents a node in the execution graph.
- */
+/** Represents a node in the execution graph. */
 public class ExecutionGraphNode {
     // The event that this node represents.
     private final Event event;
@@ -62,9 +60,7 @@ public class ExecutionGraphNode {
         this.vectorClock = new LamportVectorClock(node.vectorClock.getVector());
     }
 
-    /**
-     * Constructs a new {@link ExecutionGraphNode} copying the given node.
-     */
+    /** Constructs a new {@link ExecutionGraphNode} copying the given node. */
     public ExecutionGraphNode clone() {
         return new ExecutionGraphNode(this);
     }
@@ -86,7 +82,7 @@ public class ExecutionGraphNode {
      * Adds an edge to this node. The edge is directed from this node to the given node with the
      * given adjacency.
      *
-     * @param to        The node to which the edge is directed.
+     * @param to The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void addEdge(ExecutionGraphNode to, Relation adjacency) {
@@ -102,7 +98,7 @@ public class ExecutionGraphNode {
      * given adjacency. The vector clock of this node is updated with the vector clock of the given
      * node (only if the relation is not CO).
      *
-     * @param from      The node from which the edge is directed.
+     * @param from The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void addBackEdge(ExecutionGraphNode from, Relation adjacency) {
@@ -121,7 +117,7 @@ public class ExecutionGraphNode {
      * <p>Note that removing an edge invalidates the vector clock of all descendants. The concern of
      * fixing the vector clocks is passed to the calling function.
      *
-     * @param to        The node to which the edge is directed.
+     * @param to The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void removeEdge(ExecutionGraphNode to, Relation adjacency) {
@@ -176,7 +172,7 @@ public class ExecutionGraphNode {
     /**
      * Removes the predecessor with the given adjacency from this node.
      *
-     * @param from      The node from which the edge is directed.
+     * @param from The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void removePredecessor(ExecutionGraphNode from, Relation adjacency) {
@@ -206,7 +202,7 @@ public class ExecutionGraphNode {
     /**
      * Removes the back edge with the given adjacency from this node.
      *
-     * @param from      The node from which the edge is directed.
+     * @param from The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void removeBackEdge(ExecutionGraphNode from, Relation adjacency) {
@@ -242,6 +238,17 @@ public class ExecutionGraphNode {
         return new HashSet<>(edges.get(adjacency));
     }
 
+    public Map<Relation, Set<Event.Key>> getEdges() {
+        return edges;
+    }
+
+    public boolean hasEdge(Event.Key to, Relation adjacency) {
+        if (!edges.containsKey(adjacency)) {
+            return false;
+        }
+        return edges.get(adjacency).contains(to);
+    }
+
     /**
      * Returns all the predecessors of this node.
      *
@@ -253,6 +260,10 @@ public class ExecutionGraphNode {
             neighbors.addAll(edge);
         }
         return neighbors;
+    }
+
+    public Map<Relation, Set<Event.Key>> getBackEdges() {
+        return backEdges;
     }
 
     /**
@@ -292,7 +303,7 @@ public class ExecutionGraphNode {
             }
             vectorClock = newVectorClock;
         } catch (NoSuchEventException e) {
-            throw new HaltCheckerException(e.getMessage());
+            throw HaltCheckerException.error(e.getMessage());
         }
     }
 
@@ -320,7 +331,7 @@ public class ExecutionGraphNode {
     /**
      * Adds an attribute to this node.
      *
-     * @param key   The key of the attribute.
+     * @param key The key of the attribute.
      * @param value The value of the attribute.
      */
     public void addAttribute(String key, Object value) {
@@ -368,6 +379,29 @@ public class ExecutionGraphNode {
         return json;
     }
 
+    public JsonElement toJsonIgnoreLocation() {
+        JsonObject json = new JsonObject();
+        json.add("event", event.toJsonIgnoreLocation());
+        JsonObject attributesObject = new JsonObject();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            json.addProperty(entry.getKey(), entry.getValue().toString());
+        }
+        json.add("attributes", attributesObject);
+        JsonObject edgesObject = new JsonObject();
+        for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+            if (entry.getValue().isEmpty()) {
+                continue;
+            }
+            JsonArray edgeArray = new JsonArray();
+            for (Event.Key key : entry.getValue()) {
+                edgeArray.add(key.toString());
+            }
+            edgesObject.add(entry.getKey().toString(), edgeArray);
+        }
+        json.add("edges", edgesObject);
+        return json;
+    }
+
     @FunctionalInterface
     public interface NodeProvider {
         ExecutionGraphNode get(Event.Key key) throws NoSuchEventException;
@@ -388,10 +422,16 @@ public class ExecutionGraphNode {
         if (this == other) {
             return true;
         }
-        if (this.edges.size() != other.edges.size()) {
-            return false;
-        }
         for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+            if (entry.getValue().isEmpty()) {
+                if (!other.edges.containsKey(entry.getKey())) {
+                    continue;
+                }
+                Set<Event.Key> otherEdges = other.edges.get(entry.getKey());
+                if (!otherEdges.isEmpty()) {
+                    return false;
+                }
+            }
             if (!other.edges.containsKey(entry.getKey())) {
                 return false;
             }

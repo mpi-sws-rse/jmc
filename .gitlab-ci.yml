@@ -1,4 +1,4 @@
-image: gradle:alpine
+image: gradle:jdk17-alpine
 
 before_script:
   - GRADLE_USER_HOME="$(pwd)/.gradle"
@@ -16,14 +16,35 @@ check:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-build:
+
+compile-agent:
   stage: build
-  script: ./gradlew --build-cache assemble
+  script: ./gradlew :agent:compileJava
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
     paths:
       - build
       - .gradle
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+compile-core:
+  stage: build
+  script: ./gradlew :core:compileJava
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+
+compile-integration-test:
+  stage: build
+  script: ./gradlew :integration-test:compileTestJava
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+
+

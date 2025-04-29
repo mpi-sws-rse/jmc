@@ -130,14 +130,14 @@ public class JmcExecutorService implements ExecutorService {
 
     /** Submits a callable task to the executor service. */
     @Override
-    public <T> Future<T> submit(Callable<T> callable) {
+    public <T> JmcFuture<T> submit(Callable<T> callable) {
         JmcFuture<T> future = new JmcFuture<>(callable, JmcRuntime.addNewTask());
         offer(future);
         return future;
     }
 
     @Override
-    public <T> Future<T> submit(Runnable runnable, T t) {
+    public <T> JmcFuture<T> submit(Runnable runnable, T t) {
         JmcFuture<T> future = null;
         if (runnable instanceof JmcThread thread) {
             future = new JmcFuture<>(thread, t);
@@ -150,7 +150,7 @@ public class JmcExecutorService implements ExecutorService {
     }
 
     @Override
-    public Future<?> submit(Runnable runnable) {
+    public JmcFuture<?> submit(Runnable runnable) {
         JmcFuture<?> future = null;
         if (runnable instanceof JmcThread jmcThread) {
             // If the runnable is already a JmcThread, reuse the taskId

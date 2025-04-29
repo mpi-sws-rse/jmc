@@ -1,11 +1,15 @@
 package org.mpisws.jmc.checker;
 
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.checker.exceptions.JmcInvalidConfigurationException;
 import org.mpisws.jmc.runtime.JmcRuntimeConfiguration;
-import org.mpisws.jmc.strategies.InvalidStrategyException;
+import org.mpisws.jmc.strategies.JmcInvalidStrategyException;
 import org.mpisws.jmc.strategies.SchedulingStrategy;
 import org.mpisws.jmc.strategies.SchedulingStrategyConfiguration;
 import org.mpisws.jmc.strategies.SchedulingStrategyFactory;
+
+import java.time.Duration;
 
 public class JmcCheckerConfiguration {
     private Integer numIterations;
@@ -20,8 +24,9 @@ public class JmcCheckerConfiguration {
 
     private String reportPath;
 
-    private JmcCheckerConfiguration() {
-    }
+    private Duration timeout;
+
+    private JmcCheckerConfiguration() {}
 
     public Integer getNumIterations() {
         return numIterations;
@@ -51,11 +56,15 @@ public class JmcCheckerConfiguration {
         this.seed = seed;
     }
 
+    public Duration getTimeout() {
+        return timeout;
+    }
+
     public boolean isCustomStrategy() {
         return customStrategy != null;
     }
 
-    public JmcRuntimeConfiguration toRuntimeConfiguration() throws InvalidStrategyException {
+    public JmcRuntimeConfiguration toRuntimeConfiguration() throws JmcInvalidStrategyException {
         SchedulingStrategy strategy;
         if (customStrategy != null) {
             strategy = customStrategy;
@@ -75,7 +84,7 @@ public class JmcCheckerConfiguration {
             }
         }
         if (strategy == null) {
-            throw new InvalidStrategyException("Strategy is null");
+            throw new JmcInvalidStrategyException("Strategy is null");
         }
         return new JmcRuntimeConfiguration.Builder()
                 .strategy(strategy)
@@ -85,9 +94,9 @@ public class JmcCheckerConfiguration {
     }
 
     public static JmcCheckerConfiguration fromAnnotation(JmcCheckConfiguration annotation)
-            throws InvalidStrategyException {
+            throws JmcCheckerException {
         if (!SchedulingStrategyFactory.isValidStrategy(annotation.strategy())) {
-            throw new InvalidStrategyException("Invalid strategy: " + annotation.strategy());
+            throw new JmcInvalidStrategyException("Invalid strategy: " + annotation.strategy());
         }
         return new Builder()
                 .numIterations(annotation.numIterations())
@@ -98,9 +107,7 @@ public class JmcCheckerConfiguration {
                 .build();
     }
 
-    /**
-     * Builder for JmcCheckerConfiguration
-     */
+    /** Builder for JmcCheckerConfiguration */
     public static class Builder {
         private Integer numIterations;
 
@@ -112,15 +119,18 @@ public class JmcCheckerConfiguration {
 
         private String reportPath;
 
+        private Duration timeout;
+
         private Long seed;
 
         public Builder() {
-            this.numIterations = 1;
+            this.numIterations = 0;
             this.strategyType = "random";
             this.customStrategy = null;
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
             this.seed = System.nanoTime();
+            this.timeout = null;
         }
 
         public Builder numIterations(Integer numIterations) {
@@ -138,7 +148,8 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
-        public Builder strategyConstructor(SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor) {
+        public Builder strategyConstructor(
+                SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor) {
             this.strategyConstructor = strategyConstructor;
             return this;
         }
@@ -158,7 +169,16 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
-        public JmcCheckerConfiguration build() {
+        public Builder timeout(Duration timeout) {
+            this.timeout = timeout;
+            return this;
+        }
+
+        public JmcCheckerConfiguration build() throws JmcInvalidConfigurationException {
+            if (numIterations == 0 && timeout == null) {
+                throw new JmcInvalidConfigurationException(
+                        "Either numIterations or timeout must be set");
+            }
             JmcCheckerConfiguration config = new JmcCheckerConfiguration();
             config.numIterations = numIterations;
             config.strategyType = strategyType;
@@ -167,6 +187,7 @@ public class JmcCheckerConfiguration {
             config.debug = debug;
             config.reportPath = reportPath;
             config.seed = seed;
+            config.timeout = timeout;
             return config;
         }
     }

@@ -1,5 +1,6 @@
 package org.mpisws.jmc.util.files;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,6 +15,19 @@ public class FileUtil {
         }
     }
 
+    public static FileOutputStream unsafeCreateFile(String path) {
+        try {
+            Path pPath = Paths.get(path);
+            if (Files.exists(pPath)) {
+                Files.delete(pPath);
+            }
+            return new FileOutputStream(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      * Ensure the path exists, creating it if it does not.
      *
@@ -25,13 +39,15 @@ public class FileUtil {
         try {
             Path pPath = Paths.get(path);
             if (Files.exists(pPath) && Files.isDirectory(pPath)) {
-                Files.list(pPath).forEach((p) -> {
-                    try {
-                        Files.delete(p);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
+                Files.list(pPath)
+                        .forEach(
+                                (p) -> {
+                                    try {
+                                        Files.delete(p);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                });
             }
             Files.deleteIfExists(pPath);
             Files.createDirectories(pPath);
