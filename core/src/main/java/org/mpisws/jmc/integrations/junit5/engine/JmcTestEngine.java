@@ -7,6 +7,7 @@ import org.junit.platform.engine.discovery.ClassSelector;
 import org.junit.platform.engine.discovery.ClasspathRootSelector;
 import org.junit.platform.engine.discovery.PackageSelector;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcClassTestDescriptor;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcEngineDescriptor;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcExecutableTestDescriptor;
@@ -47,7 +48,11 @@ public class JmcTestEngine implements TestEngine {
         request.getSelectorsByType(ClassSelector.class)
                 .forEach(
                         selector -> {
-                            appendTestsInClass(selector.getJavaClass(), engineDescriptor);
+                            try {
+                                appendTestsInClass(selector.getJavaClass(), engineDescriptor);
+                            } catch (JmcCheckerException e) {
+                                throw new RuntimeException(e);
+                            }
                         });
 
         return engineDescriptor;
@@ -57,7 +62,13 @@ public class JmcTestEngine implements TestEngine {
         ReflectionSupport.findAllClassesInClasspathRoot(
                         uri, IS_JMC_TEST_CONTAINER, name -> true) //
                 .stream() //
-                .map(aClass -> new JmcClassTestDescriptor(aClass, engineDescriptor)) //
+                .map(aClass -> {
+                    try {
+                        return new JmcClassTestDescriptor(aClass, engineDescriptor);
+                    } catch (JmcCheckerException e) {
+                        throw new RuntimeException(e);
+                    }
+                }) //
                 .forEach(engineDescriptor::addChild);
     }
 
@@ -65,11 +76,17 @@ public class JmcTestEngine implements TestEngine {
         ReflectionSupport.findAllClassesInPackage(
                         packageName, IS_JMC_TEST_CONTAINER, name -> true) //
                 .stream() //
-                .map(aClass -> new JmcClassTestDescriptor(aClass, engineDescriptor)) //
+                .map(aClass -> {
+                    try {
+                        return new JmcClassTestDescriptor(aClass, engineDescriptor);
+                    } catch (JmcCheckerException e) {
+                        throw new RuntimeException(e);
+                    }
+                }) //
                 .forEach(engineDescriptor::addChild);
     }
 
-    private void appendTestsInClass(Class<?> javaClass, TestDescriptor engineDescriptor) {
+    private void appendTestsInClass(Class<?> javaClass, TestDescriptor engineDescriptor) throws JmcCheckerException {
         if (AnnotationSupport.isAnnotated(javaClass, JmcCheckConfiguration.class)) {
             engineDescriptor.addChild(new JmcClassTestDescriptor(javaClass, engineDescriptor));
         } else {

@@ -1,14 +1,12 @@
 package org.mpisws.jmc.integrations.junit5.descriptors;
 
-import org.junit.platform.commons.util.AnnotationUtils;
 import org.junit.platform.commons.util.ReflectionUtils;
 import org.junit.platform.engine.TestDescriptor;
-import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.ClassSource;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
-import org.mpisws.jmc.annotations.Replay;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 
 
 import static org.junit.platform.commons.util.ReflectionUtils.HierarchyTraversalMode.TOP_DOWN;
@@ -17,18 +15,8 @@ public class JmcClassTestDescriptor extends AbstractTestDescriptor {
     private JmcCheckerConfiguration config;
     private Class<?> testClass;
 
-    public JmcClassTestDescriptor(UniqueId uniqueId, Class<?> testClass) {
-        super(uniqueId, JmcEngineDescriptor.ENGINE_DISPLAY_NAME);
-        this.testClass = testClass;
-        JmcCheckConfiguration annotation = testClass.getAnnotation(JmcCheckConfiguration.class);
-        if (annotation != null) {
-            this.config = JmcCheckerConfiguration.fromAnnotation(annotation);
-        } else {
-            this.config = new JmcCheckerConfiguration.Builder().build();
-        }
-    }
 
-    public JmcClassTestDescriptor(Class<?> testClass, TestDescriptor parent) {
+    public JmcClassTestDescriptor(Class<?> testClass, TestDescriptor parent) throws JmcCheckerException {
         super(
                 parent.getUniqueId().append("class", testClass.getName()),
                 testClass.getSimpleName(),
@@ -47,7 +35,7 @@ public class JmcClassTestDescriptor extends AbstractTestDescriptor {
     }
 
 
-    private void discoverChildren() {
+    private void discoverChildren()  {
         JmcCheckConfiguration classAnnotation = testClass.getAnnotation(JmcCheckConfiguration.class);
         boolean classHasAnnotation = classAnnotation != null;
 
@@ -59,9 +47,17 @@ public class JmcClassTestDescriptor extends AbstractTestDescriptor {
                     JmcCheckConfiguration methodAnnotation = method.getAnnotation(JmcCheckConfiguration.class);
                     JmcCheckerConfiguration effectiveConfig;
                     if (methodAnnotation != null) {
-                        effectiveConfig = JmcCheckerConfiguration.fromAnnotation(methodAnnotation);
+                        try {
+                            effectiveConfig = JmcCheckerConfiguration.fromAnnotation(methodAnnotation);
+                        } catch (JmcCheckerException e) {
+                            throw new RuntimeException(e);
+                        }
                     } else {
-                        effectiveConfig = JmcCheckerConfiguration.fromAnnotation(classAnnotation);
+                        try {
+                            effectiveConfig = JmcCheckerConfiguration.fromAnnotation(classAnnotation);
+                        } catch (JmcCheckerException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
 
                     addChild(new JmcMethodTestDescriptor(method, this, effectiveConfig));

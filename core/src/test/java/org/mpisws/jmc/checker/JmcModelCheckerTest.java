@@ -500,7 +500,7 @@ public class JmcModelCheckerTest {
 
 
     @Test
-    void testAcquisitionLockTimeoutOnConsumer() throws InterruptedException {
+    void testAcquisitionLockTimeoutOnConsumer() throws  JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
