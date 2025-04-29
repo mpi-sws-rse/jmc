@@ -62,7 +62,6 @@ public class JmcModelChecker {
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
                     JmcRuntime.resetIteration(iteration);
-                    System.gc();
                 } catch (HaltTaskException e) {
                     LOGGER.debug(
                             "Halting execution: {} due to main thread halted: {}",
@@ -96,7 +95,7 @@ public class JmcModelChecker {
                         String errorMessage =
                                 String.format("Halting execution: %d due to timeout", iteration);
                         report.setErrorMessage(errorMessage);
-                        LOGGER.debug(errorMessage);
+                        LOGGER.error(errorMessage);
                         throw HaltCheckerException.error(errorMessage);
                     }
                 }

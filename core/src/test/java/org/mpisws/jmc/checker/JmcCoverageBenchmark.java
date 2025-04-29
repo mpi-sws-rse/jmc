@@ -36,20 +36,26 @@ public class JmcCoverageBenchmark {
                 new JmcCheckerConfiguration.Builder()
                         .strategyConstructor(
                                 (sConfig) ->
-                                        new MeasureGraphCoverageStrategy(
-                                                new TrustStrategy(
-                                                        sConfig.getSeed(),
-                                                        sConfig.getTrustSchedulingPolicy(),
-                                                        sConfig.getDebug(),
-                                                        sConfig.getReportPath()),
-                                                MeasureGraphCoverageStrategyConfig.builder()
-                                                        .recordPath(
-                                                                sConfig.getReportPath()
-                                                                        + "/trust-"
-                                                                        + threads)
-                                                        .withFrequency(
-                                                                Duration.of(1, ChronoUnit.SECONDS))
-                                                        .build()))
+                                        //                                        new
+                                        // MeasureGraphCoverageStrategy(
+                                        new TrustStrategy(
+                                                sConfig.getSeed(),
+                                                sConfig.getTrustSchedulingPolicy(),
+                                                sConfig.getDebug(),
+                                                sConfig.getReportPath()))
+                        //
+                        // MeasureGraphCoverageStrategyConfig.builder()
+                        //                                                        .recordPath(
+                        //
+                        // sConfig.getReportPath()
+                        //                                                                        +
+                        // "/trust-"
+                        //                                                                        +
+                        // threads)
+                        //                                                        .withFrequency(
+                        //
+                        // Duration.of(1, ChronoUnit.SECONDS))
+                        //                                                        .build()))
                         .timeout(timeout)
                         .debug(false)
                         .build();

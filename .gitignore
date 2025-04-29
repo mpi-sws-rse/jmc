@@ -260,6 +260,7 @@ bin/
 __pycache__/
 venv/
 http/
+.venv/
 
 ### Local results ###
 .results/
