@@ -23,6 +23,7 @@ import org.mpisws.jmc.programs.random.counter.RandomCounterIncr;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -462,7 +463,7 @@ public class JmcModelCheckerTest {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
                         .strategyType("trust")
-                        .numIterations(1000)
+                        .timeout(Duration.of(2, ChronoUnit.HOURS))
                         .debug(false)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -471,7 +472,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "TrustCC7",
                         () -> {
-                            int size = 4;
+                            int size = 6;
                             CC7.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);

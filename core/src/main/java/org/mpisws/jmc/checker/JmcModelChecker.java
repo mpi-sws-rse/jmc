@@ -47,8 +47,8 @@ public class JmcModelChecker {
         }
         JmcRuntime.setup(runtimeConfig);
         int numIterations = config.getNumIterations();
+        int iteration = 0;
         try {
-            int iteration = 0;
             LOGGER.info("JMC checker started");
             while (true) {
                 try {
@@ -106,7 +106,8 @@ public class JmcModelChecker {
             }
         } catch (HaltCheckerException e) {
             if (e.isOkay()) {
-                LOGGER.info("Model checking completed successfully.");
+                LOGGER.info(
+                        "Model checking completed successfully covering: {} iterations", iteration);
             } else if (e.isTimeout()) {
                 report.setErrorIteration(-1);
                 report.setErrorMessage(e.getMessage());
@@ -122,7 +123,7 @@ public class JmcModelChecker {
             report.setErrorIteration(-1);
             report.setErrorMessage(String.format("Model checking failed: %s", e.getMessage()));
             LOGGER.error("Model checking failed: {}", e.getMessage());
-            throw new JmcCheckerException(e.getMessage());
+            throw new JmcCheckerException(e.getMessage(), e);
         } finally {
             Long endTime = System.nanoTime();
             JmcRuntime.tearDown();
