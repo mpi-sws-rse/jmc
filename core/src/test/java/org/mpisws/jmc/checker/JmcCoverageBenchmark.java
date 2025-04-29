@@ -12,7 +12,6 @@ import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.stream.Stream;
 
 public class JmcCoverageBenchmark {
@@ -49,7 +48,7 @@ public class JmcCoverageBenchmark {
                                                 false,
                                                 sConfig.getReportPath() + "/trust-" + threads,
                                                 false,
-                                                Duration.of(5, ChronoUnit.MILLIS)))
+                                                Duration.of(100, ChronoUnit.MILLIS)))
                         .timeout(timeout)
                         .debug(false)
                         .build();
@@ -88,7 +87,7 @@ public class JmcCoverageBenchmark {
                                                         + "-"
                                                         + timeout.toString(),
                                                 true,
-                                                Duration.of(5, ChronoUnit.MILLIS)))
+                                                Duration.of(100, ChronoUnit.MILLIS)))
                         .timeout(timeout)
                         .debug(false)
                         .build();
