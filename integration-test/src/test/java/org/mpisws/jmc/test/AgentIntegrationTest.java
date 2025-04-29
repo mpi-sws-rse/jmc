@@ -40,4 +40,11 @@ public class AgentIntegrationTest {
                         });
         jmcModelChecker.check(target);
     }
+
+
+    @JmcCheckConfiguration(numIterations = 10, strategy = "random", debug = true)
+    @Test
+    public void testAgentWithFutureAgain() {
+        CorrectCounterTestRunner.main(new String[0]);
+    }
 }

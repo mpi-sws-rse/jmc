@@ -7,11 +7,9 @@ import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.ClassSource;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.annotations.Replay;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.function.Predicate;
 
 import static org.junit.platform.commons.util.ReflectionUtils.HierarchyTraversalMode.TOP_DOWN;
 
@@ -48,16 +46,6 @@ public class JmcClassTestDescriptor extends AbstractTestDescriptor {
         discoverChildren();
     }
 
-//    private void addAllChildren() {
-//        Predicate<Method> isTestMethod = method -> AnnotationUtils.isAnnotated(method, JmcCheckConfiguration.class);
-//
-//        ReflectionUtils
-//                .findMethods(testClass, isTestMethod, TOP_DOWN)
-//                .stream()
-//                .map(method -> new JmcMethodTestDescriptor(method, this))
-//                .forEach(this::addChild);
-//
-//    }
 
     private void discoverChildren() {
         JmcCheckConfiguration classAnnotation = testClass.getAnnotation(JmcCheckConfiguration.class);

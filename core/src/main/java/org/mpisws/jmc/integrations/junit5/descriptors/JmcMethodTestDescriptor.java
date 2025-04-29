@@ -3,6 +3,7 @@ package org.mpisws.jmc.integrations.junit5.descriptors;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.ClassSource;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.annotations.Replay;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
 import org.mpisws.jmc.integrations.junit5.engine.JmcTestExecutor;
 
@@ -35,6 +36,21 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
         testMethod.setAccessible(true);
 
         JmcCheckConfiguration annotation = testMethod.getAnnotation(JmcCheckConfiguration.class);
+        Replay replayAnnotation = testMethod.getAnnotation(Replay.class);
+
+        if (replayAnnotation != null) {
+            JmcCheckerConfiguration config =
+                    new JmcCheckerConfiguration.Builder()
+                            .numIterations(replayAnnotation.numIterations())
+                            .debug(annotation.debug())
+                            .seed(annotation.seed())
+                            .reportPath(annotation.reportPath())
+                            .strategyType(annotation.strategy())
+                            .build();
+
+            JmcTestExecutor.executeReplay(testMethod, instance, config, annotation.seed(), annotation.numIterations());
+
+        }
 
         if (annotation == null) {
             annotation = testMethod.getDeclaringClass().getAnnotation(JmcCheckConfiguration.class);
