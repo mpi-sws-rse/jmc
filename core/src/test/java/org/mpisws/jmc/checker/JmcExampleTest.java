@@ -20,7 +20,7 @@ import org.mpisws.jmc.programs.mockKafka.ShareConsumerTest;
 
 
     @JmcCheckConfiguration(strategy = "random", debug = true)
-    @JmcTimeout(value = 5)
+    @JmcTimeout(value = 1)
     @Test
     public void testAcquisitionLockTimeoutOnConsumerTimeout() {
         ShareConsumerTest.main(new String[0]);

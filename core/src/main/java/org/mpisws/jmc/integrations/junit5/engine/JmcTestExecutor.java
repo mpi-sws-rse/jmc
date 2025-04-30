@@ -12,6 +12,7 @@ import java.lang.reflect.Method;
 public class JmcTestExecutor {
 
     public static void execute(Method testMethod, Object instance, JmcCheckerConfiguration config) throws JmcCheckerException {
+        System.out.println("JmcTestExecutor Executing test: " + testMethod.getName());
         JmcModelChecker checker = new JmcModelChecker(config);
         JmcTestTarget target =
                 new JmcFunctionalTestTarget(

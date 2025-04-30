@@ -36,6 +36,7 @@ public class JmcClassTestDescriptor extends AbstractTestDescriptor {
 
 
     private void discoverChildren()  {
+        System.out.println("JmcTestEngine discoverchildren in class test descriptor " + testClass.getName());
         JmcCheckConfiguration classAnnotation = testClass.getAnnotation(JmcCheckConfiguration.class);
         boolean classHasAnnotation = classAnnotation != null;
 
@@ -44,29 +45,13 @@ public class JmcClassTestDescriptor extends AbstractTestDescriptor {
                         method ->  method.isAnnotationPresent(JmcCheckConfiguration.class) || classHasAnnotation,
                         TOP_DOWN)
                 .forEach(method -> {
-                    JmcCheckConfiguration methodAnnotation = method.getAnnotation(JmcCheckConfiguration.class);
-                    JmcCheckerConfiguration effectiveConfig;
-                    if (methodAnnotation != null) {
-                        try {
-                            effectiveConfig = JmcCheckerConfiguration.fromAnnotation(methodAnnotation);
-                        } catch (JmcCheckerException e) {
-                            throw new RuntimeException(e);
-                        }
-                    } else {
-                        try {
-                            effectiveConfig = JmcCheckerConfiguration.fromAnnotation(classAnnotation);
-                        } catch (JmcCheckerException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
 
-                    addChild(new JmcMethodTestDescriptor(method, this, effectiveConfig));
-                    });
-
+                        addChild(new JmcMethodTestDescriptor(method, this));
+                });
     }
 
     @Override
     public Type getType() {
-        return Type.CONTAINER;
+        return Type.CONTAINER_AND_TEST;
     }
 }

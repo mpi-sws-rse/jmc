@@ -30,6 +30,7 @@ public class JmcTestEngine implements TestEngine {
 
     @Override
     public TestDescriptor discover(EngineDiscoveryRequest request, UniqueId uniqueId) {
+        System.out.println("JmcTestEngine discover");
         JmcEngineDescriptor engineDescriptor = new JmcEngineDescriptor(uniqueId);
 
         request.getSelectorsByType(ClasspathRootSelector.class)
@@ -59,6 +60,7 @@ public class JmcTestEngine implements TestEngine {
     }
 
     private void appendTestsInClasspathRoot(URI uri, TestDescriptor engineDescriptor) {
+        System.out.println("JmcTestEngine discover in classpath root");
         ReflectionSupport.findAllClassesInClasspathRoot(
                         uri, IS_JMC_TEST_CONTAINER, name -> true) //
                 .stream() //
@@ -73,6 +75,7 @@ public class JmcTestEngine implements TestEngine {
     }
 
     private void appendTestsInPackage(String packageName, TestDescriptor engineDescriptor) {
+        System.out.println("JmcTestEngine discover in package " + packageName);
         ReflectionSupport.findAllClassesInPackage(
                         packageName, IS_JMC_TEST_CONTAINER, name -> true) //
                 .stream() //
@@ -87,6 +90,7 @@ public class JmcTestEngine implements TestEngine {
     }
 
     private void appendTestsInClass(Class<?> javaClass, TestDescriptor engineDescriptor) throws JmcCheckerException {
+        System.out.println("JmcTestEngine discover in class " + javaClass.getName());
         if (AnnotationSupport.isAnnotated(javaClass, JmcCheckConfiguration.class)) {
             engineDescriptor.addChild(new JmcClassTestDescriptor(javaClass, engineDescriptor));
         } else {
