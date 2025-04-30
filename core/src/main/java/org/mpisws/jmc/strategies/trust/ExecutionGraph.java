@@ -511,7 +511,7 @@ public class ExecutionGraph {
                                 .toList());
         List<ExecutionGraphNode> lockReads = new ArrayList<>();
         for (ExecutionGraphNode altWrite : alternativeWrites) {
-            Set<Event.Key> readKeys = altWrite.getSuccessors(Relation.ReadsFrom);
+            List<Event.Key> readKeys = altWrite.getSuccessors(Relation.ReadsFrom);
             for (Event.Key readKey : readKeys) {
                 try {
                     ExecutionGraphNode readNode = getEventNode(readKey);
@@ -549,7 +549,7 @@ public class ExecutionGraph {
         List<LockBackwardRevisitView> lockBackwardRevisitViews = new ArrayList<>();
         for (ExecutionGraphNode altWrite : alternativeWrites) {
             // A possible location for the current read to read-from.
-            Set<Event.Key> readKeys = altWrite.getSuccessors(Relation.ReadsFrom);
+            List<Event.Key> readKeys = altWrite.getSuccessors(Relation.ReadsFrom);
             for (Event.Key readKey : readKeys) {
                 try {
                     ExecutionGraphNode readNode = getEventNode(readKey);
@@ -595,7 +595,7 @@ public class ExecutionGraph {
 
         List<ExecutionGraphNode> reads = new ArrayList<>();
         for (ExecutionGraphNode alternativeWrite : nonPorfWrites) {
-            Set<Event.Key> readKeys = alternativeWrite.getSuccessors(Relation.ReadsFrom);
+            List<Event.Key> readKeys = alternativeWrite.getSuccessors(Relation.ReadsFrom);
             for (Event.Key readKey : readKeys) {
                 try {
                     reads.add(getEventNode(readKey));
@@ -637,7 +637,7 @@ public class ExecutionGraph {
 
         List<ExecutionGraphNode> reads = new ArrayList<>();
         for (ExecutionGraphNode alternativeWrite : otherWrites) {
-            Set<Event.Key> readKeys = alternativeWrite.getSuccessors(Relation.ReadsFrom);
+            List<Event.Key> readKeys = alternativeWrite.getSuccessors(Relation.ReadsFrom);
             for (Event.Key readKey : readKeys) {
                 try {
                     reads.add(getEventNode(readKey));
@@ -803,7 +803,7 @@ public class ExecutionGraph {
      * @param write The write event.
      */
     public void changeReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
-        Set<Event.Key> writes = read.getPredecessors(Relation.ReadsFrom);
+        List<Event.Key> writes = read.getPredecessors(Relation.ReadsFrom);
         if (writes.size() != 1) {
             throw HaltCheckerException.error("A read has more than one RF back edge.");
         }
@@ -898,11 +898,11 @@ public class ExecutionGraph {
 
         // Remove dangling edges
         for (ExecutionGraphNode node : allEvents) {
-            Map<Relation, Set<Event.Key>> successors = node.getAllSuccessors();
+            Map<Relation, List<Event.Key>> successors = node.getAllSuccessors();
             successors.forEach((relation, edges) -> {
                 edges.removeIf(set::contains);
             });
-            Map<Relation, Set<Event.Key>> predecessors = node.getAllPredecessors();
+            Map<Relation, List<Event.Key>> predecessors = node.getAllPredecessors();
             predecessors.forEach((relation, edges) -> {
                 edges.removeIf(set::contains);
             });
@@ -958,7 +958,6 @@ public class ExecutionGraph {
                                 return;
                             }
 
-                            Map<Relation, Set<Event.Key>> predecessors = node.getAllPredecessors();
                             Event.Key poBeforeNode = node.getPoPredecessor();
                             if (poBeforeNode == null) {
                                 // No PO predecessor, this is the first event in the task
@@ -969,7 +968,7 @@ public class ExecutionGraph {
                                     new LamportVectorClock(
                                             clocks.get(poBeforeNode),
                                             Math.toIntExact(node.key().getTaskId()));
-                            predecessors.forEach(((relation, preds) -> {
+                            node.forEachPredecessor((relation, preds) -> {
                                 if (relation == Relation.Coherency) {
                                     return;
                                 }
@@ -982,7 +981,7 @@ public class ExecutionGraph {
                                     }
                                     newClock.update(predClock);
                                 });
-                            }));
+                            });
 
                             // Update the clock of the node
                             clocks.put(node.key(), newClock);
@@ -1040,12 +1039,10 @@ public class ExecutionGraph {
         Set<Event.Key> removedKeys =
                 removedNodes.stream().map(ExecutionGraphNode::key).collect(Collectors.toSet());
         for (ExecutionGraphNode node : allEvents) {
-            Map<Relation, Set<Event.Key>> successors = node.getAllSuccessors();
-            successors.forEach((relation, edges) -> {
+            node.forEachSuccessor((relation, edges) -> {
                 edges.removeIf(removedKeys::contains);
             });
-            Map<Relation, Set<Event.Key>> predecessors = node.getAllPredecessors();
-            predecessors.forEach((relation, edges) -> {
+            node.forEachPredecessor((relation, edges) -> {
                 edges.removeIf(removedKeys::contains);
             });
         }
@@ -1378,7 +1375,7 @@ public class ExecutionGraph {
         // For each read event, check if the read-from edge is present
         for (ExecutionGraphNode node : allEvents) {
             if (node.getEvent().isRead()) {
-                Set<Event.Key> writes = node.getPredecessors(Relation.ReadsFrom);
+                List<Event.Key> writes = node.getPredecessors(Relation.ReadsFrom);
                 if (writes != null && writes.size() != 1) {
                     return false;
                 }

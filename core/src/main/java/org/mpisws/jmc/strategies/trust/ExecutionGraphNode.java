@@ -3,28 +3,26 @@ package org.mpisws.jmc.strategies.trust;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.util.aux.LamportVectorClock;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.function.BiPredicate;
 
 /**
  * Represents a node in the execution graph.
  */
 public class ExecutionGraphNode {
+
+    private static Relation[] allRelations = Relation.values();
     // The event that this node represents.
     private final Event event;
     // The attributes of this node.
     private Map<String, Object> attributes;
     // Forward edges from this node. Grouped by edge relation.
-    public final Map<Relation, Set<Event.Key>> edges;
+    public final Map<Relation, List<Event.Key>> edges;
     // Back edges to this node. Grouped by edge relation.
-    public final Map<Relation, Set<Event.Key>> backEdges;
+    public final Map<Relation, List<Event.Key>> backEdges;
 
     // The vector clock of this node (Used to track only PORF relation)
     private LamportVectorClock vectorClock;
@@ -37,8 +35,8 @@ public class ExecutionGraphNode {
     public ExecutionGraphNode(Event event, LamportVectorClock vectorClock) {
         this.event = event;
         this.attributes = new HashMap<>();
-        this.edges = new HashMap<>();
-        this.backEdges = new HashMap<>();
+        this.edges = new EnumMap<>(Relation.class);
+        this.backEdges = new EnumMap<>(Relation.class);
         this.vectorClock =
                 event.isInit()
                         ? new LamportVectorClock(0)
@@ -53,13 +51,13 @@ public class ExecutionGraphNode {
     private ExecutionGraphNode(ExecutionGraphNode node) {
         this.event = node.event;
         this.attributes = new HashMap<>(node.attributes);
-        this.edges = new HashMap<>();
-        for (Map.Entry<Relation, Set<Event.Key>> entry : node.edges.entrySet()) {
-            this.edges.put(entry.getKey(), new HashSet<>(entry.getValue()));
+        this.edges = new EnumMap<>(Relation.class);
+        for (Map.Entry<Relation, List<Event.Key>> entry : node.edges.entrySet()) {
+            this.edges.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         }
-        this.backEdges = new HashMap<>();
-        for (Map.Entry<Relation, Set<Event.Key>> entry : node.backEdges.entrySet()) {
-            this.backEdges.put(entry.getKey(), new HashSet<>(entry.getValue()));
+        this.backEdges = new EnumMap<>(Relation.class);
+        for (Map.Entry<Relation, List<Event.Key>> entry : node.backEdges.entrySet()) {
+            this.backEdges.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         }
         this.vectorClock = new LamportVectorClock(node.vectorClock.getVector());
     }
@@ -93,7 +91,7 @@ public class ExecutionGraphNode {
      */
     public void addEdge(ExecutionGraphNode to, Relation adjacency) {
         if (!edges.containsKey(adjacency)) {
-            edges.put(adjacency, new HashSet<>());
+            edges.put(adjacency, new ArrayList<>());
         }
         edges.get(adjacency).add(to.key());
         to.addBackEdge(this, adjacency);
@@ -112,7 +110,7 @@ public class ExecutionGraphNode {
             vectorClock.update(from.getVectorClock());
         }
         if (!backEdges.containsKey(adjacency)) {
-            backEdges.put(adjacency, new HashSet<>());
+            backEdges.put(adjacency, new ArrayList<>());
         }
         backEdges.get(adjacency).add(from.key());
     }
@@ -224,7 +222,7 @@ public class ExecutionGraphNode {
      *
      * @return The edges of this node.
      */
-    public Map<Relation, Set<Event.Key>> getAllSuccessors() {
+    public Map<Relation, List<Event.Key>> getAllSuccessors() {
         return edges;
     }
 
@@ -234,8 +232,8 @@ public class ExecutionGraphNode {
      * @param adjacency The adjacency of the neighbours.
      * @return The neighbours of this node that have the given adjacency.
      */
-    public Set<Event.Key> getSuccessors(Relation adjacency) {
-        return edges.getOrDefault(adjacency, new HashSet<>());
+    public List<Event.Key> getSuccessors(Relation adjacency) {
+        return edges.getOrDefault(adjacency, new ArrayList<>());
     }
 
     /**
@@ -243,7 +241,7 @@ public class ExecutionGraphNode {
      *
      * @return The edges of this node.
      */
-    public Map<Relation, Set<Event.Key>> getEdges() {
+    public Map<Relation, List<Event.Key>> getEdges() {
         return edges;
     }
 
@@ -266,7 +264,7 @@ public class ExecutionGraphNode {
      *
      * @return The predecessors of this node.
      */
-    public Map<Relation, Set<Event.Key>> getAllPredecessors() {
+    public Map<Relation, List<Event.Key>> getAllPredecessors() {
         return backEdges;
     }
 
@@ -275,7 +273,7 @@ public class ExecutionGraphNode {
      *
      * @return The back edges of this node.
      */
-    public Set<Event.Key> getPredecessors(Relation adjacency) {
+    public List<Event.Key> getPredecessors(Relation adjacency) {
         return backEdges.get(adjacency);
     }
 
@@ -285,19 +283,34 @@ public class ExecutionGraphNode {
      * @return The number of incoming edges of this node.
      */
     public int getInDegree() {
-        int inDegree = 0;
-        for (Set<Event.Key> relation : backEdges.values()) {
-            inDegree += relation.size();
+        AtomicInteger inDegree = new AtomicInteger();
+        for (Relation relation : allRelations) {
+            if (!backEdges.containsKey(relation)) {
+                continue;
+            }
+            backEdges.get(relation).forEach(k -> inDegree.getAndIncrement());
         }
-        return inDegree;
+        return inDegree.get();
     }
 
-    public void forEachPredecessor(BiConsumer<Relation, Set<Event.Key>> iterator) {
-        backEdges.forEach(iterator);
+    public void forEachPredecessor(BiConsumer<Relation, List<Event.Key>> iterator) {
+        for (Relation rel : allRelations) {
+            if (!backEdges.containsKey(rel)) {
+                continue;
+            }
+            List<Event.Key> predecessors = backEdges.get(rel);
+            iterator.accept(rel, predecessors);
+        }
     }
 
-    public void forEachSuccessor(BiConsumer<Relation, Set<Event.Key>> iterator) {
-        edges.forEach(iterator);
+    public void forEachSuccessor(BiConsumer<Relation, List<Event.Key>> iterator) {
+        for (Relation rel : allRelations) {
+            if (!edges.containsKey(rel)) {
+                continue;
+            }
+            List<Event.Key> successors = edges.get(rel);
+            iterator.accept(rel, successors);
+        }
     }
 
     /**
@@ -361,7 +374,7 @@ public class ExecutionGraphNode {
         }
         json.add("attributes", attributesObject);
         JsonObject edgesObject = new JsonObject();
-        for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+        for (Map.Entry<Relation, List<Event.Key>> entry : edges.entrySet()) {
             JsonArray edgeArray = new JsonArray();
             for (Event.Key key : entry.getValue()) {
                 edgeArray.add(key.toString());
@@ -381,7 +394,7 @@ public class ExecutionGraphNode {
         }
         json.add("attributes", attributesObject);
         JsonObject edgesObject = new JsonObject();
-        for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+        for (Map.Entry<Relation, List<Event.Key>> entry : edges.entrySet()) {
             if (entry.getValue().isEmpty()) {
                 continue;
             }
@@ -404,11 +417,11 @@ public class ExecutionGraphNode {
         if (!backEdges.containsKey(Relation.ProgramOrder)) {
             return null;
         }
-        Set<Event.Key> predecessors = backEdges.get(Relation.ProgramOrder);
+        List<Event.Key> predecessors = backEdges.get(Relation.ProgramOrder);
         if (predecessors.size() != 1) {
             return null;
         }
-        return predecessors.iterator().next();
+        return predecessors.get(0);
     }
 
     /**
@@ -435,12 +448,12 @@ public class ExecutionGraphNode {
         if (this == other) {
             return true;
         }
-        for (Map.Entry<Relation, Set<Event.Key>> entry : edges.entrySet()) {
+        for (Map.Entry<Relation, List<Event.Key>> entry : edges.entrySet()) {
             if (entry.getValue().isEmpty()) {
                 if (!other.edges.containsKey(entry.getKey())) {
                     continue;
                 }
-                Set<Event.Key> otherEdges = other.edges.get(entry.getKey());
+                List<Event.Key> otherEdges = other.edges.get(entry.getKey());
                 if (!otherEdges.isEmpty()) {
                     return false;
                 }

@@ -2,7 +2,7 @@ package org.mpisws.jmc.strategies.trust;
 
 import org.mpisws.jmc.runtime.HaltCheckerException;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * Represents the revisit view of a lock read event. The two reads that are conflicting are
@@ -16,9 +16,9 @@ public class LockBackwardRevisitView {
     /**
      * Creates a new backward revisit view for a lock read event.
      *
-     * @param event The event that is revisited.
+     * @param event   The event that is revisited.
      * @param revisit The revisit read event.
-     * @param graph The execution graph.
+     * @param graph   The execution graph.
      */
     public LockBackwardRevisitView(
             ExecutionGraphNode event, ExecutionGraphNode revisit, ExecutionGraph graph) {
@@ -52,7 +52,7 @@ public class LockBackwardRevisitView {
         // Simple check if the revisit read is still porf before the event after updating the
         // reads-from, then this is not revisitable.
         // Note: not sure if this is sufficient, need to verify
-        Set<Event.Key> writes = this.revisitRead.getPredecessors(Relation.ReadsFrom);
+        List<Event.Key> writes = this.revisitRead.getPredecessors(Relation.ReadsFrom);
         if (writes.size() != 1) {
             throw HaltCheckerException.error("The read event does not have a valid rf event.");
         }

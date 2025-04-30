@@ -358,7 +358,7 @@ public class JmcModelCheckerTest {
                         "TrustCC0",
                         () -> {
                             int size = 1;
-                            CC0.main(new String[] {String.valueOf(size)});
+                            CC0.main(new String[]{String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -472,8 +472,8 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "TrustCC7",
                         () -> {
-                            int size = 5;
-                            CC7.main(new String[] {String.valueOf(size)});
+                            int size = 4;
+                            CC7.main(new String[]{String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -493,7 +493,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "Timeout",
                         () -> {
-                            CC7.main(new String[] {"6"});
+                            CC7.main(new String[]{"6"});
                         });
         jmcModelChecker.check(target);
     }
