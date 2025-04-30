@@ -13,9 +13,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * A random scheduling strategy that selects the next thread to be scheduled randomly.
- */
+/** A random scheduling strategy that selects the next thread to be scheduled randomly. */
 public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
 
     private static final Logger LOGGER = LogManager.getLogger(RandomSchedulingStrategy.class);
@@ -34,10 +32,11 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
     }
 
     @Override
-    public void initIteration(int iteration, JmcModelCheckerReport report) throws HaltExecutionException {
+    public void initIteration(int iteration, JmcModelCheckerReport report)
+            throws HaltExecutionException {
         super.initIteration(iteration, report);
         report.setReplaySeed(random.getSeed());
-        LOGGER.info("Seed for iteration {} is {}", iteration, random.getSeed());
+        LOGGER.debug("Seed for iteration {} is {}", iteration, random.getSeed());
         randomValueMap.clear();
     }
 

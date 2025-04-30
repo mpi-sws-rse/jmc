@@ -238,10 +238,22 @@ public class ExecutionGraphNode {
         return new HashSet<>(edges.get(adjacency));
     }
 
+    /**
+     * Returns the edges of this node.
+     *
+     * @return The edges of this node.
+     */
     public Map<Relation, Set<Event.Key>> getEdges() {
         return edges;
     }
 
+    /**
+     * Returns whether this node has an edge to the given node with the given adjacency.
+     *
+     * @param to The node to which the edge is directed.
+     * @param adjacency The adjacency of the edge.
+     * @return Whether this node has an edge to the given node with the given adjacency.
+     */
     public boolean hasEdge(Event.Key to, Relation adjacency) {
         if (!edges.containsKey(adjacency)) {
             return false;
@@ -279,32 +291,45 @@ public class ExecutionGraphNode {
     }
 
     /**
-     * Recomputes the vector clock based on the vector clocks of all _porf_-predecessors. The new
-     * vector clock is created based on the PO previous node.
+     * Returns the number of incoming edges of this node.
      *
-     * @param poBeforeNode The PO previous node to initialize the new vector clock
-     * @param nodeProvider A function to get Node for a given key.
+     * @return The number of incoming edges of this node.
      */
-    public void recomputeVectorClock(ExecutionGraphNode poBeforeNode, NodeProvider nodeProvider) {
-        LamportVectorClock newVectorClock =
-                new LamportVectorClock(poBeforeNode.getVectorClock(), event.getTaskId().intValue());
-        try {
-            Set<Event.Key> porfPredecessors = getPredecessors(Relation.ProgramOrder);
-            porfPredecessors.addAll(getPredecessors(Relation.ReadsFrom));
-            porfPredecessors.addAll(getPredecessors(Relation.ThreadJoin));
-            porfPredecessors.addAll(getPredecessors(Relation.ThreadCreation));
-
-            for (Event.Key key : porfPredecessors) {
-                if (key.equals(poBeforeNode.key())) {
-                    continue;
-                }
-                ExecutionGraphNode node = nodeProvider.get(key);
-                newVectorClock.update(node.getVectorClock());
-            }
-            vectorClock = newVectorClock;
-        } catch (NoSuchEventException e) {
-            throw HaltCheckerException.error(e.getMessage());
+    public int getInDegree() {
+        int inDegree = 0;
+        for (Set<Event.Key> relation : backEdges.values()) {
+            inDegree += relation.size();
         }
+        return inDegree;
+    }
+
+    /**
+     * Returns successors with number of edges to them.
+     *
+     * @return Map of successors with edge count.
+     */
+    public HashMap<Event.Key, Integer> getSuccessorsCount() {
+        HashMap<Event.Key, Integer> successorsCount = new HashMap<>();
+        for (Set<Event.Key> relation : edges.values()) {
+            for (Event.Key key : relation) {
+                successorsCount.put(key, successorsCount.getOrDefault(key, 0) + 1);
+            }
+        }
+        return successorsCount;
+    }
+
+    /**
+     * Return _porf_ predecessors of this node. This includes all predecessors that are not CO, and
+     * all read-from edges, thread-join edges and thread-creation edges.
+     *
+     * @return The _porf_ predecessors of this node.
+     */
+    public Set<Event.Key> getAllPorfPredecessors() {
+        Set<Event.Key> porfPredecessors = getPredecessors(Relation.ProgramOrder);
+        porfPredecessors.addAll(getPredecessors(Relation.ReadsFrom));
+        porfPredecessors.addAll(getPredecessors(Relation.ThreadJoin));
+        porfPredecessors.addAll(getPredecessors(Relation.ThreadCreation));
+        return porfPredecessors;
     }
 
     /**
@@ -402,9 +427,29 @@ public class ExecutionGraphNode {
         return json;
     }
 
-    @FunctionalInterface
-    public interface NodeProvider {
-        ExecutionGraphNode get(Event.Key key) throws NoSuchEventException;
+    /**
+     * Returns the predecessor of this node in the program order.
+     *
+     * @return The predecessor of this node in the program order.
+     */
+    public Event.Key getPoPredecessor() {
+        if (!backEdges.containsKey(Relation.ProgramOrder)) {
+            return null;
+        }
+        Set<Event.Key> predecessors = backEdges.get(Relation.ProgramOrder);
+        if (predecessors.size() != 1) {
+            return null;
+        }
+        return predecessors.iterator().next();
+    }
+
+    /**
+     * Updates the vector clock of this node.
+     *
+     * @param newClock The new vector clock of this node.
+     */
+    public void setVectorClock(LamportVectorClock newClock) {
+        this.vectorClock = newClock;
     }
 
     @Override

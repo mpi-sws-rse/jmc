@@ -223,7 +223,7 @@ public class Algo {
         }
 
         // The main loop of the procedure
-        ArrayList<ExecutionGraphNode> nextGraphSchedule = new ArrayList<>();
+        List<ExecutionGraphNode> nextGraphSchedule = new ArrayList<>();
         while (nextGraphSchedule.isEmpty()) {
 
             if (explorationStack.isEmpty()) {
@@ -300,7 +300,7 @@ public class Algo {
         explorationStack.push(ExplorationStack.Item.forwardLW(write, restrictedGraph));
     }
 
-    private ArrayList<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {
+    private List<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {
         // Forward revisit of w -> r
         ExecutionGraphNode read = item.getEvent1();
         ExecutionGraphNode write = item.getEvent2();
@@ -311,7 +311,7 @@ public class Algo {
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
-    private ArrayList<ExecutionGraphNode> processFWW(ExplorationStack.Item item) {
+    private List<ExecutionGraphNode> processFWW(ExplorationStack.Item item) {
         // Forward revisit of w -> w (alternative coherence placing)
         ExecutionGraphNode write1 = item.getEvent1();
         ExecutionGraphNode write2 = item.getEvent2();
@@ -321,7 +321,7 @@ public class Algo {
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
-    private ArrayList<ExecutionGraphNode> processFLW(ExplorationStack.Item item) {
+    private List<ExecutionGraphNode> processFLW(ExplorationStack.Item item) {
         // Forward revisit of w -> lw (max-co)
         ExecutionGraphNode w = item.getEvent1();
 

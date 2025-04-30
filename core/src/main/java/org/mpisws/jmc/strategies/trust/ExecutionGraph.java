@@ -142,59 +142,6 @@ public class ExecutionGraph {
     }
 
     /**
-     * Returns the list of task identifiers in the execution graph based on the topologically sorted
-     * order.
-     *
-     * @return The list of task identifiers in the execution graph.
-     */
-    public List<SchedulingChoiceWrapper> getTaskSchedule() {
-        List<SchedulingChoiceWrapper> taskSchedule = new ArrayList<>();
-        Iterator<ExecutionGraphNode> it = iterator();
-        // The init event exists by default. Not schedule-able.
-        // Also, the first event of the main thread occurs by default. We can only schedule after
-        // that.
-        it.next();
-        it.next();
-
-        // The schedule generated is 1-indexed,
-        // it lags by 1 event. Therefore, the expected location should be added to the next
-        // position.
-        Integer oldLocation = null;
-        while (it.hasNext()) {
-            ExecutionGraphNode node = it.next();
-            Integer newLocation = node.getEvent().getLocation();
-            // If the event is a blocking label then add the relevant task to the schedule
-            if (EventUtils.isBlockingLabel(node.getEvent())) {
-                Long taskId = node.getEvent().getTaskId();
-                if (taskId == null) {
-                    taskSchedule.add(
-                            new SchedulingChoiceWrapper(
-                                    SchedulingChoice.blockExecution(), oldLocation));
-                } else {
-                    taskSchedule.add(
-                            new SchedulingChoiceWrapper(
-                                    SchedulingChoice.blockTask(node.getEvent().getTaskId()),
-                                    oldLocation));
-                }
-            } else if (EventUtils.isThreadStart(node.getEvent())) {
-                taskSchedule.add(
-                        new SchedulingChoiceWrapper(
-                                SchedulingChoice.task(EventUtils.getStartedBy(node.getEvent()) + 1),
-                                oldLocation));
-            } else {
-                // Adding 1 to the task ID since the task ID is 0-indexed inside Trust but 1-indexed
-                // in JMC
-                Long taskId = node.getEvent().getTaskId() + 1;
-                taskSchedule.add(
-                        new SchedulingChoiceWrapper(SchedulingChoice.task(taskId), oldLocation));
-            }
-            oldLocation = newLocation;
-        }
-        taskSchedule.add(new SchedulingChoiceWrapper(SchedulingChoice.end(), oldLocation));
-        return taskSchedule;
-    }
-
-    /**
      * Returns the list of task identifiers in the execution graph where a new event can be added.
      *
      * @return The list of task identifiers in the execution graph.
@@ -1007,22 +954,49 @@ public class ExecutionGraph {
 
     /** Recomputes the vector clocks of all nodes in the execution graph. */
     public void recomputeVectorClocks() {
-        for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
-            ExecutionGraphNode iterNode = it.next();
-            if (iterNode.getAllPredecessors().isEmpty()) {
-                // This is the init node, safely continue
-                continue;
-            }
-            Set<Event.Key> poPredecessors = iterNode.getPredecessors(Relation.ProgramOrder);
-            if (poPredecessors.size() != 1) {
-                throw HaltCheckerException.error("A node has more than one or no PO predecessor");
-            }
-            try {
-                ExecutionGraphNode lastPONode = getEventNode(poPredecessors.iterator().next());
-                iterNode.recomputeVectorClock(lastPONode, this::getEventNode);
-            } catch (NoSuchEventException e) {
-                throw HaltCheckerException.error(e.getMessage());
-            }
+
+        TopologicalSorter topoSorter = new TopologicalSorter(this);
+        try {
+            topoSorter.sortWithVisitor(
+                    new ExecutionGraphNodeVisitor() {
+
+                        private final HashMap<Event.Key, LamportVectorClock> clocks =
+                                new HashMap<>();
+
+                        @Override
+                        public void visit(ExecutionGraphNode node) {
+                            if (node.getEvent().isInit()) {
+                                clocks.put(node.key(), new LamportVectorClock(0));
+                                return;
+                            }
+
+                            Set<Event.Key> porfPredecessors = node.getAllPorfPredecessors();
+                            Event.Key poBeforeNode = node.getPoPredecessor();
+                            if (poBeforeNode == null) {
+                                // No PO predecessor, this is the first event in the task
+                                throw HaltCheckerException.error(
+                                        "Invalid PO predecessor for the event.");
+                            }
+                            LamportVectorClock newClock =
+                                    new LamportVectorClock(
+                                            clocks.get(poBeforeNode),
+                                            Math.toIntExact(node.key().getTaskId()));
+                            for (Event.Key predecessor : porfPredecessors) {
+                                LamportVectorClock predecessorClock = clocks.get(predecessor);
+                                if (predecessorClock == null) {
+                                    throw HaltCheckerException.error(
+                                            "The predecessor clock is not found.");
+                                }
+                                newClock.update(predecessorClock);
+                            }
+
+                            // Update the clock of the node
+                            clocks.put(node.key(), newClock);
+                            node.setVectorClock(newClock);
+                        }
+                    });
+        } catch (TopologicalSorter.GraphCycleException e) {
+            throw HaltCheckerException.error("The execution graph is not a DAG.");
         }
     }
 
@@ -1095,125 +1069,27 @@ public class ExecutionGraph {
         recomputeVectorClocks();
     }
 
-    /**
-     * Restricts the execution graph to the given node. Meaning, all events that are not in the
-     * causal prefix of the given node are removed.
-     *
-     * <p>Recompute the vector clocks of all nodes and delete those nodes that are not
-     * happens-before the given node.
-     *
-     * @param restrictingNode The node to restrict to.
-     */
-    // TODO :: Remove this method
-    public void restrictTo(ExecutionGraphNode restrictingNode) {
-        // First recompute vector clocks (because, prior to restrict we are assuming that the graph
-        // has been modified)
-        recomputeVectorClocks();
-
-        // Update Task Events while tracking locations
-        Set<Integer> locationsToKeep = new HashSet<>();
-        // Max timestamp per task that we will retain. Will be used to remove dangling references.
-        // Relies on the assumption that there is a frontier of events and all edges crossing the
-        // frontier are removed.
-        HashMap<Long, Integer> taskEventSizes = new HashMap<>();
-        LamportVectorClock restrictingVectorClock = restrictingNode.getVectorClock();
-        List<List<ExecutionGraphNode>> newTaskEvents = new ArrayList<>();
-        for (int i = 0; i < taskEvents.size(); i++) {
-            List<ExecutionGraphNode> newTaskEvent = new ArrayList<>();
-            if (i > restrictingVectorClock.getSize()) {
-                // This task has no events in the causal prefix of the restricting node
-                newTaskEvents.add(newTaskEvent);
-                continue;
-            }
-            for (ExecutionGraphNode iterNode : taskEvents.get(i)) {
-                if (iterNode.getVectorClock().happensBefore(restrictingVectorClock)) {
-                    newTaskEvent.add(iterNode);
-                    Integer eventLocation = iterNode.getEvent().getLocation();
-                    if (eventLocation != null) {
-                        locationsToKeep.add(eventLocation);
-                    }
-                }
-                if (restrictingVectorClock.happensBefore(iterNode.getVectorClock())) {
-                    // We have gone past in the TO. By definition, there are no other nodes that we
-                    // need to include.
-                    break;
-                }
-            }
-            newTaskEvents.add(newTaskEvent);
-            if (!newTaskEvent.isEmpty()) {
-                taskEventSizes.put((long) i, newTaskEvent.size());
-            }
-        }
-        taskEvents = newTaskEvents;
-
-        // Update Total Order Events
-        List<ExecutionGraphNode> newAllEvents = new ArrayList<>();
-        for (ExecutionGraphNode iterNode : allEvents) {
-            if (iterNode.happensBefore(restrictingNode)) {
-                newAllEvents.add(iterNode);
-            }
-            if (restrictingNode.happensBefore(iterNode)) {
-                // We have gone past in the TO. By definition, there are no other nodes that we need
-                // to include.
-                break;
-            }
-        }
-        allEvents = newAllEvents;
-
-        // Remove nodes from coherency tracking
-        coherencyOrder.entrySet().removeIf(entry -> !locationsToKeep.contains(entry.getKey()));
-        for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : coherencyOrder.entrySet()) {
-            List<ExecutionGraphNode> writes = entry.getValue();
-            List<ExecutionGraphNode> newWrites = new ArrayList<>();
-            for (ExecutionGraphNode write : writes) {
-                if (write.happensBefore(restrictingNode)) {
-                    newWrites.add(write);
-                }
-            }
-            entry.setValue(newWrites);
-        }
-
-        // Will have dangling edges. Need to remove them.
-        for (ExecutionGraphNode node : allEvents) {
-            Set<Event.Key> successors = node.getAllSuccessors();
-            for (Event.Key successor : successors) {
-                if (successor.getTaskId() == null) {
-                    // Init event
-                    continue;
-                }
-                if (!taskEventSizes.containsKey(successor.getTaskId())
-                        || successor.getTimestamp() >= taskEventSizes.get(successor.getTaskId())) {
-                    node.removeAllEdgesTo(successor);
-                }
-            }
-            Set<Event.Key> predecessors = node.getAllPredecessors();
-            for (Event.Key predecessor : predecessors) {
-                if (predecessor.getTaskId() == null) {
-                    // Init event
-                    // Don't remove edges from the init event
-                    continue;
-                }
-                if (!taskEventSizes.containsKey(predecessor.getTaskId())
-                        || predecessor.getTimestamp()
-                                >= taskEventSizes.get(predecessor.getTaskId())) {
-                    node.removeAllEdgesFrom(predecessor);
-                }
-            }
-        }
+    /** Returns an iterator walking through the nodes in a topological sort order. */
+    public List<ExecutionGraphNode> iterator() throws TopologicalSorter.GraphCycleException {
+        return (new TopologicalSorter(this)).sort();
     }
 
-    /** Returns an iterator walking through the nodes in a topological sort order. */
-    public Iterator<ExecutionGraphNode> iterator() {
-        return new TopologicalIterator(this);
+    /** Returns List of nodes while silently ignoring any errors with cycles * */
+    public List<ExecutionGraphNode> unsafeIterator() {
+        try {
+            return (new TopologicalSorter(this)).sort();
+        } catch (TopologicalSorter.GraphCycleException e) {
+            return Collections.emptyList();
+        }
     }
 
     // TODO :: This method will lead to a stack overflow if the graph is deeply nested.
     // TODO :: We need to use an iterative approach to avoid this.
-    public ArrayList<ExecutionGraphNode> checkConsistencyAndTopologicallySort() {
+    public List<ExecutionGraphNode> checkConsistencyAndTopologicallySort() {
         return topologicalSort();
     }
 
-    public ArrayList<ExecutionGraphNode> topologicalSort() {
+    public List<ExecutionGraphNode> topologicalSort() {
         LinkedHashSet<ExecutionGraphNode> visited = new LinkedHashSet<>();
         HashSet<ExecutionGraphNode> recStack = new HashSet<>();
         ArrayList<ExecutionGraphNode> topoSort = new ArrayList<>();
@@ -1355,17 +1231,9 @@ public class ExecutionGraph {
         }
 
         // Check if the two graphs have the same events in topological order
-        ArrayList<ExecutionGraphNode> curNodes = new ArrayList<>();
-        for (Iterator<ExecutionGraphNode> it = iterator(); it.hasNext(); ) {
-            ExecutionGraphNode node = it.next();
-            curNodes.add(node);
-        }
+        List<ExecutionGraphNode> curNodes = unsafeIterator();
 
-        ArrayList<ExecutionGraphNode> thatNodes = new ArrayList<>();
-        for (Iterator<ExecutionGraphNode> it = that.iterator(); it.hasNext(); ) {
-            ExecutionGraphNode node = it.next();
-            thatNodes.add(node);
-        }
+        List<ExecutionGraphNode> thatNodes = that.unsafeIterator();
 
         for (int i = 0; i < curNodes.size(); i++) {
             if (!curNodes.get(i).equals(thatNodes.get(i))) {
@@ -1400,59 +1268,100 @@ public class ExecutionGraph {
         return true;
     }
 
+    /** Generic visitor interface for the execution graph nodes. */
+    public interface ExecutionGraphNodeVisitor {
+        void visit(ExecutionGraphNode node);
+    }
+
     /**
-     * Returns an iterator that iterates over the nodes in the graph in topological order.
+     * Topological sorter for the execution graph.
      *
-     * <p>Note: can be improved by using DFS to do the ordering
-     *
-     * <p>Does not validate if the graph has cycles!
+     * <p>Sorts the nodes in topological order and throws an exception if the graph has cycles.
      */
-    public static class TopologicalIterator implements Iterator<ExecutionGraphNode> {
-        private final Queue<ExecutionGraphNode> queue;
-        private final Set<Event.Key> visited;
+    public static class TopologicalSorter {
+
         private final ExecutionGraph graph;
+        private final Map<Event.Key, ExecutionGraphNode> nodeMap;
 
         /**
-         * Initializes a new topological iterator for the given graph.
+         * Initializes a new topological sorter for the given graph.
          *
-         * @param graph The graph to iterate over.
+         * @param graph The graph to sort.
          */
-        public TopologicalIterator(ExecutionGraph graph) {
-            this.queue = new LinkedList<>();
-            this.visited = new HashSet<>();
+        public TopologicalSorter(ExecutionGraph graph) {
             this.graph = graph;
-            if (!graph.isEmpty()) {
-                queue.add(graph.allEvents.get(0));
+            this.nodeMap = new HashMap<>();
+            for (ExecutionGraphNode node : graph.allEvents) {
+                nodeMap.put(node.key(), node);
             }
         }
 
-        @Override
-        public boolean hasNext() {
-            return !queue.isEmpty();
-        }
+        /**
+         * Sorts the graph in topological order.
+         *
+         * @return The sorted list of nodes.
+         * @throws GraphCycleException If the graph has cycles.
+         */
+        public List<ExecutionGraphNode> sort() throws GraphCycleException {
+            List<ExecutionGraphNode> queue = new ArrayList<>();
+            Map<Event.Key, Integer> inDegreeMap = new HashMap<>();
+            List<ExecutionGraphNode> output = new ArrayList<>();
 
-        @Override
-        public ExecutionGraphNode next() {
-            ExecutionGraphNode node = queue.poll();
-            if (node == null) {
-                throw new NoSuchElementException();
+            queue.add(graph.allEvents.get(0));
+
+            for (ExecutionGraphNode node : graph.allEvents) {
+                inDegreeMap.put(node.key(), node.getInDegree());
             }
-            try {
-                visited.add(node.key());
-                for (Event.Key child :
-                        node.getAllSuccessors().stream()
-                                .sorted(Comparator.comparingLong(Event.Key::getTaskId))
-                                .toList()) {
-                    ExecutionGraphNode childNode = graph.getEventNode(child);
-                    if (visited.containsAll(childNode.getAllPredecessors())) {
-                        queue.add(childNode);
+
+            while (!queue.isEmpty()) {
+                ExecutionGraphNode node = queue.remove(0);
+                output.add(node);
+
+                List<Event.Key> toAdd = new ArrayList<>();
+
+                for (Map.Entry<Event.Key, Integer> successor :
+                        node.getSuccessorsCount().entrySet()) {
+                    int newIndegree = inDegreeMap.get(successor.getKey()) - successor.getValue();
+                    inDegreeMap.put(successor.getKey(), newIndegree);
+                    if (newIndegree == 0) {
+                        toAdd.add(successor.getKey());
                     }
                 }
-            } catch (NoSuchEventException e) {
-                // Should not be possible technically
-                e.printStackTrace();
+
+                toAdd.sort(Event.Key::compareTo);
+                queue.addAll(toAdd.stream().map(nodeMap::get).toList());
             }
-            return node;
+
+            if (output.size() != graph.allEvents.size()) {
+                throw new GraphCycleException("Graph has cycles");
+            } else {
+                return output;
+            }
+        }
+
+        /**
+         * Sorts the graph in topological order and visits each node using the given visitor.
+         *
+         * @param visitor The visitor to use for each node.
+         * @throws GraphCycleException If the graph has cycles.
+         */
+        public void sortWithVisitor(ExecutionGraphNodeVisitor visitor) throws GraphCycleException {
+            List<ExecutionGraphNode> sortedNodes = sort();
+            for (ExecutionGraphNode node : sortedNodes) {
+                visitor.visit(node);
+            }
+        }
+
+        /** Exception thrown when the graph has cycles. */
+        public static class GraphCycleException extends Exception {
+            /**
+             * Initializes a new graph cycle exception with the given message.
+             *
+             * @param message The message for the exception.
+             */
+            public GraphCycleException(String message) {
+                super(message);
+            }
         }
     }
 

@@ -39,6 +39,14 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      */
     public LamportVectorClock(LamportVectorClock other, int index) {
         this.vector = new ArrayList<>(other.vector);
+        if (index >= other.vector.size()) {
+            for (int i = other.vector.size(); i < index + 1; i++) {
+                this.vector.add(0);
+                other.vector.add(0);
+            }
+        } else if (index < 0) {
+            throw new IllegalArgumentException("Index cannot be negative");
+        }
         this.vector.set(index, other.vector.get(index) + 1);
     }
 

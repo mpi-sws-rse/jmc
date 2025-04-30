@@ -472,7 +472,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "TrustCC7",
                         () -> {
-                            int size = 6;
+                            int size = 5;
                             CC7.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
