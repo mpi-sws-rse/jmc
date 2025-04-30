@@ -8,20 +8,7 @@ import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.SchedulingChoice;
 import org.mpisws.jmc.util.aux.LamportVectorClock;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Queue;
-import java.util.Set;
-import java.util.LinkedHashSet;
-import java.util.Collections;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -54,7 +41,9 @@ public class ExecutionGraph {
     // All events in the execution graph. This is the TO order
     private List<ExecutionGraphNode> allEvents;
 
-    /** Initializes a new execution graph. */
+    /**
+     * Initializes a new execution graph.
+     */
     public ExecutionGraph() {
         this.allEvents = new ArrayList<>();
         this.coherencyOrder = new HashMap<>();
@@ -464,7 +453,7 @@ public class ExecutionGraph {
      * Returns the nodes that are not _porf_-before the given node except the last node in the
      * returned list. Assumes that the given nodes are ordered in reverse CO order.
      *
-     * @param node The node to split before.
+     * @param node  The node to split before.
      * @param nodes The nodes to split.
      * @return The nodes that are not _porf_-before the given node.
      */
@@ -624,6 +613,7 @@ public class ExecutionGraph {
     }
 
     // TODO :: Remove this method
+
     /**
      * Returns the same-location reads to the given write event.
      *
@@ -669,7 +659,7 @@ public class ExecutionGraph {
      * Constructs a backward revisit view of the ExecutionGraph.
      *
      * @param write The write event
-     * @param read The read event that the write needs to backward revisit
+     * @param read  The read event that the write needs to backward revisit
      * @return The backward revisit view of the ExecutionGraph
      */
     public BackwardRevisitView revisitView(ExecutionGraphNode write, ExecutionGraphNode read) {
@@ -809,7 +799,7 @@ public class ExecutionGraph {
      * <p>Invalidates the total order and the vector clocks of events in the graph. The concern of
      * fixing the total order and the vector clocks is passed to the calling function.
      *
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public void changeReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
@@ -831,7 +821,7 @@ public class ExecutionGraph {
      *
      * <p>Does not validate if there is an existing reads-from edge to the corresponding read
      *
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public void setReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
@@ -908,18 +898,14 @@ public class ExecutionGraph {
 
         // Remove dangling edges
         for (ExecutionGraphNode node : allEvents) {
-            Set<Event.Key> successors = node.getAllSuccessors();
-            for (Event.Key successor : successors) {
-                if (set.contains(successor)) {
-                    node.removeAllEdgesTo(successor);
-                }
-            }
-            Set<Event.Key> predecessors = node.getAllPredecessors();
-            for (Event.Key predecessor : predecessors) {
-                if (set.contains(predecessor)) {
-                    node.removeAllEdgesFrom(predecessor);
-                }
-            }
+            Map<Relation, Set<Event.Key>> successors = node.getAllSuccessors();
+            successors.forEach((relation, edges) -> {
+                edges.removeIf(set::contains);
+            });
+            Map<Relation, Set<Event.Key>> predecessors = node.getAllPredecessors();
+            predecessors.forEach((relation, edges) -> {
+                edges.removeIf(set::contains);
+            });
         }
 
         // Recompute the co-edges
@@ -952,7 +938,9 @@ public class ExecutionGraph {
         }
     }
 
-    /** Recomputes the vector clocks of all nodes in the execution graph. */
+    /**
+     * Recomputes the vector clocks of all nodes in the execution graph.
+     */
     public void recomputeVectorClocks() {
 
         TopologicalSorter topoSorter = new TopologicalSorter(this);
@@ -970,7 +958,7 @@ public class ExecutionGraph {
                                 return;
                             }
 
-                            Set<Event.Key> porfPredecessors = node.getAllPorfPredecessors();
+                            Map<Relation, Set<Event.Key>> predecessors = node.getAllPredecessors();
                             Event.Key poBeforeNode = node.getPoPredecessor();
                             if (poBeforeNode == null) {
                                 // No PO predecessor, this is the first event in the task
@@ -981,14 +969,20 @@ public class ExecutionGraph {
                                     new LamportVectorClock(
                                             clocks.get(poBeforeNode),
                                             Math.toIntExact(node.key().getTaskId()));
-                            for (Event.Key predecessor : porfPredecessors) {
-                                LamportVectorClock predecessorClock = clocks.get(predecessor);
-                                if (predecessorClock == null) {
-                                    throw HaltCheckerException.error(
-                                            "The predecessor clock is not found.");
+                            predecessors.forEach(((relation, preds) -> {
+                                if (relation == Relation.Coherency) {
+                                    return;
                                 }
-                                newClock.update(predecessorClock);
-                            }
+                                preds.forEach((pred) -> {
+                                    LamportVectorClock predClock = clocks.get(pred);
+                                    if (predClock == null) {
+                                        throw HaltCheckerException.error(
+                                                "The predecessors clock is not found."
+                                        );
+                                    }
+                                    newClock.update(predClock);
+                                });
+                            }));
 
                             // Update the clock of the node
                             clocks.put(node.key(), newClock);
@@ -1046,18 +1040,14 @@ public class ExecutionGraph {
         Set<Event.Key> removedKeys =
                 removedNodes.stream().map(ExecutionGraphNode::key).collect(Collectors.toSet());
         for (ExecutionGraphNode node : allEvents) {
-            Set<Event.Key> successors = node.getAllSuccessors();
-            for (Event.Key successor : successors) {
-                if (removedKeys.contains(successor)) {
-                    node.removeAllEdgesTo(successor);
-                }
-            }
-            Set<Event.Key> predecessors = node.getAllPredecessors();
-            for (Event.Key predecessor : predecessors) {
-                if (removedKeys.contains(predecessor)) {
-                    node.removeAllEdgesFrom(predecessor);
-                }
-            }
+            Map<Relation, Set<Event.Key>> successors = node.getAllSuccessors();
+            successors.forEach((relation, edges) -> {
+                edges.removeIf(removedKeys::contains);
+            });
+            Map<Relation, Set<Event.Key>> predecessors = node.getAllPredecessors();
+            predecessors.forEach((relation, edges) -> {
+                edges.removeIf(removedKeys::contains);
+            });
         }
 
         // Recompute the co-edges
@@ -1069,12 +1059,16 @@ public class ExecutionGraph {
         recomputeVectorClocks();
     }
 
-    /** Returns an iterator walking through the nodes in a topological sort order. */
+    /**
+     * Returns an iterator walking through the nodes in a topological sort order.
+     */
     public List<ExecutionGraphNode> iterator() throws TopologicalSorter.GraphCycleException {
         return (new TopologicalSorter(this)).sort();
     }
 
-    /** Returns List of nodes while silently ignoring any errors with cycles * */
+    /**
+     * Returns List of nodes while silently ignoring any errors with cycles *
+     */
     public List<ExecutionGraphNode> unsafeIterator() {
         try {
             return (new TopologicalSorter(this)).sort();
@@ -1086,95 +1080,19 @@ public class ExecutionGraph {
     // TODO :: This method will lead to a stack overflow if the graph is deeply nested.
     // TODO :: We need to use an iterative approach to avoid this.
     public List<ExecutionGraphNode> checkConsistencyAndTopologicallySort() {
-        return topologicalSort();
+        return unsafeIterator();
     }
 
-    public List<ExecutionGraphNode> topologicalSort() {
-        LinkedHashSet<ExecutionGraphNode> visited = new LinkedHashSet<>();
-        HashSet<ExecutionGraphNode> recStack = new HashSet<>();
-        ArrayList<ExecutionGraphNode> topoSort = new ArrayList<>();
-
-        for (ExecutionGraphNode node : allEvents) {
-            if (dfsTopoSort(node, recStack, topoSort, visited)) {
-                // Cycle detected
-                return new ArrayList<>();
-            }
-        }
-
-        Collections.reverse(topoSort);
-        return topoSort;
-    }
-
-    private boolean dfsTopoSort(
-            ExecutionGraphNode node,
-            HashSet<ExecutionGraphNode> recStack,
-            ArrayList<ExecutionGraphNode> topoSort,
-            LinkedHashSet<ExecutionGraphNode> visited) {
-        if (recStack.contains(node)) {
-            return true;
-        }
-
-        if (visited.contains(node)) {
-            return false;
-        }
-
-        visited.add(node);
-        recStack.add(node);
-
-        // Exploring successors ( PO + RF + CO + Thread Coherence + Join Coherence )
-        for (Event.Key successor : node.getAllSuccessors()) {
-            try {
-                ExecutionGraphNode childNode = getEventNode(successor);
-                if (dfsTopoSort(childNode, recStack, topoSort, visited)) {
-                    return true;
-                }
-            } catch (NoSuchEventException e) {
-                // Should not be possible technically
-                e.printStackTrace();
-            }
-        }
-
-        // Exploring predecessors ( FR = RF^{-1};CO)
-        if (node.getEvent().isRead() || node.getEvent().isReadEx()) {
-            Set<Event.Key> predecessors = node.getPredecessors(Relation.ReadsFrom);
-            if (predecessors.isEmpty()) {
-                // No read event can have null read-from predecessor
-                throw HaltCheckerException.error("The read event has no read-from predecessor");
-            }
-
-            if (predecessors.size() > 1) {
-                // A read event can have only one read-from predecessor
-                throw HaltCheckerException.error(
-                        "The read event has more than one read-from predecessor");
-            }
-
-            Event.Key predecessor = predecessors.iterator().next();
-            try {
-                ExecutionGraphNode rfNode = getEventNode(predecessor);
-                Set<Event.Key> fr = rfNode.getSuccessors(Relation.Coherency);
-                for (Event.Key frkey : fr) {
-                    ExecutionGraphNode frNode = getEventNode(frkey);
-                    if (dfsTopoSort(frNode, recStack, topoSort, visited)) {
-                        return true;
-                    }
-                }
-            } catch (NoSuchEventException e) {
-                // Should not be possible technically
-                e.printStackTrace();
-            }
-        }
-
-        recStack.remove(node);
-        topoSort.add(node);
-        return false;
-    }
-
-    /** Returns true if the graph contains only the initial event. */
+    /**
+     * Returns true if the graph contains only the initial event.
+     */
     public boolean isEmpty() {
         return allEvents.size() == 1 && allEvents.get(0).getEvent().isInit();
     }
 
-    /** Clears the execution graph. */
+    /**
+     * Clears the execution graph.
+     */
     public void clear() {
         allEvents.clear();
         coherencyOrder.clear();
@@ -1268,7 +1186,13 @@ public class ExecutionGraph {
         return true;
     }
 
-    /** Generic visitor interface for the execution graph nodes. */
+    public void trackThreadJoinCompletion(ExecutionGraphNode eventNode) {
+        // TODO: complete this
+    }
+
+    /**
+     * Generic visitor interface for the execution graph nodes.
+     */
     public interface ExecutionGraphNodeVisitor {
         void visit(ExecutionGraphNode node);
     }
@@ -1303,7 +1227,7 @@ public class ExecutionGraph {
          * @throws GraphCycleException If the graph has cycles.
          */
         public List<ExecutionGraphNode> sort() throws GraphCycleException {
-            List<ExecutionGraphNode> queue = new ArrayList<>();
+            Deque<ExecutionGraphNode> queue = new ArrayDeque<>();
             Map<Event.Key, Integer> inDegreeMap = new HashMap<>();
             List<ExecutionGraphNode> output = new ArrayList<>();
 
@@ -1314,22 +1238,25 @@ public class ExecutionGraph {
             }
 
             while (!queue.isEmpty()) {
-                ExecutionGraphNode node = queue.remove(0);
+                ExecutionGraphNode node = queue.pop();
                 output.add(node);
 
                 List<Event.Key> toAdd = new ArrayList<>();
 
-                for (Map.Entry<Event.Key, Integer> successor :
-                        node.getSuccessorsCount().entrySet()) {
-                    int newIndegree = inDegreeMap.get(successor.getKey()) - successor.getValue();
-                    inDegreeMap.put(successor.getKey(), newIndegree);
-                    if (newIndegree == 0) {
-                        toAdd.add(successor.getKey());
-                    }
-                }
+                node.forEachSuccessor((relation, successors) -> {
+                    successors.forEach(successor -> {
+                        int newIndegree = inDegreeMap.get(successor) - 1;
+                        inDegreeMap.put(successor, newIndegree);
+                        if (newIndegree == 0) {
+                            toAdd.add(successor);
+                        }
+                    });
+                });
 
                 toAdd.sort(Event.Key::compareTo);
-                queue.addAll(toAdd.stream().map(nodeMap::get).toList());
+                toAdd.forEach((key) -> {
+                    queue.add(nodeMap.get(key));
+                });
             }
 
             if (output.size() != graph.allEvents.size()) {
@@ -1346,13 +1273,47 @@ public class ExecutionGraph {
          * @throws GraphCycleException If the graph has cycles.
          */
         public void sortWithVisitor(ExecutionGraphNodeVisitor visitor) throws GraphCycleException {
-            List<ExecutionGraphNode> sortedNodes = sort();
-            for (ExecutionGraphNode node : sortedNodes) {
+            Deque<ExecutionGraphNode> queue = new ArrayDeque<>();
+            Map<Event.Key, Integer> inDegreeMap = new HashMap<>();
+            List<Event.Key> output = new ArrayList<>();
+
+            queue.add(graph.allEvents.get(0));
+
+            for (ExecutionGraphNode node : graph.allEvents) {
+                inDegreeMap.put(node.key(), node.getInDegree());
+            }
+
+            while (!queue.isEmpty()) {
+                ExecutionGraphNode node = queue.pop();
+                output.add(node.key());
                 visitor.visit(node);
+
+                List<Event.Key> toAdd = new ArrayList<>();
+
+                node.forEachSuccessor((relation, successors) -> {
+                    successors.forEach(successor -> {
+                        int newIndegree = inDegreeMap.get(successor) - 1;
+                        inDegreeMap.put(successor, newIndegree);
+                        if (newIndegree == 0) {
+                            toAdd.add(successor);
+                        }
+                    });
+                });
+
+                toAdd.sort(Event.Key::compareTo);
+                toAdd.forEach((key) -> {
+                    queue.add(nodeMap.get(key));
+                });
+            }
+
+            if (output.size() != graph.allEvents.size()) {
+                throw new GraphCycleException("Graph has cycles");
             }
         }
 
-        /** Exception thrown when the graph has cycles. */
+        /**
+         * Exception thrown when the graph has cycles.
+         */
         public static class GraphCycleException extends Exception {
             /**
              * Initializes a new graph cycle exception with the given message.
@@ -1374,7 +1335,7 @@ public class ExecutionGraph {
                 System.out.print(node.getEvent());
                 // Print predecessors and successors
                 System.out.print(" [P: ");
-                for (Relation relation : node.getBackEdges().keySet()) {
+                for (Relation relation : node.getAllPredecessors().keySet()) {
                     System.out.print("{" + relation + ": ");
                     for (Event.Key key : node.getPredecessors(relation)) {
                         System.out.print(key + "/");

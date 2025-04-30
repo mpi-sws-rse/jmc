@@ -10,17 +10,21 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 
-/** Represents a node in the execution graph. */
+/**
+ * Represents a node in the execution graph.
+ */
 public class ExecutionGraphNode {
     // The event that this node represents.
     private final Event event;
     // The attributes of this node.
     private Map<String, Object> attributes;
     // Forward edges from this node. Grouped by edge relation.
-    private final Map<Relation, Set<Event.Key>> edges;
+    public final Map<Relation, Set<Event.Key>> edges;
     // Back edges to this node. Grouped by edge relation.
-    private final Map<Relation, Set<Event.Key>> backEdges;
+    public final Map<Relation, Set<Event.Key>> backEdges;
 
     // The vector clock of this node (Used to track only PORF relation)
     private LamportVectorClock vectorClock;
@@ -60,7 +64,9 @@ public class ExecutionGraphNode {
         this.vectorClock = new LamportVectorClock(node.vectorClock.getVector());
     }
 
-    /** Constructs a new {@link ExecutionGraphNode} copying the given node. */
+    /**
+     * Constructs a new {@link ExecutionGraphNode} copying the given node.
+     */
     public ExecutionGraphNode clone() {
         return new ExecutionGraphNode(this);
     }
@@ -82,7 +88,7 @@ public class ExecutionGraphNode {
      * Adds an edge to this node. The edge is directed from this node to the given node with the
      * given adjacency.
      *
-     * @param to The node to which the edge is directed.
+     * @param to        The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void addEdge(ExecutionGraphNode to, Relation adjacency) {
@@ -98,7 +104,7 @@ public class ExecutionGraphNode {
      * given adjacency. The vector clock of this node is updated with the vector clock of the given
      * node (only if the relation is not CO).
      *
-     * @param from The node from which the edge is directed.
+     * @param from      The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void addBackEdge(ExecutionGraphNode from, Relation adjacency) {
@@ -117,7 +123,7 @@ public class ExecutionGraphNode {
      * <p>Note that removing an edge invalidates the vector clock of all descendants. The concern of
      * fixing the vector clocks is passed to the calling function.
      *
-     * @param to The node to which the edge is directed.
+     * @param to        The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void removeEdge(ExecutionGraphNode to, Relation adjacency) {
@@ -156,6 +162,7 @@ public class ExecutionGraphNode {
         edges.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
+
     /**
      * Removes all edges from the given node.
      *
@@ -172,7 +179,7 @@ public class ExecutionGraphNode {
     /**
      * Removes the predecessor with the given adjacency from this node.
      *
-     * @param from The node from which the edge is directed.
+     * @param from      The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void removePredecessor(ExecutionGraphNode from, Relation adjacency) {
@@ -202,7 +209,7 @@ public class ExecutionGraphNode {
     /**
      * Removes the back edge with the given adjacency from this node.
      *
-     * @param from The node from which the edge is directed.
+     * @param from      The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void removeBackEdge(ExecutionGraphNode from, Relation adjacency) {
@@ -217,12 +224,8 @@ public class ExecutionGraphNode {
      *
      * @return The edges of this node.
      */
-    public Set<Event.Key> getAllSuccessors() {
-        Set<Event.Key> neighbors = new HashSet<>();
-        for (Set<Event.Key> edge : edges.values()) {
-            neighbors.addAll(edge);
-        }
-        return neighbors;
+    public Map<Relation, Set<Event.Key>> getAllSuccessors() {
+        return edges;
     }
 
     /**
@@ -232,10 +235,7 @@ public class ExecutionGraphNode {
      * @return The neighbours of this node that have the given adjacency.
      */
     public Set<Event.Key> getSuccessors(Relation adjacency) {
-        if (!edges.containsKey(adjacency)) {
-            return new HashSet<>();
-        }
-        return new HashSet<>(edges.get(adjacency));
+        return edges.getOrDefault(adjacency, new HashSet<>());
     }
 
     /**
@@ -250,7 +250,7 @@ public class ExecutionGraphNode {
     /**
      * Returns whether this node has an edge to the given node with the given adjacency.
      *
-     * @param to The node to which the edge is directed.
+     * @param to        The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      * @return Whether this node has an edge to the given node with the given adjacency.
      */
@@ -266,15 +266,7 @@ public class ExecutionGraphNode {
      *
      * @return The predecessors of this node.
      */
-    public Set<Event.Key> getAllPredecessors() {
-        Set<Event.Key> neighbors = new HashSet<>();
-        for (Set<Event.Key> edge : backEdges.values()) {
-            neighbors.addAll(edge);
-        }
-        return neighbors;
-    }
-
-    public Map<Relation, Set<Event.Key>> getBackEdges() {
+    public Map<Relation, Set<Event.Key>> getAllPredecessors() {
         return backEdges;
     }
 
@@ -284,10 +276,7 @@ public class ExecutionGraphNode {
      * @return The back edges of this node.
      */
     public Set<Event.Key> getPredecessors(Relation adjacency) {
-        if (!backEdges.containsKey(adjacency)) {
-            return new HashSet<>();
-        }
-        return new HashSet<>(backEdges.get(adjacency));
+        return backEdges.get(adjacency);
     }
 
     /**
@@ -303,33 +292,12 @@ public class ExecutionGraphNode {
         return inDegree;
     }
 
-    /**
-     * Returns successors with number of edges to them.
-     *
-     * @return Map of successors with edge count.
-     */
-    public HashMap<Event.Key, Integer> getSuccessorsCount() {
-        HashMap<Event.Key, Integer> successorsCount = new HashMap<>();
-        for (Set<Event.Key> relation : edges.values()) {
-            for (Event.Key key : relation) {
-                successorsCount.put(key, successorsCount.getOrDefault(key, 0) + 1);
-            }
-        }
-        return successorsCount;
+    public void forEachPredecessor(BiConsumer<Relation, Set<Event.Key>> iterator) {
+        backEdges.forEach(iterator);
     }
 
-    /**
-     * Return _porf_ predecessors of this node. This includes all predecessors that are not CO, and
-     * all read-from edges, thread-join edges and thread-creation edges.
-     *
-     * @return The _porf_ predecessors of this node.
-     */
-    public Set<Event.Key> getAllPorfPredecessors() {
-        Set<Event.Key> porfPredecessors = getPredecessors(Relation.ProgramOrder);
-        porfPredecessors.addAll(getPredecessors(Relation.ReadsFrom));
-        porfPredecessors.addAll(getPredecessors(Relation.ThreadJoin));
-        porfPredecessors.addAll(getPredecessors(Relation.ThreadCreation));
-        return porfPredecessors;
+    public void forEachSuccessor(BiConsumer<Relation, Set<Event.Key>> iterator) {
+        edges.forEach(iterator);
     }
 
     /**
@@ -356,7 +324,7 @@ public class ExecutionGraphNode {
     /**
      * Adds an attribute to this node.
      *
-     * @param key The key of the attribute.
+     * @param key   The key of the attribute.
      * @param value The value of the attribute.
      */
     public void addAttribute(String key, Object value) {

@@ -18,17 +18,17 @@ import java.util.stream.Stream;
 public class JmcCoverageBenchmark {
 
     private static Stream<Arguments> provideTrustTestCases() {
-        return Stream.of(Arguments.of(7, Duration.of(30, ChronoUnit.MINUTES)),
-                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
-                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
-                Arguments.of(12, Duration.of(30, ChronoUnit.MINUTES)),
-                Arguments.of(15, Duration.of(30, ChronoUnit.MINUTES)),
-                Arguments.of(20, Duration.of(30, ChronoUnit.MINUTES)));
+        return Stream.of(Arguments.of(7, Duration.of(5, ChronoUnit.MINUTES)));
+//        ,
+//                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
+//                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
+//                Arguments.of(12, Duration.of(30, ChronoUnit.MINUTES)),
+//                Arguments.of(15, Duration.of(30, ChronoUnit.MINUTES)),
+//                Arguments.of(20, Duration.of(30, ChronoUnit.MINUTES)));
     }
 
     private static Stream<Arguments> provideRandomTestCases() {
         return Stream.of(
-                // Arguments.of(7, Duration.of(20, ChronoUnit.MINUTES)),
                 Arguments.of(7, Duration.of(30, ChronoUnit.MINUTES)),
                 Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
                 Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),

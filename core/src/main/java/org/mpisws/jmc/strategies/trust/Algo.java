@@ -30,7 +30,9 @@ public class Algo {
 
     private final LocationStore locationStore;
 
-    /** Creates a new instance of the Trust algorithm. */
+    /**
+     * Creates a new instance of the Trust algorithm.
+     */
     public Algo() {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
@@ -41,7 +43,9 @@ public class Algo {
         this.executionGraph.addEvent(Event.init());
     }
 
-    /** Returns the next task to be scheduled according to the execution graph set in place. */
+    /**
+     * Returns the next task to be scheduled according to the execution graph set in place.
+     */
     public SchedulingChoice<?> nextTask() {
         if (!isGuiding) {
             return null;
@@ -171,6 +175,7 @@ public class Algo {
             }
         } else if (EventUtils.isThreadJoin(event)) {
             this.executionGraph.trackThreadJoins(eventNode);
+            this.executionGraph.trackThreadJoinCompletion(eventNode);
         }
     }
 
@@ -209,7 +214,9 @@ public class Algo {
         findNextExplorationChoice();
     }
 
-    /** Checks if we are guiding the execution. */
+    /**
+     * Checks if we are guiding the execution.
+     */
     private boolean areWeGuiding() {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
     }
@@ -257,9 +264,8 @@ public class Algo {
                 case FRW -> nextGraphSchedule = processFRW(item);
                 case FWW -> nextGraphSchedule = processFWW(item);
                 case FLW -> nextGraphSchedule = processFLW(item);
-                default ->
-                        throw new RuntimeException(
-                                "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
+                default -> throw new RuntimeException(
+                        "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
         }
 
@@ -591,7 +597,8 @@ public class Algo {
         }
     }
 
-    private void handleLockAwait(Event event) {}
+    private void handleLockAwait(Event event) {
+    }
 
     /**
      * Writes the execution graph to a file.

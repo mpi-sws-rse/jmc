@@ -7,6 +7,7 @@ public enum Relation {
     ThreadCreation("threadCreation"),
     ThreadStart("threadStart"),
     ThreadJoin("threadJoin"),
+    ThreadJoinCompletion("threadJoinCompletion"),
     ;
 
     private final String key;
