@@ -913,8 +913,6 @@ public class ExecutionGraph {
         for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : modifiedLocations.entrySet()) {
             recomputeCoEdges(entry.getKey(), entry.getValue());
         }
-
-        recomputeVectorClocks();
     }
 
     private void recomputeCoEdges(Integer location, List<ExecutionGraphNode> oldWrites) {
@@ -1052,8 +1050,6 @@ public class ExecutionGraph {
         for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : modifiedLocations.entrySet()) {
             recomputeCoEdges(entry.getKey(), entry.getValue());
         }
-
-        recomputeVectorClocks();
     }
 
     /**

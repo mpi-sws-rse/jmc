@@ -162,6 +162,7 @@ public class BackwardRevisitView {
         restrictedGraph.changeReadsFrom(read, write);
         // Remove the nodes
         restrictedGraph.restrictBySet(removedNodes);
+        restrictedGraph.recomputeVectorClocks();
         return restrictedGraph;
     }
 }

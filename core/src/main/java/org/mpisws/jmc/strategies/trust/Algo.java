@@ -313,6 +313,7 @@ public class Algo {
 
         executionGraph.changeReadsFrom(read, write);
         executionGraph.restrict(read);
+        executionGraph.recomputeVectorClocks();
 
         return executionGraph.checkConsistencyAndTopologicallySort();
     }

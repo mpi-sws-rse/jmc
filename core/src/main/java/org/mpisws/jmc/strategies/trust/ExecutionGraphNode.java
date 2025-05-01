@@ -299,6 +299,9 @@ public class ExecutionGraphNode {
                 continue;
             }
             List<Event.Key> predecessors = backEdges.get(rel);
+            if (predecessors.isEmpty()) {
+                continue;
+            }
             iterator.accept(rel, predecessors);
         }
     }
@@ -309,6 +312,9 @@ public class ExecutionGraphNode {
                 continue;
             }
             List<Event.Key> successors = edges.get(rel);
+            if (successors.isEmpty()) {
+                continue;
+            }
             iterator.accept(rel, successors);
         }
     }
