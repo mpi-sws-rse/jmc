@@ -114,6 +114,12 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     public void resetIteration(int iteration) {
         this.schedulingStrategy.resetIteration(iteration);
         ExecutionGraph executionGraph = simulator.getExecutionGraph();
+        if (this.schedulingStrategy instanceof TrustStrategy t) {
+            ExecutionGraph that = t.getExecutionGraph();
+            if(!executionGraph.equals(that)) {
+                LOGGER.error("Execution graph mismatch: {} vs {}", executionGraph, that);
+            }
+        }
         String json = executionGraph.toJsonStringIgnoreLocation();
         try {
             String hash = StringUtil.sha256Hash(json);
@@ -121,13 +127,13 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
                 visitedGraphs.put(hash, visitedGraphs.get(hash) + 1);
             } else {
                 visitedGraphs.put(hash, 1);
+                if (config.isDebugEnabled()) {
+                    FileUtil.unsafeStoreToFile(
+                            Paths.get(config.getRecordPath(), visitedGraphs.size() + ".json").toString(), json);
+                }
             }
             if (config.isRecordPerIteration()) {
                 updateCoverage();
-            }
-            if (config.isDebugEnabled()) {
-                FileUtil.unsafeStoreToFile(
-                        Paths.get(config.getRecordPath(), hash + ".json").toString(), json);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

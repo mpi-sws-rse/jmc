@@ -51,6 +51,24 @@ async def get_log(graph: int):
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail="Log data not found")
 
+def _get_graph_code(graph_filename: str):
+    filename = graph_filename.split(".")[0]
+    split_names = filename.split("-")
+    if (len(split_names) == 2):
+        return int(split_names[1])
+    elif (len(split_names) == 3):
+        return int(split_names[2])
+    else:
+        return int(split_names[0])
+
+def _is_valid_graph_file(graph_filename: str):
+    try:
+        _get_graph_code(graph_filename)
+        return True
+    except Exception as e:
+        return False
+
+
 def read_graphs(graph_files_path: str):
     """Read the graph files from the given path"""
     global graph_files
@@ -58,11 +76,11 @@ def read_graphs(graph_files_path: str):
     global log_files
     log_files = {}
     for file in os.listdir(graph_files_path):
-        if file.endswith(".json"):
-            file_id = int(file.split(".")[0].split("-")[1])
+        if file.endswith(".json") and _is_valid_graph_file(file):
+            file_id = _get_graph_code(file)
             graph_files[file_id] = os.path.join(graph_files_path,file)
-        elif file.endswith(".log"):
-            file_id = int(file.split(".")[0].split("-")[2])
+        elif file.endswith(".log") and _is_valid_graph_file(file):
+            file_id = _get_graph_code(file)
             log_files[file_id] = os.path.join(graph_files_path,file)
 
 if __name__ == "__main__":
