@@ -223,6 +223,8 @@ public class Event {
         WRITE_EX,
         END,
         ERROR,
+        LOCK_ACQUIRE,
+        LOCK_RELEASE,
         NOOP,
     }
 

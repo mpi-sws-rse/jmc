@@ -8,6 +8,7 @@ import org.mpisws.jmc.programs.concurrent.*;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounter;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounterKt;
 import org.mpisws.jmc.programs.det.array.DetArray;
+import org.mpisws.jmc.programs.det.lists.Client9;
 import org.mpisws.jmc.programs.det.loop.DetLoop;
 import org.mpisws.jmc.programs.det.loopVariant.DetLoopWithLock;
 import org.mpisws.jmc.programs.det.stack.Client1;
@@ -338,6 +339,22 @@ public class JmcModelCheckerTest {
                         "RandomReactiveCounter",
                         () -> {
                             RandomCounterIncr.main(new String[0]);
+                        });
+
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testRandomCoarseList() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(1000).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomCoarseList",
+                        () -> {
+                            Client9.main(new String[0]);
                         });
 
         jmcModelChecker.check(target);

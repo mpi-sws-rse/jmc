@@ -11,6 +11,7 @@ import org.mpisws.jmc.runtime.RuntimeEvent;
  */
 public class JmcReentrantLock {
 
+    public int token = 0;
     /**
      * Acquires the lock.
      */
@@ -20,7 +21,11 @@ public class JmcReentrantLock {
                         .type(RuntimeEvent.Type.LOCK_ACQUIRE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
+                        .param("name", "token")
+                        .param("value", token)
+                        .param("descriptor", "I")
                         .param("lock", this)
+                        .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);
         event =
@@ -29,8 +34,13 @@ public class JmcReentrantLock {
                         .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
                         .param("lock", this)
+                        .param("name", "token")
+                        .param("descriptor", "I")
+                        .param("value", token)
+                        .param("instance", this)
+                        .param("newValue", 1)
                         .build();
-        JmcRuntime.updateEvent(event);
+        JmcRuntime.updateEventAndYield(event);
     }
 
     /**
@@ -42,7 +52,12 @@ public class JmcReentrantLock {
                         .type(RuntimeEvent.Type.LOCK_RELEASE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
+                        .param("name", "token")
+                        .param("descriptor", "I")
+                        .param("value", token)
+                        .param("newValue", 0)
                         .param("lock", this)
+                        .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);
     }

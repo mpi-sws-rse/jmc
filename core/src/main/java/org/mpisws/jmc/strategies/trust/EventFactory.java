@@ -79,6 +79,34 @@ public class EventFactory {
                 event.setAttribute("waitingTask", joinedTask - 1);
                 return List.of(event);
             }
+            case LOCK_ACQUIRED_EVENT -> {
+                Event event1 =
+                        new Event(
+                                runtimeEvent.getTaskId() - 1,
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
+                                Event.Type.READ_EX);
+                int value = runtimeEvent.getParam("value");
+                event1.setAttribute("value", value);
+
+                Event event2 =
+                        new Event(
+                                runtimeEvent.getTaskId() - 1,
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
+                                Event.Type.WRITE_EX);
+                int newValue = runtimeEvent.getParam("newValue");
+                event2.setAttribute("newValue", newValue);
+                return List.of(event1, event2);
+            }
+            case LOCK_RELEASE_EVENT -> {
+                Event event =
+                        new Event(
+                                runtimeEvent.getTaskId() - 1,
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
+                                Event.Type.WRITE_EX);
+                int newValue = runtimeEvent.getParam("newValue");
+                event.setAttribute("newValue", newValue);
+                return List.of(event);
+            }
         }
 
         return new ArrayList<>();

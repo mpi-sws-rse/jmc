@@ -32,10 +32,10 @@ public class ExecutionGraphSimulator {
                     handleWrite(trustEvent);
                     break;
                 case READ_EX:
-                    handleRead(trustEvent);
+                    handleReadEx(trustEvent);
                     break;
                 case WRITE_EX:
-                    handleWrite(trustEvent);
+                    handleWriteEx(trustEvent);
                     break;
                 case LOCK_AWAIT:
                     handleLockAwait(trustEvent);
@@ -69,7 +69,8 @@ public class ExecutionGraphSimulator {
 
     public void handleReadEx(Event event) {
         ExecutionGraphNode write = executionGraph.addEvent(event);
-        executionGraph.trackCoherency(write);
+        ExecutionGraphNode coMaxRead = executionGraph.getCoMax(event.getLocation());
+        executionGraph.setReadsFrom(write, coMaxRead);
     }
 
     public void handleWriteEx(Event event) {
