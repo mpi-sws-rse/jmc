@@ -22,6 +22,9 @@ import org.mpisws.jmc.programs.futures.CompletableFutureP;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
 import org.mpisws.jmc.programs.random.counter.RandomCounterIncr;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
+import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
+import org.mpisws.jmc.strategies.trust.MeasureGraphCoverageStrategy;
+import org.mpisws.jmc.strategies.trust.MeasureGraphCoverageStrategyConfig;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -354,7 +357,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "RandomCoarseList",
                         () -> {
-                            Client9.main(new String[0]);
+                            Client9.main(new String[]{String.valueOf(3)});
                         });
 
         jmcModelChecker.check(target);
