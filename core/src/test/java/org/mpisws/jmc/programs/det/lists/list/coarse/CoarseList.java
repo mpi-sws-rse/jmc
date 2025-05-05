@@ -14,7 +14,6 @@ public class CoarseList implements Set {
     public CoarseList() {
         Node newNode1 = new Node(Integer.MIN_VALUE);
         head = newNode1;
-
         // Write event for initializing head node
         RuntimeEvent event1 =
                 new RuntimeEvent.Builder()
@@ -31,7 +30,6 @@ public class CoarseList implements Set {
         JmcRuntime.updateEventAndYield(event1);
 
         Node headNode = head;
-
         // Read event for accessing head node
         RuntimeEvent event2 =
                 new RuntimeEvent.Builder()
@@ -48,7 +46,6 @@ public class CoarseList implements Set {
 
         Node newNode2 = new Node(Integer.MAX_VALUE);
         headNode.next = newNode2;
-
         // Write event for initializing next member of head node
         RuntimeEvent event3 =
                 new RuntimeEvent.Builder()
@@ -66,7 +63,6 @@ public class CoarseList implements Set {
 
         JmcReentrantLock lock = new JmcReentrantLock();
         this.lock = lock;
-
         // Write event for initializing lock
         RuntimeEvent event4 =
                 new RuntimeEvent.Builder()
@@ -92,7 +88,6 @@ public class CoarseList implements Set {
         Node pred, curr;
         int key = i;
         JmcReentrantLock l = lock;
-
         // Read event to read the lock object
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
@@ -110,7 +105,6 @@ public class CoarseList implements Set {
         try {
             l.lock();
             Node h = head;
-
             // Read event to read the head node
             RuntimeEvent event1 =
                     new RuntimeEvent.Builder()
@@ -127,7 +121,6 @@ public class CoarseList implements Set {
             pred = h;
 
             curr = pred.next;
-
             // Read event to read the next member of the head node
             RuntimeEvent event2 =
                     new RuntimeEvent.Builder()

@@ -120,6 +120,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
                 LOGGER.error("Execution graph mismatch: {} vs {}", executionGraph, that);
             }
         }
+        //executionGraph.printGraph();
         String json = executionGraph.toJsonStringIgnoreLocation();
         try {
             String hash = StringUtil.sha256Hash(json);

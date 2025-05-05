@@ -43,7 +43,7 @@ public class JmcReentrantLock {
                         .param("instance", this)
                         .param("newValue", 1)
                         .build();
-        JmcRuntime.updateEventAndYield(event);
+        JmcRuntime.updateEvent(event);
     }
 
     /**
