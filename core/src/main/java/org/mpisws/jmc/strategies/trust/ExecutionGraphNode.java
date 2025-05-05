@@ -400,15 +400,22 @@ public class ExecutionGraphNode {
         }
         json.add("attributes", attributesObject);
         JsonObject edgesObject = new JsonObject();
-        for (Map.Entry<Relation, List<Event.Key>> entry : edges.entrySet()) {
-            if (entry.getValue().isEmpty()) {
+        Relation[] relations = Relation.values();
+        for (int i=0; i< relations.length; i++) {
+            Relation relation = relations[i];
+            if (!edges.containsKey(relation)) {
+                continue;
+            }
+            List<Event.Key> successors = edges.get(relation);
+            if (successors.isEmpty()) {
                 continue;
             }
             JsonArray edgeArray = new JsonArray();
-            for (Event.Key key : entry.getValue()) {
+            successors.sort(Event.Key::compareTo);
+            for (Event.Key key : successors) {
                 edgeArray.add(key.toString());
             }
-            edgesObject.add(entry.getKey().toString(), edgeArray);
+            edgesObject.add(relation.toString(), edgeArray);
         }
         json.add("edges", edgesObject);
         return json;
