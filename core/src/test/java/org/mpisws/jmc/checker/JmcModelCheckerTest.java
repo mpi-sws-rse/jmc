@@ -8,6 +8,7 @@ import org.mpisws.jmc.programs.concurrent.*;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounter;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounterKt;
 import org.mpisws.jmc.programs.det.array.DetArray;
+import org.mpisws.jmc.programs.det.lists.Client8;
 import org.mpisws.jmc.programs.det.lists.Client9;
 import org.mpisws.jmc.programs.det.loop.DetLoop;
 import org.mpisws.jmc.programs.det.loopVariant.DetLoopWithLock;
@@ -344,6 +345,20 @@ public class JmcModelCheckerTest {
                             RandomCounterIncr.main(new String[0]);
                         });
 
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testRandomLazyList() throws JmcCheckerException {
+        JmcCheckerConfiguration config = new JmcCheckerConfiguration.Builder().numIterations(100).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomLazyList",
+                        () -> {
+                            Client8.main(new String[0]);
+                        });
         jmcModelChecker.check(target);
     }
 
