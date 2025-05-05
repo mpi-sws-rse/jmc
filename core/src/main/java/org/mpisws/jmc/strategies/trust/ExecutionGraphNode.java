@@ -395,8 +395,10 @@ public class ExecutionGraphNode {
         JsonObject json = new JsonObject();
         json.add("event", event.toJsonIgnoreLocation());
         JsonObject attributesObject = new JsonObject();
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-            json.addProperty(entry.getKey(), entry.getValue().toString());
+        List<String> attributeKeys = new ArrayList<>(attributes.keySet().stream().toList());
+        attributeKeys.sort(String::compareTo);
+        for (String key : attributeKeys) {
+            attributesObject.addProperty(key, attributes.get(key).toString());
         }
         json.add("attributes", attributesObject);
         JsonObject edgesObject = new JsonObject();
