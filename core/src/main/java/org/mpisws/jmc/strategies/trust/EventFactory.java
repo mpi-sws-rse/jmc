@@ -93,8 +93,8 @@ public class EventFactory {
                                 runtimeEvent.getTaskId() - 1,
                                 Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.WRITE_EX);
-                int newValue = runtimeEvent.getParam("newValue");
-                event2.setAttribute("newValue", newValue);
+                /*int newValue = runtimeEvent.getParam("newValue");
+                event2.setAttribute("newValue", newValue);*/
                 return List.of(event1, event2);
             }
             case LOCK_RELEASE_EVENT -> {
@@ -103,8 +103,8 @@ public class EventFactory {
                                 runtimeEvent.getTaskId() - 1,
                                 Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.WRITE_EX);
-                int newValue = runtimeEvent.getParam("newValue");
-                event.setAttribute("newValue", newValue);
+                /*int newValue = runtimeEvent.getParam("newValue");
+                event.setAttribute("newValue", newValue);*/
                 return List.of(event);
             }
         }

@@ -6,6 +6,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerTimeoutException;
 import org.mpisws.jmc.programs.concurrent.CC7;
+import org.mpisws.jmc.programs.det.lists.Client10;
 import org.mpisws.jmc.programs.det.lists.Client9;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.trust.MeasureGraphCoverageStrategy;
@@ -40,11 +41,20 @@ public class JmcCoverageBenchmark {
 
     private static Stream<Arguments> provideRandomTestCasesCoarse9() {
         return Stream.of(
-                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
-                Arguments.of(3, Duration.of(150000000, ChronoUnit.NANOS)),
-                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
-                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
-                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
+//                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
+                Arguments.of(5, Duration.of(4, ChronoUnit.SECONDS)));
+//                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
+//                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
+//                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
+    }
+
+    private static Stream<Arguments> provideRandomTestCasesFine10() {
+        return Stream.of(
+//                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
+                Arguments.of(4, Duration.of(800000000, ChronoUnit.NANOS)));
+//                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
+//                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
+//                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
     }
 
     @ParameterizedTest
@@ -166,6 +176,46 @@ public class JmcCoverageBenchmark {
                         "CoarseList",
                         () -> {
                             Client9.main(
+                                    new String[]{String.valueOf(threads)});
+                        });
+        try {
+            jmcModelChecker.check(target);
+        } catch (JmcCheckerException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideRandomTestCasesFine10")
+    public void benchmarkFineListRandom(int threads, Duration timeout)
+            throws JmcCheckerException {
+        System.out.println("Running with threads = " + threads);
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyConstructor(
+                                (sConfig) ->
+                                        new MeasureGraphCoverageStrategy(
+                                                new RandomSchedulingStrategy(sConfig.getSeed()),
+                                                MeasureGraphCoverageStrategyConfig.builder()
+                                                        .recordPath(
+                                                                sConfig.getReportPath()
+                                                                        + "/random-"
+                                                                        + threads
+                                                                        + "-"
+                                                                        + timeout.toString())
+                                                        .debug(true)
+                                                        .withFrequency(
+                                                                Duration.of(1, ChronoUnit.SECONDS))
+                                                        .build()))
+                        .timeout(timeout)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "CoarseList",
+                        () -> {
+                            Client10.main(
                                     new String[]{String.valueOf(threads)});
                         });
         try {
