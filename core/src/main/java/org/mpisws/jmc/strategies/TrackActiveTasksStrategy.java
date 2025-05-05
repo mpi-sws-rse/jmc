@@ -311,9 +311,11 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                 Object lock = event.getParam("lock");
                 // The lock is released. The waiting tasks are marked as active.
                 Set<Long> blockedTasks = waitingTasks.get(lock);
+                wantingTasks.put(lock, new HashSet<>());
                 if (blockedTasks != null) {
                     for (Long blockedTask : blockedTasks) {
                         activeTasks.put(blockedTask, Optional.empty());
+                        wantingTasks.get(lock).add(blockedTask);
                     }
                     waitingTasks.remove(lock);
                 }
