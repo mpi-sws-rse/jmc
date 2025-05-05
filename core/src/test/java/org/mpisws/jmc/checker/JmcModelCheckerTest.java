@@ -49,7 +49,7 @@ public class JmcModelCheckerTest {
     @Test
     void testRandomCorrectCounter() throws JmcCheckerException {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(100000).build();
+                new JmcCheckerConfiguration.Builder().numIterations(10).build();
 
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 

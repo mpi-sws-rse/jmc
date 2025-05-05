@@ -3,6 +3,8 @@ package org.mpisws.jmc.util.concurrent;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * A reentrant lock that can be used to synchronize access to shared resources.
  *
@@ -10,8 +12,8 @@ import org.mpisws.jmc.runtime.RuntimeEvent;
  * <p>Yields control to the runtime for lock and unlock.
  */
 public class JmcReentrantLock {
-
     public int token = 0;
+    private final ReentrantLock lock = new ReentrantLock();
     /**
      * Acquires the lock.
      */
@@ -28,6 +30,7 @@ public class JmcReentrantLock {
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);
+        lock.lock();
         event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.LOCK_ACQUIRED_EVENT)
@@ -47,6 +50,7 @@ public class JmcReentrantLock {
      * Releases the lock.
      */
     public void unlock() {
+        lock.unlock();
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.LOCK_RELEASE_EVENT)
