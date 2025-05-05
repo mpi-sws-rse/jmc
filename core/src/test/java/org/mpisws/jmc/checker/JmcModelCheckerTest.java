@@ -8,6 +8,7 @@ import org.mpisws.jmc.programs.concurrent.*;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounter;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounterKt;
 import org.mpisws.jmc.programs.det.array.DetArray;
+import org.mpisws.jmc.programs.det.lists.Client10;
 import org.mpisws.jmc.programs.det.lists.Client8;
 import org.mpisws.jmc.programs.det.lists.Client9;
 import org.mpisws.jmc.programs.det.loop.DetLoop;
@@ -17,7 +18,6 @@ import org.mpisws.jmc.programs.det.stack.Client2;
 import org.mpisws.jmc.programs.det.stack.Client3;
 import org.mpisws.jmc.programs.det.stack.Client4;
 import org.mpisws.jmc.programs.det.stack.Client5;
-import org.mpisws.jmc.programs.det.stack.Client6;
 import org.mpisws.jmc.programs.dining.DiningPhilosophers;
 import org.mpisws.jmc.programs.futures.CompletableFutureP;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
@@ -221,7 +221,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "RandomDetStack1",
                         () -> {
-                            Client6.main(new String[0]);
+                            org.mpisws.jmc.programs.det.stack.Client6.main(new String[0]);
                         });
 
         jmcModelChecker.check(target);
@@ -375,6 +375,36 @@ public class JmcModelCheckerTest {
                             Client9.main(new String[]{String.valueOf(3)});
                         });
 
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testRandomFineList() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(1000).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomFineList",
+                        () -> {
+                            Client10.main(
+                                    new String[]{String.valueOf(4)});
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testRandomOptList() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(1000).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomOptList",
+                        () -> {
+                            org.mpisws.jmc.programs.det.lists.Client6.main(
+                                    new String[]{String.valueOf(4)});
+                        });
         jmcModelChecker.check(target);
     }
 

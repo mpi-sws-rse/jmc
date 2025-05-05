@@ -11,6 +11,53 @@ public class FNode {
     public FNode next;
     private final JmcReentrantLock lock;
 
+    public int getKey() {
+        int out = key;
+        RuntimeEvent event = new RuntimeEvent.Builder().type(RuntimeEvent.Type.READ_EVENT)
+                .taskId(JmcRuntime.currentTask())
+                .param(
+                        "owner",
+                        "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                .param("name", "key")
+                .param("descriptor", "I")
+                .param("instance", this)
+                .build();
+        JmcRuntime.updateEventAndYield(event);
+        return out;
+    }
+
+    public FNode getNext() {
+        FNode out = next;
+        RuntimeEvent event = new RuntimeEvent.Builder()
+                .type(RuntimeEvent.Type.READ_EVENT)
+                .taskId(JmcRuntime.currentTask())
+                .param(
+                        "owner",
+                        "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                .param("name", "next")
+                .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
+                .param("instance", this)
+                .build();
+        return out;
+    }
+
+    public void setNext(FNode newNext) {
+        this.next = newNext;
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEvent.Type.WRITE_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param("newValue", newNext)
+                        .param(
+                                "owner",
+                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("name", "next")
+                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
+                        .param("instance", this)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
+    }
+
     public FNode(int i) {
         item = i;
         // Write event for initializing item

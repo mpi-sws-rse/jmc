@@ -48,15 +48,6 @@ public class JmcCoverageBenchmark {
 //                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
     }
 
-    private static Stream<Arguments> provideRandomTestCasesFine10() {
-        return Stream.of(
-//                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
-                Arguments.of(4, Duration.of(800000000, ChronoUnit.NANOS)));
-//                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
-//                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
-//                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
-    }
-
     @ParameterizedTest
     @MethodSource("provideTrustTestCases")
     public void benchmarkCorrectCounterTrust(int threads, Duration timeout)
@@ -185,6 +176,16 @@ public class JmcCoverageBenchmark {
         }
     }
 
+    private static Stream<Arguments> provideRandomTestCasesFine10() {
+        return Stream.of(
+//                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
+//                Arguments.of(4, Duration.of(800000000, ChronoUnit.NANOS)));
+//                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
+//                Arguments.of(5, Duration.of(2, ChronoUnit.SECONDS)));
+                Arguments.of(5, Duration.of(60, ChronoUnit.SECONDS)));
+    }
+
+
     @ParameterizedTest
     @MethodSource("provideRandomTestCasesFine10")
     public void benchmarkFineListRandom(int threads, Duration timeout)
@@ -204,8 +205,7 @@ public class JmcCoverageBenchmark {
                                                                         + "-"
                                                                         + timeout.toString())
                                                         .debug(true)
-                                                        .withFrequency(
-                                                                Duration.of(1, ChronoUnit.SECONDS))
+                                                        .recordPerIteration()
                                                         .build()))
                         .timeout(timeout)
                         .debug(false)

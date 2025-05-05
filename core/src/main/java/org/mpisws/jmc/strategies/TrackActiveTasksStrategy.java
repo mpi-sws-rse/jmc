@@ -272,7 +272,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                 Optional<Object> owner = activeTasks.get(taskId);
                 if (owner != null && owner.isPresent()) {
                     if (owner.get() == lock) {
-                        LOGGER.info("Reentrant lock already included by task {}", taskId);
+                        LOGGER.debug("Reentrant lock already included by task {}", taskId);
                         return getActiveTasks();
                     }
                 }
