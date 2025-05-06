@@ -85,8 +85,8 @@ public class EventFactory {
                                 runtimeEvent.getTaskId() - 1,
                                 Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.READ_EX);
-                int value = runtimeEvent.getParam("value");
-                event1.setAttribute("value", value);
+                /*int value = runtimeEvent.getParam("value");
+                event1.setAttribute("value", value);*/
 
                 Event event2 =
                         new Event(

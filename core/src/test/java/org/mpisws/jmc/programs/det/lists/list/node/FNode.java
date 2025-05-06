@@ -161,10 +161,38 @@ public class FNode {
     }
 
     public void lock() {
-        lock.lock();
+        JmcReentrantLock l = lock;
+        // Read event for accessing lock
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEvent.Type.READ_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param(
+                                "owner",
+                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("name", "lock")
+                        .param("descriptor", "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;")
+                        .param("instance", this)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
+        l.lock();
     }
 
     public void unlock() {
-        lock.unlock();
+        JmcReentrantLock l = lock;
+        // Read event for accessing lock
+        RuntimeEvent event =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEvent.Type.READ_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param(
+                                "owner",
+                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("name", "lock")
+                        .param("descriptor", "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;")
+                        .param("instance", this)
+                        .build();
+        JmcRuntime.updateEventAndYield(event);
+        l.unlock();
     }
 }

@@ -1114,6 +1114,7 @@ public class ExecutionGraph {
         }
         JsonObject gson = new JsonObject();
         gson.add("nodes", nodes);
+
         return gson.toString();
     }
 

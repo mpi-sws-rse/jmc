@@ -80,7 +80,7 @@ public class FineList implements Set {
         JmcRuntime.updateEventAndYield(event1);
 
         hNode.lock();
-        FNode pred = head;
+        FNode pred = hNode;
         // Read event for accessing head node
         RuntimeEvent event2 =
                 new RuntimeEvent.Builder()
@@ -243,7 +243,7 @@ public class FineList implements Set {
         JmcRuntime.updateEventAndYield(event1);
 
         hNode.lock();
-        FNode pred = head;
+        FNode pred = hNode;
         // Read event for accessing head node
         RuntimeEvent event2 =
                 new RuntimeEvent.Builder()

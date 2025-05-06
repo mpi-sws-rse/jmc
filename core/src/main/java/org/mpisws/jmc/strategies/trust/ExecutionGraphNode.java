@@ -394,15 +394,17 @@ public class ExecutionGraphNode {
     public JsonElement toJsonIgnoreLocation() {
         JsonObject json = new JsonObject();
         json.add("event", event.toJsonIgnoreLocation());
-        JsonObject attributesObject = new JsonObject();
-        List<String> attributeKeys = new ArrayList<>(attributes.keySet().stream().toList());
-        attributeKeys.sort(String::compareTo);
-        for (String key : attributeKeys) {
-            attributesObject.addProperty(key, attributes.get(key).toString());
-        }
-        json.add("attributes", attributesObject);
+        // Sort the attributes by key
+        /*JsonObject attributesObject = new JsonObject();
+        attributes.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> attributesObject.addProperty(entry.getKey(), entry.getValue().toString()));
+        json.add("attributes", attributesObject);*/
         JsonObject edgesObject = new JsonObject();
-        Relation[] relations = Relation.values();
+        /*Relation[] relations = Relation.values();*/
+        Relation[] relations = Arrays.stream(Relation.values())
+                .sorted(Comparator.comparingInt(Relation::ordinal))
+                .toArray(Relation[]::new);
         for (int i=0; i< relations.length; i++) {
             Relation relation = relations[i];
             if (!edges.containsKey(relation)) {

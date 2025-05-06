@@ -8,14 +8,19 @@ public class ExecutionGraphSimulator {
 
     private ExecutionGraph executionGraph;
 
+    private CoverageGraph coverageGraph;
+
     public ExecutionGraphSimulator() {
         this.executionGraph = new ExecutionGraph();
+        this.coverageGraph = new CoverageGraph();
         this.executionGraph.addEvent(Event.init());
     }
 
     public ExecutionGraph getExecutionGraph() {
         return executionGraph;
     }
+
+    public CoverageGraph getCoverageGraph() {return coverageGraph;}
 
     public void updateEvent(RuntimeEvent event) {
         // Update the execution graph based on the event
@@ -44,11 +49,14 @@ public class ExecutionGraphSimulator {
                     handleNoop(trustEvent);
                     break;
             }
+            // Add PO
+            coverageGraph.addPo(trustEvent);
         }
     }
 
     public void reset() {
         this.executionGraph = new ExecutionGraph();
+        this.coverageGraph = new CoverageGraph();
         this.executionGraph.addEvent(Event.init());
     }
 
@@ -60,22 +68,26 @@ public class ExecutionGraphSimulator {
         ExecutionGraphNode read = executionGraph.addEvent(event);
         ExecutionGraphNode coMaxWrite = executionGraph.getCoMax(event.getLocation());
         executionGraph.setReadsFrom(read, coMaxWrite);
+        coverageGraph.addRf(event);
     }
 
     public void handleWrite(Event event) {
         ExecutionGraphNode write = executionGraph.addEvent(event);
         executionGraph.trackCoherency(write);
+        coverageGraph.addCo(event);
     }
 
     public void handleReadEx(Event event) {
         ExecutionGraphNode write = executionGraph.addEvent(event);
         ExecutionGraphNode coMaxRead = executionGraph.getCoMax(event.getLocation());
         executionGraph.setReadsFrom(write, coMaxRead);
+        coverageGraph.addRf(event);
     }
 
     public void handleWriteEx(Event event) {
         ExecutionGraphNode writeNode = executionGraph.addEvent(event);
         executionGraph.trackCoherency(writeNode);
+        coverageGraph.addCo(event);
     }
 
     public void handleLockAwait(Event event) {}

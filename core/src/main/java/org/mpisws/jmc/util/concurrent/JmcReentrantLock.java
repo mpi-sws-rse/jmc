@@ -14,6 +14,22 @@ import java.util.concurrent.locks.ReentrantLock;
 public class JmcReentrantLock {
     public int token = 0;
     private final ReentrantLock lock = new ReentrantLock();
+
+    public JmcReentrantLock() {
+        RuntimeEvent event1 =
+                new RuntimeEvent.Builder()
+                        .type(RuntimeEvent.Type.WRITE_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param("newValue", 0)
+                        .param(
+                                "owner",
+                                "org/mpisws/jmc/util/concurrent/ReentrantLock")
+                        .param("name", "token")
+                        .param("descriptor", "I")
+                        .param("instance", this)
+                        .build();
+        JmcRuntime.updateEventAndYield(event1);
+    }
     /**
      * Acquires the lock.
      */
