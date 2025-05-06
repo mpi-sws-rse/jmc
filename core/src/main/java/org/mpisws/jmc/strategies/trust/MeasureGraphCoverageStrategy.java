@@ -138,6 +138,10 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             String hashCoverage = StringUtil.sha256Hash(coverage);
             if(!coveredGraphs.contains(hashCoverage)) {
                 coveredGraphs.add(hashCoverage);
+                if (config.isDebugEnabled()) {
+                    FileUtil.unsafeStoreToFile(
+                            Paths.get(config.getRecordPath(), coveredGraphs.size()  + ".txt").toString(), coverage);
+                }
             }
             if (visitedGraphs.containsKey(hash)) {
                 visitedGraphs.put(hash, visitedGraphs.get(hash) + 1);

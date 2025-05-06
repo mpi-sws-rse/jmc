@@ -89,7 +89,7 @@ public class CoverageGraph {
         for (Map.Entry<Long, List<Event>> entry : po.entrySet()) {
             graph[0] += " ID " + entry.getKey() + ": ";
             for (Event event : entry.getValue()) {
-                graph[0] += event.getKey().toString() + " -> ";
+                graph[0] += (event.getType()+ event.getKey().toString() + " -> ");
             }
             graph[0] += "\n";
         }
@@ -98,7 +98,7 @@ public class CoverageGraph {
         rf.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey((e1, e2) -> e1.getKey().compareTo(e2.getKey())))
                 .forEach(entry -> {
-                    graph[0] += entry.getKey().getKey().toString() + " -> " + entry.getValue().getKey().toString() + "\n";
+                    graph[0] += (entry.getKey().getType() + entry.getKey().getKey().toString() + " -> " + entry.getValue().getType() + entry.getValue().getKey().toString() + "\n");
                 });
         graph[0] += "CO:\n";
         // Sort co by key. Each key is an event. compare the event by its getKey().
@@ -106,7 +106,7 @@ public class CoverageGraph {
                 .sorted(Map.Entry.comparingByKey((e1, e2) -> e1.getKey().compareTo(e2.getKey())))
                 .forEach(entry -> {
                     for (Event event : entry.getValue()) {
-                        graph[0] += event.getKey().toString() + " -> ";
+                        graph[0] += (event.getType() + event.getKey().toString() + " -> ");
                     }
                     graph[0] += "\n";
                 });
