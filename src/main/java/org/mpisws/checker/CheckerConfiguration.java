@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The CheckerConfiguration class is responsible for managing the configuration of the checker. It maintains several
@@ -86,6 +87,10 @@ public final class CheckerConfiguration implements Serializable {
 
     public int[][] inputIntegers;
 
+    public TimeUnit timeUnit;
+
+    public long timeout;
+
     /**
      * The following constructor is used to initialize the configuration with default values.
      * <br>
@@ -109,6 +114,9 @@ public final class CheckerConfiguration implements Serializable {
         solverApproach = builder.solverApproach;
         schedulingPolicy = builder.schedulingPolicy;
         inputIntegers = builder.inputIntegers;
+        timeUnit = builder.timeUnit;
+        timeout = builder.timeout;
+
     }
 
     /**
@@ -209,6 +217,8 @@ public final class CheckerConfiguration implements Serializable {
         public SolverApproach solverApproach = SolverApproach.NO_SOLVER;
         public SchedulingPolicy schedulingPolicy = SchedulingPolicy.FIFO;
         public int[][] inputIntegers = null;
+        public TimeUnit timeUnit = TimeUnit.SECONDS;
+        public long timeout = 100000000L;
 
         public ConfigurationBuilder() {
         }
@@ -289,6 +299,16 @@ public final class CheckerConfiguration implements Serializable {
 
         public ConfigurationBuilder withInputIntegers(int[][] inputIntegers) {
             this.inputIntegers = inputIntegers;
+            return this;
+        }
+
+        public ConfigurationBuilder withTimeUnit(TimeUnit timeUnit) {
+            this.timeUnit = timeUnit;
+            return this;
+        }
+
+        public ConfigurationBuilder withTimeout(long timeout) {
+            this.timeout = timeout;
             return this;
         }
     }

@@ -47,4 +47,8 @@ data class ReadExEvent(
         if (other !is ReadExEvent) return false
         return tid == other.tid && type == other.type && serial == other.serial
     }
+
+    override fun toString(): String {
+        return "$type{${tid - 1}, $serial}"
+    }
 }

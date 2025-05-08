@@ -17,6 +17,7 @@ import javax.tools.ToolProvider;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpisws.checker.CheckerConfiguration;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.util.Textifier;
@@ -257,7 +258,7 @@ public class ByteCodeManager {
      * @throws IllegalAccessException    if the main method cannot be accessed
      * @throws InvocationTargetException if the main method cannot be invoked
      */
-    public void invokeMainMethod(Map<String, byte[]> allBytecode, String packageName) {
+    public void invokeMainMethod(Map<String, byte[]> allBytecode, String packageName, CheckerConfiguration configuration) {
         if (allBytecode == null || packageName == null) {
             throw new IllegalArgumentException("Bytecode map and package name must not be null");
         }
@@ -272,6 +273,8 @@ public class ByteCodeManager {
             String[] mainMethodArgs = {};  // Add any required arguments here
             // Invoke the main method
             Finished finished = saveFinishObject();
+
+            long startTime = System.currentTimeMillis();
             while (!finished.terminate) {
                 try {
                     mainMethod.invoke(null, (Object) mainMethodArgs);
@@ -285,6 +288,11 @@ public class ByteCodeManager {
                         LOGGER.error("Error invoking the main method: {}", e.getMessage());
                         e.printStackTrace();
                     }
+                }
+                long passedTime = System.currentTimeMillis() - startTime;
+                if (passedTime >= configuration.timeout) {
+                    LOGGER.error("The program has timed out");
+                    break;
                 }
             }
             state(finished);
@@ -307,7 +315,7 @@ public class ByteCodeManager {
         }
     }
 
-    public void invokeMainMethod(Map<String, byte[]> allBytecode, String packageName, int[][] inputIntegers) {
+    public void invokeMainMethod(Map<String, byte[]> allBytecode, String packageName, int[][] inputIntegers, CheckerConfiguration configuration) {
         if (allBytecode == null || packageName == null) {
             throw new IllegalArgumentException("Bytecode map and package name must not be null");
         }
@@ -316,6 +324,7 @@ public class ByteCodeManager {
             int numOfBlockedExecutions = 0;
             int numOfCompletedExecutions = 0;
             long timeTaken = 0L;
+
             // Read the size of the first dimension of the inputIntegers array
             int size = inputIntegers.length;
             int index = 0;

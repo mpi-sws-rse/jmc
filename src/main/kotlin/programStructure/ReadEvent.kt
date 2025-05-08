@@ -70,9 +70,9 @@ open class ReadEvent(
         }
     }
 
-    override fun toString(): String {
+    /*override fun toString(): String {
         return "ReadEvent(tid=$tid, type=$type, serial=$serial, value=$value, rf=$rf, loc=$loc)"
-    }
+    }*/
 
     override fun hashCode(): Int {
         var result = tid

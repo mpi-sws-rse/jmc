@@ -96,9 +96,9 @@ public class ModelChecker {
         }
         logger.debug("Running the modified bytecode");
         if (configuration.inputIntegers != null) {
-            byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage(), configuration.inputIntegers);
+            byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage(), configuration.inputIntegers, configuration);
         } else {
-            byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage());
+            byteCodeManager.invokeMainMethod(byteCodeModifier.allByteCode, target.getTestPackage(), configuration);
         }
     }
 

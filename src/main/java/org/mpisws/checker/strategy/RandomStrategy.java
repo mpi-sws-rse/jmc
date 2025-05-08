@@ -40,6 +40,8 @@ public class RandomStrategy implements SearchStrategy {
      */
     public Random random;
 
+    public CoverageGraph coverageGraph;
+
     /**
      * @property {@link #buggyTracePath} is the path to the buggy trace object.
      */
@@ -73,6 +75,7 @@ public class RandomStrategy implements SearchStrategy {
         buggyTraceFile = RuntimeEnvironment.buggyTraceFile;
         random = new Random(RuntimeEnvironment.seed);
         solver = RuntimeEnvironment.solver;
+        coverageGraph = new CoverageGraph();
     }
 
     /**
@@ -89,6 +92,7 @@ public class RandomStrategy implements SearchStrategy {
     public void nextStartEvent(Thread calleeThread, Thread callerThread) {
         StartEvent startEvent = RuntimeEnvironment.createStartEvent(calleeThread, callerThread);
         RuntimeEnvironment.eventsRecord.add(startEvent);
+        updateCoverage(startEvent);
     }
 
     /**
@@ -97,6 +101,7 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void nextConAssumeRequest(ConAssumeEvent conAssumeEvent) {
         RuntimeEnvironment.eventsRecord.add(conAssumeEvent);
+        updateCoverage(conAssumeEvent);
     }
 
     /**
@@ -115,6 +120,7 @@ public class RandomStrategy implements SearchStrategy {
 
         SymAssumeEvent symAssumeEvent = RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
         RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
+        updateCoverage(symAssumeEvent);
     }
 
     /**
@@ -149,6 +155,7 @@ public class RandomStrategy implements SearchStrategy {
         SymExecutionEvent symExecutionEvent = RuntimeEnvironment.createSymExecutionEvent(thread,
                 symbolicOperation, solver.bothSatUnsat);
         RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
+        updateCoverage(symExecutionEvent);
     }
 
     /**
@@ -157,11 +164,13 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void nextAssumeBlockedRequest(AssumeBlockedEvent assumeBlockedEvent) {
         RuntimeEnvironment.eventsRecord.add(assumeBlockedEvent);
+        updateCoverage(assumeBlockedEvent);
     }
 
     @Override
     public void nextMainStartEvent(MainStartEvent mainStartEvent) {
         RuntimeEnvironment.eventsRecord.add(mainStartEvent);
+        updateCoverage(mainStartEvent);
     }
 
     /**
@@ -176,8 +185,17 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public void nextEnterMonitorEvent(Thread thread, Object monitor) {
-        EnterMonitorEvent enterMonitorEvent = RuntimeEnvironment.createEnterMonitorEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(enterMonitorEvent);
+        /*EnterMonitorEvent enterMonitorEvent = RuntimeEnvironment.createEnterMonitorEvent(thread, monitor);
+        RuntimeEnvironment.eventsRecord.add(enterMonitorEvent);*/
+
+        Location location = RuntimeEnvironment.createLocation(
+                RuntimeEnvironment.lockAvailMap.get(monitor),
+                "org/mpisws/util/concurrent/JMCLock",
+                "permits", "I");
+        ReadExEvent readExEvent = RuntimeEnvironment.createReadExEvent(thread, location);
+        WriteExEvent writeExEvent = RuntimeEnvironment.createWriteExEvent(thread, location, 1, 0);
+        updateCoverage(readExEvent);
+        updateCoverage(writeExEvent);
     }
 
     /**
@@ -193,9 +211,16 @@ public class RandomStrategy implements SearchStrategy {
      */
     @Override
     public void nextExitMonitorEvent(Thread thread, Object monitor) {
-        ExitMonitorEvent exitMonitorEvent = RuntimeEnvironment.createExitMonitorEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(exitMonitorEvent);
+        /*ExitMonitorEvent exitMonitorEvent = RuntimeEnvironment.createExitMonitorEvent(thread, monitor);
+        RuntimeEnvironment.eventsRecord.add(exitMonitorEvent);*/
         analyzeSuspendedThreadsForMonitor(monitor);
+
+        Location location = RuntimeEnvironment.createLocation(
+                RuntimeEnvironment.lockAvailMap.get(monitor),
+                "org/mpisws/util/concurrent/JMCLock",
+                "permits", "I");
+        WriteEvent writeEvent = RuntimeEnvironment.createWriteEvent(thread, location, 0);
+        updateCoverage(writeEvent);
     }
 
     /**
@@ -212,6 +237,7 @@ public class RandomStrategy implements SearchStrategy {
     public void nextJoinEvent(Thread joinReq, Thread joinRes) {
         JoinEvent joinEvent = RuntimeEnvironment.createJoinEvent(joinReq, joinRes);
         RuntimeEnvironment.eventsRecord.add(joinEvent);
+        updateCoverage(joinEvent);
     }
 
     /**
@@ -248,6 +274,8 @@ public class RandomStrategy implements SearchStrategy {
             writeExEvent.setOperationSuccess(true);
             RuntimeEnvironment.eventsRecord.add(readExEvent);
             RuntimeEnvironment.eventsRecord.add(writeExEvent);
+            updateCoverage(readExEvent);
+            updateCoverage(writeExEvent);
         }
         return pickNextThread();
     }
@@ -258,7 +286,9 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void handleCachedCASEvent(int tid) {
         RuntimeEnvironment.eventsRecord.add(cachedEvents.get(tid).get(0));
+        updateCoverage(cachedEvents.get(tid).get(0));
         RuntimeEnvironment.eventsRecord.add(cachedEvents.get(tid).get(1));
+        updateCoverage(cachedEvents.get(tid).get(1));
         WriteExEvent writeExEvent = (WriteExEvent) cachedEvents.get(tid).get(1);
         writeExEvent.setOperationSuccess(true);
         cachedEvents.remove(tid);
@@ -347,6 +377,7 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void nextReadEvent(ReadEvent readEvent) {
         RuntimeEnvironment.eventsRecord.add(readEvent);
+        updateCoverage(readEvent);
     }
 
     /**
@@ -364,6 +395,7 @@ public class RandomStrategy implements SearchStrategy {
             RuntimeEnvironment.monitorList.remove(lock);
             analyzeSuspendedThreadsForMonitor(lock);
         }
+        updateCoverage(writeEvent);
     }
 
     @Override
@@ -468,6 +500,7 @@ public class RandomStrategy implements SearchStrategy {
         FinishEvent finishEvent = RuntimeEnvironment.createFinishEvent(thread);
         RuntimeEnvironment.eventsRecord.add(finishEvent);
         analyzeSuspendedThreadsForJoin(thread);
+        updateCoverage(finishEvent);
     }
 
     /**
@@ -499,6 +532,7 @@ public class RandomStrategy implements SearchStrategy {
     public void nextFailureEvent(Thread thread) {
         FailureEvent failureEvent = RuntimeEnvironment.createFailureEvent(thread);
         RuntimeEnvironment.eventsRecord.add(failureEvent);
+        updateCoverage(failureEvent);
     }
 
     /**
@@ -514,6 +548,7 @@ public class RandomStrategy implements SearchStrategy {
     public void nextDeadlockEvent(Thread thread) {
         DeadlockEvent deadlockEvent = RuntimeEnvironment.createDeadlockEvent(thread);
         RuntimeEnvironment.eventsRecord.add(deadlockEvent);
+        updateCoverage(deadlockEvent);
     }
 
     /**
@@ -556,6 +591,32 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public void saveExecutionState() {
         //printExecutionTrace();
+        if (coverageGraph != null) {
+            String g = coverageGraph.toString();
+            if (!RuntimeEnvironment.coveregeSet.contains(g)) {
+                // Serialize the string
+                String fileName = "G_" + RuntimeEnvironment.coverage + ".txt";
+                String filePath = "src/main/resources/coverageRandom/" + fileName;
+                try {
+                    Files.write(Paths.get(filePath), g.getBytes());
+                    //System.out.println("[OPT-DPOR Strategy Message] : The coverage graph is saved in " + filePath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                String json = coverageGraph.toJson();
+                // Serialize the string
+                fileName = "G_" + RuntimeEnvironment.coverage + ".json";
+                filePath = "src/main/resources/coverageRandom/" + fileName;
+                try {
+                    Files.write(Paths.get(filePath), json.getBytes());
+                    //System.out.println("[OPT-DPOR Strategy Message] : The coverage graph is saved in " + filePath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                RuntimeEnvironment.coverage++;
+                RuntimeEnvironment.coveregeSet.add(g);
+            }
+        }
     }
 
     /**
@@ -568,5 +629,20 @@ public class RandomStrategy implements SearchStrategy {
     @Override
     public boolean done() {
         return (RuntimeEnvironment.numOfExecutions == RuntimeEnvironment.maxNumOfExecutions);
+    }
+
+    protected void updateCoverage(ThreadEvent event) {
+        // Add PO
+        coverageGraph.addPo(event);
+        switch (event.getType()) {
+            case READ, READ_EX:
+                coverageGraph.addRf(event);
+                break;
+            case WRITE, WRITE_EX:
+                coverageGraph.addCo(event);
+                break;
+            default:
+                break;
+        }
     }
 }

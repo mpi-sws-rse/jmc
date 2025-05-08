@@ -41,4 +41,8 @@ data class WriteExEvent(
         if (other !is WriteExEvent) return false
         return this.tid == other.tid && this.serial == other.serial && this.type == other.type
     }
+
+    override fun toString(): String {
+        return "$type{${tid - 1}, $serial}"
+    }
 }

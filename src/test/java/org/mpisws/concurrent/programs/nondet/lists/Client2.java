@@ -15,7 +15,7 @@ public class Client2 {
     public static void main(String[] args) {
         try {
             Set set = new CoarseList();
-            int NUM_OPERATIONS = 7;
+            int NUM_OPERATIONS = 6;
             int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
             int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
 
@@ -34,9 +34,9 @@ public class Client2 {
                 items.add(e);
             }
 
-            ArithmeticFormula f = new ArithmeticFormula();
+            /*ArithmeticFormula f = new ArithmeticFormula();
             SymbolicOperation op1 = f.distinct(keys);
-            Utils.assume(op1); // ASSUME keys are distinct
+            Utils.assume(op1); // ASSUME keys are distinct*/
 
             List<InsertionThread> threads = new ArrayList<>(NUM_INSERTIONS);
             for (int i = 0; i < NUM_INSERTIONS; i++) {

@@ -50,9 +50,9 @@ open class WriteEvent(
         )
     }
 
-    override fun toString(): String {
+    /*override fun toString(): String {
         return "WriteEvent(tid=$tid, type=$type, serial=$serial, value=$value, loc=$loc)"
-    }
+    }*/
 
     override fun hashCode(): Int {
         var result = tid

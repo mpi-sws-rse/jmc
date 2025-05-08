@@ -2433,8 +2433,9 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -2482,7 +2483,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -2530,7 +2531,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -2578,11 +2579,330 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Lazy List II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  FIXED COARSE LIST II ( TRUST STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Fixed Coarse List II")
+    void trustTestFixedCoarseListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client9",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Fixed Coarse List II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fixed Coarse List II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  FIXED COARSE LIST II ( RANDOM STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Fixed Coarse List II")
+    void randomTestFixedCoarseListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client9",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Fixed Coarse List II Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.timeout = 2766000;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fixed Coarse List II Random Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  RANDOM COARSE LIST II
+     */
+
+    @Test
+    @DisplayName("Random Coarse List II")
+    void randomTestRandomCoarseListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client13",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Random Coarse List II Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.timeout = 1242000;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Random Coarse List II Random Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  FIXED FINE LIST II ( TRUST STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Fixed Fine List II")
+    void trustTestFixedFineListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client10",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Fixed Fine List II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fixed Fine List II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  FIXED FINE LIST II ( RANDOM STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Fixed Fine List II")
+    void randomTestFixedFineListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client10",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Fixed Fine List II Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.timeout = 24000;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fixed Fine List II Random Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  RANDOM FINE LIST II
+     */
+
+    @Test
+    @DisplayName("Random Fine List II")
+    void randomTestRandomFineListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client14",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Random Fine List II Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.timeout = 192000;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Random Fine List II Random Strategy Finished");
+        System.gc();
+    }
+
+
+
+    /*
+     *                                  FIXED OPTIMISTIC LIST II ( TRUST STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Fixed Optimistic List II")
+    void trustTestFixedOptimisticListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client11",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Fixed Optimistic List II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fixed Optimistic List II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  FIXED OPTIMISTIC LIST II ( RANDOM STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Fixed Optimistic List II")
+    void randomTestFixedOptimisticListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client11",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Fixed Optimistic List II Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.timeout = 40;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fixed Optimistic List II Random Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  RANDOM OPTIMISTIC LIST II
+     */
+
+    @Test
+    @DisplayName("Random Optimistic List II")
+    void randomTestRandomOptimisticListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client15",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Random Optimistic List II Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.timeout = 320;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Random Optimistic List II Random Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  FIXED LAZY LIST II ( TRUST STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Fixed Lazy List II")
+    void trustTestFixedLazyListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client12",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Fixed Lazy List II Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fixed Lazy List II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  FIXED LAZY LIST II ( RANDOM STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Fixed Lazy List II")
+    void randomTestFixedLazyListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client12",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Fixed Lazy List II Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.timeout = 180;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fixed Lazy List II Random Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  RANDOM LAZY LIST II
+     */
+
+    @Test
+    @DisplayName("Random Lazy List II")
+    void randomTestRandomLazyListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client16",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Random Lazy List II Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.timeout = 170;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Random Lazy List II Random Strategy Finished");
         System.gc();
     }
 

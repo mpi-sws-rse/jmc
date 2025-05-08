@@ -25,7 +25,7 @@ import java.util.*;
  * <p>
  * SymbolicSolver initializes with a configuration, a logging manager, and a shutdown manager to handle the lifecycle
  * of the solver context. It provides methods to access and manipulate symbolic variables (both boolean and integer),
- * facilitating the creation of complex symbolic expressions that can be used by programmer.
+ * facilitating the creation of complex symbolic expressions that programmer can use.
  */
 abstract public class SymbolicSolver {
 

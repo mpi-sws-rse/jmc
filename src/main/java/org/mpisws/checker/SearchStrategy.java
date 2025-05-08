@@ -86,8 +86,8 @@ public interface SearchStrategy {
      * @return the next random thread to run.
      */
     default Thread nextEnterMonitorRequest(Thread thread, Object monitor) {
-        MonitorRequestEvent monitorRequestEvent = RuntimeEnvironment.createMonitorRequestEvent(thread, monitor);
-        RuntimeEnvironment.eventsRecord.add(monitorRequestEvent);
+        //MonitorRequestEvent monitorRequestEvent = RuntimeEnvironment.createMonitorRequestEvent(thread, monitor);
+        //RuntimeEnvironment.eventsRecord.add(monitorRequestEvent);
         RuntimeEnvironment.monitorRequest.put(thread, monitor);
         if (monitorsDeadlockDetection()) {
             LOGGER.debug("There is a deadlock between the threads in using the monitors");
@@ -414,6 +414,7 @@ public interface SearchStrategy {
             RuntimeEnvironment.monitorRequest.remove(thread, monitor);
             LOGGER.debug("The request of {} to enter the monitor {} is removed from the monitorRequest", thread.getName(), monitor);
             //handleCachedCASEvent(RuntimeEnvironment.threadIdMap.get(thread.getId()).intValue());
+            nextEnterMonitorEvent(thread, monitor);
             return thread;
         }
     }

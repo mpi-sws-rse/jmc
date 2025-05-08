@@ -34,9 +34,9 @@ public class Client8 {
                 items.add(e);
             }
 
-            ArithmeticFormula f = new ArithmeticFormula();
+            /*ArithmeticFormula f = new ArithmeticFormula();
             SymbolicOperation op1 = f.distinct(keys);
-            Utils.assume(op1); // ASSUME keys are distinct
+            Utils.assume(op1); // ASSUME keys are distinct*/
 
             List<InsertionThread> threads = new ArrayList<>(NUM_INSERTIONS);
             for (int i = 0; i < NUM_INSERTIONS; i++) {
@@ -76,9 +76,9 @@ public class Client8 {
                 }
             }
 
-            System.out.println("Deletion Finished");
+            //System.out.println("Deletion Finished");
         } catch (JMCInterruptException e) {
-            System.out.println("Program Skipped");
+            //System.out.println("Program Skipped");
         }
     }
 }

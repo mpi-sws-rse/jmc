@@ -363,6 +363,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
             readEx.setLoc(readExEvent.getLoc());
             currentGraph.addRF(readEx, wr);
             RuntimeEnvironment.eventsRecord.add(readEx);
+            updateCoverage(readEx);
 
             for (int i = 0; i < guidingEvents.size(); i++) {
                 if (guidingEvents.get(i) instanceof WriteExEvent && guidingEvents.get(i).getTid() == readEx.getTid() && guidingEvents.get(i).getSerial() == readEx.getSerial() + 1) {
@@ -379,6 +380,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
             writeExEvent.setOperationSuccess(writeEx.getOperationSuccess());
             //System.out.println("[OPT-Trust Strategy Debugging] The success of write is :" + writeEx.getOperationSuccess());
             RuntimeEnvironment.eventsRecord.add(writeEx);
+            updateCoverage(writeEx);
             return pickNextThread();
         } else {
             ArrayList<ThreadEvent> events = new ArrayList<>();
@@ -387,6 +389,8 @@ public class OptTrustStrategy extends OptDPORStrategy {
             events.add(writeExEvent);
             RuntimeEnvironment.eventsRecord.add(writeExEvent);
             passEventToDPOR(events);
+            updateCoverage(readExEvent);
+            updateCoverage(writeExEvent);
             return thread;
         }
     }
@@ -400,9 +404,11 @@ public class OptTrustStrategy extends OptDPORStrategy {
             read.setLoc(readEvent.getLoc());
             currentGraph.addRF(read, wr);
             RuntimeEnvironment.eventsRecord.add(read);
+            updateCoverage(read);
         } else {
             RuntimeEnvironment.eventsRecord.add(readEvent);
             passEventToDPOR(readEvent);
+            updateCoverage(readEvent);
         }
     }
 
@@ -412,9 +418,11 @@ public class OptTrustStrategy extends OptDPORStrategy {
             WriteEvent write = (WriteEvent) guidingEvent;
             write.setLoc(writeEvent.getLoc());
             RuntimeEnvironment.eventsRecord.add(write);
+            updateCoverage(write);
         } else {
             RuntimeEnvironment.eventsRecord.add(writeEvent);
             passEventToDPOR(writeEvent);
+            updateCoverage(writeEvent);
         }
     }
 }

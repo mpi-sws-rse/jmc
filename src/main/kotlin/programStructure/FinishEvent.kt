@@ -47,4 +47,8 @@ data class FinishEvent(
         result = 31 * result + serial
         return result
     }
+
+    override fun toString(): String {
+        return "$type{${tid - 1}, $serial}"
+    }
 }

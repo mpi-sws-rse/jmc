@@ -15,12 +15,17 @@ import programStructure.*;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public abstract class OptDPORStrategy implements SearchStrategy {
 
 
     protected OptExecutionGraph currentGraph;
+
+    protected CoverageGraph coverageGraph = null;
 
     protected boolean guidingActivate = false;
 
@@ -61,6 +66,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             guidingEvents = RuntimeEnvironment.guidingEvents;
             guidingActivate = true;
         }
+        coverageGraph = new CoverageGraph();
     }
 
     protected abstract void handleGraphOp(GraphOp graphOp);
@@ -104,15 +110,17 @@ public abstract class OptDPORStrategy implements SearchStrategy {
      */
     @Override
     public void nextStartEvent(Thread calleeThread, Thread callerThread) {
+        StartEvent st;
         if (guidingActivate) {
-            StartEvent st = (StartEvent) guidingEvent;
+            st = (StartEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(st);
         } else {
             //System.out.println("[OPT-DPOR Strategy Message] : The start event is passed to the model checker");
-            StartEvent st = RuntimeEnvironment.createStartEvent(calleeThread, callerThread);
+            st = RuntimeEnvironment.createStartEvent(calleeThread, callerThread);
             RuntimeEnvironment.eventsRecord.add(st);
             passEventToDPOR(st);
         }
+        updateCoverage(st);
     }
 
     /**
@@ -123,10 +131,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         if (guidingActivate) {
             MainStartEvent mst = (MainStartEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(mst);
+            updateCoverage(mst);
         } else {
             //System.out.println("[OPT-DPOR Strategy Message] : The main start event is passed to the model checker");
             RuntimeEnvironment.eventsRecord.add(mainStartEvent);
             passEventToDPOR(mainStartEvent);
+            updateCoverage(mainStartEvent);
         }
     }
 
@@ -164,11 +174,13 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             RuntimeEnvironment.getNextSerialNumber(joinReq); // To update the serial number of the joinRq thread
             JoinEvent je = (JoinEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(je);
+            updateCoverage(je);
         } else {
             //System.out.println("[OPT-DPOR Strategy Message] : The join event is passed to the model checker");
             JoinEvent je = RuntimeEnvironment.createJoinEvent(joinReq, joinRes);
             RuntimeEnvironment.eventsRecord.add(je);
             passEventToDPOR(je);
+            updateCoverage(je);
         }
     }
 
@@ -249,12 +261,14 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             FinishEvent fe = (FinishEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(fe);
             analyzeSuspendedThreadsForJoin(thread);
+            updateCoverage(fe);
         } else {
             //System.out.println("[OPT-DPOR Strategy Message] : The finish event is passed to the model checker");
             FinishEvent fe = RuntimeEnvironment.createFinishEvent(thread);
             RuntimeEnvironment.eventsRecord.add(fe);
             passEventToDPOR(fe);
             analyzeSuspendedThreadsForJoin(thread);
+            updateCoverage(fe);
         }
     }
 
@@ -269,11 +283,13 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
             FailureEvent fe = (FailureEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(fe);
+            updateCoverage(fe);
         } else {
             //System.out.println("[OPT-DPOR Strategy Message] : The failure event is passed to the model checker");
             FailureEvent fe = RuntimeEnvironment.createFailureEvent(thread);
             RuntimeEnvironment.eventsRecord.add(fe);
             passEventToDPOR(fe);
+            updateCoverage(fe);
         }
     }
 
@@ -288,11 +304,13 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
             DeadlockEvent de = (DeadlockEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(de);
+            updateCoverage(de);
         } else {
             //System.out.println("[OPT-DPOR Strategy Message] : The deadlock event is passed to the model checker");
             DeadlockEvent de = RuntimeEnvironment.createDeadlockEvent(thread);
             RuntimeEnvironment.eventsRecord.add(de);
             passEventToDPOR(de);
+            updateCoverage(de);
         }
     }
 
@@ -329,10 +347,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         if (guidingActivate) {
             ConAssumeEvent cae = (ConAssumeEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(cae);
+            updateCoverage(cae);
         } else {
             //System.out.println("[OPT-DPOR Strategy Message] : The con assume event is passed to the model checker");
             RuntimeEnvironment.eventsRecord.add(conAssumeEvent);
             passEventToDPOR(conAssumeEvent);
+            updateCoverage(conAssumeEvent);
         }
     }
 
@@ -355,6 +375,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         // TODO: Implement the guided symbolic assert operation
         RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
         RuntimeEnvironment.eventsRecord.add(guidingAssertEvent);
+        updateCoverage(guidingAssertEvent);
     }
 
     private void handleNewSymAssertOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
@@ -363,6 +384,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         AssertEvent assertEvent = RuntimeEnvironment.createAssertEvent(thread, RuntimeEnvironment.solverResult);
         RuntimeEnvironment.eventsRecord.add(assertEvent);
         passEventToDPOR(assertEvent);
+        updateCoverage(assertEvent);
     }
 
     /**
@@ -393,6 +415,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         }
         RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
         RuntimeEnvironment.eventsRecord.add(guidingSymAssumeEvent);
+        updateCoverage(guidingSymAssumeEvent);
     }
 
     /**
@@ -403,10 +426,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         if (guidingActivate) {
             AssumeBlockedEvent abe = (AssumeBlockedEvent) guidingEvent;
             RuntimeEnvironment.eventsRecord.add(abe);
+            updateCoverage(abe);
         } else {
             //System.out.println("[OPT-DPOR Strategy Message] : The assume blocked event is passed to the model checker");
             RuntimeEnvironment.eventsRecord.add(assumeBlockedEvent);
             passEventToDPOR(assumeBlockedEvent);
+            updateCoverage(assumeBlockedEvent);
         }
     }
 
@@ -422,6 +447,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         SymAssumeEvent symAssumeEvent = RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
         RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
         passEventToDPOR(symAssumeEvent);
+        updateCoverage(symAssumeEvent);
     }
 
     /**
@@ -468,6 +494,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             }
         }
         RuntimeEnvironment.eventsRecord.add(guidingSymExecutionEvent);
+        updateCoverage(guidingSymExecutionEvent);
     }
 
     public void handleNewSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
@@ -483,6 +510,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                 symbolicOperation, solver.bothSatUnsat);
         RuntimeEnvironment.eventsRecord.add(symExecutionEvent);
         passEventToDPOR(symExecutionEvent);
+        updateCoverage(symExecutionEvent);
     }
 
     /**
@@ -677,6 +705,31 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             }
         }
         RuntimeEnvironment.numOfGraphs = dpor.getGraphCounter();
+
+        if (coverageGraph != null && !RuntimeEnvironment.isExecutionBlocked) {
+            String g = coverageGraph.toString();
+            // Serialize the string
+            String fileName = "G_" + RuntimeEnvironment.coverage + ".txt";
+            String filePath = "src/main/resources/coverageTrust/" + fileName;
+            try {
+                Files.write(Paths.get(filePath), g.getBytes());
+                //System.out.println("[OPT-DPOR Strategy Message] : The coverage graph is saved in " + filePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            String json = coverageGraph.toJson();
+            // Serialize the string
+            fileName = "G_" + RuntimeEnvironment.coverage + ".json";
+            filePath = "src/main/resources/coverageTrust/" + fileName;
+            try {
+                Files.write(Paths.get(filePath), json.getBytes());
+                //System.out.println("[OPT-DPOR Strategy Message] : The coverage graph is saved in " + filePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            RuntimeEnvironment.coverage++;
+            RuntimeEnvironment.coveregeSet.add(g);
+        }
     }
 
     /**
@@ -698,4 +751,19 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     }
 
     abstract void handleEmptyGuidingEvents();
+
+    protected void updateCoverage(ThreadEvent event) {
+        // Add PO
+        coverageGraph.addPo(event);
+        switch (event.getType()) {
+            case READ, READ_EX:
+                coverageGraph.addRf(event);
+                break;
+            case WRITE, WRITE_EX:
+                coverageGraph.addCo(event);
+                break;
+            default:
+                break;
+        }
+    }
 }

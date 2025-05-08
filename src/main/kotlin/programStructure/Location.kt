@@ -105,4 +105,8 @@ data class Location(
     fun isPrimitive(): Boolean {
         return true
     }
+
+    fun compareTo(other: Location): Int {
+        return instance.toString().compareTo(other.instance.toString())
+    }
 }
