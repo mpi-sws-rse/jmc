@@ -80,16 +80,16 @@ And the following inside `src/app/test/org/example/ExampleCounterTest.java`
 ```java
 public class ExampleCounterTest {
     @Test
-    void testRandomBuggyCounter() {
+    void testRandomExampleCounter() {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
                 new JmcFunctionalTestTarget(
-                        "RandomBuggyCounter",
+                        "RandomExampleCounter",
                         () -> {
-                            BuggyCounter.main(new String[0]);
+                            ExampleCounter.main(new String[0]);
                         });
 
         jmcModelChecker.check(target);
