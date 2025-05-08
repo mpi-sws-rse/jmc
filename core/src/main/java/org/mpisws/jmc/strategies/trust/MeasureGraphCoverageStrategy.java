@@ -29,45 +29,43 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
     private final ConcurrentHashMap<String, Integer> visitedGraphs;
     private final MeasuringThread measuringThread;
+    private final ArrayList<Integer> coverages;
 
     private final SchedulingStrategy schedulingStrategy;
-
-    private final boolean debug;
-    private final String recordPath;
-    private final boolean recordGraphs;
+    private final MeasureGraphCoverageStrategyConfig config;
 
     private long timeStart;
 
     public MeasureGraphCoverageStrategy(
-            SchedulingStrategy schedulingStrategy,
-            boolean debug,
-            String recordPath,
-            boolean recordGraphs,
-            Duration measuringFrequency) {
+            SchedulingStrategy schedulingStrategy, MeasureGraphCoverageStrategyConfig config) {
         this.schedulingStrategy = schedulingStrategy;
         this.simulator = new ExecutionGraphSimulator();
         this.visitedGraphs = new ConcurrentHashMap<>();
-        this.measuringThread = new MeasuringThread(this, measuringFrequency);
-        this.recordPath = recordPath;
-        this.recordGraphs = recordGraphs;
-        this.debug = debug;
-
-        if (recordPath != null && !recordPath.isEmpty()) {
-            FileUtil.unsafeEnsurePath(recordPath);
+        this.coverages = new ArrayList<>();
+        this.config = config;
+        if (config.isRecordPerIteration()) {
+            this.measuringThread = null;
+        } else {
+            this.measuringThread = new MeasuringThread(this, config.getMeasuringFrequency());
         }
+
+        FileUtil.unsafeEnsurePath(config.getRecordPath());
+    }
+
+    private void updateCoverage() {
+        int val = this.visitedGraphs.size();
+        this.coverages.add(val);
     }
 
     private static class MeasuringThread extends Thread {
         private final MeasureGraphCoverageStrategy strategy;
         private final Duration measuringFrequency;
 
-        private final List<Integer> coverages;
         private final CompletableFuture<Void> future;
 
         public MeasuringThread(MeasureGraphCoverageStrategy strategy, Duration measuringFrequency) {
             this.strategy = strategy;
             this.measuringFrequency = measuringFrequency;
-            this.coverages = new ArrayList<>();
             this.future = new CompletableFuture<>();
         }
 
@@ -76,7 +74,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             while (!future.isDone()) {
                 try {
                     Thread.sleep(measuringFrequency.toMillis());
-                    coverages.add(strategy.visitedGraphs.size());
+                    strategy.updateCoverage();
                 } catch (InterruptedException e) {
                     break;
                 }
@@ -86,10 +84,6 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         public void stopMeasuring() {
             future.complete(null);
         }
-
-        public List<Integer> getCoverages() {
-            return coverages;
-        }
     }
 
     @Override
@@ -97,7 +91,9 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             throws HaltCheckerException {
         if (iteration == 0) {
             this.timeStart = System.currentTimeMillis();
-            this.measuringThread.start();
+            if (!config.isRecordPerIteration()) {
+                this.measuringThread.start();
+            }
         }
         this.simulator.reset();
         this.schedulingStrategy.initIteration(iteration, report);
@@ -126,8 +122,12 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             } else {
                 visitedGraphs.put(hash, 1);
             }
-            if (debug) {
-                FileUtil.unsafeStoreToFile(Paths.get(recordPath, hash + ".json").toString(), json);
+            if (config.isRecordPerIteration()) {
+                updateCoverage();
+            }
+            if (config.isDebugEnabled()) {
+                FileUtil.unsafeStoreToFile(
+                        Paths.get(config.getRecordPath(), hash + ".json").toString(), json);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -136,48 +136,48 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
     @Override
     public void teardown() {
-        measuringThread.stopMeasuring();
-        try {
-            measuringThread.join();
-        } catch (InterruptedException e) {
-            LOGGER.error("Error while waiting for measuring thread to finish", e);
-            return;
+        if (!config.isRecordPerIteration()) {
+            measuringThread.stopMeasuring();
+            try {
+                measuringThread.join();
+            } catch (InterruptedException e) {
+                LOGGER.error("Error while waiting for measuring thread to finish", e);
+                return;
+            }
         }
         Long timeDiff = System.currentTimeMillis() - timeStart;
         Duration d = Duration.ofMillis(timeDiff);
         simulator.reset();
         schedulingStrategy.teardown();
-        if (recordPath != null && !recordPath.isEmpty()) {
-            if (recordGraphs) {
-                FileOutputStream fileOutputStream =
-                        FileUtil.unsafeCreateFile(
-                                Paths.get(recordPath, "hash_coverage.txt").toString());
-                for (HashMap.Entry<String, Integer> entry : visitedGraphs.entrySet()) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-                    try {
-                        fileOutputStream.write(sb.toString().getBytes());
-                    } catch (Exception e) {
-                        LOGGER.error("Error while writing to file", e);
-                    }
-                }
+        if (config.shouldRecordGraphs()) {
+            FileOutputStream fileOutputStream =
+                    FileUtil.unsafeCreateFile(
+                            Paths.get(config.getRecordPath(), "hash_coverage.txt").toString());
+            for (HashMap.Entry<String, Integer> entry : visitedGraphs.entrySet()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
                 try {
-                    fileOutputStream.close();
+                    fileOutputStream.write(sb.toString().getBytes());
                 } catch (Exception e) {
-                    LOGGER.error("Error while closing file output stream", e);
+                    LOGGER.error("Error while writing to file", e);
                 }
             }
-            Gson gson = new Gson();
-            List<Integer> coverages = measuringThread.getCoverages();
-            JsonArray jsonArray = new JsonArray();
-            for (int coverage : coverages) {
-                jsonArray.add(coverage);
+            try {
+                fileOutputStream.close();
+            } catch (Exception e) {
+                LOGGER.error("Error while closing file output stream", e);
             }
-            JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("time", d.toMillis());
-            jsonObject.add("coverage", jsonArray);
-            String json = gson.toJson(jsonObject);
-            FileUtil.unsafeStoreToFile(Paths.get(recordPath, "coverage.json").toString(), json);
         }
+        Gson gson = new Gson();
+        JsonArray jsonArray = new JsonArray();
+        for (int coverage : coverages) {
+            jsonArray.add(coverage);
+        }
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("time", d.toMillis());
+        jsonObject.add("coverage", jsonArray);
+        String json = gson.toJson(jsonObject);
+        FileUtil.unsafeStoreToFile(
+                Paths.get(config.getRecordPath(), "coverage.json").toString(), json);
     }
 }

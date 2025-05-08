@@ -8,6 +8,7 @@ import org.mpisws.jmc.checker.exceptions.JmcCheckerTimeoutException;
 import org.mpisws.jmc.programs.concurrent.CC7;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.trust.MeasureGraphCoverageStrategy;
+import org.mpisws.jmc.strategies.trust.MeasureGraphCoverageStrategyConfig;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.time.Duration;
@@ -17,17 +18,23 @@ import java.util.stream.Stream;
 public class JmcCoverageBenchmark {
 
     private static Stream<Arguments> provideTrustTestCases() {
-        return Stream.of(
-                Arguments.of(6, Duration.of(6, ChronoUnit.MINUTES)),
-                Arguments.of(7, Duration.of(10, ChronoUnit.MINUTES)));
+        return Stream.of(Arguments.of(7, Duration.of(5, ChronoUnit.MINUTES)));
+//        ,
+//                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
+//                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
+//                Arguments.of(12, Duration.of(30, ChronoUnit.MINUTES)),
+//                Arguments.of(15, Duration.of(30, ChronoUnit.MINUTES)),
+//                Arguments.of(20, Duration.of(30, ChronoUnit.MINUTES)));
     }
 
     private static Stream<Arguments> provideRandomTestCases() {
         return Stream.of(
-                Arguments.of(6, Duration.of(6, ChronoUnit.MINUTES)),
-                Arguments.of(6, Duration.of(12, ChronoUnit.MINUTES)),
-                Arguments.of(7, Duration.of(10, ChronoUnit.MINUTES)),
-                Arguments.of(7, Duration.of(20, ChronoUnit.MINUTES)));
+                Arguments.of(7, Duration.of(30, ChronoUnit.MINUTES)),
+                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
+                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
+                Arguments.of(12, Duration.of(30, ChronoUnit.MINUTES)),
+                Arguments.of(15, Duration.of(30, ChronoUnit.MINUTES)),
+                Arguments.of(20, Duration.of(30, ChronoUnit.MINUTES)));
     }
 
     @ParameterizedTest
@@ -39,16 +46,26 @@ public class JmcCoverageBenchmark {
                 new JmcCheckerConfiguration.Builder()
                         .strategyConstructor(
                                 (sConfig) ->
-                                        new MeasureGraphCoverageStrategy(
-                                                new TrustStrategy(
-                                                        sConfig.getSeed(),
-                                                        sConfig.getTrustSchedulingPolicy(),
-                                                        sConfig.getDebug(),
-                                                        sConfig.getReportPath()),
-                                                false,
-                                                sConfig.getReportPath() + "/trust-" + threads,
-                                                false,
-                                                Duration.of(100, ChronoUnit.MILLIS)))
+                                        //                                        new
+                                        // MeasureGraphCoverageStrategy(
+                                        new TrustStrategy(
+                                                sConfig.getSeed(),
+                                                sConfig.getTrustSchedulingPolicy(),
+                                                sConfig.getDebug(),
+                                                sConfig.getReportPath()))
+                        //
+                        // MeasureGraphCoverageStrategyConfig.builder()
+                        //                                                        .recordPath(
+                        //
+                        // sConfig.getReportPath()
+                        //                                                                        +
+                        // "/trust-"
+                        //                                                                        +
+                        // threads)
+                        //                                                        .withFrequency(
+                        //
+                        // Duration.of(1, ChronoUnit.SECONDS))
+                        //                                                        .build()))
                         .timeout(timeout)
                         .debug(false)
                         .build();
@@ -58,7 +75,7 @@ public class JmcCoverageBenchmark {
                 new JmcFunctionalTestTarget(
                         "TrustCC1",
                         () -> {
-                            CC7.main(new String[] {String.valueOf(threads)});
+                            CC7.main(new String[]{String.valueOf(threads)});
                         });
         try {
             jmcModelChecker.check(target);
@@ -80,14 +97,16 @@ public class JmcCoverageBenchmark {
                                 (sConfig) ->
                                         new MeasureGraphCoverageStrategy(
                                                 new RandomSchedulingStrategy(sConfig.getSeed()),
-                                                false,
-                                                sConfig.getReportPath()
-                                                        + "/random-"
-                                                        + threads
-                                                        + "-"
-                                                        + timeout.toString(),
-                                                true,
-                                                Duration.of(100, ChronoUnit.MILLIS)))
+                                                MeasureGraphCoverageStrategyConfig.builder()
+                                                        .recordPath(
+                                                                sConfig.getReportPath()
+                                                                        + "/random-"
+                                                                        + threads
+                                                                        + "-"
+                                                                        + timeout.toString())
+                                                        .withFrequency(
+                                                                Duration.of(1, ChronoUnit.SECONDS))
+                                                        .build()))
                         .timeout(timeout)
                         .debug(false)
                         .build();
@@ -97,7 +116,7 @@ public class JmcCoverageBenchmark {
                 new JmcFunctionalTestTarget(
                         "TrustCC1",
                         () -> {
-                            CC7.main(new String[] {String.valueOf(threads)});
+                            CC7.main(new String[]{String.valueOf(threads)});
                         });
         try {
             jmcModelChecker.check(target);

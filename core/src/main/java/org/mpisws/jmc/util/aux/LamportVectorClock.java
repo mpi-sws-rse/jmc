@@ -3,10 +3,12 @@ package org.mpisws.jmc.util.aux;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Represents a Lamport vector clock used by the algorithm. It is of variable length. */
+/**
+ * Represents a Lamport vector clock used by the algorithm. It is of variable length.
+ */
 public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
 
-    private final List<Integer> vector;
+    private int[] vector;
 
     /**
      * Creates a new Lamport vector clock with the given size.
@@ -14,9 +16,9 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      * @param size The size of the vector clock.
      */
     public LamportVectorClock(int size) {
-        this.vector = new ArrayList<>(size);
+        this.vector = new int[size];
         for (int i = 0; i < size; i++) {
-            vector.add(0);
+            vector[i] = 0;
         }
     }
 
@@ -25,9 +27,9 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      *
      * @param vector The vector clock.
      */
-    public LamportVectorClock(List<Integer> vector) {
-        this.vector = new ArrayList<>(vector.size());
-        this.vector.addAll(vector);
+    public LamportVectorClock(int[] vector) {
+        this.vector = new int[vector.length];
+        System.arraycopy(vector, 0, this.vector, 0, vector.length);
     }
 
     /**
@@ -38,8 +40,22 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      * @param index The index of the component to increment.
      */
     public LamportVectorClock(LamportVectorClock other, int index) {
-        this.vector = new ArrayList<>(other.vector);
-        this.vector.set(index, other.vector.get(index) + 1);
+        if (index >= other.vector.length) {
+            this.vector = new int[index + 1];
+            System.arraycopy(other.vector, 0, this.vector, 0, other.vector.length);
+            other.vector = new int[index + 1];
+            System.arraycopy(this.vector, 0, other.vector, 0, other.vector.length);
+            for (int i = other.vector.length; i < index + 1; i++) {
+                this.vector[i] = 0;
+                other.vector[i] = 0;
+            }
+        } else if (index < 0) {
+            throw new IllegalArgumentException("Index cannot be negative");
+        } else {
+            this.vector = new int[other.vector.length];
+            System.arraycopy(other.vector, 0, this.vector, 0, other.vector.length);
+        }
+        this.vector[index] = other.vector[index] + 1;
     }
 
     /**
@@ -47,7 +63,7 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      *
      * @return The vector clock.
      */
-    public List<Integer> getVector() {
+    public int[] getVector() {
         return vector;
     }
 
@@ -57,7 +73,23 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      * @return The size of the vector clock.
      */
     public int getSize() {
-        return vector.size();
+        return vector.length;
+    }
+
+    private int grow(LamportVectorClock other) {
+        // Can't copy values. Need to initialize zeros here.
+        if (other.vector.length > vector.length) {
+            int[] newVector = new int[other.vector.length];
+            System.arraycopy(this.vector, 0, newVector, 0, this.vector.length);
+            this.vector = newVector;
+            return other.vector.length;
+        } else if (vector.length > other.vector.length) {
+            int[] newVector = new int[vector.length];
+            System.arraycopy(other.vector, 0, newVector, 0, other.vector.length);
+            other.vector = newVector;
+            return this.vector.length;
+        }
+        return this.vector.length;
     }
 
     /**
@@ -66,15 +98,12 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      * @param other The other vector clock.
      */
     public void update(LamportVectorClock other) {
-        int size = Math.max(vector.size(), other.vector.size());
-        for (int i = 0; i < size; i++) {
-            if (i >= vector.size()) {
-                vector.add(0);
-            }
-            if (i >= other.vector.size()) {
-                other.vector.add(0);
-            }
-            vector.set(i, Math.max(vector.get(i), other.vector.get(i)));
+        grow(other);
+        if (this.vector.length != other.vector.length) {
+            throw new RuntimeException("Vector sizes do not match");
+        }
+        for (int i = 0; i < vector.length; i++) {
+            this.vector[i] = Math.max(this.vector[i], other.vector[i]);
         }
     }
 
@@ -87,17 +116,14 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
     public boolean happensBefore(LamportVectorClock other) {
         boolean happenedBefore = false;
         boolean happenedAfter = false;
-        int size = Math.max(vector.size(), other.vector.size());
+        int size = this.vector.length;
+        if (vector.length != other.vector.length) {
+            size = grow(other);
+        }
         for (int i = 0; i < size; i++) {
-            if (i >= vector.size()) {
-                vector.add(0);
-            }
-            if (i >= other.vector.size()) {
-                other.vector.add(0);
-            }
-            if (vector.get(i) <= other.vector.get(i)) {
+            if (vector[i] <= other.vector[i]) {
                 happenedBefore = true;
-            } else if (vector.get(i) > other.vector.get(i)) {
+            } else if (vector[i] > other.vector[i]) {
                 happenedAfter = true;
             }
         }
@@ -110,11 +136,11 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
      * @return The string representation of the vector clock.
      */
     public boolean equals(LamportVectorClock other) {
-        if (vector.size() != other.vector.size()) {
+        if (vector.length != other.vector.length) {
             return false;
         }
-        for (int i = 0; i < vector.size(); i++) {
-            if (!vector.get(i).equals(other.vector.get(i))) {
+        for (int i = 0; i < vector.length; i++) {
+            if (vector[i] != other.vector[i]) {
                 return false;
             }
         }
@@ -149,7 +175,9 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
         }
     }
 
-    /** Represents a component of the Lamport vector clock. */
+    /**
+     * Represents a component of the Lamport vector clock.
+     */
     public static class Component implements TotalOrder<Component> {
 
         private final int index;
@@ -175,8 +203,8 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
                                 + " and "
                                 + other.index);
             }
-            int t1Component = this.clock.vector.get(this.index);
-            int t2Component = other.clock.vector.get(other.index);
+            int t1Component = this.clock.vector[this.index];
+            int t2Component = other.clock.vector[other.index];
             if (t1Component < t2Component) {
                 return Relation.LT;
             } else if (t1Component > t2Component) {

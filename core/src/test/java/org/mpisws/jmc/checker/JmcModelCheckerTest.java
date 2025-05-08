@@ -24,6 +24,7 @@ import org.mpisws.jmc.programs.mockKafka.ShareConsumerTest;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -358,7 +359,7 @@ public class JmcModelCheckerTest {
                         "TrustCC0",
                         () -> {
                             int size = 1;
-                            CC0.main(new String[] {String.valueOf(size)});
+                            CC0.main(new String[]{String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -463,7 +464,7 @@ public class JmcModelCheckerTest {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
                         .strategyType("trust")
-                        .numIterations(1000)
+                        .timeout(Duration.of(2, ChronoUnit.HOURS))
                         .debug(false)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -473,7 +474,7 @@ public class JmcModelCheckerTest {
                         "TrustCC7",
                         () -> {
                             int size = 4;
-                            CC7.main(new String[] {String.valueOf(size)});
+                            CC7.main(new String[]{String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -493,7 +494,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "Timeout",
                         () -> {
-                            CC7.main(new String[] {"6"});
+                            CC7.main(new String[]{"6"});
                         });
         jmcModelChecker.check(target);
     }

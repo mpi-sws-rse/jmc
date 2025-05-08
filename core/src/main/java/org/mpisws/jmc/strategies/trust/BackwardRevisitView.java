@@ -25,7 +25,7 @@ public class BackwardRevisitView {
      * Creates a new backward revisit view.
      *
      * @param graph The execution graph.
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public BackwardRevisitView(
@@ -48,7 +48,9 @@ public class BackwardRevisitView {
         return read;
     }
 
-    /** Just marks the node as removed, does not update the graph */
+    /**
+     * Just marks the node as removed, does not update the graph
+     */
     public void removeNode(Event.Key key) {
         removedNodes.add(key);
     }
@@ -89,7 +91,7 @@ public class BackwardRevisitView {
                 // 1. Check first if key is a write event that has a dangling read in the
                 // restricted graph.
                 if (EventUtils.isWrite(node.getEvent())) {
-                    Set<Event.Key> reads = node.getSuccessors(Relation.ReadsFrom);
+                    List<Event.Key> reads = node.getSuccessors(Relation.ReadsFrom);
                     for (Event.Key readKey : reads) {
                         // Check if in previous
                         if (previous.test(readKey)) {
@@ -101,7 +103,7 @@ public class BackwardRevisitView {
                 // 2. Check if the write event associated with the node is CO maximal in previous
                 ExecutionGraphNode nodeWrite = node;
                 if (EventUtils.isRead(node.getEvent())) {
-                    Set<Event.Key> writes = node.getPredecessors(Relation.ReadsFrom);
+                    List<Event.Key> writes = node.getPredecessors(Relation.ReadsFrom);
                     if (writes.size() != 1) {
                         throw HaltExecutionException.error(
                                 "The read event does not have a valid rf event.");
@@ -160,6 +162,7 @@ public class BackwardRevisitView {
         restrictedGraph.changeReadsFrom(read, write);
         // Remove the nodes
         restrictedGraph.restrictBySet(removedNodes);
+        restrictedGraph.recomputeVectorClocks();
         return restrictedGraph;
     }
 }

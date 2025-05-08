@@ -47,8 +47,8 @@ public class JmcModelChecker {
         }
         JmcRuntime.setup(runtimeConfig);
         int numIterations = config.getNumIterations();
+        int iteration = 0;
         try {
-            int iteration = 0;
             LOGGER.info("JMC checker started");
             while (true) {
                 try {
@@ -62,6 +62,10 @@ public class JmcModelChecker {
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
                     JmcRuntime.resetIteration(iteration);
+                    if (iteration % 50000 == 0) {
+                        LOGGER.info("Completed {} iterations", iteration);
+                        System.gc();
+                    }
                 } catch (HaltTaskException e) {
                     LOGGER.debug(
                             "Halting execution: {} due to main thread halted: {}",
@@ -83,7 +87,7 @@ public class JmcModelChecker {
                                     "Halting execution: %d due to assertion error: %s",
                                     iteration, e.getMessage()));
                     LOGGER.error("Assertion error in iteration {}: {}", iteration, e.getMessage());
-                    break;
+                    throw HaltCheckerException.error("Assertion error in iteration "+iteration+": "+e.getMessage());
                 } finally {
                     iteration++;
                     if (numIterations != 0 && iteration >= numIterations) {
@@ -95,14 +99,16 @@ public class JmcModelChecker {
                         String errorMessage =
                                 String.format("Halting execution: %d due to timeout", iteration);
                         report.setErrorMessage(errorMessage);
-                        LOGGER.debug(errorMessage);
+                        LOGGER.error(errorMessage);
                         throw HaltCheckerException.error(errorMessage);
                     }
                 }
             }
         } catch (HaltCheckerException e) {
             if (e.isOkay()) {
-                LOGGER.info("Model checking completed successfully.");
+                LOGGER.info(
+                        "Model checking completed successfully covering: {} iterations",
+                        iteration - 1);
             } else if (e.isTimeout()) {
                 report.setErrorIteration(-1);
                 report.setErrorMessage(e.getMessage());
@@ -118,7 +124,7 @@ public class JmcModelChecker {
             report.setErrorIteration(-1);
             report.setErrorMessage(String.format("Model checking failed: %s", e.getMessage()));
             LOGGER.error("Model checking failed: {}", e.getMessage());
-            throw new JmcCheckerException(e.getMessage());
+            throw new JmcCheckerException(e.getMessage(), e);
         } finally {
             Long endTime = System.nanoTime();
             JmcRuntime.tearDown();
