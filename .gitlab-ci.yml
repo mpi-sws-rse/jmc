@@ -1,0 +1,50 @@
+image: gradle:jdk17-alpine
+
+before_script:
+  - GRADLE_USER_HOME="$(pwd)/.gradle"
+  - export GRADLE_USER_HOME
+
+check:
+  stage: build
+  script: ./gradlew checkstyleMain checkstyleTest
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+
+compile-agent:
+  stage: build
+  script: ./gradlew :agent:compileJava
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+
+compile-core:
+  stage: build
+  script: ./gradlew :core:compileJava
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+
+compile-integration-test:
+  stage: build
+  script: ./gradlew :integration-test:compileTestJava
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+
+

@@ -1,0 +1,237 @@
+// class version 61.0 (61)
+// access flags 0x21
+public class org/mpisws/concurrent/programs/dining/Philosopher extends java/lang/Thread {
+
+  // compiled from: Philosopher.java
+
+  // access flags 0x12
+  private final I id
+
+  // access flags 0x12
+  private final Lorg/mpisws/util/concurrent/ReentrantLock; leftStick
+
+  // access flags 0x12
+  private final Lorg/mpisws/util/concurrent/ReentrantLock; rightStick
+
+  // access flags 0x1
+  public <init>(ILorg/mpisws/util/concurrent/ReentrantLock;Lorg/mpisws/util/concurrent/ReentrantLock;)V
+   L0
+    LINENUMBER 11 L0
+    ALOAD 0
+    INVOKESPECIAL java/lang/Thread.<init> ()V
+   L1
+    LINENUMBER 12 L1
+    ALOAD 0
+    ILOAD 1
+    DUP2
+    INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.dining.Philosopher"
+    LDC "id"
+    LDC "I"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.writeOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    PUTFIELD org/mpisws/concurrent/programs/dining/Philosopher.id : I
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+   L2
+    LINENUMBER 13 L2
+    ALOAD 0
+    ALOAD 2
+    DUP2
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.dining.Philosopher"
+    LDC "leftStick"
+    LDC "Lorg/mpisws/util/concurrent/ReentrantLock;"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.writeOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    PUTFIELD org/mpisws/concurrent/programs/dining/Philosopher.leftStick : Lorg/mpisws/util/concurrent/ReentrantLock;
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+   L3
+    LINENUMBER 14 L3
+    ALOAD 0
+    ALOAD 3
+    DUP2
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.dining.Philosopher"
+    LDC "rightStick"
+    LDC "Lorg/mpisws/util/concurrent/ReentrantLock;"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.writeOperation (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    PUTFIELD org/mpisws/concurrent/programs/dining/Philosopher.rightStick : Lorg/mpisws/util/concurrent/ReentrantLock;
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+   L4
+    LINENUMBER 15 L4
+    RETURN
+    MAXSTACK = 8
+    MAXLOCALS = 4
+
+  // access flags 0x2
+  private think()V
+   L0
+    LINENUMBER 20 L0
+    RETURN
+    MAXSTACK = 0
+    MAXLOCALS = 1
+
+  // access flags 0x2
+  private tryToEat()V throws org/mpisws/util/concurrent/JMCInterruptException
+    TRYCATCHBLOCK L0 L1 L2 null
+    TRYCATCHBLOCK L2 L3 L2 null
+    TRYCATCHBLOCK L4 L5 L6 null
+    TRYCATCHBLOCK L6 L7 L6 null
+   L8
+    LINENUMBER 23 L8
+    ALOAD 0
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.dining.Philosopher"
+    LDC "rightStick"
+    LDC "Lorg/mpisws/util/concurrent/ReentrantLock;"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/mpisws/concurrent/programs/dining/Philosopher.rightStick : Lorg/mpisws/util/concurrent/ReentrantLock;
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+    DUP
+    ASTORE 1
+    DUP
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.acquireLockReq (Ljava/lang/Object;Ljava/lang/Thread;)V
+    MONITORENTER
+   L4
+    LINENUMBER 24 L4
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.acquiredLock (Ljava/lang/Object;Ljava/lang/Thread;)V
+    ALOAD 0
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    LDC "org.mpisws.concurrent.programs.dining.Philosopher"
+    LDC "leftStick"
+    LDC "Lorg/mpisws/util/concurrent/ReentrantLock;"
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.readOperation (Ljava/lang/Object;Ljava/lang/Thread;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+    GETFIELD org/mpisws/concurrent/programs/dining/Philosopher.leftStick : Lorg/mpisws/util/concurrent/ReentrantLock;
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    NOP
+    DUP
+    ASTORE 2
+    DUP
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.acquireLockReq (Ljava/lang/Object;Ljava/lang/Thread;)V
+    MONITORENTER
+   L0
+    LINENUMBER 25 L0
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.acquiredLock (Ljava/lang/Object;Ljava/lang/Thread;)V
+    ALOAD 0
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/dining/Philosopher.eat ()V
+   L9
+    LINENUMBER 26 L9
+    ALOAD 2
+    DUP
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.releaseLockReq (Ljava/lang/Object;Ljava/lang/Thread;)V
+    MONITOREXIT
+   L1
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.releasedLock (Ljava/lang/Object;Ljava/lang/Thread;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    GOTO L10
+   L2
+   FRAME FULL [org/mpisws/concurrent/programs/dining/Philosopher org/mpisws/util/concurrent/ReentrantLock org/mpisws/util/concurrent/ReentrantLock] [java/lang/Throwable]
+    ASTORE 3
+    ALOAD 2
+    DUP
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.releaseLockReq (Ljava/lang/Object;Ljava/lang/Thread;)V
+    MONITOREXIT
+   L3
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.releasedLock (Ljava/lang/Object;Ljava/lang/Thread;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    ALOAD 3
+    ATHROW
+   L10
+    LINENUMBER 28 L10
+   FRAME SAME
+    ALOAD 1
+    DUP
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.releaseLockReq (Ljava/lang/Object;Ljava/lang/Thread;)V
+    MONITOREXIT
+   L5
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.releasedLock (Ljava/lang/Object;Ljava/lang/Thread;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    GOTO L11
+   L6
+   FRAME FULL [org/mpisws/concurrent/programs/dining/Philosopher org/mpisws/util/concurrent/ReentrantLock] [java/lang/Throwable]
+    ASTORE 4
+    ALOAD 1
+    DUP
+    DUP
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.releaseLockReq (Ljava/lang/Object;Ljava/lang/Thread;)V
+    MONITOREXIT
+   L7
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.releasedLock (Ljava/lang/Object;Ljava/lang/Thread;)V
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+    ALOAD 4
+    ATHROW
+   L11
+    LINENUMBER 30 L11
+   FRAME APPEND [org/mpisws/util/concurrent/ReentrantLock]
+    RETURN
+    MAXSTACK = 6
+    MAXLOCALS = 5
+
+  // access flags 0x2
+  private eat()V
+   L0
+    LINENUMBER 35 L0
+    RETURN
+    MAXSTACK = 0
+    MAXLOCALS = 1
+
+  // access flags 0x1
+  public run()V
+    TRYCATCHBLOCK L0 L1 L2 org/mpisws/util/concurrent/JMCInterruptException
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.waitRequest (Ljava/lang/Thread;)V
+   L0
+    LINENUMBER 40 L0
+    ALOAD 0
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/dining/Philosopher.think ()V
+   L3
+    LINENUMBER 41 L3
+    ALOAD 0
+    INVOKEVIRTUAL org/mpisws/concurrent/programs/dining/Philosopher.tryToEat ()V
+   L1
+    LINENUMBER 44 L1
+    GOTO L4
+   L2
+    LINENUMBER 42 L2
+   FRAME SAME1 org/mpisws/util/concurrent/JMCInterruptException
+    ASTORE 1
+   L4
+    LINENUMBER 45 L4
+   FRAME SAME
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKESTATIC org/mpisws/runtime/RuntimeEnvironment.finishThreadRequest (Ljava/lang/Thread;)V
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 2
+}

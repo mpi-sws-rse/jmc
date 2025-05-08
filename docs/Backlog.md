@@ -1,0 +1,37 @@
+- [ ] **Thread Problem** - ~~Fix the undying thread problem - threads don't die. (short term fixed)~~
+	- The root cause is that when the main thread finishes in the [[Runtime]], the rest of the threads are blocked on `waitRequest` waiting for a lock that is never released. Therefore, these threads never run to completion.
+	- The problem is apparent if you run a test with a profiler. The threads that do not end are visible and are blocked on `waitRequest` (maybe not. Need to revisit)
+	- The fix is that if the execution is halted, then we need to explicitly make sure that all `Thread`s are run to completion
+	- [x] Move to using `Future`to block threads.
+	- [x] Each `Thread` is associated with a `Future` that is used to yield control back to the `Runtime`
+	- [x] Introduce a clean `yield` co-routine interface for the runtime that uses `Futures` underneath. This way ending the execution would mean ending all `Futures`
+	- [x] Semantics of read and write events. Read/write and Yield - or -  Yield and Read/Write
+	- [ ] Need to understand why locks are special in the Runtime calls. - Needs a decorator for tracking lock requests from threads.
+	- [ ] What events corresponds to thread operations? Maybe this needs to be abstracted away with a helper function
+		- [ ] We need to keep state to track the requests of threads and ensure no deadlock. This deals with locks and also join requests.
+	- [x] What is compare and set operation?
+		- [x] Introduce a compare and set Operation (Should be handled separately for Trust)
+	- [x] Need to understand executors!
+	- [ ] What is JMCThread with message passing primitives?
+		- [ ] 
+	- [x] ~~Points where the yield occurs - `AtomicReference`, `AtomicStampedReference` (yield occurs after locking, shouldn't this be a problem)~~ Not a problem
+	- [ ] `AtomicStampedReference` why is `stamp` and `value` two different variables? No use of locks...
+		- [ ] Need to keep them separate. Maybe? Maybe not?
+- [x] **Thread Manager** - Build a `ThreadManager` to manage references to `Thread` objects and ensure all state is cleared in each iteration. Avoiding memory leaks.
+- [ ] **Annotation Processor** - Move to an Annotation Processor based instrumentation. The user annotates a test with the configuration and automatically, we will instrument and run the Model checker ^35f61b
+	- [ ] Read up on Annotation processing. Move just the Configuration first
+	- [ ] Need to write plugins.
+		- [ ] JUnit4
+		- [ ] Junit5
+	- [ ] Adapt existing Byte-code instrumentation process to be used in the annotation processor. 
+- [x] Build a `EventFactory` to associate `RuntimeEnvironment` calls to events to be added to an execution graph and to be passed to the [[Scheduler]]
+- [ ] The `IncrementalSolver` extends `SimpleSolver` leading to code duplication. Should move to a Decorator pattern.
+	- [ ] An explicit `reset` function is needed in both the solvers to do better memory management
+- [ ] Figure out why `ByteCodeModifier` is consuming so much memory. Is this solved by using an annotation processor based instrumentation?
+	- [ ] Referring to [[Byte code Modifier#Pending Tasks]] (need to use annotation processor and should make a single pass over the byte code for efficiency.)
+	- [ ] Infer program type or make instrumentation agnostic to the program type (Shared memory or message passing)
+- [ ] Can we build a Symbolic execution engine out of [[Symbolic execution engine]]?
+- [ ] Infer program type (Shared memory or message passing)
+	- Figure out why there is a distinction. How does the model checker behavior change based on it?
+- [ ] Fix the Builder pattern of `ConfigurationBuilder`
+	- [ ] Maybe use Lombok? (May not be possible if we are using annotation processing for building the configuration)

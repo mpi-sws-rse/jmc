@@ -5,7 +5,7 @@ build/
 !**/src/test/**/build/
 src/main/java/org/mpisws/checker/*.class
 src/main/java/org/mpisws/checker/strategy/*.class
-src/main/resources/
+core/src/main/resources/
 src/main/java/org/mpisws/runtime/*.class
 src/main/java/org/mpisws/solver/*.class
 src/main/java/org/mpisws/symbolic/*.class
@@ -206,6 +206,7 @@ src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/simpleTSStack/*.
 src/test/java/org/mpisws/concurrent/programs/det/stack/lockFree/simpleTSStack/*.txt
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/simpleTSStack/*.class
 src/test/java/org/mpisws/concurrent/programs/nondet/stack/lockFree/simpleTSStack/*.txt
+
 src/test/java/org/mpisws/concurrent/programs/bigShot/*.class
 src/test/java/org/mpisws/concurrent/programs/bigShot/*.txt
 src/test/java/org/mpisws/concurrent/programs/fibBench/*.class
@@ -216,6 +217,10 @@ src/test/java/org/mpisws/concurrent/programs/sigma/*.class
 src/test/java/org/mpisws/concurrent/programs/sigma/*.txt
 src/test/java/org/mpisws/concurrent/programs/singleton/*.class
 src/test/java/org/mpisws/concurrent/programs/singleton/*.txt
+
+### Source code ###
+integration-test/src/main/resources/lib/
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 /.idea/workspace.xml
@@ -226,6 +231,7 @@ src/test/java/org/mpisws/concurrent/programs/singleton/*.txt
 .idea/copilot
 .idea/vcs.xml
 .idea/workspace.xml
+.idea/kotlinc.xml
 *.iws
 *.iml
 *.ipr
@@ -257,3 +263,15 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Python ###
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+venv/
+http/
+.venv/
+
+### Local results ###
+.results/

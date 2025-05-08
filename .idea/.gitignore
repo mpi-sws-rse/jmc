@@ -11,6 +11,8 @@
 
 # automatic code formatting
 !codeStyleSettings.xml
+!codeStyles
+!checkstyle-idea.xml
 
 # project specific words
 !dictionaries

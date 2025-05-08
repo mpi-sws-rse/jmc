@@ -1,0 +1,217 @@
+{
+  "main": {
+    "id": "e20f6334d327f042",
+    "type": "split",
+    "children": [
+      {
+        "id": "126dc3ae5ad58ca4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "eb5fe70b3da4c3fd",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.8.7"
+              },
+              "icon": "lucide-book-up",
+              "title": "Release Notes 1.8.7"
+            }
+          },
+          {
+            "id": "a5fd928d7ed9b2df",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.8.9"
+              },
+              "icon": "lucide-book-up",
+              "title": "Release Notes 1.8.9"
+            }
+          },
+          {
+            "id": "fd52ca546eec657e",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.8.10"
+              },
+              "icon": "lucide-book-up",
+              "title": "Release Notes 1.8.10"
+            }
+          }
+        ],
+        "currentTab": 2
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "8efb670d7c062a77",
+    "type": "split",
+    "children": [
+      {
+        "id": "1a178fbf7394d106",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "82d1ad6138cad0b4",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "ed470c27b6422545",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "788547c05b40df49",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "9adec5ddcde7653b",
+    "type": "split",
+    "children": [
+      {
+        "id": "5e06491a88cb9c7d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ac8f49f81500c7ce",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Byte code Modifier.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Byte code Modifier"
+            }
+          },
+          {
+            "id": "0a59c5499be33345",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "892eff7f0d136151",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "207bd9a017074b80",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {},
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "fd52ca546eec657e",
+  "lastOpenFiles": [
+    "JMC Overview.md",
+    "Scheduler.md",
+    "Runtime.md",
+    "Backlog.md",
+    "Symbolic execution engine.md",
+    "Concurrent primitives.md",
+    "Developing.md",
+    "Byte code Instrumentation/Park and Unpark Instrumentation.md",
+    "Byte code Instrumentation/Assert Instrumentation.md",
+    "Byte code Modifier.md",
+    "Byte code Instrumentation/Executors Instrumentation.md",
+    "Byte code Instrumentation/Monitor Instrumentation.md",
+    "Byte code Instrumentation/Read write Instrumentation.md",
+    "Byte code Instrumentation/Runtime Instrumentation.md",
+    "Byte code Instrumentation/Symbolic instrumentation.md",
+    "Byte code Instrumentation/Synchronized method instrumentation.md",
+    "Byte code Instrumentation/Thread Instrumentation.md",
+    "ModelChecker.md",
+    "Byte code Instrumentation/Thread start Instrumentation.md",
+    "Byte code Instrumentation/Thread creation Instrumentation.md",
+    "2024-11-08.md",
+    "Configuration.md",
+    "JMC/Supporting Futures.md",
+    "Byte code Instrumentation",
+    "JMC/Tasks.md",
+    "JMC",
+    "Welcome.md",
+    "create a link.md"
+  ]
+}
