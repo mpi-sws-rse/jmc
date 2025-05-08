@@ -123,8 +123,3 @@ Currently supported primitives are:
 
 By replacing the Thread primitives with the JmcThread primitives, we can control the interleaving of the threads across
 different use cases such as ThreadPools and Executors.
-
-## Pending work
-
-- [ ] Implementing support for Park and Unpark
-- [ ] Migrating automatic instrumentation of Java bytecode to replace the manual instrumentation
