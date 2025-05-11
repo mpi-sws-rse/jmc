@@ -1,11 +1,14 @@
 package org.mpisws.jmc.integrations.junit5.engine;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.commons.support.ReflectionSupport;
 import org.junit.platform.engine.*;
 import org.junit.platform.engine.discovery.ClassSelector;
 import org.junit.platform.engine.discovery.ClasspathRootSelector;
 import org.junit.platform.engine.discovery.PackageSelector;
+import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcClassTestDescriptor;
@@ -19,9 +22,12 @@ import java.util.function.Predicate;
 
 public class JmcTestEngine implements TestEngine {
 
+    private static final Logger LOGGER = LogManager.getLogger(JmcTestEngine.class);
+
     private static final Predicate<Class<?>> IS_JMC_TEST_CONTAINER =
             classCandidate ->
-                    AnnotationSupport.isAnnotated(classCandidate, JmcCheckConfiguration.class);
+                    AnnotationSupport.isAnnotated(classCandidate, JmcCheckConfiguration.class) ||
+                            AnnotationSupport.isAnnotated(classCandidate, JmcCheck.class);
 
     @Override
     public String getId() {
@@ -30,7 +36,7 @@ public class JmcTestEngine implements TestEngine {
 
     @Override
     public TestDescriptor discover(EngineDiscoveryRequest request, UniqueId uniqueId) {
-        System.out.println("JmcTestEngine discover");
+        LOGGER.debug("Discovering tests");
         JmcEngineDescriptor engineDescriptor = new JmcEngineDescriptor(uniqueId);
 
         request.getSelectorsByType(ClasspathRootSelector.class)
@@ -60,7 +66,6 @@ public class JmcTestEngine implements TestEngine {
     }
 
     private void appendTestsInClasspathRoot(URI uri, TestDescriptor engineDescriptor) {
-        System.out.println("JmcTestEngine discover in classpath root");
         ReflectionSupport.findAllClassesInClasspathRoot(
                         uri, IS_JMC_TEST_CONTAINER, name -> true) //
                 .stream() //
@@ -75,7 +80,7 @@ public class JmcTestEngine implements TestEngine {
     }
 
     private void appendTestsInPackage(String packageName, TestDescriptor engineDescriptor) {
-        System.out.println("JmcTestEngine discover in package " + packageName);
+        LOGGER.debug("Discovering tests in package {}", packageName);
         ReflectionSupport.findAllClassesInPackage(
                         packageName, IS_JMC_TEST_CONTAINER, name -> true) //
                 .stream() //
@@ -90,21 +95,18 @@ public class JmcTestEngine implements TestEngine {
     }
 
     private void appendTestsInClass(Class<?> javaClass, TestDescriptor engineDescriptor) throws JmcCheckerException {
-        System.out.println("JmcTestEngine discover in class " + javaClass.getName());
-        if (AnnotationSupport.isAnnotated(javaClass, JmcCheckConfiguration.class)) {
+        LOGGER.debug("Discovering tests in class {}", javaClass.getName());
+        if (IS_JMC_TEST_CONTAINER.test(javaClass)) {
             engineDescriptor.addChild(new JmcClassTestDescriptor(javaClass, engineDescriptor));
         } else {
             Method[] methodList = javaClass.getMethods();
             for (Method method : methodList) {
-                if (method.getAnnotation(JmcCheckConfiguration.class) != null) {
+                if (method.getAnnotation(JmcCheckConfiguration.class) != null || method.getAnnotation(JmcCheck.class) != null) {
                     engineDescriptor.addChild(new JmcClassTestDescriptor(javaClass, engineDescriptor));
                 }
-
             }
-
         }
     }
-
 
     @Override
     public void execute(ExecutionRequest request) {

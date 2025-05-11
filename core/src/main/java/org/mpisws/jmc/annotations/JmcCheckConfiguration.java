@@ -10,8 +10,6 @@ import java.lang.annotation.Target;
 public @interface JmcCheckConfiguration {
     String strategy() default "random";
 
-//    SchedulingStrategy customStrategy() default RandomSchedulingStrategy.class;
-
     int numIterations() default 0;
 
     boolean debug() default false;
@@ -19,5 +17,4 @@ public @interface JmcCheckConfiguration {
     String reportPath() default "build/test-results/jmc-report";
 
     long seed() default 0;
-
 }

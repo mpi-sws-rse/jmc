@@ -21,7 +21,8 @@ git clone git@github.com:mpi-sws-rse/jmc.git
 
 ## Adding dependency
 
-This assumes that there is an existing java project to run the model checker on. If not, refer to [Project setup instructions](Gradle%20Example%20Project%20Setup.md)
+This assumes that there is an existing java project to run the model checker on. If not, refer
+to [Project setup instructions](Gradle%20Example%20Project%20Setup.md)
 
 In the `app/build.gradle.kts` or `app/build.gradle` file, add the following inside `dependencies`
 
@@ -35,14 +36,15 @@ Note that if you built from source then you would need to add `mavenLocal()` ins
 
 Here is a sample test program and a test to run the model checker on.
 
-Copy the `BuggyCounterUsingAPI.java` and `ExampleCounterTest.java` from (here)[examples/counter] and add them inside `app/src/test/java/org/example/BuggyCounterUsingAPI.java` and `app/src/test/java/org/example/ExampleCounterTest.java`
+Copy the `BuggyCounterUsingAPI.java` and `ExampleCounterTest.java` from (here)[] and add them inside
+`app/src/test/java/org/example/BuggyCounterUsingAPI.java` and `app/src/test/java/org/example/ExampleCounterTest.java`
 
 The test looks as follows.
 
 ```java
 public class ExampleCounterTest {
     @Test
-    void testRandomBuggyCounter() throws JmcCheckerException{
+    void testRandomBuggyCounter() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
@@ -59,7 +61,8 @@ public class ExampleCounterTest {
 }
 ```
 
-First initializing the configuration for the model checker and then specifying the target to model check and eventually running the `checker.check` method.
+First initializing the configuration for the model checker and then specifying the target to model check and eventually
+running the `checker.check` method.
 
 To run the test with the model checker on the command line use the following command.
 

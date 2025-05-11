@@ -7,17 +7,14 @@ import org.mpisws.jmc.programs.atomic.counter.AtomicCounter;
 import org.mpisws.jmc.programs.correct.counter.CorrectCounter;
 import org.mpisws.jmc.programs.mockKafka.ShareConsumerTest;
 
-
-
 @JmcCheckConfiguration(numIterations = 10, strategy = "random", debug = true)
- public class JmcExampleTest {
+public class JmcExampleTest {
 
     @JmcCheckConfiguration(numIterations = 20, strategy = "random", debug = true)
     @Test
     public void testAcquisitionLockTimeoutOnConsumer() {
         ShareConsumerTest.main(new String[0]);
     }
-
 
     @JmcCheckConfiguration(strategy = "random", debug = true)
     @JmcTimeout(value = 1)

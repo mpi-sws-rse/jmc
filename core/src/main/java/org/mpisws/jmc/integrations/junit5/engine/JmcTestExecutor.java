@@ -1,5 +1,7 @@
 package org.mpisws.jmc.integrations.junit5.engine;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
 import org.mpisws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpisws.jmc.checker.JmcModelChecker;
@@ -11,8 +13,10 @@ import java.lang.reflect.Method;
 
 public class JmcTestExecutor {
 
+    private static final Logger LOGGER = LogManager.getLogger(JmcTestExecutor.class);
+
     public static void execute(Method testMethod, Object instance, JmcCheckerConfiguration config) throws JmcCheckerException {
-        System.out.println("JmcTestExecutor Executing test: " + testMethod.getName());
+        LOGGER.debug("JmcTestExecutor Executing test: {}", testMethod.getName());
         JmcModelChecker checker = new JmcModelChecker(config);
         JmcTestTarget target =
                 new JmcFunctionalTestTarget(
