@@ -20,6 +20,7 @@ import org.mpisws.jmc.programs.dining.DiningPhilosophers;
 import org.mpisws.jmc.programs.futures.CompletableFutureP;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
 import org.mpisws.jmc.programs.random.counter.RandomCounterIncr;
+import org.mpisws.jmc.programs.mockKafka.ShareConsumerTest;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
 
 import java.time.Duration;
@@ -495,6 +496,23 @@ public class JmcModelCheckerTest {
                         () -> {
                             CC7.main(new String[]{"6"});
                         });
+        jmcModelChecker.check(target);
+    }
+
+
+    @Test
+    void testAcquisitionLockTimeoutOnConsumer() throws  JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(10).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomKafkaTest",
+                        () -> {
+                            ShareConsumerTest.main(new String[0]);
+                        });
+
         jmcModelChecker.check(target);
     }
 }

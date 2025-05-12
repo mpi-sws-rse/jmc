@@ -7,14 +7,7 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JmcCheckConfiguration {
-    String strategy() default "random";
-
-    int numIterations() default 0;
-
-    boolean debug() default false;
-
-    String reportPath() default "build/test-results/jmc-report";
-
+public @interface Replay {
     long seed() default 0;
+    int numIterations() default 10;
 }

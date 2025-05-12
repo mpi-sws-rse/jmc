@@ -4,17 +4,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.time.temporal.ChronoUnit;
 
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JmcCheckConfiguration {
-    String strategy() default "random";
+public @interface JmcTimeout {
+    long value();
 
-    int numIterations() default 0;
-
-    boolean debug() default false;
-
-    String reportPath() default "build/test-results/jmc-report";
-
-    long seed() default 0;
+    ChronoUnit unit() default ChronoUnit.SECONDS;
 }
