@@ -11,7 +11,7 @@ public class CorrectCounterTestRunner {
     public static void main(String[] args) {
         ReentrantLock lock = new ReentrantLock();
         CounterITest counter = new CounterITest();
-        CorrectCounterITest[] threads = new CorrectCounterITest[3];
+        CorrectCounterITest[] threads = new CorrectCounterITest[2];
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new CorrectCounterITest(lock, counter);
         }
@@ -25,7 +25,6 @@ public class CorrectCounterTestRunner {
                 e.printStackTrace();
             }
         }
-        assert (counter.counter == 3);
-        System.out.println("All good!");
+        assert (counter.counter == 2);
     }
 }

@@ -17,8 +17,14 @@ public class Location {
         return new Location(instance, param);
     }
 
+    public static Location fromRuntimeLockEvent(RuntimeEvent runtimeEvent) {
+        Object instance = runtimeEvent.getParam("lock");
+        String param = runtimeEvent.getParam("owner");
+        return new Location(instance, param);
+    }
+
     @Override
     public int hashCode() {
-        return (instance.hashCode() +param).hashCode();
+        return (instance.hashCode() + param).hashCode();
     }
 }

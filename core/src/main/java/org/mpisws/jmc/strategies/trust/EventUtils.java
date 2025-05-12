@@ -18,7 +18,7 @@ public class EventUtils {
     }
 
     public static boolean isLockAcquireRead(Event event) {
-        return event.getType() == Event.Type.READ && event.hasAttribute("lock_acquire");
+        return event.getType() == Event.Type.READ_EX && event.hasAttribute("lock_acquire");
     }
 
     public static boolean isLockReleaseWrite(Event event) {
