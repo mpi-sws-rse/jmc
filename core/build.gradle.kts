@@ -18,6 +18,10 @@ repositories {
 //    toolVersion = "10.19.0"
 //}
 
+java {
+    withSourcesJar()
+}
+
 dependencies {
     implementation("org.sosy-lab:java-smt:5.0.1")
     implementation("org.sosy-lab:javasmt-solver-z3:4.13.3")

@@ -3,10 +3,12 @@ package org.mpisws.jmc.integrations.junit5.engine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.platform.commons.support.AnnotationSupport;
+import org.junit.platform.commons.support.HierarchyTraversalMode;
 import org.junit.platform.commons.support.ReflectionSupport;
 import org.junit.platform.engine.*;
 import org.junit.platform.engine.discovery.ClassSelector;
 import org.junit.platform.engine.discovery.ClasspathRootSelector;
+import org.junit.platform.engine.discovery.MethodSelector;
 import org.junit.platform.engine.discovery.PackageSelector;
 import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
@@ -14,11 +16,12 @@ import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcClassTestDescriptor;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcEngineDescriptor;
 import org.mpisws.jmc.integrations.junit5.descriptors.JmcExecutableTestDescriptor;
+import org.mpisws.jmc.integrations.junit5.descriptors.JmcMethodTestDescriptor;
 
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.List;
 import java.util.function.Predicate;
-
 
 public class JmcTestEngine implements TestEngine {
 
@@ -26,8 +29,8 @@ public class JmcTestEngine implements TestEngine {
 
     private static final Predicate<Class<?>> IS_JMC_TEST_CONTAINER =
             classCandidate ->
-                    AnnotationSupport.isAnnotated(classCandidate, JmcCheckConfiguration.class) ||
-                            AnnotationSupport.isAnnotated(classCandidate, JmcCheck.class);
+                    AnnotationSupport.isAnnotated(classCandidate, JmcCheckConfiguration.class)
+                            || AnnotationSupport.isAnnotated(classCandidate, JmcCheck.class);
 
     @Override
     public String getId() {
@@ -61,6 +64,23 @@ public class JmcTestEngine implements TestEngine {
                                 throw new RuntimeException(e);
                             }
                         });
+        request.getSelectorsByType(MethodSelector.class)
+                .forEach(
+                        (selector) -> {
+                            try {
+                                Class<?> javaClass = selector.getJavaClass();
+                                Method method = selector.getJavaMethod();
+                                if (IS_JMC_TEST_CONTAINER.test(javaClass)) {
+                                    engineDescriptor.addChild(
+                                            new JmcClassTestDescriptor(
+                                                    javaClass, engineDescriptor, false));
+                                } else {
+                                    appendTestsInClass(javaClass, engineDescriptor);
+                                }
+                            } catch (JmcCheckerException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
 
         return engineDescriptor;
     }
@@ -69,13 +89,14 @@ public class JmcTestEngine implements TestEngine {
         ReflectionSupport.findAllClassesInClasspathRoot(
                         uri, IS_JMC_TEST_CONTAINER, name -> true) //
                 .stream() //
-                .map(aClass -> {
-                    try {
-                        return new JmcClassTestDescriptor(aClass, engineDescriptor);
-                    } catch (JmcCheckerException e) {
-                        throw new RuntimeException(e);
-                    }
-                }) //
+                .map(
+                        aClass -> {
+                            try {
+                                return new JmcClassTestDescriptor(aClass, engineDescriptor, true);
+                            } catch (JmcCheckerException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }) //
                 .forEach(engineDescriptor::addChild);
     }
 
@@ -84,27 +105,47 @@ public class JmcTestEngine implements TestEngine {
         ReflectionSupport.findAllClassesInPackage(
                         packageName, IS_JMC_TEST_CONTAINER, name -> true) //
                 .stream() //
-                .map(aClass -> {
-                    try {
-                        return new JmcClassTestDescriptor(aClass, engineDescriptor);
-                    } catch (JmcCheckerException e) {
-                        throw new RuntimeException(e);
-                    }
-                }) //
+                .map(
+                        aClass -> {
+                            try {
+                                return new JmcClassTestDescriptor(aClass, engineDescriptor, true);
+                            } catch (JmcCheckerException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }) //
                 .forEach(engineDescriptor::addChild);
     }
 
-    private void appendTestsInClass(Class<?> javaClass, TestDescriptor engineDescriptor) throws JmcCheckerException {
+    private void appendTestsInClass(Class<?> javaClass, TestDescriptor engineDescriptor)
+            throws JmcCheckerException {
         LOGGER.debug("Discovering tests in class {}", javaClass.getName());
         if (IS_JMC_TEST_CONTAINER.test(javaClass)) {
-            engineDescriptor.addChild(new JmcClassTestDescriptor(javaClass, engineDescriptor));
+            engineDescriptor.addChild(
+                    new JmcClassTestDescriptor(javaClass, engineDescriptor, true));
         } else {
-            Method[] methodList = javaClass.getMethods();
-            for (Method method : methodList) {
-                if (method.getAnnotation(JmcCheckConfiguration.class) != null || method.getAnnotation(JmcCheck.class) != null) {
-                    engineDescriptor.addChild(new JmcClassTestDescriptor(javaClass, engineDescriptor));
-                }
+            List<Method> methods =
+                    ReflectionSupport.findMethods(
+                            javaClass,
+                            (method) ->
+                                    method.getAnnotation(JmcCheckConfiguration.class) != null
+                                            || method.getAnnotation(JmcCheck.class) != null,
+                            HierarchyTraversalMode.TOP_DOWN);
+
+            if (methods.isEmpty()) {
+                return;
             }
+            JmcClassTestDescriptor testDescriptor =
+                    new JmcClassTestDescriptor(javaClass, engineDescriptor, false);
+            engineDescriptor.addChild(testDescriptor);
+
+            methods.forEach(
+                    (method) -> {
+                        if (method.getAnnotation(JmcCheckConfiguration.class) != null
+                                || method.getAnnotation(JmcCheck.class) != null) {
+                            testDescriptor.addChild(
+                                    new JmcMethodTestDescriptor(method, testDescriptor));
+                        }
+                    });
         }
     }
 
@@ -122,9 +163,8 @@ public class JmcTestEngine implements TestEngine {
     }
 
     private void executeDescriptor(EngineExecutionListener listener, TestDescriptor descriptor) {
-        listener.executionStarted(descriptor);
-
         if (descriptor instanceof JmcExecutableTestDescriptor exec) {
+            listener.executionStarted(descriptor);
             try {
                 exec.execute();
                 listener.executionFinished(descriptor, TestExecutionResult.successful());
@@ -135,7 +175,6 @@ public class JmcTestEngine implements TestEngine {
             for (TestDescriptor child : descriptor.getChildren()) {
                 executeDescriptor(listener, child);
             }
-            listener.executionFinished(descriptor, TestExecutionResult.successful());
         }
     }
 }

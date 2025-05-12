@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.ClassSource;
+import org.junit.platform.engine.support.descriptor.MethodSource;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.annotations.JmcTimeout;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
@@ -20,14 +21,15 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
     private static final Logger LOGGER = LogManager.getLogger(JmcMethodTestDescriptor.class);
 
     private final Method testMethod;
+    private final JmcCheckConfiguration parentConfigAnnotation;
 
     public JmcMethodTestDescriptor(Method testMethod, JmcClassTestDescriptor parent) {
         super(
                 parent.getUniqueId().append("method", testMethod.getName()),
                 testMethod.getName(),
-                ClassSource.from(testMethod.getDeclaringClass()));
+                MethodSource.from(testMethod));
         this.testMethod = testMethod;
-        setParent(parent);
+        this.parentConfigAnnotation = parent.getConfigAnnotation();
     }
 
     @Override
@@ -72,8 +74,7 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                     testMethod.getAnnotation(JmcCheckConfiguration.class);
             LOGGER.debug("JmcCheckConfiguration annotation found");
             configBuilder = buildFromAnnotation(configBuilder, annotation);
-        } else if (testMethod.getDeclaringClass().getAnnotation(JmcCheckConfiguration.class)
-                != null) {
+        } else if (parentConfigAnnotation != null) {
             // Class has JmcCheckConfiguration annotation use that
             JmcCheckConfiguration annotation =
                     testMethod.getDeclaringClass().getAnnotation(JmcCheckConfiguration.class);
