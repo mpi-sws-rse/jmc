@@ -30,7 +30,7 @@ public class EventUtils {
     }
 
     public static boolean isBlockingLabel(Event event) {
-        return event.getType() == Event.Type.BLOCK || event.getType() == Event.Type.LOCK_AWAIT;
+        return event.getType() == Event.Type.BLOCK;
     }
 
     public static Long getStartedBy(Event event) {

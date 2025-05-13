@@ -137,8 +137,12 @@ public class ExplorationStack {
         // - (w ->(rf) r), event1 is r and event2 is w
         // - (w1 ->(co) w2), event1 is w1 and event2 is w2
         // In the case of a backward revisit, event1 is the write event and event2 is null
-        private final ExecutionGraphNode event1; // TODO: Since they are graph nodes, we must use a better name
-        private final ExecutionGraphNode event2; // TODO: Since they are graph nodes, we must use a better name
+        private final ExecutionGraphNode
+                event1; // TODO: Since they are graph nodes, we must use a better name
+        private final ExecutionGraphNode
+                event2; // TODO: Since they are graph nodes, we must use a better name
+
+        private List<Event> additionalEventsToProcess;
 
         // Graph is used only in the case of a backward revisit
         private final ExecutionGraph graph;
@@ -152,6 +156,15 @@ public class ExplorationStack {
             this.event1 = one;
             this.event2 = two;
             this.graph = graph;
+            this.additionalEventsToProcess = new ArrayList<>();
+        }
+
+        public void addAdditionalEvent(Event event) {
+            this.additionalEventsToProcess.add(event);
+        }
+
+        public List<Event> getAdditionalEventsToProcess() {
+            return this.additionalEventsToProcess;
         }
 
         /**
@@ -180,8 +193,7 @@ public class ExplorationStack {
             return new Item(ItemType.FWW, one, two, graph);
         }
 
-        public static Item forwardLW(
-                ExecutionGraphNode one, ExecutionGraph graph) {
+        public static Item forwardLW(ExecutionGraphNode one, ExecutionGraph graph) {
             return new Item(ItemType.FLW, one, null, graph);
         }
 
@@ -274,10 +286,14 @@ public class ExplorationStack {
 
         @Override
         public String toString() {
-            // return a string representation of the item type and the events. If the event2 is null,
+            // return a string representation of the item type and the events. If the event2 is
+            // null,
             // then just return the event1.
-            return this.type + "(" + (this.event1 != null ? ":" + this.event1.getEvent() : "") +
-                    (this.event2 != null ? ":" + this.event2.getEvent() : "") + ")";
+            return this.type
+                    + "("
+                    + (this.event1 != null ? ":" + this.event1.getEvent() : "")
+                    + (this.event2 != null ? ":" + this.event2.getEvent() : "")
+                    + ")";
         }
     }
 

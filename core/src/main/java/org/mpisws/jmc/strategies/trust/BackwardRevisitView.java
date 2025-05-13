@@ -21,16 +21,35 @@ public class BackwardRevisitView {
     private final ExecutionGraphNode read;
     private final ExecutionGraphNode write;
 
+    // Additional event, maintained here for revisits of a write exclusive with a read exclusive.
+    // The write exclusive of the revisited read exclusive is stored here.
+    private Event addEvent;
+
     /**
      * Creates a new backward revisit view.
      *
      * @param graph The execution graph.
-     * @param read  The read event.
+     * @param read The read event.
      * @param write The write event.
      */
     public BackwardRevisitView(
             ExecutionGraph graph, ExecutionGraphNode read, ExecutionGraphNode write) {
         this.graph = graph.clone();
+        if (EventUtils.isLockAcquireRead(read.getEvent())) {
+            // Find the write exclusive of the read exclusive
+            List<Event.Key> porfSuccessors = read.getSuccessors(Relation.ProgramOrder);
+            if (porfSuccessors.size() != 1) {
+                throw HaltExecutionException.error(
+                        "The read event does not have a valid porf successor.");
+            }
+            Event.Key porfSuccessor = porfSuccessors.get(0);
+            try {
+                this.addEvent = graph.getEventNode(porfSuccessor).getEvent().clone();
+            } catch (NoSuchEventException ignored) {
+                throw HaltExecutionException.error(
+                        "The porf successor event does not exist in the graph.");
+            }
+        }
         this.removedNodes = new HashSet<>();
         try {
             this.read = this.graph.getEventNode(read.key());
@@ -48,9 +67,7 @@ public class BackwardRevisitView {
         return read;
     }
 
-    /**
-     * Just marks the node as removed, does not update the graph
-     */
+    /** Just marks the node as removed, does not update the graph */
     public void removeNode(Event.Key key) {
         removedNodes.add(key);
     }
@@ -164,5 +181,9 @@ public class BackwardRevisitView {
         restrictedGraph.restrictBySet(removedNodes);
         restrictedGraph.recomputeVectorClocks();
         return restrictedGraph;
+    }
+
+    public Event additionalEvent() {
+        return addEvent;
     }
 }

@@ -20,7 +20,7 @@ import java.util.*;
  * task, you will receive the same sequence of events in that task.
  */
 public class Algo {
-    private static Logger LOGGER = LogManager.getLogger(Algo.class);
+    private static final Logger LOGGER = LogManager.getLogger(Algo.class);
     // The sequence of tasks to be scheduled. This is kept in sync with the execution graph that we
     // are currently visiting.
     private ArrayDeque<SchedulingChoiceWrapper> guidingTaskSchedule;
@@ -30,9 +30,7 @@ public class Algo {
 
     private final LocationStore locationStore;
 
-    /**
-     * Creates a new instance of the Trust algorithm.
-     */
+    /** Creates a new instance of the Trust algorithm. */
     public Algo() {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
@@ -43,9 +41,7 @@ public class Algo {
         this.executionGraph.addEvent(Event.init());
     }
 
-    /**
-     * Returns the next task to be scheduled according to the execution graph set in place.
-     */
+    /** Returns the next task to be scheduled according to the execution graph set in place. */
     public SchedulingChoice<?> nextTask() {
         if (!isGuiding) {
             return null;
@@ -125,9 +121,7 @@ public class Algo {
                 handleRead(event);
                 break;
             case WRITE:
-                if (EventUtils.isLockAcquireWrite(event)) {
-                    handleLockAcquireWrite(event);
-                } else if (EventUtils.isLockReleaseWrite(event)) {
+                if (EventUtils.isLockReleaseWrite(event)) {
                     handleLockReleaseWrite(event);
                 } else {
                     handleWrite(event);
@@ -141,10 +135,11 @@ public class Algo {
                 }
                 break;
             case WRITE_EX:
-                handleWriteX(event);
-                break;
-            case LOCK_AWAIT:
-                handleLockAwait(event);
+                if (EventUtils.isLockAcquireWrite(event)) {
+                    handleLockAcquireWrite(event);
+                } else {
+                    handleWriteX(event);
+                }
                 break;
             case NOOP:
                 if (areWeGuiding()) {
@@ -214,9 +209,7 @@ public class Algo {
         findNextExplorationChoice();
     }
 
-    /**
-     * Checks if we are guiding the execution.
-     */
+    /** Checks if we are guiding the execution. */
     private boolean areWeGuiding() {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
     }
@@ -264,8 +257,9 @@ public class Algo {
                 case FRW -> nextGraphSchedule = processFRW(item);
                 case FWW -> nextGraphSchedule = processFWW(item);
                 case FLW -> nextGraphSchedule = processFLW(item);
-                default -> throw new RuntimeException(
-                        "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
+                default ->
+                        throw new RuntimeException(
+                                "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
         }
 
@@ -293,6 +287,10 @@ public class Algo {
         ExecutionGraphNode write = item.getEvent1();
         ExecutionGraph restrictedGraph = item.getGraph();
 
+        for (Event additionalEvent : item.getAdditionalEventsToProcess()) {
+            restrictedGraph.addEvent(additionalEvent);
+        }
+
         List<ExecutionGraphNode> alternativeWrites = restrictedGraph.getCoherentPlacings(write);
 
         if (!alternativeWrites.isEmpty()) {
@@ -315,7 +313,11 @@ public class Algo {
         executionGraph.restrict(read);
         executionGraph.recomputeVectorClocks();
 
-        return executionGraph.checkConsistencyAndTopologicallySort();
+        for (Event additionalEvent : item.getAdditionalEventsToProcess()) {
+            executionGraph.addEvent(additionalEvent);
+        }
+
+        return executionGraph.checkConsistencyAndTopologicallySort(read);
     }
 
     private List<ExecutionGraphNode> processFWW(ExplorationStack.Item item) {
@@ -504,7 +506,7 @@ public class Algo {
 
         for (BackwardRevisitView revisit : revisitViews) {
             // Block the tasks of the reads that need to be revisited
-            executionGraph.addBlockingLabel(revisit.getRead().getEvent().getTaskId(), false);
+            executionGraph.addBlockingLabel(revisit.getRead().getEvent().getTaskId());
             explorationStack.push(
                     ExplorationStack.Item.backwardRevisit(
                             revisit.getWrite(), revisit.getRestrictedGraph()));
@@ -518,38 +520,30 @@ public class Algo {
 
         ExecutionGraphNode read = executionGraph.addEvent(event);
         ExecutionGraphNode coMaxWrite = executionGraph.getCoMax(event.getLocation());
-        // If reading from acquire write, then add a lock await label after the read
-        if (EventUtils.isLockAcquireWrite(coMaxWrite.getEvent())) {
-            executionGraph.addBlockingLabel(read.getEvent().getTaskId(), true);
-        }
 
-        // Check if there are alternative reads from the same write then block
-        List<ExecutionGraphNode> alternativeReads = new ArrayList<>();
-        for (Event.Key readKey : coMaxWrite.getSuccessors(Relation.ReadsFrom)) {
-            try {
-                alternativeReads.add(executionGraph.getEventNode(readKey));
-            } catch (NoSuchEventException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        if (alternativeReads.size() > 1) {
-            executionGraph.addBlockingLabel(read.getEvent().getTaskId(), true);
+        if (coMaxWrite.happensBefore(read)) {
+            executionGraph.setReadsFrom(read, coMaxWrite);
+            return;
         }
 
         // Find alternative lock reads to revisit
-        List<LockBackwardRevisitView> alternativeWrites =
-                executionGraph.getAlternativeLockRevisits(read);
+        List<ExecutionGraphNode> alternativeWrites = executionGraph.getAlternativeLockWrites(read);
+        executionGraph.setReadsFrom(read, coMaxWrite);
         if (alternativeWrites.isEmpty()) {
             return;
         }
-        alternativeWrites =
-                alternativeWrites.stream().filter(LockBackwardRevisitView::isRevisitAble).toList();
-        for (LockBackwardRevisitView alternativeWrite : alternativeWrites) {
-            explorationStack.push(
-                    ExplorationStack.Item.lockBackwardRevisit(
-                            read,
-                            alternativeWrite.getRevisitRead(),
-                            alternativeWrite.getRestrictedGraph()));
+
+        for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
+            ExplorationStack.Item item =
+                    ExplorationStack.Item.forwardRW(read, alternativeWrites.get(i), executionGraph);
+            Event additionalWrite =
+                    new Event(
+                            read.getEvent().getTaskId(),
+                            read.getEvent().getLocation(),
+                            Event.Type.WRITE_EX);
+            additionalWrite.setAttribute("lock_acquire", true);
+            item.addAdditionalEvent(additionalWrite);
+            explorationStack.push(item);
         }
     }
 
@@ -559,21 +553,34 @@ public class Algo {
         }
 
         ExecutionGraphNode write = executionGraph.addEvent(event);
-        executionGraph.trackCoherency(write);
 
+        // No concurrent writes since all same location writes are totally ordered
         List<ExecutionGraphNode> alternateLockReads = executionGraph.getAlternativeLockReads(write);
         if (alternateLockReads.isEmpty()) {
+            executionGraph.trackCoherency(write);
             return;
         }
-        for (ExecutionGraphNode read : alternateLockReads) {
-            if (!EventUtils.isLockAcquireRead(read.getEvent())) {
-                continue;
-            }
-            Long taskId = read.getEvent().getTaskId();
-            if (!executionGraph.isTaskBlocked(taskId)) {
-                executionGraph.addBlockingLabel(read.getEvent().getTaskId(), true);
-            }
+        List<BackwardRevisitView> revisitViews =
+                alternateLockReads.stream()
+                        .map((r) -> executionGraph.revisitView(write, r))
+                        .toList();
+        revisitViews =
+                revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
+
+        for (int i = revisitViews.size() - 1; i >= 0; i--) {
+            ExplorationStack.Item item =
+                    ExplorationStack.Item.backwardRevisit(
+                            write, revisitViews.get(i).getRestrictedGraph());
+            item.addAdditionalEvent(revisitViews.get(i).additionalEvent());
+            explorationStack.push(item);
         }
+        ExecutionGraphNode coMaxWrite = executionGraph.getCoMax(write.getEvent().getLocation());
+        if (!coMaxWrite.getEvent().isInit()
+                && !EventUtils.isLockReleaseWrite(coMaxWrite.getEvent())) {
+            // Block task if the coMaxWrite is not init or a lock release write
+            executionGraph.addBlockingLabel(write.getEvent().getTaskId());
+        }
+        executionGraph.trackCoherency(write);
     }
 
     private void handleLockReleaseWrite(Event event) {
@@ -582,23 +589,40 @@ public class Algo {
         }
 
         ExecutionGraphNode write = executionGraph.addEvent(event);
-        executionGraph.trackCoherency(write);
+        List<ExecutionGraphNode> lockWrites = executionGraph.getWrites(event.getLocation());
 
-        List<ExecutionGraphNode> alternateLockReads = executionGraph.getAlternativeLockReads(write);
-        if (alternateLockReads.isEmpty()) {
-            return;
-        }
-        for (ExecutionGraphNode read : alternateLockReads) {
-            Long taskId = read.getEvent().getTaskId();
-            if (!executionGraph.isTaskBlocked(taskId)) {
-                continue;
+        // Do the inplace revisit
+        // Find the read that is reading from the lock acquire write in the same task
+        ExecutionGraphNode altWrite = null;
+        for (int i = lockWrites.size() - 1; i >= 0; i--) {
+            altWrite = lockWrites.get(i);
+            if (Objects.equals(altWrite.getEvent().getTaskId(), write.getEvent().getTaskId())) {
+                break;
             }
-            executionGraph.unBlockTask(taskId);
-            executionGraph.changeReadsFrom(read, write);
         }
-    }
+        // Check if altWrite is null
+        if (altWrite == null) {
+            throw HaltCheckerException.error("Could not find the lock acquire write");
+        }
+        List<Event.Key> otherLockReads = altWrite.getSuccessors(Relation.ReadsFrom);
 
-    private void handleLockAwait(Event event) {
+        if (otherLockReads.size() > 1) {
+            // There can only be one (if any) lock acquire read reading from the acquire write
+            // Again, due to total order of writes of lock acquires and writes always follow reads.
+            throw HaltCheckerException.error(
+                    "Many locks reading from the same lock acquire write.");
+        }
+        if (otherLockReads.size() == 1) {
+            try {
+                ExecutionGraphNode otherLockRead =
+                        executionGraph.getEventNode(otherLockReads.get(0));
+                executionGraph.changeReadsFrom(otherLockRead, write);
+                executionGraph.unBlockTask(otherLockRead.getEvent().getTaskId());
+            } catch (NoSuchEventException ignore) {
+
+            }
+        }
+        executionGraph.trackCoherency(write);
     }
 
     /**

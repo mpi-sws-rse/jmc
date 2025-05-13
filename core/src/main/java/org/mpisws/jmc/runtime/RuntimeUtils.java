@@ -8,7 +8,7 @@ import java.util.HashMap;
 // These methods are invoked mainly through bytecode instrumentation and
 // not meant to be used within the codebase.
 public class RuntimeUtils {
-    public static void readEvent(String owner, String name, String descriptor, Object instance) {
+    public static void readEvent(Object instance, String owner, String name, String descriptor) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
         builder.type(RuntimeEvent.Type.READ_EVENT).taskId(JmcRuntime.currentTask());
 
@@ -21,7 +21,7 @@ public class RuntimeUtils {
     }
 
     public static void writeEvent(
-            Object value, String owner, String name, String descriptor, Object instance) {
+            Object instance, Object value, String owner, String name, String descriptor) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
         builder.type(RuntimeEvent.Type.READ_EVENT).taskId(JmcRuntime.currentTask());
 
