@@ -87,7 +87,8 @@ public class JmcModelChecker {
                                     "Halting execution: %d due to assertion error: %s",
                                     iteration, e.getMessage()));
                     LOGGER.error("Assertion error in iteration {}: {}", iteration, e.getMessage());
-                    throw HaltCheckerException.error("Assertion error in iteration "+iteration+": "+e.getMessage());
+                    throw HaltCheckerException.error(
+                            "Assertion error in iteration " + iteration + ": " + e.getMessage());
                 } finally {
                     iteration++;
                     if (numIterations != 0 && iteration >= numIterations) {

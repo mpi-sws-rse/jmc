@@ -17,7 +17,7 @@ public class CorrectCounter extends JmcThread {
     @Override
     public void run1() {
         lock.lock();
-        counter.count = counter.count + 1;
+        counter.set(counter.get() + 1);
         lock.unlock();
     }
 
@@ -27,18 +27,17 @@ public class CorrectCounter extends JmcThread {
         CorrectCounter thread1 = new CorrectCounter(counter, lock);
         CorrectCounter thread2 = new CorrectCounter(counter, lock);
         CorrectCounter thread3 = new CorrectCounter(counter, lock);
+        CorrectCounter thread4 = new CorrectCounter(counter, lock);
         thread1.start();
         thread2.start();
         thread3.start();
+        thread4.start();
         try {
             thread1.join1();
             thread2.join1();
             thread3.join1();
-            assert counter.count == 3;
-            System.out.println(
-                    "[Correct Counter message] : If you see this message, the assert passed. The"
-                            + " counter value is "
-                            + counter.count);
+            thread4.join1();
+            assert counter.get() == 4;
         } catch (InterruptedException e) {
             System.out.println("JMCInterruptException thrown");
         }

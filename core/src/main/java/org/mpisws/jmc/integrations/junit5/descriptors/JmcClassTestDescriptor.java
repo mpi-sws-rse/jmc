@@ -12,7 +12,7 @@ import static org.junit.platform.commons.util.ReflectionUtils.HierarchyTraversal
 
 public class JmcClassTestDescriptor extends AbstractTestDescriptor {
     private JmcCheckConfiguration config;
-    private Class<?> testClass;
+    private final Class<?> testClass;
 
     public JmcClassTestDescriptor(Class<?> testClass, TestDescriptor parent, boolean selfDiscovery)
             throws JmcCheckerException {

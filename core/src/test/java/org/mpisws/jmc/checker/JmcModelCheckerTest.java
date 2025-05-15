@@ -64,6 +64,27 @@ public class JmcModelCheckerTest {
     }
 
     @Test
+    void testTrustCorrectCounter() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .numIterations(30)
+                        .strategyType("trust")
+                        .debug(true)
+                        .build();
+
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCorrectCounter",
+                        () -> {
+                            CorrectCounter.main(new String[0]);
+                        });
+
+        jmcModelChecker.check(target);
+    }
+
+    @Test
     void testRandomComplexCounter() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
@@ -359,7 +380,7 @@ public class JmcModelCheckerTest {
                         "TrustCC0",
                         () -> {
                             int size = 1;
-                            CC0.main(new String[]{String.valueOf(size)});
+                            CC0.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -474,7 +495,7 @@ public class JmcModelCheckerTest {
                         "TrustCC7",
                         () -> {
                             int size = 4;
-                            CC7.main(new String[]{String.valueOf(size)});
+                            CC7.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -494,14 +515,13 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "Timeout",
                         () -> {
-                            CC7.main(new String[]{"6"});
+                            CC7.main(new String[] {"6"});
                         });
         jmcModelChecker.check(target);
     }
 
-
     @Test
-    void testAcquisitionLockTimeoutOnConsumer() throws  JmcCheckerException {
+    void testAcquisitionLockTimeoutOnConsumer() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder().numIterations(10).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);

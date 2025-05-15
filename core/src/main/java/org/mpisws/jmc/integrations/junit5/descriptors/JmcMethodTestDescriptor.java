@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.ClassSource;
 import org.junit.platform.engine.support.descriptor.MethodSource;
+import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.annotations.JmcTimeout;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
@@ -90,6 +91,10 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                     configBuilder.timeout(
                             Duration.of(annotationTimeout.value(), annotationTimeout.unit()));
         }
+
+        configBuilder =
+                JmcDescriptorUtil.checkStrategyConfig(
+                        configBuilder, testMethod.getDeclaringClass(), testMethod);
 
         try {
             JmcCheckerConfiguration config = configBuilder.build();

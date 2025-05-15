@@ -37,12 +37,7 @@ public class VisitorHelper {
      * @param descriptor The descriptor of the field.
      */
     public static void insertRead(
-            MethodVisitor mv,
-            Boolean isStatic,
-            String owner,
-            String name,
-            String descriptor,
-            LocalVarFetcher localVarFetcher) {
+            MethodVisitor mv, Boolean isStatic, String owner, String name, String descriptor) {
         mv.visitLdcInsn(owner);
         mv.visitLdcInsn(name);
         mv.visitLdcInsn(descriptor);
@@ -68,12 +63,7 @@ public class VisitorHelper {
      * @param descriptor The descriptor of the field.
      */
     public static void insertWrite(
-            MethodVisitor mv,
-            Boolean isStatic,
-            String owner,
-            String name,
-            String descriptor,
-            LocalVarFetcher localVarFetcher) {
+            MethodVisitor mv, Boolean isStatic, String owner, String name, String descriptor) {
         Type fieldType = Type.getType(descriptor);
         addObjectConverter(mv, fieldType);
         mv.visitLdcInsn(owner);

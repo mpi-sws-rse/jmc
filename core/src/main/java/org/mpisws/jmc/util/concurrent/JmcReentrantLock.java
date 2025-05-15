@@ -6,20 +6,19 @@ import org.mpisws.jmc.runtime.RuntimeEvent;
 /**
  * A reentrant lock that can be used to synchronize access to shared resources.
  *
- * <p>Replacement for java.util.concurrent.ReentrantLock</p>
+ * <p>Replacement for java.util.concurrent.ReentrantLock
+ *
  * <p>Yields control to the runtime for lock and unlock.
  */
 public class JmcReentrantLock {
 
-    /**
-     * Acquires the lock.
-     */
+    /** Acquires the lock. */
     public void lock() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.LOCK_ACQUIRE_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
+                        .param("owner", "org/mpisws/jmc/util/concurrent/JmcReentrantLock")
                         .param("lock", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);
@@ -27,21 +26,19 @@ public class JmcReentrantLock {
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.LOCK_ACQUIRED_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
+                        .param("owner", "org/mpisws/jmc/util/concurrent/JmcReentrantLock")
                         .param("lock", this)
                         .build();
         JmcRuntime.updateEvent(event);
     }
 
-    /**
-     * Releases the lock.
-     */
+    /** Releases the lock. */
     public void unlock() {
         RuntimeEvent event =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.LOCK_RELEASE_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
+                        .param("owner", "org/mpisws/jmc/util/concurrent/JmcReentrantLock")
                         .param("lock", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);

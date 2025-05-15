@@ -216,7 +216,6 @@ public class Event {
     public enum Type {
         READ,
         READ_EX,
-        LOCK_AWAIT,
         BLOCK,
         INIT,
         WRITE,
