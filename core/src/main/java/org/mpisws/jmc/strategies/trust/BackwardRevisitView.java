@@ -178,7 +178,6 @@ public class BackwardRevisitView {
         ExecutionGraph restrictedGraph = graph;
         // So far the coherency of this write is not tracked
         // TODO: Maybe this should be done in the constructor?
-        graph.trackCoherency(write);
         // Update the reads-from relation
         restrictedGraph.changeReadsFrom(read, write);
         // Remove the nodes

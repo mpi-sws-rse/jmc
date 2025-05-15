@@ -581,7 +581,7 @@ public class ExecutionGraph {
                     continue;
                 }
                 filteredAlternativeWrites.add(alternativeWrite);
-            } else if (alternativeWrite.getEvent().isInit()) {
+            } else {
                 filteredAlternativeWrites.add(alternativeWrite);
             }
         }
@@ -865,9 +865,8 @@ public class ExecutionGraph {
             // Collect the location of the write event
             if (node.getEvent().isWrite() || node.getEvent().isWriteEx()) {
                 Integer location = node.getEvent().getLocation();
-                if (!modifiedLocations.keySet().contains(location)) {
-                    modifiedLocations.put(location, new ArrayList<>(coherencyOrder.get(location)));
-                }
+
+                modifiedLocations.put(location, coherencyOrder.get(location));
             }
 
             allEvents.removeIf((event) -> event.key().equals(key));
@@ -884,7 +883,7 @@ public class ExecutionGraph {
             if (!coherencyOrder.containsKey(location)) {
                 throw HaltCheckerException.error("The restricting node is not in coherency order");
             }
-            coherencyOrder.get(location).removeIf((e) -> e.key() == key);
+            coherencyOrder.get(location).removeIf((e) -> e.key().equals(key));
         }
 
         // Remove dangling edges
@@ -919,7 +918,6 @@ public class ExecutionGraph {
         }
 
         List<ExecutionGraphNode> writes = coherencyOrder.get(location);
-
         // Update the edges
         for (int i = 0; i < oldWrites.size() - 1; i++) {
             oldWrites.get(i).removeEdge(oldWrites.get(i + 1), Relation.Coherency);
@@ -928,6 +926,18 @@ public class ExecutionGraph {
             writes.get(i).addEdge(writes.get(i + 1), Relation.Coherency);
         }
     }
+
+    //
+    //    public void checkCoBackEdges() {
+    //        for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : coherencyOrder.entrySet()) {
+    //            for (ExecutionGraphNode write : entry.getValue()) {
+    //                List<Event.Key> coBackEdges = write.getPredecessors(Relation.Coherency);
+    //                if (coBackEdges != null && coBackEdges.size() > 1) {
+    //                    throw HaltExecutionException.error("The previous writes are more than 1");
+    //                }
+    //            }
+    //        }
+    //    }
 
     /** Recomputes the vector clocks of all nodes in the execution graph. */
     public void recomputeVectorClocks() {
@@ -1008,8 +1018,8 @@ public class ExecutionGraph {
 
             if (node.getEvent().isWrite() || node.getEvent().isWriteEx()) {
                 Integer location = node.getEvent().getLocation();
-                if (!modifiedLocations.keySet().contains(location)) {
-                    modifiedLocations.put(location, new ArrayList<>(coherencyOrder.get(location)));
+                if (!modifiedLocations.containsKey(location)) {
+                    modifiedLocations.put(location, coherencyOrder.get(location));
                 }
             }
 
@@ -1020,14 +1030,14 @@ public class ExecutionGraph {
                 throw HaltCheckerException.error("The restricting node is not in coherency order");
             }
 
-            coherencyOrder.get(location).removeIf((e) -> e.key() == node.key());
+            coherencyOrder.get(location).removeIf((e) -> e.key().equals(node.key()));
 
             // Removing from taskEvents
             int task = Math.toIntExact(node.getEvent().getTaskId());
             if (task >= taskEvents.size()) {
                 throw HaltCheckerException.error("The restricting node is not in task events");
             }
-            taskEvents.get(task).removeIf((e) -> e.key() == node.key());
+            taskEvents.get(task).removeIf((e) -> e.key().equals(node.key()));
         }
 
         // Removing dangling edges
