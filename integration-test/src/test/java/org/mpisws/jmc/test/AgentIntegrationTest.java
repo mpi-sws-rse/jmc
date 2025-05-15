@@ -1,6 +1,7 @@
 package org.mpisws.jmc.test;
 
 import org.junit.jupiter.api.Test;
+import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
 import org.mpisws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpisws.jmc.checker.JmcModelChecker;
@@ -39,5 +40,12 @@ public class AgentIntegrationTest {
                             FutureCounterTestRunner.main(new String[0]);
                         });
         jmcModelChecker.check(target);
+    }
+
+
+    @JmcCheckConfiguration(numIterations = 10, strategy = "random", debug = true)
+    @Test
+    public void testAgentWithFutureAgain() {
+        CorrectCounterTestRunner.main(new String[0]);
     }
 }

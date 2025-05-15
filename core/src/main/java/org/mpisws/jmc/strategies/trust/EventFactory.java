@@ -79,32 +79,37 @@ public class EventFactory {
                 event.setAttribute("waitingTask", joinedTask - 1);
                 return List.of(event);
             }
-            case LOCK_ACQUIRED_EVENT -> {
+            case LOCK_ACQUIRE_EVENT -> {
                 Event event1 =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
                                 Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.READ_EX);
-                /*int value = runtimeEvent.getParam("value");
-                event1.setAttribute("value", value);*/
-
+                event1.setAttribute("lock_acquire", true);
                 Event event2 =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
                                 Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.WRITE_EX);
-                /*int newValue = runtimeEvent.getParam("newValue");
-                event2.setAttribute("newValue", newValue);*/
+                event2.setAttribute("lock_acquire", true);
                 return List.of(event1, event2);
+            }
+            case LOCK_ACQUIRED_EVENT -> {
+                Event event =
+                        new Event(
+                                runtimeEvent.getTaskId() - 1,
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
+                                Event.Type.NOOP);
+                event.setAttribute("lock_acquired", true);
+                return List.of(event);
             }
             case LOCK_RELEASE_EVENT -> {
                 Event event =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
                                 Location.fromRuntimeEvent(runtimeEvent).hashCode(),
-                                Event.Type.WRITE_EX);
-                /*int newValue = runtimeEvent.getParam("newValue");
-                event.setAttribute("newValue", newValue);*/
+                                Event.Type.WRITE);
+                event.setAttribute("lock_release", true);
                 return List.of(event);
             }
         }

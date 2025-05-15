@@ -15,7 +15,6 @@ public class JmcCheckerConfiguration {
     private Integer numIterations;
 
     private String strategyType;
-    private SchedulingStrategy customStrategy;
     private SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor;
 
     private boolean debug;
@@ -40,10 +39,6 @@ public class JmcCheckerConfiguration {
         return strategyType;
     }
 
-    public SchedulingStrategy getCustomStrategy() {
-        return customStrategy;
-    }
-
     public boolean getDebug() {
         return debug;
     }
@@ -60,28 +55,20 @@ public class JmcCheckerConfiguration {
         return timeout;
     }
 
-    public boolean isCustomStrategy() {
-        return customStrategy != null;
-    }
-
     public JmcRuntimeConfiguration toRuntimeConfiguration() throws JmcInvalidStrategyException {
         SchedulingStrategy strategy;
-        if (customStrategy != null) {
-            strategy = customStrategy;
+        SchedulingStrategyConfiguration.Builder strategyConfigurationBuilder =
+                new SchedulingStrategyConfiguration.Builder().seed(seed);
+        if (debug) {
+            strategyConfigurationBuilder.debug();
+            strategyConfigurationBuilder.reportPath(reportPath);
+        }
+        if (strategyConstructor != null) {
+            strategy = strategyConstructor.create(strategyConfigurationBuilder.build());
         } else {
-            SchedulingStrategyConfiguration.Builder strategyConfigurationBuilder =
-                    new SchedulingStrategyConfiguration.Builder().seed(seed);
-            if (debug) {
-                strategyConfigurationBuilder.debug();
-                strategyConfigurationBuilder.reportPath(reportPath);
-            }
-            if (strategyConstructor != null) {
-                strategy = strategyConstructor.create(strategyConfigurationBuilder.build());
-            } else {
-                strategy =
-                        SchedulingStrategyFactory.createSchedulingStrategy(
-                                strategyType, strategyConfigurationBuilder.build());
-            }
+            strategy =
+                    SchedulingStrategyFactory.createSchedulingStrategy(
+                            strategyType, strategyConfigurationBuilder.build());
         }
         if (strategy == null) {
             throw new JmcInvalidStrategyException("Strategy is null");
@@ -182,7 +169,6 @@ public class JmcCheckerConfiguration {
             JmcCheckerConfiguration config = new JmcCheckerConfiguration();
             config.numIterations = numIterations;
             config.strategyType = strategyType;
-            config.customStrategy = customStrategy;
             config.strategyConstructor = strategyConstructor;
             config.debug = debug;
             config.reportPath = reportPath;

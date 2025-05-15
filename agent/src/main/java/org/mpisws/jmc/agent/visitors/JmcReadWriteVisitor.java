@@ -5,9 +5,14 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.util.Objects;
+
 /**
  * Represents a JMC read-write visitor. Adds instrumentation to change field accesses to
  * JmcReadWrite calls.
+ *
+ * <p>TODO: Does not work, fix this. Calls to readEvent and writeEvent passes the incorrect instance
+ * value.
  */
 public class JmcReadWriteVisitor {
 
@@ -57,11 +62,15 @@ public class JmcReadWriteVisitor {
 
         private void insertUpdateEventCall(
                 String owner, boolean isWrite, String name, String descriptor) {
+            if (Objects.equals(owner, "java/lang/System")) {
+                // Ignore System calls
+                return;
+            }
             instrumented = true;
             if (!isWrite) {
-                VisitorHelper.insertRead(mv, isStatic, owner, name, descriptor, this);
+                VisitorHelper.insertRead(mv, isStatic, owner, name, descriptor);
             } else {
-                VisitorHelper.insertWrite(mv, isStatic, owner, name, descriptor, this);
+                VisitorHelper.insertWrite(mv, isStatic, owner, name, descriptor);
             }
         }
 
@@ -96,6 +105,10 @@ public class JmcReadWriteVisitor {
                 } else {
                     mv.visitInsn(Opcodes.DUP);
                 }
+            }
+            if (Objects.equals(name, "$assertionsDisabled")) {
+                // Ignore assertionsDisabled field
+                shouldInstrument = false;
             }
             super.visitFieldInsn(opcode, owner, name, descriptor);
             if (shouldInstrument) {

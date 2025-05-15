@@ -42,9 +42,6 @@ public class ExecutionGraphSimulator {
                 case WRITE_EX:
                     handleWriteEx(trustEvent);
                     break;
-                case LOCK_AWAIT:
-                    handleLockAwait(trustEvent);
-                    break;
                 case NOOP:
                     handleNoop(trustEvent);
                     break;

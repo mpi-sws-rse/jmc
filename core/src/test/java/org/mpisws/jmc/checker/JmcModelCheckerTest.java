@@ -22,6 +22,7 @@ import org.mpisws.jmc.programs.dining.DiningPhilosophers;
 import org.mpisws.jmc.programs.futures.CompletableFutureP;
 import org.mpisws.jmc.programs.futures.SimpleFuture;
 import org.mpisws.jmc.programs.random.counter.RandomCounterIncr;
+import org.mpisws.jmc.programs.mockKafka.ShareConsumerTest;
 import org.mpisws.jmc.programs.wrong.counter.BuggyCounter;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.trust.MeasureGraphCoverageStrategy;
@@ -60,6 +61,27 @@ public class JmcModelCheckerTest {
         JmcTestTarget target =
                 new JmcFunctionalTestTarget(
                         "RandomCorrectCounter",
+                        () -> {
+                            CorrectCounter.main(new String[0]);
+                        });
+
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustCorrectCounter() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .numIterations(150)
+                        .strategyType("trust")
+                        .debug(false)
+                        .build();
+
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCorrectCounter",
                         () -> {
                             CorrectCounter.main(new String[0]);
                         });
@@ -423,7 +445,7 @@ public class JmcModelCheckerTest {
                         "TrustCC0",
                         () -> {
                             int size = 1;
-                            CC0.main(new String[]{String.valueOf(size)});
+                            CC0.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -538,7 +560,7 @@ public class JmcModelCheckerTest {
                         "TrustCC7",
                         () -> {
                             int size = 4;
-                            CC7.main(new String[]{String.valueOf(size)});
+                            CC7.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -558,8 +580,24 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "Timeout",
                         () -> {
-                            CC7.main(new String[]{"6"});
+                            CC7.main(new String[] {"6"});
                         });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testAcquisitionLockTimeoutOnConsumer() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(10).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomKafkaTest",
+                        () -> {
+                            ShareConsumerTest.main(new String[0]);
+                        });
+
         jmcModelChecker.check(target);
     }
 }

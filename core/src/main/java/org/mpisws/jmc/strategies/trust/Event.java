@@ -35,6 +35,7 @@ public class Event {
     public Event clone() {
         Event e = new Event(key.getTaskId(), location, type);
         e.key.setTimestamp(key.getTimestamp());
+        e.key.setToStamp(key().getToStamp());
         e.attributes.putAll(attributes);
         return e;
     }
@@ -217,7 +218,6 @@ public class Event {
     public enum Type {
         READ,
         READ_EX,
-        LOCK_AWAIT,
         BLOCK,
         INIT,
         WRITE,
@@ -247,6 +247,16 @@ public class Event {
             this.taskId = taskId;
             this.timestamp = null;
             this.toStamp = null;
+        }
+
+        public Key(Key other) {
+            this.taskId = other.taskId;
+            this.timestamp = other.timestamp;
+            this.toStamp = other.toStamp;
+        }
+
+        public Key clone() {
+            return new Key(this);
         }
 
         public Long getTaskId() {

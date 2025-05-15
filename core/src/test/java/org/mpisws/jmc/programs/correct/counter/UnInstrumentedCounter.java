@@ -15,7 +15,7 @@ public class UnInstrumentedCounter extends Thread {
     @Override
     public void run() {
         lock.lock();
-        counter.count = counter.count + 1;
+        counter.set(counter.get() + 1);
         lock.unlock();
     }
 
@@ -32,11 +32,11 @@ public class UnInstrumentedCounter extends Thread {
             thread1.join();
             thread2.join();
             thread3.join();
-            assert counter.count == 3;
+            assert counter.get() == 3;
             System.out.println(
                     "[Uninstrumented Counter message] : If you see this message, the assert passed. The"
                             + " counter value is "
-                            + counter.count);
+                            + counter.get());
         } catch (InterruptedException e) {
             System.out.println("JMCInterruptException thrown");
         }

@@ -19,6 +19,6 @@ public class Location {
 
     @Override
     public int hashCode() {
-        return (instance.hashCode() +param).hashCode();
+        return (instance.hashCode() + param).hashCode();
     }
 }

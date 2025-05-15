@@ -5,7 +5,12 @@ import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -226,13 +231,12 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
          * lock, it is removed from the set.
          */
         private final Map<Object, Set<Long>> waitingTasks;
+
         private final Map<Object, Set<Long>> wantingTasks;
 
         private final Map<Long, Optional<Object>> activeTasks;
 
-        /**
-         * Constructs a new TrackLocks object.
-         */
+        /** Constructs a new TrackLocks object. */
         public TrackLocks() {
             this.waitingTasks = new ConcurrentHashMap<>();
             this.wantingTasks = new ConcurrentHashMap<>();
@@ -242,11 +246,11 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         /**
          * Updates based on lock acquire and release events.
          *
-         * <p>For every acquire event, if the lock is already acquired, the task is made to wait. Tracked
-         * in {@link TrackLocks#waitingTasks}.
+         * <p>For every acquire event, if the lock is already acquired, the task is made to wait.
+         * Tracked in {@link TrackLocks#waitingTasks}.
          *
-         * <p>If it is not yet acquired, it is put in {@link TrackLocks#wantingTasks} and retained in active tasks.
-         * </p>
+         * <p>If it is not yet acquired, it is put in {@link TrackLocks#wantingTasks} and retained
+         * in active tasks.
          *
          * <p>For every release event, the corresponding waiting tasks are marked as active.
          *
@@ -283,21 +287,24 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                     tasks.add(taskId);
                     activeTasks.remove(taskId);
                 } else {
-                    // 3. The lock is not acquired by any task. The current task is added to the wanting
+                    // 3. The lock is not acquired by any task. The current task is added to the
+                    // wanting
                     // list.
                     wantingTasks.putIfAbsent(lock, new HashSet<>());
                     wantingTasks.get(lock).add(taskId);
                 }
             } else if (type == RuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
                 Object lock = event.getParam("lock");
-                // The lock is acquired by the current task. Remove it from the wanting list and add the rest to waiting
+                // The lock is acquired by the current task. Remove it from the wanting list and add
+                // the rest to waiting
                 // list.
                 activeTasks.put(taskId, Optional.of(lock));
                 waitingTasks.putIfAbsent(lock, new HashSet<>());
                 Set<Long> wantingList = wantingTasks.get(lock);
                 if (wantingList != null) {
                     for (Long wantingTask : wantingList) {
-                        // If the task is not already in the waiting list, add it to the waiting list
+                        // If the task is not already in the waiting list, add it to the waiting
+                        // list
                         if (Objects.equals(wantingTask, taskId)) {
                             // Ignore the current task
                             continue;
