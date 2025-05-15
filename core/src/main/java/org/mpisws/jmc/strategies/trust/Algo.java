@@ -366,12 +366,14 @@ public class Algo {
         executionGraph.trackCoherency(w);
         executionGraph.restrict(w);
 
-        if (item.getAdditionalEventsToProcess().size() > 1) {
+        List<Event> additionalEvents = item.getAdditionalEventsToProcess();
+        if (additionalEvents.size() > 1) {
             throw HaltCheckerException.error(
                     "The forward revisit item has more than one additional event");
         }
-        Event additionalEvent = item.getAdditionalEventsToProcess().get(0);
-        processAdditionalEvent(additionalEvent);
+        for (Event additionalEvent : additionalEvents) {
+            processAdditionalEvent(additionalEvent);
+        }
 
         return executionGraph.checkConsistencyAndTopologicallySort();
     }

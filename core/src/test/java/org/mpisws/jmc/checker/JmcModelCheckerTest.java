@@ -69,7 +69,7 @@ public class JmcModelCheckerTest {
                 new JmcCheckerConfiguration.Builder()
                         .numIterations(150)
                         .strategyType("trust")
-                        .debug(true)
+                        .debug(false)
                         .build();
 
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);

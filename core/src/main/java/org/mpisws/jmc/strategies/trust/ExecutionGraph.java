@@ -865,8 +865,9 @@ public class ExecutionGraph {
             // Collect the location of the write event
             if (node.getEvent().isWrite() || node.getEvent().isWriteEx()) {
                 Integer location = node.getEvent().getLocation();
-
-                modifiedLocations.put(location, coherencyOrder.get(location));
+                if (!modifiedLocations.containsKey(location)) {
+                    modifiedLocations.put(location, coherencyOrder.get(location));
+                }
             }
 
             allEvents.removeIf((event) -> event.key().equals(key));
@@ -1089,6 +1090,10 @@ public class ExecutionGraph {
                 for (Event.Key readKey : reads) {
                     try {
                         ExecutionGraphNode readNode = getEventNode(readKey);
+                        if (!readNode.getEvent().isReadEx()) {
+                            // We only check for read exclusive events
+                            continue;
+                        }
                         Integer readLocation = readNode.getEvent().getLocation();
                         if (!readsPerLocation.containsKey(readLocation)) {
                             readsPerLocation.put(readLocation, new ArrayList<>());
