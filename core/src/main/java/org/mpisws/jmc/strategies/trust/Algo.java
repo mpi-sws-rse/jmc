@@ -555,8 +555,7 @@ public class Algo {
         }
 
         ExecutionGraphNode coMaxWrite = executionGraph.getCoMax(event.getLocation());
-        if (!coMaxWrite.getEvent().isInit()
-                && !EventUtils.isLockReleaseWrite(coMaxWrite.getEvent())) {
+        if (EventUtils.isLockAcquireWrite(coMaxWrite.getEvent())) {
             // Then we block the task and delay the acquiring of the lock
             executionGraph.blockTaskForLock(event);
             return;
@@ -621,7 +620,8 @@ public class Algo {
             for (int i = revisitViews.size() - 1; i >= 0; i--) {
                 ExplorationStack.Item item =
                         ExplorationStack.Item.backwardRevisit(
-                                write, revisitViews.get(i).getRestrictedGraph());
+                                revisitViews.get(i).getWrite(),
+                                revisitViews.get(i).getRestrictedGraph());
                 item.addAdditionalEvent(revisitViews.get(i).additionalEvent());
                 explorationStack.push(item);
             }

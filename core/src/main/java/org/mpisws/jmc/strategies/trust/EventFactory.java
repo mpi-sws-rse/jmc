@@ -83,13 +83,13 @@ public class EventFactory {
                 Event event1 =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                Location.fromRuntimeLockEvent(runtimeEvent).hashCode(),
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.READ_EX);
                 event1.setAttribute("lock_acquire", true);
                 Event event2 =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                Location.fromRuntimeLockEvent(runtimeEvent).hashCode(),
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.WRITE_EX);
                 event2.setAttribute("lock_acquire", true);
                 return List.of(event1, event2);
@@ -98,7 +98,7 @@ public class EventFactory {
                 Event event =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                Location.fromRuntimeLockEvent(runtimeEvent).hashCode(),
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.NOOP);
                 event.setAttribute("lock_acquired", true);
                 return List.of(event);
@@ -107,7 +107,7 @@ public class EventFactory {
                 Event event =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,
-                                Location.fromRuntimeLockEvent(runtimeEvent).hashCode(),
+                                Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.WRITE);
                 event.setAttribute("lock_release", true);
                 return List.of(event);
