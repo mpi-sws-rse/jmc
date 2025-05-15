@@ -94,6 +94,15 @@ public class EventFactory {
                 event2.setAttribute("lock_acquire", true);
                 return List.of(event1, event2);
             }
+            case LOCK_ACQUIRED_EVENT -> {
+                Event event =
+                        new Event(
+                                runtimeEvent.getTaskId() - 1,
+                                Location.fromRuntimeLockEvent(runtimeEvent).hashCode(),
+                                Event.Type.NOOP);
+                event.setAttribute("lock_acquired", true);
+                return List.of(event);
+            }
             case LOCK_RELEASE_EVENT -> {
                 Event event =
                         new Event(

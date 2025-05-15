@@ -38,7 +38,7 @@ public class JmcReentrantLock {
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.LOCK_RELEASE_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/ReentrantLock")
+                        .param("owner", "org/mpisws/jmc/util/concurrent/JmcReentrantLock")
                         .param("lock", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);

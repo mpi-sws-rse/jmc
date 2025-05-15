@@ -23,7 +23,7 @@ public class RuntimeUtils {
     public static void writeEvent(
             Object instance, Object value, String owner, String name, String descriptor) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
-        builder.type(RuntimeEvent.Type.READ_EVENT).taskId(JmcRuntime.currentTask());
+        builder.type(RuntimeEvent.Type.WRITE_EVENT).taskId(JmcRuntime.currentTask());
 
         HashMap<String, Object> var2 = new HashMap<>();
         var2.put("newValue", value);

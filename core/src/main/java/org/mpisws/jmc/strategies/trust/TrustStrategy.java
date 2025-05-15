@@ -54,14 +54,17 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
         // Always add 1 to the return value the strategy expects 1-indexed tasks but we store
         // 0-indexed tasks
 
+        // Otherwise, return an active, schedule-able task based on the policy
+        Set<Long> activeTasks = getActiveTasks();
         // If the algorithm has a task to execute, return it
         SchedulingChoice<?> nextTask = algoInstance.nextTask();
         if (nextTask != null) {
+            if (!activeTasks.contains(nextTask.getTaskId())) {
+                LOGGER.debug("Guiding trace led us to a task that is not active: {}", nextTask);
+            }
             return nextTask;
         }
 
-        // Otherwise, return an active, schedule-able task based on the policy
-        Set<Long> activeTasks = getActiveTasks();
         List<Long> activeScheduleAbleTasks =
                 algoInstance.getSchedulableTasks().stream()
                         // Adding 1 here for all further uses of the task ID
@@ -89,7 +92,12 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
         List<Event> trustEvents = EventFactory.fromRuntimeEvent(event);
         for (Event e : trustEvents) {
             LOGGER.debug("Received event: {}", e);
-            algoInstance.updateEvent(e);
+            try {
+                algoInstance.updateEvent(e);
+            } catch (Exception ex) {
+                LOGGER.error("Failed to update event: {}", e, ex);
+                throw new RuntimeException(ex);
+            }
         }
     }
 

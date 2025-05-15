@@ -67,8 +67,9 @@ public class JmcModelCheckerTest {
     void testTrustCorrectCounter() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
-                        .timeout(Duration.ofSeconds(10))
+                        .numIterations(30)
                         .strategyType("trust")
+                        .debug(true)
                         .build();
 
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);

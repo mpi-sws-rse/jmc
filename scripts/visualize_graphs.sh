@@ -24,13 +24,14 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+GRAPH_DIR="../../$1"
+
 # Check if the provided argument is a valid directory
-if [ ! -d "$1" ]; then
+if [ ! -d "$GRAPH_DIR" ]; then
     echo "Invalid directory: $1"
     exit 1
 fi
 
-GRAPH_DIR=$1
 
 # Run the visualizer
 python3 web_server.py $GRAPH_DIR

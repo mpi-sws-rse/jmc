@@ -26,7 +26,7 @@ public class EventUtils {
     }
 
     public static boolean isLockAcquireWrite(Event event) {
-        return event.getType() == Event.Type.WRITE && event.hasAttribute("lock_acquire");
+        return event.getType() == Event.Type.WRITE_EX && event.hasAttribute("lock_acquire");
     }
 
     public static boolean isBlockingLabel(Event event) {
@@ -72,5 +72,19 @@ public class EventUtils {
     public static boolean isRevisit(Event event) {
         Boolean revisit = event.getAttribute("revisit");
         return revisit == null || revisit;
+    }
+
+    public static boolean isFinalLockWrite(Event event) {
+        return event.getType() == Event.Type.WRITE_EX
+                && event.hasAttribute("final_lock")
+                && event.hasAttribute("lock_acquire");
+    }
+
+    public static void markLockWriteFinal(Event event) {
+        event.setAttribute("final_lock", true);
+    }
+
+    public static boolean isLockAcquired(Event event) {
+        return event.getType() == Event.Type.NOOP && event.hasAttribute("lock_acquired");
     }
 }

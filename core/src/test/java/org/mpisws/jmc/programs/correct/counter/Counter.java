@@ -15,7 +15,7 @@ public class Counter {
         int out = count;
         RuntimeUtils.readEvent(
                 this, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I");
-        return count;
+        return out;
     }
 
     public void set(int value) {
