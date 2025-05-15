@@ -8,9 +8,8 @@ public class Coordinator {
     protected final int id;
     protected final int numParticipants;
     protected Participant[] participants;
-    protected final int timeout;
 
-    public Coordinator(int numParticipants, int timeout) {
+    public Coordinator(int numParticipants) {
         this.mailbox = new Mailbox();
         this.id = 0;
         this.numParticipants = numParticipants;
@@ -18,7 +17,6 @@ public class Coordinator {
         for (int i = 0; i < numParticipants; i++) {
             this.participants[i] = new Participant(i + 1, this);
         }
-        this.timeout = timeout;
     }
 
     public void send(Message message) {
@@ -38,9 +36,6 @@ public class Coordinator {
     }
 
     public boolean acceptRequest(int requestId) {
-        // Logic to determine if the coordinator accepts the request
-        // This is a placeholder and should be replaced with actual logic
-
         for (Participant participant : participants) {
             participant.send(
                     new Message(
