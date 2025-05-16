@@ -164,6 +164,14 @@ public class ExecutionGraphNode {
         edges.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
+
+    public void removeEdgeTo(Event.Key to, Relation adjacency) {
+        if (!edges.containsKey(adjacency)) {
+            return;
+        }
+        edges.get(adjacency).removeIf(key -> key.equals(to));
+    }
+
     /**
      * Removes all edges from the given node.
      *

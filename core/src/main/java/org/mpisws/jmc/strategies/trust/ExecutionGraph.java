@@ -60,7 +60,7 @@ public class ExecutionGraph {
                 if (EventUtils.isBlockingLabel(node.getEvent())) {
                     // We ignore blocking labels when revisiting
                     // And also remove the edge pointing to the blocking label
-                    newTaskEvent.get(newTaskEvent.size()-1).removeEdge(node, Relation.ProgramOrder);
+                    newTaskEvent.get(newTaskEvent.size()-1).removeEdgeTo(node.key(), Relation.ProgramOrder);
                     continue;
                 }
                 newTaskEvent.add(node.clone());
