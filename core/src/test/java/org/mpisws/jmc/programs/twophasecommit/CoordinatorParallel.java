@@ -1,11 +1,13 @@
 package org.mpisws.jmc.programs.twophasecommit;
 
+import org.mpisws.jmc.util.concurrent.JmcThread;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class CoordinatorParallel extends Coordinator {
-    public CoordinatorParallel(int numParticipants, int timeout) {
-        super(numParticipants, timeout);
+    public CoordinatorParallel(int numParticipants) {
+        super(numParticipants);
     }
 
     @Override
@@ -22,7 +24,7 @@ public class CoordinatorParallel extends Coordinator {
         boolean shouldCommit = false;
         for (RequestThread thread : threads) {
             try {
-                thread.join(timeout);
+                thread.join1();
                 // Handle timeout
                 shouldCommit = thread.getResponseReceived();
             } catch (InterruptedException e) {
@@ -62,7 +64,7 @@ public class CoordinatorParallel extends Coordinator {
         return shouldCommit;
     }
 
-    private static class RequestThread extends Thread {
+    private static class RequestThread extends JmcThread {
         private final int requestId;
         private final Participant participant;
         private final Mailbox mailbox;
@@ -81,7 +83,7 @@ public class CoordinatorParallel extends Coordinator {
         }
 
         @Override
-        public void run() {
+        public void run1() {
             this.participant.send(
                     new Message(
                             Message.Type.PREPARE,

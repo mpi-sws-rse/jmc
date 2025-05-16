@@ -248,7 +248,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
             RuntimeEvent.Type type = event.getType();
 
             if (type == RuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
-                Object lock = event.getParam("lock");
+                Object lock = event.getParam("instance");
                 // Want the lock. Three cases.
                 // 1. Current task already has the lock. Ignore.
                 Optional<Object> owner = activeTasks.get(taskId);
@@ -272,7 +272,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                     wantingTasks.get(lock).add(taskId);
                 }
             } else if (type == RuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
-                Object lock = event.getParam("lock");
+                Object lock = event.getParam("instance");
                 // The lock is acquired by the current task. Remove it from the wanting list and add
                 // the rest to waiting
                 // list.
@@ -293,7 +293,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                     wantingTasks.remove(lock);
                 }
             } else if (type == RuntimeEvent.Type.LOCK_RELEASE_EVENT) {
-                Object lock = event.getParam("lock");
+                Object lock = event.getParam("instance");
                 // The lock is released. The waiting tasks are marked as active.
                 Set<Long> blockedTasks = waitingTasks.get(lock);
                 wantingTasks.put(lock, new HashSet<>());
@@ -309,7 +309,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         }
 
         private Set<Long> getActiveTasks() {
-            return new HashSet<>(activeTasks.keySet());
+            return activeTasks.keySet();
         }
 
         @Override

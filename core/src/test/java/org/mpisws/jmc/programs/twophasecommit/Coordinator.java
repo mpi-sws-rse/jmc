@@ -50,12 +50,15 @@ public class Coordinator {
 
         while (!completed) {
             Message message = mailbox.receive();
-            switch (message.getType()) {
-                case ABORT -> responses.put(message.getSenderId() - 1, false);
-                case COMMIT -> responses.put(message.getSenderId() - 1, true);
-            }
-            if (responses.size() == numParticipants) {
-                completed = true;
+            // Bug 1: message check
+            if (message != null) {
+                switch (message.getType()) {
+                    case ABORT -> responses.put(message.getSenderId() - 1, false);
+                    case COMMIT -> responses.put(message.getSenderId() - 1, true);
+                }
+                if (responses.size() == numParticipants) {
+                    completed = true;
+                }
             }
         }
 
