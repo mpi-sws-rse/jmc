@@ -59,6 +59,8 @@ public class ExecutionGraph {
             for (ExecutionGraphNode node : taskEvent) {
                 if (EventUtils.isBlockingLabel(node.getEvent())) {
                     // We ignore blocking labels when revisiting
+                    // And also remove the edge pointing to the blocking label
+                    newTaskEvent.get(newTaskEvent.size()-1).removeEdge(node, Relation.ProgramOrder);
                     continue;
                 }
                 newTaskEvent.add(node.clone());
@@ -1475,6 +1477,9 @@ public class ExecutionGraph {
                     toAdd.sort(Event.Key::compareTo);
                     toAdd.forEach(
                             (key) -> {
+                                if (!nodeMap.containsKey(key)) {
+                                    LOGGER.debug("Error finding the node");
+                                }
                                 queue.add(nodeMap.get(key));
                             });
                 }
