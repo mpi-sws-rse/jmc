@@ -431,6 +431,48 @@ public class JmcModelCheckerTest {
     }
 
     @Test
+    void testTrustCoarse() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .timeout(Duration.of(2, ChronoUnit.HOURS))
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustCoarse",
+                        () -> {
+                            int size = 7;
+                            Client9.main(new String[] {String.valueOf(size)});
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    void testTrustFine() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .timeout(Duration.of(2, ChronoUnit.HOURS))
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "TrustFine",
+                        () -> {
+                            int size = 6;
+                            Client10.main(new String[] {String.valueOf(size)});
+                        });
+        jmcModelChecker.check(target);
+    }
+
+
+
+    @Test
     void testTrustCC0() throws JmcCheckerException {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
@@ -455,8 +497,8 @@ public class JmcModelCheckerTest {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
                         .strategyType("trust")
-                        .numIterations(100)
-                        .debug(true)
+                        .timeout(Duration.of(2, ChronoUnit.HOURS))
+                        .debug(false)
                         .build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
@@ -559,7 +601,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "TrustCC7",
                         () -> {
-                            int size = 4;
+                            int size = 5;
                             CC7.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
