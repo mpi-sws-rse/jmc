@@ -48,6 +48,8 @@ public class Coordinator {
         boolean completed = false;
         Map<Integer, Boolean> responses = new HashMap<>();
 
+        start();
+
         while (!completed) {
             Message message = mailbox.receive();
             // Bug 1: message check
