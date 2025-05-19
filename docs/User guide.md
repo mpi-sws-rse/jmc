@@ -43,26 +43,13 @@ The test looks as follows.
 
 ```java
 public class ExampleCounterTest {
-    @Test
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations=100, strategy="trust")
     void testRandomBuggyCounter() throws JmcCheckerException {
-        JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).build();
-        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
-
-        JmcTestTarget target =
-                new JmcFunctionalTestTarget(
-                        "RandomBuggyCounter",
-                        () -> {
-                            BuggyCounterUsingAPI.main(new String[0]);
-                        });
-
-        jmcModelChecker.check(target);
+        BuggyCounterUsingAPI.main(new String[0]);
     }
 }
 ```
-
-First initializing the configuration for the model checker and then specifying the target to model check and eventually
-running the `checker.check` method.
 
 To run the test with the model checker on the command line use the following command.
 

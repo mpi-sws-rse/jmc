@@ -181,7 +181,7 @@ function load_log(graphName) {
         .then(response => response.json())
         .then(data => {
             d3.select('#log').selectAll("p").data(data.log).enter().append("p").attr("class", "box-content").text(d => d);
-        });
+        }).catch((error) => {});
 }
 
 function update_graph_selection(selectElement) {

@@ -59,11 +59,12 @@ public class Event {
         JsonObject json = new JsonObject();
         json.add("key", key.toJson());
         json.addProperty("type", type.toString());
-        JsonObject attributesJson = new JsonObject();
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-            attributesJson.addProperty(entry.getKey(), entry.getValue().toString());
-        }
-        json.add("attributes", attributesJson);
+        // Sort the attributes by key
+        /*JsonObject attributesJson = new JsonObject();
+        attributes.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> attributesJson.addProperty(entry.getKey(), entry.getValue().toString()));
+        json.add("attributes", attributesJson);*/
         return json;
     }
 
@@ -223,6 +224,8 @@ public class Event {
         WRITE_EX,
         END,
         ERROR,
+        LOCK_ACQUIRE,
+        LOCK_RELEASE,
         NOOP,
     }
 
@@ -385,5 +388,9 @@ public class Event {
          * @return True if the event passes the test, false otherwise.
          */
         boolean test(Event event);
+    }
+
+    public Key getKey() {
+        return key;
     }
 }
