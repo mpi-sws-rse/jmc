@@ -6,9 +6,9 @@ import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
 
 public class FNode {
 
-    public int item;
-    public int key;
-    public FNode next;
+    private int item;
+    private int key;
+    private FNode next;
     private final JmcReentrantLock lock;
 
     public int getKey() {
@@ -38,6 +38,7 @@ public class FNode {
                 .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
                 .param("instance", this)
                 .build();
+        JmcRuntime.updateEventAndYield(event);
         return out;
     }
 

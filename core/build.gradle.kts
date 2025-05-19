@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm") version "1.9.22"
     id("java")
-//    id("checkstyle")
+    id("checkstyle")
     id("maven-publish")
     id("java-library")
 }
@@ -14,9 +14,9 @@ repositories {
     mavenLocal()
 }
 
-//checkstyle {
-//    toolVersion = "10.19.0"
-//}
+checkstyle {
+    toolVersion = "10.19.0"
+}
 
 java {
     withSourcesJar()

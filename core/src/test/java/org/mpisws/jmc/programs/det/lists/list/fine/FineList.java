@@ -7,28 +7,10 @@ import org.mpisws.jmc.runtime.RuntimeEvent;
 
 public class FineList implements Set {
 
-    private final FNode head;
+    private FNode head;
 
-    public FineList() {
-        FNode newNode1 = new FNode(Integer.MIN_VALUE);
-        head = newNode1;
-        // Write event for initializing head
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("newValue", newNode1)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
-                        .param("name", "head")
-                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event1);
-
-        FNode headNode = head;
-        // Read event for accessing head node
+    private FNode readHead() {
+        FNode node = head;
         RuntimeEvent event2 =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.READ_EVENT)
@@ -41,178 +23,71 @@ public class FineList implements Set {
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event2);
+        return node;
+    }
 
-        FNode newNode2 = new FNode(Integer.MAX_VALUE);
-        headNode.next = newNode2;
-        // Write event for initializing next member of head node
-        RuntimeEvent event3 =
+    private void setHead(FNode head) {
+        this.head = head;
+        RuntimeEvent event1 =
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("newValue", newNode2)
+                        .param("newValue", head)
                         .param(
                                 "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                        .param("name", "next")
+                                "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
+                        .param("name", "head")
                         .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                        .param("instance", headNode)
+                        .param("instance", this)
                         .build();
-        JmcRuntime.updateEventAndYield(event3);
+        JmcRuntime.updateEventAndYield(event1);
+    }
+
+    public FineList() {
+        FNode newNode1 = new FNode(Integer.MIN_VALUE);
+        setHead(newNode1);
+        // Write event for initializing head
+
+        FNode headNode = readHead();
+
+        FNode newNode2 = new FNode(Integer.MAX_VALUE);
+        headNode.setNext(newNode2);
     }
 
 
     @Override
     public boolean add(int i) {
         int key = i;
-        FNode hNode = head;
-        // Read event for accessing head node
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
-                        .param("name", "head")
-                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event1);
+        FNode hNode = readHead();
 
         hNode.lock();
         FNode pred = hNode;
-        // Read event for accessing head node
-        RuntimeEvent event2 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
-                        .param("name", "head")
-                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event2);
 
         try {
-            FNode curr = pred.next;
-            // Read event for accessing next member of head node
-            RuntimeEvent event3 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                            .param("name", "next")
-                            .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                            .param("instance", pred)
-                            .build();
-            JmcRuntime.updateEventAndYield(event3);
+            FNode curr = pred.getNext();
 
             curr.lock();
             try {
-                int currKey = curr.key;
-                // Read event for accessing key member of current node
-                RuntimeEvent event4 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.READ_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                .param("name", "key")
-                                .param("descriptor", "I")
-                                .param("instance", curr)
-                                .build();
-                JmcRuntime.updateEventAndYield(event4);
+                int currKey = curr.getKey();
                 while (currKey < key) {
                     pred.unlock();
                     pred = curr;
-                    curr = curr.next;
-                    // Read event for accessing next member of current node
-                    RuntimeEvent event5 =
-                            new RuntimeEvent.Builder()
-                                    .type(RuntimeEvent.Type.READ_EVENT)
-                                    .taskId(JmcRuntime.currentTask())
-                                    .param(
-                                            "owner",
-                                            "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                    .param("name", "next")
-                                    .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                                    .param("instance", curr)
-                                    .build();
-                    JmcRuntime.updateEventAndYield(event5);
+                    curr = curr.getNext();
 
                     curr.lock();
 
-                    currKey = curr.key;
-                    // Read event for accessing key member of current node
-                    RuntimeEvent event6 =
-                            new RuntimeEvent.Builder()
-                                    .type(RuntimeEvent.Type.READ_EVENT)
-                                    .taskId(JmcRuntime.currentTask())
-                                    .param(
-                                            "owner",
-                                            "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                    .param("name", "key")
-                                    .param("descriptor", "I")
-                                    .param("instance", curr)
-                                    .build();
-                    JmcRuntime.updateEventAndYield(event6);
+                    currKey = curr.getKey();
                 }
 
-                currKey = curr.key;
-                // Read event for accessing key member of current node
-                RuntimeEvent event7 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.READ_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                .param("name", "key")
-                                .param("descriptor", "I")
-                                .param("instance", curr)
-                                .build();
-                JmcRuntime.updateEventAndYield(event7);
+                currKey = curr.getKey();
 
                 if (key == currKey) {
                     return false;
                 } else {
                     FNode node = new FNode(i, key);
-                    node.next = curr;
-                    // Write event for initializing next member of new node
-                    RuntimeEvent event8 =
-                            new RuntimeEvent.Builder()
-                                    .type(RuntimeEvent.Type.WRITE_EVENT)
-                                    .taskId(JmcRuntime.currentTask())
-                                    .param("newValue", curr)
-                                    .param(
-                                            "owner",
-                                            "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                    .param("name", "next")
-                                    .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                                    .param("instance", node)
-                                    .build();
-                    JmcRuntime.updateEventAndYield(event8);
+                    node.setNext(curr);
 
-                    pred.next = node;
-                    // Write event for initializing next member of previous node
-                    RuntimeEvent event9 =
-                            new RuntimeEvent.Builder()
-                                    .type(RuntimeEvent.Type.WRITE_EVENT)
-                                    .taskId(JmcRuntime.currentTask())
-                                    .param("newValue", node)
-                                    .param(
-                                            "owner",
-                                            "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                    .param("name", "next")
-                                    .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                                    .param("instance", pred)
-                                    .build();
-                    JmcRuntime.updateEventAndYield(event9);
+                    pred.setNext(node);
                     return true;
                 }
             } finally {
@@ -227,152 +102,34 @@ public class FineList implements Set {
     @Override
     public boolean remove(int i) {
         int key = i;
-        FNode hNode = head;
-        // Read event for accessing head node
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
-                        .param("name", "head")
-                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event1);
+        FNode hNode = readHead();
 
         hNode.lock();
         FNode pred = hNode;
-        // Read event for accessing head node
-        RuntimeEvent event2 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
-                        .param("name", "head")
-                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event2);
 
         try {
-            FNode curr = pred.next;
-            // Read event for accessing next member of head node
-            RuntimeEvent event3 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                            .param("name", "next")
-                            .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                            .param("instance", pred)
-                            .build();
-            JmcRuntime.updateEventAndYield(event3);
+            FNode curr = pred.getNext();
 
             curr.lock();
             try {
-                int currKey = curr.key;
-                // Read event for accessing key member of current node
-                RuntimeEvent event4 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.READ_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                .param("name", "key")
-                                .param("descriptor", "I")
-                                .param("instance", curr)
-                                .build();
-                JmcRuntime.updateEventAndYield(event4);
+                int currKey = curr.getKey();
 
                 while (currKey < key) {
                     pred.unlock();
                     pred = curr;
-                    curr = curr.next;
-                    // Read event for accessing next member of current node
-                    RuntimeEvent event5 =
-                            new RuntimeEvent.Builder()
-                                    .type(RuntimeEvent.Type.READ_EVENT)
-                                    .taskId(JmcRuntime.currentTask())
-                                    .param(
-                                            "owner",
-                                            "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                    .param("name", "next")
-                                    .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                                    .param("instance", curr)
-                                    .build();
-                    JmcRuntime.updateEventAndYield(event5);
+                    curr = curr.getNext();
 
                     curr.lock();
 
-                    currKey = curr.key;
-                    // Read event for accessing key member of current node
-                    RuntimeEvent event6 =
-                            new RuntimeEvent.Builder()
-                                    .type(RuntimeEvent.Type.READ_EVENT)
-                                    .taskId(JmcRuntime.currentTask())
-                                    .param(
-                                            "owner",
-                                            "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                    .param("name", "key")
-                                    .param("descriptor", "I")
-                                    .param("instance", curr)
-                                    .build();
-                    JmcRuntime.updateEventAndYield(event6);
+                    currKey = curr.getKey();
                 }
 
-                currKey = curr.key;
-                // Read event for accessing key member of current node
-                RuntimeEvent event7 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.READ_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                .param("name", "key")
-                                .param("descriptor", "I")
-                                .param("instance", curr)
-                                .build();
-                JmcRuntime.updateEventAndYield(event7);
+                currKey = curr.getKey();
 
                 if (key == currKey) {
-                    FNode n = curr.next;
-                    // Read event for accessing next member of current node
-                    RuntimeEvent event8 =
-                            new RuntimeEvent.Builder()
-                                    .type(RuntimeEvent.Type.READ_EVENT)
-                                    .taskId(JmcRuntime.currentTask())
-                                    .param(
-                                            "owner",
-                                            "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                    .param("name", "next")
-                                    .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                                    .param("instance", curr)
-                                    .build();
-                    JmcRuntime.updateEventAndYield(event8);
+                    FNode n = curr.getNext();
 
-                    pred.next = n;
-                    // Write event for initializing next member of previous node
-                    RuntimeEvent event9 =
-                            new RuntimeEvent.Builder()
-                                    .type(RuntimeEvent.Type.WRITE_EVENT)
-                                    .taskId(JmcRuntime.currentTask())
-                                    .param("newValue", n)
-                                    .param(
-                                            "owner",
-                                            "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                                    .param("name", "next")
-                                    .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                                    .param("instance", pred)
-                                    .build();
-                    JmcRuntime.updateEventAndYield(event9);
+                    pred.setNext(n);
                     return true;
                 } else {
                     return false;
@@ -392,16 +149,16 @@ public class FineList implements Set {
         head.lock();
         FNode pred = head;
         try {
-            FNode curr = pred.next;
+            FNode curr = pred.getNext();
             curr.lock();
             try {
-                while (curr.key < key) {
+                while (curr.getKey() < key) {
                     pred.unlock();
                     pred = curr;
-                    curr = curr.next;
+                    curr = curr.getNext();
                     curr.lock();
                 }
-                return key == curr.key;
+                return key == curr.getKey();
             } finally {
                 curr.unlock();
             }

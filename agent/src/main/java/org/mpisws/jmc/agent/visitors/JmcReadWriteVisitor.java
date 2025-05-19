@@ -66,6 +66,10 @@ public class JmcReadWriteVisitor {
                 // Ignore System calls
                 return;
             }
+            if (Objects.equals(name, "$assertionsDisabled")) {
+                // Ignore assertionsDisabled field
+                return;
+            }
             instrumented = true;
             if (!isWrite) {
                 VisitorHelper.insertRead(mv, isStatic, owner, name, descriptor);
@@ -88,6 +92,9 @@ public class JmcReadWriteVisitor {
             Type fieldType = Type.getType(descriptor);
             boolean isWide = fieldType.getSize() == 2;
             if (opcode == Opcodes.GETFIELD || opcode == Opcodes.GETSTATIC) {
+                if (opcode == Opcodes.GETFIELD) {
+
+                }
                 shouldInstrument = true;
             } else if (opcode == Opcodes.PUTFIELD) {
                 shouldInstrument = true;
@@ -106,9 +113,8 @@ public class JmcReadWriteVisitor {
                     mv.visitInsn(Opcodes.DUP);
                 }
             }
-            if (Objects.equals(name, "$assertionsDisabled")) {
-                // Ignore assertionsDisabled field
-                shouldInstrument = false;
+            if (shouldInstrument && (opcode == Opcodes.GETFIELD || opcode == Opcodes.PUTFIELD)) {
+                mv.visitInsn(Opcodes.DUP);
             }
             super.visitFieldInsn(opcode, owner, name, descriptor);
             if (shouldInstrument) {

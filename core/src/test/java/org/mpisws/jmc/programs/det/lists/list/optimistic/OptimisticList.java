@@ -130,17 +130,17 @@ public class OptimisticList implements Set {
             int key = i;
             while (true) {
                 FNode pred = head;
-                FNode curr = pred.next;
-                while (curr.key < key) {
+                FNode curr = pred.getNext();
+                while (curr.getKey() < key) {
                     pred = curr;
-                    curr = curr.next;
+                    curr = curr.getNext();
                 }
                 pred.lock();
                 try {
                     curr.lock();
                     try {
                         if (validate(pred, curr)) {
-                            return key == curr.key;
+                            return key == curr.getKey();
                         }
                     } finally {
                         curr.unlock();
