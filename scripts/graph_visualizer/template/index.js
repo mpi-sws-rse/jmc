@@ -27,12 +27,18 @@ function plot_graph(graphData) {
         nodeMap.set(id, node);
     });
 
+    const initNode = "{null, null}";
+
     // Create links
     Object.entries(graphData.nodes).forEach(([sourceId, data]) => {
         if (data.edges) {
             Object.entries(data.edges).forEach(([edgeType, targets]) => {
                 edgeTypes.add(edgeType);
                 targets.forEach(targetId => {
+                    if (edgeType === "coherency" && sourceId === initNode) {
+                        // Skip the init node for coherency edges
+                        return;
+                    }
                     links.push({
                         source: sourceId,
                         target: targetId,
@@ -42,6 +48,29 @@ function plot_graph(graphData) {
             })
         }
     });
+
+    var edgeEnterDiv = d3.select("#edge-selection")
+        .selectAll(".edge-input")
+        .data(edgeTypes.keys())
+        .enter().append("div");
+
+    edgeEnterDiv.append("input")
+        .attr("type", "checkbox")
+        .attr("id", d => `edge-${d}`)
+        .attr("value", d => d)
+        .attr("class", "edge-input")
+        .attr("checked", d => d === "readsFrom" || d === "programOrder" ? true : null)
+        .on("change", function (event, d) {
+            if (event.target.checked) {
+                d3.selectAll(`.link.${d}`).style("display", "block");
+            } else {
+                d3.selectAll(`.link.${d}`).style("display", "none");
+            }
+        });
+
+    edgeEnterDiv.append("label")
+        .attr("for", d => `edge-${d}`)
+        .text(d => d);
 
     // Set up the SVG
     const width = d3.select("#graph").node().getBoundingClientRect().width;
@@ -102,7 +131,7 @@ function plot_graph(graphData) {
     const link = g.selectAll(".link")
         .data(links)
         .enter().append("line")
-        .attr("class", "link")
+        .attr("class", d => `link ${d.type}`)
         .attr("stroke", d => edgeColorScale(d.type))
         .attr("marker-end", d => `url(#arrow-${d.type})`)
         .attr("x1", d => xScale(nodeMap.get(d.source).taskId))
@@ -116,6 +145,11 @@ function plot_graph(graphData) {
         })
         .attr("y2", d => yScale(nodeMap.get(d.target).timestamp))
 
+    for (edgeType of edgeTypes.keys()) {
+        if (edgeType !== "readsFrom" && edgeType !== "programOrder") {
+            d3.selectAll(`.link.${edgeType}`).style("display", "none");
+        }
+    }
 
     // Draw nodes
     const node = g.selectAll(".node")
