@@ -18,11 +18,13 @@ public class TwoPhaseCommit {
 
                             coordinator.stop();
                         } catch (Exception e) {
+                            System.out.println("Main thread interrupted");
                         }
                     });
             tps.start();
             tps.join1();
         } catch (InterruptedException e) {
+            System.out.println("Main thread interrupted");
         }
     }
 }

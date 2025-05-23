@@ -685,7 +685,7 @@ public class Algo {
         executionGraph.addEvent(event);
         boolean result = event.getAttribute("result");
 
-        if (result) {
+        if (!result) {
             Long taskId = event.getTaskId();
             // Indicate that the task must be blocked
             mustBlockTask = taskId;
