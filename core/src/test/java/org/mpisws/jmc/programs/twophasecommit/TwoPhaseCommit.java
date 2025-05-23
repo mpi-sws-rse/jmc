@@ -9,17 +9,13 @@ public class TwoPhaseCommit {
         try {
             JmcThread tps = new JmcThread(
                     () -> {
-                        try {
-                            Coordinator coordinator = new Coordinator(numParticipants);
-                            coordinator.start();
+                        Coordinator coordinator = new Coordinator(numParticipants);
+                        coordinator.start();
 
-                            // Simulate sending a request to the coordinator
-                            assert coordinator.acceptRequest(1);
+                        // Simulate sending a request to the coordinator
+                        assert coordinator.acceptRequest(1);
 
-                            coordinator.stop();
-                        } catch (Exception e) {
-                            System.out.println("Main thread interrupted");
-                        }
+                        coordinator.stop();
                     });
             tps.start();
             tps.join1();

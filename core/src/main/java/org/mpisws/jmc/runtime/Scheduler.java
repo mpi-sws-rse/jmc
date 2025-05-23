@@ -117,7 +117,9 @@ public class Scheduler {
         if (choice.isBlockExecution()) {
             taskManager.stopAll();
         } else if (choice.isBlockTask()) {
-            taskManager.error(choice.getTaskId(), new HaltTaskException(choice.getTaskId()));
+            Long taskId = choice.getTaskId();
+            setCurrentTask(taskId);
+            taskManager.error(taskId, new HaltTaskException(taskId));
         } else {
             Long taskId = choice.getTaskId();
             setCurrentTask(taskId);

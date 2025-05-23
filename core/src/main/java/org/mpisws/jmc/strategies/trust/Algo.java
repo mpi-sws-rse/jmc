@@ -50,7 +50,7 @@ public class Algo {
      */
     public SchedulingChoice<?> nextTask() {
         if (mustBlockTask != null) {
-            Long taskId = mustBlockTask;
+            Long taskId = mustBlockTask + 1;
             mustBlockTask = null;
             return SchedulingChoice.blockTask(taskId);
         }
