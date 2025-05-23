@@ -43,7 +43,9 @@ public class ExecutionGraph {
 
     private final HashMap<Integer, List<Long>> blockedLocks;
 
-    /** Initializes a new execution graph. */
+    /**
+     * Initializes a new execution graph.
+     */
     public ExecutionGraph() {
         this.allEvents = new ArrayList<>();
         this.coherencyOrder = new HashMap<>();
@@ -60,7 +62,7 @@ public class ExecutionGraph {
                 if (EventUtils.isBlockingLabel(node.getEvent())) {
                     // We ignore blocking labels when revisiting
                     // And also remove the edge pointing to the blocking label
-                    newTaskEvent.get(newTaskEvent.size()-1).removeEdgeTo(node.key(), Relation.ProgramOrder);
+                    newTaskEvent.get(newTaskEvent.size() - 1).removeEdgeTo(node.key(), Relation.ProgramOrder);
                     continue;
                 }
                 newTaskEvent.add(node.clone());
@@ -470,7 +472,7 @@ public class ExecutionGraph {
      * Returns the nodes that are not _porf_-before the given node except the last node in the
      * returned list. Assumes that the given nodes are ordered in reverse CO order.
      *
-     * @param node The node to split before.
+     * @param node  The node to split before.
      * @param nodes The nodes to split.
      * @return The nodes that are not _porf_-before the given node.
      */
@@ -648,7 +650,7 @@ public class ExecutionGraph {
      * Constructs a backward revisit view of the ExecutionGraph.
      *
      * @param write The write event
-     * @param read The read event that the write needs to backward revisit
+     * @param read  The read event that the write needs to backward revisit
      * @return The backward revisit view of the ExecutionGraph
      */
     public BackwardRevisitView revisitView(ExecutionGraphNode write, ExecutionGraphNode read) {
@@ -788,7 +790,7 @@ public class ExecutionGraph {
      * <p>Invalidates the total order and the vector clocks of events in the graph. The concern of
      * fixing the total order and the vector clocks is passed to the calling function.
      *
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public void changeReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
@@ -810,7 +812,7 @@ public class ExecutionGraph {
      *
      * <p>Does not validate if there is an existing reads-from edge to the corresponding read
      *
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public void setReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
@@ -883,10 +885,12 @@ public class ExecutionGraph {
 
             // Each event in the coherencyOrder which holds the key must be removed
             Integer location = node.getEvent().getLocation();
-            if (!coherencyOrder.containsKey(location)) {
-                throw HaltCheckerException.error("The restricting node is not in coherency order");
+            if (location != null) {
+                if (!coherencyOrder.containsKey(location)) {
+                    throw HaltCheckerException.error("The restricting node is not in coherency order");
+                }
+                coherencyOrder.get(location).removeIf((e) -> e.key().equals(key));
             }
-            coherencyOrder.get(location).removeIf((e) -> e.key().equals(key));
         }
 
         // Remove dangling edges
@@ -942,7 +946,9 @@ public class ExecutionGraph {
     //        }
     //    }
 
-    /** Recomputes the vector clocks of all nodes in the execution graph. */
+    /**
+     * Recomputes the vector clocks of all nodes in the execution graph.
+     */
     public void recomputeVectorClocks() {
 
         TopologicalSorter topoSorter = new TopologicalSorter(this);
@@ -1029,11 +1035,13 @@ public class ExecutionGraph {
             // Removing from coherencyOrder
             Integer location = node.getEvent().getLocation();
 
-            if (!coherencyOrder.containsKey(location)) {
-                throw HaltCheckerException.error("The restricting node is not in coherency order");
-            }
+            if (location != null) {
+                if (!coherencyOrder.containsKey(location)) {
+                    throw HaltCheckerException.error("The restricting node is not in coherency order");
+                }
 
-            coherencyOrder.get(location).removeIf((e) -> e.key().equals(node.key()));
+                coherencyOrder.get(location).removeIf((e) -> e.key().equals(node.key()));
+            }
 
             // Removing from taskEvents
             int task = Math.toIntExact(node.getEvent().getTaskId());
@@ -1064,12 +1072,16 @@ public class ExecutionGraph {
         }
     }
 
-    /** Returns an iterator walking through the nodes in a topological sort order. */
+    /**
+     * Returns an iterator walking through the nodes in a topological sort order.
+     */
     public List<ExecutionGraphNode> iterator() throws TopologicalSorter.GraphCycleException {
         return (new TopologicalSorter(this)).sort();
     }
 
-    /** Returns List of nodes while silently ignoring any errors with cycles * */
+    /**
+     * Returns List of nodes while silently ignoring any errors with cycles *
+     */
     public List<ExecutionGraphNode> unsafeIterator() {
         try {
             return (new TopologicalSorter(this)).sort();
@@ -1136,7 +1148,7 @@ public class ExecutionGraph {
                 ExecutionGraphNode next = topologicalSort.get(i + 1);
                 if (EventUtils.isLockAcquireWrite(next.getEvent())
                         && Objects.equals(
-                                node.getEvent().getTaskId(), next.getEvent().getTaskId())) {
+                        node.getEvent().getTaskId(), next.getEvent().getTaskId())) {
                     // Next event is a WriteEx event of the same task ID
                     continue;
                 }
@@ -1146,7 +1158,7 @@ public class ExecutionGraph {
                     ExecutionGraphNode nextNode = topologicalSort.get(j);
                     if (EventUtils.isLockAcquireWrite(nextNode.getEvent())
                             && Objects.equals(
-                                    node.getEvent().getTaskId(), nextNode.getEvent().getTaskId())) {
+                            node.getEvent().getTaskId(), nextNode.getEvent().getTaskId())) {
                         // Move the WriteEx event before the ReadEx event
                         fixedTopologicalSort.add(nextNode);
 
@@ -1160,12 +1172,16 @@ public class ExecutionGraph {
         return fixedTopologicalSort;
     }
 
-    /** Returns true if the graph contains only the initial event. */
+    /**
+     * Returns true if the graph contains only the initial event.
+     */
     public boolean isEmpty() {
         return allEvents.size() == 1 && allEvents.get(0).getEvent().isInit();
     }
 
-    /** Clears the execution graph. */
+    /**
+     * Clears the execution graph.
+     */
     public void clear() {
         allEvents.clear();
         coherencyOrder.clear();
@@ -1317,7 +1333,9 @@ public class ExecutionGraph {
         return blockedLocks.get(location).contains(taskId);
     }
 
-    /** Generic visitor interface for the execution graph nodes. */
+    /**
+     * Generic visitor interface for the execution graph nodes.
+     */
     public interface ExecutionGraphNodeVisitor {
         void visit(ExecutionGraphNode node);
     }
@@ -1461,7 +1479,9 @@ public class ExecutionGraph {
             }
         }
 
-        /** Exception thrown when the graph has cycles. */
+        /**
+         * Exception thrown when the graph has cycles.
+         */
         public static class GraphCycleException extends Exception {
             /**
              * Initializes a new graph cycle exception with the given message.
