@@ -15,9 +15,7 @@ import org.mpisws.jmc.util.files.FileUtil;
 import java.io.FileOutputStream;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 
@@ -28,6 +26,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     private final ExecutionGraphSimulator simulator;
 
     private final ConcurrentHashMap<String, Integer> visitedGraphs;
+    private final Set<String> coveredGraphs;
     private final MeasuringThread measuringThread;
     private final ArrayList<Integer> coverages;
 
@@ -41,6 +40,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         this.schedulingStrategy = schedulingStrategy;
         this.simulator = new ExecutionGraphSimulator();
         this.visitedGraphs = new ConcurrentHashMap<>();
+        this.coveredGraphs = new HashSet<>();
         this.coverages = new ArrayList<>();
         this.config = config;
         if (config.isRecordPerIteration()) {
@@ -114,20 +114,46 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     public void resetIteration(int iteration) {
         this.schedulingStrategy.resetIteration(iteration);
         ExecutionGraph executionGraph = simulator.getExecutionGraph();
+        CoverageGraph coverageGraph = simulator.getCoverageGraph();
+        if (this.schedulingStrategy instanceof TrustStrategy t) {
+            ExecutionGraph that = t.getExecutionGraph();
+            if(!executionGraph.equals(that)) {
+                LOGGER.error("Execution graph mismatch: {} vs {}", executionGraph, that);
+            }
+        }
+        /*System.out.println("-------------- Execution Graph --------------");
+        executionGraph.printGraph();
+        System.out.println("-------------- Coverage Graph --------------");
+        coverageGraph.printGraph();
+        System.out.println("-------------- End of Graph --------------");*/
+        List<ExecutionGraphNode> list = executionGraph.checkConsistencyAndTopologicallySort();
+        if (list.isEmpty()) {
+            throw new RuntimeException("Execution graph is not consistent");
+        }
         String json = executionGraph.toJsonStringIgnoreLocation();
+        String coverage = coverageGraph.toString();
+        //System.out.println(coverage);
         try {
             String hash = StringUtil.sha256Hash(json);
+            String hashCoverage = StringUtil.sha256Hash(coverage);
+            if(!coveredGraphs.contains(hashCoverage)) {
+                coveredGraphs.add(hashCoverage);
+                if (config.isDebugEnabled()) {
+                    FileUtil.unsafeStoreToFile(
+                            Paths.get(config.getRecordPath(), coveredGraphs.size()  + ".txt").toString(), coverage);
+                }
+            }
             if (visitedGraphs.containsKey(hash)) {
                 visitedGraphs.put(hash, visitedGraphs.get(hash) + 1);
             } else {
                 visitedGraphs.put(hash, 1);
+                if (config.isDebugEnabled()) {
+                    FileUtil.unsafeStoreToFile(
+                            Paths.get(config.getRecordPath(), visitedGraphs.size() + ".json").toString(), json);
+                }
             }
             if (config.isRecordPerIteration()) {
                 updateCoverage();
-            }
-            if (config.isDebugEnabled()) {
-                FileUtil.unsafeStoreToFile(
-                        Paths.get(config.getRecordPath(), hash + ".json").toString(), json);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -179,5 +205,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         String json = gson.toJson(jsonObject);
         FileUtil.unsafeStoreToFile(
                 Paths.get(config.getRecordPath(), "coverage.json").toString(), json);
+
+        System.out.println(coveredGraphs.size());
     }
 }

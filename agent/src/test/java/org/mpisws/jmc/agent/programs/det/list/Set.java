@@ -1,4 +1,4 @@
-package org.mpisws.jmc.programs.det.lists.list;
+package org.mpisws.jmc.agent.programs.det.list;
 
 public interface Set {
 

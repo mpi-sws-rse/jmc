@@ -59,6 +59,8 @@ public class ExecutionGraph {
             for (ExecutionGraphNode node : taskEvent) {
                 if (EventUtils.isBlockingLabel(node.getEvent())) {
                     // We ignore blocking labels when revisiting
+                    // And also remove the edge pointing to the blocking label
+                    newTaskEvent.get(newTaskEvent.size()-1).removeEdgeTo(node.key(), Relation.ProgramOrder);
                     continue;
                 }
                 newTaskEvent.add(node.clone());
@@ -1158,37 +1160,6 @@ public class ExecutionGraph {
         return fixedTopologicalSort;
     }
 
-    public List<ExecutionGraphNode> checkConsistencyAndTopologicallySort(ExecutionGraphNode hint) {
-        // The hint can be
-        // 1. A read exclusive event
-        if (EventUtils.isLockAcquireRead(hint.getEvent())) {
-            List<Event.Key> writes = hint.getPredecessors(Relation.ReadsFrom);
-            try {
-                ExecutionGraphNode writeNode = getEventNode(writes.get(0));
-                List<Event.Key> reads = writeNode.getSuccessors(Relation.ReadsFrom);
-                List<ExecutionGraphNode> readNodes = new ArrayList<>();
-                for (Event.Key readKey : reads) {
-                    readNodes.add(getEventNode(readKey));
-                }
-                List<ExecutionGraphNode> filteredReads =
-                        readNodes.stream()
-                                .filter(
-                                        (r) ->
-                                                EventUtils.isLockAcquireRead(r.getEvent())
-                                                        && Objects.equals(
-                                                                r.getEvent().getLocation(),
-                                                                hint.getEvent().getLocation()))
-                                .toList();
-                if (filteredReads.size() > 1) {
-                    return new ArrayList<>();
-                }
-            } catch (NoSuchEventException e) {
-                throw HaltCheckerException.error("Consistency checking: The event is not found.");
-            }
-        }
-        return fixTopologicalSort(unsafeIterator());
-    }
-
     /** Returns true if the graph contains only the initial event. */
     public boolean isEmpty() {
         return allEvents.size() == 1 && allEvents.get(0).getEvent().isInit();
@@ -1224,6 +1195,7 @@ public class ExecutionGraph {
         }
         JsonObject gson = new JsonObject();
         gson.add("nodes", nodes);
+
         return gson.toString();
     }
 
@@ -1474,6 +1446,9 @@ public class ExecutionGraph {
                     toAdd.sort(Event.Key::compareTo);
                     toAdd.forEach(
                             (key) -> {
+                                if (!nodeMap.containsKey(key)) {
+                                    LOGGER.debug("Error finding the node");
+                                }
                                 queue.add(nodeMap.get(key));
                             });
                 }
