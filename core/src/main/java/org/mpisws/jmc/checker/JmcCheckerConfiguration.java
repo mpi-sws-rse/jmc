@@ -99,7 +99,6 @@ public class JmcCheckerConfiguration {
         private Integer numIterations;
 
         private String strategyType;
-        private SchedulingStrategy customStrategy;
         private SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor;
 
         private boolean debug;
@@ -113,7 +112,6 @@ public class JmcCheckerConfiguration {
         public Builder() {
             this.numIterations = 0;
             this.strategyType = "random";
-            this.customStrategy = null;
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
             this.seed = System.nanoTime();
@@ -130,10 +128,6 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
-        public Builder customStrategy(SchedulingStrategy customStrategy) {
-            this.customStrategy = customStrategy;
-            return this;
-        }
 
         public Builder strategyConstructor(
                 SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor) {

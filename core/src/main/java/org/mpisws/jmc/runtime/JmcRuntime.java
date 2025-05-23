@@ -170,7 +170,7 @@ public class JmcRuntime {
             return taskManager.wait(taskId);
         } catch (ExecutionException | InterruptedException e) {
             LOGGER.error("Failed to wait for task: {}", taskId);
-            Throwable cause = e.getCause();
+            Throwable cause = e.getCause().getCause();
             if (cause instanceof HaltTaskException) {
                 throw (HaltTaskException) cause;
             } else {

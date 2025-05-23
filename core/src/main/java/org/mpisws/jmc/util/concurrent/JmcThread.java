@@ -71,8 +71,8 @@ public class JmcThread extends Thread {
         } catch (HaltTaskException e) {
             LOGGER.error("Failed to start task: {}", e.getMessage());
         }
-        JmcRuntime.yield(jmcThreadId);
         try {
+            JmcRuntime.yield(jmcThreadId);
             run1();
         } catch (HaltTaskException e) {
             event =
