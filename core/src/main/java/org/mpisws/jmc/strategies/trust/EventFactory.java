@@ -112,6 +112,16 @@ public class EventFactory {
                 event.setAttribute("lock_release", true);
                 return List.of(event);
             }
+            case ASSUME_EVENT -> {
+                Event event =
+                        new Event(
+                                runtimeEvent.getTaskId() - 1,
+                                null,
+                                Event.Type.ASSUME);
+                boolean result = runtimeEvent.getParam("result");
+                event.setAttribute("result", result);
+                return List.of(event);
+            }
         }
 
         return new ArrayList<>();

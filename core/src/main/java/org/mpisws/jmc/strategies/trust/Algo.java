@@ -30,7 +30,11 @@ public class Algo {
 
     private final LocationStore locationStore;
 
-    /** Creates a new instance of the Trust algorithm. */
+    private Long mustBlockTask;
+
+    /**
+     * Creates a new instance of the Trust algorithm.
+     */
     public Algo() {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
@@ -41,8 +45,16 @@ public class Algo {
         this.executionGraph.addEvent(Event.init());
     }
 
-    /** Returns the next task to be scheduled according to the execution graph set in place. */
+    /**
+     * Returns the next task to be scheduled according to the execution graph set in place.
+     */
     public SchedulingChoice<?> nextTask() {
+        if (mustBlockTask != null) {
+            Long taskId = mustBlockTask;
+            mustBlockTask = null;
+            return SchedulingChoice.blockTask(taskId);
+        }
+
         if (!isGuiding) {
             return null;
         }
@@ -85,6 +97,12 @@ public class Algo {
                 locationStore.addAlias(location, event.getLocation());
             }
         }
+
+        switch (event.getType()) {
+            case ASSUME:
+                handleGuidedAssume(event);
+        }
+
     }
 
     /**
@@ -147,6 +165,9 @@ public class Algo {
                     return;
                 }
                 handleNoop(event);
+                break;
+            case ASSUME:
+                handleAssume(event);
         }
         LOGGER.debug("Handled event: {}", event);
     }
@@ -212,7 +233,9 @@ public class Algo {
         findNextExplorationChoice();
     }
 
-    /** Checks if we are guiding the execution. */
+    /**
+     * Checks if we are guiding the execution.
+     */
     private boolean areWeGuiding() {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
     }
@@ -260,9 +283,8 @@ public class Algo {
                 case FRW -> nextGraphSchedule = processFRW(item);
                 case FWW -> nextGraphSchedule = processFWW(item);
                 case FLW -> nextGraphSchedule = processFLW(item);
-                default ->
-                        throw new RuntimeException(
-                                "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
+                default -> throw new RuntimeException(
+                        "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
         }
 
@@ -658,6 +680,28 @@ public class Algo {
         writeEvent.setAttribute("lock_acquire", true);
         handleLockAcquireWrite(writeEvent);
     }
+
+    private void handleAssume(Event event) {
+        executionGraph.addEvent(event);
+        boolean result = event.getAttribute("result");
+
+        if (result) {
+            Long taskId = event.getTaskId();
+            // Indicate that the task must be blocked
+            mustBlockTask = taskId;
+        }
+    }
+
+    private void handleGuidedAssume(Event event) {
+        boolean result = event.getAttribute("result");
+
+        if (result) {
+            Long taskId = event.getTaskId();
+            // Indicate that the task must be blocked
+            mustBlockTask = taskId;
+        }
+    }
+
 
     /**
      * Writes the execution graph to a file.
