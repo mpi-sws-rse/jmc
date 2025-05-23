@@ -1,6 +1,7 @@
 package org.mpisws.jmc.programs.twophasecommit;
 
 import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.util.statements.Assume;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,6 +57,9 @@ public class CoordinatorParallel extends Coordinator {
         Map<Integer, Boolean> acknowledgments = new HashMap<>();
         while (acknowledgments.size() < numParticipants) {
             Message message = mailbox.receive();
+            Assume.assume(message != null &&
+                    message.getType() == Message.Type.ACKNOWLEDGE);
+
             if (message.getType() == Message.Type.ACKNOWLEDGE) {
                 acknowledgments.put(message.getSenderId() - 1, true);
             }
@@ -93,6 +97,8 @@ public class CoordinatorParallel extends Coordinator {
                             mailbox));
             while (true) {
                 Message message = mailbox.receive();
+                Assume.assume(message != null);
+
                 if (message != null) {
                     switch (message.getType()) {
                         case ABORT -> {
