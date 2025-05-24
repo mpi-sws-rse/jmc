@@ -48,7 +48,7 @@ public class VisitorHelper {
         }
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/RuntimeUtils",
+                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
                 "readEvent",
                 "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V",
                 false);
@@ -76,7 +76,7 @@ public class VisitorHelper {
         }
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/RuntimeUtils",
+                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
                 "writeEvent",
                 "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V",
                 false);

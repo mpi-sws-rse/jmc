@@ -13,9 +13,7 @@ import java.util.Set;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * A strategy that tracks the active tasks.
- */
+/** A strategy that tracks the active tasks. */
 public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
 
     private static final Logger LOGGER = LogManager.getLogger(TrackActiveTasksStrategy.class);
@@ -26,18 +24,14 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
 
     private final List<Tracker> trackers;
 
-    /**
-     * Constructs a new TrackActiveTasksStrategy object.
-     */
+    /** Constructs a new TrackActiveTasksStrategy object. */
     public TrackActiveTasksStrategy() {
         this.allTasks = new HashSet<>();
         this.activeTasks = new HashSet<>();
         this.trackers = List.of(new TrackTasks(), new TrackLocks());
     }
 
-    /**
-     * Constructs a new TrackActiveTasksStrategy object with the given trackers.
-     */
+    /** Constructs a new TrackActiveTasksStrategy object with the given trackers. */
     public TrackActiveTasksStrategy(List<Tracker> trackers) {
         this.allTasks = new HashSet<>();
         this.activeTasks = new HashSet<>();
@@ -45,8 +39,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void initIteration(int iteration, JmcModelCheckerReport report) {
-    }
+    public void initIteration(int iteration, JmcModelCheckerReport report) {}
 
     @Override
     public void updateEvent(RuntimeEvent event) {
@@ -131,9 +124,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         }
     }
 
-    /**
-     * Tracks the active tasks based on events.
-     */
+    /** Tracks the active tasks based on events. */
     public interface Tracker {
         /**
          * Updates the event.
@@ -143,24 +134,18 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
          */
         Set<Long> updateEvent(RuntimeEvent event);
 
-        /**
-         * Resets the tracker.
-         */
+        /** Resets the tracker. */
         void reset();
     }
 
-    /**
-     * Tracks the tasks start finish and join request events.
-     */
+    /** Tracks the tasks start finish and join request events. */
     public static class TrackTasks implements Tracker {
         private final Set<Long> activeTasks;
         private final Map<Long, Set<Long>> waitingTasks;
         private final Set<Long> completedTasks;
         private final Object tasksLock = new Object();
 
-        /**
-         * Constructs a new TrackTasks object.
-         */
+        /** Constructs a new TrackTasks object. */
         public TrackTasks() {
             this.activeTasks = new HashSet<>();
             this.completedTasks = new HashSet<>();
@@ -221,9 +206,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         }
     }
 
-    /**
-     * Tracks the locks acquired and released events of tasks.
-     */
+    /** Tracks the locks acquired and released events of tasks. */
     public static class TrackLocks implements Tracker {
 
         /**

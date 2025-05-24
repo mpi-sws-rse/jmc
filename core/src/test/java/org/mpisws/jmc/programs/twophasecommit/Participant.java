@@ -3,7 +3,7 @@ package org.mpisws.jmc.programs.twophasecommit;
 import org.mpisws.jmc.util.JmcRandom;
 import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
 import org.mpisws.jmc.util.concurrent.JmcThread;
-import org.mpisws.jmc.util.statements.Assume;
+import org.mpisws.jmc.util.statements.JmcAssume;
 
 /* Simple participant class for the two-phase commit protocol.
  * This class represents a participant in the two-phase commit protocol.
@@ -102,7 +102,7 @@ public class Participant {
                 }
                 this.lock.unlock();
                 Message message = participant.receive();
-                Assume.assume(message != null);
+                JmcAssume.assume(message != null);
 
                 if (message != null) {
                     // Process the message
@@ -149,7 +149,7 @@ public class Participant {
                                     message.getResponseMailbox());
                             break;
                         case ACKNOWLEDGE:
-                            // Should not be receiving acknowledgments
+                        // Should not be receiving acknowledgments
                         default:
                             throw new IllegalStateException(
                                     "Unexpected value: " + message.getType());

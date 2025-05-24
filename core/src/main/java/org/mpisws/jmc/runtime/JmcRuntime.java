@@ -49,9 +49,7 @@ public class JmcRuntime {
         scheduler.start();
     }
 
-    /**
-     * Tears down the runtime by shutting down the scheduler adn clearing the task manager.
-     */
+    /** Tears down the runtime by shutting down the scheduler adn clearing the task manager. */
     public static void tearDown() {
         LOGGER.debug("Tearing down!");
         taskManager.reset();
@@ -107,9 +105,7 @@ public class JmcRuntime {
         JmcRuntime.yield();
     }
 
-    /**
-     * Resets the runtime for a new iteration.
-     */
+    /** Resets the runtime for a new iteration. */
     public static void resetIteration(int iteration) {
         scheduler.resetIteration(iteration);
         taskManager.reset();
@@ -170,12 +166,8 @@ public class JmcRuntime {
             return taskManager.wait(taskId);
         } catch (ExecutionException | InterruptedException e) {
             LOGGER.error("Failed to wait for task: {}", taskId);
-            Throwable cause = e.getCause().getCause();
-            if (cause instanceof HaltTaskException) {
-                throw (HaltTaskException) cause;
-            } else {
-                throw HaltExecutionException.error(cause.getMessage());
-            }
+            Throwable cause = e.getCause();
+            throw HaltExecutionException.error(cause.getMessage());
         }
     }
 

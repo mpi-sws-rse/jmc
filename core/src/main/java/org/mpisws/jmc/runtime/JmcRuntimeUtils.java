@@ -7,7 +7,7 @@ import java.util.HashMap;
 // Wrapper methods to create events and make JmcRuntime calls at Runtime
 // These methods are invoked mainly through bytecode instrumentation and
 // not meant to be used within the codebase.
-public class RuntimeUtils {
+public class JmcRuntimeUtils {
     public static void readEvent(Object instance, String owner, String name, String descriptor) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
         builder.type(RuntimeEvent.Type.READ_EVENT).taskId(JmcRuntime.currentTask());

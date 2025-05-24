@@ -3,7 +3,7 @@ package org.mpisws.jmc.util.statements;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 
-public class Assume {
+public class JmcAssume {
 
     public static void assume(boolean condition) {
         RuntimeEvent event =
@@ -14,5 +14,4 @@ public class Assume {
                         .build();
         JmcRuntime.updateEventAndYield(event);
     }
-
 }

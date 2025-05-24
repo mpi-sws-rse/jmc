@@ -1,6 +1,6 @@
 package org.mpisws.jmc.programs.twophasecommit;
 
-import org.mpisws.jmc.util.statements.Assume;
+import org.mpisws.jmc.util.statements.JmcAssume;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +52,7 @@ public class Coordinator {
 
         while (!completed) {
             Message message = mailbox.receive();
-            Assume.assume(message != null);
+            JmcAssume.assume(message != null);
 
             // Bug 1: message check
             if (message != null) {
@@ -98,7 +98,7 @@ public class Coordinator {
         Map<Integer, Boolean> acknowledgments = new HashMap<>();
         while (acknowledgments.size() < numParticipants) {
             Message message = mailbox.receive();
-            Assume.assume(message != null && message.getType() == Message.Type.ACKNOWLEDGE);
+            JmcAssume.assume(message != null && message.getType() == Message.Type.ACKNOWLEDGE);
 
             if (message.getType() == Message.Type.ACKNOWLEDGE) {
                 acknowledgments.put(message.getSenderId() - 1, true);
