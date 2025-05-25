@@ -30,8 +30,6 @@ public class Algo {
 
     private final LocationStore locationStore;
 
-    private Long mustBlockTask;
-
     /**
      * Creates a new instance of the Trust algorithm.
      */
@@ -49,11 +47,6 @@ public class Algo {
      * Returns the next task to be scheduled according to the execution graph set in place.
      */
     public SchedulingChoice<?> nextTask() {
-        if (mustBlockTask != null) {
-            Long taskId = mustBlockTask + 1;
-            mustBlockTask = null;
-            return SchedulingChoice.blockTask(taskId);
-        }
 
         if (!isGuiding) {
             return null;
@@ -97,12 +90,6 @@ public class Algo {
                 locationStore.addAlias(location, event.getLocation());
             }
         }
-
-        switch (event.getType()) {
-            case ASSUME:
-                handleGuidedAssume(event);
-        }
-
     }
 
     /**
@@ -684,24 +671,8 @@ public class Algo {
     private void handleAssume(Event event) {
         executionGraph.addEvent(event);
         boolean result = event.getAttribute("result");
-
-        if (!result) {
-            Long taskId = event.getTaskId();
-            // Indicate that the task must be blocked
-            mustBlockTask = taskId;
-        }
+        LOGGER.debug("Handling assume event: {}, result: {}", event, result);
     }
-
-    private void handleGuidedAssume(Event event) {
-        boolean result = event.getAttribute("result");
-
-        if (result) {
-            Long taskId = event.getTaskId();
-            // Indicate that the task must be blocked
-            mustBlockTask = taskId;
-        }
-    }
-
 
     /**
      * Writes the execution graph to a file.

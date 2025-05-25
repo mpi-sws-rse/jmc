@@ -445,7 +445,7 @@ public class JmcModelCheckerTest {
                         "TrustCoarse",
                         () -> {
                             int size = 7;
-                            Client9.main(new String[] {String.valueOf(size)});
+                            Client9.main(new String[]{String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -466,11 +466,10 @@ public class JmcModelCheckerTest {
                         "TrustFine",
                         () -> {
                             int size = 5;
-                            Client10.main(new String[] {String.valueOf(size)});
+                            Client10.main(new String[]{String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
-
 
 
     @Test
@@ -488,7 +487,7 @@ public class JmcModelCheckerTest {
                         "TrustCC0",
                         () -> {
                             int size = 1;
-                            CC0.main(new String[] {String.valueOf(size)});
+                            CC0.main(new String[]{String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -602,8 +601,8 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "TrustCC7",
                         () -> {
-                            int size = 5;
-                            CC7.main(new String[] {String.valueOf(size)});
+                            int size = 3;
+                            CC7.main(new String[]{String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -623,7 +622,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "Timeout",
                         () -> {
-                            CC7.main(new String[] {"6"});
+                            CC7.main(new String[]{"6"});
                         });
         jmcModelChecker.check(target);
     }

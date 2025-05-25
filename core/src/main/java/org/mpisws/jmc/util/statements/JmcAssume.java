@@ -1,5 +1,6 @@
 package org.mpisws.jmc.util.statements;
 
+import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 
@@ -13,5 +14,9 @@ public class JmcAssume {
                         .param("result", condition)
                         .build();
         JmcRuntime.updateEventAndYield(event);
+
+        if (!condition) {
+            throw new HaltTaskException(JmcRuntime.currentTask(), "Assumption failed");
+        }
     }
 }

@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class JmcRuntime {
 
-    private static Logger LOGGER = LogManager.getLogger(JmcRuntime.class);
+    private static final Logger LOGGER = LogManager.getLogger(JmcRuntime.class);
 
     private static final TaskManager taskManager = new TaskManager();
 
@@ -49,7 +49,9 @@ public class JmcRuntime {
         scheduler.start();
     }
 
-    /** Tears down the runtime by shutting down the scheduler adn clearing the task manager. */
+    /**
+     * Tears down the runtime by shutting down the scheduler adn clearing the task manager.
+     */
     public static void tearDown() {
         LOGGER.debug("Tearing down!");
         taskManager.reset();
@@ -105,7 +107,9 @@ public class JmcRuntime {
         JmcRuntime.yield();
     }
 
-    /** Resets the runtime for a new iteration. */
+    /**
+     * Resets the runtime for a new iteration.
+     */
     public static void resetIteration(int iteration) {
         scheduler.resetIteration(iteration);
         taskManager.reset();
