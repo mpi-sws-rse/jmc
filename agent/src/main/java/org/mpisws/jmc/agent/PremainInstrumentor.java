@@ -1,9 +1,6 @@
 package org.mpisws.jmc.agent;
 
-import org.mpisws.jmc.agent.visitors.JmcFutureVisitor;
-import org.mpisws.jmc.agent.visitors.JmcReadWriteVisitor;
-import org.mpisws.jmc.agent.visitors.JmcReentrantLockVisitor;
-import org.mpisws.jmc.agent.visitors.JmcThreadVisitor;
+import org.mpisws.jmc.agent.visitors.*;
 import org.mpisws.jmc.annotations.JmcIgnoreInstrumentation;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -35,10 +32,16 @@ public class PremainInstrumentor implements ClassFileTransformer {
         if (!this.matcher.matches(finalClassName, loader)) {
             return copiedClassBuffer;
         }
-        if (classBeingRedefined.getAnnotation(JmcIgnoreInstrumentation.class) != null) {
-            // If the class is annotated with @JmcIgnoreInstrumentation, skip transformation.
-            return copiedClassBuffer;
+        ClassReader tempCr = new ClassReader(copiedClassBuffer);
+        ClassWriter tempCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+
+        JmcIgnoreVisitor ignoreVisitor = new JmcIgnoreVisitor(tempCw);
+        tempCr.accept(ignoreVisitor, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+
+        if (ignoreVisitor.hasIgnoreAnnotation()) {
+            return copiedClassBuffer; // Skip instrumentation if the class has JmcIgnoreInstrumentation annotation
         }
+
         ClassReader cr = new ClassReader(copiedClassBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         ClassVisitor cv =
