@@ -13,6 +13,10 @@ public class Location {
 
     public static Location fromRuntimeEvent(RuntimeEvent runtimeEvent) {
         Object instance = runtimeEvent.getParam("instance");
+        if (instance == null) {
+            // This is because the call is a static method call
+            instance = runtimeEvent.getParam("owner");
+        }
         String param = runtimeEvent.getParam("name");
         return new Location(instance, param);
     }

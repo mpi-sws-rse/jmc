@@ -41,10 +41,8 @@ public class JmcReadWriteVisitor {
     }
 
     /** Method visitor for JMC read-write visitor. */
-    public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor
-            implements VisitorHelper.LocalVarFetcher {
+    public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor {
 
-        private boolean isStatic;
         private boolean instrumented;
 
         /**
@@ -57,11 +55,10 @@ public class JmcReadWriteVisitor {
         public ReadWriteMethodVisitor(MethodVisitor mv, int access, String descriptor) {
             super(Opcodes.ASM9, mv, access, descriptor);
             this.instrumented = false;
-            this.isStatic = (access & Opcodes.ACC_STATIC) != 0;
         }
 
         private void insertUpdateEventCall(
-                String owner, boolean isWrite, String name, String descriptor) {
+                String owner, boolean isStatic, boolean isWrite, String name, String descriptor) {
             if (Objects.equals(owner, "java/lang/System")) {
                 // Ignore System calls
                 return;
@@ -89,37 +86,25 @@ public class JmcReadWriteVisitor {
         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
             boolean shouldInstrument = false;
             boolean isWrite = false;
-            Type fieldType = Type.getType(descriptor);
-            boolean isWide = fieldType.getSize() == 2;
             if (opcode == Opcodes.GETFIELD || opcode == Opcodes.GETSTATIC) {
-                if (opcode == Opcodes.GETFIELD) {
-
-                }
                 shouldInstrument = true;
             } else if (opcode == Opcodes.PUTFIELD) {
                 shouldInstrument = true;
                 isWrite = true;
-                if (isWide) {
-                    mv.visitInsn(Opcodes.DUP2_X1);
-                } else {
-                    mv.visitInsn(Opcodes.DUP_X1);
-                }
             } else if (opcode == Opcodes.PUTSTATIC) {
                 shouldInstrument = true;
                 isWrite = true;
-                if (isWide) {
-                    mv.visitInsn(Opcodes.DUP2);
-                } else {
-                    mv.visitInsn(Opcodes.DUP);
-                }
             }
-            if (shouldInstrument && (opcode == Opcodes.GETFIELD || opcode == Opcodes.PUTFIELD)) {
-                mv.visitInsn(Opcodes.DUP);
+            if (shouldInstrument) {
+                insertUpdateEventCall(
+                        owner,
+                        opcode == Opcodes.GETSTATIC || opcode == Opcodes.PUTSTATIC,
+                        isWrite,
+                        name,
+                        descriptor);
             }
             super.visitFieldInsn(opcode, owner, name, descriptor);
-            if (shouldInstrument) {
-                insertUpdateEventCall(owner, isWrite, name, descriptor);
-            }
+            VisitorHelper.insertYield(mv);
         }
 
         @Override
