@@ -4,6 +4,7 @@ import org.mpisws.jmc.agent.visitors.JmcFutureVisitor;
 import org.mpisws.jmc.agent.visitors.JmcReadWriteVisitor;
 import org.mpisws.jmc.agent.visitors.JmcReentrantLockVisitor;
 import org.mpisws.jmc.agent.visitors.JmcThreadVisitor;
+import org.mpisws.jmc.annotations.JmcIgnoreInstrumentation;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -32,6 +33,10 @@ public class PremainInstrumentor implements ClassFileTransformer {
         String finalClassName = className.replace("/", ".");
         byte[] copiedClassBuffer = Arrays.copyOf(classFileBuffer, classFileBuffer.length);
         if (!this.matcher.matches(finalClassName, loader)) {
+            return copiedClassBuffer;
+        }
+        if (classBeingRedefined.getAnnotation(JmcIgnoreInstrumentation.class) != null) {
+            // If the class is annotated with @JmcIgnoreInstrumentation, skip transformation.
             return copiedClassBuffer;
         }
         ClassReader cr = new ClassReader(copiedClassBuffer);
