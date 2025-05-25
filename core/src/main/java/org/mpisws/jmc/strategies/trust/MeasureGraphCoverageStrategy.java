@@ -39,8 +39,8 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             SchedulingStrategy schedulingStrategy, MeasureGraphCoverageStrategyConfig config) {
         this.schedulingStrategy = schedulingStrategy;
         this.simulator = new ExecutionGraphSimulator();
-        this.visitedGraphs = new ConcurrentHashMap<>();
         this.coveredGraphs = new HashSet<>();
+        this.visitedGraphs = new ConcurrentHashMap<>();
         this.coverages = new ArrayList<>();
         this.config = config;
         if (config.isRecordPerIteration()) {
@@ -53,7 +53,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     }
 
     private void updateCoverage() {
-        int val = this.visitedGraphs.size();
+        int val = this.coveredGraphs.size();
         this.coverages.add(val);
     }
 

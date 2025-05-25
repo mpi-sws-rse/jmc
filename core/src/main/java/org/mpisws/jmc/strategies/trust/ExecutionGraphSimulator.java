@@ -16,15 +16,30 @@ public class ExecutionGraphSimulator {
         this.executionGraph.addEvent(Event.init());
     }
 
-    public ExecutionGraph getExecutionGraph() {
-        return executionGraph;
-    }
+    public ExecutionGraph getExecutionGraph() {return executionGraph;}
 
     public CoverageGraph getCoverageGraph() {return coverageGraph;}
 
     public void updateEvent(RuntimeEvent event) {
-        // Update the execution graph based on the event
         List<Event> trustEvents = EventFactory.fromRuntimeEvent(event);
+        // Update the execution graph based on the event
+        if (event.getType() == RuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
+            return;
+        } else if (event.getType() == RuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
+            Event event1 =
+                    new Event(
+                            event.getTaskId() - 1,
+                            Location.fromRuntimeEvent(event).hashCode(),
+                            Event.Type.READ_EX);
+            event1.setAttribute("lock_acquire", true);
+            Event event2 =
+                    new Event(
+                            event.getTaskId() - 1,
+                            Location.fromRuntimeEvent(event).hashCode(),
+                            Event.Type.WRITE_EX);
+            event2.setAttribute("lock_acquire", true);
+            trustEvents = List.of(event1, event2);
+        }
         for (Event trustEvent : trustEvents) {
             switch (trustEvent.getType()) {
                 case END:
@@ -58,7 +73,7 @@ public class ExecutionGraphSimulator {
     }
 
     public void handleBot(Event event) {
-        executionGraph.addEvent(event);
+//        executionGraph.addEvent(event);
     }
 
     public void handleRead(Event event) {

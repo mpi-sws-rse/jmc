@@ -117,12 +117,18 @@ public class Scheduler {
         if (choice.isBlockExecution()) {
             taskManager.stopAll();
         } else if (choice.isBlockTask()) {
-            taskManager.error(choice.getTaskId(), new HaltTaskException(choice.getTaskId()));
+            Long taskId = choice.getTaskId();
+            setCurrentTask(taskId);
+            taskManager.error(taskId, new HaltTaskException(taskId));
         } else {
             Long taskId = choice.getTaskId();
             setCurrentTask(taskId);
             try {
                 LOGGER.debug("Resuming task: {}", taskId);
+                if (taskId == null) {
+                    LOGGER.error("Task ID is null, cannot resume task.");
+                    throw HaltExecutionException.error("Task ID is null, cannot resume task.");
+                }
                 if (choice.getValue() != null) {
                     taskManager.resume(taskId, choice.getValue());
                 } else {
