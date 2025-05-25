@@ -58,7 +58,7 @@ To run the test with the model checker on the command line use the following com
 ./gradlew test --tests org.example.ExampleCounterTest.testRandomBuggyCounter
 ```
 
-# Visualizing the execution graphs
+## Visualizing the execution graphs
 
 When running a test with the Trust strategy, the model checker will record the execution graphs
 if the debug flag (in the configuration) is set to true. The graphs are stored in the
