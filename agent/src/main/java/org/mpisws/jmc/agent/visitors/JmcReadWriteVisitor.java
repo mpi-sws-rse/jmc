@@ -104,7 +104,9 @@ public class JmcReadWriteVisitor {
                         descriptor);
             }
             super.visitFieldInsn(opcode, owner, name, descriptor);
-            VisitorHelper.insertYield(mv);
+            if (instrumented) {
+                VisitorHelper.insertYield(mv);
+            }
         }
 
         @Override
