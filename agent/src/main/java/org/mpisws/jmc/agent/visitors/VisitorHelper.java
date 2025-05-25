@@ -10,24 +10,6 @@ import org.objectweb.asm.Type;
  */
 public class VisitorHelper {
 
-    /** Interface for creating new local variables. */
-    public interface LocalVarFetcher {
-        /**
-         * Allocates a new local variable of the standard size.
-         *
-         * @return the index of the newly allocated local variable.
-         */
-        int newLocal();
-
-        /**
-         * Allocates a new local variable of the given type.
-         *
-         * @param type the ASM Type of the new local variable.
-         * @return the index of the newly allocated local variable.
-         */
-        int newLocal(Type type);
-    }
-
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field read operation.
      *
@@ -38,19 +20,19 @@ public class VisitorHelper {
      */
     public static void insertRead(
             MethodVisitor mv, Boolean isStatic, String owner, String name, String descriptor) {
+        if (isStatic) {
+            mv.visitInsn(Opcodes.ACONST_NULL);
+        } else {
+            mv.visitInsn(Opcodes.DUP); // Duplicate the 'this' reference on the stack
+        }
         mv.visitLdcInsn(owner);
         mv.visitLdcInsn(name);
         mv.visitLdcInsn(descriptor);
-        if (!isStatic) {
-            mv.visitVarInsn(Opcodes.ALOAD, 0); // 'this'
-        } else {
-            mv.visitInsn(Opcodes.ACONST_NULL);
-        }
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/RuntimeUtils",
-                "readEvent",
-                "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V",
+                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "readEventWithoutYield",
+                "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                 false);
     }
 
@@ -65,21 +47,54 @@ public class VisitorHelper {
     public static void insertWrite(
             MethodVisitor mv, Boolean isStatic, String owner, String name, String descriptor) {
         Type fieldType = Type.getType(descriptor);
+        boolean isLongOrDouble = fieldType.getSize() == 2;
+        if (isLongOrDouble && !isStatic) {
+            // We need to duplicate the 'this' reference and the value
+            mv.visitInsn(Opcodes.DUP2_X1); // Duplicate the value and the 'this' reference
+        } else if (!isLongOrDouble && !isStatic) {
+            // We need to duplicate the 'this' reference and value, but it is short
+            mv.visitInsn(Opcodes.DUP2);
+        } else if (isLongOrDouble) {
+            // For static fields, we just duplicate the value, but it is long or double
+            mv.visitInsn(Opcodes.DUP2); // Duplicate the value
+        } else {
+            // For static fields, we just duplicate the value, but it is short
+            mv.visitInsn(Opcodes.DUP); // Duplicate the value
+        }
+        // Convert the value to an Object if necessary
         addObjectConverter(mv, fieldType);
+        if (!isStatic && isLongOrDouble) {
+            mv.visitInsn(Opcodes.SWAP);
+            mv.visitInsn(Opcodes.DUP_X1);
+            mv.visitInsn(Opcodes.SWAP);
+        } else if (isStatic) {
+            mv.visitInsn(Opcodes.ACONST_NULL);
+            mv.visitInsn(Opcodes.SWAP);
+        }
+
         mv.visitLdcInsn(owner);
         mv.visitLdcInsn(name);
         mv.visitLdcInsn(descriptor);
-        if (!isStatic) {
-            mv.visitVarInsn(Opcodes.ALOAD, 0); // 'this'
-        } else {
-            mv.visitInsn(Opcodes.ACONST_NULL);
-        }
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/RuntimeUtils",
-                "writeEvent",
-                "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V",
+                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "writeEventWithoutYield",
+                "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                 false);
+        if (isLongOrDouble && !isStatic) {
+            mv.visitInsn(Opcodes.DUP_X2);
+            mv.visitInsn(Opcodes.POP);
+        }
+    }
+
+    public static void insertYield(MethodVisitor mv) {
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                "org/mpisws/jmc/runtime/JmcRuntime",
+                "yield",
+                "()Ljava/lang/Object;",
+                false);
+        mv.visitInsn(Opcodes.POP);
     }
 
     private static void addObjectConverter(MethodVisitor mv, Type fieldType) {

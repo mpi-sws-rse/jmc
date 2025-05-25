@@ -1,6 +1,5 @@
 package org.mpisws.jmc.programs.correct.counter;
 
-import org.mpisws.jmc.runtime.RuntimeUtils;
 import org.mpisws.jmc.util.concurrent.JmcThread;
 import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
 

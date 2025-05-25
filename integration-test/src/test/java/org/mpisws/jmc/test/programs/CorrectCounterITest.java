@@ -21,7 +21,7 @@ public class CorrectCounterITest extends Thread {
     @Override
     public void run() {
         lock.lock();
-        counter.counter++;
+        counter.increment();
         lock.unlock();
     }
 }

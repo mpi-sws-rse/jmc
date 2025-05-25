@@ -1,26 +1,26 @@
 package org.mpisws.jmc.programs.correct.counter;
 
-import org.mpisws.jmc.runtime.RuntimeUtils;
+import org.mpisws.jmc.runtime.JmcRuntimeUtils;
 
 public class Counter {
     private int count = 0;
 
     public Counter() {
         this.count = 0;
-        RuntimeUtils.writeEvent(
-                this, 0, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I");
+        JmcRuntimeUtils.writeEvent(
+                0, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I", this);
     }
 
     public int get() {
         int out = count;
-        RuntimeUtils.readEvent(
-                this, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I");
+        JmcRuntimeUtils.readEvent(
+                "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I", this);
         return out;
     }
 
     public void set(int value) {
         count = value;
-        RuntimeUtils.writeEvent(
-                this, value, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I");
+        JmcRuntimeUtils.writeEvent(
+                value, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I", this);
     }
 }
