@@ -128,7 +128,6 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
-
         public Builder strategyConstructor(
                 SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor) {
             this.strategyConstructor = strategyConstructor;

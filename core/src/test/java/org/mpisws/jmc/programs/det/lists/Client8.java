@@ -54,7 +54,5 @@ package org.mpisws.jmc.programs.det.lists;
                 e.printStackTrace();
             }
         }
-
-        System.out.println("Deletion Finished");
     }
  }

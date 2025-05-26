@@ -109,7 +109,7 @@ public class JmcModelChecker {
             if (e.isOkay()) {
                 LOGGER.info(
                         "Model checking completed successfully covering: {} iterations",
-                        iteration - 1);
+                        iteration-1);
             } else if (e.isTimeout()) {
                 report.setErrorIteration(-1);
                 report.setErrorMessage(e.getMessage());

@@ -8,19 +8,19 @@ public class Counter {
     public Counter() {
         this.count = 0;
         JmcRuntimeUtils.writeEvent(
-                this, 0, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I");
+                0, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I", this);
     }
 
     public int get() {
         int out = count;
         JmcRuntimeUtils.readEvent(
-                this, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I");
+                "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I", this);
         return out;
     }
 
     public void set(int value) {
         count = value;
         JmcRuntimeUtils.writeEvent(
-                this, value, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I");
+                value, "org/mpisws/jmc/programs/correct/counter/Counter", "count", "I", this);
     }
 }
