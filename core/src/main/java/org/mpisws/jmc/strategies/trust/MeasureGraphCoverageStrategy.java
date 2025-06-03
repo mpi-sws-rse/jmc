@@ -39,8 +39,8 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             SchedulingStrategy schedulingStrategy, MeasureGraphCoverageStrategyConfig config) {
         this.schedulingStrategy = schedulingStrategy;
         this.simulator = new ExecutionGraphSimulator();
-        this.visitedGraphs = new ConcurrentHashMap<>();
         this.coveredGraphs = new HashSet<>();
+        this.visitedGraphs = new ConcurrentHashMap<>();
         this.coverages = new ArrayList<>();
         this.config = config;
         if (config.isRecordPerIteration()) {
@@ -53,7 +53,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     }
 
     private void updateCoverage() {
-        int val = this.visitedGraphs.size();
+        int val = this.coveredGraphs.size();
         this.coverages.add(val);
     }
 
@@ -115,21 +115,6 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         this.schedulingStrategy.resetIteration(iteration);
         ExecutionGraph executionGraph = simulator.getExecutionGraph();
         CoverageGraph coverageGraph = simulator.getCoverageGraph();
-        if (this.schedulingStrategy instanceof TrustStrategy t) {
-            ExecutionGraph that = t.getExecutionGraph();
-            if(!executionGraph.equals(that)) {
-                LOGGER.error("Execution graph mismatch: {} vs {}", executionGraph, that);
-            }
-        }
-        /*System.out.println("-------------- Execution Graph --------------");
-        executionGraph.printGraph();
-        System.out.println("-------------- Coverage Graph --------------");
-        coverageGraph.printGraph();
-        System.out.println("-------------- End of Graph --------------");*/
-        List<ExecutionGraphNode> list = executionGraph.checkConsistencyAndTopologicallySort();
-        if (list.isEmpty()) {
-            throw new RuntimeException("Execution graph is not consistent");
-        }
         String json = executionGraph.toJsonStringIgnoreLocation();
         String coverage = coverageGraph.toString();
         //System.out.println(coverage);
@@ -206,6 +191,6 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         FileUtil.unsafeStoreToFile(
                 Paths.get(config.getRecordPath(), "coverage.json").toString(), json);
 
-        System.out.println(coveredGraphs.size());
+        LOGGER.info("Covered graphs: {}", coveredGraphs.size());
     }
 }

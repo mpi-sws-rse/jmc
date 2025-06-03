@@ -120,6 +120,10 @@ public class Scheduler {
             setCurrentTask(taskId);
             try {
                 LOGGER.debug("Resuming task: {}", taskId);
+                if (taskId == null) {
+                    LOGGER.error("Task ID is null, cannot resume task.");
+                    throw HaltExecutionException.error("Task ID is null, cannot resume task.");
+                }
                 if (choice.getValue() != null) {
                     taskManager.resume(taskId, choice.getValue());
                 } else {

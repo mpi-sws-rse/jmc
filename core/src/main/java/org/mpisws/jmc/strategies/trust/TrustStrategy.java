@@ -46,7 +46,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     @Override
     public void initIteration(int iteration, JmcModelCheckerReport report) {
         super.initIteration(iteration, report);
-        algoInstance.initIteration(iteration);
+        algoInstance.initIteration(iteration, report);
     }
 
     @Override

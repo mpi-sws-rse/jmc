@@ -39,7 +39,7 @@ public class JmcModelChecker {
      */
     public JmcModelCheckerReport check(JmcTestTarget target) throws JmcCheckerException {
         JmcRuntimeConfiguration runtimeConfig = config.toRuntimeConfiguration();
-        JmcModelCheckerReport report = new JmcModelCheckerReport();
+        JmcModelCheckerReport report = new JmcModelCheckerReport(runtimeConfig.getReportPath());
         Long startTime = System.currentTimeMillis();
         Long timeoutMarker = 0L;
         if (config.getTimeout() != null) {
@@ -139,7 +139,7 @@ public class JmcModelChecker {
         config.setSeed(seed);
         JmcRuntimeConfiguration runtimeConfig = config.toRuntimeConfiguration();
         JmcRuntime.setup(runtimeConfig);
-        JmcModelCheckerReport report = new JmcModelCheckerReport();
+        JmcModelCheckerReport report = new JmcModelCheckerReport(runtimeConfig.getReportPath());
         Long startTime = System.currentTimeMillis();
         try {
             JmcRuntime.initIteration(iteration, report);
