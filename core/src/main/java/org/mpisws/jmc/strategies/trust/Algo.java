@@ -284,14 +284,15 @@ public class Algo {
         }
 
         LOGGER.debug("Found the SC graph");
-        printGraphSchedule(nextGraphSchedule);
+        checkGraphSchedule(nextGraphSchedule);
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
         guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule(nextGraphSchedule));
         printGuidingTaskSchedule();
     }
 
-    private void printGraphSchedule(List<ExecutionGraphNode> graphSchedule) {
+    private void checkGraphSchedule(List<ExecutionGraphNode> graphSchedule) {
+        // Print
         if (graphSchedule == null || graphSchedule.isEmpty()) {
             LOGGER.debug("Graph schedule is empty");
             return;
@@ -305,6 +306,22 @@ public class Algo {
                     .append("\n");
         }
         LOGGER.debug(sb.toString());
+
+        // Check if the graph schedule is consistent
+        Set<Long> completedTasks = new HashSet<>();
+        for (ExecutionGraphNode node : graphSchedule) {
+            if (EventUtils.isThreadFinish(node.getEvent())) {
+                completedTasks.add(node.getEvent().getTaskId());
+                continue;
+            }
+            Long taskId = node.getEvent().getTaskId();
+            if (completedTasks.contains(taskId)) {
+                throw HaltCheckerException.error(
+                        "The graph schedule is inconsistent. Task "
+                                + taskId
+                                + " has already completed but it appears again in the schedule.");
+            }
+        }
     }
 
     /**

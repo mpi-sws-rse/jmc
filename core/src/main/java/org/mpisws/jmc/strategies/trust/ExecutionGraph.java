@@ -309,6 +309,8 @@ public class ExecutionGraph {
         }
         if (EventUtils.isBlockingLabel(lastNodePO.getEvent())) {
             throw HaltCheckerException.error("A blocking label is followed by an event.");
+        } else if (EventUtils.isThreadFinish(lastNodePO.getEvent())) {
+            throw HaltCheckerException.error("A thread finish label is followed by an event.");
         }
         ExecutionGraphNode node = new ExecutionGraphNode(event, vectorClock);
 
