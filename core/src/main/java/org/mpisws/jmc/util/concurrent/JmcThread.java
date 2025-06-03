@@ -85,6 +85,8 @@ public class JmcThread extends Thread {
             } catch (HaltTaskException ex) {
                 LOGGER.error("Failed to halt task : {}", ex.getMessage());
             }
+        } catch (Exception e) {
+            LOGGER.error("Exception running the thread: {}", e.getMessage());
         } finally {
             event =
                     new RuntimeEvent.Builder()
@@ -130,7 +132,7 @@ public class JmcThread extends Thread {
             try {
                 JmcRuntime.updateEvent(event);
             } catch (HaltTaskException ex) {
-                LOGGER.error("Failed to halt task : {}", ex.getMessage());
+                LOGGER.error("Failed to halt task (runWithoutJoin) : {}", ex.getMessage());
             }
         } finally {
             event =
@@ -141,7 +143,7 @@ public class JmcThread extends Thread {
             try {
                 JmcRuntime.updateEvent(event);
             } catch (HaltTaskException e) {
-                LOGGER.error("Failed to finish task : {}", e.getMessage());
+                LOGGER.error("Failed to finish task (runWithoutJoin) : {}", e.getMessage());
             }
         }
     }
@@ -170,7 +172,7 @@ public class JmcThread extends Thread {
         } catch (HaltTaskException ex) {
             LOGGER.error("Failed to halt task on interrupt : {}", ex.getMessage());
         }
-        LOGGER.info("thread " + t.getName() + " interrupted with exception: " + e.getMessage());
+        LOGGER.info("thread {} interrupted with exception: {}", t.getName(), e.getMessage());
     }
 
     /**

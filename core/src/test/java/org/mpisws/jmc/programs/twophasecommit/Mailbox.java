@@ -13,11 +13,11 @@ public class Mailbox {
     public Mailbox() {
         this.messages = new LinkedList<>();
         JmcRuntimeUtils.writeEvent(
-                this,
                 null,
                 "org/mpisws/jmc/programs/twophasecommit/Mailbox",
                 "messages",
-                "Ljava/util/List;");
+                "Ljava/util/List;",
+                this);
         this.lock = new JmcReentrantLock();
     }
 
@@ -25,10 +25,10 @@ public class Mailbox {
         lock.lock();
         try {
             JmcRuntimeUtils.readEvent(
-                    this,
                     "org/mpisws/jmc/programs/twophasecommit/Mailbox",
                     "messages",
-                    "Ljava/util/List;");
+                    "Ljava/util/List;",
+                    this);
             messages.add(message);
             JmcRuntimeUtils.writeEvent(
                     this,
@@ -46,20 +46,20 @@ public class Mailbox {
         // TODO: should spin here and never return null unless the mailbox is closed
         try {
             JmcRuntimeUtils.readEvent(
-                    this,
                     "org/mpisws/jmc/programs/twophasecommit/Mailbox",
                     "messages",
-                    "Ljava/util/List;");
+                    "Ljava/util/List;",
+                    this);
             if (messages.isEmpty()) {
                 return null;
             }
             Message out = messages.remove(0);
             JmcRuntimeUtils.writeEvent(
-                    this,
                     out.toString(),
                     "org/mpisws/jmc/programs/twophasecommit/Mailbox",
                     "messages",
-                    "Ljava/util/List;");
+                    "Ljava/util/List;",
+                    this);
             return out;
         } finally {
             lock.unlock();
