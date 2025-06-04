@@ -285,6 +285,8 @@ public class Algo {
 
         LOGGER.debug("Found the SC graph");
         checkGraphSchedule(nextGraphSchedule);
+        executionGraph.printGraph();
+
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
         guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule(nextGraphSchedule));
@@ -742,10 +744,10 @@ public class Algo {
      * @param filePath The path to the file to write the execution graph to.
      */
     public void writeExecutionGraphToFile(String filePath) {
-        if (!executionGraph.checkExtensiveConsistency()) {
-            throw HaltExecutionException.error(
-                    "The execution graph is not consistent at the end of the iteration.");
-        }
+        //        if (!executionGraph.checkExtensiveConsistency()) {
+        //            throw HaltExecutionException.error(
+        //                    "The execution graph is not consistent at the end of the iteration.");
+        //        }
 
         String executionGraphJson = executionGraph.toJsonString();
         FileUtil.unsafeStoreToFile(filePath, executionGraphJson);

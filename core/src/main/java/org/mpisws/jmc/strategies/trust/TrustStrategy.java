@@ -47,6 +47,11 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     public void initIteration(int iteration, JmcModelCheckerReport report) {
         super.initIteration(iteration, report);
         algoInstance.initIteration(iteration, report);
+        if (debug) {
+            algoInstance.writeExecutionGraphToFile(
+                    Paths.get(this.reportPath, "iteration-guiding-" + iteration + ".json")
+                            .toString());
+        }
     }
 
     @Override
@@ -107,7 +112,8 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
         super.resetIteration(iteration);
         if (debug) {
             algoInstance.writeExecutionGraphToFile(
-                    Paths.get(this.reportPath, "iteration-" + iteration + ".json").toString());
+                    Paths.get(this.reportPath, "iteration-complete-" + iteration + ".json")
+                            .toString());
         }
     }
 

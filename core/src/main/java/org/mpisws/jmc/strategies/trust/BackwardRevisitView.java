@@ -29,7 +29,7 @@ public class BackwardRevisitView {
      * Creates a new backward revisit view.
      *
      * @param graph The execution graph.
-     * @param read  The read event.
+     * @param read The read event.
      * @param write The write event.
      */
     public BackwardRevisitView(
@@ -60,9 +60,7 @@ public class BackwardRevisitView {
         return read;
     }
 
-    /**
-     * Just marks the node as removed, does not update the graph
-     */
+    /** Just marks the node as removed, does not update the graph */
     public void removeNode(Event.Key key) {
         removedNodes.add(key);
     }
@@ -84,7 +82,8 @@ public class BackwardRevisitView {
                 if (nodeTOIndex == null) {
                     throw HaltExecutionException.error("The event does not have a TO index.");
                 }
-                if (node.getEvent().getType() == Event.Type.NOOP || node.getEvent().getType() == Event.Type.ASSUME) {
+                if (node.getEvent().getType() == Event.Type.NOOP
+                        || node.getEvent().getType() == Event.Type.ASSUME) {
                     continue;
                 }
                 Predicate<Event.Key> previous =
@@ -181,9 +180,9 @@ public class BackwardRevisitView {
         // So far the coherency of this write is not tracked
         // TODO: Maybe this should be done in the constructor?
         // Update the reads-from relation
-        restrictedGraph.changeReadsFrom(read, write);
         // Remove the nodes
         restrictedGraph.restrictBySet(removedNodes);
+        restrictedGraph.changeReadsFrom(read, write);
         restrictedGraph.recomputeVectorClocks();
         return restrictedGraph;
     }

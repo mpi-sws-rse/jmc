@@ -8,6 +8,8 @@ public enum Relation {
     ThreadStart("threadStart"),
     ThreadJoin("threadJoin"),
     ThreadJoinCompletion("threadJoinCompletion"),
+    // FR = rf^-1;co
+    FR("fr"),
     ;
 
     private final String key;

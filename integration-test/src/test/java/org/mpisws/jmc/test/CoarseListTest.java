@@ -64,7 +64,7 @@ public class CoarseListTest {
         }
 
         // Check if the set contains the expected elements (trivially the first element)
-//        assert !set.contains(0);
+        //        assert !set.contains(0);
     }
 
     // Running with JMC using the default configuration. (random
@@ -79,6 +79,6 @@ public class CoarseListTest {
     @JmcCheckConfiguration(numIterations = 130, debug = true)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = true)
     public void runTrustCoarseListTest() {
-        test_50_50_workload_coarse_list(4);
+        test_50_50_workload_coarse_list(5);
     }
 }

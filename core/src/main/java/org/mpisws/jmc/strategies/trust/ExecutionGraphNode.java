@@ -110,7 +110,7 @@ public class ExecutionGraphNode {
      * @param adjacency The adjacency of the edge.
      */
     private void addBackEdge(ExecutionGraphNode from, Relation adjacency) {
-        if (adjacency != Relation.Coherency) {
+        if (adjacency != Relation.Coherency && adjacency != Relation.FR) {
             vectorClock.update(from.getVectorClock());
         }
         if (!backEdges.containsKey(adjacency)) {
