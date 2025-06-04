@@ -673,8 +673,8 @@ public class ExecutionGraph {
     public BackwardRevisitView revisitView(ExecutionGraphNode write, ExecutionGraphNode read) {
         // Construct a restricted view of the graph
         BackwardRevisitView restrictedView = new BackwardRevisitView(this, read, write);
-        Integer readToIndex = read.getEvent().getToStamp();
-        if (readToIndex == null) {
+        int readToIndex = getTOIndex(read);
+        if (readToIndex == -1) {
             throw HaltCheckerException.error("The read event is not found in the TO order.");
         }
 

@@ -78,8 +78,8 @@ public class BackwardRevisitView {
             for (Event.Key key : nodesToCheck) {
                 ExecutionGraphNode node = graph.getEventNode(key);
                 LOGGER.debug("Checking if the node is a maximal extension: " + node.getEvent());
-                Integer nodeTOIndex = node.getEvent().getToStamp();
-                if (nodeTOIndex == null) {
+                int nodeTOIndex = graph.getTOIndex(node);
+                if (nodeTOIndex == -1) {
                     throw HaltExecutionException.error("The event does not have a TO index.");
                 }
                 if (node.getEvent().getType() == Event.Type.NOOP
