@@ -10,7 +10,7 @@ import java.time.temporal.ChronoUnit;
 
 public class TwoPhaseCommitTest {
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "trust")
+    @JmcCheckConfiguration(numIterations = 10, debug = true, strategy = "trust")
     void testTPCCommit() {
         TwoPhaseCommit.main(new String[]{"2"});
     }
