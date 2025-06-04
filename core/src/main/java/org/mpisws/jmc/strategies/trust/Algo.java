@@ -284,13 +284,13 @@ public class Algo {
         }
 
         LOGGER.debug("Found the SC graph");
-        checkGraphSchedule(nextGraphSchedule);
-        executionGraph.printGraph();
+        //        checkGraphSchedule(nextGraphSchedule);
+        //        executionGraph.printGraph();
 
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
         guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule(nextGraphSchedule));
-        printGuidingTaskSchedule();
+        //        printGuidingTaskSchedule();
     }
 
     private void checkGraphSchedule(List<ExecutionGraphNode> graphSchedule) {

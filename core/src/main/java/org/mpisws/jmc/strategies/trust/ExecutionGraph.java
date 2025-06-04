@@ -1240,7 +1240,8 @@ public class ExecutionGraph {
             throw HaltCheckerException.error(
                     "Hit an event that doesn't exist in the graph: " + e.getMessage());
         } catch (TopologicalSorter.GraphCycleException e) {
-            throw HaltCheckerException.error("The execution graph is not a DAG: " + e.getMessage());
+            LOGGER.debug("Hit an inconsistent graph: {}", e.getMessage());
+            return new ArrayList<>();
         }
     }
 
