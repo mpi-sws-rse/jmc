@@ -45,7 +45,7 @@ public class EventFactory {
                                 Event.Type.READ);
                 return List.of(event);
             }
-            case FINISH_EVENT, HALT_EVENT -> {
+            case FINISH_EVENT/*, HALT_EVENT*/ -> {
                 // Update EventUtils::isThreadFinish if anything changes here
                 Event event =
                         new Event(

@@ -8,8 +8,8 @@ public class SendRecv {
         Sender sender = new Sender(b);
         Receiver receiver = new Receiver(b);
 
-        sender.start();
         receiver.start();
+        sender.start();
 
         try {
             sender.join();
