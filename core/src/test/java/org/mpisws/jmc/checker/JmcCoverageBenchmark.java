@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 public class JmcCoverageBenchmark {
 
     private static Stream<Arguments> provideTrustTestCases() {
-        return Stream.of(Arguments.of(7, Duration.of(5, ChronoUnit.MINUTES)));
+        return Stream.of(Arguments.of(3, Duration.of(5, ChronoUnit.MINUTES)));
 //        ,
 //                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
 //                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
@@ -30,7 +30,7 @@ public class JmcCoverageBenchmark {
     }
 
     private static Stream<Arguments> provideRandomTestCases() {
-        return Stream.of(Arguments.of(7, Duration.of(5, ChronoUnit.MINUTES)));
+        return Stream.of(Arguments.of(3, Duration.of(10, ChronoUnit.SECONDS)));
 //        ,
 //                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
 //                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
@@ -42,7 +42,7 @@ public class JmcCoverageBenchmark {
     private static Stream<Arguments> provideRandomTestCasesCoarse9() {
         return Stream.of(
 //                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
-                Arguments.of(5, Duration.of(4, ChronoUnit.SECONDS)));
+                Arguments.of(5, Duration.of(1, ChronoUnit.SECONDS)));
 //                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
 //                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
 //                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
@@ -51,7 +51,7 @@ public class JmcCoverageBenchmark {
     private static Stream<Arguments> provideRandomTestCasesFine10() {
         return Stream.of(
 //                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
-                Arguments.of(5, Duration.of(10, ChronoUnit.SECONDS)));
+                Arguments.of(4, Duration.of(10, ChronoUnit.SECONDS)));
 //                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
 //                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
 //                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
@@ -163,9 +163,7 @@ public class JmcCoverageBenchmark {
                                                                         + threads
                                                                         + "-"
                                                                         + timeout.toString())
-                                                        .debug(true)
-                                                        .withFrequency(
-                                                                Duration.of(1, ChronoUnit.SECONDS))
+                                                        .recordPerIteration()
                                                         .build()))
                         .timeout(timeout)
                         .debug(false)

@@ -25,6 +25,9 @@
                 <option value="-">-</option>
             </select>
         </div>
+        <div id="edge-selection" class="flex flex-col">
+            <label class="block text-sm font-medium text-gray-900"> Select Edges </label>
+        </div>
     </div>
 
     <!-- Second Column -->
@@ -47,6 +50,7 @@
 <script>
     document.getElementById('tab-graph').addEventListener('click', function () {
         document.getElementById('graph').classList.remove('hidden');
+        document.getElementById('edge-selection').classList.remove('hidden');
         document.getElementById('log').classList.add('hidden');
         this.classList.add('text-blue-600', 'border-blue-600');
         document.getElementById('tab-log').classList.remove('text-blue-600', 'border-blue-600');
@@ -55,6 +59,7 @@
     document.getElementById('tab-log').addEventListener('click', function () {
         document.getElementById('log').classList.remove('hidden');
         document.getElementById('graph').classList.add('hidden');
+        document.getElementById('edge-selection').classList.add('hidden');
         this.classList.add('text-blue-600', 'border-blue-600');
         document.getElementById('tab-graph').classList.remove('text-blue-600', 'border-blue-600');
     });

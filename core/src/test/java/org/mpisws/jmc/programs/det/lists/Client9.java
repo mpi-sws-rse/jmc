@@ -47,7 +47,7 @@ public class Client9 {
             try {
                 insertionThreads.get(i).join1();
             } catch (InterruptedException e) {
-
+                e.printStackTrace();
             }
         }
 
@@ -55,7 +55,7 @@ public class Client9 {
             try {
                 deleteThreads.get(i).join1();
             } catch (InterruptedException e) {
-
+                e.printStackTrace();
             }
         }
     }

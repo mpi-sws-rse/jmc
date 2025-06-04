@@ -44,7 +44,7 @@ The test looks as follows.
 ```java
 public class ExampleCounterTest {
     @JmcCheck
-    @JmcCheckConfiguration(numIterations=100, strategy="trust")
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust")
     void testRandomBuggyCounter() throws JmcCheckerException {
         BuggyCounterUsingAPI.main(new String[0]);
     }
@@ -57,3 +57,28 @@ To run the test with the model checker on the command line use the following com
 ./gradlew clean
 ./gradlew test --tests org.example.ExampleCounterTest.testRandomBuggyCounter
 ```
+
+## Visualizing the execution graphs
+
+When running a test with the Trust strategy, the model checker will record the execution graphs
+if the debug flag (in the configuration) is set to true. The graphs are stored in the
+`build/test-results/jmc-report/` directory of the project.
+
+For example, if the tests in `core/src/test` are run then the execution graphs are stored in
+`core/build/test-results/jmc-report/`.
+
+Once the test is run, the execution graphs can be visualized using the following command from the root directory of the
+project.
+
+```bash
+./scripts/visualize.sh <relative-path-to-graph-files>
+```
+
+For example, if the test is run in `core/src/test` then the command would be
+
+```bash
+./scripts/visualize.sh core/build/test-results/jmc-report/
+```
+
+The script will spin up a local web server. Open the URL `http://localhost:8000` in a web browser to view the execution
+graphs.

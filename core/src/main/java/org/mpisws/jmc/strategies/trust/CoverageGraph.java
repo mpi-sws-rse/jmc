@@ -47,7 +47,7 @@ public class CoverageGraph {
 
     private Event getMaxCo(Event e) {
         if (!coKey.containsKey(e.getLocation())) {
-            return Event.init();
+            throw new RuntimeException("Reading from an empty coKey for event: " + e);
         }
         Event key = coKey.get(e.getLocation());
         //System.out.println(e + " location " + e.getLocation());

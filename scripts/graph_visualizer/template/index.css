@@ -55,6 +55,10 @@ body {
     cursor: pointer;
 }
 
+#edge-selection div label {
+    padding-left: 2px;
+}
+
 #log p {
     width: 100%;
     border-bottom: 1px solid grey;

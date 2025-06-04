@@ -2,6 +2,7 @@ package org.mpisws.jmc.strategies.trust;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.*;
 import org.mpisws.jmc.util.files.FileUtil;
 
@@ -30,9 +31,9 @@ public class Algo {
 
     private final LocationStore locationStore;
 
-    /**
-     * Creates a new instance of the Trust algorithm.
-     */
+    private Long mustBlockTask;
+
+    /** Creates a new instance of the Trust algorithm. */
     public Algo() {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
@@ -43,10 +44,13 @@ public class Algo {
         this.executionGraph.addEvent(Event.init());
     }
 
-    /**
-     * Returns the next task to be scheduled according to the execution graph set in place.
-     */
+    /** Returns the next task to be scheduled according to the execution graph set in place. */
     public SchedulingChoice<?> nextTask() {
+        if (mustBlockTask != null) {
+            Long taskId = mustBlockTask + 1;
+            mustBlockTask = null;
+            return SchedulingChoice.blockTask(taskId);
+        }
 
         if (!isGuiding) {
             return null;
@@ -89,6 +93,11 @@ public class Algo {
             if (!locationStore.containsAlias(event.getLocation())) {
                 locationStore.addAlias(location, event.getLocation());
             }
+        }
+
+        switch (event.getType()) {
+            case ASSUME:
+                handleGuidedAssume(event);
         }
     }
 
@@ -193,7 +202,7 @@ public class Algo {
      *
      * @param iteration The iteration number.
      */
-    public void initIteration(int iteration) {
+    public void initIteration(int iteration, JmcModelCheckerReport report) {
         // Check if we are guiding the execution and construct the task schedule accordingly!
         if (iteration == 0) {
             LOGGER.debug("Initializing iteration");
@@ -220,9 +229,7 @@ public class Algo {
         findNextExplorationChoice();
     }
 
-    /**
-     * Checks if we are guiding the execution.
-     */
+    /** Checks if we are guiding the execution. */
     private boolean areWeGuiding() {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
     }
@@ -270,28 +277,68 @@ public class Algo {
                 case FRW -> nextGraphSchedule = processFRW(item);
                 case FWW -> nextGraphSchedule = processFWW(item);
                 case FLW -> nextGraphSchedule = processFLW(item);
-                default -> throw new RuntimeException(
-                        "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
+                default ->
+                        throw new RuntimeException(
+                                "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
         }
 
         LOGGER.debug("Found the SC graph");
+        checkGraphSchedule(nextGraphSchedule);
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
         guidingTaskSchedule = new ArrayDeque<>(executionGraph.getTaskSchedule(nextGraphSchedule));
+        printGuidingTaskSchedule();
     }
 
-    // For debugging
-    public void printGuidingTaskSchedule() {
+    private void checkGraphSchedule(List<ExecutionGraphNode> graphSchedule) {
+        // Print
+        if (graphSchedule == null || graphSchedule.isEmpty()) {
+            LOGGER.debug("Graph schedule is empty");
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("Graph schedule: ");
+        for (ExecutionGraphNode node : graphSchedule) {
+            sb.append(node.getEvent().key().toString())
+                    .append(" - ")
+                    .append(node.getEvent().toVerboseString())
+                    .append("\n");
+        }
+        LOGGER.debug(sb.toString());
+
+        // Check if the graph schedule is consistent
+        Set<Long> completedTasks = new HashSet<>();
+        for (ExecutionGraphNode node : graphSchedule) {
+            if (EventUtils.isThreadFinish(node.getEvent())) {
+                completedTasks.add(node.getEvent().getTaskId());
+                continue;
+            }
+            Long taskId = node.getEvent().getTaskId();
+            if (completedTasks.contains(taskId)) {
+                throw HaltCheckerException.error(
+                        "The graph schedule is inconsistent. Task "
+                                + taskId
+                                + " has already completed but it appears again in the schedule.");
+            }
+        }
+    }
+
+    /**
+     * Prints the current guiding task schedule to the debug log. This is useful for debugging
+     * purposes to see the order of tasks in the guiding schedule.
+     */
+    private void printGuidingTaskSchedule() {
         if (guidingTaskSchedule == null) {
             System.out.println("Guiding task schedule is null");
             return;
         }
-        System.out.println("Guiding task schedule:");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Guiding task schedule:");
         for (SchedulingChoiceWrapper choice : guidingTaskSchedule) {
-            System.out.print(choice.choice().getTaskId() + " - ");
+            sb.append(choice.choice().getTaskId()).append(" - ");
         }
-        System.out.println();
+        LOGGER.debug(sb.toString());
     }
 
     private void processBWR(ExplorationStack.Item item) {
@@ -671,7 +718,22 @@ public class Algo {
     private void handleAssume(Event event) {
         executionGraph.addEvent(event);
         boolean result = event.getAttribute("result");
-        LOGGER.debug("Handling assume event: {}, result: {}", event, result);
+
+        if (!result) {
+            Long taskId = event.getTaskId();
+            // Indicate that the task must be blocked
+            mustBlockTask = taskId;
+        }
+    }
+
+    private void handleGuidedAssume(Event event) {
+        boolean result = event.getAttribute("result");
+
+        if (result) {
+            Long taskId = event.getTaskId();
+            // Indicate that the task must be blocked
+            mustBlockTask = taskId;
+        }
     }
 
     /**
@@ -680,6 +742,11 @@ public class Algo {
      * @param filePath The path to the file to write the execution graph to.
      */
     public void writeExecutionGraphToFile(String filePath) {
+        if (!executionGraph.checkExtensiveConsistency()) {
+            throw HaltExecutionException.error(
+                    "The execution graph is not consistent at the end of the iteration.");
+        }
+
         String executionGraphJson = executionGraph.toJsonString();
         FileUtil.unsafeStoreToFile(filePath, executionGraphJson);
     }
