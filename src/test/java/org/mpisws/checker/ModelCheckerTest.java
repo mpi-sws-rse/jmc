@@ -2640,6 +2640,34 @@ class ModelCheckerTest {
     }
 
     /*
+     *                                  FIXED COARSE LIST II ( STATE SPACE ESTIMATION )
+     */
+
+    @Test
+    @DisplayName("Fixed Coarse List II")
+    void SSETestFixedCoarseListII() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.det.lists",
+                "Client9",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/det/lists/"
+        );
+        System.out.println("Fixed Coarse List II SSE Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = Integer.MAX_VALUE;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.maxIterations = 1;
+        checker.configuration.timeout = 2766000;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Fixed Coarse List II SSE Finished");
+        System.gc();
+    }
+
+    /*
      *                                  RANDOM COARSE LIST II
      */
 
@@ -2709,6 +2737,7 @@ class ModelCheckerTest {
         checker.configuration.maxIterations = Integer.MAX_VALUE;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
+        checker.configuration.maxIterations = 1;
         checker.configuration.timeout = 24000;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
@@ -2790,7 +2819,8 @@ class ModelCheckerTest {
         checker.configuration.maxIterations = Integer.MAX_VALUE;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.timeout = 40;
+        checker.configuration.maxIterations = 1;
+        checker.configuration.timeout = 100000;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
@@ -2869,6 +2899,7 @@ class ModelCheckerTest {
         checker.configuration.maxIterations = Integer.MAX_VALUE;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
+        checker.configuration.maxIterations = 1;
         checker.configuration.timeout = 180;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;

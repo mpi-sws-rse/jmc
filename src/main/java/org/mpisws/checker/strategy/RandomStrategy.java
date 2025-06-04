@@ -59,6 +59,8 @@ public class RandomStrategy implements SearchStrategy {
 
     private final HashMap<Integer, ArrayList<ThreadEvent>> cachedEvents = new HashMap<>();
 
+    private final SSEstimator ssEstimator;
+
     /**
      * The following constructor initializes {@link #buggyTraceFile} with the value from
      * {@link RuntimeEnvironment#buggyTraceFile}, {@link #buggyTracePath} with the value from
@@ -76,6 +78,7 @@ public class RandomStrategy implements SearchStrategy {
         random = new Random(RuntimeEnvironment.seed);
         solver = RuntimeEnvironment.solver;
         coverageGraph = new CoverageGraph();
+        ssEstimator = new SSEstimator();
     }
 
     /**
@@ -617,6 +620,8 @@ public class RandomStrategy implements SearchStrategy {
                 RuntimeEnvironment.coveregeSet.add(g);
             }
         }
+
+        System.out.println("[Random Strategy Message] : The state space estimation is " + ssEstimator.getC());
     }
 
     /**
@@ -634,6 +639,7 @@ public class RandomStrategy implements SearchStrategy {
     protected void updateCoverage(ThreadEvent event) {
         // Add PO
         coverageGraph.addPo(event);
+        ssEstimator.addEvent(event);
         switch (event.getType()) {
             case READ, READ_EX:
                 coverageGraph.addRf(event);

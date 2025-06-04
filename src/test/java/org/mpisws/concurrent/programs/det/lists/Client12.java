@@ -12,7 +12,7 @@ public class Client12 {
 
     public static void main(String[] args) {
 
-        int NUM_THREADS = 2;
+        int NUM_THREADS = 3;
         int NUM_INSERTIONS = (int) Math.ceil(NUM_THREADS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_THREADS / 2.0);
 
