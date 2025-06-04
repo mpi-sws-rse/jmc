@@ -164,7 +164,6 @@ public class ExecutionGraphNode {
         edges.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
-
     public void removeEdgeTo(Event.Key to, Relation adjacency) {
         if (!edges.containsKey(adjacency)) {
             return;
@@ -413,10 +412,11 @@ public class ExecutionGraphNode {
         json.add("attributes", attributesObject);*/
         JsonObject edgesObject = new JsonObject();
         /*Relation[] relations = Relation.values();*/
-        Relation[] relations = Arrays.stream(Relation.values())
-                .sorted(Comparator.comparingInt(Relation::ordinal))
-                .toArray(Relation[]::new);
-        for (int i=0; i< relations.length; i++) {
+        Relation[] relations =
+                Arrays.stream(Relation.values())
+                        .sorted(Comparator.comparingInt(Relation::ordinal))
+                        .toArray(Relation[]::new);
+        for (int i = 0; i < relations.length; i++) {
             Relation relation = relations[i];
             if (!edges.containsKey(relation)) {
                 continue;

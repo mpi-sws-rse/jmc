@@ -1062,8 +1062,16 @@ public class ExecutionGraph {
                 if (!modifiedLocations.containsKey(location)) {
                     modifiedLocations.put(location, coherencyOrder.get(location));
                 }
-                coherencyOrder.get(location).removeIf((e) -> e.key().equals(node.key()));
             }
+
+            // Removing from coherencyOrder
+            Integer location = node.getEvent().getLocation();
+
+            if (!coherencyOrder.containsKey(location)) {
+                throw HaltCheckerException.error("The restricting node is not in coherency order");
+            }
+
+            coherencyOrder.get(location).removeIf((e) -> e.key().equals(node.key()));
 
             // Removing from taskEvents
             int task = Math.toIntExact(node.getEvent().getTaskId());
@@ -1133,6 +1141,20 @@ public class ExecutionGraph {
             return false;
         }
         return true;
+    }
+
+    public void checkConsistency() {
+        //        ExecutionGraph clone = new ExecutionGraph(this);
+        //        try {
+        //            // Add edges from reads to alternative writes
+        //            for (Map.Entry<Integer, List<ExecutionGraphNode>>
+        // writeEntry:clone.coherencyOrder.entrySet()) {
+        //
+        //            }
+        //        } catch (NoSuchEventException e) {
+        //            throw HaltCheckerException.error(
+        //                    "Hit an event that doesn't exist in the graph: " + e.getMessage());
+        //        }
     }
 
     public List<ExecutionGraphNode> checkConsistencyAndTopologicallySort() {

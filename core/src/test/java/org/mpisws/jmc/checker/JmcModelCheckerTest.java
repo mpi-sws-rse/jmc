@@ -372,7 +372,8 @@ public class JmcModelCheckerTest {
 
     @Test
     void testRandomLazyList() throws JmcCheckerException {
-        JmcCheckerConfiguration config = new JmcCheckerConfiguration.Builder().numIterations(100).build();
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(100).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
@@ -394,7 +395,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "RandomCoarseList",
                         () -> {
-                            Client9.main(new String[]{String.valueOf(3)});
+                            Client9.main(new String[] {String.valueOf(3)});
                         });
 
         jmcModelChecker.check(target);
@@ -409,8 +410,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "RandomFineList",
                         () -> {
-                            Client10.main(
-                                    new String[]{String.valueOf(4)});
+                            Client10.main(new String[] {String.valueOf(4)});
                         });
         jmcModelChecker.check(target);
     }
@@ -425,7 +425,7 @@ public class JmcModelCheckerTest {
                         "RandomOptList",
                         () -> {
                             org.mpisws.jmc.programs.det.lists.Client6.main(
-                                    new String[]{String.valueOf(4)});
+                                    new String[] {String.valueOf(4)});
                         });
         jmcModelChecker.check(target);
     }
@@ -445,7 +445,7 @@ public class JmcModelCheckerTest {
                         "TrustCoarse",
                         () -> {
                             int size = 7;
-                            Client9.main(new String[]{String.valueOf(size)});
+                            Client9.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -455,7 +455,7 @@ public class JmcModelCheckerTest {
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
                         .strategyType("trust")
-//                        .timeout(Duration.of(2, ChronoUnit.HOURS))
+                        //                        .timeout(Duration.of(2, ChronoUnit.HOURS))
                         .numIterations(200)
                         .debug(false)
                         .build();
@@ -466,11 +466,10 @@ public class JmcModelCheckerTest {
                         "TrustFine",
                         () -> {
                             int size = 5;
-                            Client10.main(new String[]{String.valueOf(size)});
+                            Client10.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
-
 
     @Test
     void testTrustCC0() throws JmcCheckerException {
@@ -487,7 +486,7 @@ public class JmcModelCheckerTest {
                         "TrustCC0",
                         () -> {
                             int size = 1;
-                            CC0.main(new String[]{String.valueOf(size)});
+                            CC0.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -601,8 +600,8 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "TrustCC7",
                         () -> {
-                            int size = 3;
-                            CC7.main(new String[]{String.valueOf(size)});
+                            int size = 7;
+                            CC7.main(new String[] {String.valueOf(size)});
                         });
         jmcModelChecker.check(target);
     }
@@ -622,7 +621,7 @@ public class JmcModelCheckerTest {
                 new JmcFunctionalTestTarget(
                         "Timeout",
                         () -> {
-                            CC7.main(new String[]{"6"});
+                            CC7.main(new String[] {"6"});
                         });
         jmcModelChecker.check(target);
     }
