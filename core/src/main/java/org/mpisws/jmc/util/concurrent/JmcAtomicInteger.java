@@ -1,9 +1,7 @@
 package org.mpisws.jmc.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
-
-import java.util.HashMap;
+import org.mpisws.jmc.runtime.JmcRuntimeUtils;
 
 public class JmcAtomicInteger {
 
@@ -11,68 +9,36 @@ public class JmcAtomicInteger {
     public JmcReentrantLock lock = new JmcReentrantLock();
 
     public JmcAtomicInteger(int initialValue) {
+        JmcRuntimeUtils.writeEventWithoutYield(this, initialValue,
+                "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
         value = initialValue;
-        writeOp(initialValue);
-    }
-
-    private void writeOp(int newValue) {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .params(
-                                new HashMap<>() {
-                                    {
-                                        put("newValue", newValue);
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicInteger");
-                                        put("name", "value");
-                                        put("descriptor", "I");
-                                    }
-                                })
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
-    }
-
-    private void readOp() {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .params(
-                                new HashMap<>() {
-                                    {
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicInteger");
-                                        put("name", "value");
-                                        put("descriptor", "I");
-                                    }
-                                })
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
+        JmcRuntime.yield();
     }
 
     public JmcAtomicInteger() {
-        value = 0;
-        writeOp(0);
+        this(0);
     }
 
     public int get() {
+        lock.lock();
         try {
-            lock.lock();
-            int val = value;
-            readOp();
-            return val;
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            int out = value;
+            JmcRuntime.yield();
+            return out;
         } finally {
             lock.unlock();
         }
     }
 
     public void set(int newValue) {
+        lock.lock();
         try {
-            lock.lock();
+            JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
             value = newValue;
-            writeOp(newValue);
+            JmcRuntime.yield();
         } finally {
             lock.unlock();
         }
@@ -81,13 +47,18 @@ public class JmcAtomicInteger {
     public boolean compareAndSet(int expectedValue, int newValue) {
         lock.lock();
         try {
-            int val = value;
-            readOp();
-            if (val == expectedValue) {
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            if (value == expectedValue) {
+                JmcRuntime.yield();
+
+                JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
+                        "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
                 value = newValue;
-                writeOp(newValue);
+                JmcRuntime.yield();
                 return true;
             }
+            JmcRuntime.yield();
             return false;
         } finally {
             lock.unlock();
@@ -97,11 +68,52 @@ public class JmcAtomicInteger {
     public int getAndIncrement() {
         lock.lock();
         try {
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
             int result = value;
-            readOp();
+            JmcRuntime.yield();
+
+            JmcRuntimeUtils.writeEventWithoutYield(this, result + 1,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
             value = result + 1;
-            writeOp(result + 1);
+            JmcRuntime.yield();
             return result;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public int getAndSet(int newValue) {
+        lock.lock();
+        try {
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            int oldValue = value;
+            JmcRuntime.yield();
+
+            JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            value = newValue;
+            JmcRuntime.yield();
+            return oldValue;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public int addAndGet(int delta) {
+        lock.lock();
+        try {
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            int result = value;
+            JmcRuntime.yield();
+
+            JmcRuntimeUtils.writeEventWithoutYield(this, result + delta,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            value = result + delta;
+            JmcRuntime.yield();
+            return value;
         } finally {
             lock.unlock();
         }

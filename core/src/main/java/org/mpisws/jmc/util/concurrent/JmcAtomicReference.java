@@ -1,9 +1,7 @@
 package org.mpisws.jmc.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
-
-import java.util.HashMap;
+import org.mpisws.jmc.runtime.JmcRuntimeUtils;
 
 public class JmcAtomicReference<V> {
 
@@ -12,17 +10,24 @@ public class JmcAtomicReference<V> {
     JmcReentrantLock lock = new JmcReentrantLock();
 
     public JmcAtomicReference(V initialValue) {
-        writeOp(initialValue);
+        JmcRuntimeUtils.writeEventWithoutYield(this, initialValue,
+                "org/mpisws/jmc/util/concurrent/JmcAtomicReference", "value", "Ljava/lang/Object;");
         value = initialValue;
+        JmcRuntime.yield();
     }
 
     public boolean compareAndSet(V expectedReference, V newReference) {
         lock.lock();
         try {
-            readOp();
-            if (value == expectedReference) {
-                writeOp(newReference);
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicReference", "value", "Ljava/lang/Object;");
+            V readValue = value;
+            JmcRuntime.yield();
+            if (readValue == expectedReference) {
+                JmcRuntimeUtils.writeEventWithoutYield(this, newReference,
+                        "org/mpisws/jmc/util/concurrent/JmcAtomicReference", "value", "Ljava/lang/Object;");
                 value = newReference;
+                JmcRuntime.yield();
                 return true;
             }
             return false;
@@ -32,49 +37,45 @@ public class JmcAtomicReference<V> {
     }
 
     public V get() {
-        readOp();
-        return value;
+        lock.lock();
+        try {
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicReference", "value", "Ljava/lang/Object;");
+            V result = value;
+            JmcRuntime.yield();
+            return result;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void set(V newValue) {
-        writeOp(newValue);
-        value = newValue;
+        lock.lock();
+        try {
+            JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicReference", "value", "Ljava/lang/Object;");
+            value = newValue;
+            JmcRuntime.yield();
+        } finally {
+            lock.unlock();
+        }
     }
 
-    private void writeOp(V newValue) {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .params(
-                                new HashMap<>() {
-                                    {
-                                        put("newValue", newValue);
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicReference");
-                                        put("name", "value");
-                                        put("descriptor", "Ljava/lang/Object;");
-                                    }
-                                })
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
-    }
+    public V getAndSet(V newValue) {
+        lock.lock();
+        try {
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicReference", "value", "Ljava/lang/Object;");
+            V result = value;
+            JmcRuntime.yield();
 
-    private void readOp() {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .params(
-                                new HashMap<>() {
-                                    {
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicReference");
-                                        put("name", "value");
-                                        put("descriptor", "Ljava/lang/Object;");
-                                    }
-                                })
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
+            JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicReference", "value", "Ljava/lang/Object;");
+            value = newValue;
+            JmcRuntime.yield();
+            return result;
+        } finally {
+            lock.unlock();
+        }
     }
 }
