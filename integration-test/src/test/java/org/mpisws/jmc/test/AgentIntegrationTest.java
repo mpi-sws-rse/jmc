@@ -8,6 +8,9 @@ import org.mpisws.jmc.checker.JmcModelChecker;
 import org.mpisws.jmc.checker.JmcTestTarget;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.test.atomic.counter.AtomicCounter;
+import org.mpisws.jmc.test.bigShot.BigShotP;
+import org.mpisws.jmc.test.bigShot.BigShotS;
+import org.mpisws.jmc.test.bigShot.BigShotSII;
 import org.mpisws.jmc.test.programs.CorrectCounterTestRunner;
 import org.mpisws.jmc.test.programs.FutureCounterTestRunner;
 import org.mpisws.jmc.test.assume.SendRecv;
@@ -81,6 +84,63 @@ public class AgentIntegrationTest {
                         () -> {
                             int length = 8; // Default length
                             AtomicCounter.main(new String[]{String.valueOf(length)});
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    public void testBigShotP() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(1000)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "BigShotPTest",
+                        () -> {
+                            BigShotP.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    public void testBigShotS() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(1000)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "BigShotSTest",
+                        () -> {
+                            BigShotS.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    public void testBigShotSII() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(1000)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "BigShotSII",
+                        () -> {
+                            BigShotSII.main(new String[0]);
                         });
         jmcModelChecker.check(target);
     }
