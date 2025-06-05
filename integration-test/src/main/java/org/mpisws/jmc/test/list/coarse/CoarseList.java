@@ -117,4 +117,21 @@ public class CoarseList implements Set {
             lock.unlock();
         }
     }
+
+    @Override
+    public int size() {
+        int size = 0;
+        try {
+            lock.lock();
+            Node curr = head.next;
+            while (curr.key != Integer.MAX_VALUE) {
+                size++;
+                curr = curr.next;
+            }
+        } finally {
+            // Ensure that the lock is always released, even if an exception occurs
+            lock.unlock();
+        }
+        return size;
+    }
 }

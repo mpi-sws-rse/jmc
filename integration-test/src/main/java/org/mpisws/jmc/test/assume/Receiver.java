@@ -1,4 +1,4 @@
-package org.mpisws.jmc.test.programs.assume;
+package org.mpisws.jmc.test.assume;
 
 import org.mpisws.jmc.util.statements.JmcAssume;
 

@@ -107,9 +107,8 @@ public class JmcModelChecker {
             }
         } catch (HaltCheckerException e) {
             if (e.isOkay()) {
-                LOGGER.info(
-                        "Model checking completed successfully covering: {} iterations",
-                        iteration - 1);
+                report.setTotalIterations(iteration - 1);
+                LOGGER.info("Model checking completed covering: {} iterations", iteration - 1);
             } else if (e.isTimeout()) {
                 report.setErrorIteration(-1);
                 report.setErrorMessage(e.getMessage());

@@ -1,5 +1,6 @@
 package org.mpisws.jmc.test;
 
+import org.mpisws.jmc.annotations.JmcExpectExecutions;
 import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 import org.mpisws.jmc.test.list.DeletionThread;
@@ -62,9 +63,6 @@ public class CoarseListTest {
 
             }
         }
-
-        // Check if the set contains the expected elements (trivially the first element)
-        //        assert !set.contains(0);
     }
 
     // Running with JMC using the default configuration. (random
@@ -78,6 +76,7 @@ public class CoarseListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 20000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    @JmcExpectExecutions(120)
     public void runTrustCoarseListTest() {
         test_50_50_workload_coarse_list(5);
     }

@@ -1,8 +1,6 @@
 package org.mpisws.jmc.test.list;
 
-/**
- * Set interface representing a collection of integers.
- */
+/** Set interface representing a collection of integers. */
 public interface Set {
 
     /**
@@ -27,4 +25,11 @@ public interface Set {
      * @return true if the element is present in the set, false otherwise
      */
     boolean contains(int i);
+
+    /**
+     * Returns the number of elements in the set.
+     *
+     * @return the size of the set
+     */
+    int size();
 }

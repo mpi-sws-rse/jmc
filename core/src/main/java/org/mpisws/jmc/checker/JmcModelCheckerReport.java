@@ -51,6 +51,14 @@ public class JmcModelCheckerReport {
         return getParam("replaySeed");
     }
 
+    public void setTotalIterations(Integer totalIterations) {
+        setParam("totalIterations", totalIterations);
+    }
+
+    public Integer getTotalIterations() {
+        return getParam("totalIterations");
+    }
+
     public void setParam(String key, Object value) {
         this.reportData.put(key, value);
     }

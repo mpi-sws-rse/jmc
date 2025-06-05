@@ -112,4 +112,30 @@ public class FineList implements Set {
             pred.unlock();
         }
     }
+
+    // TODO: Check if this is correct
+    @Override
+    public int size() {
+        int size = 0;
+        head.lock();
+        FNode pred = head;
+        try {
+            FNode curr = pred.next;
+            curr.lock();
+            try {
+                while (curr.key < Integer.MAX_VALUE) {
+                    size++;
+                    pred.unlock();
+                    pred = curr;
+                    curr = curr.next;
+                    curr.lock();
+                }
+            } finally {
+                curr.unlock();
+            }
+        } finally {
+            pred.unlock();
+        }
+        return size;
+    }
 }
