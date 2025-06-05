@@ -1533,6 +1533,9 @@ public class ExecutionGraph {
                 toAdd.sort(Event.Key::compareTo);
                 toAdd.forEach(
                         (key) -> {
+                            if (!nodeMap.containsKey(key)) {
+                                LOGGER.debug("Error finding the node for key: {}", key);
+                            }
                             queue.add(nodeMap.get(key));
                         });
             }

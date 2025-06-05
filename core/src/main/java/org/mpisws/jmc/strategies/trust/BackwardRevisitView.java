@@ -42,11 +42,17 @@ public class BackwardRevisitView {
             // So we also mark it to be removed
             this.addEvent = read.getEvent().clone();
             this.removedNodes.add(read.key());
-            EventUtils.markLockWriteFinal(write.getEvent());
         }
         try {
             this.read = this.graph.getEventNode(read.key());
             this.write = this.graph.getEventNode(write.key());
+            // When constructing a backward revisit of a write to a
+            // lock acquire read, the write cannot be ever removed from the graph.
+            // So we mark it as such.
+            // Leads to a cyclic exploration otherwise.
+            if (EventUtils.isLockAcquireRead(read.getEvent())) {
+                EventUtils.markLockWriteFinal(this.write.getEvent());
+            }
         } catch (NoSuchEventException ignored) {
             throw HaltCheckerException.error("The read or write event is not found.");
         }
@@ -180,9 +186,9 @@ public class BackwardRevisitView {
         // So far the coherency of this write is not tracked
         // TODO: Maybe this should be done in the constructor?
         // Update the reads-from relation
+        restrictedGraph.changeReadsFrom(read, write);
         // Remove the nodes
         restrictedGraph.restrictBySet(removedNodes);
-        restrictedGraph.changeReadsFrom(read, write);
         restrictedGraph.recomputeVectorClocks();
         return restrictedGraph;
     }

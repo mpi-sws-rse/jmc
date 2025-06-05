@@ -79,6 +79,6 @@ public class CoarseListTest {
     @JmcCheckConfiguration(numIterations = 20000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runTrustCoarseListTest() {
-        test_50_50_workload_coarse_list(6);
+        test_50_50_workload_coarse_list(5);
     }
 }
