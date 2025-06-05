@@ -11,6 +11,7 @@ import org.mpisws.jmc.test.atomic.counter.AtomicCounter;
 import org.mpisws.jmc.test.bigShot.BigShotP;
 import org.mpisws.jmc.test.bigShot.BigShotS;
 import org.mpisws.jmc.test.bigShot.BigShotSII;
+import org.mpisws.jmc.test.concrete.gcd.ParallelGCD;
 import org.mpisws.jmc.test.programs.CorrectCounterTestRunner;
 import org.mpisws.jmc.test.programs.FutureCounterTestRunner;
 import org.mpisws.jmc.test.assume.SendRecv;
@@ -141,6 +142,29 @@ public class AgentIntegrationTest {
                         "BigShotSII",
                         () -> {
                             BigShotSII.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    public void testParallelGCD() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(1000)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "ParallelGCD",
+                        () -> {
+                            // Assuming ParallelGCD is a class with a main method
+                            // that runs the GCD algorithm in parallel.
+                            int a = 5; // Example value
+                            int b = 5; // Example value
+                            ParallelGCD.main(new String[]{String.valueOf(a), String.valueOf(b)});
                         });
         jmcModelChecker.check(target);
     }
