@@ -7,11 +7,14 @@ import org.mpisws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpisws.jmc.checker.JmcModelChecker;
 import org.mpisws.jmc.checker.JmcTestTarget;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.test.atomic.counter.AtomicCounter;
 import org.mpisws.jmc.test.programs.CorrectCounterTestRunner;
 import org.mpisws.jmc.test.programs.FutureCounterTestRunner;
 import org.mpisws.jmc.test.assume.SendRecv;
 
-/** The AgentIntegrationTest class is used to test the agent. */
+/**
+ * The AgentIntegrationTest class is used to test the agent.
+ */
 public class AgentIntegrationTest {
     @Test
     public void testAgent() throws JmcCheckerException {
@@ -58,6 +61,26 @@ public class AgentIntegrationTest {
                         "AssumeTest",
                         () -> {
                             SendRecv.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    public void testAtomicCounter() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(100000)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "AtomicCounter",
+                        () -> {
+                            int length = 8; // Default length
+                            AtomicCounter.main(new String[]{String.valueOf(length)});
                         });
         jmcModelChecker.check(target);
     }
