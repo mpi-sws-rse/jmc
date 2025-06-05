@@ -61,17 +61,11 @@ public class JmcModelChecker {
                                     .taskId(1L)
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
-                    JmcRuntime.resetIteration(iteration);
-                    if (iteration % 50000 == 0) {
-                        LOGGER.info("Completed {} iterations", iteration);
-                        System.gc();
-                    }
                 } catch (HaltTaskException e) {
                     LOGGER.debug(
                             "Halting execution: {} due to main thread halted: {}",
                             iteration,
                             e.getMessage());
-                    break;
                 } catch (HaltExecutionException e) {
                     report.setErrorIteration(iteration);
                     report.setErrorMessage(e.getMessage());
@@ -79,7 +73,6 @@ public class JmcModelChecker {
                             "Halting execution: {} due to exception: {}",
                             iteration,
                             e.getMessage());
-                    break;
                 } catch (AssertionError e) {
                     report.setErrorIteration(iteration);
                     report.setErrorMessage(
@@ -87,9 +80,15 @@ public class JmcModelChecker {
                                     "Halting execution: %d due to assertion error: %s",
                                     iteration, e.getMessage()));
                     LOGGER.error("Assertion error in iteration {}: {}", iteration, e.getMessage());
+                    JmcRuntime.recordTrace();
                     throw HaltCheckerException.error(
                             "Assertion error in iteration " + iteration + ": " + e.getMessage());
                 } finally {
+                    JmcRuntime.resetIteration(iteration);
+                    if (iteration % 50000 == 0) {
+                        LOGGER.info("Completed {} iterations", iteration);
+                        System.gc();
+                    }
                     iteration++;
                     if (numIterations != 0 && iteration >= numIterations) {
                         throw HaltCheckerException.ok();

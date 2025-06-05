@@ -3,6 +3,7 @@ package org.mpisws.jmc.runtime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
+import org.mpisws.jmc.strategies.ReplayableSchedulingStrategy;
 import org.mpisws.jmc.strategies.SchedulingStrategy;
 
 import java.util.concurrent.CompletableFuture;
@@ -188,6 +189,14 @@ public class Scheduler {
     /** Resets the TaskManager and the scheduling strategy for a new iteration. */
     public void resetIteration(int iteration) {
         strategy.resetIteration(iteration);
+    }
+
+    public void recordTrace() {
+        if (strategy instanceof ReplayableSchedulingStrategy) {
+            ((ReplayableSchedulingStrategy) strategy).recordTrace();
+        } else {
+            LOGGER.warn("Recording trace is not supported by the current scheduling strategy");
+        }
     }
 
     /** Shuts down the scheduler. */
