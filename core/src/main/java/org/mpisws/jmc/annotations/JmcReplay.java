@@ -7,7 +7,4 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Replay {
-    long seed() default 0;
-    int numIterations() default 10;
-}
+public @interface JmcReplay {}

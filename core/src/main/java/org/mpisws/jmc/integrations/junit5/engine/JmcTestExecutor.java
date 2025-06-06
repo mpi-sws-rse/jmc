@@ -31,11 +31,7 @@ public class JmcTestExecutor {
     }
 
     public static void executeReplay(
-            Method testMethod,
-            Object instance,
-            JmcCheckerConfiguration config,
-            Long seed,
-            int iteration)
+            Method testMethod, Object instance, JmcCheckerConfiguration config)
             throws JmcCheckerException {
         JmcModelChecker checker = new JmcModelChecker(config);
         JmcTestTarget target =
@@ -48,6 +44,6 @@ public class JmcTestExecutor {
                                 throw new RuntimeException(e);
                             }
                         });
-        checker.replay(target, seed, iteration);
+        checker.replay(target);
     }
 }

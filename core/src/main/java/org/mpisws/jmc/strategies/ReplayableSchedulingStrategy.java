@@ -7,7 +7,14 @@ package org.mpisws.jmc.strategies;
  *
  * <p>The storage and management of the recorded trace is implementation-specific.
  *
- * <p>
+ * <p>recordTrace() will be called by the model checker whenever a AssertionError is thrown during
+ * the execution of the scheduling strategy. This allows the strategy to capture the current state
+ * of the scheduling decisions made up to that point, which can then be replayed to reproduce the
+ * error or analyze the behavior of the system.
+ *
+ * <p>replayRecordedTrace() will be called to replay the recorded trace. The checker will call this
+ * method before initIteration() and allows the strategy to fetch the recorded trace and setup to
+ * allow replaying in the subsequent iteration.
  */
 public interface ReplayableSchedulingStrategy extends SchedulingStrategy {
     /** Records the current execution trace of the scheduling strategy. */

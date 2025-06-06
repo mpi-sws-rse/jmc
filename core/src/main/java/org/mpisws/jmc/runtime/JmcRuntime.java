@@ -9,6 +9,10 @@ import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
 import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.strategies.JmcReplayUnsupported;
+import org.mpisws.jmc.strategies.ReplayableSchedulingStrategy;
+import org.mpisws.jmc.strategies.SchedulingStrategy;
 
 import java.util.concurrent.ExecutionException;
 
@@ -44,6 +48,24 @@ public class JmcRuntime {
         scheduler =
                 new Scheduler(
                         config.getStrategy(),
+                        config.getSchedulerTries(),
+                        config.getSchedulerTrySleepTimeNanos());
+        scheduler.start();
+    }
+
+    public static void setupReplay(JmcRuntimeConfiguration config) throws JmcCheckerException {
+        LOGGER.debug("Setting up for replay!");
+        JmcRuntime.config = config;
+        SchedulingStrategy strategy = config.getStrategy();
+        if (!(strategy instanceof ReplayableSchedulingStrategy)) {
+            LOGGER.error(
+                    "The provided strategy is not replayable. Please use a replayable strategy.");
+            throw new JmcReplayUnsupported();
+        }
+        ((ReplayableSchedulingStrategy) strategy).replayRecordedTrace();
+        scheduler =
+                new Scheduler(
+                        strategy,
                         config.getSchedulerTries(),
                         config.getSchedulerTrySleepTimeNanos());
         scheduler.start();
