@@ -12,6 +12,7 @@ import org.mpisws.jmc.test.bigShot.BigShotP;
 import org.mpisws.jmc.test.bigShot.BigShotS;
 import org.mpisws.jmc.test.bigShot.BigShotSII;
 import org.mpisws.jmc.test.concrete.gcd.ParallelGCD;
+import org.mpisws.jmc.test.det.array.DetArray;
 import org.mpisws.jmc.test.programs.CorrectCounterTestRunner;
 import org.mpisws.jmc.test.programs.FutureCounterTestRunner;
 import org.mpisws.jmc.test.assume.SendRecv;
@@ -123,6 +124,26 @@ public class AgentIntegrationTest {
                         "BigShotSTest",
                         () -> {
                             BigShotS.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    public void testDetArray() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(1111000)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "DetArrayTest",
+                        () -> {
+                            String[] args = {"5"}; // Example argument
+                            DetArray.main(args);
                         });
         jmcModelChecker.check(target);
     }

@@ -1,20 +1,21 @@
-package org.mpisws.jmc.test.list.node;
+package org.mpisws.jmc.test.det.list.node;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-public class FNode {
+public class LNode {
 
     public int item;
     public int key;
-    public FNode next;
+    public LNode next;
     private final ReentrantLock lock = new ReentrantLock();
+    public boolean marked = false;
 
-    public FNode(int i) {
-        this.item = i;
-        this.key = i;
+    public LNode(int i) {
+        item = i;
+        key = i;
     }
 
-    public FNode(int item, int key) {
+    public LNode(int item, int key) {
         this.item = item;
         this.key = key;
     }

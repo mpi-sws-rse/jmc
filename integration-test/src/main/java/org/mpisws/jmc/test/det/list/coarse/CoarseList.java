@@ -1,7 +1,7 @@
-package org.mpisws.jmc.test.list.coarse;
+package org.mpisws.jmc.test.det.list.coarse;
 
-import org.mpisws.jmc.test.list.Set;
-import org.mpisws.jmc.test.list.node.Node;
+import org.mpisws.jmc.test.det.list.Set;
+import org.mpisws.jmc.test.det.list.node.Node;
 
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -12,10 +12,14 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class CoarseList implements Set {
 
-    /** Head node of the coarse-grained linked list. */
+    /**
+     * Head node of the coarse-grained linked list.
+     */
     private final Node head;
 
-    /** Lock for synchronizing access to the list. */
+    /**
+     * Lock for synchronizing access to the list.
+     */
     private final ReentrantLock lock;
 
     /**
