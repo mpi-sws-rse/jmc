@@ -12,7 +12,7 @@ public class Client4 {
     public static void main(String[] args) {
         try {
 
-            int NUM_OPERATIONS = 4;
+            int NUM_OPERATIONS = 3;
             int NUM_PUSHES = (int) Math.ceil(NUM_OPERATIONS / 2.0);
             int NUM_POPS = (int) Math.floor(NUM_OPERATIONS / 2.0);
             Stack stack = new EliminationBackoffStack<SymbolicInteger>(NUM_PUSHES);

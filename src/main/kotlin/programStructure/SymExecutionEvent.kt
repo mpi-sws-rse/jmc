@@ -36,4 +36,8 @@ data class SymExecutionEvent(
         res = 31 * res + serial
         return res
     }
+
+    override fun toString(): String {
+        return "$type{${tid - 1}, $serial}"
+    }
 }

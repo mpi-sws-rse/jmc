@@ -34,9 +34,11 @@ public class Producer2 extends Thread {
                     shared.enqueue = false;
                     shared.dequeue = true;
                 }
-                lock.unlock();
+
             } catch (JMCInterruptException e) {
 
+            } finally {
+                lock.unlock();
             }
         }
     }

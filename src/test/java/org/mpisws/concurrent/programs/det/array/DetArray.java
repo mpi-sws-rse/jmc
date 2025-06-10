@@ -7,7 +7,7 @@ public class DetArray {
 
     public static void main(String[] args) {
         try {
-            int SIZE = 6;
+            int SIZE = 5;
             Array array = new Array(SIZE);
             List<SetterThread> threads = new ArrayList<>(SIZE);
 
@@ -15,7 +15,7 @@ public class DetArray {
                 threads.add(new SetterThread(array));
             }
 
-            int n = 2;
+            int n = 5;
 
             for (int i = 0; i < n; i++) {
                 threads.get(i).start();

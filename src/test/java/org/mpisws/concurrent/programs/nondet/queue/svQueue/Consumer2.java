@@ -49,9 +49,11 @@ public class Consumer2 extends Thread {
                         }
                     }
                 }
-                lock.unlock();
+
             } catch (JMCInterruptException e) {
 
+            } finally {
+                lock.unlock();
             }
         }
     }

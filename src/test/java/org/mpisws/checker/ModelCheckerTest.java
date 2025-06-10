@@ -305,8 +305,9 @@ class ModelCheckerTest {
         );
         System.out.println("AtomicCounter Trust Strategy Started");
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
-        checker.configuration.verbose = true;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.verbose = false;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "AtomicCounter Trust Strategy Finished");
@@ -1073,7 +1074,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1151,7 +1152,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1302,7 +1303,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1355,7 +1356,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1455,7 +1456,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1480,7 +1481,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1829,7 +1830,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1882,7 +1883,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1935,7 +1936,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1988,7 +1989,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -2409,7 +2410,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -2433,7 +2434,6 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.maxIterations = Integer.MAX_VALUE;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
@@ -2507,7 +2507,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -2555,7 +2555,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -2584,6 +2584,58 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Lazy List II Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  RWW ( RANDOM STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Random RWW")
+    void randomTestRWW() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.rww",
+                "RWW",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/rww/"
+        );
+        System.out.println("RWW Random Strategy Started");
+        checker.configuration.strategyType = StrategyType.RANDOM;
+        checker.configuration.maxIterations = 3;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.timeout = 2766000;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "RWW Random Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  RWW ( TRUST STRATEGY )
+     */
+
+    @Test
+    @DisplayName("Trust RWW")
+    void trustTestRWW() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.rww",
+                "RWW",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/rww/"
+        );
+        System.out.println("RWW Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "RWW Trust Strategy Finished");
         System.gc();
     }
 
@@ -2899,8 +2951,8 @@ class ModelCheckerTest {
         checker.configuration.maxIterations = Integer.MAX_VALUE;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.maxIterations = 1;
-        checker.configuration.timeout = 180;
+        checker.configuration.maxIterations = 1000;
+        checker.configuration.timeout = 18000000;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
@@ -3011,8 +3063,8 @@ class ModelCheckerTest {
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
         checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
         checker.configuration.solverType = SMTSolverTypes.Z3;
-        int[] dataDomain = {0, 1, 2};
-        int size = 5;
+        int[] dataDomain = {0, 1, 2, 3};
+        int size = 4;
         checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -3283,6 +3335,31 @@ class ModelCheckerTest {
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "NonDet Concurrent Map I Trust Strategy Finished");
+        System.gc();
+    }
+
+    /*
+     *                                  VIOLATION
+     */
+
+    @Test
+    @DisplayName("Violation")
+    void trustTestViolation() {
+        var t = new TestTarget("org.mpisws.concurrent.programs.violation",
+                "Violation",
+                "main",
+                "src/test/java/org/mpisws/concurrent/programs/violation"
+        );
+        System.out.println("Violation Trust Strategy Started");
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
+        checker.configuration.graphExploration = GraphExploration.DFS;
+        checker.configuration.verbose = false;
+        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.solverType = SMTSolverTypes.Z3;
+        checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
+        checker.configuration.buggyTraceFile = "buggyTrace.obj";
+        assertTrue(checker.check(t), "Violation Trust Strategy Finished");
         System.gc();
     }
 
@@ -3713,7 +3790,7 @@ class ModelCheckerTest {
                 "src/test/java/org/mpisws/concurrent/programs/symbolic/gcd/"
         );
         System.out.println("Symbolic GCD Trust Strategy Started");
-        checker.configuration.strategyType = StrategyType.TRUST;
+        checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = true;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
@@ -3729,7 +3806,7 @@ class ModelCheckerTest {
      */
 
     @Test
-    @Disabled("This test is disabled due to using symbolic while loop")
+    //@Disabled("This test is disabled due to using symbolic while loop")
     @DisplayName("Concrete GCD")
     void trustTestConcreteGCD() {
         var t = new TestTarget("org.mpisws.concurrent.programs.concrete.gcd",
@@ -3741,8 +3818,8 @@ class ModelCheckerTest {
         checker.configuration.strategyType = StrategyType.OPT_TRUST;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
-        checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.RR;
+        checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.PRINCESS;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";

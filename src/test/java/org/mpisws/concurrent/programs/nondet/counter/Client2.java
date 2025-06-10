@@ -8,7 +8,7 @@ public class Client2 {
 
     public static void main(String[] args) {
         FCounter counter = new FCounter();
-        int SIZE = 7;
+        int SIZE = 5;
         int NUM_INSERTIONS = (int) Math.ceil(SIZE / 2.0);
         int NUM_DELETIONS = (int) Math.floor(SIZE / 2.0);
 

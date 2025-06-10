@@ -15,7 +15,7 @@ public class Client7 {
     public static void main(String[] args) {
         try {
             Set set = new LazyList();
-            int NUM_OPERATIONS = 1;
+            int NUM_OPERATIONS = 3;
 
             List<Element> items = new ArrayList<>(NUM_OPERATIONS);
             List<AbstractInteger> keys = new ArrayList<>(NUM_OPERATIONS);

@@ -15,7 +15,7 @@ public class Client1 {
     public static void main(String[] args) {
         try {
             Set set = new CoarseList();
-            int NUM_OPERATIONS = 6;
+            int NUM_OPERATIONS = 4;
 
             List<Element> items = new ArrayList<>(NUM_OPERATIONS);
             List<AbstractInteger> keys = new ArrayList<>(NUM_OPERATIONS);

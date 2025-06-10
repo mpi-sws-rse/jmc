@@ -12,7 +12,7 @@ public class Client3 {
     public static void main(String[] args) {
 
         try {
-            int NUM_OPERATIONS = 2;
+            int NUM_OPERATIONS = 3;
             Stack<SymbolicInteger> stack = new EliminationBackoffStack(NUM_OPERATIONS);
 
             List<SymbolicInteger> items = new ArrayList<>(NUM_OPERATIONS);

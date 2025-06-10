@@ -622,6 +622,7 @@ public class RandomStrategy implements SearchStrategy {
         }
 
         System.out.println("[Random Strategy Message] : The state space estimation is " + ssEstimator.getC());
+        ssEstimator.reset();
     }
 
     /**

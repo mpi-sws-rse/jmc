@@ -9,13 +9,14 @@ import java.util.Set;
 
 public class SSEstimator {
 
-    private int c = 1;
+    private int c = 0;
     private int v = 1;
     private final int o = 1; // This is the weight of an event
     private final Map<Integer, ThreadEvent> events = new HashMap<>();
     private final Map<Integer, Boolean> max = new HashMap<>();
 
     public void addEvent(ThreadEvent e) {
+        System.out.println("[SSEstimator] Adding event: " + e);
         events.put(e.getTid(), e);
         max.put(e.getTid(), true);
         int in = 1;
@@ -24,25 +25,40 @@ public class SSEstimator {
         for (Integer id : ids) {
             if (id != e.getTid()) {
                 ThreadEvent e_p = events.get(id);
-                if (hasConflict(e_p, e)) {
+                if (commutable(e_p, e)) {
                     int t_p = e_p.getTid();
                     max.put(t_p, false);
                 }
                 if (max.get(e_p.getTid())) {
-                    in++;
+                    in = in * (in + 1);
                 }
             }
         }
 
+        System.out.println("[SSEstimator] in: " + in + ", out: " + out);
+
         v = v * out / in;
-        c = c + v * o;
+        c = c + (v * o);
+
+        System.out.println("[SSEstimator] Updated c: " + c + ", v: " + v);
     }
 
     public int getC() {
         return c;
     }
 
-    private boolean hasConflict(ThreadEvent e1, ThreadEvent e2) {
+    public int getV() {
+        return v;
+    }
+
+    public void reset() {
+        c = 0;
+        v = 1;
+        events.clear();
+        max.clear();
+    }
+
+    private boolean commutable(ThreadEvent e1, ThreadEvent e2) {
 
         if (e1 instanceof WriteEvent w1 && e2 instanceof WriteEvent w2) {
             return w1.getLoc().equals(w2.getLoc());

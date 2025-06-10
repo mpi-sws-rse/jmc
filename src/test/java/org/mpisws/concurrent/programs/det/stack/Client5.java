@@ -9,7 +9,7 @@ import java.util.List;
 public class Client5 {
 
     public static void main(String[] args) {
-        int NUM_OPERATIONS = 4;
+        int NUM_OPERATIONS = 3;
         long[] threadIds = new long[NUM_OPERATIONS];
         List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {

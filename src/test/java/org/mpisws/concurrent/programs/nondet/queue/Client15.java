@@ -6,7 +6,7 @@ import org.mpisws.util.concurrent.ReentrantLock;
 public class Client15 {
 
     public static void main(String[] args) {
-        int SIZE = 2;
+        int SIZE = 3;
         SVQueue q = new SVQueue(SIZE);
         SharedState sharedState = new SharedState(SIZE);
         ReentrantLock lock = new ReentrantLock();
