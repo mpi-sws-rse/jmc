@@ -18,7 +18,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
 
     public PremainInstrumentor(AgentArgs agentArgs) {
         this.agentArgs = agentArgs;
-        this.matcher = new JmcMatcher(agentArgs.getInstrumentingPackages());
+        this.matcher = new JmcMatcher(agentArgs.getInstrumentingPackages(), agentArgs.getExcludedPackages());
     }
 
     public byte[] transform(
@@ -29,9 +29,11 @@ public class PremainInstrumentor implements ClassFileTransformer {
             byte[] classFileBuffer) {
         String finalClassName = className.replace("/", ".");
         byte[] copiedClassBuffer = Arrays.copyOf(classFileBuffer, classFileBuffer.length);
+
         if (!this.matcher.matches(finalClassName, loader)) {
             return copiedClassBuffer;
         }
+        System.out.println("Jmc PremainInstrumentor.transform(" + className + ", " + finalClassName + ")");
         ClassReader tempCr = new ClassReader(copiedClassBuffer);
         ClassWriter tempCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
