@@ -7,7 +7,10 @@ public class ExceptionUtil {
             return true;
         }
         if (t instanceof RuntimeException) {
-            return t.getCause().getCause() instanceof AssertionError;
+            Throwable firstCause = t.getCause();
+            if (firstCause != null) {
+                return firstCause.getCause() instanceof AssertionError;
+            }
         }
         return false;
     }
