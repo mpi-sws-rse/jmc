@@ -1,6 +1,7 @@
 package org.mpisws.jmc.util;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
@@ -41,7 +42,7 @@ public class FileUtil {
     /**
      * Ensure the path exists, creating it if it does not.
      *
-     * <p>Deletes the path if it already exists.
+     * <p>Deletes the contents of the path if it already exists.
      *
      * @param path the path to ensure
      */
@@ -99,7 +100,11 @@ public class FileUtil {
             List<SchedulingChoice<?>> out = new ArrayList<>();
             for (int i = 0; i < scheduleArray.size(); i++) {
                 JsonObject choiceJson = scheduleArray.get(i).getAsJsonObject();
-                Long taskId = choiceJson.get("taskId").getAsLong();
+                JsonElement taskIdJson = choiceJson.get("taskId");
+                Long taskId = null;
+                if (!taskIdJson.isJsonNull()) {
+                    taskId = taskIdJson.getAsLong();
+                }
                 boolean isBlockTask = choiceJson.get("isBlockTask").getAsBoolean();
                 if (isBlockTask) {
                     out.add(SchedulingChoice.blockTask(taskId));
