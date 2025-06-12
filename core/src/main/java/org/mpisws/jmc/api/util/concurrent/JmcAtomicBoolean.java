@@ -1,4 +1,4 @@
-package org.mpisws.jmc.util.concurrent;
+package org.mpisws.jmc.api.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
@@ -34,7 +34,7 @@ public class JmcAtomicBoolean {
                         .type(RuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask()));
         HashMap<String, Object> eventParams = new HashMap<>();
-        eventParams.put("owner", "org/mpisws/jmc/util/concurrent/AtomicBoolean");
+        eventParams.put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicBoolean");
         eventParams.put("name", "value");
         eventParams.put("descriptor", "Z");
         JmcRuntime.updateEventAndYield(eventBuilder.params(eventParams).param("instance", this).build());
@@ -51,7 +51,7 @@ public class JmcAtomicBoolean {
                                 new HashMap<>() {
                                     {
                                         put("newValue", newValue);
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicBoolean");
+                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicBoolean");
                                         put("name", "value");
                                         put("descriptor", "Z");
                                     }
@@ -85,7 +85,7 @@ public class JmcAtomicBoolean {
                                 new HashMap<>() {
                                     {
                                         put("newValue", newValue);
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicBoolean");
+                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicBoolean");
                                         put("name", "value");
                                         put("descriptor", "Z");
                                     }
@@ -103,7 +103,7 @@ public class JmcAtomicBoolean {
                         .params(
                                 new HashMap<>() {
                                     {
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicBoolean");
+                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicBoolean");
                                         put("name", "value");
                                         put("descriptor", "Z");
                                     }

@@ -11,7 +11,7 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
     }
 
     private static final String REENTRANT_LOCK_DESC = "Ljava/util/concurrent/locks/ReentrantLock;";
-    private static final String JMC_REENTRANT_LOCK_DESC = "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;";
+    private static final String JMC_REENTRANT_LOCK_DESC = "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;";
 
     private static String replaceDescriptor(String desc) {
         if (desc.contains(REENTRANT_LOCK_DESC)) {
@@ -24,7 +24,7 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
     public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
         // Replace field descriptor if it's ReentrantLock
         if (descriptor.equals("Ljava/util/concurrent/locks/ReentrantLock;")) {
-            descriptor = "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;";
+            descriptor = "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;";
         }
         return super.visitField(access, name, descriptor, signature, value);
     }
@@ -45,7 +45,7 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         public void visitTypeInsn(int opcode, String type) {
             // Replace NEW ReentrantLock with JmcReentrantLock
             if (opcode == Opcodes.NEW && type.equals("java/util/concurrent/locks/ReentrantLock")) {
-                super.visitTypeInsn(opcode, "org/mpisws/jmc/util/concurrent/JmcReentrantLock");
+                super.visitTypeInsn(opcode, "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock");
             } else {
                 super.visitTypeInsn(opcode, type);
             }
@@ -57,7 +57,7 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
             descriptor = replaceDescriptor(descriptor);
             if (owner.equals("java/util/concurrent/locks/ReentrantLock")) {
                 super.visitMethodInsn(opcode,
-                        "org/mpisws/jmc/util/concurrent/JmcReentrantLock",
+                        "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock",
                         name,
                         descriptor,
                         isInterface);
@@ -70,7 +70,7 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
             // Replace field references
             if (descriptor.equals("Ljava/util/concurrent/locks/ReentrantLock;")) {
-                super.visitFieldInsn(opcode, owner, name, "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;");
+                super.visitFieldInsn(opcode, owner, name, "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;");
             } else {
                 super.visitFieldInsn(opcode, owner, name, descriptor);
             }

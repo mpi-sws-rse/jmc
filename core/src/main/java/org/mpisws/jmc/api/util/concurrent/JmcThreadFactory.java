@@ -1,4 +1,4 @@
-package org.mpisws.jmc.util.concurrent;
+package org.mpisws.jmc.api.util.concurrent;
 
 import java.util.concurrent.ThreadFactory;
 

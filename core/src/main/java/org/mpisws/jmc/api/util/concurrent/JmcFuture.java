@@ -1,4 +1,4 @@
-package org.mpisws.jmc.util.concurrent;
+package org.mpisws.jmc.api.util.concurrent;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

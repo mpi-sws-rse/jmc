@@ -3,19 +3,21 @@ package org.mpisws.jmc.strategies.trust;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpisws.jmc.strategies.ReplayableSchedulingStrategy;
 import org.mpisws.jmc.strategies.TrackActiveTasksStrategy;
-import org.mpisws.jmc.util.files.FileUtil;
+import org.mpisws.jmc.util.FileUtil;
 
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class TrustStrategy extends TrackActiveTasksStrategy {
+public class TrustStrategy extends TrackActiveTasksStrategy implements ReplayableSchedulingStrategy {
 
     private final Logger LOGGER = LogManager.getLogger(TrustStrategy.class);
 
@@ -25,6 +27,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
 
     private final boolean debug;
     private final String reportPath;
+    private List<SchedulingChoice<?>> recordedTrace;
 
     public TrustStrategy() {
         this(System.nanoTime(), SchedulingPolicy.FIFO, false, "build/test-results/jmc-report");
@@ -56,6 +59,14 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
 
     @Override
     public SchedulingChoice<?> nextTask() {
+
+        if (recordedTrace != null && !recordedTrace.isEmpty()) {
+            // If we have a recorded trace, return the next task from it
+            SchedulingChoice<?> next = recordedTrace.remove(0);
+            LOGGER.debug("Returning recorded task: {}", next);
+            return next;
+        }
+
         // Always add 1 to the return value the strategy expects 1-indexed tasks but we store
         // 0-indexed tasks
 
@@ -125,6 +136,20 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     public void teardown() {
         super.teardown();
         algoInstance.teardown();
+    }
+
+    @Override
+    public void recordTrace() throws JmcCheckerException {
+        String filePath = Paths.get(this.reportPath, "replay.json")
+                .toString();
+        LOGGER.info("Recording trace to {}", filePath);
+        algoInstance.recordTaskSchedule(filePath);
+    }
+
+    @Override
+    public void replayRecordedTrace() throws JmcCheckerException {
+        recordedTrace = FileUtil.readTaskSchedule(Paths.get(this.reportPath, "replay.json")
+                .toString());
     }
 
     public enum SchedulingPolicy {

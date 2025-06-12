@@ -10,6 +10,7 @@ import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFact
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.runtime.scheduling.Scheduler;
 import org.mpisws.jmc.strategies.JmcReplayUnsupported;
 import org.mpisws.jmc.strategies.ReplayableSchedulingStrategy;
 import org.mpisws.jmc.strategies.SchedulingStrategy;

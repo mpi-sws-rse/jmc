@@ -1,9 +1,8 @@
 package org.mpisws.jmc.programs.det.lists;
 
 import org.mpisws.jmc.programs.det.lists.list.Set;
-import org.mpisws.jmc.programs.det.lists.list.coarse.CoarseList;
 import org.mpisws.jmc.programs.det.lists.list.fine.FineList;
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 import java.util.ArrayList;
 import java.util.List;

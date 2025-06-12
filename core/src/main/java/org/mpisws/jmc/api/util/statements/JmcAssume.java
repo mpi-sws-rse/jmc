@@ -1,4 +1,4 @@
-package org.mpisws.jmc.util.statements;
+package org.mpisws.jmc.api.util.statements;
 
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntime;

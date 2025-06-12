@@ -1,6 +1,6 @@
 package org.mpisws.jmc.strategies.trust;
 
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 
 /**
  * Represents a scheduling choice with an optional location.

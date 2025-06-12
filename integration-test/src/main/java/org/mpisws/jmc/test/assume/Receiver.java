@@ -1,6 +1,6 @@
 package org.mpisws.jmc.test.assume;
 
-import org.mpisws.jmc.util.statements.JmcAssume;
+import org.mpisws.jmc.api.util.statements.JmcAssume;
 
 public class Receiver extends Thread {
 

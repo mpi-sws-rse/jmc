@@ -1,7 +1,7 @@
 package org.mpisws.jmc.programs.twophasecommit;
 
-import org.mpisws.jmc.util.concurrent.JmcThread;
-import org.mpisws.jmc.util.statements.JmcAssume;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.statements.JmcAssume;
 
 import java.util.HashMap;
 import java.util.Map;

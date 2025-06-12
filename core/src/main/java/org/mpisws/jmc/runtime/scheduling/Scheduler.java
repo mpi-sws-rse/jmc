@@ -1,14 +1,15 @@
-package org.mpisws.jmc.runtime;
+package org.mpisws.jmc.runtime.scheduling;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.runtime.*;
 import org.mpisws.jmc.strategies.ReplayableSchedulingStrategy;
 import org.mpisws.jmc.strategies.SchedulingStrategy;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
 
 /**
  * The scheduler is responsible for managing the execution of threads.
@@ -105,7 +106,7 @@ public class Scheduler {
      *
      * @param choice The scheduling choice to make.
      */
-    protected <T> void scheduleTask(SchedulingChoice<T> choice) {
+    protected <T extends SchedulingChoiceValue> void scheduleTask(SchedulingChoice<T> choice) {
         if (choice.isBlockExecution()) {
             taskManager.stopAll();
         } else if (choice.isBlockTask()) {
@@ -193,7 +194,11 @@ public class Scheduler {
 
     public void recordTrace() {
         if (strategy instanceof ReplayableSchedulingStrategy) {
-            ((ReplayableSchedulingStrategy) strategy).recordTrace();
+            try {
+                ((ReplayableSchedulingStrategy) strategy).recordTrace();
+            } catch (JmcCheckerException e) {
+                LOGGER.error("Failed to record trace: {}", e.getMessage());
+            }
         } else {
             LOGGER.warn("Recording trace is not supported by the current scheduling strategy");
         }

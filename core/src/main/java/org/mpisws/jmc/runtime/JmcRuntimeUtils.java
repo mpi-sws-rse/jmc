@@ -1,6 +1,6 @@
 package org.mpisws.jmc.runtime;
 
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 import java.util.HashMap;
 

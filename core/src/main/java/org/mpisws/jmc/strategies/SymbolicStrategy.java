@@ -2,7 +2,7 @@ package org.mpisws.jmc.strategies;
 
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 
 import java.util.Random;
 

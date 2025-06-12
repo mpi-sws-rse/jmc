@@ -1,7 +1,8 @@
-package org.mpisws.jmc.util;
+package org.mpisws.jmc.api.util;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.scheduling.PrimitiveValue;
 
 public class JmcRandom extends java.util.Random {
     public JmcRandom() {
@@ -14,7 +15,7 @@ public class JmcRandom extends java.util.Random {
 
     @Override
     public int next(int bits) {
-        Integer val = JmcRuntime.<Integer>updateEventAndYield(
+        PrimitiveValue val = JmcRuntime.<PrimitiveValue>updateEventAndYield(
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.REACTIVE_EVENT_RANDOM_VALUE)
                         .taskId(JmcRuntime.currentTask())
@@ -24,7 +25,7 @@ public class JmcRandom extends java.util.Random {
         if (val == null) {
             return super.next(bits);
         } else {
-            return val;
+            return val.asInteger();
         }
     }
 }

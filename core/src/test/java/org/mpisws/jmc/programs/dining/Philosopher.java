@@ -2,8 +2,8 @@ package org.mpisws.jmc.programs.dining;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mpisws.jmc.util.concurrent.JmcThread;
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 public class Philosopher extends JmcThread {
 

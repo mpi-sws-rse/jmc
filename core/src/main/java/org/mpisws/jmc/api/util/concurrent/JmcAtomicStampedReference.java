@@ -1,4 +1,4 @@
-package org.mpisws.jmc.util.concurrent;
+package org.mpisws.jmc.api.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
@@ -79,7 +79,7 @@ public class JmcAtomicStampedReference<V> {
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/AtomicStampedReference")
+                        .param("owner", "org/mpisws/jmc/api/util/concurrent/AtomicStampedReference")
                         .param("name", "value")
                         .param("descriptor", "Ljava/lang/Object;")
                         .param("instance", this)
@@ -93,7 +93,7 @@ public class JmcAtomicStampedReference<V> {
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/AtomicStampedReference")
+                        .param("owner", "org/mpisws/jmc/api/util/concurrent/AtomicStampedReference")
                         .param("name", "value")
                         .param("descriptor", "Ljava/lang/Object;")
                         .param("instance", this)

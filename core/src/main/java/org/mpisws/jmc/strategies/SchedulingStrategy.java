@@ -2,12 +2,12 @@ package org.mpisws.jmc.strategies;
 
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.Scheduler;
+import org.mpisws.jmc.runtime.scheduling.Scheduler;
 import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 
 /**
  * The scheduling strategy is responsible for deciding which thread to schedule next.

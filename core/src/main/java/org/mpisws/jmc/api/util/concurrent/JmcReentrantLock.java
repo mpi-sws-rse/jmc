@@ -1,4 +1,4 @@
-package org.mpisws.jmc.util.concurrent;
+package org.mpisws.jmc.api.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
@@ -23,7 +23,7 @@ public class JmcReentrantLock {
                         .type(RuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", 0)
-                        .param("owner", "org/mpisws/jmc/util/concurrent/JmcReentrantLock")
+                        .param("owner", "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock")
                         .param("name", "token")
                         .param("descriptor", "I")
                         .param("instance", this)
@@ -37,7 +37,7 @@ public class JmcReentrantLock {
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.LOCK_ACQUIRE_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/JmcReentrantLock")
+                        .param("owner", "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock")
                         .param("name", "token")
                         .param("value", token)
                         .param("descriptor", "I")
@@ -49,7 +49,7 @@ public class JmcReentrantLock {
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.LOCK_ACQUIRED_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/JmcReentrantLock")
+                        .param("owner", "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock")
                         .param("instance", this)
                         .param("name", "token")
                         .param("descriptor", "I")
@@ -66,7 +66,7 @@ public class JmcReentrantLock {
                 new RuntimeEvent.Builder()
                         .type(RuntimeEvent.Type.LOCK_RELEASE_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/JmcReentrantLock")
+                        .param("owner", "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock")
                         .param("name", "token")
                         .param("descriptor", "I")
                         .param("value", token)

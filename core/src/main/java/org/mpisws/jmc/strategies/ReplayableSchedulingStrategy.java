@@ -1,5 +1,7 @@
 package org.mpisws.jmc.strategies;
 
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+
 /**
  * A ReplayableSchedulingStrategy is a scheduling strategy that can record and replay its execution
  * trace. This is useful for debugging and testing purposes, allowing the same sequence of events to
@@ -18,8 +20,8 @@ package org.mpisws.jmc.strategies;
  */
 public interface ReplayableSchedulingStrategy extends SchedulingStrategy {
     /** Records the current execution trace of the scheduling strategy. */
-    void recordTrace();
+    void recordTrace() throws JmcCheckerException;
 
     /** Replays the recorded execution trace of the scheduling strategy. */
-    void replayRecordedTrace();
+    void replayRecordedTrace() throws JmcCheckerException;
 }

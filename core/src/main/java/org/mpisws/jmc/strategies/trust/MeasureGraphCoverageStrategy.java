@@ -8,9 +8,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.*;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.strategies.SchedulingStrategy;
 import org.mpisws.jmc.util.StringUtil;
-import org.mpisws.jmc.util.files.FileUtil;
+import org.mpisws.jmc.util.FileUtil;
 
 import java.io.FileOutputStream;
 import java.nio.file.Paths;

@@ -1,9 +1,9 @@
 package org.mpisws.jmc.programs.twophasecommit;
 
-import org.mpisws.jmc.util.JmcRandom;
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
-import org.mpisws.jmc.util.concurrent.JmcThread;
-import org.mpisws.jmc.util.statements.JmcAssume;
+import org.mpisws.jmc.api.util.JmcRandom;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.statements.JmcAssume;
 
 /* Simple participant class for the two-phase commit protocol.
  * This class represents a participant in the two-phase commit protocol.

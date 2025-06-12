@@ -1,4 +1,4 @@
-package org.mpisws.jmc.util.concurrent;
+package org.mpisws.jmc.api.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
@@ -50,7 +50,7 @@ public class JmcAtomicReference<V> {
                                 new HashMap<>() {
                                     {
                                         put("newValue", newValue);
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicReference");
+                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicReference");
                                         put("name", "value");
                                         put("descriptor", "Ljava/lang/Object;");
                                     }
@@ -68,7 +68,7 @@ public class JmcAtomicReference<V> {
                         .params(
                                 new HashMap<>() {
                                     {
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicReference");
+                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicReference");
                                         put("name", "value");
                                         put("descriptor", "Ljava/lang/Object;");
                                     }

@@ -10,6 +10,7 @@ import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.JmcRuntimeConfiguration;
 import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.util.ExceptionUtil;
 
 /**
  * The JmcModelChecker class is responsible for managing the model checking process. It uses a
@@ -73,16 +74,21 @@ public class JmcModelChecker {
                             "Halting execution: {} due to exception: {}",
                             iteration,
                             e.getMessage());
-                } catch (AssertionError e) {
+                } catch (Exception e) {
+                    // Catchall for any other exceptions that may occur
                     report.setErrorIteration(iteration);
-                    report.setErrorMessage(
-                            String.format(
-                                    "Halting execution: %d due to assertion error: %s",
-                                    iteration, e.getMessage()));
-                    LOGGER.error("Assertion error in iteration {}: {}", iteration, e.getMessage());
-                    JmcRuntime.recordTrace();
-                    throw HaltCheckerException.error(
-                            "Assertion error in iteration " + iteration + ": " + e.getMessage());
+                    if (ExceptionUtil.isAssertionError(e)) {
+                        report.setErrorMessage(
+                                String.format(
+                                        "Halting execution: %d due to assertion error: %s",
+                                        iteration, e.getMessage()));
+                        LOGGER.error("Assertion error in iteration {}: {}", iteration, e.getMessage());
+                        JmcRuntime.recordTrace();
+                        throw HaltCheckerException.error(
+                                "Assertion error in iteration " + iteration + ": " + e.getMessage());
+                    } else {
+                        throw e;
+                    }
                 } finally {
                     JmcRuntime.resetIteration(iteration);
                     if (iteration % 50000 == 0) {

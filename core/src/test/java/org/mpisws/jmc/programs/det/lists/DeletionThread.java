@@ -3,7 +3,7 @@ package org.mpisws.jmc.programs.det.lists;
 import org.mpisws.jmc.programs.det.lists.list.Set;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 public class DeletionThread extends JmcThread {
 

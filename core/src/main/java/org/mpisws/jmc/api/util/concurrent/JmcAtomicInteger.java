@@ -1,4 +1,4 @@
-package org.mpisws.jmc.util.concurrent;
+package org.mpisws.jmc.api.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
@@ -24,7 +24,7 @@ public class JmcAtomicInteger {
                                 new HashMap<>() {
                                     {
                                         put("newValue", newValue);
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicInteger");
+                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicInteger");
                                         put("name", "value");
                                         put("descriptor", "I");
                                     }
@@ -42,7 +42,7 @@ public class JmcAtomicInteger {
                         .params(
                                 new HashMap<>() {
                                     {
-                                        put("owner", "org/mpisws/jmc/util/concurrent/AtomicInteger");
+                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicInteger");
                                         put("name", "value");
                                         put("descriptor", "I");
                                     }
