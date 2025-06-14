@@ -41,6 +41,7 @@ public class JmcModelChecker {
     public JmcModelCheckerReport check(JmcTestTarget target) throws JmcCheckerException {
         JmcRuntimeConfiguration runtimeConfig = config.toRuntimeConfiguration();
         JmcModelCheckerReport report = new JmcModelCheckerReport(runtimeConfig.getReportPath());
+        report.setupReportPath();
         Long startTime = System.currentTimeMillis();
         Long timeoutMarker = 0L;
         if (config.getTimeout() != null) {

@@ -167,4 +167,95 @@ public class VisitorHelper {
                 return;
         }
     }
+
+    public static void addReturnInst(MethodVisitor mv, String descriptor) {
+        // Find the return type of the method and add the corresponding return instruction
+        String returnType = descriptor.substring(descriptor.lastIndexOf(')') + 1);
+        switch (returnType) {
+            case "V":
+                mv.visitInsn(Opcodes.RETURN); // return for void methods
+                break;
+            case "D":
+                mv.visitInsn(Opcodes.DRETURN); // return for double
+                break;
+            case "F":
+                mv.visitInsn(Opcodes.FRETURN); // return for float
+                break;
+            case "J":
+                mv.visitInsn(Opcodes.LRETURN); // return for long
+                break;
+            case "I":
+            case "B":
+            case "C":
+            case "S":
+            case "Z":
+                mv.visitInsn(Opcodes.IRETURN); // return for int, byte, char, short, boolean
+                break;
+            default:
+                mv.visitInsn(Opcodes.ARETURN); // return for object references
+                break;
+        }
+    }
+
+    /**
+     * The MethodInfo class is used to store information about a method.
+     */
+    public static class MethodInfo {
+
+        /**
+         * @property {@link #access} is the access flags of the method.
+         */
+        public int access;
+
+        /**
+         * @property {@link #name} is the name of the method.
+         */
+        public String name;
+
+        /**
+         * @property {@link #descriptor} is the descriptor of the method.
+         */
+        public String descriptor;
+
+        /**
+         * @property {@link #signature} is the signature of the method.
+         */
+        public String signature;
+
+        /**
+         * @property {@link #exceptions} is the exceptions of the method.
+         */
+        public String[] exceptions;
+
+        public MethodInfo(int access, String name, String descriptor, String signature, String[] exceptions) {
+            this.access = access;
+            this.name = name;
+            this.descriptor = descriptor;
+            this.signature = signature;
+            this.exceptions = exceptions;
+        }
+
+        public boolean isStatic() {
+            return (access & Opcodes.ACC_STATIC) != 0;
+        }
+
+        /**
+         * Changes the access flags of the method to be non-synchronized.
+         */
+        public int getNonSyncAccess() {
+            return access & ~Opcodes.ACC_SYNCHRONIZED;
+        }
+
+        /**
+         * Changes the name of the method to have a suffix of "$synchronized".
+         */
+        public String getSyncName() {
+            return name + "$synchronized";
+        }
+
+        public String getUnsyncName() {
+            return name + "$unsynchronized";
+        }
+    }
+
 }

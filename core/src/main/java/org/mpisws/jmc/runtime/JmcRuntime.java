@@ -132,6 +132,7 @@ public class JmcRuntime {
     public static void resetIteration(int iteration) {
         scheduler.resetIteration(iteration);
         taskManager.reset();
+        JmcRuntimeUtils.clearSyncLocks();
     }
 
     public static void recordTrace() {

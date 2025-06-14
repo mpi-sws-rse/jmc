@@ -48,10 +48,6 @@ public class TrustStrategy extends TrackActiveTasksStrategy implements Replayabl
     @Override
     public void initIteration(int iteration, JmcModelCheckerReport report) {
         super.initIteration(iteration, report);
-        if (debug && recordedTrace == null && iteration == 0) {
-            // If we are debugging and this is the first iteration, ensure the report path exists
-            FileUtil.unsafeEnsurePath(reportPath);
-        }
         algoInstance.initIteration(iteration, report);
         if (debug) {
             algoInstance.writeExecutionGraphToFile(

@@ -82,18 +82,6 @@ public class JmcThread extends Thread {
         try {
             JmcRuntime.yield(jmcThreadId);
             run1();
-        } catch (HaltTaskException e) {
-            /*event =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.HALT_EVENT)
-                            .taskId(jmcThreadId)
-                            .build();
-            try {
-                JmcRuntime.updateEvent(event);
-            } catch (HaltTaskException ex) {
-                LOGGER.error("Failed to halt task : {}", ex.getMessage());
-            }*/
-            System.out.println("BUGGGGGGGG");
         } catch (Exception e) {
             LOGGER.error("Exception running the thread: {}", e.getMessage());
         } finally {

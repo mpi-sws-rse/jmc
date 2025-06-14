@@ -1,13 +1,18 @@
 package org.mpisws.jmc.runtime;
 
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 import java.util.HashMap;
+import java.util.Map;
 
 // Wrapper methods to create events and make JmcRuntime calls at Runtime
 // These methods are invoked mainly through bytecode instrumentation and
 // not meant to be used within the codebase.
 public class JmcRuntimeUtils {
+
+    private static JmcSyncMethodLocksStore syncMethodLocksStore = new JmcSyncMethodLocksStore();
+
     public static void readEvent(String owner, String name, String descriptor, Object instance) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
         builder.type(RuntimeEvent.Type.READ_EVENT).taskId(JmcRuntime.currentTask());
@@ -85,5 +90,53 @@ public class JmcRuntimeUtils {
 
     public static boolean shouldInstrumentThreadCall(Object t) {
         return JmcThread.class.isAssignableFrom(t.getClass());
+    }
+
+    public static void syncMethodLock(Object instance) {
+        syncMethodLocksStore.getLock(instance.hashCode()).lock();
+    }
+
+    public static void syncMethodUnLock(Object instance) {
+        syncMethodLocksStore.getLock(instance.hashCode()).unlock();
+    }
+
+    public static void syncMethodLock(String className) {
+        syncMethodLocksStore.getLock(className.hashCode()).lock();
+    }
+
+    public static void syncMethodUnLock(String className) {
+        syncMethodLocksStore.getLock(className.hashCode()).unlock();
+    }
+
+    public static void registerSyncLock(Object instance) {
+        syncMethodLocksStore.registerLock(instance.hashCode());
+    }
+
+    public static void registerSyncLock(String className) {
+        syncMethodLocksStore.registerLock(className.hashCode());
+    }
+
+    public static void clearSyncLocks() {
+        syncMethodLocksStore.clear();
+    }
+
+    private static class JmcSyncMethodLocksStore {
+        private final Map<Integer, JmcReentrantLock> lockMap;
+
+        public JmcSyncMethodLocksStore() {
+            lockMap = new HashMap<>();
+        }
+
+        public void clear() {
+            lockMap.clear();
+        }
+
+        public JmcReentrantLock getLock(Integer hashCode) {
+            return lockMap.get(hashCode);
+        }
+
+        public void registerLock(int hashcode) {
+            lockMap.put(hashcode, new JmcReentrantLock());
+        }
     }
 }

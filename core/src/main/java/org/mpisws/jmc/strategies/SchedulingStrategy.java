@@ -20,7 +20,6 @@ import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
  * calls to the {@link SchedulingStrategy#updateEvent} function.
  */
 public interface SchedulingStrategy {
-
     /**
      * Initializes the strategy for a new iteration.
      *
