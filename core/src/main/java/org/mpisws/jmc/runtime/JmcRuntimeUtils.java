@@ -11,7 +11,7 @@ import java.util.Map;
 // not meant to be used within the codebase.
 public class JmcRuntimeUtils {
 
-    private static JmcSyncMethodLocksStore syncMethodLocksStore = new JmcSyncMethodLocksStore();
+    private static final JmcSyncLocksStore syncMethodLocksStore = new JmcSyncLocksStore();
 
     public static void readEvent(String owner, String name, String descriptor, Object instance) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
@@ -92,6 +92,28 @@ public class JmcRuntimeUtils {
         return JmcThread.class.isAssignableFrom(t.getClass());
     }
 
+    // Synchronized method and blocks calls are replaced with calls to
+    // These methods which maintains state in a static global instance
+    // of `JmcSyncLockStore`.
+
+    // For synchronized methods,
+    // 1. In the constructor of the class or the static initializer
+    //      `registerSyncLock` is called
+    // 2. Then each method start is replaced with a
+    //      `try {lock() ... } finally {unlock()}
+    // 3. The lock is done using `syncMethodLock`
+    // 4. The unlock is done using `synchMethodUnlock`
+    // 5. The difference between a static sync method and an
+    //      instance sync method is in the parameters passed.
+    //      The object instance for the former and the classname
+    //      as string for the latter
+
+    // For synchronized blocks
+    // 1. The block is seen in the bytecode as a try catch with
+    //      `MONITORENTER` and `MONITOREXIT`
+    // 2. We just replace the enter and exit with lock() and unlock()
+
+
     public static void syncMethodLock(Object instance) {
         syncMethodLocksStore.getLock(instance.hashCode()).lock();
     }
@@ -116,19 +138,43 @@ public class JmcRuntimeUtils {
         syncMethodLocksStore.registerLock(className.hashCode());
     }
 
+    public static void syncBlockLock(Object instance) {
+        syncMethodLocksStore.getWithRegister(instance.hashCode()).lock();
+    }
+
+    public static void syncBlockUnLock(Object instance) {
+        syncMethodLocksStore.getWithRegister(instance.hashCode()).unlock();
+    }
+
     public static void clearSyncLocks() {
         syncMethodLocksStore.clear();
     }
 
-    private static class JmcSyncMethodLocksStore {
+    private static class JmcSyncLocksStore {
         private final Map<Integer, JmcReentrantLock> lockMap;
 
-        public JmcSyncMethodLocksStore() {
+        public JmcSyncLocksStore() {
             lockMap = new HashMap<>();
         }
 
         public void clear() {
             lockMap.clear();
+        }
+
+        /**
+         * Returns a JmcReentrantLock for the given lockObject.
+         * If it does not exist, creates a new one and registers it.
+         *
+         * <p>Note: the lock created does not call the initial write.</p>
+         *
+         * @param lockObject the object to lock on
+         * @return the JmcReentrantLock for the given lockObject
+         */
+        public JmcReentrantLock getWithRegister(Object lockObject) {
+            if (!lockMap.containsKey(lockObject.hashCode())) {
+                lockMap.put(lockObject.hashCode(), new JmcReentrantLock(lockObject));
+            }
+            return lockMap.get(lockObject.hashCode());
         }
 
         public JmcReentrantLock getLock(Integer hashCode) {

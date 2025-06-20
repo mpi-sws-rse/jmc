@@ -5,6 +5,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -30,7 +31,6 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-
         if (jmcSyncScanData.hasSyncMethods() && Objects.equals(name, "<init>")) {
             MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
             return new JmcSyncMethodConstMethodVisitor(mv, true, "");
@@ -41,13 +41,21 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
             return new JmcSyncMethodConstMethodVisitor(mv, false, name);
         }
 
+        MethodVisitor mv;
         if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
             VisitorHelper.MethodInfo methodInfo = new VisitorHelper.MethodInfo(access, name, desc, signature, exceptions);
             syncMethods.add(methodInfo);
-            return super.visitMethod(
+            mv = super.visitMethod(
                     access & ~Opcodes.ACC_SYNCHRONIZED, methodInfo.getUnsyncName(), desc, signature, exceptions);
+        } else {
+            mv = super.visitMethod(access, name, desc, signature, exceptions);
         }
-        return super.visitMethod(access, name, desc, signature, exceptions);
+
+        if (jmcSyncScanData.hasSyncBlocks()) {
+            // If there are sync blocks, we still need to instrument monitorenter/monitorexit
+            mv = new JmcSyncBlockMethodVisitor(mv);
+        }
+        return mv;
     }
 
     @Override
@@ -158,6 +166,29 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                 }
             }
             super.visitInsn(opcode);
+        }
+    }
+
+    private static class JmcSyncBlockMethodVisitor extends MethodVisitor {
+
+        public JmcSyncBlockMethodVisitor(MethodVisitor mv) {
+            super(Opcodes.ASM9, mv);
+        }
+
+        @Override
+        public void visitInsn(int opcode) {
+            if (opcode == Opcodes.MONITORENTER || opcode == Opcodes.MONITOREXIT) {
+                // No additional handling needed for sync blocks
+                mv.visitMethodInsn(
+                        Opcodes.INVOKESTATIC,
+                        "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                        opcode == Opcodes.MONITORENTER ? "syncBlockLock" : "syncBlockUnLock",
+                        "(Ljava/lang/Object;)V",
+                        false
+                );
+            } else {
+                super.visitInsn(opcode);
+            }
         }
     }
 }

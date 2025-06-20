@@ -21,6 +21,24 @@ public class JmcSyncScanVisitor extends ClassVisitor {
                 this.jmcSyncScanData.setHasSyncMethods(true);
             }
         }
-        return super.visitMethod(access, name, desc, signature, exceptions);
+        MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+        return new JmcSyncScanMethodVisitor(mv, jmcSyncScanData);
+    }
+
+    private static class JmcSyncScanMethodVisitor extends MethodVisitor {
+        private final JmcSyncScanData jmcSyncScanData;
+
+        public JmcSyncScanMethodVisitor(MethodVisitor mv, JmcSyncScanData jmcSyncScanData) {
+            super(Opcodes.ASM9, mv);
+            this.jmcSyncScanData = jmcSyncScanData;
+        }
+
+        @Override
+        public void visitInsn(int opcode) {
+            if (opcode == Opcodes.MONITORENTER || opcode == Opcodes.MONITOREXIT) {
+                this.jmcSyncScanData.setHasSyncBlocks(true);
+            }
+            super.visitInsn(opcode);
+        }
     }
 }

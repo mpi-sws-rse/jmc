@@ -16,6 +16,7 @@ public class JmcReentrantLock {
 
     private int token = 0;
     private final ReentrantLock lock = new ReentrantLock();
+    private final Object lockObj;
 
     public JmcReentrantLock() {
         RuntimeEvent event1 =
@@ -29,6 +30,15 @@ public class JmcReentrantLock {
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event1);
+        this.lockObj = null;
+    }
+
+    /**
+     * Piggybacks on the lock object. No initial write event is triggered.
+     * The constructor is restricted to be used only for `synchronized` blocks.
+     **/
+    public JmcReentrantLock(Object lockObject) {
+        this.lockObj = lockObject;
     }
 
     /** Acquires the lock. */
@@ -41,7 +51,7 @@ public class JmcReentrantLock {
                         .param("name", "token")
                         .param("value", token)
                         .param("descriptor", "I")
-                        .param("instance", this)
+                        .param("instance", this.lockObj == null ? this: this.lockObj)
                         .build();
         JmcRuntime.updateEventAndYield(event);
         lock.lock();
@@ -50,7 +60,7 @@ public class JmcReentrantLock {
                         .type(RuntimeEvent.Type.LOCK_ACQUIRED_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("owner", "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock")
-                        .param("instance", this)
+                        .param("instance", this.lockObj == null ? this: this.lockObj)
                         .param("name", "token")
                         .param("descriptor", "I")
                         .param("value", token)
@@ -71,7 +81,7 @@ public class JmcReentrantLock {
                         .param("descriptor", "I")
                         .param("value", token)
                         .param("newValue", 0)
-                        .param("instance", this)
+                        .param("instance", this.lockObj == null ? this: this.lockObj)
                         .build();
         JmcRuntime.updateEventAndYield(event);
     }

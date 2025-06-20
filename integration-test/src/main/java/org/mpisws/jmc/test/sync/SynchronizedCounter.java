@@ -1,19 +1,20 @@
 package org.mpisws.jmc.test.sync;
 
-import org.mpisws.jmc.runtime.JmcRuntimeUtils;
+/**
+ * Interface for a synchronized counter that can be incremented and queried for its count.
+ * Implementations should ensure thread safety when incrementing the count and retrieving it.
+ */
+public interface SynchronizedCounter {
 
-public class SynchronizedCounter {
-    int count;
+    /**
+     * Increments the count in a synchronized manner.
+     */
+    void increment();
 
-    public SynchronizedCounter() {
-        count = 0;
-    }
-
-    public synchronized void increment() {
-        count++;
-    }
-
-    public synchronized int getCount() {
-        return count;
-    }
+    /**
+     * Returns the current count.
+     *
+     * @return the current count
+     */
+    int getCount();
 }
