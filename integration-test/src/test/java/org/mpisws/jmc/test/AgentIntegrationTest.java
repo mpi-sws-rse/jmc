@@ -9,6 +9,7 @@ import org.mpisws.jmc.checker.JmcTestTarget;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.test.programs.CorrectCounterTestRunner;
 import org.mpisws.jmc.test.programs.FutureCounterTestRunner;
+import org.mpisws.jmc.test.assume.SendRecv;
 
 /** The AgentIntegrationTest class is used to test the agent. */
 public class AgentIntegrationTest {
@@ -42,6 +43,24 @@ public class AgentIntegrationTest {
         jmcModelChecker.check(target);
     }
 
+    @Test
+    public void testAssume() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(10)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "AssumeTest",
+                        () -> {
+                            SendRecv.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
 
     @JmcCheckConfiguration(numIterations = 10, strategy = "random", debug = true)
     @Test

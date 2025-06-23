@@ -4,7 +4,7 @@ import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 // TODO: complete this

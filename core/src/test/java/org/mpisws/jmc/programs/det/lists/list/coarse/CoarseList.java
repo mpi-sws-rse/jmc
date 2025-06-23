@@ -2,81 +2,65 @@ package org.mpisws.jmc.programs.det.lists.list.coarse;
 
 import org.mpisws.jmc.programs.det.lists.list.Set;
 import org.mpisws.jmc.programs.det.lists.list.node.Node;
-import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.runtime.JmcRuntimeUtils;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 public class CoarseList implements Set {
 
     private final Node head;
     private final JmcReentrantLock lock;
 
+    private void readHead() {
+        JmcRuntimeUtils.readEvent(
+                "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList",
+                "head",
+                "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;",
+                this);
+    }
+
+    private void writeHead(Node newNode) {
+        JmcRuntimeUtils.writeEvent(
+                newNode,
+                "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList",
+                "head",
+                "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;",
+                this);
+    }
+
+    private void readLock() {
+        JmcRuntimeUtils.readEvent(
+                "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList",
+                "lock",
+                "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;",
+                this);
+    }
+
+    private void writeLock(JmcReentrantLock newLock) {
+        JmcRuntimeUtils.writeEvent(
+                newLock,
+                "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList",
+                "lock",
+                "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;",
+                this);
+    }
+
     public CoarseList() {
         Node newNode1 = new Node(Integer.MIN_VALUE);
         head = newNode1;
         // Write event for initializing head node
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("newValue", newNode1)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList")
-                        .param("name", "head")
-                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event1);
+        writeHead(newNode1);
 
         Node headNode = head;
         // Read event for accessing head node
-        RuntimeEvent event2 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList")
-                        .param("name", "head")
-                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event2);
+        readHead();
 
         Node newNode2 = new Node(Integer.MAX_VALUE);
-        headNode.next = newNode2;
-        // Write event for initializing next member of head node
-        RuntimeEvent event3 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("newValue", newNode2)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                        .param("name", "next")
-                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                        .param("instance", headNode)
-                        .build();
-        JmcRuntime.updateEventAndYield(event3);
+        headNode.setNext(newNode2);
 
         JmcReentrantLock lock = new JmcReentrantLock();
         this.lock = lock;
         // Write event for initializing lock
-        RuntimeEvent event4 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("newValue", lock)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList")
-                        .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event4);
+        writeLock(lock);
     }
 
     /**
@@ -89,156 +73,41 @@ public class CoarseList implements Set {
         int key = i;
         JmcReentrantLock l = lock;
         // Read event to read the lock object
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList")
-                        .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
+        readLock();
 
-        try {
-            l.lock();
-            Node h = head;
-            // Read event to read the head node
-            RuntimeEvent event1 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList")
-                            .param("name", "head")
-                            .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                            .param("instance", this)
-                            .build();
-            JmcRuntime.updateEventAndYield(event1);
-            pred = h;
+        //        try {
+        //            l.lock();
+        Node h = head;
+        // Read event to read the head node
+        readHead();
+        pred = h;
 
-            curr = pred.next;
-            // Read event to read the next member of the head node
-            RuntimeEvent event2 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                            .param("name", "next")
-                            .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                            .param("instance", pred)
-                            .build();
-            JmcRuntime.updateEventAndYield(event2);
+        curr = pred.getNext();
 
-            int currKey = curr.key;
-            // Read event to read the key of the current node
-            RuntimeEvent event3 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                            .param("name", "key")
-                            .param("descriptor", "I")
-                            .param("instance", curr)
-                            .build();
-            JmcRuntime.updateEventAndYield(event3);
+        int currKey = curr.getKey();
 
-            while (currKey < key) {
-                pred = curr;
-                Node n = curr.next;
-                // Read event to read the next member of the current node
-                RuntimeEvent event4 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.READ_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                                .param("name", "next")
-                                .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                                .param("instance", curr)
-                                .build();
-                JmcRuntime.updateEventAndYield(event4);
-                curr = n;
+        while (currKey < key) {
+            pred = curr;
+            Node n = curr.getNext();
+            curr = n;
 
-                currKey = curr.key;
-                // Read event to read the key of the current node
-                RuntimeEvent event5 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.READ_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                                .param("name", "key")
-                                .param("descriptor", "I")
-                                .param("instance", curr)
-                                .build();
-                JmcRuntime.updateEventAndYield(event5);
-            }
-
-            currKey = curr.key;
-            // Read event to read the key of the current node
-            RuntimeEvent event6 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                            .param("name", "key")
-                            .param("descriptor", "I")
-                            .param("instance", curr)
-                            .build();
-            JmcRuntime.updateEventAndYield(event6);
-            if (key == currKey) {
-                return false;
-            } else {
-                Node node = new Node(i, key);
-                node.next = curr;
-                // Write event to write the next member of the new node
-                RuntimeEvent event7 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.WRITE_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param("newValue", curr)
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                                .param("name", "next")
-                                .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                                .param("instance", node)
-                                .build();
-                JmcRuntime.updateEventAndYield(event7);
-
-                pred.next = node;
-                // Write event to write the next member of the predecessor node
-                RuntimeEvent event8 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.WRITE_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param("newValue", node)
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                                .param("name", "next")
-                                .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                                .param("instance", pred)
-                                .build();
-                JmcRuntime.updateEventAndYield(event8);
-
-                return true;
-            }
-        } finally {
-            l.unlock();
+            currKey = curr.getKey();
         }
+
+        currKey = curr.getKey();
+        if (key == currKey) {
+            return false;
+        } else {
+            Node node = new Node(i, key);
+            node.setNext(curr);
+
+            pred.setNext(node);
+
+            return true;
+        }
+        //        } finally {
+        //            l.unlock();
+        //        }
     }
 
     /**
@@ -250,155 +119,34 @@ public class CoarseList implements Set {
         Node pred, curr;
         int key = i;
         JmcReentrantLock l = lock;
+        readLock();
+        //        try {
+        //            l.lock();
+        pred = head;
+        readHead();
+        curr = pred.getNext();
 
-        // Read event to read the lock object
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList")
-                        .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
-        try {
-            l.lock();
-            pred = head;
+        int currKey = curr.getKey();
+        while (currKey < key) {
+            pred = curr;
 
-            // Read event to read the head node
-            RuntimeEvent event1 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList")
-                            .param("name", "head")
-                            .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                            .param("instance", this)
-                            .build();
-            JmcRuntime.updateEventAndYield(event1);
+            Node n = curr.getNext();
+            curr = n;
 
-            curr = pred.next;
-
-            // Read event to read the next member of the head node
-            RuntimeEvent event2 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                            .param("name", "next")
-                            .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                            .param("instance", pred)
-                            .build();
-            JmcRuntime.updateEventAndYield(event2);
-
-            int currKey = curr.key;
-            // Read event to read the key of the current node
-            RuntimeEvent event3 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                            .param("name", "key")
-                            .param("descriptor", "I")
-                            .param("instance", curr)
-                            .build();
-            JmcRuntime.updateEventAndYield(event3);
-            while (currKey < key) {
-                pred = curr;
-
-                Node n = curr.next;
-                // Read event to read the next member of the current node
-                RuntimeEvent event4 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.READ_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                                .param("name", "next")
-                                .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                                .param("instance", curr)
-                                .build();
-                JmcRuntime.updateEventAndYield(event4);
-                curr = n;
-
-                currKey = curr.key;
-                // Read event to read the key of the current node
-                RuntimeEvent event5 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.READ_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                                .param("name", "key")
-                                .param("descriptor", "I")
-                                .param("instance", curr)
-                                .build();
-                JmcRuntime.updateEventAndYield(event5);
-            }
-            currKey = curr.key;
-            // Read event to read the key of the current node
-            RuntimeEvent event6 =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
-                            .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                            .param("name", "key")
-                            .param("descriptor", "I")
-                            .param("instance", curr)
-                            .build();
-            JmcRuntime.updateEventAndYield(event6);
-            if (key == currKey) {
-                Node n = curr.next;
-
-                // Read event to read the next member of the current node
-                RuntimeEvent event7 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.READ_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                                .param("name", "next")
-                                .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                                .param("instance", curr)
-                                .build();
-                JmcRuntime.updateEventAndYield(event7);
-
-                pred.next = n;
-                // Write event to write the next member of the predecessor node
-                RuntimeEvent event8 =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.WRITE_EVENT)
-                                .taskId(JmcRuntime.currentTask())
-                                .param("newValue", n)
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/det/lists/list/node/Node")
-                                .param("name", "next")
-                                .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/Node;")
-                                .param("instance", pred)
-                                .build();
-                JmcRuntime.updateEventAndYield(event8);
-                return true;
-            } else {
-                return false;
-            }
-        } finally {
-            l.unlock();
+            currKey = curr.getKey();
         }
+        currKey = curr.getKey();
+        if (key == currKey) {
+            Node n = curr.getNext();
+
+            pred.setNext(n);
+            return true;
+        } else {
+            return false;
+        }
+        //        } finally {
+        //            l.unlock();
+        //        }
     }
 
     /**
@@ -409,13 +157,18 @@ public class CoarseList implements Set {
     public boolean contains(int i) {
         Node pred, curr;
         int key = i;
-        synchronized (lock) {
+        try {
+            lock.lock();
+            readLock();
             pred = head;
-            curr = pred.next;
-            while (curr.key < key) {
-                curr = curr.next;
+            readHead();
+            curr = pred.getNext();
+            while (curr.getKey() < key) {
+                curr = curr.getNext();
             }
-            return key == curr.key;
+            return key == curr.getKey();
+        } finally {
+            lock.unlock();
         }
     }
 }

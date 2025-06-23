@@ -15,7 +15,7 @@ import java.util.function.Predicate;
  * are updated.
  */
 public class BackwardRevisitView {
-    private static Logger LOGGER = LogManager.getLogger(BackwardRevisitView.class);
+    private static final Logger LOGGER = LogManager.getLogger(BackwardRevisitView.class);
     private final ExecutionGraph graph;
     private final HashSet<Event.Key> removedNodes;
     private final ExecutionGraphNode read;
@@ -42,11 +42,17 @@ public class BackwardRevisitView {
             // So we also mark it to be removed
             this.addEvent = read.getEvent().clone();
             this.removedNodes.add(read.key());
-            EventUtils.markLockWriteFinal(write.getEvent());
         }
         try {
             this.read = this.graph.getEventNode(read.key());
             this.write = this.graph.getEventNode(write.key());
+            // When constructing a backward revisit of a write to a
+            // lock acquire read, the write cannot be ever removed from the graph.
+            // So we mark it as such.
+            // Leads to a cyclic exploration otherwise.
+            if (EventUtils.isLockAcquireRead(read.getEvent())) {
+                EventUtils.markLockWriteFinal(this.write.getEvent());
+            }
         } catch (NoSuchEventException ignored) {
             throw HaltCheckerException.error("The read or write event is not found.");
         }
@@ -78,11 +84,12 @@ public class BackwardRevisitView {
             for (Event.Key key : nodesToCheck) {
                 ExecutionGraphNode node = graph.getEventNode(key);
                 LOGGER.debug("Checking if the node is a maximal extension: " + node.getEvent());
-                Integer nodeTOIndex = node.getEvent().getToStamp();
-                if (nodeTOIndex == null) {
+                int nodeTOIndex = graph.getTOIndex(node);
+                if (nodeTOIndex == -1) {
                     throw HaltExecutionException.error("The event does not have a TO index.");
                 }
-                if (node.getEvent().getType() == Event.Type.NOOP) {
+                if (node.getEvent().getType() == Event.Type.NOOP
+                        || node.getEvent().getType() == Event.Type.ASSUME) {
                     continue;
                 }
                 Predicate<Event.Key> previous =

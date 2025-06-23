@@ -314,7 +314,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         }
 
         private Set<Long> getActiveTasks() {
-            return new HashSet<>(activeTasks.keySet());
+            return activeTasks.keySet();
         }
 
         @Override

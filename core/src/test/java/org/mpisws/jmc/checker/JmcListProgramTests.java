@@ -4,6 +4,7 @@ import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.programs.det.lists.Client10;
 import org.mpisws.jmc.programs.det.lists.Client8;
+import org.mpisws.jmc.programs.det.lists.Client9;
 
 public class JmcListProgramTests {
     @JmcCheck
@@ -19,8 +20,14 @@ public class JmcListProgramTests {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(strategy = "trust", numIterations = 1000, debug=true)
+    @JmcCheckConfiguration(strategy = "trust", numIterations = 1000, debug = true)
     void testTrustLazyList() {
         Client8.main(new String[] {String.valueOf(3)});
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(strategy = "trust", numIterations = 150, debug = true)
+    void testCoarseList() {
+        Client9.main(new String[] {String.valueOf(4)});
     }
 }

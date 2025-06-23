@@ -1,5 +1,10 @@
 package org.mpisws.jmc.programs.twophasecommit;
 
+import org.mpisws.jmc.api.util.JmcRandom;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.statements.JmcAssume;
+
 /* Simple participant class for the two-phase commit protocol.
  * This class represents a participant in the two-phase commit protocol.
  * It handles sending and receiving messages, and contains logic for
@@ -11,6 +16,7 @@ public class Participant {
     private final Mailbox mailbox;
     private final int id;
     private final Coordinator coordinator;
+    private final JmcRandom random;
 
     private final ParticipantThread participantThread;
 
@@ -19,6 +25,7 @@ public class Participant {
         this.id = id;
         this.coordinator = coordinator;
         this.participantThread = new ParticipantThread(this);
+        this.random = new JmcRandom();
     }
 
     public void send(Message message) {
@@ -44,19 +51,27 @@ public class Participant {
     public void stop() {
         // Need a better way to stop the thread
         // JmcRuntime should handle this more gracefully
-        participantThread.interrupt();
+        try {
+            participantThread.finish();
+            participantThread.join1();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean shouldCommit() {
         // Logic to determine if the participant should commit
         // This is a placeholder and should be replaced with actual logic
-
         // The non-determinism comes here
+
+        // return random.nextBoolean();
         return true;
     }
 
-    private static class ParticipantThread extends Thread {
+    private static class ParticipantThread extends JmcThread {
         private final Participant participant;
+        private final JmcReentrantLock lock = new JmcReentrantLock();
+        private boolean finished = false;
 
         public ParticipantThread(Participant participant) {
             this.participant = participant;
@@ -77,9 +92,18 @@ public class Participant {
         }
 
         @Override
-        public void run() {
-            while (true) {
+        public void run1() {
+            int NUMBER_OF_MESSAGES = 2;
+            while (NUMBER_OF_MESSAGES > 0) {
+                this.lock.lock();
+                if (finished) {
+                    this.lock.unlock();
+                    break;
+                }
+                this.lock.unlock();
                 Message message = participant.receive();
+                JmcAssume.assume(message != null);
+
                 if (message != null) {
                     // Process the message
                     // This is where the participant logic would be implemented
@@ -130,8 +154,17 @@ public class Participant {
                             throw new IllegalStateException(
                                     "Unexpected value: " + message.getType());
                     }
+
+                    // Decrement the number of messages to process
+                    NUMBER_OF_MESSAGES--;
                 }
             }
+        }
+
+        public void finish() {
+            this.lock.lock();
+            finished = true;
+            this.lock.unlock();
         }
     }
 }

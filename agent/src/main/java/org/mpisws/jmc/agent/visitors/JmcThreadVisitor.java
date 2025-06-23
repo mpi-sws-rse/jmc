@@ -31,7 +31,7 @@ public class JmcThreadVisitor {
             if ("java/lang/Thread".equals(superName)) {
                 isExtendingThread = true;
                 // Replace the superclass with JmcThread (ensure the internal name is correct)
-                superName = "org/mpisws/jmc/util/concurrent/JmcThread";
+                superName = "org/mpisws/jmc/api/util/concurrent/JmcThread";
             }
             // Continue visiting with the possibly modified superclass.
             super.visit(version, access, name, signature, superName, interfaces);
@@ -73,7 +73,7 @@ public class JmcThreadVisitor {
                     // Replace with call to JmcThread's constructor
                     super.visitMethodInsn(
                             Opcodes.INVOKESPECIAL,
-                            "org/mpisws/jmc/util/concurrent/JmcThread",
+                            "org/mpisws/jmc/api/util/concurrent/JmcThread",
                             name,
                             descriptor,
                             isInterface);

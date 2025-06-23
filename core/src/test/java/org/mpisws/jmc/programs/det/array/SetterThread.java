@@ -1,6 +1,6 @@
 package org.mpisws.jmc.programs.det.array;
 
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 public class SetterThread extends JmcThread {
 

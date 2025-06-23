@@ -2,7 +2,7 @@ package org.mpisws.jmc.programs.det.lists;
 
 import org.mpisws.jmc.programs.det.lists.list.Set;
 import org.mpisws.jmc.programs.det.lists.list.coarse.CoarseList;
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +47,7 @@ public class Client9 {
             try {
                 insertionThreads.get(i).join1();
             } catch (InterruptedException e) {
-
+                e.printStackTrace();
             }
         }
 
@@ -55,7 +55,7 @@ public class Client9 {
             try {
                 deleteThreads.get(i).join1();
             } catch (InterruptedException e) {
-
+                e.printStackTrace();
             }
         }
     }

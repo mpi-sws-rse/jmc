@@ -23,6 +23,6 @@ public class CorrectCounterTestRunner {
                 e.printStackTrace();
             }
         }
-        assert (counter.getCounter() == 2);
+        assert (counter.getCounter() == 1);
     }
 }

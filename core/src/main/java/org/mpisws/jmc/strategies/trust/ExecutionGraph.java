@@ -5,7 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.util.aux.LamportVectorClock;
 
 import java.util.*;
@@ -60,7 +60,9 @@ public class ExecutionGraph {
                 if (EventUtils.isBlockingLabel(node.getEvent())) {
                     // We ignore blocking labels when revisiting
                     // And also remove the edge pointing to the blocking label
-                    newTaskEvent.get(newTaskEvent.size()-1).removeEdgeTo(node.key(), Relation.ProgramOrder);
+                    newTaskEvent
+                            .get(newTaskEvent.size() - 1)
+                            .removeEdgeTo(node.key(), Relation.ProgramOrder);
                     continue;
                 }
                 newTaskEvent.add(node.clone());
@@ -105,7 +107,16 @@ public class ExecutionGraph {
         this.blockedLocks = new HashMap<>();
     }
 
-    public List<SchedulingChoiceWrapper> getTaskSchedule(List<ExecutionGraphNode> taskEvents) {
+    /**
+     * Generate a task Schedule from a given sorted list of event nodes.
+     *
+     * <p>Note that the generated Schedule involves tasks that are 1-indexed and
+     * The trust ExecutionGraph has tasks that are 0-indexed.</p>
+     *
+     * @param taskEvents A sorted list of event nodes
+     * @return A list of SchedulingChoiceWrappers.
+     */
+    public static List<SchedulingChoiceWrapper> getTaskSchedule(List<ExecutionGraphNode> taskEvents) {
         List<SchedulingChoiceWrapper> result = new ArrayList<>();
         taskEvents.remove(0); // Remove the init event
         taskEvents.remove(0); // Remove the first event of the main thread
@@ -137,7 +148,18 @@ public class ExecutionGraph {
                         new SchedulingChoiceWrapper(
                                 SchedulingChoice.task(node.getEvent().getTaskId() + 1),
                                 oldLocation));
+                // We skip the lock acquire write since the two events are added for a single
+                // runtime event
                 i++;
+            } else if (EventUtils.isThreadJoin(node.getEvent())) {
+                // If we are scheduling a thread join,
+                // we duplicate the task ID. since each join in trust is two separate events in the
+                // runtime. Join request and join completion.
+                Long taskId = node.getEvent().getTaskId() + 1;
+                result.add(new SchedulingChoiceWrapper(SchedulingChoice.task(taskId), oldLocation));
+                oldLocation = newLocation;
+                newLocation = null;
+                result.add(new SchedulingChoiceWrapper(SchedulingChoice.task(taskId), oldLocation));
             } else {
                 // Adding 1 to the task ID since the task ID is 0-indexed inside Trust but 1-indexed
                 // in JMC
@@ -292,6 +314,8 @@ public class ExecutionGraph {
         }
         if (EventUtils.isBlockingLabel(lastNodePO.getEvent())) {
             throw HaltCheckerException.error("A blocking label is followed by an event.");
+        } else if (EventUtils.isThreadFinish(lastNodePO.getEvent())) {
+            throw HaltCheckerException.error("A thread finish label is followed by an event.");
         }
         ExecutionGraphNode node = new ExecutionGraphNode(event, vectorClock);
 
@@ -654,8 +678,8 @@ public class ExecutionGraph {
     public BackwardRevisitView revisitView(ExecutionGraphNode write, ExecutionGraphNode read) {
         // Construct a restricted view of the graph
         BackwardRevisitView restrictedView = new BackwardRevisitView(this, read, write);
-        Integer readToIndex = read.getEvent().getToStamp();
-        if (readToIndex == null) {
+        int readToIndex = getTOIndex(read);
+        if (readToIndex == -1) {
             throw HaltCheckerException.error("The read event is not found in the TO order.");
         }
 
@@ -718,6 +742,11 @@ public class ExecutionGraph {
 
         int write1Index = writes.indexOf(write1);
         int write2Index = writes.indexOf(write2);
+
+        if (write1Index == -1 || write2Index == -1) {
+            throw HaltCheckerException.error(
+                    "One of the write events is not found in the coherency order.");
+        }
 
         ExecutionGraphNode laterWrite = write2;
         int earlierIndex = write1Index;
@@ -883,10 +912,13 @@ public class ExecutionGraph {
 
             // Each event in the coherencyOrder which holds the key must be removed
             Integer location = node.getEvent().getLocation();
-            if (!coherencyOrder.containsKey(location)) {
-                throw HaltCheckerException.error("The restricting node is not in coherency order");
+            if (location != null) {
+                if (!coherencyOrder.containsKey(location)) {
+                    throw HaltCheckerException.error(
+                            "The restricting node is not in coherency order");
+                }
+                coherencyOrder.get(location).removeIf((e) -> e.key().equals(key));
             }
-            coherencyOrder.get(location).removeIf((e) -> e.key().equals(key));
         }
 
         // Remove dangling edges
@@ -1012,14 +1044,25 @@ public class ExecutionGraph {
         if (indexRestrictingNode == -1) {
             throw HaltCheckerException.error("The restricting node is not found.");
         }
+        List<ExecutionGraphNode> newAllEvents = new ArrayList<>(indexRestrictingNode + 1);
         List<ExecutionGraphNode> removedNodes =
-                allEvents.subList(indexRestrictingNode + 1, allEvents.size());
-        allEvents = allEvents.subList(0, indexRestrictingNode + 1);
+                new ArrayList<>(allEvents.size() - indexRestrictingNode);
 
+        for (int i = 0; i < allEvents.size(); i++) {
+            if (i <= indexRestrictingNode) {
+                newAllEvents.add(allEvents.get(i));
+            } else {
+                removedNodes.add(allEvents.get(i));
+            }
+        }
+        allEvents = newAllEvents;
         // Iterating over these nodes and remove them from the taskEvents and coherencyOrder
         for (ExecutionGraphNode node : removedNodes) {
 
             if (node.getEvent().isWrite() || node.getEvent().isWriteEx()) {
+                // Based on the assumption that the init node is never removed. So, we only have to
+                // update the CO if
+                // the node is a write or writeEx event.
                 Integer location = node.getEvent().getLocation();
                 if (!modifiedLocations.containsKey(location)) {
                     modifiedLocations.put(location, coherencyOrder.get(location));
@@ -1029,11 +1072,14 @@ public class ExecutionGraph {
             // Removing from coherencyOrder
             Integer location = node.getEvent().getLocation();
 
-            if (!coherencyOrder.containsKey(location)) {
-                throw HaltCheckerException.error("The restricting node is not in coherency order");
-            }
+            if (location != null) {
+                if (!coherencyOrder.containsKey(location)) {
+                    throw HaltCheckerException.error(
+                            "The restricting node is not in coherency order");
+                }
 
-            coherencyOrder.get(location).removeIf((e) -> e.key().equals(node.key()));
+                coherencyOrder.get(location).removeIf((e) -> e.key().equals(node.key()));
+            }
 
             // Removing from taskEvents
             int task = Math.toIntExact(node.getEvent().getTaskId());
@@ -1078,47 +1124,134 @@ public class ExecutionGraph {
         }
     }
 
-    public List<ExecutionGraphNode> checkConsistencyAndTopologicallySort() {
+    public boolean checkExtensiveConsistency() {
+        try {
+            checkConsistency();
+            //            List<ExecutionGraphNode> topologicalSort =
+            // checkConsistencyAndTopologicallySort();
 
-        for (Integer location : coherencyOrder.keySet()) {
-            List<ExecutionGraphNode> writes = coherencyOrder.get(location);
-            if (writes.isEmpty()) {
+            // Check that finish is the last event in each task
+            for (int i = 0; i < taskEvents.size(); i++) {
+                List<ExecutionGraphNode> taskEventList = taskEvents.get(i);
+                if (taskEventList.isEmpty()) {
+                    continue; // No events for this task
+                }
+                ExecutionGraphNode lastEvent = taskEventList.get(taskEventList.size() - 1);
+                if (!EventUtils.isThreadFinish(lastEvent.getEvent())) {
+                    LOGGER.error(
+                            "Task {} does not end with a finish event: {}",
+                            i,
+                            lastEvent.getEvent());
+                    return false;
+                }
+            }
+
+            if (!checkCoherencyEdges()) {
+                LOGGER.error("Coherency edges are not consistent.");
+                return false;
+            }
+            if (!checkReadsFromEdges()) {
+                LOGGER.error("Reads from edges are not consistent.");
+                return false;
+            }
+        } catch (Exception e) {
+            // If any exception is thrown, the graph is not consistent
+            LOGGER.error("Failed to check consistency of the execution graph: {}", e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    public boolean checkReadsFromEdges() {
+        for (int i = 0; i < allEvents.size(); i++) {
+            ExecutionGraphNode node = allEvents.get(i);
+            if (!node.getEvent().isRead() && !node.getEvent().isReadEx()) {
+                // Only check read events
                 continue;
             }
-            for (ExecutionGraphNode write : writes) {
-                Map<Integer, List<ExecutionGraphNode>> readsPerLocation = new HashMap<>();
-                List<Event.Key> reads = write.getSuccessors(Relation.ReadsFrom);
+            List<Event.Key> readsFrom = node.getPredecessors(Relation.ReadsFrom);
+            if (readsFrom.size() != 1) {
+                LOGGER.error(
+                        "Read event {} has {} reads from predecessors, expected 1.",
+                        node.getEvent().key(),
+                        readsFrom.size());
+                return false;
+            }
+        }
+        return true;
+    }
 
-                for (Event.Key readKey : reads) {
-                    try {
-                        ExecutionGraphNode readNode = getEventNode(readKey);
-                        if (!readNode.getEvent().isReadEx()) {
-                            // We only check for read exclusive events
-                            continue;
+    public List<ExecutionGraphNode> checkConsistency() {
+        ExecutionGraph clone = new ExecutionGraph(this);
+        try {
+            // Add edges from reads to alternative writes
+            for (Map.Entry<Integer, List<ExecutionGraphNode>> writeEntry :
+                    clone.coherencyOrder.entrySet()) {
+                List<ExecutionGraphNode> writes = writeEntry.getValue();
+                for (ExecutionGraphNode write : writes) {
+                    Map<Integer, List<ExecutionGraphNode>> readsPerLocation = new HashMap<>();
+                    List<Event.Key> reads = write.getSuccessors(Relation.ReadsFrom);
+
+                    for (Event.Key readKey : reads) {
+                        try {
+                            ExecutionGraphNode readNode = getEventNode(readKey);
+                            if (!readNode.getEvent().isReadEx()) {
+                                // We only check for read exclusive events
+                                continue;
+                            }
+                            Integer readLocation = readNode.getEvent().getLocation();
+                            if (!readsPerLocation.containsKey(readLocation)) {
+                                readsPerLocation.put(readLocation, new ArrayList<>());
+                            }
+                            readsPerLocation.get(readLocation).add(readNode);
+                        } catch (NoSuchEventException e) {
+                            throw HaltCheckerException.error("The read event is not found.");
                         }
-                        Integer readLocation = readNode.getEvent().getLocation();
-                        if (!readsPerLocation.containsKey(readLocation)) {
-                            readsPerLocation.put(readLocation, new ArrayList<>());
+                    }
+
+                    for (Map.Entry<Integer, List<ExecutionGraphNode>> entry :
+                            readsPerLocation.entrySet()) {
+                        List<ExecutionGraphNode> locationReads = entry.getValue();
+                        if (locationReads.size() > 1) {
+                            // More than one read to the same location
+                            // This is not allowed in the sequential consistency model
+                            return new ArrayList<>();
                         }
-                        readsPerLocation.get(readLocation).add(readNode);
-                    } catch (NoSuchEventException e) {
-                        throw HaltCheckerException.error("The read event is not found.");
                     }
                 }
 
-                for (Map.Entry<Integer, List<ExecutionGraphNode>> entry :
-                        readsPerLocation.entrySet()) {
-                    List<ExecutionGraphNode> locationReads = entry.getValue();
-                    if (locationReads.size() > 1) {
-                        // More than one read to the same location
-                        // This is not allowed in the sequential consistency model
-                        return new ArrayList<>();
+                for (int i = 0; i < writes.size() - 1; i++) {
+                    ExecutionGraphNode write = writes.get(i);
+                    if (write.getEvent().isInit()) {
+                        continue;
+                    }
+                    List<Event.Key> reads = write.getSuccessors(Relation.ReadsFrom);
+                    if (reads.isEmpty()) {
+                        // No reads from this write, continue
+                        continue;
+                    }
+                    List<ExecutionGraphNode> readNodes = new ArrayList<>();
+                    for (Event.Key key : reads) {
+                        readNodes.add(clone.getEventNode(key));
+                    }
+                    ExecutionGraphNode nextWrite = writes.get(i + 1);
+                    for (ExecutionGraphNode read : readNodes) {
+                        read.addEdge(nextWrite, Relation.FR);
                     }
                 }
             }
+            return fixTopologicalSort(clone.iterator());
+        } catch (NoSuchEventException e) {
+            throw HaltCheckerException.error(
+                    "Hit an event that doesn't exist in the graph: " + e.getMessage());
+        } catch (TopologicalSorter.GraphCycleException e) {
+            LOGGER.debug("Hit an inconsistent graph: {}", e.getMessage());
+            return new ArrayList<>();
         }
+    }
 
-        return fixTopologicalSort(unsafeIterator());
+    public List<ExecutionGraphNode> checkConsistencyAndTopologicallySort() {
+        return checkConsistency();
     }
 
     private List<ExecutionGraphNode> fixTopologicalSort(List<ExecutionGraphNode> topologicalSort) {
@@ -1252,8 +1385,18 @@ public class ExecutionGraph {
             }
             List<ExecutionGraphNode> writes = entry.getValue();
             for (int i = 0; i < writes.size() - 1; i++) {
-                if (!writes.get(i)
-                        .hasEdge(writes.get(i + 1).getEvent().key(), Relation.Coherency)) {
+                ExecutionGraphNode write = writes.get(i);
+                if (!write.hasEdge(writes.get(i + 1).getEvent().key(), Relation.Coherency)) {
+                    return false;
+                }
+                if (write.getEvent().isInit()) {
+                    // Skip the init event
+                    continue;
+                }
+                List<Event.Key> successiveWrites = write.getSuccessors(Relation.Coherency);
+                if (successiveWrites.size() > 1) {
+                    // More than one write to the same location
+                    // This is not allowed in the sequential consistency model
                     return false;
                 }
             }
@@ -1395,6 +1538,9 @@ public class ExecutionGraph {
                 toAdd.sort(Event.Key::compareTo);
                 toAdd.forEach(
                         (key) -> {
+                            if (!nodeMap.containsKey(key)) {
+                                LOGGER.debug("Error finding the node for key: {}", key);
+                            }
                             queue.add(nodeMap.get(key));
                         });
             }
@@ -1476,50 +1622,52 @@ public class ExecutionGraph {
 
     // For debugging
     public void printGraph() {
-        System.out.println("Execution Graph:");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Execution Graph:\n");
         for (int i = 0; i < taskEvents.size(); i++) {
-            System.out.print("Tasks " + i + ": ");
+            sb.append("Tasks ").append(i).append(": \n");
             for (ExecutionGraphNode node : taskEvents.get(i)) {
-                System.out.print(node.getEvent());
+                sb.append(node.getEvent());
                 // Print predecessors and successors
-                System.out.print(" [P: ");
+                sb.append(" [P: ");
                 for (Relation relation : node.getAllPredecessors().keySet()) {
-                    System.out.print("{" + relation + ": ");
+                    sb.append("{").append(relation).append(": ");
                     for (Event.Key key : node.getPredecessors(relation)) {
-                        System.out.print(key + "/");
+                        sb.append(key).append("/");
                     }
-                    System.out.print("} ");
+                    sb.append("} ");
                 }
-                System.out.print("] [S: ");
+                sb.append("] [S: ");
                 for (Relation relation : node.getEdges().keySet()) {
-                    System.out.print("{" + relation + ": ");
+                    sb.append("{").append(relation).append(": ");
                     for (Event.Key key : node.getSuccessors(relation)) {
-                        System.out.print(key + "/");
+                        sb.append(key).append("/");
                     }
-                    System.out.print("] ");
+                    sb.append("] ");
                 }
-                System.out.print(" ---> ");
+                sb.append(" ---> \n");
             }
-            System.out.println();
+            sb.append("\n");
         }
-        System.out.println();
+        sb.append("\n");
 
-        System.out.println("All Events:");
+        sb.append("All Events:\n");
         for (ExecutionGraphNode node : allEvents) {
-            System.out.print(node.getEvent() + " -> ");
+            sb.append(node.getEvent()).append(" -> ");
         }
-        System.out.println();
-        System.out.println();
+        sb.append("\n");
+        sb.append("\n");
 
-        System.out.println("Coherency Order:");
+        sb.append("Coherency Order:\n");
         for (Integer loc : coherencyOrder.keySet()) {
-            System.out.print("Location " + loc + ": ");
+            sb.append("Location ").append(loc).append(": ");
             for (ExecutionGraphNode node : coherencyOrder.get(loc)) {
-                System.out.print(node.getEvent() + " -> ");
+                sb.append(node.getEvent()).append(" -> ");
             }
-            System.out.println();
+            sb.append("\n");
         }
-        System.out.println();
+        sb.append("\n");
+        LOGGER.debug("{}", sb.toString());
     }
 
     public boolean isRfConsistent() {

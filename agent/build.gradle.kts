@@ -18,7 +18,7 @@ checkstyle {
 
 dependencies {
     implementation("org.ow2.asm:asm:9.8")
-    testImplementation("org.ow2.asm:asm-util:9.8")
+    implementation("org.ow2.asm:asm-util:9.8")
     implementation(project(":core"))
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

@@ -52,7 +52,7 @@ public class JmcFutureVisitor {
                 // Replace the call to Executors with a call to JmcExecutors
                 super.visitMethodInsn(
                         opcode,
-                        "org/mpisws/jmc/util/concurrent/JmcExecutors",
+                        "org/mpisws/jmc/api/util/concurrent/JmcExecutors",
                         name,
                         descriptor,
                         isInterface);
@@ -95,7 +95,7 @@ public class JmcFutureVisitor {
                 // Replace the call to FutureTask with a call to JmcFuture
                 super.visitMethodInsn(
                         opcode,
-                        "org/mpisws/jmc/util/concurrent/JmcFuture",
+                        "org/mpisws/jmc/api/util/concurrent/JmcFuture",
                         name,
                         descriptor,
                         isInterface);
@@ -146,7 +146,7 @@ public class JmcFutureVisitor {
             public void visitTypeInsn(int opcode, String type) {
                 // Replace NEW CompletableFuture with JmcCompletableFuture
                 if (opcode == Opcodes.NEW && type.equals("java/util/concurrent/CompletableFuture")) {
-                    super.visitTypeInsn(opcode, "org/mpisws/jmc/util/concurrent/JmcCompletableFuture");
+                    super.visitTypeInsn(opcode, "org/mpisws/jmc/api/util/concurrent/JmcCompletableFuture");
                 } else {
                     super.visitTypeInsn(opcode, type);
                 }
@@ -158,7 +158,7 @@ public class JmcFutureVisitor {
                 descriptor = replaceDescriptor(descriptor);
                 if (owner.equals("java/util/concurrent/CompletableFuture")) {
                     super.visitMethodInsn(opcode,
-                            "org/mpisws/jmc/util/concurrent/JmcCompletableFuture",
+                            "org/mpisws/jmc/api/util/concurrent/JmcCompletableFuture",
                             name,
                             descriptor,
                             isInterface);

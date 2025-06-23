@@ -52,6 +52,16 @@ public class Message {
         // Make call to runtime to indicate a read operation
     }
 
+    @Override
+    public String toString() {
+        return "Message{" +
+                "type=" + type +
+                ", content='" + content + '\'' +
+                ", senderId=" + senderId +
+                ", receiverId=" + receiverId +
+                '}';
+    }
+
     public enum Type {
         PREPARE,
         COMMIT,

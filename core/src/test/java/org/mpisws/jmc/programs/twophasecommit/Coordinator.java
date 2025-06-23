@@ -1,5 +1,7 @@
 package org.mpisws.jmc.programs.twophasecommit;
 
+import org.mpisws.jmc.api.util.statements.JmcAssume;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,9 +10,8 @@ public class Coordinator {
     protected final int id;
     protected final int numParticipants;
     protected Participant[] participants;
-    protected final int timeout;
 
-    public Coordinator(int numParticipants, int timeout) {
+    public Coordinator(int numParticipants) {
         this.mailbox = new Mailbox();
         this.id = 0;
         this.numParticipants = numParticipants;
@@ -18,7 +19,6 @@ public class Coordinator {
         for (int i = 0; i < numParticipants; i++) {
             this.participants[i] = new Participant(i + 1, this);
         }
-        this.timeout = timeout;
     }
 
     public void send(Message message) {
@@ -38,9 +38,6 @@ public class Coordinator {
     }
 
     public boolean acceptRequest(int requestId) {
-        // Logic to determine if the coordinator accepts the request
-        // This is a placeholder and should be replaced with actual logic
-
         for (Participant participant : participants) {
             participant.send(
                     new Message(
@@ -55,12 +52,17 @@ public class Coordinator {
 
         while (!completed) {
             Message message = mailbox.receive();
-            switch (message.getType()) {
-                case ABORT -> responses.put(message.getSenderId() - 1, false);
-                case COMMIT -> responses.put(message.getSenderId() - 1, true);
-            }
-            if (responses.size() == numParticipants) {
-                completed = true;
+            JmcAssume.assume(message != null);
+
+            // Bug 1: message check
+            if (message != null) {
+                switch (message.getType()) {
+                    case ABORT -> responses.put(message.getSenderId() - 1, false);
+                    case COMMIT -> responses.put(message.getSenderId() - 1, true);
+                }
+                if (responses.size() == numParticipants) {
+                    completed = true;
+                }
             }
         }
 
@@ -96,6 +98,8 @@ public class Coordinator {
         Map<Integer, Boolean> acknowledgments = new HashMap<>();
         while (acknowledgments.size() < numParticipants) {
             Message message = mailbox.receive();
+            JmcAssume.assume(message != null && message.getType() == Message.Type.ACKNOWLEDGE);
+
             if (message.getType() == Message.Type.ACKNOWLEDGE) {
                 acknowledgments.put(message.getSenderId() - 1, true);
             }

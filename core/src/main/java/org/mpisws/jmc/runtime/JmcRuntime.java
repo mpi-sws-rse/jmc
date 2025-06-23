@@ -9,6 +9,11 @@ import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
 import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.runtime.scheduling.Scheduler;
+import org.mpisws.jmc.strategies.JmcReplayUnsupported;
+import org.mpisws.jmc.strategies.ReplayableSchedulingStrategy;
+import org.mpisws.jmc.strategies.SchedulingStrategy;
 
 import java.util.concurrent.ExecutionException;
 
@@ -25,7 +30,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class JmcRuntime {
 
-    private static Logger LOGGER = LogManager.getLogger(JmcRuntime.class);
+    private static final Logger LOGGER = LogManager.getLogger(JmcRuntime.class);
 
     private static final TaskManager taskManager = new TaskManager();
 
@@ -49,9 +54,25 @@ public class JmcRuntime {
         scheduler.start();
     }
 
-    /**
-     * Tears down the runtime by shutting down the scheduler adn clearing the task manager.
-     */
+    public static void setupReplay(JmcRuntimeConfiguration config) throws JmcCheckerException {
+        LOGGER.debug("Setting up for replay!");
+        JmcRuntime.config = config;
+        SchedulingStrategy strategy = config.getStrategy();
+        if (!(strategy instanceof ReplayableSchedulingStrategy)) {
+            LOGGER.error(
+                    "The provided strategy is not replayable. Please use a replayable strategy.");
+            throw new JmcReplayUnsupported();
+        }
+        ((ReplayableSchedulingStrategy) strategy).replayRecordedTrace();
+        scheduler =
+                new Scheduler(
+                        strategy,
+                        config.getSchedulerTries(),
+                        config.getSchedulerTrySleepTimeNanos());
+        scheduler.start();
+    }
+
+    /** Tears down the runtime by shutting down the scheduler adn clearing the task manager. */
     public static void tearDown() {
         LOGGER.debug("Tearing down!");
         taskManager.reset();
@@ -107,12 +128,15 @@ public class JmcRuntime {
         JmcRuntime.yield();
     }
 
-    /**
-     * Resets the runtime for a new iteration.
-     */
+    /** Resets the runtime for a new iteration. */
     public static void resetIteration(int iteration) {
         scheduler.resetIteration(iteration);
         taskManager.reset();
+        JmcRuntimeUtils.clearSyncLocks();
+    }
+
+    public static void recordTrace() {
+        scheduler.recordTrace();
     }
 
     /**
@@ -171,11 +195,7 @@ public class JmcRuntime {
         } catch (ExecutionException | InterruptedException e) {
             LOGGER.error("Failed to wait for task: {}", taskId);
             Throwable cause = e.getCause();
-            if (cause instanceof HaltTaskException) {
-                throw (HaltTaskException) cause;
-            } else {
-                throw HaltExecutionException.error(cause.getMessage());
-            }
+            throw HaltExecutionException.error(cause.getMessage());
         }
     }
 
@@ -223,6 +243,9 @@ public class JmcRuntime {
             LOGGER.error("Failed to update event: {}", event);
             taskManager.terminate(event.getTaskId());
             throw e;
+        } catch (Exception e) {
+            LOGGER.error("Failed to update event: {}", event, e);
+            throw HaltExecutionException.error(e.getMessage());
         }
     }
 

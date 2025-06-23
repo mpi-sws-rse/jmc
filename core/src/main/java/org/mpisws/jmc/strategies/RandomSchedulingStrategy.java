@@ -6,7 +6,8 @@ import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.PrimitiveValue;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 
 import java.util.HashMap;
 import java.util.Random;
@@ -60,7 +61,7 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
         if (randomValueMap.containsKey(taskToSchedule)) {
             int randomValue = randomValueMap.remove(taskToSchedule);
             LOGGER.debug("Using cached random value {} for task {}", randomValue, taskToSchedule);
-            return SchedulingChoice.task(taskToSchedule, randomValue);
+            return SchedulingChoice.task(taskToSchedule, new PrimitiveValue(randomValue));
         }
         return SchedulingChoice.task(taskToSchedule);
     }

@@ -3,19 +3,22 @@ package org.mpisws.jmc.strategies.trust;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpisws.jmc.strategies.ReplayableSchedulingStrategy;
 import org.mpisws.jmc.strategies.TrackActiveTasksStrategy;
-import org.mpisws.jmc.util.files.FileUtil;
+import org.mpisws.jmc.util.FileUtil;
 
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class TrustStrategy extends TrackActiveTasksStrategy {
+public class TrustStrategy extends TrackActiveTasksStrategy implements ReplayableSchedulingStrategy {
 
     private final Logger LOGGER = LogManager.getLogger(TrustStrategy.class);
 
@@ -25,6 +28,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
 
     private final boolean debug;
     private final String reportPath;
+    private List<SchedulingChoice<?>> recordedTrace;
 
     public TrustStrategy() {
         this(System.nanoTime(), SchedulingPolicy.FIFO, false, "build/test-results/jmc-report");
@@ -38,19 +42,44 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
         this.policy = policy;
         this.debug = debug;
         this.reportPath = reportPath;
-        if (debug) {
-            FileUtil.unsafeEnsurePath(reportPath);
-        }
+        this.recordedTrace = null;
     }
 
     @Override
     public void initIteration(int iteration, JmcModelCheckerReport report) {
         super.initIteration(iteration, report);
-        algoInstance.initIteration(iteration);
+        algoInstance.initIteration(iteration, report);
+        if (debug) {
+            algoInstance.writeExecutionGraphToFile(
+                    Paths.get(this.reportPath, "iteration-guiding-" + iteration + ".json")
+                            .toString());
+        }
     }
 
     @Override
     public SchedulingChoice<?> nextTask() {
+        if (recordedTrace != null) {
+            // If we have a recorded trace, return the next task from it
+            SchedulingChoice<?> next = recordedTrace.remove(0);
+            LOGGER.debug("Returning recorded task: {}", next);
+            if (next.isEnd()) {
+                // If we are at the end event only the main thread (1) needs to be active and continue.
+                // For sanity, we check that the set of active tasks contains only the main thread.
+                Set<Long> activeTasks = getActiveTasks();
+                if (activeTasks.size() != 1 || !activeTasks.contains(1L)) {
+                    LOGGER.error(
+                            "End of trace reached but active tasks are not as expected: {}",
+                            activeTasks);
+                    throw new RuntimeException(
+                            "End of trace reached but active tasks are not as expected: "
+                                    + activeTasks);
+                }
+                return SchedulingChoice.task(1L); // Return task ID 1 for end of trace
+            }
+            return next;
+        }
+
+
         // Always add 1 to the return value the strategy expects 1-indexed tasks but we store
         // 0-indexed tasks
 
@@ -89,6 +118,11 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     @Override
     public void updateEvent(RuntimeEvent event) throws HaltTaskException, HaltExecutionException {
         super.updateEvent(event);
+        if (recordedTrace != null && !recordedTrace.isEmpty()) {
+            // If we are replaying a recorded trace, we do not update the algorithm with new events
+            LOGGER.debug("Skipping event update during trace replay: {}", event);
+            return;
+        }
         List<Event> trustEvents = EventFactory.fromRuntimeEvent(event);
         for (Event e : trustEvents) {
             LOGGER.debug("Received event: {}", e);
@@ -107,7 +141,8 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
         super.resetIteration(iteration);
         if (debug) {
             algoInstance.writeExecutionGraphToFile(
-                    Paths.get(this.reportPath, "iteration-" + iteration + ".json").toString());
+                    Paths.get(this.reportPath, "iteration-complete-" + iteration + ".json")
+                            .toString());
         }
     }
 
@@ -119,6 +154,20 @@ public class TrustStrategy extends TrackActiveTasksStrategy {
     public void teardown() {
         super.teardown();
         algoInstance.teardown();
+    }
+
+    @Override
+    public void recordTrace() throws JmcCheckerException {
+        String filePath = Paths.get(this.reportPath, "replay.json")
+                .toString();
+        LOGGER.info("Recording trace to {}", filePath);
+        algoInstance.recordTaskSchedule(filePath);
+    }
+
+    @Override
+    public void replayRecordedTrace() throws JmcCheckerException {
+        recordedTrace = FileUtil.readTaskSchedule(Paths.get(this.reportPath, "replay.json")
+                .toString());
     }
 
     public enum SchedulingPolicy {

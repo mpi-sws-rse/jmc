@@ -1,7 +1,7 @@
 package org.mpisws.jmc.programs.futures;
 
-import org.mpisws.jmc.util.concurrent.JmcCompletableFuture;
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcCompletableFuture;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 import java.util.concurrent.CompletableFuture;
 

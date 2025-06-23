@@ -45,7 +45,7 @@ public class EventFactory {
                                 Event.Type.READ);
                 return List.of(event);
             }
-            case FINISH_EVENT, HALT_EVENT -> {
+            case FINISH_EVENT/*, HALT_EVENT*/ -> {
                 // Update EventUtils::isThreadFinish if anything changes here
                 Event event =
                         new Event(
@@ -67,18 +67,18 @@ public class EventFactory {
                 event.setAttribute("joined_task", joinedTask - 1);
                 return List.of(event);
             }
-            case JOIN_REQUEST_EVENT -> {
-                // Update EventUtils::isThreadJoin if anything changes here
-                Event event =
-                        new Event(
-                                runtimeEvent.getTaskId() - 1,
-                                LocationStore.ThreadLocation,
-                                Event.Type.NOOP);
-                Long joinedTask = runtimeEvent.getParam("waitingTask");
-                event.setAttribute("thread_join_request", true);
-                event.setAttribute("waitingTask", joinedTask - 1);
-                return List.of(event);
-            }
+            //            case JOIN_REQUEST_EVENT -> {
+            //                // Update EventUtils::isThreadJoin if anything changes here
+            //                Event event =
+            //                        new Event(
+            //                                runtimeEvent.getTaskId() - 1,
+            //                                LocationStore.ThreadLocation,
+            //                                Event.Type.NOOP);
+            //                Long joinedTask = runtimeEvent.getParam("joinedTask");
+            //                event.setAttribute("thread_join", true);
+            //                event.setAttribute("joined_task", joinedTask - 1);
+            //                return List.of(event);
+            //            }
             case LOCK_ACQUIRE_EVENT -> {
                 Event event1 =
                         new Event(
@@ -110,6 +110,12 @@ public class EventFactory {
                                 Location.fromRuntimeEvent(runtimeEvent).hashCode(),
                                 Event.Type.WRITE);
                 event.setAttribute("lock_release", true);
+                return List.of(event);
+            }
+            case ASSUME_EVENT -> {
+                Event event = new Event(runtimeEvent.getTaskId() - 1, null, Event.Type.ASSUME);
+                boolean result = runtimeEvent.getParam("result");
+                event.setAttribute("result", result);
                 return List.of(event);
             }
         }

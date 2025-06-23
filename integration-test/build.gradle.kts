@@ -23,7 +23,7 @@ dependencies {
     agentDependencies("org.mpisws:jmc-agent:0.1.0")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation(project(":core"))
+    implementation(project(":core"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
 }
 
