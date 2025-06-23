@@ -30,7 +30,7 @@ public class SchedulingStrategyFactory {
             throw new JmcInvalidStrategyException("Invalid strategy: " + name);
         }
         if (name.equals("random")) {
-            return new RandomSchedulingStrategy(config.getSeed());
+            return new RandomSchedulingStrategy(config.getSeed(), config.getReportPath());
         } else if (name.equals("trust")) {
             return new TrustStrategy(
                     config.getSeed(),
