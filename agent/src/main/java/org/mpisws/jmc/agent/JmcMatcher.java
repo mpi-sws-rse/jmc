@@ -9,8 +9,8 @@ import java.util.List;
  */
 public class JmcMatcher {
 
-    private List<String> matchingPackages;
-    private List<String> excludedPackages;
+    private final List<String> matchingPackages;
+    private final List<String> excludedPackages;
 
     public JmcMatcher(List<String> matchingPackages, List<String> excludedPackages) {
         this.matchingPackages = matchingPackages;
@@ -25,9 +25,6 @@ public class JmcMatcher {
      * @return true if the class name matches
      */
     public boolean matches(String className, ClassLoader classLoader) {
-        //        if (classLoader == null) {
-        //            return false;
-        //        }
         String typeName = className.replace("/", ".");
         if (typeName.startsWith("java.")
                 || typeName.startsWith("javax.")
@@ -48,7 +45,6 @@ public class JmcMatcher {
         }
         // Exclude instrumentation classes.
         if (!excludedPackages.isEmpty()) {
-            System.out.println("Excluded packages: " + excludedPackages);
             for (String exclude : excludedPackages) {
                 if (!exclude.isEmpty() && typeName.startsWith(exclude)) {
                     return false;

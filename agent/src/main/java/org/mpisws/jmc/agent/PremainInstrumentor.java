@@ -33,7 +33,6 @@ public class PremainInstrumentor implements ClassFileTransformer {
         if (!this.matcher.matches(finalClassName, loader)) {
             return copiedClassBuffer;
         }
-        System.out.println("Jmc PremainInstrumentor.transform(" + className + ", " + finalClassName + ")");
         ClassReader tempCr = new ClassReader(copiedClassBuffer);
         ClassWriter tempCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
