@@ -13,6 +13,7 @@ import org.mpisws.jmc.test.bigShot.BigShotS;
 import org.mpisws.jmc.test.bigShot.BigShotSII;
 import org.mpisws.jmc.test.concrete.gcd.ParallelGCD;
 import org.mpisws.jmc.test.det.array.DetArray;
+import org.mpisws.jmc.test.det.counter.Client1;
 import org.mpisws.jmc.test.programs.CorrectCounterTestRunner;
 import org.mpisws.jmc.test.programs.FutureCounterTestRunner;
 import org.mpisws.jmc.test.assume.SendRecv;
@@ -144,6 +145,26 @@ public class AgentIntegrationTest {
                         () -> {
                             String[] args = {"5"}; // Example argument
                             DetArray.main(args);
+                        });
+        jmcModelChecker.check(target);
+    }
+
+    @Test
+    public void testCoarseCounter() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder()
+                        .strategyType("trust")
+                        .numIterations(1000000)
+                        .debug(false)
+                        .build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "CoarseCounterTest",
+                        () -> {
+                            String[] args = {"0", "1", "2", "0", "1", "2"}; // Example argument
+                            Client1.main(args);
                         });
         jmcModelChecker.check(target);
     }
