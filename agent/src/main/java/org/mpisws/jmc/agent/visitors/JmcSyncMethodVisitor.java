@@ -13,7 +13,7 @@ import java.util.Objects;
 public class JmcSyncMethodVisitor extends ClassVisitor {
 
     private String className;
-    private JmcSyncScanData jmcSyncScanData;
+    private final JmcSyncScanData jmcSyncScanData;
 
     private final List<VisitorHelper.MethodInfo> syncMethods;
 
@@ -121,7 +121,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         // Error occurred. Unlock and throw exception.
         newMv.visitLabel(l2);
         // Visit frame for throwable and store the exception
-        newMv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] {"java/lang/Throwable"});
+        newMv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[]{"java/lang/Throwable"});
         newMv.visitIntInsn(Opcodes.ASTORE, 1);
         // Unlock
         newMv.visitIntInsn(Opcodes.ALOAD, 0);
@@ -137,7 +137,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         newMv.visitLabel(l6);
 
         // Visit this local variable
-        newMv.visitLocalVariable("this", "L"+className+";", null, l0, l6, 0);
+        newMv.visitLocalVariable("this", "L" + className + ";", null, l0, l6, 0);
         newMv.visitLocalVariable("e", "Ljava/lang/Throwable;", null, l2, l4, 1);
         newMv.visitMaxs(-1, -1); // Auto-compute stack size and locals
         newMv.visitEnd();
@@ -178,6 +178,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         @Override
         public void visitInsn(int opcode) {
             if (opcode == Opcodes.MONITORENTER || opcode == Opcodes.MONITOREXIT) {
+                mv.visitInsn(Opcodes.DUP); // Duplicate the object reference for the sync block
                 // No additional handling needed for sync blocks
                 mv.visitMethodInsn(
                         Opcodes.INVOKESTATIC,
@@ -186,9 +187,8 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                         "(Ljava/lang/Object;)V",
                         false
                 );
-            } else {
-                super.visitInsn(opcode);
             }
+            super.visitInsn(opcode);
         }
     }
 }
