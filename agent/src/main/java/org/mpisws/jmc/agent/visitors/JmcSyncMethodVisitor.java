@@ -178,7 +178,6 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         @Override
         public void visitInsn(int opcode) {
             if (opcode == Opcodes.MONITORENTER || opcode == Opcodes.MONITOREXIT) {
-                mv.visitInsn(Opcodes.DUP); // Duplicate the object reference for the sync block
                 // No additional handling needed for sync blocks
                 mv.visitMethodInsn(
                         Opcodes.INVOKESTATIC,
@@ -187,8 +186,9 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                         "(Ljava/lang/Object;)V",
                         false
                 );
+            } else {
+                super.visitInsn(opcode);
             }
-            super.visitInsn(opcode);
         }
     }
 }
