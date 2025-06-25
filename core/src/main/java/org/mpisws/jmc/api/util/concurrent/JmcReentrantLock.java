@@ -16,6 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class JmcReentrantLock {
 
     private int token = 0;
+    private Object lockObj;
     private final ReentrantLock lock = new ReentrantLock();
 
     public JmcReentrantLock() {
@@ -23,16 +24,29 @@ public class JmcReentrantLock {
                 "token", "I");
         token = 0;
         JmcRuntime.yield();
+        this.lockObj = new Object();
+    }
+
+    public JmcReentrantLock(Object lockObj) {
+        this.lockObj = lockObj;
+    }
+
+    private Object getInstance() {
+        if (lockObj == null) {
+            return this;
+        } else {
+            return lockObj;
+        }
     }
 
     /** Acquires the lock. */
     public void lock() {
         JmcRuntimeUtils.lockAcquireEvent("org/mpisws/jmc/api/util/concurrent/JmcReentrantLock",
-                "token", token, "I", this);
+                "token", token, "I", getInstance());
 
         lock.lock();
 
-        JmcRuntimeUtils.lockAcquiredEventWithoutYield(this,
+        JmcRuntimeUtils.lockAcquiredEventWithoutYield(getInstance(),
                 "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock",
                 "token", token, "I", 1);
     }
@@ -41,7 +55,7 @@ public class JmcReentrantLock {
     public void unlock() {
         lock.unlock();
 
-        JmcRuntimeUtils.lockReleaseEvent(this,
+        JmcRuntimeUtils.lockReleaseEvent(getInstance(),
                 "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock", "token", token, "I", 0);
     }
 }

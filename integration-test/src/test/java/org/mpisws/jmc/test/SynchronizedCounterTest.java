@@ -74,7 +74,7 @@ public class SynchronizedCounterTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "trust", debug = true)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust")
     public void testTrustSynchronizedBlockCounter() {
         testCounterSyncBlockProgram();
     }

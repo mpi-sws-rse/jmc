@@ -1,6 +1,6 @@
 package org.mpisws.jmc.test.concrete.gcd;
 
-import org.mpisws.jmc.util.statements.JmcAssume;
+import org.mpisws.jmc.api.util.statements.JmcAssume;
 
 import java.util.concurrent.locks.ReentrantLock;
 
