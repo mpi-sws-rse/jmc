@@ -13,22 +13,25 @@ public class SynchronizedCounterTest {
 
         SynchronizedCounterThread thread1 = new SynchronizedCounterThread(counter);
         SynchronizedCounterThread thread2 = new SynchronizedCounterThread(counter);
+        SynchronizedCounterThread thread3 = new SynchronizedCounterThread(counter);
 
         thread1.start();
         thread2.start();
+        thread3.start();
 
         try {
             thread1.join();
             thread2.join();
+            thread3.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        assert counter.getCount() == 2;
+        assert counter.getCount() == 3;
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug=true)
+    @JmcCheckConfiguration(numIterations = 10, debug = true)
     public void testRandomSynchronizedCounter() {
         twoCounterProgram();
     }
@@ -46,29 +49,32 @@ public class SynchronizedCounterTest {
         SynchronizedCounterThread thread1 = new SynchronizedCounterThread(counter);
         SynchronizedCounterThread thread2 = new SynchronizedCounterThread(counter);
         SynchronizedCounterThread thread3 = new SynchronizedCounterThread(counter);
+        SynchronizedCounterThread thread4 = new SynchronizedCounterThread(counter);
 
         thread1.start();
         thread2.start();
         thread3.start();
+        thread4.start();
 
         try {
             thread1.join();
             thread2.join();
             thread3.join();
+            thread4.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assert counter.getCount() == 3;
+        assert counter.getCount() == 4;
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug=true)
+    @JmcCheckConfiguration(numIterations = 10, debug = true)
     public void testRandomSynchronizedBlockCounter() {
         testCounterSyncBlockProgram();
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "trust")
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust", debug = true)
     public void testTrustSynchronizedBlockCounter() {
         testCounterSyncBlockProgram();
     }
