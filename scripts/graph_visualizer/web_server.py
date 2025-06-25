@@ -61,37 +61,42 @@ def _get_graph_code(graph_filename: str):
     else:
         return int(split_names[0])
 
-def _is_valid_graph_file(graph_filename: str):
+def _is_valid_graph_file(graph_filename: str, guiding: bool):
     try:
+        if guiding and "guiding" not in graph_filename:
+            return False
         _get_graph_code(graph_filename)
         return True
     except Exception as e:
         return False
 
 
-def read_graphs(graph_files_path: str):
+def read_graphs(graph_files_path: str, guiding: bool):
     """Read the graph files from the given path"""
     global graph_files
     graph_files = {}
     global log_files
     log_files = {}
     for file in os.listdir(graph_files_path):
-        if file.endswith(".json") and _is_valid_graph_file(file):
+        if file.endswith(".json") and _is_valid_graph_file(file, guiding):
             file_id = _get_graph_code(file)
             graph_files[file_id] = os.path.join(graph_files_path,file)
-        elif file.endswith(".log") and _is_valid_graph_file(file):
+        elif file.endswith(".log") and _is_valid_graph_file(file, guiding):
             file_id = _get_graph_code(file)
             log_files[file_id] = os.path.join(graph_files_path,file)
 
 if __name__ == "__main__":
-    if (len(sys.argv) != 2):
-        print("Usage: python web_server.py <graph_files_path>")
+    if (len(sys.argv) != 2 and len(sys.argv) != 3):
+        print("Usage: python web_server.py <graph_files_path> [--guiding]")
         sys.exit(1)
     graph_files_path = sys.argv[1]
+    guiding = False
+    if len(sys.argv) == 3 and sys.argv[2] == "--guiding":
+        guiding = True
     if not os.path.exists(graph_files_path):
         print(f"Error: {graph_files_path} not found")
         sys.exit(1)
 
-    read_graphs(graph_files_path)
+    read_graphs(graph_files_path, guiding)
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -216,6 +216,7 @@ public class Event {
 
     /** Represents the type of the event according to the algorithm. */
     public enum Type {
+        ASSUME,
         READ,
         READ_EX,
         BLOCK,
@@ -376,6 +377,18 @@ public class Event {
     @Override
     public String toString() {
         return "Event(" + type.toString() + ")" + key;
+    }
+
+    public String toVerboseString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Event(").append(type.toString()).append(") key: ").append(key);
+        if (location != null) {
+            sb.append(", location: ").append(location);
+        }
+        if (!attributes.isEmpty()) {
+            sb.append(", attributes: ").append(attributes);
+        }
+        return sb.toString();
     }
 
     /** A generic event predicate. */

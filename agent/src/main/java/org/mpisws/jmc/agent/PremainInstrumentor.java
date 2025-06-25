@@ -46,11 +46,13 @@ public class PremainInstrumentor implements ClassFileTransformer {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         ClassVisitor cv =
                 new JmcFutureVisitor.JmcExecutorsClassVisitor(
-                        new JmcReentrantLockVisitor(
-                                new JmcThreadVisitor.ThreadClassVisitor(
-                                        new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
-                                                new JmcReadWriteVisitor.ReadWriteClassVisitor(
-                                                        cw)))));
+                        new JmcAtomicVisitor(
+                                new JmcReentrantLockVisitor(
+                                        new JmcThreadVisitor.ThreadClassVisitor(
+                                                new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
+                                                        new JmcReadWriteVisitor.ReadWriteClassVisitor(
+                                                                cw))))
+                        ));
         cr.accept(cv, 0);
         if (this.agentArgs.isDebug()) {
             byte[] transformed = cw.toByteArray();

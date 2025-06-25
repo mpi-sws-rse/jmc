@@ -13,7 +13,7 @@ public class JmcRuntimeUtils {
         builder.type(RuntimeEvent.Type.READ_EVENT).taskId(JmcRuntime.currentTask());
 
         HashMap<String, Object> var2 = new HashMap<>();
-        var2.put("newValue", (Object) null);
+        var2.put("newValue", null);
         var2.put("owner", owner);
         var2.put("name", name);
         var2.put("descriptor", descriptor);
@@ -58,6 +58,48 @@ public class JmcRuntimeUtils {
         var2.put("name", name);
         var2.put("descriptor", descriptor);
         JmcRuntime.updateEventAndYield(builder.params(var2).param("instance", instance).build());
+    }
+
+    public static void lockAcquireEvent(
+            String owner, String name, Object value, String descriptor, Object instance) {
+        RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
+        builder.type(RuntimeEvent.Type.LOCK_ACQUIRE_EVENT).taskId(JmcRuntime.currentTask());
+
+        HashMap<String, Object> var2 = new HashMap<>();
+        var2.put("owner", owner);
+        var2.put("name", name);
+        var2.put("value", value);
+        var2.put("descriptor", descriptor);
+        JmcRuntime.updateEventAndYield(builder.params(var2).param("instance", instance).build());
+    }
+
+    public static void lockAcquiredEventWithoutYield(
+            Object instance, String owner, String name, Object value, String descriptor, Object newValue) {
+        RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
+        builder.type(RuntimeEvent.Type.LOCK_ACQUIRED_EVENT).taskId(JmcRuntime.currentTask());
+
+        HashMap<String, Object> var2 = new HashMap<>();
+        var2.put("owner", owner);
+        var2.put("name", name);
+        var2.put("value", value);
+        var2.put("newValue", newValue);
+        var2.put("descriptor", descriptor);
+        JmcRuntime.updateEvent(builder.params(var2).param("instance", instance).build());
+    }
+
+    public static void lockReleaseEvent(
+            Object instance, String owner, String name, Object value, String descriptor, Object newValue) {
+        RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
+        builder.type(RuntimeEvent.Type.LOCK_RELEASE_EVENT).taskId(JmcRuntime.currentTask());
+
+        HashMap<String, Object> var2 = new HashMap<>();
+        var2.put("owner", owner);
+        var2.put("name", name);
+        var2.put("value", value);
+        var2.put("newValue", newValue);
+        var2.put("descriptor", descriptor);
+        JmcRuntime.updateEventAndYield(builder.params(var2).param("instance", instance).build());
+
     }
 
     // Join calls used by the instrumentation to replace existing join calls.

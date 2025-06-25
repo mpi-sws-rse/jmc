@@ -1,6 +1,7 @@
 package org.mpisws.jmc.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
+import org.mpisws.jmc.runtime.JmcRuntimeUtils;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 
 public class JmcAtomicStampedReference<V> {
@@ -12,25 +13,45 @@ public class JmcAtomicStampedReference<V> {
     public JmcReentrantLock lock = new JmcReentrantLock();
 
     public JmcAtomicStampedReference(V initialValue, int initialStamp) {
-        writeOp(initialValue, initialStamp);
+        JmcRuntimeUtils.writeEventWithoutYield(this, initialValue,
+                "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "value", "Ljava/lang/Object;");
         value = initialValue;
+        JmcRuntime.yield();
+
+        JmcRuntimeUtils.writeEventWithoutYield(this, initialStamp,
+                "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "stamp", "I");
         stamp = initialStamp;
+        JmcRuntime.yield();
     }
 
     public boolean compareAndSet(
             V expectedReference, V newReference, int expectedStamp, int newStamp) {
         lock.lock();
         try {
-            readOp();
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "value", "Ljava/lang/Object;");
             V readValue = value;
+            JmcRuntime.yield();
+
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "stamp", "I");
             int readStamp = stamp;
 
             if (readValue == expectedReference && readStamp == expectedStamp) {
-                writeOp(newReference, newStamp);
+                JmcRuntime.yield();
+
+                JmcRuntimeUtils.writeEventWithoutYield(this, newReference,
+                        "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "value", "Ljava/lang/Object;");
                 value = newReference;
+                JmcRuntime.yield();
+
+                JmcRuntimeUtils.writeEventWithoutYield(this, newStamp,
+                        "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "stamp", "I");
                 stamp = newStamp;
+                JmcRuntime.yield();
                 return true;
             }
+            JmcRuntime.yield();
             return false;
         } finally {
             lock.unlock();
@@ -38,23 +59,43 @@ public class JmcAtomicStampedReference<V> {
     }
 
     public V getReference() {
-        readOp();
-        V result = value;
-        return result;
+        lock.lock();
+        try {
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "value", "Ljava/lang/Object;");
+            V result = value;
+            JmcRuntime.yield();
+            return result;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public int getStamp() {
-        readOp();
-        int result = stamp;
-        return result;
+        lock.lock();
+        try {
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "stamp", "I");
+            int result = stamp;
+            JmcRuntime.yield();
+            return result;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void set(V newReference, int newStamp) {
         lock.lock();
         try {
-            writeOp(newReference, newStamp);
+            JmcRuntimeUtils.writeEventWithoutYield(this, newReference,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "value", "Ljava/lang/Object;");
             value = newReference;
+            JmcRuntime.yield();
+
+            JmcRuntimeUtils.writeEventWithoutYield(this, newStamp,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "stamp", "I");
             stamp = newStamp;
+            JmcRuntime.yield();
         } finally {
             lock.unlock();
         }
@@ -63,44 +104,20 @@ public class JmcAtomicStampedReference<V> {
     public V get(int[] stampHolder) {
         lock.lock();
         try {
-            readOp();
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "value", "Ljava/lang/Object;");
             V result = value;
+            JmcRuntime.yield();
+
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicStampedReference", "stamp", "I");
             int resultStamp = stamp;
+            JmcRuntime.yield();
 
             stampHolder[0] = resultStamp;
             return result;
         } finally {
             lock.unlock();
         }
-    }
-
-    private void readOp() {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/AtomicStampedReference")
-                        .param("name", "value")
-                        .param("descriptor", "Ljava/lang/Object;")
-                        .param("instance", this)
-                        .param("stamp", stamp)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
-    }
-
-    private void writeOp(V newValue, int newStamp) {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/util/concurrent/AtomicStampedReference")
-                        .param("name", "value")
-                        .param("descriptor", "Ljava/lang/Object;")
-                        .param("instance", this)
-                        .param("stamp", stamp)
-                        .param("newValue", newValue)
-                        .param("newStamp", newStamp)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
     }
 }

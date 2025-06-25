@@ -10,8 +10,10 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         super(Opcodes.ASM9, cv);
     }
 
-    private static final String REENTRANT_LOCK_DESC = "Ljava/util/concurrent/locks/ReentrantLock;";
-    private static final String JMC_REENTRANT_LOCK_DESC = "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;";
+    private static final String REENTRANT_LOCK_PATH = "java/util/concurrent/locks/ReentrantLock";
+    private static final String JMC_REENTRANT_LOCK_PATH = "org/mpisws/jmc/util/concurrent/JmcReentrantLock";
+    private static final String REENTRANT_LOCK_DESC = "L" + REENTRANT_LOCK_PATH + ";";
+    private static final String JMC_REENTRANT_LOCK_DESC = "L" + JMC_REENTRANT_LOCK_PATH + ";";
 
     private static String replaceDescriptor(String desc) {
         if (desc.contains(REENTRANT_LOCK_DESC)) {
@@ -20,13 +22,16 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         return desc;
     }
 
+    private static String replaceType(String type) {
+        if (type.equals(REENTRANT_LOCK_PATH)) {
+            return JMC_REENTRANT_LOCK_PATH;
+        }
+        return type;
+    }
+
     @Override
     public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-        // Replace field descriptor if it's ReentrantLock
-        if (descriptor.equals("Ljava/util/concurrent/locks/ReentrantLock;")) {
-            descriptor = "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;";
-        }
-        return super.visitField(access, name, descriptor, signature, value);
+        return super.visitField(access, name, replaceDescriptor(descriptor), signature, value);
     }
 
     @Override
@@ -44,8 +49,8 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         @Override
         public void visitTypeInsn(int opcode, String type) {
             // Replace NEW ReentrantLock with JmcReentrantLock
-            if (opcode == Opcodes.NEW && type.equals("java/util/concurrent/locks/ReentrantLock")) {
-                super.visitTypeInsn(opcode, "org/mpisws/jmc/util/concurrent/JmcReentrantLock");
+            if (opcode == Opcodes.NEW) {
+                super.visitTypeInsn(opcode, replaceType(type));
             } else {
                 super.visitTypeInsn(opcode, type);
             }
@@ -54,36 +59,18 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
             // Replace ReentrantLock constructor calls
-            descriptor = replaceDescriptor(descriptor);
-            if (owner.equals("java/util/concurrent/locks/ReentrantLock")) {
-                super.visitMethodInsn(opcode,
-                        "org/mpisws/jmc/util/concurrent/JmcReentrantLock",
-                        name,
-                        descriptor,
-                        isInterface);
-            } else {
-                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
-            }
+            super.visitMethodInsn(opcode, replaceType(owner), name, replaceDescriptor(descriptor), isInterface);
         }
 
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
-            // Replace field references
-            if (descriptor.equals("Ljava/util/concurrent/locks/ReentrantLock;")) {
-                super.visitFieldInsn(opcode, owner, name, "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;");
-            } else {
-                super.visitFieldInsn(opcode, owner, name, descriptor);
-            }
+            super.visitFieldInsn(opcode, owner, name, replaceDescriptor(descriptor));
         }
 
         @Override
         public void visitLocalVariable(String name, String descriptor, String signature,
                                        Label start, Label end, int index) {
-            if (descriptor.equals(REENTRANT_LOCK_DESC)) {
-                super.visitLocalVariable(name, JMC_REENTRANT_LOCK_DESC, signature, start, end, index);
-            } else {
-                super.visitLocalVariable(name, descriptor, signature, start, end, index);
-            }
+            super.visitLocalVariable(name, replaceDescriptor(descriptor), signature, start, end, index);
         }
     }
 }

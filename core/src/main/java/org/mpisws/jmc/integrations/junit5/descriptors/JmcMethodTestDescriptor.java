@@ -7,8 +7,10 @@ import org.junit.platform.engine.support.descriptor.ClassSource;
 import org.junit.platform.engine.support.descriptor.MethodSource;
 import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.annotations.JmcExpectExecutions;
 import org.mpisws.jmc.annotations.JmcTimeout;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
+import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.integrations.junit5.engine.JmcTestExecutor;
 
@@ -98,7 +100,19 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
 
         try {
             JmcCheckerConfiguration config = configBuilder.build();
-            JmcTestExecutor.execute(testMethod, methodInstance, config);
+            JmcModelCheckerReport report =
+                    JmcTestExecutor.execute(testMethod, methodInstance, config);
+            if (testMethod.getAnnotation(JmcExpectExecutions.class) != null) {
+                JmcExpectExecutions expectExecutions =
+                        testMethod.getAnnotation(JmcExpectExecutions.class);
+                if (report.getTotalIterations() != expectExecutions.value()) {
+                    throw new JmcCheckerException(
+                            "Expected "
+                                    + expectExecutions.value()
+                                    + " executions, but got "
+                                    + report.getTotalIterations());
+                }
+            }
         } catch (JmcCheckerException e) {
             LOGGER.error("Error executing test method: {}", testMethod.getName(), e);
             throw e;
