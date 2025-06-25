@@ -1,4 +1,4 @@
-package org.mpisws.jmc.test.list.node;
+package org.mpisws.jmc.test.det.list.node;
 
 public class Node {
 

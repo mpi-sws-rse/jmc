@@ -1,4 +1,4 @@
-package org.mpisws.jmc.test.list;
+package org.mpisws.jmc.test.det.list;
 
 /**
  * DeletionThread is a thread that deletes an item from a set.

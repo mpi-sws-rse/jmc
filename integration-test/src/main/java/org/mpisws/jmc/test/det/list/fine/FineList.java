@@ -1,7 +1,7 @@
-package org.mpisws.jmc.test.list.fine;
+package org.mpisws.jmc.test.det.list.fine;
 
-import org.mpisws.jmc.test.list.Set;
-import org.mpisws.jmc.test.list.node.FNode;
+import org.mpisws.jmc.test.det.list.Set;
+import org.mpisws.jmc.test.det.list.node.FNode;
 
 public class FineList implements Set {
 

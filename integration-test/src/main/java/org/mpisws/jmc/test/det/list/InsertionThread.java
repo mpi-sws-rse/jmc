@@ -1,4 +1,4 @@
-package org.mpisws.jmc.test.list;
+package org.mpisws.jmc.test.det.list;
 
 /**
  * InsertionThread is a thread that inserts an item into a set.

@@ -1,6 +1,7 @@
 package org.mpisws.jmc.api.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
+import org.mpisws.jmc.runtime.JmcRuntimeUtils;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 
 import java.util.concurrent.locks.ReentrantLock;
@@ -16,73 +17,31 @@ public class JmcReentrantLock {
 
     private int token = 0;
     private final ReentrantLock lock = new ReentrantLock();
-    private final Object lockObj;
 
     public JmcReentrantLock() {
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("newValue", 0)
-                        .param("owner", "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock")
-                        .param("name", "token")
-                        .param("descriptor", "I")
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event1);
-        this.lockObj = null;
-    }
-
-    /**
-     * Piggybacks on the lock object. No initial write event is triggered.
-     * The constructor is restricted to be used only for `synchronized` blocks.
-     **/
-    public JmcReentrantLock(Object lockObject) {
-        this.lockObj = lockObject;
+        JmcRuntimeUtils.writeEventWithoutYield(this, 0, "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock",
+                "token", "I");
+        token = 0;
+        JmcRuntime.yield();
     }
 
     /** Acquires the lock. */
     public void lock() {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.LOCK_ACQUIRE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock")
-                        .param("name", "token")
-                        .param("value", token)
-                        .param("descriptor", "I")
-                        .param("instance", this.lockObj == null ? this: this.lockObj)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
+        JmcRuntimeUtils.lockAcquireEvent("org/mpisws/jmc/api/util/concurrent/JmcReentrantLock",
+                "token", token, "I", this);
+
         lock.lock();
-        event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.LOCK_ACQUIRED_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock")
-                        .param("instance", this.lockObj == null ? this: this.lockObj)
-                        .param("name", "token")
-                        .param("descriptor", "I")
-                        .param("value", token)
-                        .param("newValue", 1)
-                        .build();
-        JmcRuntime.updateEvent(event);
+
+        JmcRuntimeUtils.lockAcquiredEventWithoutYield(this,
+                "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock",
+                "token", token, "I", 1);
     }
 
     /** Releases the lock. */
     public void unlock() {
         lock.unlock();
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.LOCK_RELEASE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("owner", "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock")
-                        .param("name", "token")
-                        .param("descriptor", "I")
-                        .param("value", token)
-                        .param("newValue", 0)
-                        .param("instance", this.lockObj == null ? this: this.lockObj)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
+
+        JmcRuntimeUtils.lockReleaseEvent(this,
+                "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock", "token", token, "I", 0);
     }
 }

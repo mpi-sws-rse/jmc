@@ -31,7 +31,7 @@ public class CoarseList implements Set {
         JmcRuntimeUtils.readEvent(
                 "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList",
                 "lock",
-                "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;",
+                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;",
                 this);
     }
 
@@ -40,7 +40,7 @@ public class CoarseList implements Set {
                 newLock,
                 "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList",
                 "lock",
-                "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;",
+                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;",
                 this);
     }
 

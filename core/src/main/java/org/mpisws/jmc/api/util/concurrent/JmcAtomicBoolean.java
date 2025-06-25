@@ -1,9 +1,7 @@
 package org.mpisws.jmc.api.util.concurrent;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
-
-import java.util.HashMap;
+import org.mpisws.jmc.runtime.JmcRuntimeUtils;
 
 public class JmcAtomicBoolean {
 
@@ -11,105 +9,59 @@ public class JmcAtomicBoolean {
     public JmcReentrantLock lock = new JmcReentrantLock();
 
     public JmcAtomicBoolean(boolean initialValue) {
-        writeOp(initialValue);
+        JmcRuntimeUtils.writeEventWithoutYield(this, initialValue,
+                "org/mpisws/jmc/api/util/concurrent/JmcAtomicBoolean", "value", "Z");
         value = initialValue;
+        JmcRuntime.yield();
     }
 
     public JmcAtomicBoolean() {
-        writeOp(false);
-        value = false;
+        this(false);
     }
 
     public boolean get() {
+        lock.lock();
         try {
-            lock.lock();
-        } catch (RuntimeException e) {
-            e.printStackTrace();
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/api/util/concurrent/JmcAtomicBoolean", "value", "Z");
+            boolean out = value;
+            JmcRuntime.yield();
+            return out;
         } finally {
             lock.unlock();
         }
-        boolean out = value;
-        RuntimeEvent.Builder eventBuilder =
-                (new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask()));
-        HashMap<String, Object> eventParams = new HashMap<>();
-        eventParams.put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicBoolean");
-        eventParams.put("name", "value");
-        eventParams.put("descriptor", "Z");
-        JmcRuntime.updateEventAndYield(eventBuilder.params(eventParams).param("instance", this).build());
-        return out;
     }
 
     public void set(boolean newValue) {
-        value = newValue;
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .params(
-                                new HashMap<>() {
-                                    {
-                                        put("newValue", newValue);
-                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicBoolean");
-                                        put("name", "value");
-                                        put("descriptor", "Z");
-                                    }
-                                })
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
+        lock.lock();
+        try {
+            JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
+                    "org/mpisws/jmc/api/util/concurrent/JmcAtomicBoolean", "value", "Z");
+            value = newValue;
+            JmcRuntime.yield();
+        } finally {
+            lock.unlock();
+        }
     }
 
     public boolean compareAndSet(boolean expectedValue, boolean newValue) {
         lock.lock();
         try {
-            readOp();
+            JmcRuntimeUtils.readEventWithoutYield(this,
+                    "org/mpisws/jmc/api/util/concurrent/JmcAtomicBoolean", "value", "Z");
             if (value == expectedValue) {
-                writeOp(newValue);
+                JmcRuntime.yield();
+
+                JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
+                        "org/mpisws/jmc/api/util/concurrent/JmcAtomicBoolean", "value", "Z");
                 value = newValue;
+                JmcRuntime.yield();
                 return true;
             }
+            JmcRuntime.yield();
             return false;
         } finally {
             lock.unlock();
         }
-    }
-
-    private void writeOp(boolean newValue) {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .params(
-                                new HashMap<>() {
-                                    {
-                                        put("newValue", newValue);
-                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicBoolean");
-                                        put("name", "value");
-                                        put("descriptor", "Z");
-                                    }
-                                })
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
-    }
-
-    private void readOp() {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .params(
-                                new HashMap<>() {
-                                    {
-                                        put("owner", "org/mpisws/jmc/api/util/concurrent/AtomicBoolean");
-                                        put("name", "value");
-                                        put("descriptor", "Z");
-                                    }
-                                })
-                        .param("instance", this)
-                        .build();
-        JmcRuntime.updateEventAndYield(event);
     }
 }
