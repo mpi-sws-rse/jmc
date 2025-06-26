@@ -1,6 +1,8 @@
-package org.mpisws.jmc.test.list;
+package org.mpisws.jmc.test.det.list;
 
-/** Set interface representing a collection of integers. */
+/**
+ * Set interface representing a collection of integers.
+ */
 public interface Set {
 
     /**

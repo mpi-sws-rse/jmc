@@ -9,8 +9,17 @@ public class SynchronizedBlockCounter implements SynchronizedCounter {
     }
 
     public void increment() {
-        synchronized (lock) {
-            count++;
+        try {
+            synchronized (lock) {
+                try {
+                    count++;
+                } catch (Exception e) {
+                    // Handle any exceptions that may occur during increment
+                    System.err.println("Error incrementing count: " + e.getMessage());
+                }
+            }
+        } catch (Exception ex) {
+
         }
     }
 

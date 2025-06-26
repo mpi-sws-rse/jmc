@@ -1,35 +1,45 @@
 package org.mpisws.jmc.strategies;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 import org.mpisws.jmc.runtime.scheduling.PrimitiveValue;
 import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpisws.jmc.util.FileUtil;
 
-import java.util.HashMap;
-import java.util.Random;
-import java.util.Set;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** A random scheduling strategy that selects the next thread to be scheduled randomly. */
-public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
+public class RandomSchedulingStrategy extends TrackActiveTasksStrategy implements ReplayableSchedulingStrategy{
 
     private static final Logger LOGGER = LogManager.getLogger(RandomSchedulingStrategy.class);
 
     private final ExtRandom random;
     private final HashMap<Long, Integer> randomValueMap;
 
+    private final String reportPath;
+    private RandomSchedulingTrace curTrace;
+
+
     /**
      * Constructs a new RandomSchedulingStrategy object.
      *
      * @param seed the seed for the random number generator
      */
-    public RandomSchedulingStrategy(Long seed) {
+    public RandomSchedulingStrategy(Long seed, String reportPath) {
         this.random = new ExtRandom(seed);
         this.randomValueMap = new HashMap<>();
+        this.reportPath = reportPath;
+        this.curTrace = new RandomSchedulingTrace(seed);
     }
 
     @Override
@@ -39,6 +49,8 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
         report.setReplaySeed(random.getSeed());
         LOGGER.debug("Seed for iteration {} is {}", iteration, random.getSeed());
         randomValueMap.clear();
+
+        curTrace = new RandomSchedulingTrace(random.getSeed());
     }
 
     /**
@@ -54,16 +66,20 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
             return null;
         }
         if (activeThreads.size() == 1) {
-            return SchedulingChoice.task((Long) activeThreads.toArray()[0]);
+            SchedulingChoice<?> choice =  SchedulingChoice.task((Long) activeThreads.toArray()[0]);
+            curTrace.addChoice(choice);
+            return choice;
         }
         int index = random.nextInt(activeThreads.size());
         Long taskToSchedule = (Long) activeThreads.toArray()[index];
+        SchedulingChoice<?> choice = SchedulingChoice.task(taskToSchedule);
         if (randomValueMap.containsKey(taskToSchedule)) {
             int randomValue = randomValueMap.remove(taskToSchedule);
             LOGGER.debug("Using cached random value {} for task {}", randomValue, taskToSchedule);
-            return SchedulingChoice.task(taskToSchedule, new PrimitiveValue(randomValue));
+            choice = SchedulingChoice.task(taskToSchedule, new PrimitiveValue(randomValue));
         }
-        return SchedulingChoice.task(taskToSchedule);
+        curTrace.addChoice(choice);
+        return choice;
     }
 
     // Keep track of reactive events that need a return value
@@ -77,6 +93,19 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
             randomValueMap.put(taskId, randomValue);
             LOGGER.debug("Generated random value {} for task {}", randomValue, taskId);
         }
+    }
+
+    @Override
+    public void recordTrace() throws JmcCheckerException {
+        String seedFilePath  = Paths.get(this.reportPath, "replay_seed.txt").toString();
+        String traceFilePath = Paths.get(this.reportPath, "replay_trace.json").toString();
+        FileUtil.unsafeStoreToFile(seedFilePath, this.curTrace.getSeed() + "\n");
+        FileUtil.storeTaskSchedule(traceFilePath, this.curTrace.getChoices());
+    }
+
+    @Override
+    public void replayRecordedTrace() throws JmcCheckerException {
+        // TODO: complete this
     }
 
     /*
@@ -123,6 +152,28 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy {
                 throw new RuntimeException("Random number generation mismatch");
             }
             return orig;
+        }
+    }
+
+    private static class RandomSchedulingTrace {
+        private final long seed;
+        private List<SchedulingChoice<?>> choices;
+
+        public RandomSchedulingTrace(long seed) {
+            this.seed = seed;
+            this.choices = new ArrayList<>();
+        }
+
+        public void addChoice(SchedulingChoice<?> choice) {
+            choices.add(choice);
+        }
+
+        public long getSeed() {
+            return seed;
+        }
+
+        public List<SchedulingChoice<?>> getChoices() {
+            return choices;
         }
     }
 }

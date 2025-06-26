@@ -3,15 +3,12 @@ package org.mpisws.jmc.test;
 import org.mpisws.jmc.annotations.JmcExpectExecutions;
 import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
-import org.mpisws.jmc.test.list.DeletionThread;
-import org.mpisws.jmc.test.list.InsertionThread;
-import org.mpisws.jmc.test.list.Set;
-import org.mpisws.jmc.test.list.coarse.CoarseList;
+import org.mpisws.jmc.test.det.list.DeletionThread;
+import org.mpisws.jmc.test.det.list.InsertionThread;
+import org.mpisws.jmc.test.det.list.Set;
+import org.mpisws.jmc.test.det.list.coarse.CoarseList;
 import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class CoarseListTest {
     private void test_50_50_workload_coarse_list(int NUM_THREADS) {

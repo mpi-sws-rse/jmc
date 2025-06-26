@@ -1,6 +1,7 @@
 package org.mpisws.jmc.agent;
 
 import org.mpisws.jmc.agent.visitors.*;
+import org.mpisws.jmc.annotations.JmcIgnoreInstrumentation;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -54,14 +55,16 @@ public class PremainInstrumentor implements ClassFileTransformer {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         ClassVisitor cv =new JmcSyncMethodVisitor(
                 new JmcFutureVisitor.JmcExecutorsClassVisitor(
-                        new JmcReentrantLockVisitor(
-                                new JmcThreadVisitor.ThreadClassVisitor(
-                                        new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
-                                                    new JmcReadWriteVisitor.ReadWriteClassVisitor(
-                                                            cw
-                                                )
-                                        )
-                                )
+                        new JmcAtomicVisitor(
+                            new JmcReentrantLockVisitor(
+                                    new JmcThreadVisitor.ThreadClassVisitor(
+                                            new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
+                                                        new JmcReadWriteVisitor.ReadWriteClassVisitor(
+                                                                cw
+                                                    )
+                                            )
+                                    )
+                            )
                         )
                 ),
                 syncScanData);
