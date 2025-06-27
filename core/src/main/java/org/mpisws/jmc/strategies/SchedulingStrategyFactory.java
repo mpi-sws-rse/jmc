@@ -1,11 +1,14 @@
 package org.mpisws.jmc.strategies;
 
+import org.mpisws.jmc.strategies.estimation.EstimationStrategy;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.util.HashSet;
 import java.util.Set;
 
-/** Factory class for creating scheduling strategies. */
+/**
+ * Factory class for creating scheduling strategies.
+ */
 public class SchedulingStrategyFactory {
 
     // Set of valid strategies
@@ -14,12 +17,13 @@ public class SchedulingStrategyFactory {
     static {
         validStrategies.add("random");
         validStrategies.add("trust");
+        validStrategies.add("estimation");
     }
 
     /**
      * Creates a new scheduling strategy.
      *
-     * @param name the name of the strategy
+     * @param name   the name of the strategy
      * @param config the configuration for the strategy
      * @return the scheduling strategy
      */
@@ -37,6 +41,8 @@ public class SchedulingStrategyFactory {
                     config.getTrustSchedulingPolicy(),
                     config.getDebug(),
                     config.getReportPath());
+        } else if (name.equals("estimation")) {
+            return new EstimationStrategy(config.getSeed());
         }
         return null;
     }
