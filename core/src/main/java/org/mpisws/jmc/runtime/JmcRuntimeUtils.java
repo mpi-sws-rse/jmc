@@ -3,7 +3,9 @@ package org.mpisws.jmc.runtime;
 import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 // Wrapper methods to create events and make JmcRuntime calls at Runtime
@@ -12,6 +14,9 @@ import java.util.Map;
 public class JmcRuntimeUtils {
 
     private static final JmcSyncLocksStore syncMethodLocksStore = new JmcSyncLocksStore();
+
+    // TODO: check if we need to change the type of the list here
+    private static final List<Class<?>> staticInitializedClasses = new ArrayList<>();
 
     public static void readEvent(String owner, String name, String descriptor, Object instance) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
@@ -79,7 +84,12 @@ public class JmcRuntimeUtils {
     }
 
     public static void lockAcquiredEventWithoutYield(
-            Object instance, String owner, String name, Object value, String descriptor, Object newValue) {
+            Object instance,
+            String owner,
+            String name,
+            Object value,
+            String descriptor,
+            Object newValue) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
         builder.type(RuntimeEvent.Type.LOCK_ACQUIRED_EVENT).taskId(JmcRuntime.currentTask());
 
@@ -93,7 +103,12 @@ public class JmcRuntimeUtils {
     }
 
     public static void lockReleaseEvent(
-            Object instance, String owner, String name, Object value, String descriptor, Object newValue) {
+            Object instance,
+            String owner,
+            String name,
+            Object value,
+            String descriptor,
+            Object newValue) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
         builder.type(RuntimeEvent.Type.LOCK_RELEASE_EVENT).taskId(JmcRuntime.currentTask());
 
@@ -104,7 +119,6 @@ public class JmcRuntimeUtils {
         var2.put("newValue", newValue);
         var2.put("descriptor", descriptor);
         JmcRuntime.updateEventAndYield(builder.params(var2).param("instance", instance).build());
-
     }
 
     // Join calls used by the instrumentation to replace existing join calls.
@@ -155,7 +169,6 @@ public class JmcRuntimeUtils {
     //      `MONITORENTER` and `MONITOREXIT`
     // 2. We just replace the enter and exit with lock() and unlock()
 
-
     public static void syncMethodLock(Object instance) {
         syncMethodLocksStore.getLock(instance.hashCode()).lock();
     }
@@ -204,10 +217,10 @@ public class JmcRuntimeUtils {
         }
 
         /**
-         * Returns a JmcReentrantLock for the given lockObject.
-         * If it does not exist, creates a new one and registers it.
+         * Returns a JmcReentrantLock for the given lockObject. If it does not exist, creates a new
+         * one and registers it.
          *
-         * <p>Note: the lock created does not call the initial write.</p>
+         * <p>Note: the lock created does not call the initial write.
          *
          * @param lockObject the object to lock on
          * @return the JmcReentrantLock for the given lockObject
@@ -226,5 +239,20 @@ public class JmcRuntimeUtils {
         public void registerLock(int hashcode) {
             lockMap.put(hashcode, new JmcReentrantLock());
         }
+    }
+
+    // TODO: a call to this will be added in the static initializer of the class
+    public static void registerStaticInitializedClass(Class<?> clazz) {
+        if (!staticInitializedClasses.contains(clazz)) {
+            staticInitializedClasses.add(clazz);
+        }
+    }
+
+    // TODO: invoke this method at the end of the JmcRuntime.initIteration method
+    public static void invokeStaticInitializedClasses() {
+        for (Class<?> clazz : staticInitializedClasses) {
+            // TODO: call the instrumented static initializer method if it exists.
+        }
+        staticInitializedClasses.clear();
     }
 }
