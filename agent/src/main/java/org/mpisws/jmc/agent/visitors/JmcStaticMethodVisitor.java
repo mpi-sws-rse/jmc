@@ -1,5 +1,6 @@
 package org.mpisws.jmc.agent.visitors;
 
+import org.mpisws.jmc.runtime.JmcRuntimeUtils;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -20,10 +21,29 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
             int access, String name, String desc, String signature, String[] exceptions) {
         // Check if the method is static
         if (Objects.equals(name, "<clinit>")) {
-            // If it's a static initializer, we can return a custom MethodVisitor
-            // Here you can add your custom logic for static methods
-            // TODO: create a new StaticMethodInfo instance and store it
-            // TODO: visit a new method with the static replacement name
+            this.staticMethodInfo = new StaticMethodInfo(access, name, desc, signature, exceptions);
+
+            MethodVisitor original = super.visitMethod(
+                    access,
+                    staticMethodInfo.getStaticReplacementName(),
+                    desc,
+                    signature,
+                    exceptions
+            );
+
+            MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+
+            mv.visitMethodInsn(
+                    Opcodes.INVOKESTATIC,
+                    "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                    "registerStaticInitializedClass",
+                    "(Ljava/lang/Class;)V",
+                    false
+            );
+            mv.visitInsn(Opcodes.RETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+            return null;
         }
         // Otherwise, just return the default MethodVisitor
         return super.visitMethod(access, name, desc, signature, exceptions);
@@ -35,6 +55,7 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         if (staticMethodInfo != null) {
             // TODO: visit the static constructor `<clinit>` where the body calls
             //  JmcRuntimeUtils.registerStaticInitializedClass passing the necessary information
+
         }
         super.visitEnd();
     }

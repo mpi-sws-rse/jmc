@@ -52,21 +52,23 @@ public class PremainInstrumentor implements ClassFileTransformer {
 
         ClassReader cr = new ClassReader(copiedClassBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        ClassVisitor cv =new JmcSyncMethodVisitor(
-                new JmcFutureVisitor.JmcExecutorsClassVisitor(
-                        new JmcAtomicVisitor(
-                            new JmcReentrantLockVisitor(
-                                    new JmcThreadVisitor.ThreadClassVisitor(
-                                            new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
-                                                        new JmcReadWriteVisitor.ReadWriteClassVisitor(
-                                                                cw
-                                                    )
-                                            )
-                                    )
+        ClassVisitor cv = new JmcStaticMethodVisitor(
+                new JmcSyncMethodVisitor(
+                    new JmcFutureVisitor.JmcExecutorsClassVisitor(
+                            new JmcAtomicVisitor(
+                                new JmcReentrantLockVisitor(
+                                        new JmcThreadVisitor.ThreadClassVisitor(
+                                                new JmcThreadVisitor.ThreadCallReplacerClassVisitor(
+                                                            new JmcReadWriteVisitor.ReadWriteClassVisitor(
+                                                                    cw
+                                                        )
+                                                )
+                                        )
+                                )
                             )
-                        )
-                ),
-                syncScanData);
+                    ),
+                    syncScanData)
+            );
         cr.accept(cv, 0);
         if (this.agentArgs.isDebug()) {
             byte[] transformed = cw.toByteArray();

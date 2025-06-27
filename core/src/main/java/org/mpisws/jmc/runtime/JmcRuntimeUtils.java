@@ -3,6 +3,8 @@ package org.mpisws.jmc.runtime;
 import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -241,6 +243,7 @@ public class JmcRuntimeUtils {
         }
     }
 
+
     // TODO: a call to this will be added in the static initializer of the class
     public static void registerStaticInitializedClass(Class<?> clazz) {
         if (!staticInitializedClasses.contains(clazz)) {
@@ -249,10 +252,18 @@ public class JmcRuntimeUtils {
     }
 
     // TODO: invoke this method at the end of the JmcRuntime.initIteration method
-    public static void invokeStaticInitializedClasses() {
+    public static void invokeStaticInitializedClasses()  {
         for (Class<?> clazz : staticInitializedClasses) {
             // TODO: call the instrumented static initializer method if it exists.
+            Method method = null;
+            try {
+                method = clazz.getDeclaredMethod(clazz.getEnclosingMethod().getName());
+                method.setAccessible(true);
+                method.invoke(null);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
         }
-        staticInitializedClasses.clear();
+        //staticInitializedClasses.clear();
     }
 }
