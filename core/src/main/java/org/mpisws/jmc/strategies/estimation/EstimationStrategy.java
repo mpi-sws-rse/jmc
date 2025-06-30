@@ -48,4 +48,9 @@ public class EstimationStrategy extends RandomSchedulingStrategy {
         LOGGER.info("Finished iteration {} with expected value: {}", iteration, est.getExpectedValue());
         est.reset();
     }
+
+    @Override
+    public void teardown() {
+        super.teardown();
+    }
 }

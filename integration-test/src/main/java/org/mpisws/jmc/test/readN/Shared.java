@@ -2,7 +2,7 @@ package org.mpisws.jmc.test.readN;
 
 public class Shared {
 
-    private int x;
+    private int x = 0;
 
     public Shared(int x) {
         this.x = x;

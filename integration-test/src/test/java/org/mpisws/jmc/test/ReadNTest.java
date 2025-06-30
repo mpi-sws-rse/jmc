@@ -22,11 +22,19 @@ public class ReadNTest {
         for (int i = 0; i < numThreads; i++) {
             threads.get(i).start();
         }
+
+        for (int i = 0; i < numThreads; i++) {
+            try {
+                threads.get(i).join();
+            } catch (InterruptedException e) {
+
+            }
+        }
     }
 
     // Running with JMC using the trust strategy.
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1, strategy = "estimation")
+    @JmcCheckConfiguration(numIterations = 1, strategy = "estimation", debug = true)
     public void runEstimationReadNTest() {
         readNProgram();
     }

@@ -22,28 +22,30 @@ public class Estimator {
 
     public void updateEvent(List<Event> events, int activeThreadSize) throws HaltTaskException, HaltExecutionException {
 
-        // The lock acquisition and release events, will be compiled into a pair of ReadEx and WriteEx events
-        for (Event e : events) {
-            LOGGER.info("Received event: {}", e);
-            executionGraph.updateEvent(e);
-        }
+        if (!events.isEmpty()) {
+            // The lock acquisition and release events, will be compiled into a pair of ReadEx and WriteEx events
+            for (Event e : events) {
+                LOGGER.info("Received event: {}", e);
+                executionGraph.updateEvent(e);
+            }
 
-        // Update the estimation based on the last event
-        Event e = events.get(events.size() - 1);
-        int in = 1;
-        int out = activeThreadSize;
-        // TODO :: check if the poMax events are also rf, co, fr max
-        List<Event> poMax = executionGraph.getAllPoMaxEvents();
-        for (Event poMaxEvent : poMax) {
-            if (poMaxEvent.getTaskId() != e.getTaskId()) {
-                if (!conflict(poMaxEvent, e)) {
-                    in++;
+            // Update the estimation based on the last event
+            Event e = events.get(events.size() - 1);
+            int in = 1;
+            int out = activeThreadSize;
+            // TODO :: check if the poMax events are also rf, co, fr max
+            List<Event> poMax = executionGraph.getAllPoMaxEvents();
+            for (Event poMaxEvent : poMax) {
+                if (poMaxEvent.getTaskId() != e.getTaskId()) {
+                    if (!conflict(poMaxEvent, e)) {
+                        in++;
+                    }
                 }
             }
-        }
 
-        expectedValue = expectedValue * out / in;
-        LOGGER.info("Expected value: {}", expectedValue);
+            expectedValue = expectedValue * out / in;
+            LOGGER.info("Expected value: {}", expectedValue);
+        }
 
     }
 
