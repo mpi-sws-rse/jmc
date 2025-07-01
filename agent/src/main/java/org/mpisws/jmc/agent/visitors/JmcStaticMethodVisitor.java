@@ -7,7 +7,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.Objects;
 
-// TODO: call this visitor in the outer most ClassVisitor in `PremainInstrumentor`
 public class JmcStaticMethodVisitor extends ClassVisitor {
 
     private StaticMethodInfo staticMethodInfo;
@@ -22,28 +21,33 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         // Check if the method is static
         if (Objects.equals(name, "<clinit>")) {
             this.staticMethodInfo = new StaticMethodInfo(access, name, desc, signature, exceptions);
-
-            MethodVisitor original = super.visitMethod(
-                    access,
+            return super.visitMethod(
+                    staticMethodInfo.getStaticReplacementAccess(),
                     staticMethodInfo.getStaticReplacementName(),
                     desc,
                     signature,
-                    exceptions
-            );
-
-            MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-
+                    exceptions);
+            //            MethodVisitor original =
+            //                    super.visitMethod(
+            //                            access,
+            //                            staticMethodInfo.getStaticReplacementName(),
+            //                            desc,
+            //                            signature,
+            //                            exceptions);
+            //
+            //            MethodVisitor mv = super.visitMethod(access, name, desc, signature,
+            // exceptions);
+            //
             mv.visitMethodInsn(
                     Opcodes.INVOKESTATIC,
                     "org/mpisws/jmc/runtime/JmcRuntimeUtils",
                     "registerStaticInitializedClass",
                     "(Ljava/lang/Class;)V",
-                    false
-            );
+                    false);
             mv.visitInsn(Opcodes.RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-            return null;
+            //            mv.visitMaxs(0, 0);
+            //            mv.visitEnd();
+            //            return null;
         }
         // Otherwise, just return the default MethodVisitor
         return super.visitMethod(access, name, desc, signature, exceptions);
@@ -55,7 +59,12 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         if (staticMethodInfo != null) {
             // TODO: visit the static constructor `<clinit>` where the body calls
             //  JmcRuntimeUtils.registerStaticInitializedClass passing the necessary information
-
+            super.visitMethod(
+                    staticMethodInfo.access(),
+                    staticMethodInfo.name(),
+                    staticMethodInfo.desc(),
+                    staticMethodInfo.signature(),
+                    staticMethodInfo.exceptions());
         }
         super.visitEnd();
     }
@@ -65,6 +74,10 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
             int access, String name, String desc, String signature, String[] exceptions) {
         public String getStaticReplacementName() {
             return "$staticInit";
+        }
+
+        public int getStaticReplacementAccess() {
+            return Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC;
         }
     }
 }
