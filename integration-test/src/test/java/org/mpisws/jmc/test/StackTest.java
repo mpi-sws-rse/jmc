@@ -12,9 +12,8 @@ import java.util.List;
 
 public class StackTest {
 
-    private void lockFreeStackTest() {
+    private void lockFreeStackTest(int NUM_OPERATIONS) {
         Stack stack = new LockFreeStack<Integer>();
-        int NUM_OPERATIONS = 3;
 
         List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
@@ -44,9 +43,9 @@ public class StackTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000)
+    @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    public void runLockFreeStackTest() {
-        lockFreeStackTest();
+    public void runLockFreeStackTest_100_0_workload() {
+        lockFreeStackTest(4);
     }
 }
