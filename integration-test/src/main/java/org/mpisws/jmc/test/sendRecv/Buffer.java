@@ -1,4 +1,4 @@
-package org.mpisws.jmc.test.assume;
+package org.mpisws.jmc.test.sendRecv;
 
 public class Buffer {
 

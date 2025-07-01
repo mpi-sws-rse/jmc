@@ -1,8 +1,8 @@
-package org.mpisws.jmc.test.det.counter.coarse;
+package org.mpisws.jmc.test.det.counter;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-public class CCounter {
+public class CCounter implements Counter {
 
     public int c1 = 0;
     public int c2 = 0;

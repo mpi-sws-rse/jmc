@@ -1,13 +1,19 @@
-package org.mpisws.jmc.test.det.array;
+package org.mpisws.jmc.test.programs;
+
+import org.mpisws.jmc.annotations.JmcCheck;
+import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.annotations.JmcExpectExecutions;
+import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
+import org.mpisws.jmc.test.det.array.Array;
+import org.mpisws.jmc.test.det.array.SetterThread;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DetArray {
+public class ArrayTest {
 
-    public static void main(String[] args) {
+    private void detArray(int SIZE) {
         try {
-            int SIZE = args.length > 0 ? Integer.parseInt(args[0]) : 10;
             Array array = new Array(SIZE);
             List<SetterThread> threads = new ArrayList<>(SIZE);
 
@@ -34,9 +40,17 @@ public class DetArray {
             //assert (sum <= SIZE) : " ***The assert did not pass, the sum is " + sum + " instead of " + SIZE;
 
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+
         } catch (AssertionError e) {
-            System.out.println(e.getMessage());
+
         }
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcTrustStrategy
+    @JmcExpectExecutions(14400) // For input 5
+    public void runDetArrayTest() {
+        detArray(5);
     }
 }

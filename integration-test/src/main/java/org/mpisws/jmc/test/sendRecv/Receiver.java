@@ -1,4 +1,4 @@
-package org.mpisws.jmc.test.assume;
+package org.mpisws.jmc.test.sendRecv;
 
 import org.mpisws.jmc.api.util.statements.JmcAssume;
 

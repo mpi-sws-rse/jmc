@@ -1,11 +1,11 @@
-package org.mpisws.jmc.test.det.counter.coarse;
+package org.mpisws.jmc.test.det.counter;
 
 public class IncThread extends Thread {
 
-    public CCounter counter;
+    public Counter counter;
     public int id;
 
-    public IncThread(CCounter counter, int id) {
+    public IncThread(Counter counter, int id) {
         this.counter = counter;
         this.id = id;
     }

@@ -1,7 +1,8 @@
-package org.mpisws.jmc.test;
+package org.mpisws.jmc.test.programs;
 
 import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.annotations.JmcExpectExecutions;
 import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
 import org.mpisws.jmc.test.det.stack.InsertionThread;
 import org.mpisws.jmc.test.det.stack.Stack;
@@ -45,6 +46,7 @@ public class StackTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
+    @JmcExpectExecutions(2520) // For input 4
     public void runLockFreeStackTest_100_0_workload() {
         lockFreeStackTest(4);
     }

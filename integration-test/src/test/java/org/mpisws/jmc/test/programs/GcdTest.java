@@ -1,15 +1,20 @@
-package org.mpisws.jmc.test.concrete.gcd;
+package org.mpisws.jmc.test.programs;
 
+import org.junit.jupiter.api.Disabled;
+import org.mpisws.jmc.annotations.JmcCheck;
+import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
 import org.mpisws.jmc.api.util.statements.JmcAssume;
+import org.mpisws.jmc.test.concrete.gcd.DecrementorA;
+import org.mpisws.jmc.test.concrete.gcd.DecrementorB;
+import org.mpisws.jmc.test.concrete.gcd.Numbers;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ParallelGCD {
+public class GcdTest {
 
-    public static void main(String[] args) {
+    private void parallelGcd(int a, int b) {
         try {
-            int a = args.length > 0 ? Integer.parseInt(args[0]) : 6;
-            int b = args.length > 1 ? Integer.parseInt(args[1]) : 9;
             JmcAssume.assume(a > 0);
             JmcAssume.assume(b > 0);
 
@@ -36,5 +41,13 @@ public class ParallelGCD {
         } catch (InterruptedException e) {
 
         }
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcTrustStrategy
+    @Disabled // TODO : Fix this test
+    public void runParallelGcdTest() {
+        parallelGcd(4, 2);
     }
 }

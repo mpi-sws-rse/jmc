@@ -1,11 +1,11 @@
-package org.mpisws.jmc.test.det.counter.coarse;
+package org.mpisws.jmc.test.det.counter;
 
 public class DecThread extends Thread {
 
-    public CCounter counter;
+    public Counter counter;
     public int id;
 
-    public DecThread(CCounter counter, int id) {
+    public DecThread(Counter counter, int id) {
         this.counter = counter;
         this.id = id;
     }
