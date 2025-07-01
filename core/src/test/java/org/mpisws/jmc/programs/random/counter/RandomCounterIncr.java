@@ -1,7 +1,7 @@
 package org.mpisws.jmc.programs.random.counter;
 
-import org.mpisws.jmc.util.JmcRandom;
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.JmcRandom;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 public class RandomCounterIncr extends JmcThread {
     private final Counter counter;

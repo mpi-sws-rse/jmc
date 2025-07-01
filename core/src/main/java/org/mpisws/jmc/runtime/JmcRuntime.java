@@ -9,6 +9,11 @@ import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
 import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
+import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.runtime.scheduling.Scheduler;
+import org.mpisws.jmc.strategies.JmcReplayUnsupported;
+import org.mpisws.jmc.strategies.ReplayableSchedulingStrategy;
+import org.mpisws.jmc.strategies.SchedulingStrategy;
 
 import java.util.concurrent.ExecutionException;
 
@@ -49,9 +54,25 @@ public class JmcRuntime {
         scheduler.start();
     }
 
-    /**
-     * Tears down the runtime by shutting down the scheduler adn clearing the task manager.
-     */
+    public static void setupReplay(JmcRuntimeConfiguration config) throws JmcCheckerException {
+        LOGGER.debug("Setting up for replay!");
+        JmcRuntime.config = config;
+        SchedulingStrategy strategy = config.getStrategy();
+        if (!(strategy instanceof ReplayableSchedulingStrategy)) {
+            LOGGER.error(
+                    "The provided strategy is not replayable. Please use a replayable strategy.");
+            throw new JmcReplayUnsupported();
+        }
+        ((ReplayableSchedulingStrategy) strategy).replayRecordedTrace();
+        scheduler =
+                new Scheduler(
+                        strategy,
+                        config.getSchedulerTries(),
+                        config.getSchedulerTrySleepTimeNanos());
+        scheduler.start();
+    }
+
+    /** Tears down the runtime by shutting down the scheduler adn clearing the task manager. */
     public static void tearDown() {
         LOGGER.debug("Tearing down!");
         taskManager.reset();
@@ -107,12 +128,15 @@ public class JmcRuntime {
         JmcRuntime.yield();
     }
 
-    /**
-     * Resets the runtime for a new iteration.
-     */
+    /** Resets the runtime for a new iteration. */
     public static void resetIteration(int iteration) {
         scheduler.resetIteration(iteration);
         taskManager.reset();
+        JmcRuntimeUtils.clearSyncLocks();
+    }
+
+    public static void recordTrace() {
+        scheduler.recordTrace();
     }
 
     /**

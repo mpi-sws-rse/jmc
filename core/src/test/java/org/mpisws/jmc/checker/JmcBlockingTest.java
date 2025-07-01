@@ -1,11 +1,10 @@
 package org.mpisws.jmc.checker;
 
 import org.junit.jupiter.api.Test;
-import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.strategies.TrackActiveTasksStrategy;
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 import java.util.Iterator;
 import java.util.Set;

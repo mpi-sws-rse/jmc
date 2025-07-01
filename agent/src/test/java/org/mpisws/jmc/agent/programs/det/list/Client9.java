@@ -1,7 +1,7 @@
 package org.mpisws.jmc.agent.programs.det.list;
 
 import org.mpisws.jmc.agent.programs.det.list.coarse.CoarseList;
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 import java.util.ArrayList;
 import java.util.List;

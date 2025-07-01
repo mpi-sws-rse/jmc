@@ -1,6 +1,6 @@
 package org.mpisws.jmc.agent.programs.det.list;
 
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 public class InsertionThread extends JmcThread {
 

@@ -3,7 +3,7 @@ package org.mpisws.jmc.test.strategies;
 import org.mpisws.jmc.annotations.JmcIgnoreInstrumentation;
 import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.runtime.SchedulingChoice;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.strategies.TrackActiveTasksStrategy;
 
 import java.util.*;

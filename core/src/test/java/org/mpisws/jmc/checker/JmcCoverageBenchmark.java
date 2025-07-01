@@ -116,7 +116,7 @@ public class JmcCoverageBenchmark {
                         .strategyConstructor(
                                 (sConfig) ->
                                         new MeasureGraphCoverageStrategy(
-                                                new RandomSchedulingStrategy(sConfig.getSeed()),
+                                                new RandomSchedulingStrategy(sConfig.getSeed(), sConfig.getReportPath()),
                                                 MeasureGraphCoverageStrategyConfig.builder()
                                                         .recordPath(
                                                                 sConfig.getReportPath()
@@ -155,7 +155,7 @@ public class JmcCoverageBenchmark {
                         .strategyConstructor(
                                 (sConfig) ->
                                         new MeasureGraphCoverageStrategy(
-                                                new RandomSchedulingStrategy(sConfig.getSeed()),
+                                                new RandomSchedulingStrategy(sConfig.getSeed(), sConfig.getReportPath()),
                                                 MeasureGraphCoverageStrategyConfig.builder()
                                                         .recordPath(
                                                                 sConfig.getReportPath()
@@ -193,7 +193,7 @@ public class JmcCoverageBenchmark {
                         .strategyConstructor(
                                 (sConfig) ->
                                         new MeasureGraphCoverageStrategy(
-                                                new RandomSchedulingStrategy(sConfig.getSeed()),
+                                                new RandomSchedulingStrategy(sConfig.getSeed(), sConfig.getReportPath()),
                                                 MeasureGraphCoverageStrategyConfig.builder()
                                                         .recordPath(
                                                                 sConfig.getReportPath()

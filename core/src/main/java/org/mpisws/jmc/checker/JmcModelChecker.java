@@ -10,6 +10,7 @@ import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.JmcRuntimeConfiguration;
 import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.util.ExceptionUtil;
 
 /**
  * The JmcModelChecker class is responsible for managing the model checking process. It uses a
@@ -40,6 +41,7 @@ public class JmcModelChecker {
     public JmcModelCheckerReport check(JmcTestTarget target) throws JmcCheckerException {
         JmcRuntimeConfiguration runtimeConfig = config.toRuntimeConfiguration();
         JmcModelCheckerReport report = new JmcModelCheckerReport(runtimeConfig.getReportPath());
+        report.setupReportPath();
         Long startTime = System.currentTimeMillis();
         Long timeoutMarker = 0L;
         if (config.getTimeout() != null) {
@@ -61,17 +63,11 @@ public class JmcModelChecker {
                                     .taskId(1L)
                                     .build();
                     JmcRuntime.updateEvent(mainEndEvent);
-                    JmcRuntime.resetIteration(iteration);
-                    if (iteration % 50000 == 0) {
-                        LOGGER.info("Completed {} iterations", iteration);
-                        System.gc();
-                    }
                 } catch (HaltTaskException e) {
                     LOGGER.debug(
                             "Halting execution: {} due to main thread halted: {}",
                             iteration,
                             e.getMessage());
-                    break;
                 } catch (HaltExecutionException e) {
                     report.setErrorIteration(iteration);
                     report.setErrorMessage(e.getMessage());
@@ -79,17 +75,27 @@ public class JmcModelChecker {
                             "Halting execution: {} due to exception: {}",
                             iteration,
                             e.getMessage());
-                    break;
-                } catch (AssertionError e) {
+                } catch (Exception e) {
+                    // Catchall for any other exceptions that may occur
                     report.setErrorIteration(iteration);
-                    report.setErrorMessage(
-                            String.format(
-                                    "Halting execution: %d due to assertion error: %s",
-                                    iteration, e.getMessage()));
-                    LOGGER.error("Assertion error in iteration {}: {}", iteration, e.getMessage());
-                    throw HaltCheckerException.error(
-                            "Assertion error in iteration " + iteration + ": " + e.getMessage());
+                    if (ExceptionUtil.isAssertionError(e)) {
+                        report.setErrorMessage(
+                                String.format(
+                                        "Halting execution: %d due to assertion error: %s",
+                                        iteration, e.getMessage()));
+                        LOGGER.error("Assertion error in iteration {}: {}", iteration, e.getMessage());
+                        JmcRuntime.recordTrace();
+                        throw HaltCheckerException.error(
+                                "Assertion error in iteration " + iteration + ": " + e.getMessage());
+                    } else {
+                        throw e;
+                    }
                 } finally {
+                    JmcRuntime.resetIteration(iteration);
+                    if (iteration % 50000 == 0) {
+                        LOGGER.info("Completed {} iterations", iteration);
+                        System.gc();
+                    }
                     iteration++;
                     if (numIterations != 0 && iteration >= numIterations) {
                         throw HaltCheckerException.ok();
@@ -133,15 +139,21 @@ public class JmcModelChecker {
         return report;
     }
 
-    public JmcModelCheckerReport replay(JmcTestTarget target, Long seed, int iteration)
-            throws JmcCheckerException {
-        config.setSeed(seed);
+    /**
+     * Replays the given test target. The replay is handled by the Strategy
+     *
+     * @param target the test target to replay
+     * @throws JmcCheckerException if an error occurs during replay
+     */
+    public void replay(JmcTestTarget target) throws JmcCheckerException {
         JmcRuntimeConfiguration runtimeConfig = config.toRuntimeConfiguration();
-        JmcRuntime.setup(runtimeConfig);
-        JmcModelCheckerReport report = new JmcModelCheckerReport(runtimeConfig.getReportPath());
+        JmcRuntime.setupReplay(runtimeConfig);
         Long startTime = System.currentTimeMillis();
+
+        JmcModelCheckerReport dummyReport =
+                new JmcModelCheckerReport(runtimeConfig.getReportPath());
         try {
-            JmcRuntime.initIteration(iteration, report);
+            JmcRuntime.initIteration(0, dummyReport);
             target.invoke();
             RuntimeEvent mainEndEvent =
                     new RuntimeEvent.Builder()
@@ -149,29 +161,28 @@ public class JmcModelChecker {
                             .taskId(1L)
                             .build();
             JmcRuntime.updateEvent(mainEndEvent);
-            JmcRuntime.resetIteration(iteration);
+            JmcRuntime.resetIteration(0);
         } catch (HaltTaskException e) {
             LOGGER.debug("Halting execution: due to main thread halted: {}", e.getMessage());
         } catch (HaltExecutionException e) {
-            report.setErrorMessage(e.getMessage());
+            dummyReport.setErrorMessage(e.getMessage());
             LOGGER.error("Halting execution: due to exception: {}", e.getMessage());
         } catch (AssertionError e) {
-            report.setErrorMessage(
+            dummyReport.setErrorMessage(
                     String.format("Halting execution due to assertion error: %s", e.getMessage()));
             LOGGER.error("Assertion error: {}", e.getMessage());
         } catch (HaltCheckerException e) {
             if (e.isOkay()) {
                 LOGGER.info("Replay completed successfully.");
             } else {
-                report.setErrorIteration(-1);
-                report.setErrorMessage(String.format("Replaying failed: %s", e.getMessage()));
+                dummyReport.setErrorIteration(-1);
+                dummyReport.setErrorMessage(String.format("Replaying failed: %s", e.getMessage()));
                 LOGGER.error("Replaying failed: {}", e.getMessage());
             }
         } finally {
             Long endTime = System.currentTimeMillis();
             JmcRuntime.tearDown();
-            report.setTotalTimeMillis(endTime - startTime);
+            dummyReport.setTotalTimeMillis(endTime - startTime);
         }
-        return report;
     }
 }

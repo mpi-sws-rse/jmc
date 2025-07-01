@@ -11,7 +11,7 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
     }
 
     private static final String REENTRANT_LOCK_PATH = "java/util/concurrent/locks/ReentrantLock";
-    private static final String JMC_REENTRANT_LOCK_PATH = "org/mpisws/jmc/util/concurrent/JmcReentrantLock";
+    private static final String JMC_REENTRANT_LOCK_PATH = "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock";
     private static final String REENTRANT_LOCK_DESC = "L" + REENTRANT_LOCK_PATH + ";";
     private static final String JMC_REENTRANT_LOCK_DESC = "L" + JMC_REENTRANT_LOCK_PATH + ";";
 

@@ -1,6 +1,7 @@
 package org.mpisws.jmc.test;
 
 import org.mpisws.jmc.annotations.JmcCheck;
+import org.mpisws.jmc.annotations.JmcReplay;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
 import org.mpisws.jmc.test.programs.CorrectCounterTestRunner;
@@ -10,6 +11,7 @@ public class AgentIntegrationAnnotationTest {
 
     @JmcCheck
     @JmcTrustStrategy(debug = true)
+    @JmcReplay
     public void testAgentWithFutureAgain() {
         CorrectCounterTestRunner.main(new String[0]);
     }

@@ -5,10 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.ClassSource;
 import org.junit.platform.engine.support.descriptor.MethodSource;
-import org.mpisws.jmc.annotations.JmcCheck;
-import org.mpisws.jmc.annotations.JmcCheckConfiguration;
-import org.mpisws.jmc.annotations.JmcExpectExecutions;
-import org.mpisws.jmc.annotations.JmcTimeout;
+import org.mpisws.jmc.annotations.*;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
@@ -24,6 +21,7 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
     private static final Logger LOGGER = LogManager.getLogger(JmcMethodTestDescriptor.class);
 
     private final Method testMethod;
+    private final boolean isReplayTest;
     private final JmcCheckConfiguration parentConfigAnnotation;
 
     public JmcMethodTestDescriptor(Method testMethod, JmcClassTestDescriptor parent) {
@@ -32,6 +30,7 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 testMethod.getName(),
                 MethodSource.from(testMethod));
         this.testMethod = testMethod;
+        this.isReplayTest = testMethod.getAnnotation(JmcReplay.class) != null;
         this.parentConfigAnnotation = parent.getConfigAnnotation();
     }
 
@@ -100,17 +99,21 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
 
         try {
             JmcCheckerConfiguration config = configBuilder.build();
-            JmcModelCheckerReport report =
-                    JmcTestExecutor.execute(testMethod, methodInstance, config);
-            if (testMethod.getAnnotation(JmcExpectExecutions.class) != null) {
-                JmcExpectExecutions expectExecutions =
-                        testMethod.getAnnotation(JmcExpectExecutions.class);
-                if (report.getTotalIterations() != expectExecutions.value()) {
-                    throw new JmcCheckerException(
-                            "Expected "
-                                    + expectExecutions.value()
-                                    + " executions, but got "
-                                    + report.getTotalIterations());
+            if (isReplayTest) {
+                JmcTestExecutor.executeReplay(testMethod, methodInstance, config);
+            } else {
+                JmcModelCheckerReport report =
+                        JmcTestExecutor.execute(testMethod, methodInstance, config);
+                if (testMethod.getAnnotation(JmcExpectExecutions.class) != null) {
+                    JmcExpectExecutions expectExecutions =
+                            testMethod.getAnnotation(JmcExpectExecutions.class);
+                    if (report.getTotalIterations() != expectExecutions.value()) {
+                        throw new JmcCheckerException(
+                                "Expected "
+                                        + expectExecutions.value()
+                                        + " executions, but got "
+                                        + report.getTotalIterations());
+                    }
                 }
             }
         } catch (JmcCheckerException e) {

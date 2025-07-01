@@ -2,7 +2,7 @@ package org.mpisws.jmc.programs.det.lists.list.node;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 public class FNode {
 
@@ -104,7 +104,7 @@ public class FNode {
                                 "owner",
                                 "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;")
+                        .param("descriptor", "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event3);
@@ -155,7 +155,7 @@ public class FNode {
                                 "owner",
                                 "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;")
+                        .param("descriptor", "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event3);
@@ -172,7 +172,7 @@ public class FNode {
                                 "owner",
                                 "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;")
+                        .param("descriptor", "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);
@@ -190,7 +190,7 @@ public class FNode {
                                 "owner",
                                 "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;")
+                        .param("descriptor", "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);

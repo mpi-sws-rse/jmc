@@ -45,7 +45,7 @@ public class JmcRuntimeConfiguration {
         private long schedulerTrySleepTimeNanos;
 
         public Builder() {
-            this.strategy = new RandomSchedulingStrategy(System.nanoTime());
+            this.strategy = new RandomSchedulingStrategy(System.nanoTime(), "build/test-results/jmc-report");
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
             this.schedulerTries = 10;

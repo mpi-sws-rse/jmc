@@ -2,10 +2,8 @@ package org.mpisws.jmc.programs.det.lists.list.coarse;
 
 import org.mpisws.jmc.programs.det.lists.list.Set;
 import org.mpisws.jmc.programs.det.lists.list.node.Node;
-import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.JmcRuntimeUtils;
-import org.mpisws.jmc.runtime.RuntimeEvent;
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 public class CoarseList implements Set {
 
@@ -33,7 +31,7 @@ public class CoarseList implements Set {
         JmcRuntimeUtils.readEvent(
                 "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList",
                 "lock",
-                "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;",
+                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;",
                 this);
     }
 
@@ -42,7 +40,7 @@ public class CoarseList implements Set {
                 newLock,
                 "org/mpisws/jmc/programs/det/lists/list/coarse/CoarseList",
                 "lock",
-                "Lorg/mpisws/jmc/util/concurrent/JmcReentrantLock;",
+                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;",
                 this);
     }
 
