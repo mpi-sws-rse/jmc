@@ -15,5 +15,6 @@ public class StaticInitTest {
         // If the static block is not called, the value of x will not be reset to 0,
         // and the assertion will fail after the first iteration.
         StaticInitBlock.setX(StaticInitBlock.getX() + 1);
+        assert StaticInitBlock.getX() == 1 : "Static initialization block did not reset x to 0";
     }
 }
