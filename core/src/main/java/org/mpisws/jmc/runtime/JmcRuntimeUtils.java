@@ -246,7 +246,13 @@ public class JmcRuntimeUtils {
 
     // TODO: a call to this will be added in the static initializer of the class
     public static void registerStaticInitializedClass(Class<?> clazz) {
-        if (!staticInitializedClasses.contains(clazz)) {
+//        if (!staticInitializedClasses.contains(clazz)) {
+//            staticInitializedClasses.add(clazz);
+//        }
+        if (clazz == null) {
+            System.err.println("[JMC] registerStaticInitializedClass called with null");
+            Thread.dumpStack();
+        } else {
             staticInitializedClasses.add(clazz);
         }
     }
@@ -254,15 +260,20 @@ public class JmcRuntimeUtils {
     // TODO: invoke this method at the end of the JmcRuntime.initIteration method
     public static void invokeStaticInitializedClasses()  {
         for (Class<?> clazz : staticInitializedClasses) {
-            // TODO: call the instrumented static initializer method if it exists.
-            Method method = null;
-            try {
-                method = clazz.getDeclaredMethod(clazz.getEnclosingMethod().getName());
+            try{
+                Method method = clazz.getDeclaredMethod("$staticInit");
                 method.setAccessible(true);
                 method.invoke(null);
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException(e);
+            } catch (NoSuchMethodException e) {
+                System.err.println("No $staticInit method for class " + clazz.getName());
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Failed to invoke $staticInit on " + clazz.getName(), e);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                cause.printStackTrace();
+                System.err.println("Invocation of $staticInit failed: " + cause.getMessage());
             }
+
         }
         //staticInitializedClasses.clear();
     }
