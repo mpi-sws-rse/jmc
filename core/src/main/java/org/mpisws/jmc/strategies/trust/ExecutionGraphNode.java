@@ -3,7 +3,7 @@ package org.mpisws.jmc.strategies.trust;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import org.mpisws.jmc.util.aux.LamportVectorClock;
+import org.mpisws.jmc.util.LamportVectorClock;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;

@@ -2,21 +2,19 @@ package org.mpisws.jmc.test.strategies;
 
 import org.mpisws.jmc.annotations.JmcIgnoreInstrumentation;
 import org.mpisws.jmc.runtime.HaltCheckerException;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.strategies.TrackActiveTasksStrategy;
 
 import java.util.*;
 
 /**
- * A strategy that selects tasks based on a weighted random approach.
- * Each task has a weight that determines its likelihood of being selected.
- * The weight decreases each time the task is selected.
+ * A strategy that selects tasks based on a weighted random approach. Each task has a weight that
+ * determines its likelihood of being selected. The weight decreases each time the task is selected.
  *
- * <p>
- * Note: The JmcIgnoreInstrumentation annotation is used to indicate that this class
- * should not be instrumented by the JMC model checker. As it will be run in the context of
- * the JMC model checker. This is true of all custom strategies.
+ * <p>Note: The JmcIgnoreInstrumentation annotation is used to indicate that this class should not
+ * be instrumented by the JMC model checker. As it will be run in the context of the JMC model
+ * checker. This is true of all custom strategies.
  */
 @JmcIgnoreInstrumentation
 public class WeightedRandomStrategy extends TrackActiveTasksStrategy {
@@ -36,14 +34,14 @@ public class WeightedRandomStrategy extends TrackActiveTasksStrategy {
     }
 
     /**
-     * Invoked each time the strategy receives an event.
-     * In most cases, the updateEvent method is called right before nextTask is called.
-     * Since all events are of the format JmcRuntime.updateEventAndYield(event).
+     * Invoked each time the strategy receives an event. In most cases, the updateEvent method is
+     * called right before nextTask is called. Since all events are of the format
+     * JmcRuntime.updateEventAndYield(event).
      *
      * @param event The RuntimeEvent that occurred.
      */
     @Override
-    public void updateEvent(RuntimeEvent event) {
+    public void updateEvent(JmcRuntimeEvent event) {
         // Handle the event as needed.
         super.updateEvent(event);
 
@@ -59,8 +57,8 @@ public class WeightedRandomStrategy extends TrackActiveTasksStrategy {
     }
 
     /**
-     * Invoked each time the strategy needs to select a task to execute.
-     * (On ever JmcRuntime.yield() call)
+     * Invoked each time the strategy needs to select a task to execute. (On ever JmcRuntime.yield()
+     * call)
      *
      * @return A SchedulingChoice representing the next task to execute.
      */

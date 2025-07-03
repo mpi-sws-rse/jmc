@@ -1,15 +1,12 @@
 package org.mpisws.jmc.strategies;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.runtime.scheduling.PrimitiveValue;
 import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.util.FileUtil;
@@ -19,7 +16,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** A random scheduling strategy that selects the next thread to be scheduled randomly. */
-public class RandomSchedulingStrategy extends TrackActiveTasksStrategy implements ReplayableSchedulingStrategy{
+public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
+        implements ReplayableSchedulingStrategy {
 
     private static final Logger LOGGER = LogManager.getLogger(RandomSchedulingStrategy.class);
 
@@ -28,7 +26,6 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy implement
 
     private final String reportPath;
     private RandomSchedulingTrace curTrace;
-
 
     /**
      * Constructs a new RandomSchedulingStrategy object.
@@ -66,7 +63,7 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy implement
             return null;
         }
         if (activeThreads.size() == 1) {
-            SchedulingChoice<?> choice =  SchedulingChoice.task((Long) activeThreads.toArray()[0]);
+            SchedulingChoice<?> choice = SchedulingChoice.task((Long) activeThreads.toArray()[0]);
             curTrace.addChoice(choice);
             return choice;
         }
@@ -84,9 +81,10 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy implement
 
     // Keep track of reactive events that need a return value
     @Override
-    public void updateEvent(RuntimeEvent event) throws HaltTaskException, HaltExecutionException {
+    public void updateEvent(JmcRuntimeEvent event)
+            throws HaltTaskException, HaltExecutionException {
         super.updateEvent(event);
-        if (event.getType() == RuntimeEvent.Type.REACTIVE_EVENT_RANDOM_VALUE) {
+        if (event.getType() == JmcRuntimeEvent.Type.REACTIVE_EVENT_RANDOM_VALUE) {
             Long taskId = event.getTaskId();
             Integer bits = (Integer) event.getParam("bits");
             int randomValue = random.next(bits);
@@ -97,7 +95,7 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy implement
 
     @Override
     public void recordTrace() throws JmcCheckerException {
-        String seedFilePath  = Paths.get(this.reportPath, "replay_seed.txt").toString();
+        String seedFilePath = Paths.get(this.reportPath, "replay_seed.txt").toString();
         String traceFilePath = Paths.get(this.reportPath, "replay_trace.json").toString();
         FileUtil.unsafeStoreToFile(seedFilePath, this.curTrace.getSeed() + "\n");
         FileUtil.storeTaskSchedule(traceFilePath, this.curTrace.getChoices());

@@ -1,8 +1,6 @@
-package org.mpisws.jmc.util.aux;
+package org.mpisws.jmc.util;
 
-/**
- * Represents a generic partial order relation.
- */
+/** Represents a generic partial order relation. */
 public interface PartialOrder<T> {
 
     /**
@@ -13,9 +11,7 @@ public interface PartialOrder<T> {
      */
     Relation compare(T other);
 
-    /**
-     * Represents the relation between two objects.
-     */
+    /** Represents the relation between two objects. */
     enum Relation {
         GT,
         LT,

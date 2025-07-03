@@ -1,11 +1,6 @@
-package org.mpisws.jmc.util.aux;
+package org.mpisws.jmc.util;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Represents a Lamport vector clock used by the algorithm. It is of variable length.
- */
+/** Represents a Lamport vector clock used by the algorithm. It is of variable length. */
 public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
 
     private int[] vector;
@@ -175,9 +170,7 @@ public class LamportVectorClock implements PartialOrder<LamportVectorClock> {
         }
     }
 
-    /**
-     * Represents a component of the Lamport vector clock.
-     */
+    /** Represents a component of the Lamport vector clock. */
     public static class Component implements TotalOrder<Component> {
 
         private final int index;

@@ -1,6 +1,6 @@
 package org.mpisws.jmc.strategies.trust;
 
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public class EventFactory {
      * @param runtimeEvent The runtime event.
      * @return A list of trust events (empty if not supported).
      */
-    public static List<Event> fromRuntimeEvent(RuntimeEvent runtimeEvent) {
+    public static List<Event> fromRuntimeEvent(JmcRuntimeEvent runtimeEvent) {
         // Note: Subtract 1 from the task id since the runtime is 1-indexed
         switch (runtimeEvent.getType()) {
             case START_EVENT -> {
@@ -45,7 +45,7 @@ public class EventFactory {
                                 Event.Type.READ);
                 return List.of(event);
             }
-            case FINISH_EVENT/*, HALT_EVENT*/ -> {
+            case FINISH_EVENT /*, HALT_EVENT*/ -> {
                 // Update EventUtils::isThreadFinish if anything changes here
                 Event event =
                         new Event(

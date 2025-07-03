@@ -1,7 +1,8 @@
 package org.mpisws.jmc.programs.det.lists.list.node;
+
 //
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 public class LNode {
@@ -25,14 +26,12 @@ public class LNode {
     public void setMarked(boolean marked) {
         this.marked = marked;
         // Write event of the marked
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", marked)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/LNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/LNode")
                         .param("name", "marked")
                         .param("descriptor", "Z")
                         .param("instance", this)
@@ -43,13 +42,11 @@ public class LNode {
     public boolean getMarked() {
         boolean out = marked;
         // Read event of the marked
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/LNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/LNode")
                         .param("name", "marked")
                         .param("descriptor", "Z")
                         .param("instance", this)
@@ -61,13 +58,11 @@ public class LNode {
     public int getKey() {
         int out = key;
         // Read event of the key
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/LNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/LNode")
                         .param("name", "key")
                         .param("descriptor", "I")
                         .param("instance", this)
@@ -79,13 +74,11 @@ public class LNode {
     public LNode getNext() {
         LNode out = next;
         // Read event of the next
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/LNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/LNode")
                         .param("name", "next")
                         .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/LNode;")
                         .param("instance", this)
@@ -97,14 +90,12 @@ public class LNode {
     public void setNext(LNode next) {
         this.next = next;
         // Write event of the next
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", next)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/LNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/LNode")
                         .param("name", "next")
                         .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/LNode;")
                         .param("instance", this)
@@ -112,8 +103,7 @@ public class LNode {
         JmcRuntime.updateEventAndYield(event);
     }
 
-
-    public void lock(){
+    public void lock() {
         lock.lock();
     }
 
