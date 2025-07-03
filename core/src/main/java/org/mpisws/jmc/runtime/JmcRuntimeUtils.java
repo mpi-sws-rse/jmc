@@ -1,24 +1,25 @@
 package org.mpisws.jmc.runtime;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
 
 // Wrapper methods to create events and make JmcRuntime calls at Runtime
 // These methods are invoked mainly through bytecode instrumentation and
 // not meant to be used within the codebase.
 public class JmcRuntimeUtils {
+    private static final Logger LOGGER = LogManager.getLogger(JmcRuntimeUtils.class);
 
     private static final JmcSyncLocksStore syncMethodLocksStore = new JmcSyncLocksStore();
 
     // TODO: check if we need to change the type of the list here
-    private static final List<Class<?>> staticInitializedClasses = new ArrayList<>();
+    private static final List<Class> staticInitializedClassesList = new ArrayList<>();
+    private static final Set<String> staticInitializedClasses = new HashSet<>();
 
     public static void readEvent(String owner, String name, String descriptor, Object instance) {
         RuntimeEvent.Builder builder = new RuntimeEvent.Builder();
@@ -243,38 +244,60 @@ public class JmcRuntimeUtils {
         }
     }
 
-
-    // TODO: a call to this will be added in the static initializer of the class
     public static void registerStaticInitializedClass(Class<?> clazz) {
-//        if (!staticInitializedClasses.contains(clazz)) {
-//            staticInitializedClasses.add(clazz);
-//        }
-        if (clazz == null) {
-            System.err.println("[JMC] registerStaticInitializedClass called with null");
-            Thread.dumpStack();
-        } else {
-            staticInitializedClasses.add(clazz);
+        if (!staticInitializedClasses.contains(clazz.getName())) {
+            staticInitializedClasses.add(clazz.getName());
+            staticInitializedClassesList.add(clazz);
         }
     }
 
-    // TODO: invoke this method at the end of the JmcRuntime.initIteration method
-    public static void invokeStaticInitializedClasses()  {
-        for (Class<?> clazz : staticInitializedClasses) {
-            try{
-                Method method = clazz.getDeclaredMethod("$staticInit");
-                method.setAccessible(true);
-                method.invoke(null);
-            } catch (NoSuchMethodException e) {
-                System.err.println("No $staticInit method for class " + clazz.getName());
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException("Failed to invoke $staticInit on " + clazz.getName(), e);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                cause.printStackTrace();
-                System.err.println("Invocation of $staticInit failed: " + cause.getMessage());
-            }
-
+    private static URL renameClassURL(URL url) {
+        String urlString = url.toString();
+        urlString = urlString.replace("build/classes/java/main/", "build/generated/instrumented/");
+        urlString = urlString.replace("build/classes/java/test/", "build/generated/instrumented/");
+        try {
+            return new URL(urlString);
+        } catch (Exception e) {
+            LOGGER.error("Error renaming class URL: {}", urlString, e);
+            return url; // Fallback to original URL in case of error
         }
-        //staticInitializedClasses.clear();
+    }
+
+    public static void invokeStaticInitializedClasses() {
+        URL[] urls = new URL[staticInitializedClassesList.size()];
+        for (Class<?> clazz : staticInitializedClassesList) {
+            URL url = clazz.getResource(clazz.getSimpleName() + ".class");
+            urls[staticInitializedClassesList.indexOf(clazz)] = renameClassURL(url);
+        }
+
+        try (ReloadingClassLoader classLoader = new ReloadingClassLoader(urls)) {
+            // This will load the classes and trigger static initializers
+            for (Class<?> clazz : staticInitializedClassesList) {
+                try {
+                    classLoader.reloadClass(clazz.getCanonicalName());
+                } catch (ClassNotFoundException e) {
+                    LOGGER.error("Could not reload class: {}", clazz.getCanonicalName(), e);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error initializing the custom class loader", e);
+        }
+    }
+
+    private static class ReloadingClassLoader extends URLClassLoader {
+        public ReloadingClassLoader(URL[] urls) {
+            super(urls, null);
+        }
+
+        public void reloadClass(String className) throws ClassNotFoundException {
+            // TODO: this is not working. Need to figure out why?
+            // This method is used to reload a class by its name
+            Class<?> clazz = loadClass(className, true);
+            if (clazz != null) {
+                LOGGER.info("Reloaded class: {}", className);
+            } else {
+                throw new ClassNotFoundException("Class not found: " + className);
+            }
+        }
     }
 }

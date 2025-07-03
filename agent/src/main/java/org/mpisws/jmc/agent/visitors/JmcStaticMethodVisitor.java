@@ -103,7 +103,6 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         }
     }
 
-    // TODO: update with necessary parameters
     private static record StaticMethodInfo(
             int access, String name, String desc, String signature, String[] exceptions) {
         public String getStaticReplacementName() {
