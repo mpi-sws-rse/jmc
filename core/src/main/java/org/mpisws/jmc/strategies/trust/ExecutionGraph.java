@@ -1704,4 +1704,103 @@ public class ExecutionGraph {
         }
         return result;
     }
+
+    public boolean isCoMax(Event event) {
+        if (EventUtils.isWrite(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> succ = node.getSuccessors(Relation.Coherency);
+                if (succ != null && !succ.isEmpty()) {
+                    return false;
+                }
+            } catch (NoSuchEventException e) {
+                throw HaltCheckerException.error(
+                        "The write event does not exist in the execution graph.");
+            }
+
+        }
+        return true;
+    }
+
+    public boolean isRfMax(Event event) {
+        if (EventUtils.isWrite(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> succ = node.getSuccessors(Relation.ReadsFrom);
+                if (succ != null && !succ.isEmpty()) {
+                    return false;
+                }
+            } catch (NoSuchEventException e) {
+                throw HaltCheckerException.error(
+                        "The write event does not exist in the execution graph.");
+            }
+        }
+        return true;
+    }
+
+    public boolean isFrMax(Event event) {
+        if (EventUtils.isRead(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> pred = node.getPredecessors(Relation.ReadsFrom);
+                if (pred == null || pred.isEmpty()) {
+                    throw HaltCheckerException.error(
+                            "The read event does not have a FR predecessor.");
+                }
+                ExecutionGraphNode w = getEventNode(pred.get(0));
+                return isCoMax(w.getEvent());
+            } catch (NoSuchEventException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return true;
+    }
+
+    public boolean isTcMax(Event event) {
+        if (EventUtils.isThreadStart(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> succ = node.getSuccessors(Relation.ThreadCreation);
+                if (succ != null && !succ.isEmpty()) {
+                    return false;
+                }
+            } catch (NoSuchEventException e) {
+                throw HaltCheckerException.error(
+                        "The thread start event does not exist in the execution graph.");
+            }
+        }
+        return true;
+    }
+
+    public boolean isStMax(Event event) {
+        try {
+            ExecutionGraphNode node = getEventNode(event.key());
+            List<Event.Key> succ = node.getSuccessors(Relation.ThreadStart);
+            if (succ != null && !succ.isEmpty()) {
+                return false;
+            }
+        } catch (NoSuchEventException e) {
+            throw HaltCheckerException.error(
+                    "The thread start event does not exist in the execution graph.");
+        }
+
+        return true;
+    }
+
+    public boolean isJtMax(Event event) {
+        if (EventUtils.isThreadFinish(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> succ = node.getSuccessors(Relation.ThreadJoin);
+                if (succ != null && !succ.isEmpty()) {
+                    return false;
+                }
+            } catch (NoSuchEventException e) {
+                throw HaltCheckerException.error(
+                        "The thread join event does not exist in the execution graph.");
+            }
+        }
+
+        return true;
+    }
 }

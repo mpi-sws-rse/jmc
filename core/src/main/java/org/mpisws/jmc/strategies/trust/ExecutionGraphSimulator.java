@@ -128,4 +128,28 @@ public class ExecutionGraphSimulator {
         }
         return events;
     }
+
+    public boolean isCoMax(Event event) {
+        return executionGraph.isCoMax(event);
+    }
+
+    public boolean isRfMax(Event event) {
+        return executionGraph.isRfMax(event);
+    }
+
+    public boolean isFrMax(Event event) {
+        return executionGraph.isFrMax(event);
+    }
+
+    public boolean isTcMax(Event event) {
+        return executionGraph.isTcMax(event);
+    }
+
+    public boolean isStMax(Event event) {
+        return executionGraph.isStMax(event);
+    }
+
+    public boolean isJtMax(Event event) {
+        return executionGraph.isJtMax(event);
+    }
 }

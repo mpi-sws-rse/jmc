@@ -33,10 +33,9 @@ public class Estimator {
             Event e = events.get(events.size() - 1);
             int in = 1;
             int out = activeThreadSize;
-            // TODO :: check if the poMax events are also rf, co, fr max
             List<Event> poMax = executionGraph.getAllPoMaxEvents();
             for (Event poMaxEvent : poMax) {
-                if (poMaxEvent.getTaskId() != e.getTaskId()) {
+                if (poMaxEvent.getTaskId() != e.getTaskId() && isScMax(poMaxEvent)) {
                     if (!conflict(poMaxEvent, e)) {
                         in++;
                     }
@@ -47,6 +46,17 @@ public class Estimator {
             LOGGER.info("Expected value: {}", expectedValue);
         }
 
+    }
+
+    // The given event to this method is already a PoMax event. This method will check if the event is a SCMax event.
+    // A SCMax event is a PO + RF + FR + CO + ST + TC + JT max event.
+    private boolean isScMax(Event e) {
+        return executionGraph.isCoMax(e) &&
+                executionGraph.isRfMax(e) &&
+                executionGraph.isFrMax(e) &&
+                executionGraph.isTcMax(e) &&
+                executionGraph.isStMax(e) &&
+                executionGraph.isJtMax(e);
     }
 
     private boolean conflict(Event e1, Event e2) {

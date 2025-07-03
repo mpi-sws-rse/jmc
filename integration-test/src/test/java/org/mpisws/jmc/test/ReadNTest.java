@@ -34,7 +34,7 @@ public class ReadNTest {
 
     // Running with JMC using the trust strategy.
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1, strategy = "estimation", debug = true)
+    @JmcCheckConfiguration(numIterations = 1, strategy = "estimation", debug = false)
     public void runEstimationReadNTest() {
         readNProgram();
     }
