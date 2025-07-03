@@ -93,12 +93,12 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         public void visitCode() {
             super.visitCode();
 
-            mv.visitLdcInsn(className);
+            mv.visitLdcInsn(Type.getObjectType(className));
             mv.visitMethodInsn(
                     Opcodes.INVOKESTATIC,
                     "org/mpisws/jmc/runtime/JmcRuntimeUtils",
                     "registerStaticInitializedClass",
-                    "(Ljava/lang/String;)V",
+                    "(Ljava/lang/Class;)V",
                     false);
         }
     }
