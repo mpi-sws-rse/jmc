@@ -82,7 +82,6 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
 
     private static class JmcStaticInitMethodVisitor extends MethodVisitor {
 
-        private boolean instrumented = false;
         private final String className;
 
         public JmcStaticInitMethodVisitor(MethodVisitor methodVisitor, String className) {
@@ -91,17 +90,16 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         }
 
         @Override
-        public void visitInsn(int opcode) {
-            if (!instrumented) {
-                mv.visitLdcInsn(className);
-                mv.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "org/mpisws/jmc/runtime/JmcRuntimeUtils",
-                        "registerStaticInitializedClass",
-                        "(Ljava/lang/String;)V",
-                        false);
-                instrumented = true;
-            }
+        public void visitCode() {
+            super.visitCode();
+
+            mv.visitLdcInsn(className);
+            mv.visitMethodInsn(
+                    Opcodes.INVOKESTATIC,
+                    "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                    "registerStaticInitializedClass",
+                    "(Ljava/lang/String;)V",
+                    false);
         }
     }
 
