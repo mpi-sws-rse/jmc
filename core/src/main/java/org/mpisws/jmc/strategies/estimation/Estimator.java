@@ -60,13 +60,10 @@ public class Estimator {
     }
 
     private boolean conflict(Event e1, Event e2) {
-        // TODO :: check the conflict between an starter and influenced thread event
         if (!EventUtils.isWrite(e1) || !EventUtils.isWrite(e2)) {
-            if (EventUtils.isThreadStart(e1) && EventUtils.isThreadFinish(e2)) {
-                if (e1 == e2) {
-                    long startedBy = EventUtils.getStartedBy(e1);
-                    return startedBy == e2.getTaskId();
-                }
+            if (EventUtils.isThreadStart(e1)) {
+                long startedBy = EventUtils.getStartedBy(e1);
+                return startedBy == e2.getTaskId();
             }
         } else { // One of the two events is a write event
             return e1.getLocation().equals(e2.getLocation());
