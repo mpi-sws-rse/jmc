@@ -22,7 +22,7 @@ public class Estimator {
 
     public void updateEvent(List<Event> events, int activeThreadSize) throws HaltTaskException, HaltExecutionException {
 
-        if (!events.isEmpty()) {
+        if (!events.isEmpty() && activeThreadSize != 0) {
             // The lock acquisition and release events, will be compiled into a pair of ReadEx and WriteEx events
             for (Event e : events) {
                 LOGGER.info("Received event: {}", e);
