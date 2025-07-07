@@ -69,4 +69,10 @@ public class StackTest {
     public void runEstimationTreiberStackTest() {
         treiberStack_50_50_test(2);
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100, strategy = "random", debug = false)
+    public void runRandomTreiberStackTest() {
+        treiberStack_50_50_test(2);
+    }
 }
