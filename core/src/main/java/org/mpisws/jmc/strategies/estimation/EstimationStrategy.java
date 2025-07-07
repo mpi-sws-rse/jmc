@@ -9,7 +9,9 @@ import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.trust.Event;
 import org.mpisws.jmc.strategies.trust.EventFactory;
 import org.mpisws.jmc.strategies.trust.LocationStore;
+import org.mpisws.jmc.util.files.FileUtil;
 
+import java.nio.file.Paths;
 import java.util.List;
 
 public class EstimationStrategy extends RandomSchedulingStrategy {
@@ -17,6 +19,9 @@ public class EstimationStrategy extends RandomSchedulingStrategy {
     private final Logger LOGGER = LogManager.getLogger(EstimationStrategy.class);
 
     private final Estimator est;
+
+    private final StringBuilder estimatorCollector = new StringBuilder();
+
 
     /**
      * Constructs a new RandomSchedulingStrategy object.
@@ -56,11 +61,15 @@ public class EstimationStrategy extends RandomSchedulingStrategy {
     public void resetIteration(int iteration) {
         super.resetIteration(iteration);
         LOGGER.info("Finished iteration {} with expected value: {}", iteration, est.getExpectedValue());
+        estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
         est.reset();
     }
 
     @Override
     public void teardown() {
         super.teardown();
+        // TODO : Fix the hard coded path
+        FileUtil.unsafeStoreToFile(
+                Paths.get("build/test-results/jmc-report/", "EstimateResult.txt").toString(), estimatorCollector.toString());
     }
 }
