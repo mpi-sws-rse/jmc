@@ -22,7 +22,6 @@ public class StaticInitTest {
     @JmcCheckConfiguration(numIterations = 10)
     public void testStaticInitBlockMultipleIterations() {
         StaticInitBlock.setX(StaticInitBlock.getX() + 1);
-        System.out.println("Current value of x: " + StaticInitBlock.getX());
 
         assert StaticInitBlock.getX() == 1 : "Static initialization block only executed once";
     }

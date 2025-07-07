@@ -18,7 +18,7 @@ public class JmcRuntimeUtils {
     private static final JmcSyncLocksStore syncMethodLocksStore = new JmcSyncLocksStore();
 
     // TODO: check if we need to change the type of the list here
-    private static final List<Class> staticInitializedClassesList = new ArrayList<>();
+    private static final List<Class<?>> staticInitializedClassesList = new ArrayList<>();
     private static final Set<String> staticInitializedClasses = new HashSet<>();
 
     public static void readEvent(String owner, String name, String descriptor, Object instance) {
@@ -263,7 +263,11 @@ public class JmcRuntimeUtils {
         }
     }
 
-    public static void invokeStaticInitializedClasses() {
+    private static void reloadStaticInitializedClasses() {
+        if (staticInitializedClasses.isEmpty()) {
+            LOGGER.info("No static initialized classes to reload.");
+            return;
+        }
         URL[] urls = new URL[staticInitializedClassesList.size()];
         for (Class<?> clazz : staticInitializedClassesList) {
             URL url = clazz.getResource(clazz.getSimpleName() + ".class");
@@ -282,6 +286,33 @@ public class JmcRuntimeUtils {
         } catch (Exception e) {
             LOGGER.error("Error initializing the custom class loader", e);
         }
+    }
+
+    private static void invokeInstrumentedStaticMethod() {
+        if (staticInitializedClasses.isEmpty()) {
+            LOGGER.info("No static initialized classes to invoke.");
+            return;
+        }
+        for (Class<?> clazz : staticInitializedClassesList) {
+            try {
+                // Assuming the static method is named "invokeStaticInitializedClasses"
+                clazz.getMethod("$staticInit").invoke(null);
+                LOGGER.info("Invoked static method in class: {}", clazz.getName());
+            } catch (Exception e) {
+                LOGGER.error("Error invoking static method in class: {}", clazz.getName());
+            }
+        }
+    }
+
+    /**
+     * Invokes static initializer of the instrumented classes.
+     *
+     * <p>The instrumentation introduces a special method `$staticInit` for each class that has a
+     * non-empty static initializer. Here we invoke that method.
+     */
+    public static void invokeStaticInitializedClasses() {
+        // reloadStaticInitializedClasses();
+        invokeInstrumentedStaticMethod();
     }
 
     private static class ReloadingClassLoader extends URLClassLoader {

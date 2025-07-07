@@ -1,9 +1,6 @@
 package org.mpisws.jmc.agent.visitors;
 
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -12,7 +9,6 @@ import java.util.Objects;
 public class JmcStaticMethodVisitor extends ClassVisitor {
 
     private String className;
-    private MethodNode clinitMethodNode;
     private StaticMethodInfo staticMethodInfo;
 
     public JmcStaticMethodVisitor(ClassVisitor classVisitor) {
@@ -32,53 +28,70 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     }
 
     @Override
+    public FieldVisitor visitField(
+            int access, String name, String desc, String signature, Object value) {
+        if (isStaticFinalField(access)) {
+            return super.visitField(removeFinal(access), name, desc, signature, value);
+        }
+        return super.visitField(access, name, desc, signature, value);
+    }
+
+    @Override
     public MethodVisitor visitMethod(
             int access, String name, String desc, String signature, String[] exceptions) {
         // Check if the method is static
         if (Objects.equals(name, "<clinit>")) {
-            MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-            return new JmcStaticInitMethodVisitor(mv, className);
+            this.staticMethodInfo = new StaticMethodInfo(access, name, desc, signature, exceptions);
+            return super.visitMethod(
+                    this.staticMethodInfo.getStaticReplacementAccess(),
+                    this.staticMethodInfo.getStaticReplacementName(),
+                    desc,
+                    signature,
+                    exceptions);
         }
         // Otherwise, just return the default MethodVisitor
         return super.visitMethod(access, name, desc, signature, exceptions);
     }
 
     //    @Override
-    //    public void visitEnd() {
-    //        // If we have a static method info, we can process it here
-    //        if (clinitMethodNode != null) {
-    //
-    //            MethodVisitor mv = cv.visitMethod(
-    //                    Opcodes.ACC_STATIC,
-    //                    "<clinit>",
-    //                    "()V",
-    //                    null,
-    //                    null);
-    //            mv.visitCode();
-    //
-    //            //original clinit instructions especially for static final fields like
-    // $assertionsDisabled
-    //            for (AbstractInsnNode insn : clinitMethodNode.instructions) {
-    //                insn.accept(mv);
-    //            }
-    //
-    //            mv.visitLdcInsn(Type.getObjectType(className));
-    //
-    //            //call to JmcRuntimeUtils.registerStaticInitializedClass
-    //            mv.visitMethodInsn(
-    //                    Opcodes.INVOKESTATIC,
-    //                    "org/mpisws/jmc/runtime/JmcRuntimeUtils",
-    //                    "registerStaticInitializedClass",
-    //                    "(Ljava/lang/Class;)V",
-    //                    false);
-    //
-    //
-    //            mv.visitInsn(Opcodes.RETURN);
-    //            mv.visitMaxs(0, 0);
-    //            mv.visitEnd();
-    //        }
-    //        super.visitEnd();
-    //    }
+    public void visitEnd() {
+        // If we have a static method info, we can process it here
+        if (this.staticMethodInfo != null) {
+
+            MethodVisitor mv =
+                    cv.visitMethod(
+                            this.staticMethodInfo.access(),
+                            this.staticMethodInfo.name(),
+                            this.staticMethodInfo.desc(),
+                            this.staticMethodInfo.signature(),
+                            this.staticMethodInfo.exceptions());
+            mv.visitCode();
+
+            mv.visitLdcInsn(Type.getObjectType(className));
+
+            // call to JmcRuntimeUtils.registerStaticInitializedClass
+            mv.visitMethodInsn(
+                    Opcodes.INVOKESTATIC,
+                    "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                    "registerStaticInitializedClass",
+                    "(Ljava/lang/Class;)V",
+                    false);
+
+            mv.visitInsn(Opcodes.RETURN);
+            mv.visitMaxs(-1, -1);
+            mv.visitEnd();
+        }
+        super.visitEnd();
+    }
+
+    private boolean isStaticFinalField(int access) {
+        return (access & Opcodes.ACC_STATIC) != 0 && (access & Opcodes.ACC_FINAL) != 0;
+    }
+
+    private int removeFinal(int access) {
+        // Remove the final modifier from the access flags
+        return access & ~Opcodes.ACC_FINAL;
+    }
 
     private static class JmcStaticInitMethodVisitor extends MethodVisitor {
 
@@ -103,7 +116,7 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         }
     }
 
-    private static record StaticMethodInfo(
+    private record StaticMethodInfo(
             int access, String name, String desc, String signature, String[] exceptions) {
         public String getStaticReplacementName() {
             return "$staticInit";
