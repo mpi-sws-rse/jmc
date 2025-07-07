@@ -20,6 +20,7 @@ checkstyle {
 
 java {
     withSourcesJar()
+    withJavadocJar()
 }
 
 dependencies {

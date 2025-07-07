@@ -1,6 +1,6 @@
 package org.mpisws.jmc.strategies.trust;
 
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 
 import java.util.List;
 
@@ -16,16 +16,20 @@ public class ExecutionGraphSimulator {
         this.executionGraph.addEvent(Event.init());
     }
 
-    public ExecutionGraph getExecutionGraph() {return executionGraph;}
+    public ExecutionGraph getExecutionGraph() {
+        return executionGraph;
+    }
 
-    public CoverageGraph getCoverageGraph() {return coverageGraph;}
+    public CoverageGraph getCoverageGraph() {
+        return coverageGraph;
+    }
 
-    public void updateEvent(RuntimeEvent event) {
+    public void updateEvent(JmcRuntimeEvent event) {
         List<Event> trustEvents = EventFactory.fromRuntimeEvent(event);
         // Update the execution graph based on the event
-        if (event.getType() == RuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
+        if (event.getType() == JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
             return;
-        } else if (event.getType() == RuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
+        } else if (event.getType() == JmcRuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
             Event event1 =
                     new Event(
                             event.getTaskId() - 1,
@@ -73,7 +77,7 @@ public class ExecutionGraphSimulator {
     }
 
     public void handleBot(Event event) {
-//        executionGraph.addEvent(event);
+        //        executionGraph.addEvent(event);
     }
 
     public void handleRead(Event event) {

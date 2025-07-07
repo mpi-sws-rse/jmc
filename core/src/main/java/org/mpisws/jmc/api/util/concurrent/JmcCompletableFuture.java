@@ -4,6 +4,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
+/**
+ * A JMC-specific version of {@link java.util.concurrent.CompletableFuture} that allows for custom
+ * execution and provides a way to set an underlying JmcFuture.
+ *
+ * @param <T> the type of the result of the future
+ */
 public class JmcCompletableFuture<T> extends CompletableFuture<T> {
     private static final JmcExecutorService executor = new JmcExecutorService(2);
 

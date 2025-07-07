@@ -2,7 +2,7 @@ package org.mpisws.jmc.programs.det.lists.list.node;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.JmcRuntimeUtils;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 
 public class Node {
 
@@ -13,9 +13,9 @@ public class Node {
     public Node(int i) {
         item = i;
         // Write event for initializing item
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event1 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", i)
                         .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/Node")
@@ -27,9 +27,9 @@ public class Node {
 
         key = i;
         // Write event for initializing key
-        RuntimeEvent event2 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event2 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", i)
                         .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/Node")
@@ -43,9 +43,9 @@ public class Node {
     public Node(int item, int key) {
         this.item = item;
         // Write event for initializing item
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event1 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", item)
                         .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/Node")
@@ -57,9 +57,9 @@ public class Node {
 
         this.key = key;
         // Write event for initializing key
-        RuntimeEvent event2 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event2 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", key)
                         .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/Node")

@@ -1,6 +1,6 @@
 package org.mpisws.jmc.strategies.trust;
 
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 
 public class Location {
     Object instance;
@@ -11,7 +11,7 @@ public class Location {
         this.param = param;
     }
 
-    public static Location fromRuntimeEvent(RuntimeEvent runtimeEvent) {
+    public static Location fromRuntimeEvent(JmcRuntimeEvent runtimeEvent) {
         Object instance = runtimeEvent.getParam("instance");
         if (instance == null) {
             // This is because the call is a static method call

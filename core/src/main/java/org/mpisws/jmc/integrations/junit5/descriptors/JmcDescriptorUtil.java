@@ -6,8 +6,23 @@ import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.lang.reflect.Method;
 
+/**
+ * Utility class for handling JMC descriptor configurations.
+ *
+ * <p>This class provides methods to check and update JMC checker configurations based on
+ * annotations present on classes or methods.
+ */
 public class JmcDescriptorUtil {
 
+    /**
+     * Checks the provided class and method for JMC trust strategy annotations and updates the JMC
+     * checker configuration builder accordingly.
+     *
+     * @param builder The JMC checker configuration builder to update.
+     * @param clazz The class to check for annotations.
+     * @param method The method to check for annotations.
+     * @return An updated JMC checker configuration builder.
+     */
     public static JmcCheckerConfiguration.Builder checkStrategyConfig(
             JmcCheckerConfiguration.Builder builder, Class<?> clazz, Method method) {
         if (method != null && hasStrategyAnnotation(method)) {

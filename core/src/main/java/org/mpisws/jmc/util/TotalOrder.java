@@ -1,8 +1,6 @@
-package org.mpisws.jmc.util.aux;
+package org.mpisws.jmc.util;
 
-/**
- * Represents a generic total order relation.
- */
+/** Represents a generic total order relation. */
 public interface TotalOrder<T> {
     /**
      * Compares two objects of type T - the current and the other passed as argument.
@@ -12,18 +10,14 @@ public interface TotalOrder<T> {
      */
     Relation compare(T other) throws InvalidComparisonException;
 
-    /**
-     * Represents the relation between two objects.
-     */
+    /** Represents the relation between two objects. */
     enum Relation {
         GT,
         LT,
         EQ,
     }
 
-    /**
-     * Represents an exception thrown when an invalid comparison is attempted.
-     */
+    /** Represents an exception thrown when an invalid comparison is attempted. */
     class InvalidComparisonException extends Exception {
         public InvalidComparisonException(String message) {
             super(message);

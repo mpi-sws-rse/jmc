@@ -3,7 +3,7 @@ package org.mpisws.jmc.programs.det.lists.list.lazy;
 import org.mpisws.jmc.programs.det.lists.list.Set;
 import org.mpisws.jmc.programs.det.lists.list.node.LNode;
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 
 public class LazyList implements Set {
 
@@ -19,14 +19,12 @@ public class LazyList implements Set {
     }
 
     private void writeHead(LNode node) {
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event1 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", node)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/lazy/LazyList")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/lazy/LazyList")
                         .param("name", "head")
                         .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/LNode;")
                         .param("instance", this)
@@ -35,13 +33,11 @@ public class LazyList implements Set {
     }
 
     private void readHead() {
-        RuntimeEvent event2 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
+        JmcRuntimeEvent event2 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/lazy/LazyList")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/lazy/LazyList")
                         .param("name", "head")
                         .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/LNode;")
                         .param("instance", this)
@@ -51,36 +47,36 @@ public class LazyList implements Set {
 
     @Override
     public boolean add(int i) {
-            int key = i;
-            while (true) {
-                LNode pred = head;
-                readHead();
-                LNode curr = pred.getNext();
-                while (curr.getKey() < key) {
-                    pred = curr;
-                    curr = curr.getNext();
-                }
-                pred.lock();
+        int key = i;
+        while (true) {
+            LNode pred = head;
+            readHead();
+            LNode curr = pred.getNext();
+            while (curr.getKey() < key) {
+                pred = curr;
+                curr = curr.getNext();
+            }
+            pred.lock();
+            try {
+                curr.lock();
                 try {
-                    curr.lock();
-                    try {
-                        if (validate(pred, curr)) {
-                            if (key == curr.getKey()) {
-                                return false;
-                            } else {
-                                LNode node = new LNode(i, key);
-                                node.setNext(curr);
-                                pred.setNext(node);
-                                return true;
-                            }
+                    if (validate(pred, curr)) {
+                        if (key == curr.getKey()) {
+                            return false;
+                        } else {
+                            LNode node = new LNode(i, key);
+                            node.setNext(curr);
+                            pred.setNext(node);
+                            return true;
                         }
-                    } finally {
-                        curr.unlock();
                     }
                 } finally {
-                    pred.unlock();
+                    curr.unlock();
                 }
+            } finally {
+                pred.unlock();
             }
+        }
     }
 
     /**
@@ -89,35 +85,35 @@ public class LazyList implements Set {
      */
     @Override
     public boolean remove(int i) {
-            int key = i;
-            while (true) {
-                LNode pred = head;
-                readHead();
-                LNode curr = pred.getNext();
-                while (curr.getKey() < key) {
-                    pred = curr;
-                    curr = curr.getNext();
-                }
-                pred.lock();
+        int key = i;
+        while (true) {
+            LNode pred = head;
+            readHead();
+            LNode curr = pred.getNext();
+            while (curr.getKey() < key) {
+                pred = curr;
+                curr = curr.getNext();
+            }
+            pred.lock();
+            try {
+                curr.lock();
                 try {
-                    curr.lock();
-                    try {
-                        if (validate(pred, curr)) {
-                            if (key == curr.getKey()) {
-                                curr.setMarked(true);
-                                pred.setNext(curr.getNext());
-                                return true;
-                            } else {
-                                return false;
-                            }
+                    if (validate(pred, curr)) {
+                        if (key == curr.getKey()) {
+                            curr.setMarked(true);
+                            pred.setNext(curr.getNext());
+                            return true;
+                        } else {
+                            return false;
                         }
-                    } finally {
-                        curr.unlock();
                     }
                 } finally {
-                    pred.unlock();
+                    curr.unlock();
                 }
+            } finally {
+                pred.unlock();
             }
+        }
     }
 
     /**
