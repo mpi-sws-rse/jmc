@@ -3,11 +3,14 @@ package org.mpisws.jmc.test.programs;
 import org.junit.jupiter.api.Disabled;
 import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.annotations.JmcExpectAssertionFailure;
 import org.mpisws.jmc.annotations.JmcExpectExecutions;
 import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
 import org.mpisws.jmc.test.bigShot.Str;
 import org.mpisws.jmc.test.bigShot.T1;
 import org.mpisws.jmc.test.bigShot.T2;
+
+import java.util.Objects;
 
 public class BigShotTest {
 
@@ -41,7 +44,7 @@ public class BigShotTest {
             t2.start();
             t2.join();
 
-            assert s.v == "" || s.v.charAt(0) == 'b' : "Assertion Fail! ";
+            assert Objects.equals(s.v, "") || s.v.charAt(0) == 'b' : "Assertion Fail! ";
         } catch (InterruptedException e) {
 
         }
@@ -59,7 +62,7 @@ public class BigShotTest {
             t2.start();
             t2.join();
 
-            assert s.v != "" && s.v.charAt(0) == 'b' : "Assertion Fail! ";
+            assert !Objects.equals(s.v, "") && s.v.charAt(0) == 'b' : "Assertion Fail! ";
         } catch (InterruptedException e) {
 
         }
@@ -84,7 +87,7 @@ public class BigShotTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    @Disabled // Disabled due to assertion violation
+    @JmcExpectAssertionFailure
     public void runBigShotS2Test() {
         bigShotS2();
     }
