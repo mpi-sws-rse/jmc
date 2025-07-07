@@ -2,7 +2,10 @@ package org.mpisws.jmc.api.util.concurrent;
 
 import java.util.concurrent.ThreadFactory;
 
-/** A thread factory that creates {@link JmcThread} instances. */
+/**
+ * A thread factory that creates {@link JmcThread} instances. Reimplementation of {@link
+ * java.util.concurrent.ThreadFactory}
+ */
 public class JmcThreadFactory implements ThreadFactory {
 
     private final ThreadFactory baseFactory;

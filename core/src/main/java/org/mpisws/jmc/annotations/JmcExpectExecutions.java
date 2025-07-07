@@ -12,5 +12,13 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JmcExpectExecutions {
+    /**
+     * The expected number of executions for the annotated test method or class.
+     *
+     * <p>This value is used to verify that the JMC model checker produces the expected number of
+     * executions during the test run.
+     *
+     * @return the expected number of executions
+     */
     int value();
 }

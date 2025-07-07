@@ -3,7 +3,7 @@ package org.mpisws.jmc.programs.det.lists.list.optimistic;
 import org.mpisws.jmc.programs.det.lists.list.Set;
 import org.mpisws.jmc.programs.det.lists.list.node.FNode;
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 
 public class OptimisticList implements Set {
     public FNode head;
@@ -17,9 +17,9 @@ public class OptimisticList implements Set {
     }
 
     private void readHead() {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
                         .taskId(org.mpisws.jmc.runtime.JmcRuntime.currentTask())
                         .param(
                                 "owner",
@@ -32,9 +32,9 @@ public class OptimisticList implements Set {
     }
 
     private void writeHead(FNode newHead) {
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(org.mpisws.jmc.runtime.JmcRuntime.currentTask())
                         .param("newValue", newHead)
                         .param(
@@ -53,36 +53,36 @@ public class OptimisticList implements Set {
      */
     @Override
     public boolean add(int i) {
-            int key = i;
-            while (true) {
-                FNode pred = head;
-                readHead();
-                FNode curr = pred.getNext();
-                while (curr.getKey() < key) {
-                    pred = curr;
-                    curr = curr.getNext();
-                }
-                pred.lock();
+        int key = i;
+        while (true) {
+            FNode pred = head;
+            readHead();
+            FNode curr = pred.getNext();
+            while (curr.getKey() < key) {
+                pred = curr;
+                curr = curr.getNext();
+            }
+            pred.lock();
+            try {
+                curr.lock();
                 try {
-                    curr.lock();
-                    try {
-                        if (validate(pred, curr)) {
-                            if (key == curr.getKey()) {
-                                return false;
-                            } else {
-                                FNode node = new FNode(i, key);
-                                node.setNext(curr);
-                                pred.setNext(node);
-                                return true;
-                            }
+                    if (validate(pred, curr)) {
+                        if (key == curr.getKey()) {
+                            return false;
+                        } else {
+                            FNode node = new FNode(i, key);
+                            node.setNext(curr);
+                            pred.setNext(node);
+                            return true;
                         }
-                    } finally {
-                        curr.unlock();
                     }
                 } finally {
-                    pred.unlock();
+                    curr.unlock();
                 }
+            } finally {
+                pred.unlock();
             }
+        }
     }
 
     /**
@@ -91,34 +91,34 @@ public class OptimisticList implements Set {
      */
     @Override
     public boolean remove(int i) {
-            int key = i;
-            while (true) {
-                FNode pred = head;
-                readHead();
-                FNode curr = pred.getNext();
-                while (curr.getKey() < key) {
-                    pred = curr;
-                    curr = curr.getNext();
-                }
-                pred.lock();
+        int key = i;
+        while (true) {
+            FNode pred = head;
+            readHead();
+            FNode curr = pred.getNext();
+            while (curr.getKey() < key) {
+                pred = curr;
+                curr = curr.getNext();
+            }
+            pred.lock();
+            try {
+                curr.lock();
                 try {
-                    curr.lock();
-                    try {
-                        if (validate(pred, curr)) {
-                            if (key == curr.getKey()) {
-                                pred.setNext(curr.getNext());
-                                return true;
-                            } else {
-                                return false;
-                            }
+                    if (validate(pred, curr)) {
+                        if (key == curr.getKey()) {
+                            pred.setNext(curr.getNext());
+                            return true;
+                        } else {
+                            return false;
                         }
-                    } finally {
-                        curr.unlock();
                     }
                 } finally {
-                    pred.unlock();
+                    curr.unlock();
                 }
+            } finally {
+                pred.unlock();
             }
+        }
     }
 
     /**
@@ -127,28 +127,28 @@ public class OptimisticList implements Set {
      */
     @Override
     public boolean contains(int i) {
-            int key = i;
-            while (true) {
-                FNode pred = head;
-                FNode curr = pred.getNext();
-                while (curr.getKey() < key) {
-                    pred = curr;
-                    curr = curr.getNext();
-                }
-                pred.lock();
+        int key = i;
+        while (true) {
+            FNode pred = head;
+            FNode curr = pred.getNext();
+            while (curr.getKey() < key) {
+                pred = curr;
+                curr = curr.getNext();
+            }
+            pred.lock();
+            try {
+                curr.lock();
                 try {
-                    curr.lock();
-                    try {
-                        if (validate(pred, curr)) {
-                            return key == curr.getKey();
-                        }
-                    } finally {
-                        curr.unlock();
+                    if (validate(pred, curr)) {
+                        return key == curr.getKey();
                     }
                 } finally {
-                    pred.unlock();
+                    curr.unlock();
                 }
+            } finally {
+                pred.unlock();
             }
+        }
     }
 
     private boolean validate(FNode pred, FNode curr) {

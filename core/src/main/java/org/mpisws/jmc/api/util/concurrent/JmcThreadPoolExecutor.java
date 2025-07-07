@@ -8,7 +8,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A thread pool executor that runs tasks in new threads. The thread creation is wrapped with the
- * {@link JmcThreadFactory} to create {@link JmcThread} instances.
+ * {@link JmcThreadFactory} to create {@link JmcThread} instances. Reimplementation of {@link
+ * java.util.concurrent.ThreadPoolExecutor}
  */
 public class JmcThreadPoolExecutor extends ThreadPoolExecutor {
 

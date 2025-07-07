@@ -6,15 +6,14 @@ import org.mpisws.jmc.runtime.scheduling.Scheduler;
 import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 
 /**
  * The scheduling strategy is responsible for deciding which thread to schedule next.
  *
- * <p>It is used by the {@link Scheduler} to decide which thread to schedule
- * next. The {@link Scheduler} is in turn used by the {@link
- * JmcRuntime} to manage the execution of threads.
+ * <p>It is used by the {@link Scheduler} to decide which thread to schedule next. The {@link
+ * Scheduler} is in turn used by the {@link JmcRuntime} to manage the execution of threads.
  *
  * <p>Implementations of this interface should be thread-safe. Multiple threads can make concurrent
  * calls to the {@link SchedulingStrategy#updateEvent} function.
@@ -32,7 +31,7 @@ public interface SchedulingStrategy {
      *
      * <p>May be left empty if unused
      */
-    void updateEvent(RuntimeEvent event) throws HaltTaskException, HaltExecutionException;
+    void updateEvent(JmcRuntimeEvent event) throws HaltTaskException, HaltExecutionException;
 
     /**
      * Returns the ID of the next thread to be scheduled.
@@ -41,13 +40,9 @@ public interface SchedulingStrategy {
      */
     SchedulingChoice<?> nextTask();
 
-    /**
-     * Resets the strategy for the current Iteration.
-     */
+    /** Resets the strategy for the current Iteration. */
     void resetIteration(int iteration);
 
-    /**
-     * Teardown the strategy. Allows for releasing resources.
-     */
+    /** Teardown the strategy. Allows for releasing resources. */
     void teardown();
 }
