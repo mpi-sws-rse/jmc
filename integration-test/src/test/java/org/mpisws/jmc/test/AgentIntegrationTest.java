@@ -1,6 +1,7 @@
 package org.mpisws.jmc.test;
 
 import org.junit.jupiter.api.Test;
+import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
 import org.mpisws.jmc.checker.JmcFunctionalTestTarget;
@@ -18,9 +19,7 @@ import org.mpisws.jmc.test.programs.CorrectCounterTestRunner;
 import org.mpisws.jmc.test.programs.FutureCounterTestRunner;
 import org.mpisws.jmc.test.assume.SendRecv;
 
-/**
- * The AgentIntegrationTest class is used to test the agent.
- */
+/** The AgentIntegrationTest class is used to test the agent. */
 public class AgentIntegrationTest {
     @Test
     public void testAgent() throws JmcCheckerException {
@@ -86,7 +85,7 @@ public class AgentIntegrationTest {
                         "AtomicCounter",
                         () -> {
                             int length = 8; // Default length
-                            AtomicCounter.main(new String[]{String.valueOf(length)});
+                            AtomicCounter.main(new String[] {String.valueOf(length)});
                         });
         jmcModelChecker.check(target);
     }
@@ -206,13 +205,13 @@ public class AgentIntegrationTest {
                             // that runs the GCD algorithm in parallel.
                             int a = 5; // Example value
                             int b = 5; // Example value
-                            ParallelGCD.main(new String[]{String.valueOf(a), String.valueOf(b)});
+                            ParallelGCD.main(new String[] {String.valueOf(a), String.valueOf(b)});
                         });
         jmcModelChecker.check(target);
     }
 
+    @JmcCheck
     @JmcCheckConfiguration(numIterations = 10, strategy = "random", debug = true)
-    @Test
     public void testAgentWithFutureAgain() {
         CorrectCounterTestRunner.main(new String[0]);
     }
