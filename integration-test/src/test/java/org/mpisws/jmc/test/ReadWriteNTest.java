@@ -4,12 +4,13 @@ import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.test.readerWriter.Shared;
 import org.mpisws.jmc.test.readerWriter.Reader;
+import org.mpisws.jmc.test.readerWriter.Writer;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
-public class ReadNTest {
+public class ReadWriteNTest {
 
     /**
      * This program has 1 distinct execution graph.
@@ -25,10 +26,9 @@ public class ReadNTest {
      * J(T3)    |           |           |
      * F        |           |           |
      */
-    private void readNProgram() {
+    private void readNProgram(int numThreads) {
         Shared shared = new Shared(0);
         List<Reader> threads = new ArrayList<>();
-        int numThreads = 3;
         for (int i = 0; i < numThreads; i++) {
             Reader thread = new Reader(shared);
             threads.add(thread);
@@ -46,10 +46,36 @@ public class ReadNTest {
         }
     }
 
-    // Running with JMC using the trust strategy.
+    private void readWriteNProgram(int numThreads) {
+        Shared shared = new Shared(0);
+        List<Writer> threads = new ArrayList<>();
+        for (int i = 0; i < numThreads; i++) {
+            Writer thread = new Writer(shared);
+            threads.add(thread);
+        }
+        for (int i = 0; i < numThreads; i++) {
+            threads.get(i).start();
+        }
+
+        for (int i = 0; i < numThreads; i++) {
+            try {
+                threads.get(i).join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+    }
+
+
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1, strategy = "estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 10000, strategy = "estimation", debug = false)
     public void runEstimationReadNTest() {
-        readNProgram();
+        readNProgram(5);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10000, strategy = "estimation", debug = false)
+    public void runEstimationReadWriteNTest() {
+        readWriteNProgram(5);
     }
 }
