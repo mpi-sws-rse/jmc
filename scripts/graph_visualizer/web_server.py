@@ -73,6 +73,7 @@ def _is_valid_graph_file(graph_filename: str, guiding: bool):
 
 def read_graphs(graph_files_path: str, guiding: bool):
     """Read the graph files from the given path"""
+    print("Reading graph files from:", graph_files_path)
     global graph_files
     graph_files = {}
     global log_files

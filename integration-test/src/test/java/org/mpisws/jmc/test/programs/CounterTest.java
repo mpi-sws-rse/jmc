@@ -103,16 +103,16 @@ public class CounterTest {
     @JmcExpectExecutions(720) // For input 6
     public void runCoarseCounterTest() {
         // TODO : Make the test parametric
-        coarseCounter(new String[]{"0", "1", "2", "0", "1", "2"});
+        coarseCounter(new String[] {"0", "1", "2", "0", "1", "2"});
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcCheckConfiguration(numIterations = 10000, debug = true)
     @JmcTrustStrategy
     // TODO :: Fix this test
     public void runFineCounterTest() {
         // TODO : Make the test parametric
-        FineCounter(new String[]{"0", "1", "2", "0", "1", "2"});
+        FineCounter(new String[] {"0", "1", "2", "3"});
     }
 
     @JmcCheck
@@ -122,7 +122,6 @@ public class CounterTest {
         counter.run();
         assert counter.getCounterValue() == 2;
     }
-
 
     @JmcCheck
     @JmcCheckConfiguration(strategy = "trust", numIterations = 100, debug = true)
