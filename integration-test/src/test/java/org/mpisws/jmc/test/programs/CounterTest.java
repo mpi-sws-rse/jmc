@@ -4,6 +4,7 @@ import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.annotations.JmcExpectExecutions;
 import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
+import org.mpisws.jmc.strategies.trust.TrustStrategy;
 import org.mpisws.jmc.test.ParametricCounter;
 import org.mpisws.jmc.test.det.counter.CCounter;
 import org.mpisws.jmc.test.det.counter.DecThread;
@@ -108,11 +109,11 @@ public class CounterTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10000, debug = true)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(debug = true)
     // TODO :: Fix this test
     public void runFineCounterTest() {
         // TODO : Make the test parametric
-        FineCounter(new String[] {"0", "1", "2", "3"});
+        FineCounter(new String[] {"0", "1", "2", "3", "4"});
     }
 
     @JmcCheck

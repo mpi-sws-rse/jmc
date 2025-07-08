@@ -144,6 +144,19 @@ function plot_graph(graphData) {
             return xScale(nodeMap.get(d.target).taskId);
         })
         .attr("y2", d => yScale(nodeMap.get(d.target).timestamp))
+        .on("mouseover", function (event, d) {
+            // Dim all links
+            link.style("opacity", 0.2);
+            // Highlight the hovered link
+            d3.select(this)
+                .style("opacity", 1)
+                .style("stroke-width", "3px");
+        })
+        .on("mouseout", function () {
+            // Reset all links
+            link.style("opacity", 1)
+                .style("stroke-width", "1.5px");
+        });
 
     for (edgeType of edgeTypes.keys()) {
         if (edgeType !== "readsFrom" && edgeType !== "programOrder") {
@@ -215,7 +228,8 @@ function load_log(graphName) {
         .then(response => response.json())
         .then(data => {
             d3.select('#log').selectAll("p").data(data.log).enter().append("p").attr("class", "box-content").text(d => d);
-        }).catch((error) => {});
+        }).catch((error) => {
+    });
 }
 
 function update_graph_selection(selectElement) {

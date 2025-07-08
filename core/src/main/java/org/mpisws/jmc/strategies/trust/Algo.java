@@ -109,8 +109,10 @@ public class Algo {
      * @param filePath to record the task schedule in.
      */
     public void recordTaskSchedule(String filePath) throws JmcCheckerException {
-        List<SchedulingChoiceWrapper> taskSchedule = ExecutionGraph.getTaskSchedule(executionGraph.checkConsistency());
-        FileUtil.storeTaskSchedule(filePath, taskSchedule.stream().map(SchedulingChoiceWrapper::choice).toList());
+        List<SchedulingChoiceWrapper> taskSchedule =
+                ExecutionGraph.getTaskSchedule(executionGraph.checkConsistency());
+        FileUtil.storeTaskSchedule(
+                filePath, taskSchedule.stream().map(SchedulingChoiceWrapper::choice).toList());
     }
 
     /**
@@ -296,13 +298,14 @@ public class Algo {
         }
 
         LOGGER.debug("Found the SC graph");
+        executionGraph.checkDanglingEdges();
         //        checkGraphSchedule(nextGraphSchedule);
-        //        executionGraph.printGraph();
+        executionGraph.printGraph();
 
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
         guidingTaskSchedule = new ArrayDeque<>(ExecutionGraph.getTaskSchedule(nextGraphSchedule));
-        //        printGuidingTaskSchedule();
+        printGuidingTaskSchedule();
     }
 
     private void checkGraphSchedule(List<ExecutionGraphNode> graphSchedule) {
@@ -756,10 +759,10 @@ public class Algo {
      * @param filePath The path to the file to write the execution graph to.
      */
     public void writeExecutionGraphToFile(String filePath) {
-        //        if (!executionGraph.checkExtensiveConsistency()) {
-        //            throw HaltExecutionException.error(
-        //                    "The execution graph is not consistent at the end of the iteration.");
-        //        }
+        if (!executionGraph.checkExtensiveConsistency()) {
+            throw HaltExecutionException.error(
+                    "The execution graph is not consistent at the end of the iteration.");
+        }
 
         String executionGraphJson = executionGraph.toJsonString();
         FileUtil.unsafeStoreToFile(filePath, executionGraphJson);
