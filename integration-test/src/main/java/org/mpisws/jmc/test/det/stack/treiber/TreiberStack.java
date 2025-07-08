@@ -1,4 +1,7 @@
-package org.mpisws.jmc.test.det.stack;
+package org.mpisws.jmc.test.det.stack.treiber;
+
+import org.mpisws.jmc.test.det.stack.Node;
+import org.mpisws.jmc.test.det.stack.Stack;
 
 import java.util.concurrent.atomic.AtomicReference;
 

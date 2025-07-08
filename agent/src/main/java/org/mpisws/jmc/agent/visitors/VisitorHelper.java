@@ -13,9 +13,9 @@ public class VisitorHelper {
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field read operation.
      *
-     * @param mv The MethodVisitor to which the instrumentation will be added.
-     * @param owner The internal name of the class containing the field.
-     * @param name The name of the field.
+     * @param mv         The MethodVisitor to which the instrumentation will be added.
+     * @param owner      The internal name of the class containing the field.
+     * @param name       The name of the field.
      * @param descriptor The descriptor of the field.
      */
     public static void insertRead(
@@ -39,9 +39,9 @@ public class VisitorHelper {
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field write operation.
      *
-     * @param mv The MethodVisitor to which the instrumentation will be added.
-     * @param owner The internal name of the class containing the field.
-     * @param name The name of the field.
+     * @param mv         The MethodVisitor to which the instrumentation will be added.
+     * @param owner      The internal name of the class containing the field.
+     * @param name       The name of the field.
      * @param descriptor The descriptor of the field.
      */
     public static void insertWrite(
@@ -164,7 +164,10 @@ public class VisitorHelper {
                         "valueOf",
                         "(D)Ljava/lang/Double;",
                         false);
-                return;
         }
+    }
+
+    public static boolean isInstanciation(int opcode) {
+        return opcode == Opcodes.NEW || opcode == Opcodes.ANEWARRAY || opcode == Opcodes.MULTIANEWARRAY;
     }
 }

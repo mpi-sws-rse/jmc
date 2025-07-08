@@ -9,10 +9,21 @@ import org.mpisws.jmc.test.det.list.Set;
 import org.mpisws.jmc.test.det.list.coarse.CoarseList;
 import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.test.det.list.lazy.LazyList;
 
-public class CoarseListTest {
-    private void test_50_50_workload_coarse_list(int NUM_THREADS) {
+import java.util.ArrayList;
+import java.util.List;
 
+public class OrderedListTest {
+    private void coarseList_50_50_test(int NUM_THREADS) {
+        list_50_50_test(NUM_THREADS, new CoarseList());
+    }
+
+    private void lazyList_50_50_test(int NUM_THREADS) {
+        list_50_50_test(NUM_THREADS, new LazyList());
+    }
+
+    private void list_50_50_test(int NUM_THREADS, Set set) {
         int NUM_INSERTIONS = (int) Math.ceil(NUM_THREADS / 2.0);
         int NUM_DELETIONS = (int) Math.floor(NUM_THREADS / 2.0);
 
@@ -20,8 +31,6 @@ public class CoarseListTest {
         for (int i = 0; i < NUM_INSERTIONS; i++) {
             arr[i] = i + 1; // Fixing input data
         }
-
-        Set set = new CoarseList();
 
         InsertionThread[] insertionThreads = new InsertionThread[NUM_INSERTIONS];
         for (int i = 0; i < NUM_INSERTIONS; i++) {
@@ -66,7 +75,7 @@ public class CoarseListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100)
     public void runRandomCoarseListTest() {
-        test_50_50_workload_coarse_list(6);
+        coarseList_50_50_test(6);
     }
 
     // Running with JMC using the trust strategy.
@@ -75,6 +84,18 @@ public class CoarseListTest {
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     @JmcExpectExecutions(120)
     public void runTrustCoarseListTest() {
-        test_50_50_workload_coarse_list(5);
+        coarseList_50_50_test(5);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10000, strategy = "estimation")
+    public void runEstimationCoarseList() {
+        coarseList_50_50_test(6);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10000, strategy = "estimation")
+    public void runEstimationLazyList() {
+        lazyList_50_50_test(6);
     }
 }

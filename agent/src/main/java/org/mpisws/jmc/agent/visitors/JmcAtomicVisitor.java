@@ -153,7 +153,7 @@ public class JmcAtomicVisitor extends ClassVisitor {
         @Override
         public void visitTypeInsn(int opcode, String type) {
             // Replace NEW Atomic types with JmcAtomic types
-            if (opcode == Opcodes.NEW) {
+            if (VisitorHelper.isInstanciation(opcode)) {
                 super.visitTypeInsn(opcode, replaceType(type));
             } else {
                 super.visitTypeInsn(opcode, type);

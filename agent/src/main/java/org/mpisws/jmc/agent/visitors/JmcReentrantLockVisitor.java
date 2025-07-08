@@ -49,7 +49,7 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         @Override
         public void visitTypeInsn(int opcode, String type) {
             // Replace NEW ReentrantLock with JmcReentrantLock
-            if (opcode == Opcodes.NEW) {
+            if (VisitorHelper.isInstanciation(opcode)) {
                 super.visitTypeInsn(opcode, replaceType(type));
             } else {
                 super.visitTypeInsn(opcode, type);
