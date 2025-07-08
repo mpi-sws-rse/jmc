@@ -266,6 +266,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                 // 2. The lock is already acquired by another task. The current task is added to the
                 // waiting list.
                 if (waitingTasks.containsKey(lock)) {
+                    LOGGER.debug("Task {} waits for lock {}", taskId, lock.hashCode());
                     Set<Long> tasks = waitingTasks.get(lock);
                     tasks.add(taskId);
                     activeTasks.remove(taskId);
@@ -273,6 +274,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                     // 3. The lock is not acquired by any task. The current task is added to the
                     // wanting
                     // list.
+                    LOGGER.debug("Task {} wants lock {}", taskId, lock.hashCode());
                     wantingTasks.putIfAbsent(lock, new HashSet<>());
                     wantingTasks.get(lock).add(taskId);
                 }
@@ -281,6 +283,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                 // The lock is acquired by the current task. Remove it from the wanting list and add
                 // the rest to waiting
                 // list.
+                LOGGER.debug("Task {} acquired lock {}", taskId, lock.hashCode());
                 activeTasks.put(taskId, Optional.of(lock));
                 waitingTasks.putIfAbsent(lock, new HashSet<>());
                 Set<Long> wantingList = wantingTasks.get(lock);
@@ -300,6 +303,8 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
             } else if (type == RuntimeEvent.Type.LOCK_RELEASE_EVENT) {
                 Object lock = event.getParam("instance");
                 // The lock is released. The waiting tasks are marked as active.
+                LOGGER.debug("Task {} released lock {}", taskId, lock.hashCode());
+                activeTasks.put(taskId, Optional.empty());
                 Set<Long> blockedTasks = waitingTasks.get(lock);
                 wantingTasks.put(lock, new HashSet<>());
                 if (blockedTasks != null) {

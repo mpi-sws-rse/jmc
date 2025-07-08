@@ -9,8 +9,12 @@ public class JmcAtomicInteger {
     public JmcReentrantLock lock = new JmcReentrantLock();
 
     public JmcAtomicInteger(int initialValue) {
-        JmcRuntimeUtils.writeEventWithoutYield(this, initialValue,
-                "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+        JmcRuntimeUtils.writeEventWithoutYield(
+                this,
+                initialValue,
+                "org/mpisws/jmc/util/concurrent/JmcAtomicInteger",
+                "value",
+                "I");
         value = initialValue;
         JmcRuntime.yield();
     }
@@ -22,8 +26,8 @@ public class JmcAtomicInteger {
     public int get() {
         lock.lock();
         try {
-            JmcRuntimeUtils.readEventWithoutYield(this,
-                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            JmcRuntimeUtils.readEventWithoutYield(
+                    this, "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
             int out = value;
             JmcRuntime.yield();
             return out;
@@ -35,8 +39,12 @@ public class JmcAtomicInteger {
     public void set(int newValue) {
         lock.lock();
         try {
-            JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
-                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            JmcRuntimeUtils.writeEventWithoutYield(
+                    this,
+                    newValue,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger",
+                    "value",
+                    "I");
             value = newValue;
             JmcRuntime.yield();
         } finally {
@@ -47,13 +55,17 @@ public class JmcAtomicInteger {
     public boolean compareAndSet(int expectedValue, int newValue) {
         lock.lock();
         try {
-            JmcRuntimeUtils.readEventWithoutYield(this,
-                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            JmcRuntimeUtils.readEventWithoutYield(
+                    this, "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
             if (value == expectedValue) {
                 JmcRuntime.yield();
 
-                JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
-                        "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+                JmcRuntimeUtils.writeEventWithoutYield(
+                        this,
+                        newValue,
+                        "org/mpisws/jmc/util/concurrent/JmcAtomicInteger",
+                        "value",
+                        "I");
                 value = newValue;
                 JmcRuntime.yield();
                 return true;
@@ -68,13 +80,17 @@ public class JmcAtomicInteger {
     public int getAndIncrement() {
         lock.lock();
         try {
-            JmcRuntimeUtils.readEventWithoutYield(this,
-                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            JmcRuntimeUtils.readEventWithoutYield(
+                    this, "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
             int result = value;
             JmcRuntime.yield();
 
-            JmcRuntimeUtils.writeEventWithoutYield(this, result + 1,
-                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            JmcRuntimeUtils.writeEventWithoutYield(
+                    this,
+                    result + 1,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger",
+                    "value",
+                    "I");
             value = result + 1;
             JmcRuntime.yield();
             return result;
@@ -86,13 +102,17 @@ public class JmcAtomicInteger {
     public int getAndSet(int newValue) {
         lock.lock();
         try {
-            JmcRuntimeUtils.readEventWithoutYield(this,
-                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            JmcRuntimeUtils.readEventWithoutYield(
+                    this, "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
             int oldValue = value;
             JmcRuntime.yield();
 
-            JmcRuntimeUtils.writeEventWithoutYield(this, newValue,
-                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            JmcRuntimeUtils.writeEventWithoutYield(
+                    this,
+                    newValue,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger",
+                    "value",
+                    "I");
             value = newValue;
             JmcRuntime.yield();
             return oldValue;
@@ -104,13 +124,17 @@ public class JmcAtomicInteger {
     public int addAndGet(int delta) {
         lock.lock();
         try {
-            JmcRuntimeUtils.readEventWithoutYield(this,
-                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            JmcRuntimeUtils.readEventWithoutYield(
+                    this, "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
             int result = value;
             JmcRuntime.yield();
 
-            JmcRuntimeUtils.writeEventWithoutYield(this, result + delta,
-                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger", "value", "I");
+            JmcRuntimeUtils.writeEventWithoutYield(
+                    this,
+                    result + delta,
+                    "org/mpisws/jmc/util/concurrent/JmcAtomicInteger",
+                    "value",
+                    "I");
             value = result + delta;
             JmcRuntime.yield();
             return value;
