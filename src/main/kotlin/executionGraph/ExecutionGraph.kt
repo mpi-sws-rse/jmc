@@ -77,11 +77,17 @@ data class ExecutionGraph(
      */
     var previous: MutableList<Event> = mutableListOf(),
 
+    var symEvents: MutableList<ThreadEvent> = mutableListOf(),
+
     /**
      * @property id The id of the graph
      */
     var id: Int = 0
 ) : Serializable {
+
+    fun addSymEvent(symEvent: ThreadEvent) {
+        symEvents.add(symEvents as ThreadEvent)
+    }
 
     /**
      * Adds an event to the execution graph if it's not already present.

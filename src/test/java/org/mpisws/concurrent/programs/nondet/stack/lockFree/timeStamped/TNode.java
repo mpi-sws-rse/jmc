@@ -10,16 +10,17 @@ public class TNode<V> {
     public SymbolicInteger timeStamp;
     public AtomicBoolean taken;
 
-    public TNode(V value, boolean taken) {
+    public TNode(V value, boolean taken, long poolId) {
         this.value = value;
         this.taken = new AtomicBoolean(taken);
         this.next = null;
+        timeStamp = new SymbolicInteger("dummy-item-" + poolId, true);
     }
 
     public TNode(V value, boolean taken, String name) {
         this.value = value;
         this.taken = new AtomicBoolean(taken);
         this.next = null;
-        timeStamp = new SymbolicInteger(name, false);
+        timeStamp = new SymbolicInteger(name, true);
     }
 }

@@ -9,45 +9,64 @@ import java.util.Set;
 
 public class SSEstimator {
 
-    private int c = 0;
-    private int v = 1;
-    private final int o = 1; // This is the weight of an event
+    private final CoverageGraph g = new CoverageGraph();
+
+    private float c = 0F;
+    private float v = 1F;
+    //private final int o = 1; // This is the weight of an event
     private final Map<Integer, ThreadEvent> events = new HashMap<>();
-    private final Map<Integer, Boolean> max = new HashMap<>();
 
     public void addEvent(ThreadEvent e) {
+        g.addPo(e);
+        switch (e.getType()) {
+            case READ, READ_EX:
+                g.addRf(e);
+                break;
+            case WRITE, WRITE_EX:
+                g.addCo(e);
+                break;
+            case START:
+                g.addTc(e);
+                g.addTs((StartEvent) e);
+                break;
+            case JOIN:
+                g.addTj((JoinEvent) e);
+                break;
+            case FINISH:
+                //g.addFc(e);
+            default:
+                break;
+        }
+
         System.out.println("[SSEstimator] Adding event: " + e);
         events.put(e.getTid(), e);
-        max.put(e.getTid(), true);
         int in = 1;
         int out = RuntimeEnvironment.readyThread.size();
         Set<Integer> ids = events.keySet();
         for (Integer id : ids) {
+
             if (id != e.getTid()) {
                 ThreadEvent e_p = events.get(id);
-                if (commutable(e_p, e)) {
-                    int t_p = e_p.getTid();
-                    max.put(t_p, false);
-                }
-                if (max.get(e_p.getTid())) {
-                    in = in * (in + 1);
+                if (g.porfPrefix(e_p, e) || commutable(e_p, e)) {
+                    // Skip
+                } else {
+                    in = in + 1;
                 }
             }
         }
 
-        System.out.println("[SSEstimator] in: " + in + ", out: " + out);
 
         v = v * out / in;
-        c = c + (v * o);
+        c = c + v;
 
         System.out.println("[SSEstimator] Updated c: " + c + ", v: " + v);
     }
 
-    public int getC() {
+    public float getC() {
         return c;
     }
 
-    public int getV() {
+    public float getV() {
         return v;
     }
 
@@ -55,7 +74,6 @@ public class SSEstimator {
         c = 0;
         v = 1;
         events.clear();
-        max.clear();
     }
 
     private boolean commutable(ThreadEvent e1, ThreadEvent e2) {
@@ -106,6 +124,11 @@ public class SSEstimator {
 
         if (e1 instanceof ReadExEvent r && e2 instanceof WriteExEvent w) {
             return r.getLoc().equals(w.getLoc());
+        }
+
+        if (e1 instanceof StartEvent s && e2 instanceof FinishEvent f) {
+            int starterTid = s.getCallerThread();
+            return starterTid == f.getTid();
         }
 
         return false;

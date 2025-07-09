@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
 public abstract class OptDPORStrategy implements SearchStrategy {
 
@@ -48,6 +49,8 @@ public abstract class OptDPORStrategy implements SearchStrategy {
     //protected OptTrust dpor;
 
     protected String executionGraphsPath;
+
+    //protected List<ThreadEvent> symEvents = new ArrayList<>();
 
     public OptDPORStrategy() {
         buggyTracePath = RuntimeEnvironment.buggyTracePath;
@@ -412,7 +415,9 @@ public abstract class OptDPORStrategy implements SearchStrategy {
             solver.updatePathSymbolicOperations(symbolicOperation);
 //            solver.push(symbolicOperation);
             solver.computeGuidedSymAssumeOperationRequest(symbolicOperation);
+            //currentGraph.getSymEvents().add(guidingSymAssumeEvent);
         }
+
         RuntimeEnvironment.getNextSerialNumber(thread); // To update the serial number of the thread
         RuntimeEnvironment.eventsRecord.add(guidingSymAssumeEvent);
         updateCoverage(guidingSymAssumeEvent);
@@ -446,6 +451,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
 
         SymAssumeEvent symAssumeEvent = RuntimeEnvironment.createSymAssumeEvent(thread, symbolicOperation);
         RuntimeEnvironment.eventsRecord.add(symAssumeEvent);
+
         passEventToDPOR(symAssumeEvent);
         updateCoverage(symAssumeEvent);
     }
@@ -487,11 +493,12 @@ public abstract class OptDPORStrategy implements SearchStrategy {
         //System.out.println("[OPT-DPOR Strategy Message] : The result is " + guidingSymExecutionEvent.getResult());
         //System.out.println("[OPT-DPOR Strategy Message] : The event is " + guidingSymExecutionEvent.getTid() + " : " + guidingSymExecutionEvent.getSerial());
         if (solver.resetProver) {
-            if (guidingSymExecutionEvent.getResult()) {
+            /*if (guidingSymExecutionEvent.getResult()) {
                 solver.push(symbolicOperation);
             } else {
                 solver.push(solver.negateFormula(symbolicOperation.getFormula()));
-            }
+            }*/
+            //currentGraph.getSymEvents().add(guidingSymExecutionEvent);
         }
         RuntimeEnvironment.eventsRecord.add(guidingSymExecutionEvent);
         updateCoverage(guidingSymExecutionEvent);
@@ -603,12 +610,19 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                 if (solver != null && solver.size() != 0) {
                     if (graphOp.getType() == GraphOpType.FR_NEG_SYM) {
                         solver.pop();
+
                         SymExecutionEvent symEvent = (SymExecutionEvent) graphOp.getFirstEvent();
                         if (symEvent.getResult()) {
                             solver.push(symEvent.getSymbolicOp().getFormula());
                         } else {
                             solver.push(solver.negateFormula(symEvent.getSymbolicOp().getFormula()));
                         }
+                        /*if (!symEvents.get(symEvents.size() - 1).equals(symEvent)) {
+                            for (int i = 0; i < symEvents.size(); i++) {
+                                System.out.println(symEvents.get(i));
+                            }
+                            System.out.println(symEvent);
+                        }*/
                         solver.solveAndUpdateModelSymbolicVariables();
 
 //                        SymExecutionEvent symEvent = (SymExecutionEvent) graphOp.getFirstEvent();
@@ -670,6 +684,7 @@ public abstract class OptDPORStrategy implements SearchStrategy {
                 }
                 if (solver != null && solver.size() == 0) {
                     solver.resetProver = true;
+                    //RuntimeEnvironment.guidingGraph.getSymEvents().clear();
                 }
                 return false;
             }

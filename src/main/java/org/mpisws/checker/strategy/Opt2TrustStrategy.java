@@ -30,7 +30,7 @@ public class Opt2TrustStrategy extends Opt2DPORStrategy {
             case FR_L_W:
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
                 if (solver != null) {
-                    state = new RevisitState(new ArrayList<>(), 0);
+                    state = new RevisitState(new ArrayList<>(), 0, null);
                 }
                 makeDPORFree();
                 RuntimeEnvironment.frCounter++;
@@ -39,7 +39,7 @@ public class Opt2TrustStrategy extends Opt2DPORStrategy {
             case FR_W_W:
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ", " + graphOp.getSecondEvent().getTid() + ":" + graphOp.getSecondEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
                 if (solver != null) {
-                    state = new RevisitState(new ArrayList<>(), 0);
+                    state = new RevisitState(new ArrayList<>(), 0, null);
                 }
                 makeDPORFree();
                 RuntimeEnvironment.frCounter++;
@@ -48,7 +48,7 @@ public class Opt2TrustStrategy extends Opt2DPORStrategy {
             case FR_R_W:
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ", " + graphOp.getSecondEvent().getTid() + ":" + graphOp.getSecondEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
                 if (solver != null) {
-                    state = new RevisitState(new ArrayList<>(), 0);
+                    state = new RevisitState(new ArrayList<>(), 0, null);
                 }
                 makeDPORFree();
                 RuntimeEnvironment.frCounter++;
@@ -57,7 +57,7 @@ public class Opt2TrustStrategy extends Opt2DPORStrategy {
             case FR_RX_W:
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ", " + graphOp.getSecondEvent().getTid() + ":" + graphOp.getSecondEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
                 if (solver != null) {
-                    state = new RevisitState(new ArrayList<>(), 0);
+                    state = new RevisitState(new ArrayList<>(), 0, null);
                 }
                 makeDPORFree();
                 RuntimeEnvironment.frCounter++;
@@ -66,7 +66,7 @@ public class Opt2TrustStrategy extends Opt2DPORStrategy {
             case FR_NEG_SYM:
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
                 if (solver != null) {
-                    state = new RevisitState(new ArrayList<>(), 0);
+                    state = new RevisitState(new ArrayList<>(), 0, null);
                 }
                 makeDPORFree();
                 RuntimeEnvironment.frCounter++;

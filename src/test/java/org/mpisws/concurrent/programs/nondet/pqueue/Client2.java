@@ -14,7 +14,7 @@ public class Client2 {
 
     public static void main(String[] args) {
         try {
-            int NUM_OPERATIONS = 2;
+            int NUM_OPERATIONS = 4;
             int NUM_INSERTIONS = (int) Math.ceil(NUM_OPERATIONS / 2.0);
             int NUM_DELETIONS = (int) Math.floor(NUM_OPERATIONS / 2.0);
             PQueue pqueue = new LockBasedLinear(NUM_INSERTIONS);
@@ -22,9 +22,9 @@ public class Client2 {
             ArrayList<SymbolicInteger> items = new ArrayList<>(NUM_INSERTIONS);
             ArrayList<SymbolicInteger> scores = new ArrayList<>(NUM_INSERTIONS);
             for (int i = 0; i < NUM_INSERTIONS; i++) {
-                SymbolicInteger item = new SymbolicInteger("item-" + i, false);
+                SymbolicInteger item = new SymbolicInteger("item-" + i, true);
                 items.add(item);
-                SymbolicInteger score = new SymbolicInteger("score-" + i, false);
+                SymbolicInteger score = new SymbolicInteger("score-" + i, true);
                 ArithmeticFormula f = new ArithmeticFormula();
                 SymbolicOperation op1 = f.geq(score, 0);
                 SymbolicOperation op2 = f.lt(score, NUM_INSERTIONS);

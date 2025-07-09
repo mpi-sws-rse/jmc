@@ -18,7 +18,7 @@ public class Client6 {
 
         List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_PUSHES; i++) {
-            items.add(i);
+            items.add(i + 100);
         }
 
         List<PusherThread> pusherThreads = new ArrayList<>(NUM_PUSHES);

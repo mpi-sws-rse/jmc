@@ -33,7 +33,7 @@ public class TSStack<V> implements Stack<V> {
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op1 = f.gt(ts, 0);
         Utils.assume(op1); // assume ts > 0
-        node.timeStamp = ts;
+        //node.timeStamp = ts;
     }
 
     /**
@@ -43,7 +43,7 @@ public class TSStack<V> implements Stack<V> {
     @Override
     public V pop() throws JMCInterruptException {
         PoperThread thread = (PoperThread) Thread.currentThread();
-        SymbolicInteger startTime = new SymbolicInteger("st-" + thread.id, false);
+        SymbolicInteger startTime = new SymbolicInteger("st-" + thread.id, true);
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op1 = f.gt(startTime, 0);
         Utils.assume(op1); // assume startTime > 0
@@ -66,7 +66,7 @@ public class TSStack<V> implements Stack<V> {
 
     private Result tryRem(SymbolicInteger startTime) throws JMCInterruptException {
         TNode<V> youngest = null;
-        SymbolicInteger timeStamp = new SymbolicInteger("ts-" + startTime.getName(), false);
+        SymbolicInteger timeStamp = new SymbolicInteger("ts-" + startTime.getName(), true);
         ArithmeticFormula f = new ArithmeticFormula();
         SymbolicOperation op1 = f.eq(timeStamp, -1);
         Utils.assume(op1); // assume timeStamp == -1

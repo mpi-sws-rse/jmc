@@ -5,6 +5,7 @@ import executionGraph.ClosureGraph
 import executionGraph.OptExecutionGraph
 import executionGraph.operations.GraphOp
 import executionGraph.operations.GraphOpType
+import org.mpisws.solver.SymbolicSolver
 import programStructure.*
 import kotlin.system.exitProcess
 
@@ -194,6 +195,10 @@ class NewTrust(path: String, verbose: Boolean) {
                 //println("[Trust Message] : Next event is a sym assume event - $nextEvent")
                 g.addEvent(nextEvent as SymAssumeEvent)
                 g.addProgramOrder(nextEvent)
+                val symAssumeEvent = nextEvent as SymAssumeEvent
+                if (symAssumeEvent.result) {
+                    g.symEvents.add(symAssumeEvent)
+                }
                 visit(g, allEvents)
             }
 
@@ -218,6 +223,7 @@ class NewTrust(path: String, verbose: Boolean) {
                 if (nextEvent.isNegatable) {
                     batching_fR_neg_sym(g, nextEvent)
                 }
+                g.symEvents.add(nextEvent)
                 visit(g, allEvents)
             }
 
@@ -363,7 +369,7 @@ class NewTrust(path: String, verbose: Boolean) {
             notPorf.addAll(deleted)
             val porfPrefix = computePorfPrefix(g, deleted, readEvent)
             porf.addAll(porfPrefix)
-            revisitIfIsMaximal(g, porfPrefix, deleted, nextWrite, readEvent)
+            //revisitIfIsMaximal(g, porfPrefix, deleted, nextWrite, readEvent)
         }
     }
 
@@ -384,7 +390,7 @@ class NewTrust(path: String, verbose: Boolean) {
                         deleted.add(g.eventOrder[j])
                     }
                 }
-                revisitIfIsMaximal(g, porf, deleted, nextWrite, readEvent)
+                //revisitIfIsMaximal(g, porf, deleted, nextWrite, readEvent)
             }
         }
     }
@@ -402,9 +408,10 @@ class NewTrust(path: String, verbose: Boolean) {
         porfPrefix: HashSet<ThreadEvent>,
         deleted: LinkedHashSet<ThreadEvent>,
         nextWrite: WriteEvent,
-        readEvent: ReadEvent
+        readEvent: ReadEvent,
+        state: RevisitState?
     ) {
-        if (isMaximal(g, porfPrefix, deleted, nextWrite)) {
+        if (isMaximal(g, porfPrefix, deleted, nextWrite, state)) {
             //println("[OPT-TRUST] The deleted events are maximal")
 
             val toBeAdded = ArrayList<ThreadEvent>()
@@ -451,6 +458,9 @@ class NewTrust(path: String, verbose: Boolean) {
                     }
                     //println("[Trust Message] : The next batched op is: " + GraphOpType.CREATE_PROVER + " with prover id: " + proverId)
                 } else {
+                    if (state != null) {
+                        state.deleted?.removeAt(state.deleted!!.size - 1)
+                    }
                     //println("[OPT-Trust Message] : Ex reads are not consistent for the write ex event $wr")
                 }
             } else {
@@ -696,14 +706,18 @@ class NewTrust(path: String, verbose: Boolean) {
         }
     }
 
-    fun processBR_W_R(g: OptExecutionGraph, nextWrite: WriteEvent, state: RevisitState?) {
+    fun processBR_W_R(
+        g: OptExecutionGraph,
+        nextWrite: WriteEvent,
+        state: RevisitState?
+    ) {
         restrictStrictAfterEvent(g, nextWrite, state)
         g.removeWrite(nextWrite)
-        backwardRevisit(g, nextWrite)
+        backwardRevisit(g, nextWrite, state)
     }
 
 
-    private fun backwardRevisit(g: OptExecutionGraph, nextWrite: WriteEvent) {
+    private fun backwardRevisit(g: OptExecutionGraph, nextWrite: WriteEvent, state: RevisitState?) {
         val closureGraph = ClosureGraph()
         computePorf(g, closureGraph)
         for (readEvent in g.reads[nextWrite.loc]!!) {
@@ -725,10 +739,9 @@ class NewTrust(path: String, verbose: Boolean) {
                         }
                     }
                     deleted.add(readEvent)
-
                 }
                 val porfPrefix = computePorfPrefix(g, deleted, readEvent)
-                revisitIfIsMaximal(g, porfPrefix, deleted, nextWrite, readEvent)
+                revisitIfIsMaximal(g, porfPrefix, deleted, nextWrite, readEvent, state)
             } else {
                 //println("[OPT-TRUST] The read event was in porf!")
             }
@@ -945,16 +958,26 @@ class NewTrust(path: String, verbose: Boolean) {
         g: OptExecutionGraph,
         porfPrefix: HashSet<ThreadEvent>,
         set: LinkedHashSet<ThreadEvent>,
-        write: WriteEvent
+        write: WriteEvent,
+        state: RevisitState?
     ): Boolean {
         var maximal = true
+        var symEvents: HashSet<SymExecutionEvent> = HashSet()
         for (event in set) {
+            if (event is SymExecutionEvent) {
+                symEvents.add(event)
+                continue
+            }
+
             //println("[debugging] The event for checking isMaximal is: $event")
             if (!isMaximallyAdded(g, porfPrefix, event, write)) {
                 //println("[debugging] The event is not maximally added")
                 maximal = false
                 break
             }
+        }
+        if (maximal) {
+            state?.deleted?.add(symEvents)
         }
         return maximal
     }
@@ -966,7 +989,8 @@ class NewTrust(path: String, verbose: Boolean) {
         write: WriteEvent
     ): Boolean {
         if (event.type == EventType.SYM_EXECUTION) {
-            return isSatMaximal(event as SymExecutionEvent)
+            //return isSatMaximal(event as SymExecutionEvent)
+            return true
         }
 
         if (event.type == EventType.WRITE_EX) {
@@ -1082,6 +1106,7 @@ class NewTrust(path: String, verbose: Boolean) {
                 }
 
                 is SymExecutionEvent -> {
+                    g.symEvents.remove(e)
                     //println("[OPT-Trust] removing symbolic event")
                     if (state != null) {
                         //state.popitems!!.add(e)
@@ -1091,6 +1116,7 @@ class NewTrust(path: String, verbose: Boolean) {
 
                 is SymAssumeEvent -> {
                     if (e.result) {
+                        g.symEvents.remove(e)
                         if (state != null) {
                             //state.popitems!!.add(e)
                             state.numOfPop++

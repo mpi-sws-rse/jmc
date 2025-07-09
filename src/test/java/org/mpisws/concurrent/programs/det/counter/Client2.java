@@ -7,8 +7,8 @@ import org.mpisws.concurrent.programs.det.counter.fine.IncThread;
 public class Client2 {
 
     public static void main(String[] args) {
-        int SIZE = args.length;
-
+        //int SIZE = args.length;
+        int SIZE = 4;
         FCounter counter = new FCounter();
         int NUM_INSERTIONS = (int) Math.ceil(SIZE / 2.0);
         int NUM_DELETIONS = (int) Math.floor(SIZE / 2.0);
@@ -16,14 +16,16 @@ public class Client2 {
         int i;
         IncThread[] threads = new IncThread[NUM_INSERTIONS];
         for (i = 0; i < NUM_INSERTIONS; i++) {
-            int arg = Integer.parseInt(args[i]);
-            threads[i] = new IncThread(counter, arg);
+            /*int arg = Integer.parseInt(args[i]);
+            threads[i] = new IncThread(counter, arg);*/
+            threads[i] = new IncThread(counter, i);
         }
 
         DecThread[] threads2 = new DecThread[NUM_DELETIONS];
         for (i = NUM_INSERTIONS; i < SIZE; i++) {
-            int arg = Integer.parseInt(args[i]);
-            threads2[i - NUM_INSERTIONS] = new DecThread(counter, arg);
+            /*int arg = Integer.parseInt(args[i]);
+            threads2[i - NUM_INSERTIONS] = new DecThread(counter, arg);*/
+            threads2[i - NUM_INSERTIONS] = new DecThread(counter, i);
         }
 
         for (i = 0; i < NUM_INSERTIONS; i++) {

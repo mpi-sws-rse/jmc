@@ -13,7 +13,7 @@ data class OptExecutionGraph(
     var writes: HashMap<Location, ArrayList<WriteEvent>> = HashMap(),
     var st: ArrayList<Pair<ThreadEvent, ThreadEvent>> = ArrayList(),
     var tc: ArrayList<ThreadEvent> = ArrayList(),
-    //var symExs: ArrayList<ThreadEvent> = ArrayList(),
+    var symEvents: ArrayList<ThreadEvent> = ArrayList(),
     var jt: ArrayList<Pair<ThreadEvent, ThreadEvent>> = ArrayList(),
     var rf: HashMap<ReadEvent, WriteEvent> = HashMap(),
     var id: Int = 0
@@ -99,15 +99,15 @@ data class OptExecutionGraph(
                     jt.removeIf { it.second == e }
                 }
 
-//                is SymExecutionEvent -> {
-//                    symExs.remove(e)
-//                }
-//
-//                is SymAssumeEvent -> {
-//                    if (e.result) {
-//                        symExs.remove(e)
-//                    }
-//                }
+                is SymExecutionEvent -> {
+                    symEvents.remove(e)
+                }
+
+                is SymAssumeEvent -> {
+                    if (e.result) {
+                        symEvents.remove(e)
+                    }
+                }
             }
         }
 
@@ -272,6 +272,13 @@ data class OptExecutionGraph(
 
         rf.forEach { (key, value) ->
             newExecutionGraph.rf[eventMap[key] as ReadEvent] = eventMap[value] as WriteEvent
+        }
+
+        symEvents.forEach { event ->
+            if (!eventMap.containsKey(event)) {
+                print("[debugging] error: symEvent $event not found in eventMap")
+            }
+            newExecutionGraph.symEvents.add(eventMap[event]!!)
         }
 
         return newExecutionGraph

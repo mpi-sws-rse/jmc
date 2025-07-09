@@ -3,6 +3,7 @@ package org.mpisws.checker.strategy;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import executionGraph.ClosureGraph;
 import programStructure.*;
 
 import java.util.*;
@@ -15,12 +16,21 @@ public class CoverageGraph {
     private final Map<ThreadEvent, List<ThreadEvent>> fr = new HashMap<>();
     private final Map<Location, ThreadEvent> coKeys = new HashMap<>();
     private final Map<ThreadEvent, List<ThreadEvent>> co = new HashMap<>();
-    private final List<ThreadEvent> tc = null;
-    private final Map<ThreadEvent, ThreadEvent> ts = null;
-    private final Map<ThreadEvent, ThreadEvent> tj = null;
+    private final List<ThreadEvent> tc = new ArrayList<>();
+    private final Map<ThreadEvent, ThreadEvent> ts = new HashMap<>();
+    private final Map<ThreadEvent, ThreadEvent> tj = new HashMap<>();
+    private final List<ThreadEvent> fc = new ArrayList<>();
+
+    private final ClosureGraph closureGraph = new ClosureGraph();
 
     public void addPo(ThreadEvent e) {
+        closureGraph.addVertex(e);
         if (po.containsKey(e.getTid())) {
+            // Adding the PO to Porf
+            ThreadEvent event = getPoMax(e.getTid());
+            closureGraph.addEdge(event, e);
+
+            // Adding the PO to po
             po.get(e.getTid()).add(e);
         } else {
             List<ThreadEvent> list = new ArrayList<>();
@@ -28,6 +38,66 @@ public class CoverageGraph {
             po.put(e.getTid(), list);
         }
         allEvents.add(e);
+    }
+
+    public void addTc(ThreadEvent e) {
+        if (tc == null) {
+            throw new RuntimeException("Thread context is not initialized.");
+        }
+        // Adding the TC to the closure graph
+        if (!tc.isEmpty()) {
+            ThreadEvent lastEvent = tc.get(tc.size() - 1);
+            closureGraph.addEdge(lastEvent, e);
+
+        }
+        tc.add(e);
+    }
+
+    public void addFc(ThreadEvent e) {
+        if (fc == null) {
+            throw new RuntimeException("Thread context is not initialized.");
+        }
+        // Adding the TC to the closure graph
+        if (!fc.isEmpty()) {
+            ThreadEvent lastEvent = fc.get(fc.size() - 1);
+            closureGraph.addEdge(lastEvent, e);
+
+        }
+        fc.add(e);
+    }
+
+    public void addTs(StartEvent start) {
+        int callerThread = start.getCallerThread();
+        ThreadEvent poMax = getPoMax(callerThread);
+        if (poMax == null) {
+            throw new RuntimeException("No events found for thread ID: " + callerThread);
+        }
+        closureGraph.addEdge(poMax, start);
+        //ts.put(poMax, start);
+    }
+
+    public void addTj(JoinEvent e) {
+        if (tj == null) {
+            throw new RuntimeException("Thread join is not initialized.");
+        }
+        int joinTid = e.getJoinTid();
+        ThreadEvent poMax = getPoMax(joinTid);
+        if (poMax == null || poMax.getType() != EventType.FINISH) {
+            throw new RuntimeException("No finish event found for thread ID: " + joinTid);
+        }
+        closureGraph.addEdge(poMax, e);
+        //tj.put(poMax, e);
+    }
+
+    public ThreadEvent getPoMax(int tid) {
+        if (!po.containsKey(tid)) {
+            throw new RuntimeException("No events found for thread ID: " + tid);
+        }
+        List<ThreadEvent> events = po.get(tid);
+        if (events.isEmpty()) {
+            throw new RuntimeException("No events found for thread ID: " + tid);
+        }
+        return events.get(events.size() - 1);
     }
 
     public void addCo(ThreadEvent w) {
@@ -47,6 +117,8 @@ public class CoverageGraph {
             co.put(w, list);
         } else {
             ThreadEvent t = coKeys.get(l);
+            ThreadEvent lastCo = co.get(t).get(co.get(t).size() - 1);
+            //closureGraph.addEdge(lastCo, w);
             co.get(t).add(w);
         }
     }
@@ -60,6 +132,8 @@ public class CoverageGraph {
             list.add(r);
             fr.put(w, list);
         }
+        // Adding the RF to the closure graph
+        closureGraph.addEdge(w, r);
         rf.put(r, w);
     }
 
@@ -228,5 +302,9 @@ public class CoverageGraph {
         public String toString() {
             return key;
         }
+    }
+
+    public boolean porfPrefix(ThreadEvent e1, ThreadEvent e2) {
+        return closureGraph.pathExists(e1, e2);
     }
 }

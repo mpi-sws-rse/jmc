@@ -2,6 +2,7 @@ package org.mpisws.util.concurrent;
 
 import org.mpisws.runtime.RuntimeEnvironment;
 import org.mpisws.symbolic.SymbolicBoolean;
+import org.mpisws.symbolic.SymbolicFormula;
 import org.mpisws.symbolic.SymbolicOperation;
 
 
@@ -20,13 +21,16 @@ public class Utils {
     }
 
     public static void assume(SymbolicOperation op) throws JMCInterruptException {
-        boolean b = RuntimeEnvironment.symbolicAssume(Thread.currentThread(), op);
+        SymbolicFormula condition = new SymbolicFormula();
+        boolean b = condition.evaluate(op);
+        assume(b);
+        /*boolean b = RuntimeEnvironment.symbolicAssume(Thread.currentThread(), op);
         RuntimeEnvironment.waitRequest(Thread.currentThread());
         if (!b) {
             RuntimeEnvironment.AssumeBlocked(Thread.currentThread());
             RuntimeEnvironment.isExecutionBlocked = true;
             throw new JMCInterruptException();
-        }
+        }*/
     }
 
     public static void assume(SymbolicBoolean b) throws JMCInterruptException {

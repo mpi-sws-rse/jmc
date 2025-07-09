@@ -30,6 +30,7 @@ public class IncrementalSolver extends SymbolicSolver {
     @Override
     public void resetProver() {
         //System.out.println("[Incremental Symbolic Solver Message] : Resetting the prover");
+        long startTime = System.nanoTime();
         if (prover != null) {
             while (prover.size() > 0) {
                 pop();
@@ -38,6 +39,8 @@ public class IncrementalSolver extends SymbolicSolver {
 //            prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
             //stack.clear();
         }
+        long endTime = System.nanoTime();
+        RuntimeEnvironment.incSolverTime(endTime - startTime);
     }
 
     /**

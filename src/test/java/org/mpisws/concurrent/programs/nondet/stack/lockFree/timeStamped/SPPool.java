@@ -10,13 +10,13 @@ public class SPPool<V> {
 
     public SPPool(long id) {
         this.id = id;
-        TNode<V> sentinel = new TNode<>(null, true);
+        TNode<V> sentinel = new TNode<>(null, true, id);
         sentinel.next = sentinel;
         this.head = new AtomicReference<>(sentinel);
     }
 
     public TNode insert(V item) throws JMCInterruptException {
-        TNode<V> newNode = new TNode<>(item, false, "ts-" + item);
+        TNode<V> newNode = new TNode<>(item, false, "ts-item-" + item);
         newNode.next = head.get();
         head.set(newNode);
 

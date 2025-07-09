@@ -8,7 +8,7 @@ public class RWW {
     public static void main(String[] args) {
         Shared shared = new Shared(0);
         List<ThreadA> threads = new ArrayList<ThreadA>();
-        int numThreads = 3;
+        int numThreads = 10;
         for (int i = 0; i < numThreads; i++) {
             ThreadA thread = new ThreadA(shared);
             threads.add(thread);
@@ -17,12 +17,12 @@ public class RWW {
             threads.get(i).start();
         }
 
-        for (int i = 0; i < numThreads; i++) {
+        /*for (int i = 0; i < numThreads; i++) {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
 
             }
-        }
+        }*/
     }
 }

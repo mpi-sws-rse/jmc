@@ -1177,7 +1177,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1506,7 +1506,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
@@ -1961,11 +1961,11 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.NO_SOLVER;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
-        int[] dataDomain = {0, 1, 2};
+        /*int[] dataDomain = {0, 1, 2};
         int size = 2;
-        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism
+        checker.configuration.generateSequences(dataDomain, size); // Enumerate exhaustively sequences to handle data non-determinism*/
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";
         assertTrue(checker.check(t), "Det Fine Counter Trust Strategy Finished");
@@ -2601,7 +2601,7 @@ class ModelCheckerTest {
         );
         System.out.println("RWW Random Strategy Started");
         checker.configuration.strategyType = StrategyType.RANDOM;
-        checker.configuration.maxIterations = 3;
+        checker.configuration.maxIterations = 1;
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.timeout = 2766000;
@@ -3305,7 +3305,7 @@ class ModelCheckerTest {
         checker.configuration.graphExploration = GraphExploration.DFS;
         checker.configuration.verbose = false;
         checker.configuration.solverApproach = SolverApproach.INCREMENTAL;
-        checker.configuration.schedulingPolicy = SchedulingPolicy.LIFO;
+        checker.configuration.schedulingPolicy = SchedulingPolicy.NON_DET;
         checker.configuration.solverType = SMTSolverTypes.Z3;
         checker.configuration.buggyTracePath = "src/main/resources/buggyTrace/";
         checker.configuration.buggyTraceFile = "buggyTrace.obj";

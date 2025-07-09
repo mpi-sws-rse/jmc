@@ -3,6 +3,7 @@ package org.mpisws.checker.strategy;
 
 import dpor.NewTrust;
 import dpor.RevisitState;
+import executionGraph.OptExecutionGraph;
 import executionGraph.operations.GraphOp;
 import executionGraph.operations.GraphOpType;
 import org.mpisws.runtime.RuntimeEnvironment;
@@ -15,10 +16,7 @@ import org.sosy_lab.java_smt.api.ProverEnvironment;
 import programStructure.*;
 import scala.concurrent.impl.FutureConvertersImpl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 
 public class OptTrustStrategy extends OptDPORStrategy {
 
@@ -68,7 +66,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
 
                 if (solver != null) {
-                    state = new RevisitState(null, 0);
+                    state = new RevisitState(null, 0, null);
                     updateProver(graphOp.getProverId());
                     dpor.setProverId(graphOp.getProverId());
                 }
@@ -81,7 +79,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ", " + graphOp.getSecondEvent().getTid() + ":" + graphOp.getSecondEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
 
                 if (solver != null) {
-                    state = new RevisitState(null, 0);
+                    state = new RevisitState(null, 0, null);
                     updateProver(graphOp.getProverId());
                     dpor.setProverId(graphOp.getProverId());
                 }
@@ -93,7 +91,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ", " + graphOp.getSecondEvent().getTid() + ":" + graphOp.getSecondEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
 
                 if (solver != null) {
-                    state = new RevisitState(null, 0);
+                    state = new RevisitState(null, 0, null);
                     updateProver(graphOp.getProverId());
                     dpor.setProverId(graphOp.getProverId());
                 }
@@ -105,7 +103,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ", " + graphOp.getSecondEvent().getTid() + ":" + graphOp.getSecondEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
 
                 if (solver != null) {
-                    state = new RevisitState(null, 0);
+                    state = new RevisitState(null, 0, null);
                     updateProver(graphOp.getProverId());
                     dpor.setProverId(graphOp.getProverId());
                 }
@@ -117,7 +115,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
                 //System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
 
                 if (solver != null) {
-                    state = new RevisitState(null, 0);
+                    state = new RevisitState(null, 0, null);
                     updateProver(graphOp.getProverId());
                     dpor.setProverId(graphOp.getProverId());
                 }
@@ -191,16 +189,133 @@ public class OptTrustStrategy extends OptDPORStrategy {
 //                break;
             case BR_W_R:
 //                System.out.println("[OPT-Trust Strategy] The graphOp is :" + graphOp.getType() + " (" + graphOp.getFirstEvent().getTid() + ":" + graphOp.getFirstEvent().getSerial() + ") with prover id :" + graphOp.getProverId());
-
+                //HashSet<ThreadEvent> deletedSymEvent = new HashSet<>();
                 makeDPORFree();
                 if (solver != null) {
-                    state = new RevisitState(null, 0);
+                    state = new RevisitState(null, 0, new ArrayList<>());
                     updateProver(graphOp.getProverId());
                     dpor.setProverId(graphOp.getProverId());
                 }
 //                solver.resetProver();
 //                solver.resetProver = true;
                 dpor.processBR_W_R(graphOp.getG(), (WriteEvent) graphOp.getFirstEvent(), state);
+
+                /*int create_number = 0;
+                for (GraphOp op : dpor.getNextOperations()) {
+                    if (op.component3() == GraphOpType.CREATE_PROVER) {
+                        create_number++;
+                    }
+                }
+
+                if (create_number > 1) {
+                    System.out.println("BUGGG");
+                }*/
+
+                OptExecutionGraph dump_g = graphOp.getG();
+                if (state != null && state.getNumOfPop() > 0) {
+                    int numOfPop = state.getNumOfPop();
+                    while (numOfPop > 0) {
+                        solver.pop();
+                        numOfPop--;
+                        //dump_g.getSymEvents().remove(dump_g.getSymEvents().size() - 1);
+                    }
+                    state.setNumOfPop(0);
+                }
+
+                // TODO: Check if the deletedSymEvent is maximal
+                if (state != null && state.getDeleted().size() > 0) {
+                    int nextRemove = 0;
+                    List<GraphOp> nextOps = new ArrayList<>();
+                    for (int i = 0; i < state.getDeleted().size(); i++) {
+                        Set<SymExecutionEvent> deletedSymEvent = state.getDeleted().get(i);
+                        boolean isMaximal = true;
+                        if (deletedSymEvent.size() > 0) {
+                            solver.resetProver();
+                            for (int j = 0; j < dump_g.getSymEvents().size(); j++) {
+                                ThreadEvent symEvent = dump_g.getSymEvents().get(j);
+                                if (symEvent instanceof SymExecutionEvent sym) {
+                                    if (!deletedSymEvent.contains(sym)) {
+                                        if (sym.getResult()) {
+                                            solver.push(sym.getSymbolicOp().getFormula());
+                                        } else {
+                                            solver.push(solver.negateFormula(sym.getSymbolicOp().getFormula()));
+                                        }
+                                    }
+                                }
+                            }
+
+                            for (int k = 0; k < dump_g.getSymEvents().size(); k++) {
+                                ThreadEvent symEvent = dump_g.getSymEvents().get(k);
+                                if (symEvent instanceof SymExecutionEvent sym) {
+                                    if (deletedSymEvent.contains(sym)) {
+                                        boolean SAT = false;
+                                        boolean UNSAT = false;
+                                        SAT = solver.solveSymbolicFormula(sym.getSymbolicOp());
+                                        solver.pop();
+                                        UNSAT = solver.disSolveSymbolicFormula(sym.getSymbolicOp());
+                                        solver.pop();
+
+                                        if (SAT && UNSAT) {
+                                            if (!sym.getResult()) {
+                                                isMaximal = false;
+                                                break;
+                                            }
+                                        }
+
+                                        if (SAT) {
+                                            solver.push(sym.getSymbolicOp().getFormula());
+                                        } else if (UNSAT) {
+                                            solver.push(solver.negateFormula(sym.getSymbolicOp().getFormula()));
+                                        } else {
+                                            System.out.println("[OPT-Trust Strategy] The sym result is neither SAT nor UNSAT");
+                                            System.out.println("[OPT-Trust Strategy] The sym event is :" + sym);
+                                            System.out.println("[OPT-Trust Strategy] The sym formula is :" + sym.getSymbolicOp().getFormula());
+                                            System.exit(0);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (isMaximal) {
+                            int opIndex = nextRemove;
+                            while (true) {
+                                nextOps.add(dpor.getNextOperations().get(opIndex));
+                                opIndex++;
+                                if (dpor.getNextOperations().size() == opIndex || dpor.getNextOperations().get(opIndex).getType() == GraphOpType.REMOVE_PROVER) {
+                                    nextRemove = opIndex;
+                                    break;
+                                }
+                            }
+                        } else {
+                            nextRemove++;
+                            while (nextRemove < dpor.getNextOperations().size()) {
+                                if (dpor.getNextOperations().get(nextRemove).getType() == GraphOpType.REMOVE_PROVER) {
+                                    break;
+                                }
+                                nextRemove++;
+                            }
+                        }
+                    }
+
+                    dpor.getNextOperations().clear();
+                    dpor.getNextOperations().addAll(nextOps);
+
+
+                    solver.resetProver();
+                    for (int t = 0; t < dump_g.getSymEvents().size(); t++) {
+                        ThreadEvent symEvent1 = dump_g.getSymEvents().get(t);
+                        if (symEvent1 instanceof SymExecutionEvent sym1) {
+                            if (sym1.getResult()) {
+                                solver.push(sym1.getSymbolicOp().getFormula());
+                            } else {
+                                solver.push(solver.negateFormula(sym1.getSymbolicOp().getFormula()));
+                            }
+                        }
+                    }
+
+                }
+
                 break;
         }
 //        System.out.println("[OPT-Trust Strategy] The size of stack is :" + solver.size());
@@ -218,6 +333,7 @@ public class OptTrustStrategy extends OptDPORStrategy {
             while (numOfPop > 0) {
                 solver.pop();
                 numOfPop--;
+                //symEvents.remove(symEvents.size() - 1);
             }
 
 //            if (state != null && !state.getPopitems().isEmpty()) {
@@ -281,6 +397,17 @@ public class OptTrustStrategy extends OptDPORStrategy {
 //                System.out.println("[OPT-Trust Strategy] The size of stack is :" + solver.size());
 //                System.out.println("[OPT-Trust Strategy] The prover id is :" + solver.getProverId());
 //                System.out.println("[OPT-Trust Strategy] The model is updated");
+                ArrayList<ThreadEvent> syms = currentGraph.getSymEvents();
+                for (int i = 0; i < syms.size(); i++) {
+                    ThreadEvent symEvent = syms.get(i);
+                    if (symEvent instanceof SymExecutionEvent sym) {
+                        if (sym.getResult()) {
+                            solver.push(sym.getSymbolicOp().getFormula());
+                        } else {
+                            solver.push(solver.negateFormula(sym.getSymbolicOp().getFormula()));
+                        }
+                    }
+                }
                 solver.solveAndUpdateModelSymbolicVariables();
                 solver.resetProver = false;
             }
