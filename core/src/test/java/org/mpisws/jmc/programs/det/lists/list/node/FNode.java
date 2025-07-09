@@ -1,7 +1,7 @@
 package org.mpisws.jmc.programs.det.lists.list.node;
 
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 public class FNode {
@@ -13,45 +13,42 @@ public class FNode {
 
     public int getKey() {
         int out = key;
-        RuntimeEvent event = new RuntimeEvent.Builder().type(RuntimeEvent.Type.READ_EVENT)
-                .taskId(JmcRuntime.currentTask())
-                .param(
-                        "owner",
-                        "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                .param("name", "key")
-                .param("descriptor", "I")
-                .param("instance", this)
-                .build();
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("name", "key")
+                        .param("descriptor", "I")
+                        .param("instance", this)
+                        .build();
         JmcRuntime.updateEventAndYield(event);
         return out;
     }
 
     public FNode getNext() {
         FNode out = next;
-        RuntimeEvent event = new RuntimeEvent.Builder()
-                .type(RuntimeEvent.Type.READ_EVENT)
-                .taskId(JmcRuntime.currentTask())
-                .param(
-                        "owner",
-                        "org/mpisws/jmc/programs/det/lists/list/node/FNode")
-                .param("name", "next")
-                .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
-                .param("instance", this)
-                .build();
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("name", "next")
+                        .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
+                        .param("instance", this)
+                        .build();
         JmcRuntime.updateEventAndYield(event);
         return out;
     }
 
     public void setNext(FNode newNext) {
         this.next = newNext;
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", newNext)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "next")
                         .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
                         .param("instance", this)
@@ -62,14 +59,12 @@ public class FNode {
     public FNode(int i) {
         item = i;
         // Write event for initializing item
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event1 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", i)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "item")
                         .param("descriptor", "I")
                         .param("instance", this)
@@ -78,14 +73,12 @@ public class FNode {
 
         key = i;
         // Write event for initializing key
-        RuntimeEvent event2 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event2 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", i)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "key")
                         .param("descriptor", "I")
                         .param("instance", this)
@@ -95,16 +88,16 @@ public class FNode {
         JmcReentrantLock l = new JmcReentrantLock();
         lock = l;
         // Write event for initializing lock
-        RuntimeEvent event3 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event3 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", l)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
+                        .param(
+                                "descriptor",
+                                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event3);
@@ -113,14 +106,12 @@ public class FNode {
     public FNode(int item, int key) {
         this.item = item;
         // Write event for initializing item
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event1 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", item)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "item")
                         .param("descriptor", "I")
                         .param("instance", this)
@@ -129,14 +120,12 @@ public class FNode {
 
         this.key = key;
         // Write event for initializing key
-        RuntimeEvent event2 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event2 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", key)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "key")
                         .param("descriptor", "I")
                         .param("instance", this)
@@ -146,16 +135,16 @@ public class FNode {
         JmcReentrantLock l = new JmcReentrantLock();
         lock = l;
         // Write event for initializing lock
-        RuntimeEvent event3 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event3 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", l)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
+                        .param(
+                                "descriptor",
+                                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event3);
@@ -164,15 +153,15 @@ public class FNode {
     public void lock() {
         JmcReentrantLock l = lock;
         // Read event for accessing lock
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
+                        .param(
+                                "descriptor",
+                                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);
@@ -182,15 +171,15 @@ public class FNode {
     public void unlock() {
         JmcReentrantLock l = lock;
         // Read event for accessing lock
-        RuntimeEvent event =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/node/FNode")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/node/FNode")
                         .param("name", "lock")
-                        .param("descriptor", "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
+                        .param(
+                                "descriptor",
+                                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;")
                         .param("instance", this)
                         .build();
         JmcRuntime.updateEventAndYield(event);

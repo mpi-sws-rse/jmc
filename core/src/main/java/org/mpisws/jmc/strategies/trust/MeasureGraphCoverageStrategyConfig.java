@@ -2,6 +2,13 @@ package org.mpisws.jmc.strategies.trust;
 
 import java.time.Duration;
 
+/**
+ * Configuration class for the MeasureGraphCoverageStrategy.
+ *
+ * <p>This class provides a builder pattern to create instances of the configuration with various
+ * options such as enabling debug mode, recording graphs, setting the record path, measuring
+ * frequency, and whether to record per iteration.
+ */
 public class MeasureGraphCoverageStrategyConfig {
     private boolean debug;
     private boolean recordGraphs;

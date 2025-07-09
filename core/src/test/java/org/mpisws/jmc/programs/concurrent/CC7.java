@@ -2,7 +2,7 @@ package org.mpisws.jmc.programs.concurrent;
 
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 import java.util.ArrayList;
@@ -15,14 +15,12 @@ public class CC7 {
         public Value() {
             count = 0;
             try {
-                RuntimeEvent event =
-                        new RuntimeEvent.Builder()
-                                .type(RuntimeEvent.Type.WRITE_EVENT)
+                JmcRuntimeEvent event =
+                        new JmcRuntimeEvent.Builder()
+                                .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                                 .taskId(JmcRuntime.currentTask())
                                 .param("newValue", 0)
-                                .param(
-                                        "owner",
-                                        "org/mpisws/jmc/programs/concurrent/Counter$Value")
+                                .param("owner", "org/mpisws/jmc/programs/concurrent/Counter$Value")
                                 .param("name", "count")
                                 .param("descriptor", "I")
                                 .param("instance", this)
@@ -35,14 +33,12 @@ public class CC7 {
 
         public void set(int newValue) {
             count = newValue;
-            RuntimeEvent event =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.WRITE_EVENT)
+            JmcRuntimeEvent event =
+                    new JmcRuntimeEvent.Builder()
+                            .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                             .taskId(JmcRuntime.currentTask())
                             .param("newValue", newValue)
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/concurrent/Counter$Value")
+                            .param("owner", "org/mpisws/jmc/programs/concurrent/Counter$Value")
                             .param("name", "count")
                             .param("descriptor", "I")
                             .param("instance", this)
@@ -52,13 +48,11 @@ public class CC7 {
 
         public int get() {
             int out = count;
-            RuntimeEvent event =
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.READ_EVENT)
+            JmcRuntimeEvent event =
+                    new JmcRuntimeEvent.Builder()
+                            .type(JmcRuntimeEvent.Type.READ_EVENT)
                             .taskId(JmcRuntime.currentTask())
-                            .param(
-                                    "owner",
-                                    "org/mpisws/jmc/programs/concurrent/Counter$Value")
+                            .param("owner", "org/mpisws/jmc/programs/concurrent/Counter$Value")
                             .param("name", "count")
                             .param("descriptor", "I")
                             .param("instance", this)

@@ -11,6 +11,14 @@ import org.mpisws.jmc.strategies.SchedulingStrategyFactory;
 
 import java.time.Duration;
 
+/**
+ * Configuration for the JMC checker.
+ *
+ * <p>This class encapsulates the configuration parameters for running the JMC checker, including
+ * the number of iterations, strategy type, debug mode, report path, seed, and timeout.
+ *
+ * <p>Use the {@link JmcCheckerConfiguration.Builder} to create a configuration instance.
+ */
 public class JmcCheckerConfiguration {
     private Integer numIterations;
 
@@ -27,34 +35,76 @@ public class JmcCheckerConfiguration {
 
     private JmcCheckerConfiguration() {}
 
+    /**
+     * Returns the number of iterations to run the checker.
+     *
+     * @return the number of iterations
+     */
     public Integer getNumIterations() {
         return numIterations;
     }
 
+    /**
+     * Returns the path where the report will be saved.
+     *
+     * @return the report path as a string
+     */
     public String getReportPath() {
         return reportPath;
     }
 
+    /**
+     * Returns the type of scheduling strategy to be used.
+     *
+     * @return the strategy type as a string
+     */
     public String getStrategyType() {
         return strategyType;
     }
 
+    /**
+     * Returns the debug mode status.
+     *
+     * @return true if debug mode is enabled, false otherwise
+     */
     public boolean getDebug() {
         return debug;
     }
 
+    /**
+     * Returns the seed for the checker.
+     *
+     * @return the seed, or null if no seed is set
+     */
     public Long getSeed() {
         return seed;
     }
 
+    /**
+     * Sets the seed for the checker.
+     *
+     * @param seed the seed to set.
+     */
     public void setSeed(Long seed) {
         this.seed = seed;
     }
 
+    /**
+     * Returns the timeout duration for the checker.
+     *
+     * @return the timeout duration, or null if no timeout is set
+     */
     public Duration getTimeout() {
         return timeout;
     }
 
+    /**
+     * Converts this configuration to a runtime configuration.
+     *
+     * @return a {@link JmcRuntimeConfiguration} based on this configuration
+     * @throws JmcInvalidStrategyException if the strategy type is invalid or the strategy cannot be
+     *     created
+     */
     public JmcRuntimeConfiguration toRuntimeConfiguration() throws JmcInvalidStrategyException {
         SchedulingStrategy strategy;
         SchedulingStrategyConfiguration.Builder strategyConfigurationBuilder =
@@ -80,6 +130,13 @@ public class JmcCheckerConfiguration {
                 .build();
     }
 
+    /**
+     * Creates a JmcCheckerConfiguration from the given annotation.
+     *
+     * @param annotation the JmcCheckConfiguration annotation
+     * @return a JmcCheckerConfiguration instance
+     * @throws JmcCheckerException if the configuration is invalid
+     */
     public static JmcCheckerConfiguration fromAnnotation(JmcCheckConfiguration annotation)
             throws JmcCheckerException {
         if (!SchedulingStrategyFactory.isValidStrategy(annotation.strategy())) {

@@ -11,22 +11,46 @@ public class HaltCheckerException extends RuntimeException {
         this.timeout = timeout;
     }
 
+    /**
+     * Constructs a new {@link HaltCheckerException} indicating that the exploration stopped
+     * naturally without any errors.
+     */
     public static HaltCheckerException ok() {
         return new HaltCheckerException(true, "OK", false);
     }
 
+    /**
+     * Constructs a new {@link HaltCheckerException} indicating that the exploration was halted due
+     * to a timeout.
+     */
     public static HaltCheckerException timeout() {
         return new HaltCheckerException(false, "Timeout", true);
     }
 
+    /**
+     * Constructs a new {@link HaltCheckerException} indicating that the exploration was halted due
+     * to an error.
+     *
+     * @param message the error message
+     */
     public static HaltCheckerException error(String message) {
         return new HaltCheckerException(false, message, false);
     }
 
+    /**
+     * Returns whether the exploration was successful without any errors.
+     *
+     * @return true if the exploration was successful, false otherwise
+     */
     public boolean isOkay() {
         return okay;
     }
 
+    /**
+     * Returns whether the exploration was halted due to a timeout.
+     *
+     * @return true if the exploration was halted due to a timeout, false otherwise
+     */
     public boolean isTimeout() {
         return timeout;
     }

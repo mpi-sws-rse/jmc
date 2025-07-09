@@ -117,8 +117,8 @@ public class JmcRuntime {
         scheduler.init(taskManager, mainThreadId);
         try {
             scheduler.updateEvent(
-                    new RuntimeEvent.Builder()
-                            .type(RuntimeEvent.Type.START_EVENT)
+                    new JmcRuntimeEvent.Builder()
+                            .type(JmcRuntimeEvent.Type.START_EVENT)
                             .taskId(mainThreadId)
                             .param("startedBy", 1L)
                             .build());
@@ -235,7 +235,7 @@ public class JmcRuntime {
      *
      * @param event to be added
      */
-    public static void updateEvent(RuntimeEvent event) throws HaltTaskException {
+    public static void updateEvent(JmcRuntimeEvent event) throws HaltTaskException {
         LOGGER.debug("Updating event: {}", event);
         try {
             scheduler.updateEvent(event);
@@ -264,7 +264,7 @@ public class JmcRuntime {
      *
      * @param event the new event
      */
-    public static <T> T updateEventAndYield(RuntimeEvent event) throws HaltTaskException {
+    public static <T> T updateEventAndYield(JmcRuntimeEvent event) throws HaltTaskException {
         updateEvent(event);
         return JmcRuntime.yield();
     }
