@@ -126,9 +126,7 @@ public class JmcRuntime {
             LOGGER.error("Failed to start main thread.");
         }
         JmcRuntime.yield();
-        if (iteration != 0) {
-            JmcRuntimeUtils.invokeStaticInitializedClasses();
-        }
+        JmcRuntimeUtils.invokeStaticInitializedClasses();
     }
 
     /** Resets the runtime for a new iteration. */
