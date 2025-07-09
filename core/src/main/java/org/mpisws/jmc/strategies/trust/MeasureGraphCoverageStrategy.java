@@ -20,6 +20,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * A scheduling strategy that measures the coverage of execution graphs during the model checking
+ * process.
+ *
+ * <p>This strategy records the coverage of execution graphs and stores them in a specified path. It
+ * can also measure the coverage per iteration or at a specified frequency.
+ */
 public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
     private static final Logger LOGGER = LogManager.getLogger(MeasureGraphCoverageStrategy.class);
@@ -101,7 +108,8 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void updateEvent(RuntimeEvent event) throws HaltTaskException, HaltExecutionException {
+    public void updateEvent(JmcRuntimeEvent event)
+            throws HaltTaskException, HaltExecutionException {
         this.schedulingStrategy.updateEvent(event);
         this.simulator.updateEvent(event);
     }
@@ -118,15 +126,17 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         CoverageGraph coverageGraph = simulator.getCoverageGraph();
         String json = executionGraph.toJsonStringIgnoreLocation();
         String coverage = coverageGraph.toString();
-        //System.out.println(coverage);
+        // System.out.println(coverage);
         try {
             String hash = StringUtil.sha256Hash(json);
             String hashCoverage = StringUtil.sha256Hash(coverage);
-            if(!coveredGraphs.contains(hashCoverage)) {
+            if (!coveredGraphs.contains(hashCoverage)) {
                 coveredGraphs.add(hashCoverage);
                 if (config.isDebugEnabled()) {
                     FileUtil.unsafeStoreToFile(
-                            Paths.get(config.getRecordPath(), coveredGraphs.size()  + ".txt").toString(), coverage);
+                            Paths.get(config.getRecordPath(), coveredGraphs.size() + ".txt")
+                                    .toString(),
+                            coverage);
                 }
             }
             if (visitedGraphs.containsKey(hash)) {
@@ -135,7 +145,9 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
                 visitedGraphs.put(hash, 1);
                 if (config.isDebugEnabled()) {
                     FileUtil.unsafeStoreToFile(
-                            Paths.get(config.getRecordPath(), visitedGraphs.size() + ".json").toString(), json);
+                            Paths.get(config.getRecordPath(), visitedGraphs.size() + ".json")
+                                    .toString(),
+                            json);
                 }
             }
             if (config.isRecordPerIteration()) {

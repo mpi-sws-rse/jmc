@@ -3,6 +3,18 @@ package org.mpisws.jmc.runtime;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.SchedulingStrategy;
 
+/**
+ * Represents the configuration for the JMC runtime.
+ *
+ * <p>This class encapsulates various settings that control the behavior of the JMC runtime,
+ * including scheduling strategies, debugging options, report paths, and retry configurations.
+ *
+ * <p>Use the {@link JmcRuntimeConfiguration.Builder} to create a configuration instance.
+ *
+ * <p>The user does not have to specify this explicitly. The {@link
+ * org.mpisws.jmc.checker.JmcCheckerConfiguration} provided is used to create and instance of this
+ * class
+ */
 public class JmcRuntimeConfiguration {
 
     private SchedulingStrategy strategy;
@@ -45,7 +57,9 @@ public class JmcRuntimeConfiguration {
         private long schedulerTrySleepTimeNanos;
 
         public Builder() {
-            this.strategy = new RandomSchedulingStrategy(System.nanoTime(), "build/test-results/jmc-report");
+            this.strategy =
+                    new RandomSchedulingStrategy(
+                            System.nanoTime(), "build/test-results/jmc-report");
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
             this.schedulerTries = 10;

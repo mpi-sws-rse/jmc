@@ -3,7 +3,7 @@ package org.mpisws.jmc.programs.det.lists.list.fine;
 import org.mpisws.jmc.programs.det.lists.list.Set;
 import org.mpisws.jmc.programs.det.lists.list.node.FNode;
 import org.mpisws.jmc.runtime.JmcRuntime;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 
 public class FineList implements Set {
 
@@ -11,13 +11,11 @@ public class FineList implements Set {
 
     private FNode readHead() {
         FNode node = head;
-        RuntimeEvent event2 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.READ_EVENT)
+        JmcRuntimeEvent event2 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.READ_EVENT)
                         .taskId(JmcRuntime.currentTask())
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
                         .param("name", "head")
                         .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
                         .param("instance", this)
@@ -28,14 +26,12 @@ public class FineList implements Set {
 
     private void setHead(FNode head) {
         this.head = head;
-        RuntimeEvent event1 =
-                new RuntimeEvent.Builder()
-                        .type(RuntimeEvent.Type.WRITE_EVENT)
+        JmcRuntimeEvent event1 =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.WRITE_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("newValue", head)
-                        .param(
-                                "owner",
-                                "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
+                        .param("owner", "org/mpisws/jmc/programs/det/lists/list/fine/FineList")
                         .param("name", "head")
                         .param("descriptor", "Lorg/mpisws/jmc/programs/det/lists/list/node/FNode;")
                         .param("instance", this)
@@ -53,7 +49,6 @@ public class FineList implements Set {
         FNode newNode2 = new FNode(Integer.MAX_VALUE);
         headNode.setNext(newNode2);
     }
-
 
     @Override
     public boolean add(int i) {
@@ -98,7 +93,6 @@ public class FineList implements Set {
         }
     }
 
-
     @Override
     public boolean remove(int i) {
         int key = i;
@@ -141,7 +135,6 @@ public class FineList implements Set {
             pred.unlock();
         }
     }
-
 
     @Override
     public boolean contains(int i) {

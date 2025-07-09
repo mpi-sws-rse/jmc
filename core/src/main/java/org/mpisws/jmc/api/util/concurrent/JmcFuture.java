@@ -8,11 +8,10 @@ import java.util.concurrent.*;
 /**
  * A future that runs a callable function in a new thread.
  *
- * <p>TODO: Need to handle cancel
- *
  * @param <T> The return type of the callable function.
  */
 public class JmcFuture<T> implements RunnableFuture<T> {
+    // TODO: Add support for cancellation and timeouts.
 
     private static final Logger LOGGER = LogManager.getLogger(JmcFuture.class);
 

@@ -3,10 +3,8 @@ package org.mpisws.jmc.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Represents an event that occurs during the execution of a program.
- */
-public class RuntimeEvent {
+/** Represents an event that occurs during the execution of a program. */
+public class JmcRuntimeEvent {
 
     // The type of the event
     private Type type;
@@ -18,11 +16,11 @@ public class RuntimeEvent {
     /**
      * Constructs a new runtime event with the specified type, task ID, and parameters.
      *
-     * @param type   the type of the event
+     * @param type the type of the event
      * @param taskId the ID of the task that generated the event
      * @param params the parameters of the event
      */
-    public RuntimeEvent(Type type, Long taskId, Map<String, Object> params) {
+    public JmcRuntimeEvent(Type type, Long taskId, Map<String, Object> params) {
         this.type = type;
         this.taskId = taskId;
         this.params = params;
@@ -33,10 +31,10 @@ public class RuntimeEvent {
      *
      * <p>The parameters of the event are initialized to an empty map.
      *
-     * @param type   the type of the event
+     * @param type the type of the event
      * @param taskId the ID of the task that generated the event
      */
-    public RuntimeEvent(Type type, Long taskId) {
+    public JmcRuntimeEvent(Type type, Long taskId) {
         this.type = type;
         this.taskId = taskId;
         this.params = new HashMap<>();
@@ -99,7 +97,7 @@ public class RuntimeEvent {
     /**
      * Sets the value of the parameter with the specified key.
      *
-     * @param key   the key of the parameter
+     * @param key the key of the parameter
      * @param value the value of the parameter
      */
     public void setParam(String key, Object value) {
@@ -112,7 +110,7 @@ public class RuntimeEvent {
      *
      * @param key the key of the parameter
      * @return the value of the parameter as an object of the specified class. Can throw an
-     * exception when casting.
+     *     exception when casting.
      */
     public <T> T getParam(String key) {
         return (T) params.get(key);
@@ -123,41 +121,31 @@ public class RuntimeEvent {
         return "RuntimeEvent{" + "type=" + type + ", taskId=" + taskId + ", params=" + params + '}';
     }
 
-    /**
-     * A builder for constructing a {@link RuntimeEvent} object.
-     */
+    /** A builder for constructing a {@link JmcRuntimeEvent} object. */
     public static class Builder {
         private Type type;
         private Long taskId;
         private Map<String, Object> params;
 
-        /**
-         * Sets the type of the event.
-         */
+        /** Sets the type of the event. */
         public Builder type(Type type) {
             this.type = type;
             return this;
         }
 
-        /**
-         * Sets the ID of the task that generated the event.
-         */
+        /** Sets the ID of the task that generated the event. */
         public Builder taskId(Long taskId) {
             this.taskId = taskId;
             return this;
         }
 
-        /**
-         * Sets the parameters of the event.
-         */
+        /** Sets the parameters of the event. */
         public Builder params(Map<String, Object> params) {
             this.params = params;
             return this;
         }
 
-        /**
-         * Adds a parameter to the event.
-         */
+        /** Adds a parameter to the event. */
         public Builder param(String key, Object value) {
             if (params == null) {
                 params = new HashMap<>();
@@ -166,14 +154,18 @@ public class RuntimeEvent {
             return this;
         }
 
-        /**
-         * Builds the {@link RuntimeEvent} object.
-         */
-        public RuntimeEvent build() {
-            return new RuntimeEvent(type, taskId, params);
+        /** Builds the {@link JmcRuntimeEvent} object. */
+        public JmcRuntimeEvent build() {
+            return new JmcRuntimeEvent(type, taskId, params);
         }
     }
 
+    /**
+     * Enum representing the different types of runtime events that can occur.
+     *
+     * <p>Each event type corresponds to a specific action or occurrence in the program's execution,
+     * such as thread creation, locking, reading, writing, and more.
+     */
     public enum Type {
         // Thread creation and termination events
         START_EVENT,
@@ -228,7 +220,8 @@ public class RuntimeEvent {
         THREAD_POOL_CREATED,
         TASK_CREATED_EVENT,
 
-        // Reactive Event (Events that require information from the strategy, upto the strategy to deal with it)
+        // Reactive Event (Events that require information from the strategy, upto the strategy to
+        // deal with it)
         REACTIVE_EVENT_RANDOM_VALUE,
 
         // Related to assertions in the code

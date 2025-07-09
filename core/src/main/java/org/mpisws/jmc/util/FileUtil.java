@@ -17,15 +17,42 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Utility class for file operations related to storing and reading task schedules.
+ *
+ * <p>This class provides methods to store task schedules to a file and read them back, as well as
+ * utility methods for file and path operations.
+ */
 public class FileUtil {
+
+    private static final org.apache.logging.log4j.Logger LOGGER =
+            org.apache.logging.log4j.LogManager.getLogger(FileUtil.class);
+
+    /**
+     * Stores the given content to a file at the specified path.
+     *
+     * <p>This method overwrites the file if it already exists and silently ignores any IOExceptions
+     * that may occur during the operation.
+     *
+     * @param path the path to the file
+     * @param content the content to store in the file
+     */
     public static void unsafeStoreToFile(String path, String content) {
         try {
             Files.write(Paths.get(path), content.getBytes());
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to store content to file: {}", path, e);
         }
     }
 
+    /**
+     * Creates a new file at the specified path, deleting it if it already exists.
+     *
+     * <p>This method returns a {@link FileOutputStream} for the created file.
+     *
+     * @param path the path to create the file at
+     * @return a {@link FileOutputStream} for the created file, or null if an error occurs
+     */
     public static FileOutputStream unsafeCreateFile(String path) {
         try {
             Path pPath = Paths.get(path);
@@ -34,7 +61,7 @@ public class FileUtil {
             }
             return new FileOutputStream(path);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to create file at path: {}", path, e);
         }
         return null;
     }
@@ -67,9 +94,21 @@ public class FileUtil {
         }
     }
 
-    public static void storeTaskSchedule(String filePath, List<? extends SchedulingChoice<?>> taskSchedule) throws JmcCheckerException {
+    /**
+     * Stores the task schedule to a file in JSON format.
+     *
+     * <p>This method serializes the list of {@link SchedulingChoice} objects into a JSON array and
+     * writes it to the specified file path.
+     *
+     * @param filePath the path to the file where the schedule will be stored
+     * @param taskSchedule the list of scheduling choices to store
+     * @throws JmcCheckerException if an error occurs while writing to the file
+     */
+    public static void storeTaskSchedule(
+            String filePath, List<? extends SchedulingChoice<?>> taskSchedule)
+            throws JmcCheckerException {
         JsonArray schedule = new JsonArray();
-        for (SchedulingChoice<?> choice: taskSchedule) {
+        for (SchedulingChoice<?> choice : taskSchedule) {
             JsonObject choiceJson = new JsonObject();
             choiceJson.addProperty("taskId", choice.getTaskId());
             choiceJson.addProperty("isBlockTask", choice.isBlockTask());
@@ -92,7 +131,18 @@ public class FileUtil {
         }
     }
 
-    public static List<SchedulingChoice<?>> readTaskSchedule(String filePath) throws JmcCheckerException {
+    /**
+     * Reads a task schedule from a JSON file.
+     *
+     * <p>This method reads the content of the specified file, parses it as JSON, and constructs a
+     * list of {@link SchedulingChoice} objects based on the parsed data.
+     *
+     * @param filePath the path to the file containing the task schedule
+     * @return a list of scheduling choices read from the file
+     * @throws JmcCheckerException if an error occurs while reading or parsing the file
+     */
+    public static List<SchedulingChoice<?>> readTaskSchedule(String filePath)
+            throws JmcCheckerException {
         try {
             String content = Files.readString(Paths.get(filePath));
             JsonObject jsonObject = JsonParser.parseString(content).getAsJsonObject();
@@ -122,9 +172,12 @@ public class FileUtil {
                 JsonObject valueJson = choiceJson.getAsJsonObject("value");
                 String choiceValueType = valueJson.get("type").getAsString();
                 if (!SchedulingChoiceValueFactory.containsType(choiceValueType)) {
-                    throw new JmcCheckerException("No adapter registered for type: " + choiceValueType);
+                    throw new JmcCheckerException(
+                            "No adapter registered for type: " + choiceValueType);
                 }
-                SchedulingChoiceValue value = SchedulingChoiceValueFactory.create(choiceValueType, choiceJson.get("content"));
+                SchedulingChoiceValue value =
+                        SchedulingChoiceValueFactory.create(
+                                choiceValueType, choiceJson.get("content"));
                 out.add(SchedulingChoice.task(taskId, value));
             }
             return out;

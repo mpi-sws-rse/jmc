@@ -9,10 +9,12 @@ import java.util.List;
  */
 public class JmcMatcher {
 
-    private List<String> matchingPackages;
+    private final List<String> matchingPackages;
+    private final List<String> excludedPackages;
 
-    public JmcMatcher(List<String> matchingPackages) {
+    public JmcMatcher(List<String> matchingPackages, List<String> excludedPackages) {
         this.matchingPackages = matchingPackages;
+        this.excludedPackages = excludedPackages;
     }
 
     /**
@@ -23,9 +25,6 @@ public class JmcMatcher {
      * @return true if the class name matches
      */
     public boolean matches(String className, ClassLoader classLoader) {
-        //        if (classLoader == null) {
-        //            return false;
-        //        }
         String typeName = className.replace("/", ".");
         if (typeName.startsWith("java.")
                 || typeName.startsWith("javax.")
@@ -43,6 +42,14 @@ public class JmcMatcher {
         // Exclude instrumentation classes.
         if (typeName.startsWith("org.mpisws.jmc.agent.")) {
             return false;
+        }
+        // Exclude instrumentation classes.
+        if (!excludedPackages.isEmpty()) {
+            for (String exclude : excludedPackages) {
+                if (!exclude.isEmpty() && typeName.startsWith(exclude)) {
+                    return false;
+                }
+            }
         }
         if (!matchingPackages.isEmpty()) {
             return matchingPackages.stream().anyMatch(typeName::startsWith);

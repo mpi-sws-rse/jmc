@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
-import org.mpisws.jmc.util.aux.LamportVectorClock;
+import org.mpisws.jmc.util.LamportVectorClock;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -110,13 +110,14 @@ public class ExecutionGraph {
     /**
      * Generate a task Schedule from a given sorted list of event nodes.
      *
-     * <p>Note that the generated Schedule involves tasks that are 1-indexed and
-     * The trust ExecutionGraph has tasks that are 0-indexed.</p>
+     * <p>Note that the generated Schedule involves tasks that are 1-indexed and The trust
+     * ExecutionGraph has tasks that are 0-indexed.
      *
      * @param taskEvents A sorted list of event nodes
      * @return A list of SchedulingChoiceWrappers.
      */
-    public static List<SchedulingChoiceWrapper> getTaskSchedule(List<ExecutionGraphNode> taskEvents) {
+    public static List<SchedulingChoiceWrapper> getTaskSchedule(
+            List<ExecutionGraphNode> taskEvents) {
         List<SchedulingChoiceWrapper> result = new ArrayList<>();
         taskEvents.remove(0); // Remove the init event
         taskEvents.remove(0); // Remove the first event of the main thread

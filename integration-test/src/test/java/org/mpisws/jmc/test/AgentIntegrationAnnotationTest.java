@@ -11,7 +11,6 @@ public class AgentIntegrationAnnotationTest {
 
     @JmcCheck
     @JmcTrustStrategy(debug = true)
-    @JmcReplay
     public void testAgentWithFutureAgain() {
         CorrectCounterTestRunner.main(new String[0]);
     }

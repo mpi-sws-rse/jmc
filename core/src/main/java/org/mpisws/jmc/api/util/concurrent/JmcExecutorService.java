@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * An executor service that runs tasks in new threads.
+ * An executor service that runs tasks in new threads. It is a redefinition of {@link
+ * java.util.concurrent.ExecutorService} for JMC model checking.
  *
  * <p>Currently, the executor service does not support stopping tasks.
  */

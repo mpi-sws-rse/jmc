@@ -4,10 +4,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
-import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.strategies.ReplayableSchedulingStrategy;
 import org.mpisws.jmc.strategies.TrackActiveTasksStrategy;
@@ -18,7 +17,14 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class TrustStrategy extends TrackActiveTasksStrategy implements ReplayableSchedulingStrategy {
+/**
+ * A wrapper around the {@link Algo} algorithm that implements a scheduling strategy based on trust.
+ * The class implements the {@link ReplayableSchedulingStrategy} and {@link
+ * org.mpisws.jmc.strategies.SchedulingStrategy} and uses the {@link TrackActiveTasksStrategy} to
+ * track active tasks during the execution.
+ */
+public class TrustStrategy extends TrackActiveTasksStrategy
+        implements ReplayableSchedulingStrategy {
 
     private final Logger LOGGER = LogManager.getLogger(TrustStrategy.class);
 
@@ -63,7 +69,8 @@ public class TrustStrategy extends TrackActiveTasksStrategy implements Replayabl
             SchedulingChoice<?> next = recordedTrace.remove(0);
             LOGGER.debug("Returning recorded task: {}", next);
             if (next.isEnd()) {
-                // If we are at the end event only the main thread (1) needs to be active and continue.
+                // If we are at the end event only the main thread (1) needs to be active and
+                // continue.
                 // For sanity, we check that the set of active tasks contains only the main thread.
                 Set<Long> activeTasks = getActiveTasks();
                 if (activeTasks.size() != 1 || !activeTasks.contains(1L)) {
@@ -78,7 +85,6 @@ public class TrustStrategy extends TrackActiveTasksStrategy implements Replayabl
             }
             return next;
         }
-
 
         // Always add 1 to the return value the strategy expects 1-indexed tasks but we store
         // 0-indexed tasks
@@ -116,7 +122,8 @@ public class TrustStrategy extends TrackActiveTasksStrategy implements Replayabl
     }
 
     @Override
-    public void updateEvent(RuntimeEvent event) throws HaltTaskException, HaltExecutionException {
+    public void updateEvent(JmcRuntimeEvent event)
+            throws HaltTaskException, HaltExecutionException {
         super.updateEvent(event);
         if (recordedTrace != null && !recordedTrace.isEmpty()) {
             // If we are replaying a recorded trace, we do not update the algorithm with new events
@@ -158,16 +165,15 @@ public class TrustStrategy extends TrackActiveTasksStrategy implements Replayabl
 
     @Override
     public void recordTrace() throws JmcCheckerException {
-        String filePath = Paths.get(this.reportPath, "replay.json")
-                .toString();
+        String filePath = Paths.get(this.reportPath, "replay.json").toString();
         LOGGER.info("Recording trace to {}", filePath);
         algoInstance.recordTaskSchedule(filePath);
     }
 
     @Override
     public void replayRecordedTrace() throws JmcCheckerException {
-        recordedTrace = FileUtil.readTaskSchedule(Paths.get(this.reportPath, "replay.json")
-                .toString());
+        recordedTrace =
+                FileUtil.readTaskSchedule(Paths.get(this.reportPath, "replay.json").toString());
     }
 
     public enum SchedulingPolicy {

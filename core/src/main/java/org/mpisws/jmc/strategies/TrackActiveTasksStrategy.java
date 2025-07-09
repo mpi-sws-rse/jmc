@@ -3,7 +3,7 @@ package org.mpisws.jmc.strategies;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +42,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     public void initIteration(int iteration, JmcModelCheckerReport report) {}
 
     @Override
-    public void updateEvent(RuntimeEvent event) {
+    public void updateEvent(JmcRuntimeEvent event) {
         Set<Long> localActiveTasks;
         synchronized (tasksLock) {
             allTasks.add(event.getTaskId());
@@ -132,7 +132,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
          * @param event the event to update
          * @return the set of active tasks
          */
-        Set<Long> updateEvent(RuntimeEvent event);
+        Set<Long> updateEvent(JmcRuntimeEvent event);
 
         /** Resets the tracker. */
         void reset();
@@ -153,12 +153,12 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
         }
 
         @Override
-        public Set<Long> updateEvent(RuntimeEvent event) {
-            if (event.getType() == RuntimeEvent.Type.START_EVENT) {
+        public Set<Long> updateEvent(JmcRuntimeEvent event) {
+            if (event.getType() == JmcRuntimeEvent.Type.START_EVENT) {
                 synchronized (tasksLock) {
                     activeTasks.add(event.getTaskId());
                 }
-            } else if (event.getType() == RuntimeEvent.Type.FINISH_EVENT) {
+            } else if (event.getType() == JmcRuntimeEvent.Type.FINISH_EVENT) {
                 Long eventTask = event.getTaskId();
                 synchronized (tasksLock) {
                     activeTasks.remove(eventTask);
@@ -169,7 +169,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                         waitingTasks.remove(eventTask);
                     }
                 }
-            } else if (event.getType() == RuntimeEvent.Type.JOIN_REQUEST_EVENT) {
+            } else if (event.getType() == JmcRuntimeEvent.Type.JOIN_REQUEST_EVENT) {
                 Long requestingTask = event.getTaskId();
                 Long requestedTask = event.getParam("waitingTask");
 
@@ -241,7 +241,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
          * @return the set of active tasks
          */
         @Override
-        public Set<Long> updateEvent(RuntimeEvent event) {
+        public Set<Long> updateEvent(JmcRuntimeEvent event) {
 
             Long taskId = event.getTaskId();
             if (taskId == null) {
@@ -250,9 +250,9 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
             }
             activeTasks.putIfAbsent(taskId, Optional.empty());
 
-            RuntimeEvent.Type type = event.getType();
+            JmcRuntimeEvent.Type type = event.getType();
 
-            if (type == RuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
+            if (type == JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
                 Object lock = event.getParam("instance");
                 // Want the lock. Three cases.
                 // 1. Current task already has the lock. Ignore.
@@ -276,7 +276,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                     wantingTasks.putIfAbsent(lock, new HashSet<>());
                     wantingTasks.get(lock).add(taskId);
                 }
-            } else if (type == RuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
+            } else if (type == JmcRuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
                 Object lock = event.getParam("instance");
                 // The lock is acquired by the current task. Remove it from the wanting list and add
                 // the rest to waiting
@@ -297,7 +297,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
                     }
                     wantingTasks.remove(lock);
                 }
-            } else if (type == RuntimeEvent.Type.LOCK_RELEASE_EVENT) {
+            } else if (type == JmcRuntimeEvent.Type.LOCK_RELEASE_EVENT) {
                 Object lock = event.getParam("instance");
                 // The lock is released. The waiting tasks are marked as active.
                 Set<Long> blockedTasks = waitingTasks.get(lock);

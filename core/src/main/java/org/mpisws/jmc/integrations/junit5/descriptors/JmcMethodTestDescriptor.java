@@ -15,6 +15,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 
+/**
+ * A JUnit 5 test descriptor for a JMC method test.
+ *
+ * <p>This descriptor represents a single test method annotated with JMC annotations, allowing for
+ * the execution of JMC checks as part of the test lifecycle.
+ */
 public class JmcMethodTestDescriptor extends AbstractTestDescriptor
         implements JmcExecutableTestDescriptor {
 
@@ -52,6 +58,18 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 .strategyType(annotation.strategy());
     }
 
+    /**
+     * Executes the JMC test method.
+     *
+     * <p>This method creates an instance of the test class, configures the JMC checker based on
+     * annotations, and executes the test method using the JMC Model Checker.
+     *
+     * <p>Execution can be either running the model checker or replaying a previous execution and
+     * depends on the annotation provided for the test method. If the method is annotated with
+     * {@link JmcReplay}, it will replay the test method instead of executing it.
+     *
+     * @throws JmcCheckerException If an error occurs during execution or configuration.
+     */
     public void execute() throws JmcCheckerException {
         LOGGER.debug("JmcMethodTestDescriptor execute() called");
         Object methodInstance;
