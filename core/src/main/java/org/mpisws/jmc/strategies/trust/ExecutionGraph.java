@@ -963,6 +963,8 @@ public class ExecutionGraph {
         for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : modifiedLocations.entrySet()) {
             recomputeCoEdges(entry.getKey(), entry.getValue());
         }
+
+        // Remove blocking labels
     }
 
     private void recomputeCoEdges(Integer location, List<ExecutionGraphNode> oldWrites) {
@@ -1178,12 +1180,41 @@ public class ExecutionGraph {
                 return false;
             }
             checkDanglingEdges();
+            checkBrokenEdges();
         } catch (Exception e) {
             // If any exception is thrown, the graph is not consistent
             LOGGER.error("Failed to check consistency of the execution graph: {}", e.getMessage());
             return false;
         }
         return true;
+    }
+
+    private void checkBrokenEdges() {
+        Map<Event.Key, ExecutionGraphNode> eventMap = new HashMap<>();
+        for (ExecutionGraphNode node : allEvents) {
+            eventMap.put(node.key(), node);
+        }
+
+        for (ExecutionGraphNode node : allEvents) {
+            Map<Relation, List<Event.Key>> successors = node.getAllSuccessors();
+            for (Map.Entry<Relation, List<Event.Key>> entry : successors.entrySet()) {
+                for (Event.Key key : entry.getValue()) {
+                    if (!eventMap.containsKey(key)) {
+                        throw HaltCheckerException.error(
+                                String.format(
+                                        "Broken edge found from %s to %s",
+                                        node.key().toString(), key.toString()));
+                    }
+                    ExecutionGraphNode successorNode = eventMap.get(key);
+                    if (!successorNode.hasPredecessor(node.key(), entry.getKey())) {
+                        throw HaltCheckerException.error(
+                                String.format(
+                                        "Broken edge found from %s to %s",
+                                        node.key().toString(), key.toString()));
+                    }
+                }
+            }
+        }
     }
 
     public boolean checkReadsFromEdges() {

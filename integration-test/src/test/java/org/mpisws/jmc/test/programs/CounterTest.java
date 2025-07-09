@@ -108,7 +108,9 @@ public class CounterTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, debug = true)
+    @JmcCheckConfiguration(
+            numIterations = 10000,
+            debug = true) // , debug = true, seed = 158542095196480L
     @JmcTrustStrategy(debug = true)
     // TODO :: Fix this test
     public void runFineCounterTest() {
@@ -125,10 +127,10 @@ public class CounterTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(strategy = "trust", numIterations = 100, debug = true)
+    @JmcCheckConfiguration(strategy = "trust", numIterations = 1000)
     public void testTrustCounter() {
-        ParametricCounter counter = new ParametricCounter(2);
+        ParametricCounter counter = new ParametricCounter(5);
         counter.run();
-        assert counter.getCounterValue() == 2;
+        assert counter.getCounterValue() == 5;
     }
 }

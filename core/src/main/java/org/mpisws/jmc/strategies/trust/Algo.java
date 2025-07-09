@@ -68,6 +68,15 @@ public class Algo {
     }
 
     private void handleGuidedEvent(Event event) {
+        if (EventUtils.isLockAcquired(event)) {
+            // Ignore lock acquired events in the guiding trace
+            // These are not added to the execution graph and does not bear any consequence
+            // on what occurs below.
+
+            // The lock acquired event is also not a yielding event therefore the real event will
+            // follow.
+            return;
+        }
         SchedulingChoiceWrapper choiceW = guidingTaskSchedule.peek();
         SchedulingChoice<?> choice = choiceW.choice();
         if (choice.isBlockTask()) {
@@ -298,7 +307,6 @@ public class Algo {
         }
 
         LOGGER.debug("Found the SC graph");
-        executionGraph.checkDanglingEdges();
         //        checkGraphSchedule(nextGraphSchedule);
         executionGraph.printGraph();
 
@@ -759,10 +767,10 @@ public class Algo {
      * @param filePath The path to the file to write the execution graph to.
      */
     public void writeExecutionGraphToFile(String filePath) {
-        if (!executionGraph.checkExtensiveConsistency()) {
-            throw HaltExecutionException.error(
-                    "The execution graph is not consistent at the end of the iteration.");
-        }
+        //        if (!executionGraph.checkExtensiveConsistency()) {
+        //            throw HaltExecutionException.error(
+        //                    "The execution graph is not consistent at the end of the iteration.");
+        //        }
 
         String executionGraphJson = executionGraph.toJsonString();
         FileUtil.unsafeStoreToFile(filePath, executionGraphJson);

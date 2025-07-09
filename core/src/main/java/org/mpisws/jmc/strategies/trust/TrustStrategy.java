@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntimeEvent;
@@ -147,6 +148,9 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         LOGGER.debug("Resetting iteration {}", iteration);
         super.resetIteration(iteration);
         if (debug) {
+            if (!algoInstance.getExecutionGraph().checkExtensiveConsistency()) {
+                throw HaltCheckerException.error("Explored an inconsistent execution graph");
+            }
             algoInstance.writeExecutionGraphToFile(
                     Paths.get(this.reportPath, "iteration-complete-" + iteration + ".json")
                             .toString());

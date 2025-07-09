@@ -1,5 +1,7 @@
 package org.mpisws.jmc.checker;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.checker.exceptions.JmcInvalidConfigurationException;
@@ -20,6 +22,9 @@ import java.time.Duration;
  * <p>Use the {@link JmcCheckerConfiguration.Builder} to create a configuration instance.
  */
 public class JmcCheckerConfiguration {
+
+    private static final Logger LOGGER = LogManager.getLogger(JmcCheckerConfiguration.class);
+
     private Integer numIterations;
 
     private String strategyType;
@@ -216,6 +221,7 @@ public class JmcCheckerConfiguration {
                 throw new JmcInvalidConfigurationException(
                         "Either numIterations or timeout must be set");
             }
+            LOGGER.info("Using seed: {}", seed);
             JmcCheckerConfiguration config = new JmcCheckerConfiguration();
             config.numIterations = numIterations;
             config.strategyType = strategyType;
