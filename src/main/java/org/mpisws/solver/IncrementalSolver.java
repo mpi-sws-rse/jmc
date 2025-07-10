@@ -11,7 +11,6 @@ import java.math.BigInteger;
 import java.util.Stack;
 
 
-// TODO: should be a decorator on the SimpleSolver. Using inheritance makes it harder to use later on.
 public class IncrementalSolver extends SymbolicSolver {
 
     public ProverEnvironment prover;
@@ -19,25 +18,19 @@ public class IncrementalSolver extends SymbolicSolver {
 
     public IncrementalSolver() {
         super();
-        //prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
     }
 
     public IncrementalSolver(SMTSolverTypes type) {
         super(type);
-        //prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
     }
 
     @Override
     public void resetProver() {
-        //System.out.println("[Incremental Symbolic Solver Message] : Resetting the prover");
         long startTime = System.nanoTime();
         if (prover != null) {
             while (prover.size() > 0) {
                 pop();
             }
-//            prover.close();
-//            prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
-            //stack.clear();
         }
         long endTime = System.nanoTime();
         RuntimeEnvironment.incSolverTime(endTime - startTime);
@@ -123,19 +116,6 @@ public class IncrementalSolver extends SymbolicSolver {
      */
     @Override
     public void computeNewSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
-//        boolean concreteEval = symbolicOperation.concreteEvaluation();
-//        if (concreteEval) {
-//            RuntimeEnvironment.solverResult = true;
-//        } else {
-//            boolean sat = solveSymbolicFormula(symbolicOperation);
-//            if (sat) {
-//                RuntimeEnvironment.solverResult = true;
-//                pop();
-//            } else {
-//                RuntimeEnvironment.solverResult = false;
-//                push(negateFormula(symbolicOperation.getFormula()));
-//            }
-//        }
         boolean sat = solver(negateFormula(symbolicOperation.getFormula()));
         RuntimeEnvironment.solverResult = !sat;
         pop();
@@ -143,14 +123,14 @@ public class IncrementalSolver extends SymbolicSolver {
 
     @Override
     public void computeGuidedSymbolicAssertOperationRequest(SymbolicOperation symbolicOperation) {
-        // TODO: implement this method
+        // No Support
     }
 
     private void updateModel() {
         if (model != null) {
             long startTime = System.nanoTime();
             model.iterator().forEachRemaining(entry -> {
-                //System.out.println("[Incremental Symbolic Solver Message] : Model Entry: " + entry.getKey() + " : " + entry.getValue());
+
                 // The key is a string like className@address. extract the class Name
                 String symbolicType = entry.getKey().toString().split("@")[0];
                 if (symbolicType.equals("SymbolicBoolean")) {
@@ -215,7 +195,7 @@ public class IncrementalSolver extends SymbolicSolver {
                     RuntimeEnvironment.incSolverTime(endTime - startTime);
                     updateModel();
                 } else {
-                    //prover.getUnsatCore().forEach(System.out::println);
+
                     long endTime = System.nanoTime();
                     RuntimeEnvironment.incSolverTime(endTime - startTime);
                     throw new RuntimeException("[Incremental Solver Message] The formula is unsatisfiable");
@@ -228,37 +208,14 @@ public class IncrementalSolver extends SymbolicSolver {
         }
     }
 
-    /**
-     * @param thread
-     * @param symbolicOperation
-     */
-    public void deprecatedComputeNewSymbolicOperationRequest(Thread thread, SymbolicOperation symbolicOperation) {
-        boolean sat = solveSymbolicFormula(symbolicOperation);
-        pop();
-        boolean unSat = disSolveSymbolicFormula(symbolicOperation);
-        bothSatUnsat = sat && unSat;
-        if (unSat) {
-            RuntimeEnvironment.solverResult = false;
-        } else {
-            pop();
-            push(symbolicOperation);
-            RuntimeEnvironment.solverResult = true;
-        }
-    }
-
     @Override
     public BooleanFormula pop() {
         long startTime = System.nanoTime();
         prover.pop();
         long endTime = System.nanoTime();
         RuntimeEnvironment.incSolverTime(endTime - startTime);
-        //return stack.pop();
         return null;
     }
-
-//    public void pop() {
-//        prover.pop();
-//    }
 
     @Override
     public void push() {
@@ -279,7 +236,6 @@ public class IncrementalSolver extends SymbolicSolver {
             prover.push(formula);
             long endTime = System.nanoTime();
             RuntimeEnvironment.incSolverTime(endTime - startTime);
-            //stack.push(formula);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -293,7 +249,6 @@ public class IncrementalSolver extends SymbolicSolver {
     @Override
     protected boolean solver(BooleanFormula formula) {
         try {
-            //System.out.println("[Incremental Symbolic Solver Message] : Solving the formula: " + formula.toString());
             long startTime = System.nanoTime();
             push(formula);
             boolean isUnsat = prover.isUnsat();
@@ -301,10 +256,8 @@ public class IncrementalSolver extends SymbolicSolver {
                 model = prover.getModel();
                 long endTime = System.nanoTime();
                 RuntimeEnvironment.incSolverTime(endTime - startTime);
-                //System.out.println("[Incremental Symbolic Solver Message] : The formula is satisfiable");
                 return true;
             } else {
-                //System.out.println("[Incremental Symbolic Solver Message] : The formula is unsatisfiable");
                 long endTime = System.nanoTime();
                 RuntimeEnvironment.incSolverTime(endTime - startTime);
                 return false;
@@ -334,9 +287,6 @@ public class IncrementalSolver extends SymbolicSolver {
         } else {
             return RuntimeEnvironment.proverPool.remove(0);
         }
-//        RuntimeEnvironment.numOfCreatedProvers++;
-//        ProverEnvironment prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
-//        return new ProverState(prover);
     }
 
     @Override
@@ -361,7 +311,6 @@ public class IncrementalSolver extends SymbolicSolver {
     @Override
     public void setProver(ProverEnvironment prover, Stack<BooleanFormula> stack, int proverId) {
         this.prover = prover;
-        //this.stack = stack;
         this.proverId = proverId;
     }
 
@@ -381,6 +330,5 @@ public class IncrementalSolver extends SymbolicSolver {
         }
         long endTime = System.nanoTime();
         RuntimeEnvironment.incSolverTime(endTime - startTime);
-        //prover.close();
     }
 }
