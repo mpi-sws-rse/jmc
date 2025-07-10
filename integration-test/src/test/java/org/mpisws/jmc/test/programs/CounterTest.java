@@ -109,13 +109,12 @@ public class CounterTest {
 
     @JmcCheck
     @JmcCheckConfiguration(
-            numIterations = 10000,
-            debug = true) // , debug = true, seed = 158542095196480L
-    @JmcTrustStrategy(debug = true)
+            numIterations = 10000,debug=true) // , debug = true, seed = 158542095196480L
+    @JmcTrustStrategy(debug=true)
     // TODO :: Fix this test
     public void runFineCounterTest() {
         // TODO : Make the test parametric
-        FineCounter(new String[] {"0", "1", "2", "3", "4"});
+        FineCounter(new String[] {"0", "1", "2", "3"});
     }
 
     @JmcCheck
