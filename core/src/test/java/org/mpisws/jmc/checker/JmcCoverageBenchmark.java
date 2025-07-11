@@ -21,40 +21,40 @@ public class JmcCoverageBenchmark {
 
     private static Stream<Arguments> provideTrustTestCases() {
         return Stream.of(Arguments.of(3, Duration.of(5, ChronoUnit.MINUTES)));
-//        ,
-//                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
-//                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
-//                Arguments.of(12, Duration.of(30, ChronoUnit.MINUTES)),
-//                Arguments.of(15, Duration.of(30, ChronoUnit.MINUTES)),
-//                Arguments.of(20, Duration.of(30, ChronoUnit.MINUTES)));
+        //        ,
+        //                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
+        //                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
+        //                Arguments.of(12, Duration.of(30, ChronoUnit.MINUTES)),
+        //                Arguments.of(15, Duration.of(30, ChronoUnit.MINUTES)),
+        //                Arguments.of(20, Duration.of(30, ChronoUnit.MINUTES)));
     }
 
     private static Stream<Arguments> provideRandomTestCases() {
         return Stream.of(Arguments.of(3, Duration.of(10, ChronoUnit.SECONDS)));
-//        ,
-//                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
-//                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
-//                Arguments.of(12, Duration.of(30, ChronoUnit.MINUTES)),
-//                Arguments.of(15, Duration.of(30, ChronoUnit.MINUTES)),
-//                Arguments.of(20, Duration.of(30, ChronoUnit.MINUTES)));
+        //        ,
+        //                Arguments.of(8, Duration.of(30, ChronoUnit.MINUTES)),
+        //                Arguments.of(9, Duration.of(30, ChronoUnit.MINUTES)),
+        //                Arguments.of(12, Duration.of(30, ChronoUnit.MINUTES)),
+        //                Arguments.of(15, Duration.of(30, ChronoUnit.MINUTES)),
+        //                Arguments.of(20, Duration.of(30, ChronoUnit.MINUTES)));
     }
 
     private static Stream<Arguments> provideRandomTestCasesCoarse9() {
         return Stream.of(
-//                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
+                //                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
                 Arguments.of(5, Duration.of(1, ChronoUnit.SECONDS)));
-//                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
-//                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
-//                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
+        //                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
+        //                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
+        //                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
     }
 
     private static Stream<Arguments> provideRandomTestCasesFine10() {
         return Stream.of(
-//                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
+                //                Arguments.of(2, Duration.of(50000000, ChronoUnit.NANOS)),
                 Arguments.of(4, Duration.of(10, ChronoUnit.SECONDS)));
-//                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
-//                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
-//                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
+        //                Arguments.of(4, Duration.of(550000000, ChronoUnit.NANOS)),
+        //                Arguments.of(5, Duration.of(5, ChronoUnit.SECONDS)),
+        //                Arguments.of(6, Duration.of(67, ChronoUnit.SECONDS)));
     }
 
     @ParameterizedTest
@@ -95,7 +95,7 @@ public class JmcCoverageBenchmark {
                 new JmcFunctionalTestTarget(
                         "TrustCC1",
                         () -> {
-                            CC7.main(new String[]{String.valueOf(threads)});
+                            CC7.main(new String[] {String.valueOf(threads)});
                         });
         try {
             jmcModelChecker.check(target);
@@ -116,7 +116,8 @@ public class JmcCoverageBenchmark {
                         .strategyConstructor(
                                 (sConfig) ->
                                         new MeasureGraphCoverageStrategy(
-                                                new RandomSchedulingStrategy(sConfig.getSeed(), sConfig.getReportPath()),
+                                                new RandomSchedulingStrategy(
+                                                        sConfig.getSeed(), sConfig.getReportPath()),
                                                 MeasureGraphCoverageStrategyConfig.builder()
                                                         .recordPath(
                                                                 sConfig.getReportPath()
@@ -136,7 +137,7 @@ public class JmcCoverageBenchmark {
                 new JmcFunctionalTestTarget(
                         "TrustCC1",
                         () -> {
-                            CC7.main(new String[]{String.valueOf(threads)});
+                            CC7.main(new String[] {String.valueOf(threads)});
                         });
         try {
             jmcModelChecker.check(target);
@@ -155,7 +156,8 @@ public class JmcCoverageBenchmark {
                         .strategyConstructor(
                                 (sConfig) ->
                                         new MeasureGraphCoverageStrategy(
-                                                new RandomSchedulingStrategy(sConfig.getSeed(), sConfig.getReportPath()),
+                                                new RandomSchedulingStrategy(
+                                                        sConfig.getSeed(), sConfig.getReportPath()),
                                                 MeasureGraphCoverageStrategyConfig.builder()
                                                         .recordPath(
                                                                 sConfig.getReportPath()
@@ -173,8 +175,7 @@ public class JmcCoverageBenchmark {
                 new JmcFunctionalTestTarget(
                         "CoarseList",
                         () -> {
-                            Client9.main(
-                                    new String[]{String.valueOf(threads)});
+                            Client9.main(new String[] {String.valueOf(threads)});
                         });
         try {
             jmcModelChecker.check(target);
@@ -185,15 +186,15 @@ public class JmcCoverageBenchmark {
 
     @ParameterizedTest
     @MethodSource("provideRandomTestCasesFine10")
-    public void benchmarkFineListRandom(int threads, Duration timeout)
-            throws JmcCheckerException {
+    public void benchmarkFineListRandom(int threads, Duration timeout) throws JmcCheckerException {
         System.out.println("Running with threads = " + threads);
         JmcCheckerConfiguration config =
                 new JmcCheckerConfiguration.Builder()
                         .strategyConstructor(
                                 (sConfig) ->
                                         new MeasureGraphCoverageStrategy(
-                                                new RandomSchedulingStrategy(sConfig.getSeed(), sConfig.getReportPath()),
+                                                new RandomSchedulingStrategy(
+                                                        sConfig.getSeed(), sConfig.getReportPath()),
                                                 MeasureGraphCoverageStrategyConfig.builder()
                                                         .recordPath(
                                                                 sConfig.getReportPath()
@@ -213,8 +214,7 @@ public class JmcCoverageBenchmark {
                 new JmcFunctionalTestTarget(
                         "CoarseList",
                         () -> {
-                            Client10.main(
-                                    new String[]{String.valueOf(threads)});
+                            Client10.main(new String[] {String.valueOf(threads)});
                         });
         try {
             jmcModelChecker.check(target);

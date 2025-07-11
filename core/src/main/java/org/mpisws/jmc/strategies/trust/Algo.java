@@ -761,6 +761,11 @@ public class Algo {
         }
     }
 
+    /** */
+    public void logStackState() {
+        explorationStack.logStackState();
+    }
+
     /**
      * Writes the execution graph to a file.
      *
