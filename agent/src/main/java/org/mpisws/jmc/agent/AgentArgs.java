@@ -1,5 +1,6 @@
 package org.mpisws.jmc.agent;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /** The AgentArgs class is used to parse the agent arguments. */
@@ -11,9 +12,10 @@ public class AgentArgs {
     private static final String JMC_RUNTIME_JAR_PATH_FLAG = "jmcRuntimeJarPath";
     private boolean debug = false;
     private String debugSavePath = "build/generated/instrumented";
-    private List<String> instrumentingPackages;
-    private List<String> excludedPackages;
-    private String jmcRuntimeJarPath;
+    private List<String> instrumentingPackages = new ArrayList<>();
+    private List<String> excludedPackages = new ArrayList<>();
+    private String jmcRuntimeJarPath = "/lib/jmc-0.1.0.jar";
+    ;
 
     /**
      * The AgentArgs constructor is used to parse the agent arguments.
@@ -32,7 +34,7 @@ public class AgentArgs {
                         debugSavePath = parts[1];
                     } else if (parts[0].equals(INSTRUMENTING_PKG_FLAG)) {
                         instrumentingPackages = List.of(parts[1].split(";"));
-                    }else if (parts[0].equals(EXCLUDED_PKG_FLAG)) {
+                    } else if (parts[0].equals(EXCLUDED_PKG_FLAG)) {
                         excludedPackages = List.of(parts[1].split(";"));
                     } else if (parts[0].equals(JMC_RUNTIME_JAR_PATH_FLAG)) {
                         jmcRuntimeJarPath = parts[1];
@@ -58,7 +60,9 @@ public class AgentArgs {
         return instrumentingPackages;
     }
 
-    public List<String> getExcludedPackages() { return excludedPackages; }
+    public List<String> getExcludedPackages() {
+        return excludedPackages;
+    }
 
     public String getJmcRuntimeJarPath() {
         return jmcRuntimeJarPath;

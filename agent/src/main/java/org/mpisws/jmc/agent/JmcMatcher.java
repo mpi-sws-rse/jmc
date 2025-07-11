@@ -47,6 +47,11 @@ public class JmcMatcher {
         if (!excludedPackages.isEmpty()) {
             for (String exclude : excludedPackages) {
                 if (!exclude.isEmpty() && typeName.startsWith(exclude)) {
+                    System.out.println(
+                            "Excluding class: "
+                                    + typeName
+                                    + " due to excluded package: "
+                                    + exclude);
                     return false;
                 }
             }

@@ -32,7 +32,7 @@ public class JmcReadWriteVisitor {
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
             MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
-            return new ReadWriteMethodVisitor(mv, access, descriptor);
+            return new ReadWriteMethodVisitor(mv, access, descriptor, "<init>".equals(name));
         }
     }
 
@@ -41,6 +41,9 @@ public class JmcReadWriteVisitor {
 
         private boolean instrumented;
 
+        private boolean constructor = false;
+        private boolean constructorInitialized = false;
+
         /**
          * Constructor.
          *
@@ -48,9 +51,11 @@ public class JmcReadWriteVisitor {
          * @param access The method's access flags
          * @param descriptor The method descriptor (e.g., "(I)V")
          */
-        public ReadWriteMethodVisitor(MethodVisitor mv, int access, String descriptor) {
+        public ReadWriteMethodVisitor(
+                MethodVisitor mv, int access, String descriptor, boolean constructor) {
             super(Opcodes.ASM9, mv, access, descriptor);
             this.instrumented = false;
+            this.constructor = constructor;
         }
 
         private void insertUpdateEventCall(
@@ -63,12 +68,22 @@ public class JmcReadWriteVisitor {
                 // Ignore assertionsDisabled field
                 return;
             }
+            if (constructorNotInitialized()) {
+                return;
+            }
             instrumented = true;
             if (!isWrite) {
                 VisitorHelper.insertRead(mv, isStatic, owner, name, descriptor);
             } else {
                 VisitorHelper.insertWrite(mv, isStatic, owner, name, descriptor);
             }
+        }
+
+        private boolean constructorNotInitialized() {
+            // The method we are visiting is either
+            // 1. not a constructor
+            // 2. or a constructor that has been initialized
+            return constructor && !constructorInitialized;
         }
 
         /**
@@ -103,6 +118,20 @@ public class JmcReadWriteVisitor {
             if (instrumented) {
                 VisitorHelper.insertYield(mv);
             }
+        }
+
+        @Override
+        public void visitMethodInsn(
+                int opcode, String owner, String name, String descriptor, boolean isInterface) {
+            if (opcode == Opcodes.INVOKESPECIAL) {
+                // We do not instrument method calls in this visitor
+                if (Objects.equals(name, "<init>")) {
+                    // If this is a constructor, we need to track if it has been initialized
+                    constructorInitialized = true;
+                }
+            }
+            // We do not instrument method calls in this visitor
+            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
         }
 
         @Override
