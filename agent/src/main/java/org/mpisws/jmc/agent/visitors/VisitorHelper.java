@@ -168,6 +168,12 @@ public class VisitorHelper {
         }
     }
 
+    public static boolean isInstantiation(int opcode) {
+        return opcode == Opcodes.NEW
+                || opcode == Opcodes.ANEWARRAY
+                || opcode == Opcodes.MULTIANEWARRAY;
+    }
+
     public static void addReturnInst(MethodVisitor mv, String descriptor) {
         // Find the return type of the method and add the corresponding return instruction
         String returnType = descriptor.substring(descriptor.lastIndexOf(')') + 1);
@@ -197,9 +203,7 @@ public class VisitorHelper {
         }
     }
 
-    /**
-     * The MethodInfo class is used to store information about a method.
-     */
+    /** The MethodInfo class is used to store information about a method. */
     public static class MethodInfo {
 
         /**
@@ -227,7 +231,8 @@ public class VisitorHelper {
          */
         public String[] exceptions;
 
-        public MethodInfo(int access, String name, String descriptor, String signature, String[] exceptions) {
+        public MethodInfo(
+                int access, String name, String descriptor, String signature, String[] exceptions) {
             this.access = access;
             this.name = name;
             this.descriptor = descriptor;
@@ -239,16 +244,12 @@ public class VisitorHelper {
             return (access & Opcodes.ACC_STATIC) != 0;
         }
 
-        /**
-         * Changes the access flags of the method to be non-synchronized.
-         */
+        /** Changes the access flags of the method to be non-synchronized. */
         public int getNonSyncAccess() {
             return access & ~Opcodes.ACC_SYNCHRONIZED;
         }
 
-        /**
-         * Changes the name of the method to have a suffix of "$synchronized".
-         */
+        /** Changes the name of the method to have a suffix of "$synchronized". */
         public String getSyncName() {
             return name + "$synchronized";
         }
@@ -257,5 +258,4 @@ public class VisitorHelper {
             return name + "$unsynchronized";
         }
     }
-
 }

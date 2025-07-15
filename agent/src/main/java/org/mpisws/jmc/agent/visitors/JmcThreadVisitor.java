@@ -1,10 +1,6 @@
 package org.mpisws.jmc.agent.visitors;
 
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Label;
+import org.objectweb.asm.*;
 
 /**
  * Represents a JMC thread visitor. Adds instrumentation to change Thread calls to JmcThread calls
@@ -12,6 +8,26 @@ import org.objectweb.asm.Label;
 public class JmcThreadVisitor {
 
     public static class ThreadClassVisitor extends ClassVisitor {
+        private static final String THREAD_PATH = "java/lang/Thread";
+        private static final String JMC_THREAD_PATH =
+                "org/mpisws/jmc/api/util/concurrent/JmcThread";
+        private static final String THREAD_DESC = "L" + THREAD_PATH + ";";
+        private static final String JMC_THREAD_DESC = "L" + JMC_THREAD_PATH + ";";
+
+        private static String replaceDescriptor(String desc) {
+            if (desc.contains(THREAD_DESC)) {
+                return desc.replace(THREAD_DESC, JMC_THREAD_DESC);
+            }
+            return desc;
+        }
+
+        private static String replaceType(String type) {
+            if (type.equals(THREAD_PATH)) {
+                return JMC_THREAD_PATH;
+            }
+            return type;
+        }
+
         // Flag to indicate that the class being visited extends Thread.
         private boolean isExtendingThread = false;
 
@@ -28,33 +44,92 @@ public class JmcThreadVisitor {
                 String superName,
                 String[] interfaces) {
             // Check if the class extends java/lang/Thread
-            if ("java/lang/Thread".equals(superName)) {
+            if (THREAD_PATH.equals(superName)) {
                 isExtendingThread = true;
                 // Replace the superclass with JmcThread (ensure the internal name is correct)
-                superName = "org/mpisws/jmc/api/util/concurrent/JmcThread";
+                superName = JMC_THREAD_PATH;
             }
             // Continue visiting with the possibly modified superclass.
             super.visit(version, access, name, signature, superName, interfaces);
         }
 
         @Override
+        public FieldVisitor visitField(
+                int access, String name, String descriptor, String signature, Object value) {
+            // Replace Thread field types with JmcThread
+            return super.visitField(access, name, replaceDescriptor(descriptor), signature, value);
+        }
+
+        @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
-
+            MethodVisitor mv;
             // Only instrument if the class extends Thread and this is a constructor
             if (isExtendingThread && "<init>".equals(name)) {
-                MethodVisitor mv =
-                        super.visitMethod(access, name, descriptor, signature, exceptions);
-                return new ThreadInitMethodVisitor(mv);
+                mv =
+                        new ThreadInitMethodVisitor(
+                                super.visitMethod(
+                                        access,
+                                        name,
+                                        replaceDescriptor(descriptor),
+                                        signature,
+                                        exceptions));
             } else if (isExtendingThread && "run".equals(name) && "()V".equals(descriptor)) {
                 // Rename it to "run1" by passing the new name into the visitMethod call.
-                MethodVisitor mv =
-                        super.visitMethod(access, "run1", descriptor, signature, exceptions);
+                mv = super.visitMethod(access, "run1", descriptor, signature, exceptions);
                 AnnotationVisitor av = mv.visitAnnotation("Override", true);
                 av.visitEnd();
-                return mv;
+            } else {
+                mv =
+                        super.visitMethod(
+                                access, name, replaceDescriptor(descriptor), signature, exceptions);
             }
-            return super.visitMethod(access, name, descriptor, signature, exceptions);
+            return new ThreadInstanceMethodVisitor(mv);
+        }
+
+        private static class ThreadInstanceMethodVisitor extends MethodVisitor {
+            public ThreadInstanceMethodVisitor(MethodVisitor mv) {
+                super(Opcodes.ASM9, mv);
+            }
+
+            @Override
+            public void visitTypeInsn(int opcode, String type) {
+                // Replace Thread with JmcThread in instance creation
+                if (VisitorHelper.isInstantiation(opcode) && THREAD_PATH.equals(type)) {
+                    super.visitTypeInsn(opcode, JMC_THREAD_PATH);
+                } else {
+                    super.visitTypeInsn(opcode, replaceType(type));
+                }
+            }
+
+            @Override
+            public void visitMethodInsn(
+                    int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                // Modify constructor calls to use JmcThread
+                super.visitMethodInsn(
+                        opcode,
+                        replaceType(owner),
+                        name,
+                        replaceDescriptor(descriptor),
+                        isInterface);
+            }
+
+            @Override
+            public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
+                super.visitFieldInsn(opcode, owner, name, replaceDescriptor(descriptor));
+            }
+
+            @Override
+            public void visitLocalVariable(
+                    String name,
+                    String descriptor,
+                    String signature,
+                    org.objectweb.asm.Label start,
+                    org.objectweb.asm.Label end,
+                    int index) {
+                super.visitLocalVariable(
+                        name, replaceDescriptor(descriptor), signature, start, end, index);
+            }
         }
 
         // Nested MethodVisitor to modify constructor calls

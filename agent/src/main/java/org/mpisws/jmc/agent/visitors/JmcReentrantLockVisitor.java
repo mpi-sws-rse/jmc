@@ -11,7 +11,8 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
     }
 
     private static final String REENTRANT_LOCK_PATH = "java/util/concurrent/locks/ReentrantLock";
-    private static final String JMC_REENTRANT_LOCK_PATH = "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock";
+    private static final String JMC_REENTRANT_LOCK_PATH =
+            "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock";
     private static final String REENTRANT_LOCK_DESC = "L" + REENTRANT_LOCK_PATH + ";";
     private static final String JMC_REENTRANT_LOCK_DESC = "L" + JMC_REENTRANT_LOCK_PATH + ";";
 
@@ -30,14 +31,18 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
     }
 
     @Override
-    public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
+    public FieldVisitor visitField(
+            int access, String name, String descriptor, String signature, Object value) {
         return super.visitField(access, name, replaceDescriptor(descriptor), signature, value);
     }
 
     @Override
-    public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+    public MethodVisitor visitMethod(
+            int access, String name, String descriptor, String signature, String[] exceptions) {
         // First let the parent handle the method visitor creation
-        MethodVisitor mv = super.visitMethod(access, name, replaceDescriptor(descriptor), signature, exceptions);
+        MethodVisitor mv =
+                super.visitMethod(
+                        access, name, replaceDescriptor(descriptor), signature, exceptions);
         return new ReentrantLockReplacementMethodVisitor(mv);
     }
 
@@ -49,7 +54,7 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         @Override
         public void visitTypeInsn(int opcode, String type) {
             // Replace NEW ReentrantLock with JmcReentrantLock
-            if (opcode == Opcodes.NEW) {
+            if (VisitorHelper.isInstantiation(opcode)) {
                 super.visitTypeInsn(opcode, replaceType(type));
             } else {
                 super.visitTypeInsn(opcode, type);
@@ -57,9 +62,11 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         }
 
         @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+        public void visitMethodInsn(
+                int opcode, String owner, String name, String descriptor, boolean isInterface) {
             // Replace ReentrantLock constructor calls
-            super.visitMethodInsn(opcode, replaceType(owner), name, replaceDescriptor(descriptor), isInterface);
+            super.visitMethodInsn(
+                    opcode, replaceType(owner), name, replaceDescriptor(descriptor), isInterface);
         }
 
         @Override
@@ -68,9 +75,15 @@ public class JmcReentrantLockVisitor extends ClassVisitor {
         }
 
         @Override
-        public void visitLocalVariable(String name, String descriptor, String signature,
-                                       Label start, Label end, int index) {
-            super.visitLocalVariable(name, replaceDescriptor(descriptor), signature, start, end, index);
+        public void visitLocalVariable(
+                String name,
+                String descriptor,
+                String signature,
+                Label start,
+                Label end,
+                int index) {
+            super.visitLocalVariable(
+                    name, replaceDescriptor(descriptor), signature, start, end, index);
         }
     }
 }
