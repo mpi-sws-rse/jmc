@@ -28,8 +28,6 @@ dependencies {
 }
 
 tasks.register<Copy>("copyJar") {
-    dependsOn(":core:publishToMavenLocal")
-    dependsOn(":agent:publishToMavenLocal")
     from(agentDependencies.filter { it.name.contains("jmc-0.1.0") })
     into("src/main/resources/lib")
 }
@@ -40,9 +38,7 @@ tasks.processResources {
 
 tasks.test {
     useJUnitPlatform()
-    dependsOn(":agent:publishToMavenLocal")
 
-    systemProperty("net.bytebuddy.nexus.disabled", "true")
     val agentJar = agentDependencies.find { it.name.contains("jmc-agent-0.1.0") }?.absolutePath
 
     val agentArg = "-javaagent:$agentJar=debug,instrumentingPackages=org.mpisws.jmc.test"

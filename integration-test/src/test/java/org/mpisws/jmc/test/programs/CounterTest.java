@@ -113,6 +113,7 @@ public class CounterTest {
             numIterations = 10000,
             debug = true) // , debug = true, seed = 158542095196480L
     @JmcTrustStrategy(debug = true)
+    //    @JmcExpectExecutions(4)
     public void runFineCounterTest() {
         // TODO : Make the test parametric
         FineCounter(new String[] {"0", "1", "2", "3"});

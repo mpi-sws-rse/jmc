@@ -3,8 +3,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     id("java")
     id("checkstyle")
-    id("com.gradleup.shadow") version "9.0.0-beta9"
     id("maven-publish")
+    id("com.gradleup.shadow") version "9.0.0-beta9"
 }
 
 repositories {
@@ -40,10 +40,9 @@ task("agentJar", ShadowJar::class) {
     }
 }
 
-tasks.build {
+tasks.assemble {
     dependsOn("agentJar")
 }
-
 
 tasks.test {
     useJUnitPlatform()

@@ -46,7 +46,7 @@ public class GcdTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    @Disabled // TODO : Fix this test
+    //    @Disabled // TODO : Fix this test
     public void runParallelGcdTest() {
         parallelGcd(4, 2);
     }
