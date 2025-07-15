@@ -13,16 +13,16 @@ import java.util.List;
 
 public class StackTest {
 
-    private void lockFreeStackTest(int NUM_OPERATIONS) {
-        Stack stack = new LockFreeStack<Integer>();
+    private void lockFreeStackTest(int numOperations) {
+        Stack<Integer> stack = new LockFreeStack<>();
 
-        List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
-        for (int i = 0; i < NUM_OPERATIONS; i++) {
+        List<Integer> items = new ArrayList<>(numOperations);
+        for (int i = 0; i < numOperations; i++) {
             items.add(i);
         }
 
-        List<InsertionThread> threads = new ArrayList<>(NUM_OPERATIONS);
-        for (int i = 0; i < NUM_OPERATIONS; i++) {
+        List<InsertionThread> threads = new ArrayList<>(numOperations);
+        for (int i = 0; i < numOperations; i++) {
             Integer item = items.get(i);
             InsertionThread thread = new InsertionThread();
             thread.stack = stack;
@@ -30,11 +30,11 @@ public class StackTest {
             threads.add(thread);
         }
 
-        for (int i = 0; i < NUM_OPERATIONS; i++) {
+        for (int i = 0; i < numOperations; i++) {
             threads.get(i).start();
         }
 
-        for (int i = 0; i < NUM_OPERATIONS; i++) {
+        for (int i = 0; i < numOperations; i++) {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
