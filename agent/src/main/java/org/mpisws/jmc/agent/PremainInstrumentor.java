@@ -1,9 +1,6 @@
 package org.mpisws.jmc.agent;
 
 import org.mpisws.jmc.agent.visitors.*;
-import org.mpisws.jmc.annotations.JmcIgnoreInstrumentation;
-import org.mpisws.jmc.checker.JmcModelChecker;
-import org.mpisws.jmc.runtime.JmcRuntimeUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -15,14 +12,15 @@ import java.nio.file.Files;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
 
-
 public class PremainInstrumentor implements ClassFileTransformer {
     private final AgentArgs agentArgs;
     private final JmcMatcher matcher;
 
     public PremainInstrumentor(AgentArgs agentArgs) {
         this.agentArgs = agentArgs;
-        this.matcher = new JmcMatcher(agentArgs.getInstrumentingPackages(), agentArgs.getExcludedPackages());
+        this.matcher =
+                new JmcMatcher(
+                        agentArgs.getInstrumentingPackages(), agentArgs.getExcludedPackages());
     }
 
     public byte[] transform(
@@ -38,7 +36,6 @@ public class PremainInstrumentor implements ClassFileTransformer {
             return copiedClassBuffer;
         }
         ClassReader tempCr = new ClassReader(copiedClassBuffer);
-
         ClassWriter tempCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
         JmcIgnoreVisitor ignoreVisitor = new JmcIgnoreVisitor(tempCw);
@@ -51,40 +48,45 @@ public class PremainInstrumentor implements ClassFileTransformer {
             // JmcIgnoreInstrumentation annotation
         }
 
-        ClassReader syncCr = new ClassReader(copiedClassBuffer);
-        ClassWriter syncCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-
-        ClassReader skipCr = new ClassReader(copiedClassBuffer);
-        JmcConcurrentVisitor visitor = new JmcConcurrentVisitor(Opcodes.ASM9, null);
-        skipCr.accept(visitor, ClassReader.SKIP_FRAMES);
-
-        if (visitor.usesUnsupportedFeatures(VisitorHelper.supportedFeatures())) {
-            System.out.println("Unsupported feature detected " + visitor.getUnsupportedFeatures());
-        }
-
-
-        System.out.println("Instrumenting class: " + finalClassName);
-
-        JmcSyncScanData syncScanData = new JmcSyncScanData();
-        JmcSyncScanVisitor syncScanVisitor = new JmcSyncScanVisitor(syncCw, syncScanData);
-        syncCr.accept(syncScanVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
         try {
+            ClassReader syncCr = new ClassReader(copiedClassBuffer);
+            ClassWriter syncCw =
+                    new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+
+            ClassReader skipCr = new ClassReader(copiedClassBuffer);
+
+            JmcConcurrentVisitor visitor =
+                    new JmcConcurrentVisitor(Opcodes.ASM9, null);
+
+            skipCr.accept(visitor, ClassReader.SKIP_FRAMES);
+
+
+            if (visitor.usesUnsupportedFeatures(VisitorHelper.supportedFeatures())) {
+            System.out.println("Unsupported feature detected " + visitor.getUnsupportedFeatures());
+
+            }
+
+
+
+            JmcSyncScanData syncScanData = new JmcSyncScanData();
+            JmcSyncScanVisitor syncScanVisitor = new JmcSyncScanVisitor(syncCw, syncScanData);
+            syncCr.accept(syncScanVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+
             ClassReader cr = new ClassReader(copiedClassBuffer);
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
             ClassVisitor cv =
-                            new JmcStaticMethodVisitor(
-                                new JmcSyncMethodVisitor(
-                                        new JmcFutureVisitor.JmcExecutorsClassVisitor(
-                                                new JmcAtomicVisitor(
-                                                        new JmcReentrantLockVisitor(
-                                                                new JmcThreadVisitor.ThreadClassVisitor(
-                                                                        new JmcThreadVisitor
-                                                                                .ThreadCallReplacerClassVisitor(
-                                                                                new JmcReadWriteVisitor
-                                                                                        .ReadWriteClassVisitor(
-                                                                                        cw)))))),
-                                        syncScanData));
+                    new JmcStaticMethodVisitor(
+                        new JmcSyncMethodVisitor(
+                                new JmcFutureVisitor.JmcExecutorsClassVisitor(
+                                        new JmcAtomicVisitor(
+                                                new JmcReentrantLockVisitor(
+                                                        new JmcThreadVisitor.ThreadClassVisitor(
+                                                                new JmcThreadVisitor
+                                                                        .ThreadCallReplacerClassVisitor(
+                                                                        new JmcReadWriteVisitor
+                                                                                .ReadWriteClassVisitor(
+                                                                                cw)))))),
+                                syncScanData));
             cr.accept(cv, 0);
             if (this.agentArgs.isDebug()) {
                 byte[] transformed = cw.toByteArray();
@@ -94,8 +96,8 @@ public class PremainInstrumentor implements ClassFileTransformer {
             return cw.toByteArray();
         } catch (Exception e) {
             System.out.println("Error transforming class: " + finalClassName + " " + e);
+            throw new RuntimeException("Error instrumenting class: " + finalClassName, e);
         }
-        return null;
     }
 
     public void record(String className, byte[] classFileBuffer) {
