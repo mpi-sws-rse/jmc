@@ -10,6 +10,7 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
 
     private String className;
     private StaticMethodInfo staticMethodInfo;
+    private boolean ignore = false;
 
     public JmcStaticMethodVisitor(ClassVisitor classVisitor) {
         super(Opcodes.ASM9, classVisitor);
@@ -23,6 +24,12 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
             String signature,
             String superName,
             String[] interfaces) {
+
+        if ((access & Opcodes.ACC_INTERFACE) != 0) {
+            System.out.println("Skipping interface: " + name);
+            ignore = true;
+        }
+
         this.className = name;
         super.visit(version, access, name, signature, superName, interfaces);
     }
@@ -30,6 +37,9 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     @Override
     public FieldVisitor visitField(
             int access, String name, String desc, String signature, Object value) {
+        if (ignore) {
+            return super.visitField(access, name, desc, signature, value);
+        }
         if (isStaticFinalField(access)) {
             return super.visitField(removeFinal(access), name, desc, signature, value);
         }
@@ -40,6 +50,9 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     public MethodVisitor visitMethod(
             int access, String name, String desc, String signature, String[] exceptions) {
         // Check if the method is static
+        if (ignore) {
+            return super.visitMethod(access, name, desc, signature, exceptions);
+        }
         if (Objects.equals(name, "<clinit>")) {
             this.staticMethodInfo = new StaticMethodInfo(access, name, desc, signature, exceptions);
             return super.visitMethod(
@@ -56,6 +69,9 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     //    @Override
     public void visitEnd() {
         // If we have a static method info, we can process it here
+        if (ignore) {
+            super.visitEnd();
+        }
         if (this.staticMethodInfo != null) {
 
             MethodVisitor mv =

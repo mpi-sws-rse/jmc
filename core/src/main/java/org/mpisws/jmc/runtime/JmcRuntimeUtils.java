@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
@@ -423,6 +425,8 @@ public class JmcRuntimeUtils {
 
     public static void registerStaticInitializedClass(Class<?> clazz) {
         if (!staticInitializedClasses.contains(clazz.getName())) {
+            LOGGER.info("STatic classes registered are : " + clazz.getName());
+            System.out.println("STatic classes registered are : " + clazz.getName());
             staticInitializedClasses.add(clazz.getName());
             staticInitializedClassesList.add(clazz);
         }
@@ -470,13 +474,30 @@ public class JmcRuntimeUtils {
             LOGGER.info("No static initialized classes to invoke.");
             return;
         }
-        for (Class<?> clazz : staticInitializedClassesList) {
+        List<Class<?>> snapshot = new ArrayList<>(staticInitializedClassesList);
+        for (Class<?> clazz : snapshot) {
             try {
                 // Assuming the static method is named "invokeStaticInitializedClasses"
-                clazz.getMethod("$staticInit").invoke(null);
+//                clazz.getMethod("$staticInit").invoke(null);
+                Method m = clazz.getDeclaredMethod("$staticInit");
+                m.setAccessible(true);
+                m.invoke(null);
                 LOGGER.info("Invoked static method in class: {}", clazz.getName());
-            } catch (Exception e) {
-                LOGGER.error("Error invoking static method in class: {}", clazz.getName());
+                System.out.println("Invoked static method in class: " + clazz.getName());
+            } catch (InvocationTargetException ite) {
+                System.out.println("InvocationTargetException in " + clazz.getName());
+                ite.getCause().printStackTrace();
+                System.out.println("Cause is in " + ite.getCause());
+                LOGGER.error("Error invoking $staticInit() in {}", clazz.getName(), ite.getCause());
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                System.out.println("Error invoking static method in class " + clazz.getName() + " because  " + e);
+//                LOGGER.error("Error invoking static method in class: {}", clazz.getName(), e);
+//            }
+            } catch (IllegalAccessException e) {
+                LOGGER.error("Error invoking $staticInit() in {}", clazz.getName(), e.getCause());
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
             }
         }
     }
@@ -508,4 +529,9 @@ public class JmcRuntimeUtils {
             }
         }
     }
+
+
+
+
+
 }

@@ -4,6 +4,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.util.Set;
+
 /**
  * Helper class for inserting instrumentation to generate RuntimeEvents for field read and write
  * operations.
@@ -256,6 +258,57 @@ public class VisitorHelper {
         public String getUnsyncName() {
             return name + "$unsynchronized";
         }
+
+    }
+
+    private static final Set<String> SUPPORTED_CONCURRENT_FEATURES = Set.of(
+            "java.util.concurrent.atomic.AtomicBoolean.<init>",
+            "java.util.concurrent.atomic.AtomicBoolean.get",
+            "java.util.concurrent.atomic.AtomicBoolean.set",
+            "java.util.concurrent.atomic.AtomicBoolean.compareAndSet",
+            "java.util.concurrent.atomic.AtomicInteger.<init>",
+            "java.util.concurrent.atomic.AtomicInteger.get",
+            "java.util.concurrent.atomic.AtomicInteger.set",
+            "java.util.concurrent.atomic.AtomicInteger.compareAndSet",
+            "java.util.concurrent.atomic.AtomicInteger.getAndIncrement",
+            "java.util.concurrent.atomic.AtomicInteger.getAndSet",
+            "java.util.concurrent.atomic.AtomicInteger.addAndGet",
+            "java.util.concurrent.atomic.AtomicReference.<init>",
+            "java.util.concurrent.atomic.AtomicReference.get",
+            "java.util.concurrent.atomic.AtomicReference.set",
+            "java.util.concurrent.atomic.AtomicReference.compareAndSet",
+            "java.util.concurrent.atomic.AtomicReference.getAndSet",
+            "java.util.concurrent.atomic.AtomicReferenceArray.<init>",
+            "java.util.concurrent.atomic.AtomicReferenceArray.get",
+            "java.util.concurrent.atomic.AtomicReferenceArray.set",
+            "java.util.concurrent.atomic.AtomicReferenceArray.getAndSet",
+            "java.util.concurrent.CompletableFuture.<init>",
+            "java.util.concurrent.ExecutorService.<init>",
+            "java.util.concurrent.ExecutorService.shutdownNow",
+            "java.util.concurrent.ExecutorService.shutdown",
+            "java.util.concurrent.ExecutorService.awaitTermination",
+            "java.util.concurrent.ExecutorService.isTerminated",
+            "java.util.concurrent.ExecutorService.isShutdown",
+            "java.util.concurrent.RunnableFuture.<init>",
+            "java.util.concurrent.RunnableFuture.cancel",
+            "java.util.concurrent.Executors.newSingleThreadExecutor",
+            "java.util.concurrent.Executors.newFixedThreadPool",
+            "java.util.concurrent.locks.LockSupport.park",
+            "java.util.concurrent.locks.LockSupport.unpark",
+            "java.util.concurrent.locks.ReentrantLock.lock",
+            "java.util.concurrent.locks.ReentrantLock.unlock",
+            "java.lang.Thread.run",
+            "java.lang.Thread.join",
+            "java.util.concurrent.ThreadFactory.newThread",
+            "java.util.concurrent.ThreadPoolExecutor.<init>"
+    );
+
+    public static boolean isConcurrentFeatureSupported(String feature) {
+        return SUPPORTED_CONCURRENT_FEATURES.contains(feature);
+    }
+
+    public static Set<String> supportedFeatures() {
+        return SUPPORTED_CONCURRENT_FEATURES;
     }
 
 }
