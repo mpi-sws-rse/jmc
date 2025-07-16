@@ -26,9 +26,9 @@ dependencies {
 
 tasks.register<Copy>("copyJar") {
     dependsOn(":core:jar")
-    from(project(":core").projectDir.resolve("build/libs/core-0.1.0.jar").absolutePath)
+    from(project(":core").projectDir.resolve("build/libs/core.jar").absolutePath)
     into("src/main/resources/lib")
-    rename("jmc-0.1.0.jar", "jmc-0.1.0.jar")
+    rename("core.jar", "jmc-0.1.0.jar")
 }
 
 tasks.processResources {

@@ -6,6 +6,16 @@ kotlin {
     jvmToolchain(17)
 }
 
+tasks.assemble {
+    dependsOn(":agent:agentJar")
+}
+
+tasks.test {
+    useJUnitPlatform()
+
+    dependsOn(":agent:agentJar")
+}
+
 repositories {
     mavenCentral()
     mavenLocal()
