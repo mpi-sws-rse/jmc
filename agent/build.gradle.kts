@@ -3,8 +3,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     id("java")
     id("checkstyle")
-    id("com.gradleup.shadow") version "9.0.0-beta9"
     id("maven-publish")
+    id("com.gradleup.shadow") version "9.0.0-beta9"
 }
 
 repositories {
@@ -25,7 +25,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
 }
 
-task("agentJar", ShadowJar::class) {
+tasks.register("agentJar", ShadowJar::class) {
     archiveVersion.set("")
     archiveClassifier.set("")
     mergeServiceFiles()
@@ -40,13 +40,14 @@ task("agentJar", ShadowJar::class) {
     }
 }
 
-tasks.build {
+tasks.assemble {
     dependsOn("agentJar")
 }
 
-
 tasks.test {
     useJUnitPlatform()
+
+    dependsOn("agentJar")
 }
 
 // Create a publication for the agent jar
@@ -58,7 +59,7 @@ publishing {
                 description = "A Java agent for instrumenting Java programs"
                 url = "github.com/mpi-sws-rse/jmc"
             }
-            groupId = "org.mpisws"
+            groupId = "org.mpisws.jmc"
             artifactId = "jmc-agent"
             version = "0.1.0"
             artifact(tasks["agentJar"])

@@ -53,6 +53,7 @@ public class JmcModelChecker {
         try {
             LOGGER.info("JMC checker started");
             while (true) {
+                boolean successfulIteration = true;
                 try {
                     LOGGER.debug("Running iteration {}", iteration);
                     JmcRuntime.initIteration(iteration, report);
@@ -76,6 +77,7 @@ public class JmcModelChecker {
                             iteration,
                             e.getMessage());
                 } catch (Exception e) {
+                    successfulIteration = false;
                     // Catchall for any other exceptions that may occur
                     report.setErrorIteration(iteration);
                     if (ExceptionUtil.isAssertionError(e)) {
@@ -87,10 +89,8 @@ public class JmcModelChecker {
                                 "Assertion error in iteration {}: {}", iteration, e.getMessage());
                         JmcRuntime.recordTrace();
                         throw HaltCheckerException.error(
-                                "Assertion error in iteration "
-                                        + iteration
-                                        + ": "
-                                        + e.getMessage());
+                                "Assertion error in iteration " + iteration + ": " + e.getMessage(),
+                                e);
                     } else {
                         throw e;
                     }
@@ -101,17 +101,17 @@ public class JmcModelChecker {
                         System.gc();
                     }
                     iteration++;
-                    if (numIterations != 0 && iteration >= numIterations) {
+                    if (numIterations != 0 && iteration >= numIterations && successfulIteration) {
                         throw HaltCheckerException.ok();
                     }
                     long curTime = System.currentTimeMillis();
-                    if (timeoutMarker != 0L && curTime > timeoutMarker) {
+                    if (timeoutMarker != 0L && curTime > timeoutMarker && successfulIteration) {
                         report.setErrorIteration(iteration);
                         String errorMessage =
                                 String.format("Halting execution: %d due to timeout", iteration);
                         report.setErrorMessage(errorMessage);
                         LOGGER.error(errorMessage);
-                        throw HaltCheckerException.error(errorMessage);
+                        throw HaltCheckerException.timeout();
                     }
                 }
             }
@@ -122,19 +122,28 @@ public class JmcModelChecker {
             } else if (e.isTimeout()) {
                 report.setErrorIteration(-1);
                 report.setErrorMessage(e.getMessage());
-                LOGGER.error("Model checker timed out: {}", e.getMessage());
-                throw new JmcCheckerTimeoutException(e.getMessage());
+                LOGGER.error("Model checker timeout out: {}", e.getMessage());
             } else {
                 report.setErrorIteration(-1);
                 report.setErrorMessage(String.format("Model checking failed: %s", e.getMessage()));
                 LOGGER.error("Model checking failed: {}", e.getMessage());
-                throw new JmcCheckerException(e.getMessage());
+                if (e.getCause() != null) {
+                    throw new JmcCheckerException(e.getMessage(), e.getCause());
+                } else {
+                    throw new JmcCheckerException(e.getMessage());
+                }
             }
         } catch (Exception e) {
             report.setErrorIteration(-1);
-            report.setErrorMessage(String.format("Model checking failed: %s", e.getMessage()));
-            LOGGER.error("Model checking failed: {}", e.getMessage());
-            throw new JmcCheckerException(e.getMessage(), e);
+            report.setErrorMessage(
+                    String.format(
+                            "Model checking failed with unexpected exception: %s", e.getMessage()));
+            LOGGER.error("Model checking failed with unexpected exception: {}", e.getMessage());
+            if (e.getCause() != null) {
+                throw new JmcCheckerException(e.getMessage(), e.getCause());
+            } else {
+                throw new JmcCheckerException(e.getMessage(), e);
+            }
         } finally {
             long endTime = System.nanoTime();
             JmcRuntime.tearDown();

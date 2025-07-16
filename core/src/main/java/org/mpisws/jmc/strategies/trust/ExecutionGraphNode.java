@@ -500,4 +500,18 @@ public class ExecutionGraphNode {
         }
         return true;
     }
+
+    /**
+     * Checks if this node has a predecessor with the given key and relation.
+     *
+     * @param key The key of the predecessor.
+     * @param relation The relation of the predecessor.
+     * @return True if this node has a predecessor with the given key and relation, false otherwise.
+     */
+    public boolean hasPredecessor(Event.Key key, Relation relation) {
+        if (!backEdges.containsKey(relation)) {
+            return false;
+        }
+        return backEdges.get(relation).contains(key);
+    }
 }

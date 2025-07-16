@@ -14,13 +14,10 @@ checkstyle {
     toolVersion = "10.19.0"
 }
 
-val agentDependencies by configurations.creating
 
 dependencies {
     implementation("org.apache.logging.log4j:log4j-api:2.24.3")
     implementation("org.apache.logging.log4j:log4j-core:2.24.3")
-    agentDependencies("org.mpisws:jmc:0.1.0")
-    agentDependencies("org.mpisws:jmc-agent:0.1.0")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(project(":core"))
@@ -28,10 +25,10 @@ dependencies {
 }
 
 tasks.register<Copy>("copyJar") {
-    dependsOn(":core:publishToMavenLocal")
-    dependsOn(":agent:publishToMavenLocal")
-    from(agentDependencies.filter { it.name.contains("jmc-0.1.0") })
+    dependsOn(":core:jar")
+    from(project(":core").projectDir.resolve("build/libs/core.jar").absolutePath)
     into("src/main/resources/lib")
+    rename("core.jar", "jmc-0.1.0.jar")
 }
 
 tasks.processResources {
@@ -40,10 +37,9 @@ tasks.processResources {
 
 tasks.test {
     useJUnitPlatform()
-    dependsOn(":agent:publishToMavenLocal")
+    dependsOn(":agent:agentJar")
 
-    systemProperty("net.bytebuddy.nexus.disabled", "true")
-    val agentJar = agentDependencies.find { it.name.contains("jmc-agent-0.1.0") }?.absolutePath
+    val agentJar = project(":agent").projectDir.resolve("build/libs").resolve("agent.jar").absolutePath
 
     val agentArg = "-javaagent:$agentJar=debug,instrumentingPackages=org.mpisws.jmc.test"
     jvmArgs(agentArg)

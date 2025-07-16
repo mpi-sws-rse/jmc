@@ -190,6 +190,8 @@ public class BackwardRevisitView {
         // Remove the nodes
         restrictedGraph.restrictBySet(removedNodes);
         restrictedGraph.recomputeVectorClocks();
+        restrictedGraph.checkDanglingEdges();
+        restrictedGraph.checkConsistency();
         return restrictedGraph;
     }
 
