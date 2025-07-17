@@ -1803,4 +1803,33 @@ public class ExecutionGraph {
 
         return true;
     }
+
+    public boolean isStartMaxWithStarter(Event e) {
+        if (e == null) {
+            throw HaltCheckerException.error(
+                    "The event parameter is null");
+        }
+
+        if (EventUtils.isThreadStart(e)) {
+            long startedBy = EventUtils.getStartedBy(e);
+            ExecutionGraphNode starterPoMaxNode = getPoMaxNode(startedBy);
+            List<Event.Key> succ = starterPoMaxNode.getSuccessors(Relation.ThreadStart);
+            // The following if checks if the PO-MAX event of the starter thread is still the cause event
+            return !succ.isEmpty();
+        } else {
+            throw HaltCheckerException.error(
+                    "The event parameter is not a start event");
+        }
+    }
+
+    public ExecutionGraphNode getPoMaxNode(long taskId) {
+        if (taskId < 0 || taskId >= taskEvents.size()) {
+            throw HaltCheckerException.error("Invalid task ID: " + taskId);
+        }
+        List<ExecutionGraphNode> taskEventList = taskEvents.get(Math.toIntExact(taskId));
+        if (taskEventList.isEmpty()) {
+            return null;
+        }
+        return taskEventList.get(taskEventList.size() - 1);
+    }
 }

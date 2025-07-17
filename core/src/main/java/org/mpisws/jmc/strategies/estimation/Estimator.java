@@ -63,7 +63,8 @@ public class Estimator {
         if (!EventUtils.isWrite(e1) || !EventUtils.isWrite(e2)) {
             if (EventUtils.isThreadStart(e1)) {
                 long startedBy = EventUtils.getStartedBy(e1);
-                return startedBy == e2.getTaskId();
+                // We need to check if the START event is PO-MAX regarding the PO-MAX of the starter thread
+                return startedBy == e2.getTaskId() || !executionGraph.isStartMaxWithStarter(e1);
             }
         } else { // One of the two events is a write event
             return e1.getLocation().equals(e2.getLocation());

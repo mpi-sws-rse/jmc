@@ -129,6 +129,10 @@ public class ExecutionGraphSimulator {
         return events;
     }
 
+    public boolean isStartMaxWithStarter(Event event) {
+        return executionGraph.isStartMaxWithStarter(event);
+    }
+
     public boolean isCoMax(Event event) {
         return executionGraph.isCoMax(event);
     }
