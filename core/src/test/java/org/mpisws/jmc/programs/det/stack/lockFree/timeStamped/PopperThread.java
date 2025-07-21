@@ -1,7 +1,7 @@
 package org.mpisws.jmc.programs.det.stack.lockFree.timeStamped;
 
 import org.mpisws.jmc.programs.det.stack.Stack;
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 public class PopperThread extends JmcThread {
 

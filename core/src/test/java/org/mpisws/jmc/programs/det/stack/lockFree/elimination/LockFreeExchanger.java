@@ -1,6 +1,6 @@
 package org.mpisws.jmc.programs.det.stack.lockFree.elimination;
 
-import org.mpisws.jmc.util.concurrent.JmcAtomicStampedReference;
+import org.mpisws.jmc.api.util.concurrent.JmcAtomicStampedReference;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;

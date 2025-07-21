@@ -1,7 +1,7 @@
 package org.mpisws.jmc.programs.twophasecommit;
 
 import org.mpisws.jmc.runtime.JmcRuntimeUtils;
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 import java.util.LinkedList;
 import java.util.List;

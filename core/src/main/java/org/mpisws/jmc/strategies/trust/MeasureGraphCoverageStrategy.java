@@ -8,9 +8,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.*;
+import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.strategies.SchedulingStrategy;
 import org.mpisws.jmc.util.StringUtil;
-import org.mpisws.jmc.util.files.FileUtil;
+import org.mpisws.jmc.util.FileUtil;
 
 import java.io.FileOutputStream;
 import java.nio.file.Paths;
@@ -19,6 +20,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * A scheduling strategy that measures the coverage of execution graphs during the model checking
+ * process.
+ *
+ * <p>This strategy records the coverage of execution graphs and stores them in a specified path. It
+ * can also measure the coverage per iteration or at a specified frequency.
+ */
 public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
     private static final Logger LOGGER = LogManager.getLogger(MeasureGraphCoverageStrategy.class);
@@ -100,7 +108,8 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void updateEvent(RuntimeEvent event) throws HaltTaskException, HaltExecutionException {
+    public void updateEvent(JmcRuntimeEvent event)
+            throws HaltTaskException, HaltExecutionException {
         this.schedulingStrategy.updateEvent(event);
         this.simulator.updateEvent(event);
     }
@@ -117,15 +126,17 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         CoverageGraph coverageGraph = simulator.getCoverageGraph();
         String json = executionGraph.toJsonStringIgnoreLocation();
         String coverage = coverageGraph.toString();
-        //System.out.println(coverage);
+        // System.out.println(coverage);
         try {
             String hash = StringUtil.sha256Hash(json);
             String hashCoverage = StringUtil.sha256Hash(coverage);
-            if(!coveredGraphs.contains(hashCoverage)) {
+            if (!coveredGraphs.contains(hashCoverage)) {
                 coveredGraphs.add(hashCoverage);
                 if (config.isDebugEnabled()) {
                     FileUtil.unsafeStoreToFile(
-                            Paths.get(config.getRecordPath(), coveredGraphs.size()  + ".txt").toString(), coverage);
+                            Paths.get(config.getRecordPath(), coveredGraphs.size() + ".txt")
+                                    .toString(),
+                            coverage);
                 }
             }
             if (visitedGraphs.containsKey(hash)) {
@@ -134,7 +145,9 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
                 visitedGraphs.put(hash, 1);
                 if (config.isDebugEnabled()) {
                     FileUtil.unsafeStoreToFile(
-                            Paths.get(config.getRecordPath(), visitedGraphs.size() + ".json").toString(), json);
+                            Paths.get(config.getRecordPath(), visitedGraphs.size() + ".json")
+                                    .toString(),
+                            json);
                 }
             }
             if (config.isRecordPerIteration()) {
@@ -156,7 +169,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
                 return;
             }
         }
-        Long timeDiff = System.currentTimeMillis() - timeStart;
+        long timeDiff = System.currentTimeMillis() - timeStart;
         Duration d = Duration.ofMillis(timeDiff);
         simulator.reset();
         schedulingStrategy.teardown();
@@ -164,19 +177,23 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             FileOutputStream fileOutputStream =
                     FileUtil.unsafeCreateFile(
                             Paths.get(config.getRecordPath(), "hash_coverage.txt").toString());
-            for (HashMap.Entry<String, Integer> entry : visitedGraphs.entrySet()) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-                try {
-                    fileOutputStream.write(sb.toString().getBytes());
-                } catch (Exception e) {
-                    LOGGER.error("Error while writing to file", e);
+            if (fileOutputStream != null) {
+                for (HashMap.Entry<String, Integer> entry : visitedGraphs.entrySet()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+                    try {
+                        fileOutputStream.write(sb.toString().getBytes());
+                    } catch (Exception e) {
+                        LOGGER.error("Error while writing to file", e);
+                    }
                 }
-            }
-            try {
-                fileOutputStream.close();
-            } catch (Exception e) {
-                LOGGER.error("Error while closing file output stream", e);
+                try {
+                    fileOutputStream.close();
+                } catch (Exception e) {
+                    LOGGER.error("Error while closing file output stream", e);
+                }
+            } else {
+                LOGGER.error("Failed to create file for hash coverage");
             }
         }
         Gson gson = new Gson();

@@ -9,7 +9,7 @@ public class AgentMainInstrumentor implements ClassFileTransformer {
 
     public AgentMainInstrumentor(AgentArgs agentArgs) {
         this.agentArgs = agentArgs;
-        this.matcher = new JmcMatcher(agentArgs.getInstrumentingPackages());
+        this.matcher = new JmcMatcher(agentArgs.getInstrumentingPackages(), agentArgs.getExcludedPackages());
     }
 
     @Override

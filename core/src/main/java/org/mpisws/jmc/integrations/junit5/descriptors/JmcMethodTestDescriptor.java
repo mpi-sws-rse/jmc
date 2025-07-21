@@ -5,25 +5,30 @@ import org.apache.logging.log4j.Logger;
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.ClassSource;
 import org.junit.platform.engine.support.descriptor.MethodSource;
-import org.mpisws.jmc.annotations.JmcCheck;
-import org.mpisws.jmc.annotations.JmcCheckConfiguration;
-import org.mpisws.jmc.annotations.JmcExpectExecutions;
-import org.mpisws.jmc.annotations.JmcTimeout;
+import org.mpisws.jmc.annotations.*;
 import org.mpisws.jmc.checker.JmcCheckerConfiguration;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.integrations.junit5.engine.JmcTestExecutor;
+import org.mpisws.jmc.util.ExceptionUtil;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 
+/**
+ * A JUnit 5 test descriptor for a JMC method test.
+ *
+ * <p>This descriptor represents a single test method annotated with JMC annotations, allowing for
+ * the execution of JMC checks as part of the test lifecycle.
+ */
 public class JmcMethodTestDescriptor extends AbstractTestDescriptor
         implements JmcExecutableTestDescriptor {
 
     private static final Logger LOGGER = LogManager.getLogger(JmcMethodTestDescriptor.class);
 
     private final Method testMethod;
+    private final boolean isReplayTest;
     private final JmcCheckConfiguration parentConfigAnnotation;
 
     public JmcMethodTestDescriptor(Method testMethod, JmcClassTestDescriptor parent) {
@@ -32,6 +37,7 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 testMethod.getName(),
                 MethodSource.from(testMethod));
         this.testMethod = testMethod;
+        this.isReplayTest = testMethod.getAnnotation(JmcReplay.class) != null;
         this.parentConfigAnnotation = parent.getConfigAnnotation();
     }
 
@@ -53,6 +59,18 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 .strategyType(annotation.strategy());
     }
 
+    /**
+     * Executes the JMC test method.
+     *
+     * <p>This method creates an instance of the test class, configures the JMC checker based on
+     * annotations, and executes the test method using the JMC Model Checker.
+     *
+     * <p>Execution can be either running the model checker or replaying a previous execution and
+     * depends on the annotation provided for the test method. If the method is annotated with
+     * {@link JmcReplay}, it will replay the test method instead of executing it.
+     *
+     * @throws JmcCheckerException If an error occurs during execution or configuration.
+     */
     public void execute() throws JmcCheckerException {
         LOGGER.debug("JmcMethodTestDescriptor execute() called");
         Object methodInstance;
@@ -98,24 +116,40 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 JmcDescriptorUtil.checkStrategyConfig(
                         configBuilder, testMethod.getDeclaringClass(), testMethod);
 
+        boolean expectFailure = testMethod.getAnnotation(JmcExpectAssertionFailure.class) != null;
+        boolean failed = false;
         try {
             JmcCheckerConfiguration config = configBuilder.build();
-            JmcModelCheckerReport report =
-                    JmcTestExecutor.execute(testMethod, methodInstance, config);
-            if (testMethod.getAnnotation(JmcExpectExecutions.class) != null) {
-                JmcExpectExecutions expectExecutions =
-                        testMethod.getAnnotation(JmcExpectExecutions.class);
-                if (report.getTotalIterations() != expectExecutions.value()) {
-                    throw new JmcCheckerException(
-                            "Expected "
-                                    + expectExecutions.value()
-                                    + " executions, but got "
-                                    + report.getTotalIterations());
+            if (isReplayTest) {
+                JmcTestExecutor.executeReplay(testMethod, methodInstance, config);
+            } else {
+                JmcModelCheckerReport report =
+                        JmcTestExecutor.execute(testMethod, methodInstance, config);
+                if (testMethod.getAnnotation(JmcExpectExecutions.class) != null) {
+                    JmcExpectExecutions expectExecutions =
+                            testMethod.getAnnotation(JmcExpectExecutions.class);
+                    if (report.getTotalIterations() != expectExecutions.value()) {
+                        throw new JmcCheckerException(
+                                "Expected "
+                                        + expectExecutions.value()
+                                        + " executions, but got "
+                                        + report.getTotalIterations());
+                    }
                 }
             }
         } catch (JmcCheckerException e) {
-            LOGGER.error("Error executing test method: {}", testMethod.getName(), e);
-            throw e;
+            if (expectFailure && ExceptionUtil.isAssertionError(e.getCause())) {
+                failed = true;
+            } else {
+                LOGGER.error("Error executing test method: {}", testMethod.getName(), e);
+                throw e;
+            }
+        }
+        if (expectFailure && !failed) {
+            throw new JmcCheckerException(
+                    "Test method "
+                            + testMethod.getName()
+                            + " expected to fail but passed successfully.");
         }
     }
 }

@@ -52,7 +52,7 @@ public class JmcFutureVisitor {
                 // Replace the call to Executors with a call to JmcExecutors
                 super.visitMethodInsn(
                         opcode,
-                        "org/mpisws/jmc/util/concurrent/JmcExecutors",
+                        "org/mpisws/jmc/api/util/concurrent/JmcExecutors",
                         name,
                         descriptor,
                         isInterface);
@@ -95,7 +95,7 @@ public class JmcFutureVisitor {
                 // Replace the call to FutureTask with a call to JmcFuture
                 super.visitMethodInsn(
                         opcode,
-                        "org/mpisws/jmc/util/concurrent/JmcFuture",
+                        "org/mpisws/jmc/api/util/concurrent/JmcFuture",
                         name,
                         descriptor,
                         isInterface);
@@ -112,7 +112,7 @@ public class JmcFutureVisitor {
         }
 
         private static final String COMPLETABLE_FUTURE_LOCK_DESC = "Ljava/util/concurrent/CompletableFuture;";
-        private static final String JMC_COMPLETABLE_FUTURE_LOCK_DESC = "Lorg/mpisws/jmc/util/concurrent/JmcCompletableFuture;";
+        private static final String JMC_COMPLETABLE_FUTURE_LOCK_DESC = "Lorg/mpisws/jmc/api/util/concurrent/JmcCompletableFuture;";
 
         private static String replaceDescriptor(String desc) {
             if (desc.contains(COMPLETABLE_FUTURE_LOCK_DESC)) {
@@ -125,7 +125,7 @@ public class JmcFutureVisitor {
         public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
             // Replace field descriptor if it's ReentrantLock
             if (descriptor.equals("Ljava/util/concurrent/CompletableFuture;")) {
-                descriptor = "Lorg/mpisws/jmc/util/concurrent/CompletableFuture;";
+                descriptor = "Lorg/mpisws/jmc/api/util/concurrent/CompletableFuture;";
             }
             return super.visitField(access, name, descriptor, signature, value);
         }
@@ -146,7 +146,7 @@ public class JmcFutureVisitor {
             public void visitTypeInsn(int opcode, String type) {
                 // Replace NEW CompletableFuture with JmcCompletableFuture
                 if (opcode == Opcodes.NEW && type.equals("java/util/concurrent/CompletableFuture")) {
-                    super.visitTypeInsn(opcode, "org/mpisws/jmc/util/concurrent/JmcCompletableFuture");
+                    super.visitTypeInsn(opcode, "org/mpisws/jmc/api/util/concurrent/JmcCompletableFuture");
                 } else {
                     super.visitTypeInsn(opcode, type);
                 }
@@ -158,7 +158,7 @@ public class JmcFutureVisitor {
                 descriptor = replaceDescriptor(descriptor);
                 if (owner.equals("java/util/concurrent/CompletableFuture")) {
                     super.visitMethodInsn(opcode,
-                            "org/mpisws/jmc/util/concurrent/JmcCompletableFuture",
+                            "org/mpisws/jmc/api/util/concurrent/JmcCompletableFuture",
                             name,
                             descriptor,
                             isInterface);
@@ -171,7 +171,7 @@ public class JmcFutureVisitor {
             public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
                 // Replace field references
                 if (descriptor.equals("Ljava/util/concurrent/CompletableFuture;")) {
-                    super.visitFieldInsn(opcode, owner, name, "Lorg/mpisws/jmc/util/concurrent/JmcCompletableFuture;");
+                    super.visitFieldInsn(opcode, owner, name, "Lorg/mpisws/jmc/api/util/concurrent/JmcCompletableFuture;");
                 } else {
                     super.visitFieldInsn(opcode, owner, name, descriptor);
                 }

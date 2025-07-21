@@ -23,6 +23,12 @@ import java.net.URI;
 import java.util.List;
 import java.util.function.Predicate;
 
+/**
+ * A custom JUnit 5 test engine for running JMC tests.
+ *
+ * <p>This engine discovers and executes tests annotated with {@link JmcCheck} or {@link
+ * JmcCheckConfiguration} in the classpath, packages, or specific classes.
+ */
 public class JmcTestEngine implements TestEngine {
 
     private static final Logger LOGGER = LogManager.getLogger(JmcTestEngine.class);
@@ -37,6 +43,18 @@ public class JmcTestEngine implements TestEngine {
         return "jmc-test-engine";
     }
 
+    /**
+     * Discovers tests based on the provided discovery request and unique ID.
+     *
+     * <p>This method scans the classpath, packages, and specific classes for JMC tests annotated
+     * with {@link JmcCheck} or {@link JmcCheckConfiguration}. It creates a test descriptor for the
+     * JMC test engine and adds discovered tests as children of the engine descriptor.
+     *
+     * @param request The discovery request containing selectors for classpath roots, packages, and
+     *     classes.
+     * @param uniqueId The unique ID for the test engine descriptor.
+     * @return A {@link TestDescriptor} representing the discovered tests in the JMC test engine.
+     */
     @Override
     public TestDescriptor discover(EngineDiscoveryRequest request, UniqueId uniqueId) {
         LOGGER.debug("Discovering tests");
@@ -149,6 +167,15 @@ public class JmcTestEngine implements TestEngine {
         }
     }
 
+    /**
+     * Executes the discovered tests in the JMC test engine.
+     *
+     * <p>This method starts the execution of the root test descriptor and recursively executes all
+     * child descriptors, handling any exceptions that may occur during execution.
+     *
+     * @param request The execution request containing the root test descriptor and engine execution
+     *     listener.
+     */
     @Override
     public void execute(ExecutionRequest request) {
         TestDescriptor root = request.getRootTestDescriptor();

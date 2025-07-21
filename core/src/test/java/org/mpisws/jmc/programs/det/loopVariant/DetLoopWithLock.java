@@ -1,6 +1,6 @@
 package org.mpisws.jmc.programs.det.loopVariant;
 
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 import java.util.ArrayList;
 

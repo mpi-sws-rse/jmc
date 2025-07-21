@@ -1,7 +1,7 @@
 package org.mpisws.jmc.programs.correct.counter;
 
-import org.mpisws.jmc.util.concurrent.JmcThread;
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 public class CorrectCounter extends JmcThread {
     JmcReentrantLock lock;

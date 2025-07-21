@@ -1,6 +1,6 @@
 package org.mpisws.jmc.programs.det.stack.lockFree.timeStamped;
 
-import org.mpisws.jmc.util.concurrent.JmcAtomicReference;
+import org.mpisws.jmc.api.util.concurrent.JmcAtomicReference;
 
 public class SPPool<V> {
     public final long id;

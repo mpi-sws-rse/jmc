@@ -2,7 +2,7 @@ package org.mpisws.jmc.programs.det.stack.lockFree;
 
 import org.mpisws.jmc.programs.det.stack.Backoff;
 import org.mpisws.jmc.programs.det.stack.Stack;
-import org.mpisws.jmc.util.concurrent.JmcAtomicReference;
+import org.mpisws.jmc.api.util.concurrent.JmcAtomicReference;
 
 public class LockFreeStack<V> implements Stack<V> {
 

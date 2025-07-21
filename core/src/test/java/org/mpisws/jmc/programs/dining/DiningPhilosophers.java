@@ -1,6 +1,6 @@
 package org.mpisws.jmc.programs.dining;
 
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 import java.util.ArrayList;
 import java.util.List;

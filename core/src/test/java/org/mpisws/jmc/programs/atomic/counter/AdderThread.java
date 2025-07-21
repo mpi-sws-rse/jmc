@@ -2,8 +2,8 @@ package org.mpisws.jmc.programs.atomic.counter;
 
 import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltTaskException;
-import org.mpisws.jmc.util.concurrent.JmcAtomicInteger;
-import org.mpisws.jmc.util.concurrent.JmcThread;
+import org.mpisws.jmc.api.util.concurrent.JmcAtomicInteger;
+import org.mpisws.jmc.api.util.concurrent.JmcThread;
 
 public class AdderThread extends JmcThread {
     private final JmcAtomicInteger counter;

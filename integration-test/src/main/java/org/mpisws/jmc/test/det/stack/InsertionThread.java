@@ -7,12 +7,14 @@ public class InsertionThread extends Thread {
     public int index = 0;
 
     public InsertionThread(Stack<Integer> stack, int item) {
+        super();
         this.stack = stack;
         this.item = item;
         this.index = 0;
     }
 
     public InsertionThread() {
+        super();
     }
 
     @Override

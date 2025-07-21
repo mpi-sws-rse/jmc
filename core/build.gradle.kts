@@ -6,9 +6,6 @@ plugins {
     id("java-library")
 }
 
-group = "org.mpisws.jmc"
-version = "0.1.0"
-
 repositories {
     mavenCentral()
     mavenLocal()
@@ -20,6 +17,7 @@ checkstyle {
 
 java {
     withSourcesJar()
+    withJavadocJar()
 }
 
 dependencies {
@@ -49,7 +47,7 @@ publishing {
                 description = "A generic model checker for Java programs"
                 url = "github.com/mpi-sws-rse/jmc"
             }
-            groupId = "org.mpisws"
+            groupId = "org.mpisws.jmc"
             artifactId = "jmc"
             version = "0.1.0"
             from(components["java"])

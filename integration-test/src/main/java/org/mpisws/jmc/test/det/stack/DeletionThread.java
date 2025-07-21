@@ -13,10 +13,12 @@ public class DeletionThread extends Thread {
     }
 
     public DeletionThread(Stack<Integer> stack) {
+        super();
         this.stack = stack;
     }
 
     public DeletionThread() {
+        super();
     }
 
     @Override

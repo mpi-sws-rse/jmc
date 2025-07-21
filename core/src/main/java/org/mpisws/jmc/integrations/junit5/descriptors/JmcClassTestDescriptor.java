@@ -10,6 +10,7 @@ import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 
 import static org.junit.platform.commons.util.ReflectionUtils.HierarchyTraversalMode.TOP_DOWN;
 
+/** A JUnit 5 test descriptor for a JMC class test. */
 public class JmcClassTestDescriptor extends AbstractTestDescriptor {
     private JmcCheckConfiguration config;
     private final Class<?> testClass;

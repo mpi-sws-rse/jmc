@@ -1,6 +1,6 @@
 package org.mpisws.jmc.programs.complex.counter;
 
-import org.mpisws.jmc.util.concurrent.JmcReentrantLock;
+import org.mpisws.jmc.api.util.concurrent.JmcReentrantLock;
 
 public class Dummy {
 

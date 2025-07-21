@@ -1,6 +1,6 @@
 package org.mpisws.jmc.strategies.trust;
 
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +26,10 @@ public class ExecutionGraphSimulator {
     }
 
     // Do not use this method outside the scop of `MeasureGraphCoverageStrategy` class
-    public void updateEvent(RuntimeEvent event) {
+    public void updateEvent(JmcRuntimeEvent event) {
         List<Event> trustEvents = EventFactory.fromRuntimeEvent(event);
         // Update the execution graph based on the event
-        if (event.getType() == RuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
+        if (event.getType() == JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
             return;
         }
         for (Event trustEvent : trustEvents) {

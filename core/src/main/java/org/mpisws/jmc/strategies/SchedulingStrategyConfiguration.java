@@ -2,14 +2,22 @@ package org.mpisws.jmc.strategies;
 
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
+/**
+ * Configuration class for scheduling strategies.
+ *
+ * <p>This class encapsulates the configuration parameters for scheduling strategies, including
+ * seed, trust scheduling policy, report path, and debug mode.
+ *
+ * <p>It provides a builder pattern for constructing instances of the configuration, allowing for
+ * flexible and readable configuration of scheduling strategies.
+ */
 public class SchedulingStrategyConfiguration {
     private Long seed;
     private TrustStrategy.SchedulingPolicy trustSchedulingPolicy;
     private String reportPath;
     private boolean debug;
 
-    private SchedulingStrategyConfiguration() {
-    }
+    private SchedulingStrategyConfiguration() {}
 
     public Long getSeed() {
         return seed;

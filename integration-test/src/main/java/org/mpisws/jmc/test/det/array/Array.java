@@ -5,7 +5,7 @@ public class Array {
     public int[] a;
     public int x;
 
-    Array(int SIZE) {
+    public Array(int SIZE) {
         this.a = new int[SIZE];
         // Initialize the array with 0s
         for (int i = 0; i < SIZE; i++) {

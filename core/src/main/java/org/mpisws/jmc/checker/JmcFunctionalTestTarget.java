@@ -1,10 +1,16 @@
 package org.mpisws.jmc.checker;
 
+/**
+ * A functional test target for JMC that allows invoking a target method.
+ *
+ * <p>This class implements the {@link JmcTestTarget} interface and provides a way to invoke a
+ * target method with a specified name.
+ */
 public class JmcFunctionalTestTarget implements JmcTestTarget {
 
     private final String name;
 
-    private Target target;
+    private final Target target;
 
     public JmcFunctionalTestTarget(String name, Target target) {
         this.name = name;

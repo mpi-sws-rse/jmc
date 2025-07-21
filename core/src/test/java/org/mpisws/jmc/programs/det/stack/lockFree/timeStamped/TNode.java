@@ -1,6 +1,6 @@
 package org.mpisws.jmc.programs.det.stack.lockFree.timeStamped;
 
-import org.mpisws.jmc.util.concurrent.JmcAtomicBoolean;
+import org.mpisws.jmc.api.util.concurrent.JmcAtomicBoolean;
 
 public class TNode<T> {
 
