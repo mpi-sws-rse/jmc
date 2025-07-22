@@ -4,12 +4,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
-import org.mpisws.jmc.runtime.RuntimeEvent;
+import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.trust.Event;
 import org.mpisws.jmc.strategies.trust.EventFactory;
 import org.mpisws.jmc.strategies.trust.LocationStore;
-import org.mpisws.jmc.util.files.FileUtil;
+import org.mpisws.jmc.util.FileUtil;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -29,7 +29,8 @@ public class EstimationStrategy extends RandomSchedulingStrategy {
      * @param seed the seed for the random number generator
      */
     public EstimationStrategy(Long seed) {
-        super(seed);
+        // TODO : Fix the hard coded path
+        super(seed, "build/test-results/jmc-report");
         est = new Estimator();
     }
 
@@ -39,10 +40,10 @@ public class EstimationStrategy extends RandomSchedulingStrategy {
      * @throws HaltExecutionException
      */
     @Override
-    public void updateEvent(RuntimeEvent event) throws HaltTaskException, HaltExecutionException {
+    public void updateEvent(JmcRuntimeEvent event) throws HaltTaskException, HaltExecutionException {
         super.updateEvent(event);
         List<Event> events = EventFactory.fromRuntimeEvent(event);
-        if (event.getType() == RuntimeEvent.Type.JOIN_REQUEST_EVENT) {
+        if (event.getType() == JmcRuntimeEvent.Type.JOIN_REQUEST_EVENT) {
             Event e =
                     new Event(
                             event.getTaskId() - 1,

@@ -68,9 +68,9 @@ public class ReadWriteNTest {
 
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "estimation", debug = false)
     public void runEstimationReadNTest() {
-        readNProgram(5);
+        readNProgram(4);
     }
 
     @JmcCheck
