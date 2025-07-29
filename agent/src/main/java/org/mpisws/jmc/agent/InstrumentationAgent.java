@@ -31,19 +31,6 @@ public class InstrumentationAgent {
     }
 
     /**
-     * The agentmain method is called when the agent is attached to the target application. It is
-     * used to set up the instrumentation agent.
-     *
-     * @param agentArgs the agent arguments
-     * @param inst the instrumentation object
-     */
-    public static void agentmain(String agentArgs, Instrumentation inst) {
-        AgentArgs args = new AgentArgs(agentArgs);
-        AgentMainInstrumentor agentMainInstrumentor = new AgentMainInstrumentor(args);
-        inst.addTransformer(agentMainInstrumentor);
-    }
-
-    /**
      * The premain method is called before the application's main method is called. It is used to
      * set up the instrumentation agent.
      *

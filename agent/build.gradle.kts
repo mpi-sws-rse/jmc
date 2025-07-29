@@ -5,6 +5,8 @@ plugins {
     id("checkstyle")
     id("maven-publish")
     id("com.gradleup.shadow") version "9.0.0-beta9"
+    id("java-library")
+    signing
 }
 
 repositories {
@@ -14,6 +16,17 @@ repositories {
 
 checkstyle {
     toolVersion = "10.19.0"
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType<Javadoc> {
+    (options as StandardJavadocDocletOptions).apply {
+        addStringOption("doctitle", "JMC Model Checker Agent API")
+    }
 }
 
 dependencies {
@@ -33,11 +46,26 @@ tasks.register("agentJar", ShadowJar::class) {
     from(sourceSets["main"].output)
 
     manifest {
-        attributes["Agent-Class"] = "org.mpisws.jmc.agent.InstrumentationAgent"
         attributes["Premain-Class"] = "org.mpisws.jmc.agent.InstrumentationAgent"
         attributes["Can-Redefine-Classes"] = "true"
         attributes["Can-Retransform-Classes"] = "true"
     }
+}
+
+tasks.withType<Javadoc> {
+    (options as StandardJavadocDocletOptions).apply {
+        addStringOption("doctitle", "JMC Model Checker Agent API")
+    }
+}
+
+tasks.register<Jar>("agentJavadocJar") {
+    archiveClassifier.set("javadoc")
+    from(tasks.named("javadoc"))
+}
+
+tasks.register<Jar>("agentSourcesJar") {
+    archiveClassifier.set("sources")
+    from(sourceSets["main"].allSource)
 }
 
 tasks.assemble {
@@ -58,14 +86,39 @@ publishing {
                 name = "JMC Agent"
                 description = "A Java agent for instrumenting Java programs"
                 url = "github.com/mpi-sws-rse/jmc"
+                licenses {
+                    license {
+                        name.set("Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("mpi-sws-rse")
+                        name.set("MPI-SWS RSE Team")
+                        email.set("rupak@mpi-sws.org")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:https://github.com/mpi-sws-rse/jmc.git")
+                    developerConnection.set("scm:git:ssh://github.com/mpi-sws-rse/jmc.git")
+                    url.set("https://github.com/mpi-sws-rse/jmc")
+                }
             }
-            groupId = "org.mpisws.jmc"
             artifactId = "jmc-agent"
-            version = "0.1.0"
+            artifact(tasks["agentSourcesJar"])
+            artifact(tasks["agentJavadocJar"])
             artifact(tasks["agentJar"])
         }
     }
     repositories {
         mavenLocal()
+        maven {
+            setUrl(layout.buildDirectory.dir("staging-deploy"))
+        }
     }
+}
+
+signing {
+    sign(publishing.publications["maven"])
 }

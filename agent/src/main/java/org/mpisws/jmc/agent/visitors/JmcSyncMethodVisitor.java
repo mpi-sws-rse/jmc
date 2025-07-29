@@ -10,6 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * JmcSyncMethodVisitor is a ClassVisitor that instruments synchronized methods and blocks in a
+ * class. It replaces synchronized methods with non-synchronized versions and adds locking logic
+ * around method calls to ensure thread safety.
+ */
 public class JmcSyncMethodVisitor extends ClassVisitor {
 
     private String className;
@@ -24,13 +29,20 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
     }
 
     @Override
-    public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+    public void visit(
+            int version,
+            int access,
+            String name,
+            String signature,
+            String superName,
+            String[] interfaces) {
         this.className = name;
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
     @Override
-    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+    public MethodVisitor visitMethod(
+            int access, String name, String desc, String signature, String[] exceptions) {
         if (jmcSyncScanData.hasSyncMethods() && Objects.equals(name, "<init>")) {
             MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
             return new JmcSyncMethodConstMethodVisitor(mv, true, "");
@@ -43,10 +55,16 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
 
         MethodVisitor mv;
         if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
-            VisitorHelper.MethodInfo methodInfo = new VisitorHelper.MethodInfo(access, name, desc, signature, exceptions);
+            VisitorHelper.MethodInfo methodInfo =
+                    new VisitorHelper.MethodInfo(access, name, desc, signature, exceptions);
             syncMethods.add(methodInfo);
-            mv = super.visitMethod(
-                    access & ~Opcodes.ACC_SYNCHRONIZED, methodInfo.getUnsyncName(), desc, signature, exceptions);
+            mv =
+                    super.visitMethod(
+                            access & ~Opcodes.ACC_SYNCHRONIZED,
+                            methodInfo.getUnsyncName(),
+                            desc,
+                            signature,
+                            exceptions);
         } else {
             mv = super.visitMethod(access, name, desc, signature, exceptions);
         }
@@ -67,12 +85,13 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
     }
 
     private void addSyncMethod(VisitorHelper.MethodInfo methodInfo) {
-        MethodVisitor newMv = cv.visitMethod(
-                methodInfo.getNonSyncAccess(),
-                methodInfo.name,
-                methodInfo.descriptor,
-                methodInfo.signature,
-                methodInfo.exceptions);
+        MethodVisitor newMv =
+                cv.visitMethod(
+                        methodInfo.getNonSyncAccess(),
+                        methodInfo.name,
+                        methodInfo.descriptor,
+                        methodInfo.signature,
+                        methodInfo.exceptions);
         newMv.visitCode();
 
         Label l0 = new Label();
@@ -89,7 +108,12 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         // lock
         newMv.visitLabel(l0);
         newMv.visitIntInsn(Opcodes.ALOAD, 0);
-        newMv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/JmcRuntimeUtils", "syncMethodLock", "(Ljava/lang/Object;)V", false);
+        newMv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "syncMethodLock",
+                "(Ljava/lang/Object;)V",
+                false);
 
         // Invoke the actual method
         if (methodInfo.isStatic()) {
@@ -98,8 +122,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                     className,
                     methodInfo.getUnsyncName(),
                     methodInfo.descriptor,
-                    false
-            );
+                    false);
         } else {
             newMv.visitVarInsn(Opcodes.ALOAD, 0);
             newMv.visitMethodInsn(
@@ -107,25 +130,34 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                     className,
                     methodInfo.getUnsyncName(),
                     methodInfo.descriptor,
-                    false
-            );
+                    false);
         }
         newMv.visitLabel(l1);
 
         // No error unlock
         newMv.visitIntInsn(Opcodes.ALOAD, 0);
-        newMv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/JmcRuntimeUtils", "syncMethodUnLock", "(Ljava/lang/Object;)V", false);
+        newMv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "syncMethodUnLock",
+                "(Ljava/lang/Object;)V",
+                false);
         newMv.visitLabel(l3);
         newMv.visitJumpInsn(Opcodes.GOTO, l4);
 
         // Error occurred. Unlock and throw exception.
         newMv.visitLabel(l2);
         // Visit frame for throwable and store the exception
-        newMv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[]{"java/lang/Throwable"});
+        newMv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] {"java/lang/Throwable"});
         newMv.visitIntInsn(Opcodes.ASTORE, 1);
         // Unlock
         newMv.visitIntInsn(Opcodes.ALOAD, 0);
-        newMv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/JmcRuntimeUtils", "syncMethodUnLock", "(Ljava/lang/Object;)V", false);
+        newMv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "syncMethodUnLock",
+                "(Ljava/lang/Object;)V",
+                false);
         newMv.visitLabel(l5);
         newMv.visitIntInsn(Opcodes.ALOAD, 1);
         newMv.visitInsn(Opcodes.ATHROW);
@@ -148,7 +180,8 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         private final boolean useInstance;
         private final String className;
 
-        public JmcSyncMethodConstMethodVisitor(MethodVisitor mv, boolean useInstance, String className) {
+        public JmcSyncMethodConstMethodVisitor(
+                MethodVisitor mv, boolean useInstance, String className) {
             super(Opcodes.ASM5, mv);
             this.useInstance = useInstance;
             this.className = className;
@@ -159,10 +192,20 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
             if (opcode == Opcodes.RETURN) {
                 if (useInstance) {
                     mv.visitIntInsn(Opcodes.ALOAD, 0);
-                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/JmcRuntimeUtils", "registerSyncLock", "(Ljava/lang/Object;)V", false);
+                    mv.visitMethodInsn(
+                            Opcodes.INVOKESTATIC,
+                            "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                            "registerSyncLock",
+                            "(Ljava/lang/Object;)V",
+                            false);
                 } else {
                     mv.visitLdcInsn(className);
-                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/mpisws/jmc/runtime/JmcRuntimeUtils", "registerSyncLock", "(Ljava/lang/String;)V", false);
+                    mv.visitMethodInsn(
+                            Opcodes.INVOKESTATIC,
+                            "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                            "registerSyncLock",
+                            "(Ljava/lang/String;)V",
+                            false);
                 }
             }
             super.visitInsn(opcode);
@@ -184,8 +227,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                         "org/mpisws/jmc/runtime/JmcRuntimeUtils",
                         opcode == Opcodes.MONITORENTER ? "syncBlockLock" : "syncBlockUnLock",
                         "(Ljava/lang/Object;)V",
-                        false
-                );
+                        false);
             } else {
                 super.visitInsn(opcode);
             }

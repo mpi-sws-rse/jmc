@@ -10,9 +10,6 @@ import java.util.Objects;
 /**
  * Represents a JMC read-write visitor. Adds instrumentation to change field accesses to
  * JmcReadWrite calls.
- *
- * <p>TODO: Does not work, fix this. Calls to readEvent and writeEvent passes the incorrect instance
- * value.
  */
 public class JmcReadWriteVisitor {
 

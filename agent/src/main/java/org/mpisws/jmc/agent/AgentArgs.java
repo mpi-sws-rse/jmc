@@ -48,23 +48,49 @@ public class AgentArgs {
         }
     }
 
+    /**
+     * Checks if debug mode is enabled.
+     *
+     * @return true if debug mode is enabled, false otherwise
+     */
     public boolean isDebug() {
         return debug;
     }
 
+    /**
+     * Gets the path where debug information will be saved.
+     *
+     * @return the debug save path
+     */
     public String getDebugSavePath() {
         return debugSavePath;
     }
 
+    /**
+     * Gets the list of packages to instrument.
+     *
+     * @return the list of instrumenting packages
+     */
     public List<String> getInstrumentingPackages() {
         return instrumentingPackages;
     }
 
+    /**
+     * Gets the list of packages to exclude from instrumentation.
+     *
+     * @return the list of excluded packages
+     */
     public List<String> getExcludedPackages() {
         return excludedPackages;
     }
 
+    /**
+     * Gets the path to the JMC runtime jar.
+     *
+     * @return the path to the JMC runtime jar
+     */
     public String getJmcRuntimeJarPath() {
+        // TODO: fix this. Currently unused
         return jmcRuntimeJarPath;
     }
 }

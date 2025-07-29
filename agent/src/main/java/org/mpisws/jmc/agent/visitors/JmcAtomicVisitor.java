@@ -5,6 +5,11 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+/**
+ * This class is an ASM ClassVisitor that replaces standard Java Atomic classes with JMC Atomic
+ * classes. It modifies field descriptors, method descriptors, and type instructions to ensure that
+ * the JMC versions are used instead of the standard Java versions.
+ */
 public class JmcAtomicVisitor extends ClassVisitor {
 
     public JmcAtomicVisitor(ClassVisitor cv) {

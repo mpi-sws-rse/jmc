@@ -12,6 +12,12 @@ public class JmcMatcher {
     private final List<String> matchingPackages;
     private final List<String> excludedPackages;
 
+    /**
+     * Constructs a new JmcMatcher with the specified matching and excluded packages.
+     *
+     * @param matchingPackages the list of packages to match
+     * @param excludedPackages the list of packages to exclude
+     */
     public JmcMatcher(List<String> matchingPackages, List<String> excludedPackages) {
         this.matchingPackages = matchingPackages;
         this.excludedPackages = excludedPackages;

@@ -1,9 +1,11 @@
+import org.jetbrains.kotlin.utils.alwaysTrue
+
 plugins {
-    kotlin("jvm") version "1.9.22"
     id("java")
     id("checkstyle")
     id("maven-publish")
     id("java-library")
+    signing
 }
 
 repositories {
@@ -35,6 +37,12 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.22")
 }
 
+tasks.withType<Javadoc> {
+    (options as StandardJavadocDocletOptions).apply {
+        addStringOption("doctitle", "JMC Model Checker API")
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
 }
@@ -45,16 +53,39 @@ publishing {
             pom {
                 name = "JMC Model Checker"
                 description = "A generic model checker for Java programs"
-                url = "github.com/mpi-sws-rse/jmc"
+                url = "jmc.mpi-sws.org"
+                licenses {
+                    license {
+                        name.set("Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("mpi-sws-rse")
+                        name.set("MPI-SWS RSE Team")
+                        email.set("rupak@mpi-sws.org")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:https://github.com/mpi-sws-rse/jmc.git")
+                    developerConnection.set("scm:git:ssh://github.com/mpi-sws-rse/jmc.git")
+                    url.set("https://github.com/mpi-sws-rse/jmc")
+                }
             }
-            groupId = "org.mpisws.jmc"
             artifactId = "jmc"
-            version = "0.1.0"
             from(components["java"])
         }
     }
 
     repositories {
         mavenLocal()
+        maven {
+            setUrl(layout.buildDirectory.dir("staging-deploy"))
+        }
     }
+}
+
+signing {
+    sign(publishing.publications["maven"])
 }

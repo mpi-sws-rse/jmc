@@ -3,14 +3,14 @@ package org.mpisws.jmc.test.programs;
 import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.annotations.JmcExpectExecutions;
-import org.mpisws.jmc.annotations.strategies.JmcMeasureGraphCoverage;
 import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
-import org.mpisws.jmc.strategies.trust.TrustStrategy;
 import org.mpisws.jmc.test.ParametricCounter;
 import org.mpisws.jmc.test.det.counter.CCounter;
 import org.mpisws.jmc.test.det.counter.DecThread;
 import org.mpisws.jmc.test.det.counter.IncThread;
 import org.mpisws.jmc.test.det.counter.FCounter;
+
+import java.time.temporal.ChronoUnit;
 
 public class CounterTest {
 

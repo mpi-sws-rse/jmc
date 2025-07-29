@@ -87,6 +87,11 @@ public class VisitorHelper {
         }
     }
 
+    /**
+     * Inserts a yield call to the JmcRuntime.
+     *
+     * @param mv The MethodVisitor to which the yield call will be added.
+     */
     public static void insertYield(MethodVisitor mv) {
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
@@ -168,12 +173,24 @@ public class VisitorHelper {
         }
     }
 
+    /**
+     * Checks if the given opcode is an instantiation opcode.
+     *
+     * @param opcode The opcode to check.
+     * @return true if the opcode is an instantiation opcode, false otherwise.
+     */
     public static boolean isInstantiation(int opcode) {
         return opcode == Opcodes.NEW
                 || opcode == Opcodes.ANEWARRAY
                 || opcode == Opcodes.MULTIANEWARRAY;
     }
 
+    /**
+     * Adds a return instruction to the method visitor based on the method's return type.
+     *
+     * @param mv The MethodVisitor to which the return instruction will be added.
+     * @param descriptor The method descriptor, which contains the return type.
+     */
     public static void addReturnInst(MethodVisitor mv, String descriptor) {
         // Find the return type of the method and add the corresponding return instruction
         String returnType = descriptor.substring(descriptor.lastIndexOf(')') + 1);
@@ -206,29 +223,19 @@ public class VisitorHelper {
     /** The MethodInfo class is used to store information about a method. */
     public static class MethodInfo {
 
-        /**
-         * @property {@link #access} is the access flags of the method.
-         */
+        /** Access flags of the method. */
         public int access;
 
-        /**
-         * @property {@link #name} is the name of the method.
-         */
+        /** Name of the method. */
         public String name;
 
-        /**
-         * @property {@link #descriptor} is the descriptor of the method.
-         */
+        /** Descriptor of the method. */
         public String descriptor;
 
-        /**
-         * @property {@link #signature} is the signature of the method.
-         */
+        /** Signature of the method. */
         public String signature;
 
-        /**
-         * @property {@link #exceptions} is the exceptions of the method.
-         */
+        /** Exceptions of the method. */
         public String[] exceptions;
 
         public MethodInfo(
@@ -240,6 +247,7 @@ public class VisitorHelper {
             this.exceptions = exceptions;
         }
 
+        /** Returns true if the method is synchronized. */
         public boolean isStatic() {
             return (access & Opcodes.ACC_STATIC) != 0;
         }
@@ -254,6 +262,7 @@ public class VisitorHelper {
             return name + "$synchronized";
         }
 
+        /** Changes the name of the method to have a suffix of "$unsynchronized". */
         public String getUnsyncName() {
             return name + "$unsynchronized";
         }

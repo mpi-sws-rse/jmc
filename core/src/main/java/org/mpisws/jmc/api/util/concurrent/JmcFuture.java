@@ -15,9 +15,9 @@ public class JmcFuture<T> implements RunnableFuture<T> {
 
     private static final Logger LOGGER = LogManager.getLogger(JmcFuture.class);
 
-    private CompletableFuture<T> future;
-    private Long taskId;
-    private JmcThread thread;
+    private final CompletableFuture<T> future;
+    private final Long taskId;
+    private final JmcThread thread;
 
     public JmcFuture(Callable<T> function, Long taskId) {
         this.future = new CompletableFuture<>();

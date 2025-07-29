@@ -4,6 +4,11 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+/**
+ * JmcSyncScanVisitor is a ClassVisitor that scans for synchronized methods, static synchronized
+ * methods, and synchronized blocks in a class. It collects this information in a JmcSyncScanData
+ * object.
+ */
 public class JmcSyncScanVisitor extends ClassVisitor {
     private final JmcSyncScanData jmcSyncScanData;
 
@@ -13,7 +18,8 @@ public class JmcSyncScanVisitor extends ClassVisitor {
     }
 
     @Override
-    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+    public MethodVisitor visitMethod(
+            int access, String name, String desc, String signature, String[] exceptions) {
         if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
             if ((access & Opcodes.ACC_STATIC) != 0) {
                 this.jmcSyncScanData.setHasSyncStaticMethods(true);
