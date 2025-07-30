@@ -30,7 +30,7 @@ public class VisitorHelper {
         mv.visitLdcInsn(descriptor);
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                 "readEventWithoutYield",
                 "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                 false);
@@ -77,7 +77,7 @@ public class VisitorHelper {
         mv.visitLdcInsn(descriptor);
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                 "writeEventWithoutYield",
                 "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
                 false);
@@ -95,7 +95,7 @@ public class VisitorHelper {
     public static void insertYield(MethodVisitor mv) {
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/JmcRuntime",
+                "org/mpi_sws/jmc/runtime/JmcRuntime",
                 "yield",
                 "()Ljava/lang/Object;",
                 false);

@@ -36,7 +36,7 @@ public class JmcAtomicReference<V> {
                 lock,
                 "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicReference",
                 "lock",
-                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;");
+                "Lorg/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock;");
         this.lock = lock;
         JmcRuntime.yield();
     }

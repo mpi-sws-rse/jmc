@@ -109,7 +109,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         newMv.visitIntInsn(Opcodes.ALOAD, 0);
         newMv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                 "syncMethodLock",
                 "(Ljava/lang/Object;)V",
                 false);
@@ -137,7 +137,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         newMv.visitIntInsn(Opcodes.ALOAD, 0);
         newMv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                 "syncMethodUnLock",
                 "(Ljava/lang/Object;)V",
                 false);
@@ -153,7 +153,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         newMv.visitIntInsn(Opcodes.ALOAD, 0);
         newMv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
-                "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                 "syncMethodUnLock",
                 "(Ljava/lang/Object;)V",
                 false);
@@ -193,7 +193,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                     mv.visitIntInsn(Opcodes.ALOAD, 0);
                     mv.visitMethodInsn(
                             Opcodes.INVOKESTATIC,
-                            "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                            "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                             "registerSyncLock",
                             "(Ljava/lang/Object;)V",
                             false);
@@ -201,7 +201,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                     mv.visitLdcInsn(className);
                     mv.visitMethodInsn(
                             Opcodes.INVOKESTATIC,
-                            "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                            "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                             "registerSyncLock",
                             "(Ljava/lang/String;)V",
                             false);
@@ -223,7 +223,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                 // No additional handling needed for sync blocks
                 mv.visitMethodInsn(
                         Opcodes.INVOKESTATIC,
-                        "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                        "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                         opcode == Opcodes.MONITORENTER ? "syncBlockLock" : "syncBlockUnLock",
                         "(Ljava/lang/Object;)V",
                         false);

@@ -12,7 +12,7 @@ import org.objectweb.asm.Opcodes;
 public class JmcIgnoreVisitor extends ClassVisitor {
 
     private static final String IGNORE_ANNOTATION_DESCRIPTOR =
-            "Lorg/mpisws/jmc/annotations/JmcIgnoreInstrumentation;";
+            "Lorg/mpi_sws/jmc/annotations/JmcIgnoreInstrumentation;";
     private boolean hasIgnoreAnnotation = false;
 
     public JmcIgnoreVisitor(ClassVisitor classVisitor) {

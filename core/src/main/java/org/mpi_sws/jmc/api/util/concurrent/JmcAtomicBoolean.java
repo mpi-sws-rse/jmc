@@ -32,7 +32,7 @@ public class JmcAtomicBoolean {
                 lock,
                 "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicBoolean",
                 "lock",
-                "Lorg/mpisws/jmc/api/util/concurrent/JmcReentrantLock;");
+                "Lorg/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock;");
         this.lock = lock;
         JmcRuntime.yield();
     }

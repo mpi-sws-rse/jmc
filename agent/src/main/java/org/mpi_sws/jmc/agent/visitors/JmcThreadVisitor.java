@@ -10,7 +10,7 @@ public class JmcThreadVisitor {
     public static class ThreadClassVisitor extends ClassVisitor {
         private static final String THREAD_PATH = "java/lang/Thread";
         private static final String JMC_THREAD_PATH =
-                "org/mpisws/jmc/api/util/concurrent/JmcThread";
+                "org/mpi_sws/jmc/api/util/concurrent/JmcThread";
         private static final String THREAD_DESC = "L" + THREAD_PATH + ";";
         private static final String JMC_THREAD_DESC = "L" + JMC_THREAD_PATH + ";";
 
@@ -148,7 +148,7 @@ public class JmcThreadVisitor {
                     // Replace with call to JmcThread's constructor
                     super.visitMethodInsn(
                             Opcodes.INVOKESPECIAL,
-                            "org/mpisws/jmc/api/util/concurrent/JmcThread",
+                            "org/mpi_sws/jmc/api/util/concurrent/JmcThread",
                             name,
                             descriptor,
                             isInterface);
@@ -212,7 +212,7 @@ public class JmcThreadVisitor {
                 // Call JmcRuntimeUtils.shouldInstrumentJoin(<top of stack>)
                 mv.visitMethodInsn(
                         Opcodes.INVOKESTATIC,
-                        "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                        "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                         "shouldInstrumentThreadCall",
                         "(Ljava/lang/Object;)Z",
                         false);
@@ -224,7 +224,7 @@ public class JmcThreadVisitor {
                 // Call JmcRuntimeUtils.join()
                 mv.visitMethodInsn(
                         Opcodes.INVOKESTATIC,
-                        "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                        "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                         "join",
                         matchDescriptor(descriptor),
                         false);
@@ -246,7 +246,7 @@ public class JmcThreadVisitor {
                 // Call JmcRuntimeUtils.shouldInstrumentJoin(<top of stack>)
                 mv.visitMethodInsn(
                         Opcodes.INVOKESTATIC,
-                        "org/mpisws/jmc/runtime/JmcRuntimeUtils",
+                        "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                         "shouldInstrumentThreadCall",
                         "(Ljava/lang/Object;)Z",
                         false);
@@ -258,7 +258,7 @@ public class JmcThreadVisitor {
                 // Call JmcRuntime.yield()
                 mv.visitMethodInsn(
                         Opcodes.INVOKESTATIC,
-                        "org/mpisws/jmc/runtime/JmcRuntime",
+                        "org/mpi_sws/jmc/runtime/JmcRuntime",
                         "yield",
                         "()V",
                         false);
