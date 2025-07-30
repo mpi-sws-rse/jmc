@@ -14,8 +14,7 @@ public class AgentArgs {
     private String debugSavePath = "build/generated/instrumented";
     private List<String> instrumentingPackages = new ArrayList<>();
     private List<String> excludedPackages = new ArrayList<>();
-    private String jmcRuntimeJarPath = "/lib/jmc-0.1.1.jar";
-    ;
+    private String jmcRuntimeJarPath = "build/deps/jmc-0.1.1.jar";
 
     /**
      * The AgentArgs constructor is used to parse the agent arguments.
@@ -90,7 +89,6 @@ public class AgentArgs {
      * @return the path to the JMC runtime jar
      */
     public String getJmcRuntimeJarPath() {
-        // TODO: fix this. Currently unused
         return jmcRuntimeJarPath;
     }
 }

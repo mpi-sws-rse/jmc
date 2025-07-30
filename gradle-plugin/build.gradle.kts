@@ -1,8 +1,8 @@
 plugins {
     id("java")
-    id("java-gradle-plugin")
-    id("maven-publish")
-    id("com.gradle.plugin-publish") version "1.2.1"
+    kotlin("jvm")
+    id("com.gradle.plugin-publish") version "1.3.1"
+    signing
 }
 
 group = "org.mpi_sws.jmc.gradle"
@@ -13,12 +13,9 @@ repositories {
     mavenLocal()
 }
 
-dependencies {
-    implementation(project(":agent"))
-}
-
-tasks.named("pluginUnderTestMetadata") {
-    dependsOn(":agent:agentJar")
+java {
+    withSourcesJar()
+    withJavadocJar()
 }
 
 tasks.test {
@@ -26,13 +23,15 @@ tasks.test {
 }
 
 gradlePlugin {
+    website.set("https://jmc.mpi-sws.org")
+    vcsUrl.set("https://github.com/mpi-sws-rse/jmc.git")
     plugins {
         create("jmc") {
-            id = "org.mpi_sws.jmc"
+            id = "org.mpi_sws.jmc.gradle"
             implementationClass = "org.mpi_sws.jmc.gradle.JmcPlugin"
             displayName = "JMC Plugin"
-            description = "A plugin for the JMC model checker"
-            tags = listOf("model-checker", "verification")
+            description = "A plugin for the JMC model checker - jmc.mpi-sws.org"
+            tags.set(listOf("jmc", "model-checker", "java"))
         }
     }
 }

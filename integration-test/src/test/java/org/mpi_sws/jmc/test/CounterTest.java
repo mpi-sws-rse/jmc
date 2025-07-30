@@ -15,7 +15,7 @@ public class CounterTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(strategy = "trust", numIterations = 200)
+    @JmcCheckConfiguration(strategy = "trust", numIterations = 200, debug = true)
     @JmcExpectExecutions(120)
     public void testTrustCounter() {
         ParametricCounter counter = new ParametricCounter(5);
