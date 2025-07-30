@@ -24,23 +24,14 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
 }
 
-tasks.register<Copy>("copyJar") {
-    dependsOn(":core:jar")
-    from(project(":core").projectDir.resolve("build/libs/core-0.1.0.jar").absolutePath)
-    into("src/main/resources/lib")
-    rename("core-0.1.0.jar", "jmc-0.1.0.jar")
-}
-
-tasks.processResources {
-    dependsOn("copyJar")
-}
-
 tasks.test {
     useJUnitPlatform()
     dependsOn(":agent:agentJar")
 
     val agentJar = project(":agent").projectDir.resolve("build/libs").resolve("agent.jar").absolutePath
+    val jmcRuntimeJar = project(":core").projectDir.resolve("build/libs/core-0.1.0.jar").absolutePath
 
-    val agentArg = "-javaagent:$agentJar=debug,instrumentingPackages=org.mpi_sws.jmc.test"
+    val agentArg =
+        "-javaagent:$agentJar=debug,instrumentingPackages=org.mpi_sws.jmc.test,jmcRuntimeJarPath=$jmcRuntimeJar"
     jvmArgs(agentArg)
 }

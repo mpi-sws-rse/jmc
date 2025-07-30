@@ -13,13 +13,9 @@ import java.util.jar.JarFile;
  */
 public class InstrumentationAgent {
 
-    private static void loadDependencyJars(Instrumentation inst) {
-        String jmcRuntimeJarPath = "/lib/jmc-0.1.0.jar";
+    private static void loadDependencyJars(Instrumentation inst, String jmcRuntimeJarPath) {
         try {
-            InputStream in = InstrumentationAgent.class.getResourceAsStream(jmcRuntimeJarPath);
-            if (in == null) {
-                throw new RuntimeException("Could not find JMC runtime jar");
-            }
+            InputStream in = Files.newInputStream(new File(jmcRuntimeJarPath).toPath());
             File tempFile = File.createTempFile("jmc-runtime", ".jar");
             Files.copy(in, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             inst.appendToSystemClassLoaderSearch(new JarFile(tempFile));
@@ -36,8 +32,8 @@ public class InstrumentationAgent {
      * @param inst the instrumentation object
      */
     public static void premain(String agentArgs, Instrumentation inst) {
-        loadDependencyJars(inst);
         AgentArgs args = new AgentArgs(agentArgs);
+        loadDependencyJars(inst, args.getJmcRuntimeJarPath());
 
         PremainInstrumentor instrumentor = new PremainInstrumentor(args);
         inst.addTransformer(instrumentor, true);
