@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo $(pwd)
+
 # Get secure files from GitLab
 curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
 

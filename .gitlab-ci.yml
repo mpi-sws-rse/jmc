@@ -1,4 +1,4 @@
-image: gradle:jdk17-jammy
+image: gradle:jdk17-alpine
 
 before_script:
   - GRADLE_USER_HOME="$(pwd)/.gradle"
@@ -61,7 +61,10 @@ test:
 
 publish:
   stage: deploy
-  script: ./scripts/publish.sh
+  before_script:
+    - apk update && apk add bash zip
+  script:
+    - bash ./scripts/publish.sh
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push

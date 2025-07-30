@@ -26,7 +26,7 @@ public class InstrumentationAgent {
             Files.copy(in, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             inst.appendToSystemClassLoaderSearch(new JarFile(tempFile));
         } catch (Exception e) {
-            System.err.println("Could not find JMC runtime jar");
+            throw new RuntimeException("Failed to load JMC runtime jar", e);
         }
     }
 
