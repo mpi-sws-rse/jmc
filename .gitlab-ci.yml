@@ -82,5 +82,5 @@ publish:
       - build/jmc-agent/jmc-agent.zip
       - build/jmc/jmc.zip
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
   when: on_success
