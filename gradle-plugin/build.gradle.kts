@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.mpi_sws.jmc.gradle"
-version = "0.1.0"
+version = "0.1.1"
 
 repositories {
     mavenCentral()

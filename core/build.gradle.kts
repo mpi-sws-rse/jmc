@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.utils.alwaysTrue
-
 plugins {
     id("java")
     id("checkstyle")

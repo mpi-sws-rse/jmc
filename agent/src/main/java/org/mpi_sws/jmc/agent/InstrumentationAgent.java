@@ -14,7 +14,7 @@ import java.util.jar.JarFile;
 public class InstrumentationAgent {
 
     private static void loadDependencyJars(Instrumentation inst) {
-        String jmcRuntimeJarPath = "/lib/jmc-0.1.0.jar";
+        String jmcRuntimeJarPath = "/lib/jmc-0.1.1.jar";
         try {
             InputStream in = InstrumentationAgent.class.getResourceAsStream(jmcRuntimeJarPath);
             if (in == null) {

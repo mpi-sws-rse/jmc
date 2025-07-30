@@ -14,7 +14,7 @@ public class AgentArgs {
     private String debugSavePath = "build/generated/instrumented";
     private List<String> instrumentingPackages = new ArrayList<>();
     private List<String> excludedPackages = new ArrayList<>();
-    private String jmcRuntimeJarPath = "/lib/jmc-0.1.0.jar";
+    private String jmcRuntimeJarPath = "/lib/jmc-0.1.1.jar";
     ;
 
     /**

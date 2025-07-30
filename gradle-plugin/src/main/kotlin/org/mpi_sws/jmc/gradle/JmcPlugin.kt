@@ -51,7 +51,7 @@ class JmcPlugin : Plugin<Project> {
 }
 
 open class JmcExtension {
-    var version: String = "0.1.0"
+    var version: String = "0.1.1"
     var agentJar: String = "org.mpi_sws:jmc-agent"
     var libraryJar: String = "org.mpi_sws:jmc"
     var debug: Boolean = false
