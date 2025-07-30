@@ -19,5 +19,8 @@ else
   rm -rf build/*
 fi
 
-zip -r build/jmc-agent.zip agent/build/staging-deploy
-zip -r build/jmc.zip core/build/staging-deploy
+mv agent/build/staging-deploy build/jmc-agent
+mv core/build/staging-deploy build/jmc
+
+cd build/jmc-agent && zip -r jmc-agent.zip org && cd -
+cd build/jmc && zip -r jmc.zip org && cd -

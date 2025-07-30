@@ -23,6 +23,6 @@ repositories {
 }
 
 allprojects {
-    group = "org.mpisws.jmc"
+    group = "org.mpi-sws.jmc"
     version = "0.1.0"
 }

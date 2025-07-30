@@ -5,7 +5,7 @@ plugins {
     id("com.gradle.plugin-publish") version "1.2.1"
 }
 
-group = "org.mpisws.jmc.gradle"
+group = "org.mpi_sws.jmc.gradle"
 version = "0.1.0"
 
 repositories {
@@ -28,8 +28,8 @@ tasks.test {
 gradlePlugin {
     plugins {
         create("jmc") {
-            id = "org.mpisws.jmc"
-            implementationClass = "org.mpisws.jmc.gradle.JmcPlugin"
+            id = "org.mpi_sws.jmc"
+            implementationClass = "org.mpi_sws.jmc.gradle.JmcPlugin"
             displayName = "JMC Plugin"
             description = "A plugin for the JMC model checker"
             tags = listOf("model-checker", "verification")

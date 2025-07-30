@@ -41,6 +41,6 @@ tasks.test {
 
     val agentJar = project(":agent").projectDir.resolve("build/libs").resolve("agent.jar").absolutePath
 
-    val agentArg = "-javaagent:$agentJar=debug,instrumentingPackages=org.mpisws.jmc.test"
+    val agentArg = "-javaagent:$agentJar=debug,instrumentingPackages=org.mpi_sws.jmc.test"
     jvmArgs(agentArg)
 }
