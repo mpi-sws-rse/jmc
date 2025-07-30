@@ -46,7 +46,7 @@ tasks.register("agentJar", ShadowJar::class) {
     from(sourceSets["main"].output)
 
     manifest {
-        attributes["Premain-Class"] = "org.mpisws.jmc.agent.InstrumentationAgent"
+        attributes["Premain-Class"] = "org.mpi_sws.jmc.agent.InstrumentationAgent"
         attributes["Can-Redefine-Classes"] = "true"
         attributes["Can-Retransform-Classes"] = "true"
     }

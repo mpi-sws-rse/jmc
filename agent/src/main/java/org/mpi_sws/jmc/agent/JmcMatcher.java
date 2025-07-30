@@ -46,7 +46,7 @@ public class JmcMatcher {
             return false;
         }
         // Exclude instrumentation classes.
-        if (typeName.startsWith("org.mpisws.jmc.agent.")) {
+        if (typeName.startsWith("org.mpi_sws.jmc.agent.")) {
             return false;
         }
         // Exclude instrumentation classes.
