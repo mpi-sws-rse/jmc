@@ -60,7 +60,7 @@ test:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 publish:
-  stage: publish
+  stage: deploy
   script:
     - ./scripts/publish.sh
   cache:
