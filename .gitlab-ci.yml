@@ -61,8 +61,7 @@ test:
 
 publish:
   stage: deploy
-  script:
-    - ./scripts/publish.sh
+  script: ./scripts/publish.sh
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
