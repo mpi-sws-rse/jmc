@@ -67,7 +67,6 @@ test:
 
 publish:
   stage: deploy
-  working_directory: .
   before_script:
     - apk update && apk add bash zip
   script:
