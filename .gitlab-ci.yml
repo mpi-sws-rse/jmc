@@ -1,4 +1,4 @@
-image: gradle:jdk17-alpine
+image: gradle:jdk17-jammy
 
 before_script:
   - GRADLE_USER_HOME="$(pwd)/.gradle"
@@ -70,7 +70,8 @@ publish:
       - .gradle
   artifacts:
     paths:
-      - build/*.zip
+      - build/jmc-agent.zip
+      - build/jmc.zip
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   when: on_success
