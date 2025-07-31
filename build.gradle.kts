@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "1.9.22"
+    id("maven-publish")
 }
 
 kotlin {
@@ -19,4 +20,9 @@ tasks.test {
 repositories {
     mavenCentral()
     mavenLocal()
+}
+
+allprojects {
+    group = "org.mpi-sws.jmc"
+    version = "0.1.1"
 }

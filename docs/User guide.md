@@ -27,7 +27,7 @@ to [Project setup instructions](Gradle%20Example%20Project%20Setup.md)
 In the `app/build.gradle.kts` or `app/build.gradle` file, add the following inside `dependencies`
 
 ```kotlin
-testImplementation("org.mpisws:jmc:0.1.0")
+testImplementation("org.mpi_sws:jmc:0.1.1")
 ```
 
 Note that if you built from source then you would need to add `mavenLocal()` inside `repositories`
