@@ -14,7 +14,7 @@ import java.util.List;
  * <p>The stack is a list of inner stacks. Each inner stack is created for a backward revisit.
  */
 public class ExplorationStack {
-    private static Logger LOGGER = LogManager.getLogger(ExplorationStack.class);
+    private static final Logger LOGGER = LogManager.getLogger(ExplorationStack.class);
     private final List<InnerStack> stack;
 
     /** Creates a new exploration stack. */
@@ -34,7 +34,7 @@ public class ExplorationStack {
      * @param item The item to push onto the stack
      */
     public void push(Item item) {
-        LOGGER.debug("Adding item " + item.getType() + " to stack");
+        LOGGER.debug("Adding item {} to stack", item.toString());
         if (this.stack.isEmpty()) {
             this.stack.add(new InnerStack(item.graph));
         }
@@ -66,7 +66,7 @@ public class ExplorationStack {
      * @return The item popped from the stack
      */
     public Item pop() {
-        LOGGER.debug("Removing item " + peek() + " from stack");
+        LOGGER.debug("Removing item {} from stack", peek());
         // Note that we clean before popping. This was when an inner stack is popped to empty any
         // pushes will still go to that stack.
         // This is helpful when we pop a BCK item and then push a FRW item.
@@ -127,6 +127,17 @@ public class ExplorationStack {
         return this.stack.get(0).size();
     }
 
+    /** Logs the current state of the stack. This is a placeholder method for debugging purposes. */
+    public void logStackState() {
+        LOGGER.debug("Current stack state:");
+        for (int i = 0; i < this.stack.size(); i++) {
+            InnerStack innerStack = this.stack.get(i);
+            for (Item item : innerStack.items) {
+                LOGGER.debug("Inner Stack {}: {}", i, item);
+            }
+        }
+    }
+
     /** Represents an item in the exploration stack. */
     public static class Item {
         private int innerStackIndex;
@@ -142,7 +153,7 @@ public class ExplorationStack {
         private final ExecutionGraphNode
                 event2; // TODO: Since they are graph nodes, we must use a better name
 
-        private List<Event> additionalEventsToProcess;
+        private final List<Event> additionalEventsToProcess;
 
         // Graph is used only in the case of a backward revisit
         private final ExecutionGraph graph;

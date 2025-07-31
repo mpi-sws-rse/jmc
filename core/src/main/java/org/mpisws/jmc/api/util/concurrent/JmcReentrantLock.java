@@ -22,7 +22,7 @@ public class JmcReentrantLock {
                 this, 0, "org/mpisws/jmc/api/util/concurrent/JmcReentrantLock", "token", "I");
         token = 0;
         JmcRuntime.yield();
-        this.lockObj = new Object();
+        this.lockObj = null;
     }
 
     public JmcReentrantLock(Object lockObj) {

@@ -169,7 +169,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
                 return;
             }
         }
-        Long timeDiff = System.currentTimeMillis() - timeStart;
+        long timeDiff = System.currentTimeMillis() - timeStart;
         Duration d = Duration.ofMillis(timeDiff);
         simulator.reset();
         schedulingStrategy.teardown();
@@ -177,19 +177,23 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             FileOutputStream fileOutputStream =
                     FileUtil.unsafeCreateFile(
                             Paths.get(config.getRecordPath(), "hash_coverage.txt").toString());
-            for (HashMap.Entry<String, Integer> entry : visitedGraphs.entrySet()) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-                try {
-                    fileOutputStream.write(sb.toString().getBytes());
-                } catch (Exception e) {
-                    LOGGER.error("Error while writing to file", e);
+            if (fileOutputStream != null) {
+                for (HashMap.Entry<String, Integer> entry : visitedGraphs.entrySet()) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+                    try {
+                        fileOutputStream.write(sb.toString().getBytes());
+                    } catch (Exception e) {
+                        LOGGER.error("Error while writing to file", e);
+                    }
                 }
-            }
-            try {
-                fileOutputStream.close();
-            } catch (Exception e) {
-                LOGGER.error("Error while closing file output stream", e);
+                try {
+                    fileOutputStream.close();
+                } catch (Exception e) {
+                    LOGGER.error("Error while closing file output stream", e);
+                }
+            } else {
+                LOGGER.error("Failed to create file for hash coverage");
             }
         }
         Gson gson = new Gson();

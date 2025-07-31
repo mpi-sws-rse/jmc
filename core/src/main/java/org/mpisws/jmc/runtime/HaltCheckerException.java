@@ -11,6 +11,12 @@ public class HaltCheckerException extends RuntimeException {
         this.timeout = timeout;
     }
 
+    private HaltCheckerException(String message, Throwable cause) {
+        super(message, cause);
+        this.okay = false;
+        this.timeout = false;
+    }
+
     /**
      * Constructs a new {@link HaltCheckerException} indicating that the exploration stopped
      * naturally without any errors.
@@ -35,6 +41,17 @@ public class HaltCheckerException extends RuntimeException {
      */
     public static HaltCheckerException error(String message) {
         return new HaltCheckerException(false, message, false);
+    }
+
+    /**
+     * Constructs a new {@link HaltCheckerException} indicating that the exploration was halted due
+     * to an error, with a cause.
+     *
+     * @param message the error message
+     * @param cause the cause of the error
+     */
+    public static HaltCheckerException error(String message, Throwable cause) {
+        return new HaltCheckerException(message, cause);
     }
 
     /**

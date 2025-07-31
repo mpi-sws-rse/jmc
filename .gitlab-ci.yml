@@ -47,4 +47,17 @@ compile-integration-test:
       - build
       - .gradle
 
+test:
+  stage: test
+  script: ./gradlew :integration-test:test
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+
 

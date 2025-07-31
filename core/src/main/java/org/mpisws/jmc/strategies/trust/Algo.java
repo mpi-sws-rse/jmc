@@ -68,6 +68,15 @@ public class Algo {
     }
 
     private void handleGuidedEvent(Event event) {
+        if (EventUtils.isLockAcquired(event)) {
+            // Ignore lock acquired events in the guiding trace
+            // These are not added to the execution graph and does not bear any consequence
+            // on what occurs below.
+
+            // The lock acquired event is also not a yielding event therefore the real event will
+            // follow.
+            return;
+        }
         SchedulingChoiceWrapper choiceW = guidingTaskSchedule.peek();
         SchedulingChoice<?> choice = choiceW.choice();
         if (choice.isBlockTask()) {
@@ -109,8 +118,10 @@ public class Algo {
      * @param filePath to record the task schedule in.
      */
     public void recordTaskSchedule(String filePath) throws JmcCheckerException {
-        List<SchedulingChoiceWrapper> taskSchedule = ExecutionGraph.getTaskSchedule(executionGraph.checkConsistency());
-        FileUtil.storeTaskSchedule(filePath, taskSchedule.stream().map(SchedulingChoiceWrapper::choice).toList());
+        List<SchedulingChoiceWrapper> taskSchedule =
+                ExecutionGraph.getTaskSchedule(executionGraph.checkConsistency());
+        FileUtil.storeTaskSchedule(
+                filePath, taskSchedule.stream().map(SchedulingChoiceWrapper::choice).toList());
     }
 
     /**
@@ -297,12 +308,12 @@ public class Algo {
 
         LOGGER.debug("Found the SC graph");
         //        checkGraphSchedule(nextGraphSchedule);
-        //        executionGraph.printGraph();
+        executionGraph.printGraph();
 
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
         guidingTaskSchedule = new ArrayDeque<>(ExecutionGraph.getTaskSchedule(nextGraphSchedule));
-        //        printGuidingTaskSchedule();
+        printGuidingTaskSchedule();
     }
 
     private void checkGraphSchedule(List<ExecutionGraphNode> graphSchedule) {
@@ -748,6 +759,11 @@ public class Algo {
             // Indicate that the task must be blocked
             mustBlockTask = taskId;
         }
+    }
+
+    /** */
+    public void logStackState() {
+        explorationStack.logStackState();
     }
 
     /**

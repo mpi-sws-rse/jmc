@@ -10,6 +10,7 @@ import org.mpisws.jmc.checker.JmcCheckerConfiguration;
 import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.integrations.junit5.engine.JmcTestExecutor;
+import org.mpisws.jmc.util.ExceptionUtil;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -115,6 +116,8 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 JmcDescriptorUtil.checkStrategyConfig(
                         configBuilder, testMethod.getDeclaringClass(), testMethod);
 
+        boolean expectFailure = testMethod.getAnnotation(JmcExpectAssertionFailure.class) != null;
+        boolean failed = false;
         try {
             JmcCheckerConfiguration config = configBuilder.build();
             if (isReplayTest) {
@@ -135,8 +138,18 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 }
             }
         } catch (JmcCheckerException e) {
-            LOGGER.error("Error executing test method: {}", testMethod.getName(), e);
-            throw e;
+            if (expectFailure && ExceptionUtil.isAssertionError(e.getCause())) {
+                failed = true;
+            } else {
+                LOGGER.error("Error executing test method: {}", testMethod.getName(), e);
+                throw e;
+            }
+        }
+        if (expectFailure && !failed) {
+            throw new JmcCheckerException(
+                    "Test method "
+                            + testMethod.getName()
+                            + " expected to fail but passed successfully.");
         }
     }
 }

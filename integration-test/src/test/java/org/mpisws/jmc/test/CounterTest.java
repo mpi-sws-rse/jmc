@@ -7,7 +7,7 @@ import org.mpisws.jmc.annotations.JmcExpectExecutions;
 public class CounterTest {
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug = true)
+    @JmcCheckConfiguration(numIterations = 10)
     public void testRandomCounter() {
         ParametricCounter counter = new ParametricCounter(2);
         counter.run();
