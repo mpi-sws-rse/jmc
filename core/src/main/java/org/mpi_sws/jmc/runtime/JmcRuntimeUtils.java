@@ -482,7 +482,7 @@ public class JmcRuntimeUtils {
                 Method m = clazz.getDeclaredMethod("$staticInit");
                 m.setAccessible(true);
                 m.invoke(null);
-                LOGGER.info("Invoked static method in class: {}", clazz.getName());
+                LOGGER.debug("Invoked static method in class: {}", clazz.getName());
             } catch (InvocationTargetException ite) {
                 ite.getCause().printStackTrace();
                 LOGGER.error("Error invoking $staticInit() in {}", clazz.getName(), ite.getCause());

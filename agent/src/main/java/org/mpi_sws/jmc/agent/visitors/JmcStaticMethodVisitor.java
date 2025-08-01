@@ -24,7 +24,6 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
             String[] interfaces) {
 
         if ((access & Opcodes.ACC_INTERFACE) != 0) {
-            System.out.println("Skipping interface: " + name);
             ignore = true;
         }
 
