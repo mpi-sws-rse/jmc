@@ -2,13 +2,17 @@ package org.mpi_sws.jmc.agent.visitors;
 
 import org.objectweb.asm.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class JmcStaticMethodVisitor extends ClassVisitor {
 
     private String className;
     private StaticMethodInfo staticMethodInfo;
-    private boolean ignore = false;
+
+    private boolean isInterface = false;
+    private final List<FieldInfo> interfaceFields = new ArrayList<>();
 
     public JmcStaticMethodVisitor(ClassVisitor classVisitor) {
         super(Opcodes.ASM9, classVisitor);
@@ -24,7 +28,7 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
             String[] interfaces) {
 
         if ((access & Opcodes.ACC_INTERFACE) != 0) {
-            ignore = true;
+            isInterface = true;
         }
 
         this.className = name;
@@ -34,7 +38,8 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     @Override
     public FieldVisitor visitField(
             int access, String name, String desc, String signature, Object value) {
-        if (ignore) {
+        if (isInterface) {
+            interfaceFields.add(new FieldInfo(access, name, desc, signature, value));
             return super.visitField(access, name, desc, signature, value);
         }
         if (isStaticFinalField(access)) {
@@ -47,8 +52,9 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     public MethodVisitor visitMethod(
             int access, String name, String desc, String signature, String[] exceptions) {
         // Check if the method is static
-        if (ignore) {
-            return super.visitMethod(access, name, desc, signature, exceptions);
+        if (isInterface) {
+            return new JmcStaticInitMethodVisitor(
+                    super.visitMethod(access, name, desc, signature, exceptions), className);
         }
         if (Objects.equals(name, "<clinit>")) {
             this.staticMethodInfo = new StaticMethodInfo(access, name, desc, signature, exceptions);
@@ -66,11 +72,27 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     //    @Override
     public void visitEnd() {
         // If we have a static method info, we can process it here
-        if (ignore) {
+        if (isInterface && interfaceFields.isEmpty()) {
             super.visitEnd();
+        } else if (isInterface) {
+            MethodVisitor mv =
+                    cv.visitMethod(
+                            Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
+                            "$staticInit",
+                            "()V",
+                            null,
+                            null);
+            mv.visitCode();
+
+            for (FieldInfo field : interfaceFields) {
+                // Insert a call to write event for each field
+                field.insertWriteEventCall(mv);
+            }
+            mv.visitInsn(Opcodes.RETURN);
+            mv.visitMaxs(-1, -1);
+            mv.visitEnd();
         }
         if (this.staticMethodInfo != null) {
-
             MethodVisitor mv =
                     cv.visitMethod(
                             this.staticMethodInfo.access(),
@@ -137,6 +159,25 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
 
         public int getStaticReplacementAccess() {
             return Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC;
+        }
+    }
+
+    private record FieldInfo(int access, String name, String desc, String signature, Object value) {
+
+        public void insertWriteEventCall(MethodVisitor mv) {
+            mv.visitLdcInsn(Type.getObjectType(name));
+            mv.visitLdcInsn(Type.getType(desc));
+            if (value instanceof String) {
+                mv.visitLdcInsn(value);
+            } else {
+                mv.visitInsn(Opcodes.ACONST_NULL);
+            }
+            mv.visitMethodInsn(
+                    Opcodes.INVOKESTATIC,
+                    "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
+                    "writeEvent",
+                    "(Ljava/lang/String;Ljava/lang/Class;Ljava/lang/Object;)V",
+                    false);
         }
     }
 }

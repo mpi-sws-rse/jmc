@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.agent;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.agent.visitors.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -18,6 +20,8 @@ import java.util.Arrays;
  * specified criteria.
  */
 public class PremainInstrumentor implements ClassFileTransformer {
+    private static final Logger LOGGER = LogManager.getLogger(PremainInstrumentor.class);
+
     private final AgentArgs agentArgs;
     private final JmcMatcher matcher;
 
@@ -86,6 +90,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
             // JmcIgnoreInstrumentation annotation
         }
 
+        LOGGER.info("Instrumenting class: {}", finalClassName);
         try {
             ClassReader syncCr = new ClassReader(copiedClassBuffer);
             ClassWriter syncCw =
@@ -99,17 +104,17 @@ public class PremainInstrumentor implements ClassFileTransformer {
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
             ClassVisitor cv =
                     new JmcStaticMethodVisitor(
-                        new JmcSyncMethodVisitor(
-                                new JmcFutureVisitor.JmcExecutorsClassVisitor(
-                                        new JmcAtomicVisitor(
-                                                new JmcReentrantLockVisitor(
-                                                        new JmcThreadVisitor.ThreadClassVisitor(
-                                                                new JmcThreadVisitor
-                                                                        .ThreadCallReplacerClassVisitor(
-                                                                        new JmcReadWriteVisitor
-                                                                                .ReadWriteClassVisitor(
-                                                                                cw)))))),
-                                syncScanData));
+                            new JmcSyncMethodVisitor(
+                                    new JmcFutureVisitor.JmcExecutorsClassVisitor(
+                                            new JmcAtomicVisitor(
+                                                    new JmcReentrantLockVisitor(
+                                                            new JmcThreadVisitor.ThreadClassVisitor(
+                                                                    new JmcThreadVisitor
+                                                                            .ThreadCallReplacerClassVisitor(
+                                                                            new JmcReadWriteVisitor
+                                                                                    .ReadWriteClassVisitor(
+                                                                                    cw)))))),
+                                    syncScanData));
             cr.accept(cv, 0);
             if (this.agentArgs.isDebug()) {
                 byte[] transformed = cw.toByteArray();
@@ -118,7 +123,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
 
             return cw.toByteArray();
         } catch (Exception e) {
-            System.out.println("Error transforming class: " + finalClassName + " " + e);
+            LOGGER.error("Error transforming class: {} {}", finalClassName, e);
             throw new RuntimeException("Error instrumenting class: " + finalClassName, e);
         }
     }
@@ -130,7 +135,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
             outFile.getParentFile().mkdirs();
             Files.write(outFile.toPath(), classFileBuffer);
         } catch (Exception e) {
-            System.out.println("Error writing to file: " + outFile.getAbsolutePath() + " " + e);
+            LOGGER.error("Error writing to file: {} {}", outFile.getAbsolutePath(), e);
         }
     }
 }

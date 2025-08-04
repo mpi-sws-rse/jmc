@@ -425,8 +425,7 @@ public class JmcRuntimeUtils {
 
     public static void registerStaticInitializedClass(Class<?> clazz) {
         if (!staticInitializedClasses.contains(clazz.getName())) {
-            LOGGER.info("STatic classes registered are : " + clazz.getName());
-            System.out.println("STatic classes registered are : " + clazz.getName());
+            LOGGER.info("Static classes registered are : {}", clazz.getName());
             staticInitializedClasses.add(clazz.getName());
             staticInitializedClassesList.add(clazz);
         }
@@ -444,30 +443,32 @@ public class JmcRuntimeUtils {
         }
     }
 
-    private static void reloadStaticInitializedClasses() {
-        if (staticInitializedClasses.isEmpty()) {
-            LOGGER.info("No static initialized classes to reload.");
-            return;
-        }
-        URL[] urls = new URL[staticInitializedClassesList.size()];
-        for (Class<?> clazz : staticInitializedClassesList) {
-            URL url = clazz.getResource(clazz.getSimpleName() + ".class");
-            urls[staticInitializedClassesList.indexOf(clazz)] = renameClassURL(url);
-        }
-
-        try (ReloadingClassLoader classLoader = new ReloadingClassLoader(urls)) {
-            // This will load the classes and trigger static initializers
-            for (Class<?> clazz : staticInitializedClassesList) {
-                try {
-                    classLoader.reloadClass(clazz.getCanonicalName());
-                } catch (ClassNotFoundException e) {
-                    LOGGER.error("Could not reload class: {}", clazz.getCanonicalName(), e);
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error initializing the custom class loader", e);
-        }
-    }
+    // Relic from a different method to deal with static initialized classes
+    // Would reload the classes and trigger static initializers.
+    //    private static void reloadStaticInitializedClasses() {
+    //        if (staticInitializedClasses.isEmpty()) {
+    //            LOGGER.info("No static initialized classes to reload.");
+    //            return;
+    //        }
+    //        URL[] urls = new URL[staticInitializedClassesList.size()];
+    //        for (Class<?> clazz : staticInitializedClassesList) {
+    //            URL url = clazz.getResource(clazz.getSimpleName() + ".class");
+    //            urls[staticInitializedClassesList.indexOf(clazz)] = renameClassURL(url);
+    //        }
+    //
+    //        try (ReloadingClassLoader classLoader = new ReloadingClassLoader(urls)) {
+    //            // This will load the classes and trigger static initializers
+    //            for (Class<?> clazz : staticInitializedClassesList) {
+    //                try {
+    //                    classLoader.reloadClass(clazz.getCanonicalName());
+    //                } catch (ClassNotFoundException e) {
+    //                    LOGGER.error("Could not reload class: {}", clazz.getCanonicalName(), e);
+    //                }
+    //            }
+    //        } catch (Exception e) {
+    //            LOGGER.error("Error initializing the custom class loader", e);
+    //        }
+    //    }
 
     private static void invokeInstrumentedStaticMethod() {
         if (staticInitializedClasses.isEmpty()) {
@@ -477,8 +478,7 @@ public class JmcRuntimeUtils {
         List<Class<?>> snapshot = new ArrayList<>(staticInitializedClassesList);
         for (Class<?> clazz : snapshot) {
             try {
-                // Assuming the static method is named "invokeStaticInitializedClasses"
-                //                clazz.getMethod("$staticInit").invoke(null);
+                // Assuming the static method is named "$staticInit"
                 Method m = clazz.getDeclaredMethod("$staticInit");
                 m.setAccessible(true);
                 m.invoke(null);
@@ -486,13 +486,6 @@ public class JmcRuntimeUtils {
             } catch (InvocationTargetException ite) {
                 ite.getCause().printStackTrace();
                 LOGGER.error("Error invoking $staticInit() in {}", clazz.getName(), ite.getCause());
-                //            } catch (Exception e) {
-                //                e.printStackTrace();
-                //                System.out.println("Error invoking static method in class " +
-                // clazz.getName() + " because  " + e);
-                //                LOGGER.error("Error invoking static method in class: {}",
-                // clazz.getName(), e);
-                //            }
             } catch (IllegalAccessException e) {
                 LOGGER.error("Error invoking $staticInit() in {}", clazz.getName(), e.getCause());
             } catch (NoSuchMethodException e) {
