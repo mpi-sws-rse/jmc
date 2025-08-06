@@ -1,9 +1,9 @@
 package org.mpisws.jmc.agent.visitors;
 
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.*;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class JmcAtomicVisitor extends ClassVisitor {
 
@@ -218,5 +218,33 @@ public class JmcAtomicVisitor extends ClassVisitor {
             super.visitLocalVariable(
                     name, replaceDescriptor(descriptor), signature, start, end, index);
         }
+
+        @Override
+        public void visitInvokeDynamicInsn(
+                String name,
+                String descriptor,
+                Handle bsm,
+                Object... bsmArgs
+        ) {
+            Object[] newBsmArgs = Arrays.stream(bsmArgs)
+                    .map(arg -> {
+                        if (arg instanceof Type && ((Type) arg).getDescriptor().contains(ATOMIC_INTEGER_PATH)){
+                            return Type.getObjectType(JMC_ATOMIC_INTEGER_PATH);
+                        }
+                        if (arg instanceof Handle) {
+                            Handle h = (Handle) arg;
+                            String desc = h.getDesc().replace(ATOMIC_INTEGER_PATH, JMC_ATOMIC_INTEGER_PATH);
+                            return new Handle(h.getTag(), h.getOwner(), h.getName(), desc, h.isInterface());
+                        }
+
+                        return arg;
+                    })
+                    .toArray();
+
+            String newDescriptor=replaceDescriptor(descriptor);
+
+            super.visitInvokeDynamicInsn(name, newDescriptor, bsm, newBsmArgs);
+        }
     }
+
 }

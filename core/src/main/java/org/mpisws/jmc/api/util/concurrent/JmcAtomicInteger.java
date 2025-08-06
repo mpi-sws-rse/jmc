@@ -201,4 +201,32 @@ public class JmcAtomicInteger {
             lock.unlock();
         }
     }
+
+    /**
+     * Atomically increments the current value by 1 and returns the previous value. Invokes a read
+     * followed by a write event to the JMC runtime.
+     *
+     * @return the previous value before incrementing
+     */
+    public int incrementAndGet() {
+        lock.lock();
+        try {
+            JmcRuntimeUtils.readEventWithoutYield(
+                    this, "org/mpisws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
+            int result = value;
+            JmcRuntime.yield();
+
+            JmcRuntimeUtils.writeEventWithoutYield(
+                    this,
+                    result + 1,
+                    "org/mpisws/jmc/api/util/concurrent/JmcAtomicInteger",
+                    "value",
+                    "I");
+            value = result + 1;
+            JmcRuntime.yield();
+            return result;
+        } finally {
+            lock.unlock();
+        }
+    }
 }
