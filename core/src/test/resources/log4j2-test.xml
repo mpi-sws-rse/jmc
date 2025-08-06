@@ -12,7 +12,7 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="org.mpisws" level="INFO"/>
+        <Logger name="org.mpi_sws" level="INFO"/>
         <Root level="INFO">
             <AppenderRef ref="CONSOLE"/>
         </Root>

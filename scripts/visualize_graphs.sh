@@ -28,10 +28,20 @@ GRAPH_DIR="../../$1"
 
 # Check if the provided argument is a valid directory
 if [ ! -d "$GRAPH_DIR" ]; then
-    echo "Invalid directory: $1"
+    echo "Invalid directory: $GRAPH_DIR"
     exit 1
 fi
 
+# Check that the number of arguuments is not more than 2
+if [ $# -gt 2 ]; then
+    echo "Too many arguments provided. Usage: $0 <path_to_graph_directory> [--guiding]"
+    exit 1
+fi
 
 # Run the visualizer
-python3 web_server.py $GRAPH_DIR
+# Check if the second argument is --guiding
+if [ $# -eq 2 ] && [ "$2" = "--guiding" ]; then
+    python3 web_server.py $GRAPH_DIR --guiding
+else
+    python3 web_server.py $GRAPH_DIR
+fi
