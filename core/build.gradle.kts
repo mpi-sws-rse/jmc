@@ -3,7 +3,7 @@ plugins {
     id("checkstyle")
     id("maven-publish")
     id("java-library")
-    signing
+//    signing
 }
 
 repositories {
@@ -78,12 +78,12 @@ publishing {
 
     repositories {
         mavenLocal()
-        maven {
-            setUrl(layout.buildDirectory.dir("staging-deploy"))
-        }
+//        maven {
+//            setUrl(layout.buildDirectory.dir("staging-deploy"))
+//        }
     }
 }
 
-signing {
-    sign(publishing.publications["maven"])
-}
+//signing {
+//    sign(publishing.publications["maven"])
+//}

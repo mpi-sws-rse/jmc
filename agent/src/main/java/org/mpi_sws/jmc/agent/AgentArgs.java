@@ -91,4 +91,21 @@ public class AgentArgs {
     public String getJmcRuntimeJarPath() {
         return jmcRuntimeJarPath;
     }
+
+    public String toString() {
+        return "AgentArgs{"
+                + "debug="
+                + debug
+                + ", debugSavePath='"
+                + debugSavePath
+                + '\''
+                + ", instrumentingPackages="
+                + instrumentingPackages
+                + ", excludedPackages="
+                + excludedPackages
+                + ", jmcRuntimeJarPath='"
+                + jmcRuntimeJarPath
+                + '\''
+                + '}';
+    }
 }

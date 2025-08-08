@@ -6,7 +6,7 @@ plugins {
     id("maven-publish")
     id("com.gradleup.shadow") version "9.0.0-beta9"
     id("java-library")
-    signing
+//    signing
 }
 
 repositories {
@@ -116,12 +116,12 @@ publishing {
     }
     repositories {
         mavenLocal()
-        maven {
-            setUrl(layout.buildDirectory.dir("staging-deploy"))
-        }
+//        maven {
+//            setUrl(layout.buildDirectory.dir("staging-deploy"))
+//        }
     }
 }
 
-signing {
-    sign(publishing.publications["maven"])
-}
+//signing {
+//    sign(publishing.publications["maven"])
+//}

@@ -77,6 +77,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
         if (!this.matcher.matches(finalClassName, loader)) {
             return copiedClassBuffer;
         }
+        System.out.println("Instrumenting class: " + finalClassName);
         ClassReader tempCr = new ClassReader(copiedClassBuffer);
         ClassWriter tempCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
@@ -90,6 +91,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
             // JmcIgnoreInstrumentation annotation
         }
 
+        System.out.println("Instrumenting class: " + finalClassName);
         LOGGER.info("Instrumenting class: {}", finalClassName);
         try {
             ClassReader syncCr = new ClassReader(copiedClassBuffer);
