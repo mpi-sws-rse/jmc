@@ -15,9 +15,9 @@ public class VisitorHelper {
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field read operation.
      *
-     * @param mv The MethodVisitor to which the instrumentation will be added.
-     * @param owner The internal name of the class containing the field.
-     * @param name The name of the field.
+     * @param mv         The MethodVisitor to which the instrumentation will be added.
+     * @param owner      The internal name of the class containing the field.
+     * @param name       The name of the field.
      * @param descriptor The descriptor of the field.
      */
     public static void insertRead(
@@ -41,9 +41,9 @@ public class VisitorHelper {
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field write operation.
      *
-     * @param mv The MethodVisitor to which the instrumentation will be added.
-     * @param owner The internal name of the class containing the field.
-     * @param name The name of the field.
+     * @param mv         The MethodVisitor to which the instrumentation will be added.
+     * @param owner      The internal name of the class containing the field.
+     * @param name       The name of the field.
      * @param descriptor The descriptor of the field.
      */
     public static void insertWrite(
@@ -104,7 +104,14 @@ public class VisitorHelper {
         mv.visitInsn(Opcodes.POP);
     }
 
-    private static void addObjectConverter(MethodVisitor mv, Type fieldType) {
+    /**
+     * Adds an object converter to the method visitor. This is used to convert primitive types to
+     * their corresponding wrapper classes (e.g., int to Integer, boolean to Boolean, etc.).
+     *
+     * @param mv        The MethodVisitor to which the object converter will be added.
+     * @param fieldType The Type of the field for which the object converter is being added.
+     */
+    public static void addObjectConverter(MethodVisitor mv, Type fieldType) {
         switch (fieldType.getSort()) {
             case Type.OBJECT:
                 return;
@@ -190,7 +197,7 @@ public class VisitorHelper {
     /**
      * Adds a return instruction to the method visitor based on the method's return type.
      *
-     * @param mv The MethodVisitor to which the return instruction will be added.
+     * @param mv         The MethodVisitor to which the return instruction will be added.
      * @param descriptor The method descriptor, which contains the return type.
      */
     public static void addReturnInst(MethodVisitor mv, String descriptor) {
@@ -222,22 +229,34 @@ public class VisitorHelper {
         }
     }
 
-    /** The MethodInfo class is used to store information about a method. */
+    /**
+     * The MethodInfo class is used to store information about a method.
+     */
     public static class MethodInfo {
 
-        /** Access flags of the method. */
+        /**
+         * Access flags of the method.
+         */
         public int access;
 
-        /** Name of the method. */
+        /**
+         * Name of the method.
+         */
         public String name;
 
-        /** Descriptor of the method. */
+        /**
+         * Descriptor of the method.
+         */
         public String descriptor;
 
-        /** Signature of the method. */
+        /**
+         * Signature of the method.
+         */
         public String signature;
 
-        /** Exceptions of the method. */
+        /**
+         * Exceptions of the method.
+         */
         public String[] exceptions;
 
         public MethodInfo(
@@ -249,22 +268,30 @@ public class VisitorHelper {
             this.exceptions = exceptions;
         }
 
-        /** Returns true if the method is synchronized. */
+        /**
+         * Returns true if the method is synchronized.
+         */
         public boolean isStatic() {
             return (access & Opcodes.ACC_STATIC) != 0;
         }
 
-        /** Changes the access flags of the method to be non-synchronized. */
+        /**
+         * Changes the access flags of the method to be non-synchronized.
+         */
         public int getNonSyncAccess() {
             return access & ~Opcodes.ACC_SYNCHRONIZED;
         }
 
-        /** Changes the name of the method to have a suffix of "$synchronized". */
+        /**
+         * Changes the name of the method to have a suffix of "$synchronized".
+         */
         public String getSyncName() {
             return name + "$synchronized";
         }
 
-        /** Changes the name of the method to have a suffix of "$unsynchronized". */
+        /**
+         * Changes the name of the method to have a suffix of "$unsynchronized".
+         */
         public String getUnsyncName() {
             return name + "$unsynchronized";
         }

@@ -12,8 +12,12 @@ import java.util.Objects;
  */
 public class JmcReadWriteVisitor {
 
-    /** Class visitor for JMC read-write visitor. */
+    /**
+     * Class visitor for JMC read-write visitor.
+     */
     public static class ReadWriteClassVisitor extends ClassVisitor {
+
+        private boolean isInterface;
 
         /**
          * Constructor.
@@ -25,14 +29,36 @@ public class JmcReadWriteVisitor {
         }
 
         @Override
+        public void visit(
+                int version,
+                int access,
+                String name,
+                String signature,
+                String superName,
+                String[] interfaces) {
+
+            if ((access & Opcodes.ACC_INTERFACE) != 0) {
+                isInterface = true;
+            }
+
+            super.visit(version, access, name, signature, superName, interfaces);
+        }
+
+        @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
             MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+            if (isInterface && Objects.equals(name, "<clinit>")) {
+                // If this is an interface static initializer, we do not instrument it
+                return mv;
+            }
             return new ReadWriteMethodVisitor(mv, access, descriptor, "<init>".equals(name));
         }
     }
 
-    /** Method visitor for JMC read-write visitor. */
+    /**
+     * Method visitor for JMC read-write visitor.
+     */
     public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor {
 
         private boolean instrumented;
@@ -43,8 +69,8 @@ public class JmcReadWriteVisitor {
         /**
          * Constructor.
          *
-         * @param mv The underlying MethodVisitor
-         * @param access The method's access flags
+         * @param mv         The underlying MethodVisitor
+         * @param access     The method's access flags
          * @param descriptor The method descriptor (e.g., "(I)V")
          */
         public ReadWriteMethodVisitor(

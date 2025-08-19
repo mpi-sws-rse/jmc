@@ -36,16 +36,11 @@ public class InstrumentationAgent {
      * set up the instrumentation agent.
      *
      * @param agentArgs the agent arguments
-     * @param inst the instrumentation object
+     * @param inst      the instrumentation object
      */
     public static void premain(String agentArgs, Instrumentation inst) {
         AgentArgs args = new AgentArgs(agentArgs);
-        LOGGER.info("Starting JMC agent");
-        System.out.println("Starting JMC agent");
-        //        if (args.isDebug()) {
-        //            Configurator.setRootLevel(Level.DEBUG);
-        //        }
-        System.out.println("Agent arguments: " + agentArgs);
+        LOGGER.debug("Starting JMC agent");
         LOGGER.debug("Arguments: {}", agentArgs);
         loadDependencyJars(inst, args.getJmcRuntimeJarPath());
 
