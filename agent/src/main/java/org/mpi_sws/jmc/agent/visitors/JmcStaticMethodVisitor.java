@@ -39,7 +39,7 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     public FieldVisitor visitField(
             int access, String name, String desc, String signature, Object value) {
         if (isInterface) {
-            interfaceFields.add(new FieldInfo(access, name, desc, signature, value));
+            interfaceFields.add(new FieldInfo(this.className, name, desc, value));
             return super.visitField(access, name, desc, signature, value);
         }
         if (isStaticFinalField(access)) {
@@ -52,7 +52,7 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     public MethodVisitor visitMethod(
             int access, String name, String desc, String signature, String[] exceptions) {
         // Check if the method is static
-        if (isInterface) {
+        if (isInterface && Objects.equals(name, "<clinit>")) {
             return new JmcStaticInitMethodVisitor(
                     super.visitMethod(access, name, desc, signature, exceptions), className);
         }
@@ -162,21 +162,24 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         }
     }
 
-    private record FieldInfo(int access, String name, String desc, String signature, Object value) {
+    private record FieldInfo(String className, String name, String desc, Object value) {
 
         public void insertWriteEventCall(MethodVisitor mv) {
-            mv.visitLdcInsn(Type.getObjectType(name));
-            mv.visitLdcInsn(Type.getType(desc));
-            if (value instanceof String) {
-                mv.visitLdcInsn(value);
-            } else {
+            if (value == null) {
                 mv.visitInsn(Opcodes.ACONST_NULL);
+            } else {
+                mv.visitLdcInsn(value);
+                VisitorHelper.addObjectConverter(mv, Type.getType(desc));
             }
+            mv.visitLdcInsn(className);
+            mv.visitLdcInsn(name);
+            mv.visitLdcInsn(desc);
+            mv.visitInsn(Opcodes.ACONST_NULL);
             mv.visitMethodInsn(
                     Opcodes.INVOKESTATIC,
                     "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                     "writeEvent",
-                    "(Ljava/lang/String;Ljava/lang/Class;Ljava/lang/Object;)V",
+                    "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V",
                     false);
         }
     }

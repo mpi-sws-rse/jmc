@@ -54,15 +54,15 @@ public class PremainInstrumentor implements ClassFileTransformer {
      *   <li>JmcReadWriteVisitor: Instruments read-write calls throughout.
      * </ul>
      *
-     * @param loader the defining loader of the class to be transformed, may be {@code null} if the
-     *     bootstrap loader
-     * @param className the name of the class in the internal form of fully qualified class and
-     *     interface names as defined in <i>The Java Virtual Machine Specification</i>. For example,
-     *     <code>"java/util/List"</code>.
+     * @param loader              the defining loader of the class to be transformed, may be {@code null} if the
+     *                            bootstrap loader
+     * @param className           the name of the class in the internal form of fully qualified class and
+     *                            interface names as defined in <i>The Java Virtual Machine Specification</i>. For example,
+     *                            <code>"java/util/List"</code>.
      * @param classBeingRedefined if this is triggered by a redefine or retransform, the class being
-     *     redefined or retransformed; if this is a class load, {@code null}
-     * @param protectionDomain the protection domain of the class being defined or redefined
-     * @param classFileBuffer the input byte buffer in class file format - must not be modified
+     *                            redefined or retransformed; if this is a class load, {@code null}
+     * @param protectionDomain    the protection domain of the class being defined or redefined
+     * @param classFileBuffer     the input byte buffer in class file format - must not be modified
      * @return the transformed class file buffer, or the original
      */
     public byte[] transform(
@@ -77,7 +77,6 @@ public class PremainInstrumentor implements ClassFileTransformer {
         if (!this.matcher.matches(finalClassName, loader)) {
             return copiedClassBuffer;
         }
-        System.out.println("Instrumenting class: " + finalClassName);
         ClassReader tempCr = new ClassReader(copiedClassBuffer);
         ClassWriter tempCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
@@ -91,8 +90,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
             // JmcIgnoreInstrumentation annotation
         }
 
-        System.out.println("Instrumenting class: " + finalClassName);
-        LOGGER.info("Instrumenting class: {}", finalClassName);
+        LOGGER.debug("Instrumenting class: {}", finalClassName);
         try {
             ClassReader syncCr = new ClassReader(copiedClassBuffer);
             ClassWriter syncCw =
