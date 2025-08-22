@@ -4,7 +4,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-import java.util.Set;
+import java.util.*;
 
 /**
  * Helper class for inserting instrumentation to generate RuntimeEvents for field read and write
@@ -259,6 +259,8 @@ public class VisitorHelper {
          */
         public String[] exceptions;
 
+        public List<AnnotationInfo> annotations = new ArrayList<>();
+
         public MethodInfo(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
             this.access = access;
@@ -346,5 +348,51 @@ public class VisitorHelper {
 
     public static Set<String> supportedFeatures() {
         return SUPPORTED_CONCURRENT_FEATURES;
+    }
+
+    public static class AnnotationInfo{
+        public String descriptor;
+        public Map<String, AnnotationValue> values = new HashMap<>();
+
+        public AnnotationInfo(String descriptor) {
+            this.descriptor = descriptor;
+        }
+
+        @Override
+        public String toString() {
+            return descriptor + " " + values;
+        }
+    }
+
+
+    public interface AnnotationValue { }
+
+    public static class PrimitiveValue implements AnnotationValue {
+        private final Object value;
+        public PrimitiveValue(Object value) { this.value = value; }
+        public Object getValue() { return value; }
+    }
+
+    public static class EnumValue implements AnnotationValue {
+        private final String descriptor;
+        private final String value;
+        public EnumValue(String descriptor, String value) {
+            this.descriptor = descriptor;
+            this.value = value;
+        }
+        public String getDescriptor() { return descriptor; }
+        public String getValue() { return value; }
+    }
+
+    public static class ArrayValue implements AnnotationValue {
+        private final List<AnnotationValue> values = new ArrayList<>();
+        public void addValue(AnnotationValue value) { values.add(value); }
+        public List<AnnotationValue> getValues() { return values; }
+    }
+
+    public static class NestedAnnotationValue implements AnnotationValue {
+        private final VisitorHelper.AnnotationInfo nested;
+        public NestedAnnotationValue(VisitorHelper.AnnotationInfo nested) { this.nested = nested; }
+        public VisitorHelper.AnnotationInfo getNested() { return nested; }
     }
 }

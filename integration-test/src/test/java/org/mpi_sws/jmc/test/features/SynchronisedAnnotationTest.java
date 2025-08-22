@@ -7,17 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SynchronisedAnnotationTest {
 
-    private int sharedValue = 0;
+    //private int sharedValue = 0;
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
-    public synchronized void testSomething() throws InterruptedException {
-        sharedValue++;
-
-        Thread.sleep(5000);
-
-        assertEquals(1, sharedValue);
-
-        sharedValue = 0;
+    public void testSynchronisedAnnotation() {
+        SynchronisedExtension e = new SynchronisedExtension();
+        assertEquals(e.doSomething(), 1);
     }
 }
