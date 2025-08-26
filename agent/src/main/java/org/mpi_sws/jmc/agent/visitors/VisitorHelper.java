@@ -16,9 +16,9 @@ public class VisitorHelper {
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field read operation.
      *
-     * @param mv The MethodVisitor to which the instrumentation will be added.
-     * @param owner The internal name of the class containing the field.
-     * @param name The name of the field.
+     * @param mv         The MethodVisitor to which the instrumentation will be added.
+     * @param owner      The internal name of the class containing the field.
+     * @param name       The name of the field.
      * @param descriptor The descriptor of the field.
      */
     public static void insertRead(
@@ -42,9 +42,9 @@ public class VisitorHelper {
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field write operation.
      *
-     * @param mv The MethodVisitor to which the instrumentation will be added.
-     * @param owner The internal name of the class containing the field.
-     * @param name The name of the field.
+     * @param mv         The MethodVisitor to which the instrumentation will be added.
+     * @param owner      The internal name of the class containing the field.
+     * @param name       The name of the field.
      * @param descriptor The descriptor of the field.
      */
     public static void insertWrite(
@@ -109,7 +109,7 @@ public class VisitorHelper {
      * Adds instructions to convert a primitive type on the stack to its corresponding wrapper
      * object.
      *
-     * @param mv The MethodVisitor to which the conversion instructions will be added.
+     * @param mv        The MethodVisitor to which the conversion instructions will be added.
      * @param fieldType The Type of the field to be converted.
      */
     public static void addObjectConverter(MethodVisitor mv, Type fieldType) {
@@ -198,7 +198,7 @@ public class VisitorHelper {
     /**
      * Adds a return instruction to the method visitor based on the method's return type.
      *
-     * @param mv The MethodVisitor to which the return instruction will be added.
+     * @param mv         The MethodVisitor to which the return instruction will be added.
      * @param descriptor The method descriptor, which contains the return type.
      */
     public static void addReturnInst(MethodVisitor mv, String descriptor) {
@@ -230,22 +230,34 @@ public class VisitorHelper {
         }
     }
 
-    /** The MethodInfo class is used to store information about a method. */
+    /**
+     * The MethodInfo class is used to store information about a method.
+     */
     public static class MethodInfo {
 
-        /** Access flags of the method. */
+        /**
+         * Access flags of the method.
+         */
         public int access;
 
-        /** Name of the method. */
+        /**
+         * Name of the method.
+         */
         public String name;
 
-        /** Descriptor of the method. */
+        /**
+         * Descriptor of the method.
+         */
         public String descriptor;
 
-        /** Signature of the method. */
+        /**
+         * Signature of the method.
+         */
         public String signature;
 
-        /** Exceptions of the method. */
+        /**
+         * Exceptions of the method.
+         */
         public String[] exceptions;
 
         public List<AnnotationInfo> annotations;
@@ -260,22 +272,30 @@ public class VisitorHelper {
             this.annotations = new ArrayList<>();
         }
 
-        /** Returns true if the method is synchronized. */
+        /**
+         * Returns true if the method is synchronized.
+         */
         public boolean isStatic() {
             return (access & Opcodes.ACC_STATIC) != 0;
         }
 
-        /** Changes the access flags of the method to be non-synchronized. */
+        /**
+         * Changes the access flags of the method to be non-synchronized.
+         */
         public int getNonSyncAccess() {
             return access & ~Opcodes.ACC_SYNCHRONIZED;
         }
 
-        /** Changes the name of the method to have a suffix of "$synchronized". */
+        /**
+         * Changes the name of the method to have a suffix of "$synchronized".
+         */
         public String getSyncName() {
             return name + "$synchronized";
         }
 
-        /** Changes the name of the method to have a suffix of "$unsynchronized". */
+        /**
+         * Changes the name of the method to have a suffix of "$unsynchronized".
+         */
         public String getUnsyncName() {
             return name + "$unsynchronized";
         }
@@ -336,11 +356,29 @@ public class VisitorHelper {
     }
 
     public static class AnnotationInfo {
-        public String descriptor;
-        public Map<String, AnnotationValue> values = new HashMap<>();
+        private final String descriptor;
+        private final boolean visible;
+        private final Map<String, AnnotationValue> values = new HashMap<>();
 
-        public AnnotationInfo(String descriptor) {
+        public AnnotationInfo(String descriptor, boolean visible) {
             this.descriptor = descriptor;
+            this.visible = visible;
+        }
+
+        public void addValue(String name, AnnotationValue value) {
+            values.put(name, value);
+        }
+
+        public Map<String, AnnotationValue> getValues() {
+            return values;
+        }
+
+        public String getDescriptor() {
+            return descriptor;
+        }
+
+        public boolean getVisibility() {
+            return visible;
         }
 
         @Override
@@ -349,13 +387,27 @@ public class VisitorHelper {
         }
     }
 
-    public interface AnnotationValue {}
+    public interface AnnotationValue {
+        Type type();
+
+        enum Type {
+            Primitive,
+            Enum,
+            Array,
+            Nested
+        }
+    }
 
     public static class PrimitiveValue implements AnnotationValue {
         private final Object value;
 
         public PrimitiveValue(Object value) {
             this.value = value;
+        }
+
+        @Override
+        public Type type() {
+            return Type.Primitive;
         }
 
         public Object getValue() {
@@ -372,6 +424,11 @@ public class VisitorHelper {
             this.value = value;
         }
 
+        @Override
+        public Type type() {
+            return Type.Enum;
+        }
+
         public String getDescriptor() {
             return descriptor;
         }
@@ -383,6 +440,11 @@ public class VisitorHelper {
 
     public static class ArrayValue implements AnnotationValue {
         private final List<AnnotationValue> values = new ArrayList<>();
+
+        @Override
+        public Type type() {
+            return Type.Array;
+        }
 
         public void addValue(AnnotationValue value) {
             values.add(value);
@@ -400,8 +462,55 @@ public class VisitorHelper {
             this.nested = nested;
         }
 
+        @Override
+        public Type type() {
+            return Type.Nested;
+        }
+
         public VisitorHelper.AnnotationInfo getNested() {
             return nested;
+        }
+    }
+
+    public static class JmcAnnotationRecordVisitor extends AnnotationVisitor {
+        AnnotationInfo annotationInfo;
+
+        public JmcAnnotationRecordVisitor(AnnotationInfo annotationInfo) {
+            super(Opcodes.ASM9);
+            this.annotationInfo = annotationInfo;
+        }
+
+        @Override
+        public void visit(String name, Object value) {
+            annotationInfo.addValue(name, new PrimitiveValue(value));
+        }
+
+        @Override
+        public void visitEnum(
+                String name, String descriptor, String value) {
+            annotationInfo.addValue(
+                    name, new VisitorHelper.EnumValue(descriptor, value));
+        }
+
+        @Override
+        public AnnotationVisitor visitArray(String name) {
+            VisitorHelper.ArrayValue arr = new VisitorHelper.ArrayValue();
+            AnnotationVisitor av = new AnnotationVisitor(Opcodes.ASM8) {
+                @Override
+                public void visit(String n, Object v) {
+                    arr.getValues()
+                            .add(new VisitorHelper.PrimitiveValue(v));
+                }
+            };
+            annotationInfo.addValue(name, arr);
+            return av;
+        }
+
+        @Override
+        public AnnotationVisitor visitAnnotation(String name, String descriptor) {
+            VisitorHelper.AnnotationInfo nested = new VisitorHelper.AnnotationInfo(descriptor, true);
+            annotationInfo.addValue(name, new NestedAnnotationValue(nested));
+            return new JmcAnnotationRecordVisitor(nested);
         }
     }
 }

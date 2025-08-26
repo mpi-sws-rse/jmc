@@ -55,6 +55,9 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
             VisitorHelper.MethodInfo methodInfo =
                     new VisitorHelper.MethodInfo(access, name, desc, signature, exceptions);
             syncMethods.add(methodInfo);
+            // We record the annotations of the method when visiting it
+            // Later when we recreate the method without synchronized, we add the annotations back
+            // See visitEnd
             mv =
                     new MethodVisitor(
                             Opcodes.ASM9,
@@ -67,80 +70,9 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
 
                         @Override
                         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-
-                            VisitorHelper.AnnotationInfo annInfo =
-                                    new VisitorHelper.AnnotationInfo(desc);
-                            methodInfo.annotations.add(annInfo);
-                            return new AnnotationVisitor(Opcodes.ASM8) {
-
-                                @Override
-                                public void visit(String key, Object value) {
-                                    annInfo.values.put(
-                                            key, new VisitorHelper.PrimitiveValue(value));
-                                }
-
-                                @Override
-                                public void visitEnum(
-                                        String name, String descriptor, String value) {
-                                    annInfo.values.put(
-                                            name, new VisitorHelper.EnumValue(descriptor, value));
-                                    super.visitEnum(name, descriptor, value);
-                                }
-
-                                @Override
-                                public AnnotationVisitor visitArray(String name) {
-                                    VisitorHelper.ArrayValue arr = new VisitorHelper.ArrayValue();
-                                    annInfo.values.put(name, arr);
-                                    return new AnnotationVisitor(Opcodes.ASM8) {
-                                        @Override
-                                        public void visit(String n, Object v) {
-                                            arr.getValues()
-                                                    .add(new VisitorHelper.PrimitiveValue(v));
-                                        }
-                                    };
-                                }
-
-                                @Override
-                                public AnnotationVisitor visitAnnotation(
-                                        String key, String descriptor) {
-                                    VisitorHelper.AnnotationInfo nestedInfo =
-                                            new VisitorHelper.AnnotationInfo(descriptor);
-                                    VisitorHelper.NestedAnnotationValue nestedVal =
-                                            new VisitorHelper.NestedAnnotationValue(nestedInfo);
-                                    nestedInfo.values.put(key, nestedVal);
-
-                                    return new AnnotationVisitor(Opcodes.ASM8) {
-
-                                        @Override
-                                        public void visit(String k, Object v) {
-                                            nestedInfo.values.put(
-                                                    k, new VisitorHelper.PrimitiveValue(v));
-                                        }
-
-                                        @Override
-                                        public void visitEnum(String k, String dd, String v) {
-                                            nestedInfo.values.put(
-                                                    k, new VisitorHelper.EnumValue(dd, v));
-                                        }
-
-                                        @Override
-                                        public AnnotationVisitor visitArray(String k) {
-                                            VisitorHelper.ArrayValue arr =
-                                                    new VisitorHelper.ArrayValue();
-                                            nestedInfo.values.put(k, arr);
-                                            return new AnnotationVisitor(Opcodes.ASM8) {
-                                                @Override
-                                                public void visit(String n, Object v) {
-                                                    arr.getValues()
-                                                            .add(
-                                                                    new VisitorHelper
-                                                                            .PrimitiveValue(v));
-                                                }
-                                            };
-                                        }
-                                    };
-                                }
-                            };
+                            VisitorHelper.AnnotationInfo annotationInfo = new VisitorHelper.AnnotationInfo(desc, visible);
+                            methodInfo.annotations.add(annotationInfo);
+                            return new VisitorHelper.JmcAnnotationRecordVisitor(annotationInfo);
                         }
                     };
 
@@ -163,26 +95,37 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         super.visitEnd();
     }
 
+    // A recursive method to replay the values of the annotation for the given annotation visitor
     private void writeAnnotationValue(
             AnnotationVisitor annotationVisitor, String name, VisitorHelper.AnnotationValue value) {
-        if (value instanceof VisitorHelper.PrimitiveValue pv) {
-            annotationVisitor.visit(name, pv.getValue());
-        } else if (value instanceof VisitorHelper.EnumValue ev) {
-            annotationVisitor.visitEnum(name, ev.getDescriptor(), ev.getValue());
-        } else if (value instanceof VisitorHelper.ArrayValue arrv) {
-            AnnotationVisitor arrayVisitor = annotationVisitor.visitArray(name);
-            for (VisitorHelper.AnnotationValue v : arrv.getValues()) {
-                writeAnnotationValue(arrayVisitor, name, v);
+        switch (value.type()) {
+            case Primitive -> {
+                annotationVisitor.visit(name, ((VisitorHelper.PrimitiveValue) value).getValue());
+                break;
             }
-            arrayVisitor.visitEnd();
-        } else if (value instanceof VisitorHelper.NestedAnnotationValue nested) {
-            AnnotationVisitor nestedVisitor =
-                    annotationVisitor.visitAnnotation(name, nested.getNested().descriptor);
-            for (Map.Entry<String, VisitorHelper.AnnotationValue> e :
-                    nested.getNested().values.entrySet()) {
-                writeAnnotationValue(nestedVisitor, e.getKey(), e.getValue());
+            case Enum -> {
+                VisitorHelper.EnumValue ev = (VisitorHelper.EnumValue) value;
+                annotationVisitor.visitEnum(name, ev.getDescriptor(), ev.getValue());
+                break;
             }
-            nestedVisitor.visitEnd();
+            case Array -> {
+                AnnotationVisitor arrayVisitor = annotationVisitor.visitArray(name);
+                for (VisitorHelper.AnnotationValue v : ((VisitorHelper.ArrayValue) value).getValues()) {
+                    writeAnnotationValue(arrayVisitor, name, v);
+                }
+                break;
+            }
+            case Nested -> {
+                VisitorHelper.NestedAnnotationValue nested = (VisitorHelper.NestedAnnotationValue) value;
+                AnnotationVisitor nestedVisitor =
+                        annotationVisitor.visitAnnotation(name, nested.getNested().getDescriptor());
+                for (Map.Entry<String, VisitorHelper.AnnotationValue> e :
+                        nested.getNested().getValues().entrySet()) {
+                    writeAnnotationValue(nestedVisitor, e.getKey(), e.getValue());
+                }
+                nestedVisitor.visitEnd();
+                break;
+            }
         }
     }
 
@@ -196,8 +139,8 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                         methodInfo.exceptions);
 
         for (VisitorHelper.AnnotationInfo ann : methodInfo.annotations) {
-            AnnotationVisitor newMvAv = newMv.visitAnnotation(ann.descriptor, true);
-            for (Map.Entry<String, VisitorHelper.AnnotationValue> e : ann.values.entrySet()) {
+            AnnotationVisitor newMvAv = newMv.visitAnnotation(ann.getDescriptor(), ann.getVisibility());
+            for (Map.Entry<String, VisitorHelper.AnnotationValue> e : ann.getValues().entrySet()) {
                 writeAnnotationValue(newMvAv, e.getKey(), e.getValue());
             }
             newMvAv.visitEnd();
@@ -259,7 +202,7 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         // Error occurred. Unlock and throw exception.
         newMv.visitLabel(l2);
         // Visit frame for throwable and store the exception
-        newMv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] {"java/lang/Throwable"});
+        newMv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[]{"java/lang/Throwable"});
         newMv.visitIntInsn(Opcodes.ASTORE, 1);
         // Unlock
         newMv.visitIntInsn(Opcodes.ALOAD, 0);

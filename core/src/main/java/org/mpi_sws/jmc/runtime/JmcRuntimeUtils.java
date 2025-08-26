@@ -472,7 +472,7 @@ public class JmcRuntimeUtils {
 
     private static void invokeInstrumentedStaticMethod() {
         if (staticInitializedClasses.isEmpty()) {
-            LOGGER.info("No static initialized classes to invoke.");
+            LOGGER.debug("No static initialized classes to invoke.");
             return;
         }
         List<Class<?>> snapshot = new ArrayList<>(staticInitializedClassesList);
