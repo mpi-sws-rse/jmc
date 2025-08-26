@@ -179,7 +179,7 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
                     Opcodes.INVOKESTATIC,
                     "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                     "writeEvent",
-                    "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)V",
+                    "(Ljava/lang/String;Ljava/lang/Class;Ljava/lang/Object;)V",
                     false);
         }
     }

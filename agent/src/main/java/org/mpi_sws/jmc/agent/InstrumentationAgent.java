@@ -36,7 +36,7 @@ public class InstrumentationAgent {
      * set up the instrumentation agent.
      *
      * @param agentArgs the agent arguments
-     * @param inst      the instrumentation object
+     * @param inst the instrumentation object
      */
     public static void premain(String agentArgs, Instrumentation inst) {
         AgentArgs args = new AgentArgs(agentArgs);
@@ -44,7 +44,13 @@ public class InstrumentationAgent {
         LOGGER.debug("Arguments: {}", agentArgs);
         loadDependencyJars(inst, args.getJmcRuntimeJarPath());
 
-        PremainInstrumentor instrumentor = new PremainInstrumentor(args);
-        inst.addTransformer(instrumentor, true);
+        try {
+            PremainInstrumentor instrumentor = new PremainInstrumentor(args);
+            inst.addTransformer(instrumentor, true);
+        } catch (Exception e) {
+            LOGGER.error("Failed to initialize JMC agent", e);
+            System.err.println("Failed to initialize JMC agent: " + e.getMessage());
+            throw new RuntimeException("Failed to initialize JMC agent", e);
+        }
     }
 }

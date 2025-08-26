@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.agent.visitors;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -15,9 +16,9 @@ public class VisitorHelper {
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field read operation.
      *
-     * @param mv         The MethodVisitor to which the instrumentation will be added.
-     * @param owner      The internal name of the class containing the field.
-     * @param name       The name of the field.
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param owner The internal name of the class containing the field.
+     * @param name The name of the field.
      * @param descriptor The descriptor of the field.
      */
     public static void insertRead(
@@ -41,9 +42,9 @@ public class VisitorHelper {
     /**
      * Inserts instrumentation to generate a RuntimeEvent for a field write operation.
      *
-     * @param mv         The MethodVisitor to which the instrumentation will be added.
-     * @param owner      The internal name of the class containing the field.
-     * @param name       The name of the field.
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param owner The internal name of the class containing the field.
+     * @param name The name of the field.
      * @param descriptor The descriptor of the field.
      */
     public static void insertWrite(
@@ -105,11 +106,11 @@ public class VisitorHelper {
     }
 
     /**
-     * Adds an object converter to the method visitor. This is used to convert primitive types to
-     * their corresponding wrapper classes (e.g., int to Integer, boolean to Boolean, etc.).
+     * Adds instructions to convert a primitive type on the stack to its corresponding wrapper
+     * object.
      *
-     * @param mv        The MethodVisitor to which the object converter will be added.
-     * @param fieldType The Type of the field for which the object converter is being added.
+     * @param mv The MethodVisitor to which the conversion instructions will be added.
+     * @param fieldType The Type of the field to be converted.
      */
     public static void addObjectConverter(MethodVisitor mv, Type fieldType) {
         switch (fieldType.getSort()) {
@@ -197,7 +198,7 @@ public class VisitorHelper {
     /**
      * Adds a return instruction to the method visitor based on the method's return type.
      *
-     * @param mv         The MethodVisitor to which the return instruction will be added.
+     * @param mv The MethodVisitor to which the return instruction will be added.
      * @param descriptor The method descriptor, which contains the return type.
      */
     public static void addReturnInst(MethodVisitor mv, String descriptor) {
@@ -229,37 +230,25 @@ public class VisitorHelper {
         }
     }
 
-    /**
-     * The MethodInfo class is used to store information about a method.
-     */
+    /** The MethodInfo class is used to store information about a method. */
     public static class MethodInfo {
 
-        /**
-         * Access flags of the method.
-         */
+        /** Access flags of the method. */
         public int access;
 
-        /**
-         * Name of the method.
-         */
+        /** Name of the method. */
         public String name;
 
-        /**
-         * Descriptor of the method.
-         */
+        /** Descriptor of the method. */
         public String descriptor;
 
-        /**
-         * Signature of the method.
-         */
+        /** Signature of the method. */
         public String signature;
 
-        /**
-         * Exceptions of the method.
-         */
+        /** Exceptions of the method. */
         public String[] exceptions;
 
-        public List<AnnotationInfo> annotations = new ArrayList<>();
+        public List<AnnotationInfo> annotations;
 
         public MethodInfo(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -268,79 +257,75 @@ public class VisitorHelper {
             this.descriptor = descriptor;
             this.signature = signature;
             this.exceptions = exceptions;
+            this.annotations = new ArrayList<>();
         }
 
-        /**
-         * Returns true if the method is synchronized.
-         */
+        /** Returns true if the method is synchronized. */
         public boolean isStatic() {
             return (access & Opcodes.ACC_STATIC) != 0;
         }
 
-        /**
-         * Changes the access flags of the method to be non-synchronized.
-         */
+        /** Changes the access flags of the method to be non-synchronized. */
         public int getNonSyncAccess() {
             return access & ~Opcodes.ACC_SYNCHRONIZED;
         }
 
-        /**
-         * Changes the name of the method to have a suffix of "$synchronized".
-         */
+        /** Changes the name of the method to have a suffix of "$synchronized". */
         public String getSyncName() {
             return name + "$synchronized";
         }
 
-        /**
-         * Changes the name of the method to have a suffix of "$unsynchronized".
-         */
+        /** Changes the name of the method to have a suffix of "$unsynchronized". */
         public String getUnsyncName() {
             return name + "$unsynchronized";
         }
 
+        public void addAnnotation(AnnotationInfo annotation) {
+            this.annotations.add(annotation);
+        }
     }
 
-    private static final Set<String> SUPPORTED_CONCURRENT_FEATURES = Set.of(
-            "java.util.concurrent.atomic.AtomicBoolean.<init>",
-            "java.util.concurrent.atomic.AtomicBoolean.get",
-            "java.util.concurrent.atomic.AtomicBoolean.set",
-            "java.util.concurrent.atomic.AtomicBoolean.compareAndSet",
-            "java.util.concurrent.atomic.AtomicInteger.<init>",
-            "java.util.concurrent.atomic.AtomicInteger.get",
-            "java.util.concurrent.atomic.AtomicInteger.set",
-            "java.util.concurrent.atomic.AtomicInteger.compareAndSet",
-            "java.util.concurrent.atomic.AtomicInteger.getAndIncrement",
-            "java.util.concurrent.atomic.AtomicInteger.getAndSet",
-            "java.util.concurrent.atomic.AtomicInteger.addAndGet",
-            "java.util.concurrent.atomic.AtomicReference.<init>",
-            "java.util.concurrent.atomic.AtomicReference.get",
-            "java.util.concurrent.atomic.AtomicReference.set",
-            "java.util.concurrent.atomic.AtomicReference.compareAndSet",
-            "java.util.concurrent.atomic.AtomicReference.getAndSet",
-            "java.util.concurrent.atomic.AtomicReferenceArray.<init>",
-            "java.util.concurrent.atomic.AtomicReferenceArray.get",
-            "java.util.concurrent.atomic.AtomicReferenceArray.set",
-            "java.util.concurrent.atomic.AtomicReferenceArray.getAndSet",
-            "java.util.concurrent.CompletableFuture.<init>",
-            "java.util.concurrent.ExecutorService.<init>",
-            "java.util.concurrent.ExecutorService.shutdownNow",
-            "java.util.concurrent.ExecutorService.shutdown",
-            "java.util.concurrent.ExecutorService.awaitTermination",
-            "java.util.concurrent.ExecutorService.isTerminated",
-            "java.util.concurrent.ExecutorService.isShutdown",
-            "java.util.concurrent.RunnableFuture.<init>",
-            "java.util.concurrent.RunnableFuture.cancel",
-            "java.util.concurrent.Executors.newSingleThreadExecutor",
-            "java.util.concurrent.Executors.newFixedThreadPool",
-            "java.util.concurrent.locks.LockSupport.park",
-            "java.util.concurrent.locks.LockSupport.unpark",
-            "java.util.concurrent.locks.ReentrantLock.lock",
-            "java.util.concurrent.locks.ReentrantLock.unlock",
-            "java.lang.Thread.run",
-            "java.lang.Thread.join",
-            "java.util.concurrent.ThreadFactory.newThread",
-            "java.util.concurrent.ThreadPoolExecutor.<init>"
-    );
+    private static final Set<String> SUPPORTED_CONCURRENT_FEATURES =
+            Set.of(
+                    "java.util.concurrent.atomic.AtomicBoolean.<init>",
+                    "java.util.concurrent.atomic.AtomicBoolean.get",
+                    "java.util.concurrent.atomic.AtomicBoolean.set",
+                    "java.util.concurrent.atomic.AtomicBoolean.compareAndSet",
+                    "java.util.concurrent.atomic.AtomicInteger.<init>",
+                    "java.util.concurrent.atomic.AtomicInteger.get",
+                    "java.util.concurrent.atomic.AtomicInteger.set",
+                    "java.util.concurrent.atomic.AtomicInteger.compareAndSet",
+                    "java.util.concurrent.atomic.AtomicInteger.getAndIncrement",
+                    "java.util.concurrent.atomic.AtomicInteger.getAndSet",
+                    "java.util.concurrent.atomic.AtomicInteger.addAndGet",
+                    "java.util.concurrent.atomic.AtomicReference.<init>",
+                    "java.util.concurrent.atomic.AtomicReference.get",
+                    "java.util.concurrent.atomic.AtomicReference.set",
+                    "java.util.concurrent.atomic.AtomicReference.compareAndSet",
+                    "java.util.concurrent.atomic.AtomicReference.getAndSet",
+                    "java.util.concurrent.atomic.AtomicReferenceArray.<init>",
+                    "java.util.concurrent.atomic.AtomicReferenceArray.get",
+                    "java.util.concurrent.atomic.AtomicReferenceArray.set",
+                    "java.util.concurrent.atomic.AtomicReferenceArray.getAndSet",
+                    "java.util.concurrent.CompletableFuture.<init>",
+                    "java.util.concurrent.ExecutorService.<init>",
+                    "java.util.concurrent.ExecutorService.shutdownNow",
+                    "java.util.concurrent.ExecutorService.shutdown",
+                    "java.util.concurrent.ExecutorService.awaitTermination",
+                    "java.util.concurrent.ExecutorService.isTerminated",
+                    "java.util.concurrent.ExecutorService.isShutdown",
+                    "java.util.concurrent.RunnableFuture.<init>",
+                    "java.util.concurrent.RunnableFuture.cancel",
+                    "java.util.concurrent.Executors.newSingleThreadExecutor",
+                    "java.util.concurrent.Executors.newFixedThreadPool",
+                    "java.util.concurrent.locks.LockSupport.park",
+                    "java.util.concurrent.locks.LockSupport.unpark",
+                    "java.util.concurrent.locks.ReentrantLock.lock",
+                    "java.util.concurrent.locks.ReentrantLock.unlock",
+                    "java.lang.Thread.run",
+                    "java.lang.Thread.join",
+                    "java.util.concurrent.ThreadFactory.newThread",
+                    "java.util.concurrent.ThreadPoolExecutor.<init>");
 
     public static boolean isConcurrentFeatureSupported(String feature) {
         return SUPPORTED_CONCURRENT_FEATURES.contains(feature);
@@ -350,7 +335,7 @@ public class VisitorHelper {
         return SUPPORTED_CONCURRENT_FEATURES;
     }
 
-    public static class AnnotationInfo{
+    public static class AnnotationInfo {
         public String descriptor;
         public Map<String, AnnotationValue> values = new HashMap<>();
 
@@ -364,35 +349,59 @@ public class VisitorHelper {
         }
     }
 
-
-    public interface AnnotationValue { }
+    public interface AnnotationValue {}
 
     public static class PrimitiveValue implements AnnotationValue {
         private final Object value;
-        public PrimitiveValue(Object value) { this.value = value; }
-        public Object getValue() { return value; }
+
+        public PrimitiveValue(Object value) {
+            this.value = value;
+        }
+
+        public Object getValue() {
+            return value;
+        }
     }
 
     public static class EnumValue implements AnnotationValue {
         private final String descriptor;
         private final String value;
+
         public EnumValue(String descriptor, String value) {
             this.descriptor = descriptor;
             this.value = value;
         }
-        public String getDescriptor() { return descriptor; }
-        public String getValue() { return value; }
+
+        public String getDescriptor() {
+            return descriptor;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 
     public static class ArrayValue implements AnnotationValue {
         private final List<AnnotationValue> values = new ArrayList<>();
-        public void addValue(AnnotationValue value) { values.add(value); }
-        public List<AnnotationValue> getValues() { return values; }
+
+        public void addValue(AnnotationValue value) {
+            values.add(value);
+        }
+
+        public List<AnnotationValue> getValues() {
+            return values;
+        }
     }
 
     public static class NestedAnnotationValue implements AnnotationValue {
         private final VisitorHelper.AnnotationInfo nested;
-        public NestedAnnotationValue(VisitorHelper.AnnotationInfo nested) { this.nested = nested; }
-        public VisitorHelper.AnnotationInfo getNested() { return nested; }
+
+        public NestedAnnotationValue(VisitorHelper.AnnotationInfo nested) {
+            this.nested = nested;
+        }
+
+        public VisitorHelper.AnnotationInfo getNested() {
+            return nested;
+        }
     }
 }

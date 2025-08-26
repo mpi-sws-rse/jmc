@@ -77,21 +77,23 @@ public class PremainInstrumentor implements ClassFileTransformer {
         if (!this.matcher.matches(finalClassName, loader)) {
             return copiedClassBuffer;
         }
-        ClassReader tempCr = new ClassReader(copiedClassBuffer);
-        ClassWriter tempCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
-        JmcIgnoreVisitor ignoreVisitor = new JmcIgnoreVisitor(tempCw);
-        tempCr.accept(
-                ignoreVisitor,
-                ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
-        if (ignoreVisitor.hasIgnoreAnnotation()) {
-            return copiedClassBuffer; // Skip instrumentation if the class has
-            // JmcIgnoreInstrumentation annotation
-        }
-
-        LOGGER.debug("Instrumenting class: {}", finalClassName);
         try {
+            ClassReader tempCr = new ClassReader(copiedClassBuffer);
+            ClassWriter tempCw =
+                    new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+
+            JmcIgnoreVisitor ignoreVisitor = new JmcIgnoreVisitor(tempCw);
+            tempCr.accept(
+                    ignoreVisitor,
+                    ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+
+            if (ignoreVisitor.hasIgnoreAnnotation()) {
+                return copiedClassBuffer; // Skip instrumentation if the class has
+                // JmcIgnoreInstrumentation annotation
+            }
+
+            LOGGER.debug("Instrumenting class: {}", finalClassName);
             ClassReader syncCr = new ClassReader(copiedClassBuffer);
             ClassWriter syncCw =
                     new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
@@ -132,6 +134,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
         String outputDir = this.agentArgs.getDebugSavePath();
         File outFile = new File(outputDir + "/" + className + ".class");
         try {
+            LOGGER.debug("Recording instrumented class: {}", className);
             outFile.getParentFile().mkdirs();
             Files.write(outFile.toPath(), classFileBuffer);
         } catch (Exception e) {

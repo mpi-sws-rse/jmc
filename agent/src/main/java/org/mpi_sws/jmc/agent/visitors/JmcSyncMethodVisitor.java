@@ -25,7 +25,6 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         this.jmcSyncScanData = jmcSyncScanData;
     }
 
-
     @Override
     public void visit(
             int version,
@@ -37,7 +36,6 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         this.className = name;
         super.visit(version, access, name, signature, superName, interfaces);
     }
-
 
     @Override
     public MethodVisitor visitMethod(
@@ -58,80 +56,93 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                     new VisitorHelper.MethodInfo(access, name, desc, signature, exceptions);
             syncMethods.add(methodInfo);
             mv =
-                    new MethodVisitor(Opcodes.ASM9, super.visitMethod(
-                            access & ~Opcodes.ACC_SYNCHRONIZED,
-                            methodInfo.getUnsyncName(),
-                            desc,
-                            signature,
-                            exceptions)) {
+                    new MethodVisitor(
+                            Opcodes.ASM9,
+                            super.visitMethod(
+                                    access & ~Opcodes.ACC_SYNCHRONIZED,
+                                    methodInfo.getUnsyncName(),
+                                    desc,
+                                    signature,
+                                    exceptions)) {
 
-                    @Override
+                        @Override
                         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
 
-                        VisitorHelper.AnnotationInfo annInfo = new VisitorHelper.AnnotationInfo(desc);
-                        methodInfo.annotations.add(annInfo);
-                        return new AnnotationVisitor(Opcodes.ASM8){
+                            VisitorHelper.AnnotationInfo annInfo =
+                                    new VisitorHelper.AnnotationInfo(desc);
+                            methodInfo.annotations.add(annInfo);
+                            return new AnnotationVisitor(Opcodes.ASM8) {
 
-                            @Override
-                            public void visit(String key, Object value) {
-                                annInfo.values.put(key, new VisitorHelper.PrimitiveValue(value));
-                            }
+                                @Override
+                                public void visit(String key, Object value) {
+                                    annInfo.values.put(
+                                            key, new VisitorHelper.PrimitiveValue(value));
+                                }
 
-                            @Override
-                            public void visitEnum(String name, String descriptor, String value) {
-                                annInfo.values.put(name, new VisitorHelper.EnumValue(descriptor, value));
-                                super.visitEnum(name, descriptor, value);
-                            }
+                                @Override
+                                public void visitEnum(
+                                        String name, String descriptor, String value) {
+                                    annInfo.values.put(
+                                            name, new VisitorHelper.EnumValue(descriptor, value));
+                                    super.visitEnum(name, descriptor, value);
+                                }
 
-                            @Override
-                            public AnnotationVisitor visitArray(String name) {
-                                VisitorHelper.ArrayValue arr = new VisitorHelper.ArrayValue();
-                                annInfo.values.put(name, arr);
-                                return new AnnotationVisitor(Opcodes.ASM8) {
-                                    @Override
-                                    public void visit(String n, Object v) {
-                                        arr.getValues().add(new VisitorHelper.PrimitiveValue(v));
-                                    }
-                                };
-                            }
-
-                            @Override
-                            public AnnotationVisitor visitAnnotation(String key, String descriptor) {
-                                VisitorHelper.AnnotationInfo nestedInfo = new VisitorHelper.AnnotationInfo(descriptor);
-                                VisitorHelper.NestedAnnotationValue nestedVal = new VisitorHelper.NestedAnnotationValue(nestedInfo);
-                                nestedInfo.values.put(key, nestedVal);
-
-                                return new AnnotationVisitor(Opcodes.ASM8) {
-
-                                    @Override
-                                    public void visit(String k, Object v) {
-                                        nestedInfo.values.put(k, new VisitorHelper.PrimitiveValue(v));
-                                    }
-
-                                    @Override
-                                    public void visitEnum(String k, String dd, String v) {
-                                        nestedInfo.values.put(k, new VisitorHelper.EnumValue(dd, v));
-                                    }
-
-                                    @Override
-                                    public AnnotationVisitor visitArray(String k) {
-                                        VisitorHelper.ArrayValue arr = new VisitorHelper.ArrayValue();
-                                        nestedInfo.values.put(k, arr);
-                                        return new AnnotationVisitor(Opcodes.ASM8) {
-                                            @Override
-                                            public void visit(String n, Object v) {
-                                                arr.getValues().add(new VisitorHelper.PrimitiveValue(v));
-                                            }
-                                        };
+                                @Override
+                                public AnnotationVisitor visitArray(String name) {
+                                    VisitorHelper.ArrayValue arr = new VisitorHelper.ArrayValue();
+                                    annInfo.values.put(name, arr);
+                                    return new AnnotationVisitor(Opcodes.ASM8) {
+                                        @Override
+                                        public void visit(String n, Object v) {
+                                            arr.getValues()
+                                                    .add(new VisitorHelper.PrimitiveValue(v));
                                         }
-                                };
-                            }
+                                    };
+                                }
 
+                                @Override
+                                public AnnotationVisitor visitAnnotation(
+                                        String key, String descriptor) {
+                                    VisitorHelper.AnnotationInfo nestedInfo =
+                                            new VisitorHelper.AnnotationInfo(descriptor);
+                                    VisitorHelper.NestedAnnotationValue nestedVal =
+                                            new VisitorHelper.NestedAnnotationValue(nestedInfo);
+                                    nestedInfo.values.put(key, nestedVal);
 
-                        };
-                    }
+                                    return new AnnotationVisitor(Opcodes.ASM8) {
 
-            };
+                                        @Override
+                                        public void visit(String k, Object v) {
+                                            nestedInfo.values.put(
+                                                    k, new VisitorHelper.PrimitiveValue(v));
+                                        }
+
+                                        @Override
+                                        public void visitEnum(String k, String dd, String v) {
+                                            nestedInfo.values.put(
+                                                    k, new VisitorHelper.EnumValue(dd, v));
+                                        }
+
+                                        @Override
+                                        public AnnotationVisitor visitArray(String k) {
+                                            VisitorHelper.ArrayValue arr =
+                                                    new VisitorHelper.ArrayValue();
+                                            nestedInfo.values.put(k, arr);
+                                            return new AnnotationVisitor(Opcodes.ASM8) {
+                                                @Override
+                                                public void visit(String n, Object v) {
+                                                    arr.getValues()
+                                                            .add(
+                                                                    new VisitorHelper
+                                                                            .PrimitiveValue(v));
+                                                }
+                                            };
+                                        }
+                                    };
+                                }
+                            };
+                        }
+                    };
 
         } else {
             mv = super.visitMethod(access, name, desc, signature, exceptions);
@@ -141,7 +152,6 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
             // If there are sync blocks, we still need to instrument monitorenter/monitorexit
             mv = new JmcSyncBlockMethodVisitor(mv);
         }
-
         return mv;
     }
 
@@ -153,7 +163,8 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         super.visitEnd();
     }
 
-    private void writeAnnotationValue(AnnotationVisitor annotationVisitor, String name, VisitorHelper.AnnotationValue value) {
+    private void writeAnnotationValue(
+            AnnotationVisitor annotationVisitor, String name, VisitorHelper.AnnotationValue value) {
         if (value instanceof VisitorHelper.PrimitiveValue pv) {
             annotationVisitor.visit(name, pv.getValue());
         } else if (value instanceof VisitorHelper.EnumValue ev) {
@@ -165,8 +176,10 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
             }
             arrayVisitor.visitEnd();
         } else if (value instanceof VisitorHelper.NestedAnnotationValue nested) {
-            AnnotationVisitor nestedVisitor = annotationVisitor.visitAnnotation(name, nested.getNested().descriptor);
-            for (Map.Entry<String, VisitorHelper.AnnotationValue> e : nested.getNested().values.entrySet()) {
+            AnnotationVisitor nestedVisitor =
+                    annotationVisitor.visitAnnotation(name, nested.getNested().descriptor);
+            for (Map.Entry<String, VisitorHelper.AnnotationValue> e :
+                    nested.getNested().values.entrySet()) {
                 writeAnnotationValue(nestedVisitor, e.getKey(), e.getValue());
             }
             nestedVisitor.visitEnd();
@@ -185,13 +198,12 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         for (VisitorHelper.AnnotationInfo ann : methodInfo.annotations) {
             AnnotationVisitor newMvAv = newMv.visitAnnotation(ann.descriptor, true);
             for (Map.Entry<String, VisitorHelper.AnnotationValue> e : ann.values.entrySet()) {
-                writeAnnotationValue(newMvAv,e.getKey(), e.getValue());
+                writeAnnotationValue(newMvAv, e.getKey(), e.getValue());
             }
             newMvAv.visitEnd();
         }
 
         newMv.visitCode();
-
 
         Label l0 = new Label();
         Label l1 = new Label();
@@ -231,7 +243,6 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                     methodInfo.descriptor,
                     false);
         }
-
         newMv.visitLabel(l1);
 
         // No error unlock
