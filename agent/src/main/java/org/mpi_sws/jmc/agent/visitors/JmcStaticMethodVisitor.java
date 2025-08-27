@@ -112,6 +112,16 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
                     "(Ljava/lang/Class;)V",
                     false);
 
+            // Call $staticInit within the original <clinit>. Since classes are loaded lazyily in java,
+            // The registration call need not have occurred when the JmcRuntime is initialized. As a result, no static
+            // initialization will occur.
+            //
+            // Therefore. We make one invocation to $staticInit here and skip calling the static initialization for the
+            // first iteration of the model checker.
+
+            mv.visitMethodInsn(
+                    Opcodes.INVOKESTATIC, className, "$staticInit", "()V", false);
+
             mv.visitInsn(Opcodes.RETURN);
             mv.visitMaxs(-1, -1);
             mv.visitEnd();

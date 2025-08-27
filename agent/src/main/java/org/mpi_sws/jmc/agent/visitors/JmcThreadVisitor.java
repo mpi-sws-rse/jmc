@@ -2,6 +2,8 @@ package org.mpi_sws.jmc.agent.visitors;
 
 import org.objectweb.asm.*;
 
+import java.util.Set;
+
 /**
  * Represents a JMC thread visitor. Adds instrumentation to change Thread calls to JmcThread calls
  */
@@ -105,7 +107,6 @@ public class JmcThreadVisitor {
             @Override
             public void visitMethodInsn(
                     int opcode, String owner, String name, String descriptor, boolean isInterface) {
-                // Modify constructor calls to use JmcThread
                 super.visitMethodInsn(
                         opcode,
                         replaceType(owner),
@@ -188,6 +189,7 @@ public class JmcThreadVisitor {
      * calls to "run1" and "join1" respectively.
      */
     public static class ThreadCallReplacerMethodVisitor extends MethodVisitor {
+        private static final Set<String> JOIN_DESCRIPTORS = Set.of("()V", "(J)V", "(JI)V", "(Ljava/time/Duration;)Z");
 
         /**
          * Constructor.
@@ -205,7 +207,7 @@ public class JmcThreadVisitor {
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
-            if (name.equals("join") && opcode == Opcodes.INVOKEVIRTUAL) {
+            if (name.equals("join") && opcode == Opcodes.INVOKEVIRTUAL && JOIN_DESCRIPTORS.contains(descriptor)) {
                 // Duplicate top of the stack (the object on which join() is called)
                 mv.visitInsn(Opcodes.DUP);
 
