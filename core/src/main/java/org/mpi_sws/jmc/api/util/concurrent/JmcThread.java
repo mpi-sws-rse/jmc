@@ -2,6 +2,7 @@ package org.mpi_sws.jmc.api.util.concurrent;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
@@ -24,17 +25,38 @@ public class JmcThread extends Thread {
     // TODO: extend to all constructors of Thread and handle ThreadGroups, also all join methods
     //      Should be a drop in replacement for all possible ways to use Threads
 
-    /** Constructs a new JmcThread object. */
+    /**
+     * Constructs a new JmcThread object.
+     */
     public JmcThread() {
         this(JmcRuntime.addNewTask());
     }
 
-    /** Constructs a new JmcThread object with the given Runnable. */
+    /**
+     * Constructs a new JmcThread object with the given Runnable.
+     */
     public JmcThread(Runnable r) {
         this(r, JmcRuntime.addNewTask());
     }
 
-    /** Constructs a new JmcThread object with the given JMC thread ID. */
+    // Private constructor to handle wrapping existing threads
+    // without initializing a new JMC task in the runtime.
+    // Using any JmcThread method will break if initialize is false.
+    private JmcThread(Runnable r, boolean initialize) {
+        super(r);
+        if (initialize) {
+            this.jmcThreadId = JmcRuntime.addNewTask();
+            this.createdBy = JmcRuntime.currentTask();
+            super.setUncaughtExceptionHandler(this::handleInterrupt);
+        } else {
+            this.jmcThreadId = null;
+            this.createdBy = null;
+        }
+    }
+
+    /**
+     * Constructs a new JmcThread object with the given JMC thread ID.
+     */
     public JmcThread(Long jmcThreadId) {
         super();
         this.jmcThreadId = jmcThreadId;
@@ -43,12 +65,24 @@ public class JmcThread extends Thread {
         LOGGER = LogManager.getLogger(JmcThread.class.getName() + " Task=" + jmcThreadId);
     }
 
-    /** Constructs a new JmcThread object with the given Runnable and JMC thread ID. */
+    /**
+     * Constructs a new JmcThread object with the given Runnable and JMC thread ID.
+     */
     public JmcThread(Runnable r, Long jmcThreadId) {
         super(r);
         this.jmcThreadId = jmcThreadId;
         this.createdBy = JmcRuntime.currentTask();
         super.setUncaughtExceptionHandler(this::handleInterrupt);
+    }
+
+    @NotNull
+    public static JmcThread currentThread() {
+        Thread t = Thread.currentThread();
+        if (t instanceof JmcThread) {
+            return (JmcThread) t;
+        } else {
+            return new JmcThread(t, false);
+        }
     }
 
     /**
@@ -147,7 +181,9 @@ public class JmcThread extends Thread {
         JmcRuntime.wait(taskId);
     }
 
-    /** This method is overridden by the user. */
+    /**
+     * This method is overridden by the user.
+     */
     public void run1() throws HaltTaskException {
         super.run();
     }
@@ -175,7 +211,9 @@ public class JmcThread extends Thread {
         join1(0L);
     }
 
-    /** Replacing the Thread join to intercept the join Event. */
+    /**
+     * Replacing the Thread join to intercept the join Event.
+     */
     public void join1(Long millis) throws InterruptedException {
         Long requestingTask = JmcRuntime.currentTask();
         JmcRuntimeEvent requestEvent =
