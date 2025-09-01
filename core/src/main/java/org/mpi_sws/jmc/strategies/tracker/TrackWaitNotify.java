@@ -2,6 +2,7 @@ package org.mpi_sws.jmc.strategies.tracker;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 
 import java.util.HashMap;
@@ -12,10 +13,10 @@ public class TrackWaitNotify implements Tracker {
 
     private static final Logger LOGGER = LogManager.getLogger(TrackWaitNotify.class);
 
-    private Set<Long> activeTasks;
-    private Set<Long> trackedTasks;
-    private HashMap<Integer, Set<Long>> waitingTasks;
-    private HashMap<Integer, Set<Long>> availableTasks;
+    private final Set<Long> activeTasks;
+    private final Set<Long> trackedTasks;
+    private final HashMap<Integer, Set<Long>> waitingTasks;
+    private final HashMap<Integer, Set<Long>> availableTasks;
 
     public TrackWaitNotify() {
         this.activeTasks = new HashSet<>();
@@ -24,34 +25,70 @@ public class TrackWaitNotify implements Tracker {
         this.availableTasks = new HashMap<>();
     }
 
-
     @Override
     public Set<Long> updateEvent(JmcRuntimeEvent event) {
+        if (!this.trackedTasks.contains(event.getTaskId())) {
+            this.activeTasks.add(event.getTaskId());
+        }
         this.trackedTasks.add(event.getTaskId());
         switch (event.getType()) {
             case WAIT_EVENT -> {
                 int objectId = event.getParam("object").hashCode();
-                Set<Long> waitingList = this.waitingTasks.computeIfAbsent(objectId, k -> new HashSet<>());
+                Set<Long> waitingList =
+                        this.waitingTasks.computeIfAbsent(objectId, k -> new HashSet<>());
+                waitingList.add(event.getTaskId());
+                this.waitingTasks.put(objectId, waitingList);
                 this.activeTasks.remove(event.getTaskId());
             }
             case WAKEUP_EVENT -> {
-                // TODO: Recheck this
                 int objectId = event.getParam("object").hashCode();
-                Set<Long> waitingList = this.waitingTasks.computeIfAbsent(objectId, k -> new HashSet<>());
-                Set<Long> availableList = this.availableTasks.computeIfAbsent(objectId, k -> new HashSet<>());
-                if (!availableList.isEmpty()) {
-                    Long taskId = waitingList.iterator().next();
-                    waitingList.remove(taskId);
-                    this.activeTasks.add(taskId);
-                } else {
-                    availableList.add(event.getTaskId());
+                Set<Long> waitingList =
+                        this.waitingTasks.computeIfAbsent(objectId, k -> new HashSet<>());
+                Set<Long> availableList =
+                        this.availableTasks.computeIfAbsent(objectId, k -> new HashSet<>());
+                if (availableList.isEmpty()) {
+                    throw HaltCheckerException.error("No available tasks to wake up");
                 }
+                Long taskId = event.getTaskId();
+                availableList.remove(taskId);
+                waitingList.addAll(availableList);
+                this.waitingTasks.put(objectId, waitingList);
+                this.availableTasks.put(objectId, new HashSet<>());
+                this.activeTasks.removeAll(availableList);
+            }
+            case NOTIFY_EVENT -> {
+                int objectId = event.getParam("object").hashCode();
+                Set<Long> waitingList =
+                        this.waitingTasks.computeIfAbsent(objectId, k -> new HashSet<>());
+                Set<Long> availableList =
+                        this.availableTasks.computeIfAbsent(objectId, k -> new HashSet<>());
+                availableList.addAll(waitingList);
+                this.availableTasks.put(objectId, availableList);
+                this.activeTasks.addAll(waitingList);
+                waitingList.clear();
+                this.waitingTasks.put(objectId, waitingList);
+            }
+            case NOTIFY_ALL_EVENT -> {
+                int objectId = event.getParam("object").hashCode();
+                Set<Long> waitingList =
+                        this.waitingTasks.computeIfAbsent(objectId, k -> new HashSet<>());
+                this.activeTasks.addAll(waitingList);
+                waitingList.clear();
+                Set<Long> availableList =
+                        this.availableTasks.computeIfAbsent(objectId, k -> new HashSet<>());
+                this.activeTasks.addAll(availableList);
+                this.availableTasks.put(objectId, new HashSet<>());
+                this.waitingTasks.put(objectId, waitingList);
             }
         }
+        return this.activeTasks;
     }
 
     @Override
     public void reset() {
-
+        this.activeTasks.clear();
+        this.trackedTasks.clear();
+        this.waitingTasks.clear();
+        this.availableTasks.clear();
     }
 }
