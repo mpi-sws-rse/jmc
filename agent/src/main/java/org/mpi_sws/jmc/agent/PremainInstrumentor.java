@@ -4,9 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.agent.visitors.*;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.lang.instrument.ClassFileTransformer;
@@ -54,15 +52,15 @@ public class PremainInstrumentor implements ClassFileTransformer {
      *   <li>JmcReadWriteVisitor: Instruments read-write calls throughout.
      * </ul>
      *
-     * @param loader              the defining loader of the class to be transformed, may be {@code null} if the
-     *                            bootstrap loader
-     * @param className           the name of the class in the internal form of fully qualified class and
-     *                            interface names as defined in <i>The Java Virtual Machine Specification</i>. For example,
-     *                            <code>"java/util/List"</code>.
+     * @param loader the defining loader of the class to be transformed, may be {@code null} if the
+     *     bootstrap loader
+     * @param className the name of the class in the internal form of fully qualified class and
+     *     interface names as defined in <i>The Java Virtual Machine Specification</i>. For example,
+     *     <code>"java/util/List"</code>.
      * @param classBeingRedefined if this is triggered by a redefine or retransform, the class being
-     *                            redefined or retransformed; if this is a class load, {@code null}
-     * @param protectionDomain    the protection domain of the class being defined or redefined
-     * @param classFileBuffer     the input byte buffer in class file format - must not be modified
+     *     redefined or retransformed; if this is a class load, {@code null}
+     * @param protectionDomain the protection domain of the class being defined or redefined
+     * @param classFileBuffer the input byte buffer in class file format - must not be modified
      * @return the transformed class file buffer, or the original
      */
     public byte[] transform(
@@ -94,36 +92,11 @@ public class PremainInstrumentor implements ClassFileTransformer {
             }
 
             LOGGER.debug("Instrumenting class: {}", finalClassName);
-            ClassReader syncCr = new ClassReader(copiedClassBuffer);
-            ClassWriter syncCw =
-                    new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-
-            JmcSyncScanData syncScanData = new JmcSyncScanData();
-            JmcSyncScanVisitor syncScanVisitor = new JmcSyncScanVisitor(syncCw, syncScanData);
-            syncCr.accept(syncScanVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
-            ClassReader cr = new ClassReader(copiedClassBuffer);
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-            ClassVisitor cv =
-                    new JmcStaticMethodVisitor(
-                            new JmcSyncMethodVisitor(
-                                    new JmcFutureVisitor.JmcExecutorsClassVisitor(
-                                            new JmcAtomicVisitor(
-                                                    new JmcReentrantLockVisitor(
-                                                            new JmcThreadVisitor.ThreadClassVisitor(
-                                                                    new JmcThreadVisitor
-                                                                            .ThreadCallReplacerClassVisitor(
-                                                                            new JmcReadWriteVisitor
-                                                                                    .ReadWriteClassVisitor(
-                                                                                    cw)))))),
-                                    syncScanData));
-            cr.accept(cv, 0);
+            byte[] transformed = JmcVisitor.transform(copiedClassBuffer);
             if (this.agentArgs.isDebug()) {
-                byte[] transformed = cw.toByteArray();
                 record(className, transformed);
             }
-
-            return cw.toByteArray();
+            return transformed;
         } catch (Exception e) {
             LOGGER.error("Error transforming class: {} {}", finalClassName, e);
             throw new RuntimeException("Error instrumenting class: " + finalClassName, e);

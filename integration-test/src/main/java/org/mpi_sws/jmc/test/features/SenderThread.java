@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.test.features;
 
+import org.mpi_sws.jmc.test.features.channels.Channel;
+
 public class SenderThread extends Thread {
     private final Channel channel;
     private final int messagesToSend;

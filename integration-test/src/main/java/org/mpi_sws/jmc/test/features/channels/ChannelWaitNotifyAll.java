@@ -1,13 +1,15 @@
-package org.mpi_sws.jmc.test.features;
+package org.mpi_sws.jmc.test.features.channels;
 
-public class Channel {
+import org.mpi_sws.jmc.api.JmcObject;
+
+public class ChannelWaitNotifyAll implements Channel {
     private final int capacity;
     private final Object[] buffer;
     private int size;
     private int head;
     private int tail;
 
-    public Channel(int capacity) {
+    public ChannelWaitNotifyAll(int capacity) {
         this.capacity = capacity;
         this.buffer = new Object[capacity];
         this.size = 0;
@@ -17,22 +19,22 @@ public class Channel {
 
     public synchronized void send(Object item) throws InterruptedException {
         while (size == capacity) {
-            wait();
+            JmcObject.objectWait(this);
         }
         buffer[tail] = item;
         tail = (tail + 1) % capacity;
         size++;
-        notifyAll();
+        JmcObject.objectNotifyAll(this);
     }
 
     public synchronized Object receive() throws InterruptedException {
         while (size == 0) {
-            wait();
+            JmcObject.objectWait(this);
         }
         Object item = buffer[head];
         head = (head + 1) % capacity;
         size--;
-        notifyAll();
+        JmcObject.objectNotifyAll(this);
         return item;
     }
 }

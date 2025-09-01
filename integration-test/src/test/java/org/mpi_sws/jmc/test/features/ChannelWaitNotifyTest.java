@@ -2,11 +2,13 @@ package org.mpi_sws.jmc.test.features;
 
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
+import org.mpi_sws.jmc.test.features.channels.Channel;
+import org.mpi_sws.jmc.test.features.channels.ChannelWaitNotify;
 
-public class ChannelTest {
+public class ChannelWaitNotifyTest {
 
     private void testProgram() {
-        Channel channel = new Channel(1);
+        Channel channel = new ChannelWaitNotify();
         SenderThread sender = new SenderThread(channel, 1);
         ReceiverThread receiver = new ReceiverThread(channel, 1);
 
