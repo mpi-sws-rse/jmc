@@ -11,7 +11,8 @@ import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpi_sws.jmc.strategies.ReplayableSchedulingStrategy;
-import org.mpi_sws.jmc.strategies.TrackActiveTasksStrategy;
+import org.mpi_sws.jmc.strategies.tracker.TrackActiveTasksStrategy;
+import org.mpi_sws.jmc.strategies.tracker.TrackTasks;
 import org.mpi_sws.jmc.util.FileUtil;
 
 import java.nio.file.Paths;
@@ -112,10 +113,9 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         // If the policy is FIFO, return the first active, schedule-able task
         return SchedulingChoice.task(
                 switch (policy) {
-                    case FIFO ->
-                            activeScheduleAbleTasks.isEmpty()
-                                    ? null
-                                    : activeScheduleAbleTasks.get(0);
+                    case FIFO -> activeScheduleAbleTasks.isEmpty()
+                            ? null
+                            : activeScheduleAbleTasks.get(0);
                     case RANDOM -> {
                         int size = activeScheduleAbleTasks.size();
                         yield size == 0 ? null : activeScheduleAbleTasks.get(random.nextInt(size));

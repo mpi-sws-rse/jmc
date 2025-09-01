@@ -3,7 +3,7 @@ package org.mpi_sws.jmc.checker;
 import org.junit.jupiter.api.Test;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
-import org.mpi_sws.jmc.strategies.TrackActiveTasksStrategy;
+import org.mpi_sws.jmc.strategies.tracker.TrackActiveTasksStrategy;
 import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 
 import java.util.Iterator;
@@ -12,7 +12,7 @@ import java.util.Set;
 public class JmcBlockingTest {
 
     void testProgram() {
-        JmcThread t= new JmcThread(() -> {
+        JmcThread t = new JmcThread(() -> {
             // Your test code here
             assert false;
         });

@@ -9,13 +9,16 @@ import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.runtime.scheduling.PrimitiveValue;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.strategies.tracker.TrackActiveTasksStrategy;
 import org.mpi_sws.jmc.util.FileUtil;
 
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** A random scheduling strategy that selects the next thread to be scheduled randomly. */
+/**
+ * A random scheduling strategy that selects the next thread to be scheduled randomly.
+ */
 public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
         implements ReplayableSchedulingStrategy {
 
