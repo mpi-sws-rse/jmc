@@ -59,22 +59,14 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
             // Later when we recreate the method without synchronized, we add the annotations back
             // See visitEnd
             mv =
-                    new MethodVisitor(
-                            Opcodes.ASM9,
+                    new JmcRecordMethodVisitor(
                             super.visitMethod(
                                     access & ~Opcodes.ACC_SYNCHRONIZED,
                                     methodInfo.getUnsyncName(),
                                     desc,
                                     signature,
-                                    exceptions)) {
-
-                        @Override
-                        public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-                            VisitorHelper.AnnotationInfo annotationInfo = new VisitorHelper.AnnotationInfo(desc, visible);
-                            methodInfo.annotations.add(annotationInfo);
-                            return new VisitorHelper.JmcAnnotationRecordVisitor(annotationInfo);
-                        }
-                    };
+                                    exceptions),
+                            methodInfo);
 
         } else {
             mv = super.visitMethod(access, name, desc, signature, exceptions);
@@ -110,13 +102,15 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
             }
             case Array -> {
                 AnnotationVisitor arrayVisitor = annotationVisitor.visitArray(name);
-                for (VisitorHelper.AnnotationValue v : ((VisitorHelper.ArrayValue) value).getValues()) {
+                for (VisitorHelper.AnnotationValue v :
+                        ((VisitorHelper.ArrayValue) value).getValues()) {
                     writeAnnotationValue(arrayVisitor, name, v);
                 }
                 break;
             }
             case Nested -> {
-                VisitorHelper.NestedAnnotationValue nested = (VisitorHelper.NestedAnnotationValue) value;
+                VisitorHelper.NestedAnnotationValue nested =
+                        (VisitorHelper.NestedAnnotationValue) value;
                 AnnotationVisitor nestedVisitor =
                         annotationVisitor.visitAnnotation(name, nested.getNested().getDescriptor());
                 for (Map.Entry<String, VisitorHelper.AnnotationValue> e :
@@ -133,13 +127,20 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         MethodVisitor newMv =
                 cv.visitMethod(
                         methodInfo.getNonSyncAccess(),
-                        methodInfo.name,
-                        methodInfo.descriptor,
-                        methodInfo.signature,
-                        methodInfo.exceptions);
+                        methodInfo.getName(),
+                        methodInfo.getDescriptor(),
+                        methodInfo.getSignature(),
+                        methodInfo.getExceptions());
 
-        for (VisitorHelper.AnnotationInfo ann : methodInfo.annotations) {
-            AnnotationVisitor newMvAv = newMv.visitAnnotation(ann.getDescriptor(), ann.getVisibility());
+        List<String> parameterNames = methodInfo.getParameterNames();
+        List<Integer> parameterAccesses = methodInfo.getParameterAccesses();
+        for (int i = 0; i < parameterNames.size(); i++) {
+            newMv.visitParameter(parameterNames.get(i), parameterAccesses.get(i));
+        }
+
+        for (VisitorHelper.AnnotationInfo ann : methodInfo.getAnnotations()) {
+            AnnotationVisitor newMvAv =
+                    newMv.visitAnnotation(ann.getDescriptor(), ann.getVisibility());
             for (Map.Entry<String, VisitorHelper.AnnotationValue> e : ann.getValues().entrySet()) {
                 writeAnnotationValue(newMvAv, e.getKey(), e.getValue());
             }
@@ -161,13 +162,33 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
 
         // lock
         newMv.visitLabel(l0);
-        newMv.visitIntInsn(Opcodes.ALOAD, 0);
+        if (methodInfo.isStatic()) {
+            newMv.visitLdcInsn(className);
+        } else {
+            newMv.visitIntInsn(Opcodes.ALOAD, 0);
+        }
         newMv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
                 "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                 "syncMethodLock",
-                "(Ljava/lang/Object;)V",
+                methodInfo.isStatic() ? "(Ljava/lang/String;)V" : "(Ljava/lang/Object;)V",
                 false);
+
+        // Load all the parameters
+
+        Type[] argTypes = Type.getArgumentTypes(methodInfo.getDescriptor());
+        Type returnType = Type.getReturnType(methodInfo.getDescriptor());
+
+        int slot = 0;
+        // load parameters
+        if (!methodInfo.isStatic()) {
+            // this if not static
+            newMv.visitIntInsn(Opcodes.ALOAD, slot++);
+        }
+        for (Type t : argTypes) {
+            newMv.visitVarInsn(t.getOpcode(Opcodes.ILOAD), slot);
+            slot += t.getSize(); // long/double take 2
+        }
 
         // Invoke the actual method
         if (methodInfo.isStatic()) {
@@ -175,26 +196,29 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
                     Opcodes.INVOKESTATIC,
                     className,
                     methodInfo.getUnsyncName(),
-                    methodInfo.descriptor,
+                    methodInfo.getDescriptor(),
                     false);
         } else {
-            newMv.visitVarInsn(Opcodes.ALOAD, 0);
             newMv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     className,
                     methodInfo.getUnsyncName(),
-                    methodInfo.descriptor,
+                    methodInfo.getDescriptor(),
                     false);
         }
         newMv.visitLabel(l1);
 
         // No error unlock
-        newMv.visitIntInsn(Opcodes.ALOAD, 0);
+        if (methodInfo.isStatic()) {
+            newMv.visitLdcInsn(className);
+        } else {
+            newMv.visitIntInsn(Opcodes.ALOAD, 0);
+        }
         newMv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
                 "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                 "syncMethodUnLock",
-                "(Ljava/lang/Object;)V",
+                methodInfo.isStatic() ? "(Ljava/lang/String;)V" : "(Ljava/lang/Object;)V",
                 false);
         newMv.visitLabel(l3);
         newMv.visitJumpInsn(Opcodes.GOTO, l4);
@@ -202,29 +226,35 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
         // Error occurred. Unlock and throw exception.
         newMv.visitLabel(l2);
         // Visit frame for throwable and store the exception
-        newMv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[]{"java/lang/Throwable"});
-        newMv.visitIntInsn(Opcodes.ASTORE, 1);
+        newMv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] {"java/lang/Throwable"});
+        newMv.visitIntInsn(Opcodes.ASTORE, argTypes.length);
         // Unlock
-        newMv.visitIntInsn(Opcodes.ALOAD, 0);
+        if (methodInfo.isStatic()) {
+            newMv.visitLdcInsn(className);
+        } else {
+            newMv.visitIntInsn(Opcodes.ALOAD, 0);
+        }
         newMv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
                 "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
                 "syncMethodUnLock",
-                "(Ljava/lang/Object;)V",
+                methodInfo.isStatic() ? "(Ljava/lang/String;)V" : "(Ljava/lang/Object;)V",
                 false);
         newMv.visitLabel(l5);
-        newMv.visitIntInsn(Opcodes.ALOAD, 1);
+        newMv.visitIntInsn(Opcodes.ALOAD, argTypes.length);
         newMv.visitInsn(Opcodes.ATHROW);
 
         // Done. Return
         newMv.visitLabel(l4);
-        newMv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-        VisitorHelper.addReturnInst(newMv, methodInfo.descriptor);
+        newMv.visitFrame(Opcodes.F_SAME, 0, null, 1, new Object[] {"java/lang/Throwable"});
+        VisitorHelper.addReturnInst(newMv, methodInfo.getDescriptor());
         newMv.visitLabel(l6);
 
         // Visit this local variable
-        newMv.visitLocalVariable("this", "L" + className + ";", null, l0, l6, 0);
-        newMv.visitLocalVariable("e", "Ljava/lang/Throwable;", null, l2, l4, 1);
+        if (methodInfo.isStatic()) {
+            newMv.visitLocalVariable("this", "L" + className + ";", null, l0, l6, 0);
+        }
+        newMv.visitLocalVariable("e", "Ljava/lang/Throwable;", null, l2, l4, slot);
         newMv.visitMaxs(-1, -1); // Auto-compute stack size and locals
         newMv.visitEnd();
     }
@@ -285,6 +315,30 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
             } else {
                 super.visitInsn(opcode);
             }
+        }
+    }
+
+    private static class JmcRecordMethodVisitor extends MethodVisitor {
+
+        private final VisitorHelper.MethodInfo methodInfo;
+
+        public JmcRecordMethodVisitor(MethodVisitor mv, VisitorHelper.MethodInfo methodInfo) {
+            super(Opcodes.ASM9, mv);
+            this.methodInfo = methodInfo;
+        }
+
+        @Override
+        public void visitParameter(String name, int access) {
+            methodInfo.addParameter(name, access);
+            super.visitParameter(name, access);
+        }
+
+        @Override
+        public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
+            VisitorHelper.AnnotationInfo annotationInfo =
+                    new VisitorHelper.AnnotationInfo(descriptor, visible);
+            methodInfo.addAnnotation(annotationInfo);
+            return new VisitorHelper.JmcAnnotationRecordVisitor(annotationInfo);
         }
     }
 }

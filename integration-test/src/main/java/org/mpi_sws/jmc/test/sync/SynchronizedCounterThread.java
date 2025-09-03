@@ -9,6 +9,6 @@ public class SynchronizedCounterThread extends Thread {
 
     @Override
     public void run() {
-        counter.increment();
+        counter.increment(1);
     }
 }

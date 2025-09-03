@@ -23,6 +23,12 @@ public class SynchronizedBlockCounter implements SynchronizedCounter {
         }
     }
 
+    public void increment(int value) {
+        synchronized (lock) {
+            count += value;
+        }
+    }
+
     public int getCount() {
         synchronized (lock) {
             return count;

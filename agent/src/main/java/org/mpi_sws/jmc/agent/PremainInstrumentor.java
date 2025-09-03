@@ -8,6 +8,7 @@ import org.objectweb.asm.ClassWriter;
 
 import java.io.File;
 import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.IllegalClassFormatException;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
@@ -68,7 +69,8 @@ public class PremainInstrumentor implements ClassFileTransformer {
             String className,
             Class<?> classBeingRedefined,
             ProtectionDomain protectionDomain,
-            byte[] classFileBuffer) {
+            byte[] classFileBuffer)
+            throws IllegalClassFormatException {
         String finalClassName = className.replace("/", ".");
         byte[] copiedClassBuffer = Arrays.copyOf(classFileBuffer, classFileBuffer.length);
 
@@ -99,7 +101,8 @@ public class PremainInstrumentor implements ClassFileTransformer {
             return transformed;
         } catch (Exception e) {
             LOGGER.error("Error transforming class: {} {}", finalClassName, e);
-            throw new RuntimeException("Error instrumenting class: " + finalClassName, e);
+            throw new IllegalClassFormatException(
+                    "Error instrumenting class: " + finalClassName + " Error: " + e);
         }
     }
 
