@@ -12,9 +12,7 @@ import java.util.Objects;
  */
 public class JmcReadWriteVisitor {
 
-    /**
-     * Class visitor for JMC read-write visitor.
-     */
+    /** Class visitor for JMC read-write visitor. */
     public static class ReadWriteClassVisitor extends ClassVisitor {
 
         private boolean isInterface;
@@ -56,21 +54,19 @@ public class JmcReadWriteVisitor {
         }
     }
 
-    /**
-     * Method visitor for JMC read-write visitor.
-     */
+    /** Method visitor for JMC read-write visitor. */
     public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor {
 
         private boolean instrumented;
 
-        private boolean constructor = false;
+        private final boolean constructor;
         private boolean constructorInitialized = false;
 
         /**
          * Constructor.
          *
-         * @param mv         The underlying MethodVisitor
-         * @param access     The method's access flags
+         * @param mv The underlying MethodVisitor
+         * @param access The method's access flags
          * @param descriptor The method descriptor (e.g., "(I)V")
          */
         public ReadWriteMethodVisitor(
@@ -146,13 +142,13 @@ public class JmcReadWriteVisitor {
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
             if (opcode == Opcodes.INVOKESPECIAL) {
-                // We do not instrument method calls in this visitor
+                // We do not instrument method calls in this visit method
                 if (Objects.equals(name, "<init>")) {
                     // If this is a constructor, we need to track if it has been initialized
                     constructorInitialized = true;
                 }
             }
-            // We do not instrument method calls in this visitor
+            // We do not instrument method calls in this visit method
             super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
         }
 

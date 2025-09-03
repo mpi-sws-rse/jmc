@@ -6,10 +6,15 @@ package org.mpi_sws.jmc.test.sync;
  */
 public interface SynchronizedCounter {
 
-    /**
-     * Increments the count in a synchronized manner.
-     */
+    /** Increments the count in a synchronized manner. */
     void increment();
+
+    /**
+     * Increments the count by a specified value in a synchronized manner.
+     *
+     * @param value the value to increment the count by
+     */
+    void increment(int value);
 
     /**
      * Returns the current count.
