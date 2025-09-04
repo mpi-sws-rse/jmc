@@ -108,32 +108,48 @@ public class JmcAtomicVisitor extends ClassVisitor {
             "L" + JMC_ATOMIC_REFERENCE_FIELD_PATH + ";";
 
     private static String replaceDescriptor(String desc) {
-        if (desc.contains(ATOMIC_INTEGER_DESC)) {
-            return desc.replace(ATOMIC_INTEGER_DESC, JMC_ATOMIC_INTEGER_DESC);
-        } else if (desc.contains(ATOMIC_LONG_DESC)) {
-            return desc.replace(ATOMIC_LONG_DESC, JMC_ATOMIC_LONG_DESC);
-        } else if (desc.contains(ATOMIC_BOOLEAN_DESC)) {
-            return desc.replace(ATOMIC_BOOLEAN_DESC, JMC_ATOMIC_BOOLEAN_DESC);
-        } else if (desc.contains(ATOMIC_REFERENCE_DESC)) {
-            return desc.replace(ATOMIC_REFERENCE_DESC, JMC_ATOMIC_REFERENCE_DESC);
-        } else if (desc.contains(ATOMIC_MARKABLE_REFERENCE_DESC)) {
-            return desc.replace(ATOMIC_MARKABLE_REFERENCE_DESC, JMC_ATOMIC_MARKABLE_REFERENCE_DESC);
-        } else if (desc.contains(ATOMIC_INTEGER_ARRAY_DESC)) {
-            return desc.replace(ATOMIC_INTEGER_ARRAY_DESC, JMC_ATOMIC_INTEGER_ARRAY_DESC);
-        } else if (desc.contains(ATOMIC_LONG_ARRAY_DESC)) {
-            return desc.replace(ATOMIC_LONG_ARRAY_DESC, JMC_ATOMIC_LONG_ARRAY_DESC);
-        } else if (desc.contains(ATOMIC_REFERENCE_ARRAY_DESC)) {
-            return desc.replace(ATOMIC_REFERENCE_ARRAY_DESC, JMC_ATOMIC_REFERENCE_ARRAY_DESC);
-        } else if (desc.contains(ATOMIC_STAMPED_REFERENCE_DESC)) {
-            return desc.replace(ATOMIC_STAMPED_REFERENCE_DESC, JMC_ATOMIC_STAMPED_REFERENCE_DESC);
-        } else if (desc.contains(ATOMIC_INTEGER_FIELD_DESC)) {
-            return desc.replace(ATOMIC_INTEGER_FIELD_DESC, JMC_ATOMIC_INTEGER_FIELD_DESC);
-        } else if (desc.contains(ATOMIC_LONG_FIELD_DESC)) {
-            return desc.replace(ATOMIC_LONG_FIELD_DESC, JMC_ATOMIC_LONG_FIELD_DESC);
-        } else if (desc.contains(ATOMIC_REFERENCE_FIELD_DESC)) {
-            return desc.replace(ATOMIC_REFERENCE_FIELD_DESC, JMC_ATOMIC_REFERENCE_FIELD_DESC);
+        String newDesc = desc;
+        if (newDesc.contains(ATOMIC_INTEGER_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_INTEGER_DESC, JMC_ATOMIC_INTEGER_DESC);
         }
-        return desc;
+        if (newDesc.contains(ATOMIC_LONG_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_LONG_DESC, JMC_ATOMIC_LONG_DESC);
+        }
+        if (newDesc.contains(ATOMIC_BOOLEAN_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_BOOLEAN_DESC, JMC_ATOMIC_BOOLEAN_DESC);
+        }
+        if (newDesc.contains(ATOMIC_REFERENCE_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_REFERENCE_DESC, JMC_ATOMIC_REFERENCE_DESC);
+        }
+        if (newDesc.contains(ATOMIC_MARKABLE_REFERENCE_DESC)) {
+            newDesc =
+                    newDesc.replace(
+                            ATOMIC_MARKABLE_REFERENCE_DESC, JMC_ATOMIC_MARKABLE_REFERENCE_DESC);
+        }
+        if (newDesc.contains(ATOMIC_INTEGER_ARRAY_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_INTEGER_ARRAY_DESC, JMC_ATOMIC_INTEGER_ARRAY_DESC);
+        }
+        if (newDesc.contains(ATOMIC_LONG_ARRAY_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_LONG_ARRAY_DESC, JMC_ATOMIC_LONG_ARRAY_DESC);
+        }
+        if (newDesc.contains(ATOMIC_REFERENCE_ARRAY_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_REFERENCE_ARRAY_DESC, JMC_ATOMIC_REFERENCE_ARRAY_DESC);
+        }
+        if (newDesc.contains(ATOMIC_STAMPED_REFERENCE_DESC)) {
+            newDesc =
+                    newDesc.replace(
+                            ATOMIC_STAMPED_REFERENCE_DESC, JMC_ATOMIC_STAMPED_REFERENCE_DESC);
+        }
+        if (newDesc.contains(ATOMIC_INTEGER_FIELD_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_INTEGER_FIELD_DESC, JMC_ATOMIC_INTEGER_FIELD_DESC);
+        }
+        if (newDesc.contains(ATOMIC_LONG_FIELD_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_LONG_FIELD_DESC, JMC_ATOMIC_LONG_FIELD_DESC);
+        }
+        if (newDesc.contains(ATOMIC_REFERENCE_FIELD_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_REFERENCE_FIELD_DESC, JMC_ATOMIC_REFERENCE_FIELD_DESC);
+        }
+        return newDesc;
     }
 
     private static String replaceType(String type) {
@@ -226,30 +242,32 @@ public class JmcAtomicVisitor extends ClassVisitor {
 
         @Override
         public void visitInvokeDynamicInsn(
-                String name,
-                String descriptor,
-                Handle bsm,
-                Object... bsmArgs
-        ) {
-            Object[] newBsmArgs = Arrays.stream(bsmArgs)
-                    .map(arg -> {
-                        if (arg instanceof Type && ((Type) arg).getDescriptor().contains(ATOMIC_INTEGER_PATH)){
-                            return Type.getObjectType(JMC_ATOMIC_INTEGER_PATH);
-                        }
-                        if (arg instanceof Handle) {
-                            Handle h = (Handle) arg;
-                            String desc = h.getDesc().replace(ATOMIC_INTEGER_PATH, JMC_ATOMIC_INTEGER_PATH);
-                            return new Handle(h.getTag(), h.getOwner(), h.getName(), desc, h.isInterface());
-                        }
+                String name, String descriptor, Handle bsm, Object... bsmArgs) {
+            Object[] newBsmArgs =
+                    Arrays.stream(bsmArgs)
+                            .map(
+                                    arg -> {
+                                        if (arg instanceof Type t) {
+                                            return Type.getObjectType(
+                                                    replaceType(t.getClassName()));
+                                        }
+                                        if (arg instanceof Handle h) {
+                                            String desc = replaceDescriptor(h.getDesc());
+                                            return new Handle(
+                                                    h.getTag(),
+                                                    h.getOwner(),
+                                                    h.getName(),
+                                                    desc,
+                                                    h.isInterface());
+                                        }
 
-                        return arg;
-                    })
-                    .toArray();
+                                        return arg;
+                                    })
+                            .toArray();
 
-            String newDescriptor=replaceDescriptor(descriptor);
+            String newDescriptor = replaceDescriptor(descriptor);
 
             super.visitInvokeDynamicInsn(name, newDescriptor, bsm, newBsmArgs);
         }
     }
-
 }
