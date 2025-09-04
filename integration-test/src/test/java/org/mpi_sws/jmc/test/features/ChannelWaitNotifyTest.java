@@ -24,7 +24,7 @@ public class ChannelWaitNotifyTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10)
+    @JmcCheckConfiguration(numIterations = 10, debug = true)
     public void testChannel() {
         testProgram();
     }
