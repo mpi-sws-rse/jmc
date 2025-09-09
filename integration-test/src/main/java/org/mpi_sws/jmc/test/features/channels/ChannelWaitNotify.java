@@ -12,19 +12,19 @@ public class ChannelWaitNotify implements Channel {
 
     public synchronized void send(Object item) throws InterruptedException {
         while (this.item != null) {
-            JmcObject.objectWait(this);
+            this.wait();
         }
         this.item = item;
-        JmcObject.objectNotify(this);
+        this.notify();
     }
 
     public synchronized Object receive() throws InterruptedException {
         while (this.item == null) {
-            JmcObject.objectWait(this);
+            this.wait();
         }
         Object receivedItem = this.item;
         this.item = null;
-        JmcObject.objectNotify(this);
+        this.notify();
         return receivedItem;
     }
 }

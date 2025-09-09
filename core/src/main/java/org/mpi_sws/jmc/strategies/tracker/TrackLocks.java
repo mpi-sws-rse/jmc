@@ -57,70 +57,85 @@ public class TrackLocks implements Tracker {
 
         if (type == JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
             Object lock = event.getParam("instance");
-            // Want the lock. Three cases.
-            // 1. Current task already has the lock. Ignore.
-            Optional<Object> owner = activeTasks.get(taskId);
-            if (owner != null && owner.isPresent()) {
-                if (owner.get() == lock) {
-                    LOGGER.debug("Reentrant lock already included by task {}", taskId);
-                    return getActiveTasks();
-                }
-            }
-            // 2. The lock is already acquired by another task. The current task is added to the
-            // waiting list.
-            if (waitingTasks.containsKey(lock)) {
-                LOGGER.debug("Task {} waits for lock {}", taskId, lock.hashCode());
-                Set<Long> tasks = waitingTasks.get(lock);
-                tasks.add(taskId);
-                activeTasks.remove(taskId);
-            } else {
-                // 3. The lock is not acquired by any task. The current task is added to the
-                // wanting
-                // list.
-                LOGGER.debug("Task {} wants lock {}", taskId, lock.hashCode());
-                wantingTasks.putIfAbsent(lock, new HashSet<>());
-                wantingTasks.get(lock).add(taskId);
+            if (tryLock(taskId, lock)) {
+                return getActiveTasks();
             }
         } else if (type == JmcRuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
             Object lock = event.getParam("instance");
-            // The lock is acquired by the current task. Remove it from the wanting list and add
-            // the rest to waiting
-            // list.
-            activeTasks.put(taskId, Optional.of(lock));
-            waitingTasks.putIfAbsent(lock, new HashSet<>());
-            Set<Long> wantingList = wantingTasks.get(lock);
-            if (wantingList != null) {
-                for (Long wantingTask : wantingList) {
-                    // If the task is not already in the waiting list, add it to the waiting
-                    // list
-                    if (Objects.equals(wantingTask, taskId)) {
-                        // Ignore the current task
-                        continue;
-                    }
-                    waitingTasks.get(lock).add(wantingTask);
-                    activeTasks.remove(wantingTask);
-                }
-                wantingTasks.remove(lock);
-            }
+            lockAcquired(taskId, lock);
         } else if (type == JmcRuntimeEvent.Type.LOCK_RELEASE_EVENT) {
             Object lock = event.getParam("instance");
-            // The lock is released. The waiting tasks are marked as active.
-            LOGGER.debug("Task {} released lock {}", taskId, lock.hashCode());
-            activeTasks.put(taskId, Optional.empty());
-            Set<Long> blockedTasks = waitingTasks.get(lock);
-            wantingTasks.put(lock, new HashSet<>());
-            if (blockedTasks != null) {
-                for (Long blockedTask : blockedTasks) {
-                    activeTasks.put(blockedTask, Optional.empty());
-                    wantingTasks.get(lock).add(blockedTask);
-                }
-                waitingTasks.remove(lock);
-            }
+            unlock(taskId, lock);
         }
         return getActiveTasks();
     }
 
-    private Set<Long> getActiveTasks() {
+    protected boolean tryLock(Long taskId, Object lock) {
+        // Want the lock. Three cases.
+        // 1. Current task already has the lock. Ignore.
+        Optional<Object> owner = activeTasks.get(taskId);
+        if (owner != null && owner.isPresent()) {
+            if (owner.get() == lock) {
+                LOGGER.debug("Reentrant lock already included by task {}", taskId);
+                return true;
+            }
+        }
+        // 2. The lock is already acquired by another task. The current task is added to the
+        // waiting list.
+        if (waitingTasks.containsKey(lock)) {
+            LOGGER.debug("Task {} waits for lock {}", taskId, lock.hashCode());
+            Set<Long> tasks = waitingTasks.get(lock);
+            tasks.add(taskId);
+            activeTasks.remove(taskId);
+        } else {
+            // 3. The lock is not acquired by any task. The current task is added to the
+            // wanting
+            // list.
+            LOGGER.debug("Task {} wants lock {}", taskId, lock.hashCode());
+            wantingTasks.putIfAbsent(lock, new HashSet<>());
+            wantingTasks.get(lock).add(taskId);
+        }
+        return false;
+    }
+
+    protected void lockAcquired(Long taskId, Object lock) {
+        // The lock is acquired by the current task. Remove it from the wanting list and add
+        // the rest to waiting
+        // list.
+        activeTasks.put(taskId, Optional.of(lock));
+        waitingTasks.putIfAbsent(lock, new HashSet<>());
+        Set<Long> wantingList = wantingTasks.get(lock);
+        if (wantingList != null) {
+            for (Long wantingTask : wantingList) {
+                // If the task is not already in the waiting list, add it to the waiting
+                // list
+                if (Objects.equals(wantingTask, taskId)) {
+                    // Ignore the current task
+                    continue;
+                }
+                waitingTasks.get(lock).add(wantingTask);
+                activeTasks.remove(wantingTask);
+            }
+            wantingTasks.remove(lock);
+        }
+    }
+
+    protected void unlock(Long taskId, Object lock) {
+        // The lock is released. The waiting tasks are marked as active.
+        LOGGER.debug("Task {} released lock {}", taskId, lock.hashCode());
+        activeTasks.put(taskId, Optional.empty());
+        Set<Long> blockedTasks = waitingTasks.get(lock);
+        wantingTasks.put(lock, new HashSet<>());
+        if (blockedTasks != null) {
+            for (Long blockedTask : blockedTasks) {
+                activeTasks.put(blockedTask, Optional.empty());
+                wantingTasks.get(lock).add(blockedTask);
+            }
+            waitingTasks.remove(lock);
+        }
+    }
+
+    protected Set<Long> getActiveTasks() {
         return activeTasks.keySet();
     }
 

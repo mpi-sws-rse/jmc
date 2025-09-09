@@ -24,20 +24,21 @@ public class JmcVisitor {
         ClassReader cr = new ClassReader(classFileBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         ClassVisitor cv =
-                new JmcStaticMethodVisitor(
-                        new JmcSyncMethodVisitor(
-                                new JmcFutureVisitor.JmcExecutorsClassVisitor(
-                                        new JmcAtomicVisitor(
-                                                new JmcReentrantLockVisitor(
-                                                        new JmcWaitNotifyVisitor(
-                                                                new JmcThreadVisitor
-                                                                        .ThreadClassVisitor(
+                new JmcWaitNotifyVisitor(
+                        new JmcStaticMethodVisitor(
+                                new JmcSyncMethodVisitor(
+                                        new JmcFutureVisitor.JmcExecutorsClassVisitor(
+                                                new JmcAtomicVisitor(
+                                                        new JmcReentrantLockVisitor(
+                                                                new JmcWaitNotifyVisitor(
                                                                         new JmcThreadVisitor
-                                                                                .ThreadCallReplacerClassVisitor(
-                                                                                new JmcReadWriteVisitor
-                                                                                        .ReadWriteClassVisitor(
-                                                                                        cw))))))),
-                                syncScanData));
+                                                                                .ThreadClassVisitor(
+                                                                                new JmcThreadVisitor
+                                                                                        .ThreadCallReplacerClassVisitor(
+                                                                                        new JmcReadWriteVisitor
+                                                                                                .ReadWriteClassVisitor(
+                                                                                                cw))))))),
+                                        syncScanData)));
         cr.accept(cv, 0);
         return cw.toByteArray();
     }

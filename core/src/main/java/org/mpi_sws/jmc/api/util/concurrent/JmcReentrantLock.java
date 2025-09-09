@@ -2,8 +2,7 @@ package org.mpi_sws.jmc.api.util.concurrent;
 
 import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
-
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Objects;
 
 /**
  * A reentrant lock that can be used to synchronize access to shared resources. Replacement for
@@ -14,8 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class JmcReentrantLock {
 
     private int token = 0;
-    private Object lockObj;
-    private final ReentrantLock lock = new ReentrantLock();
+    private final Object lockObj;
 
     public JmcReentrantLock() {
         JmcRuntimeUtils.writeEventWithoutYield(
@@ -29,12 +27,9 @@ public class JmcReentrantLock {
         this.lockObj = lockObj;
     }
 
-    private Object getInstance() {
-        if (lockObj == null) {
-            return this;
-        } else {
-            return lockObj;
-        }
+    /** Returns the instance to be used for locking. */
+    public Object getInstance() {
+        return Objects.requireNonNullElse(lockObj, this);
     }
 
     /** Acquires the lock. */
@@ -46,7 +41,13 @@ public class JmcReentrantLock {
                 "I",
                 getInstance());
 
-        lock.lock();
+        token = 1;
+        // Removing call to an actual reentrant lock
+        // lock.lock();
+        // Since we use the same primitive for synchronized blocks with wait/notify,
+        // we cannot do actual lock and unlock here and block.
+        // Instead, we just yield to the runtime to handle the locking.
+        // The runtime will manage which task has the lock and which are waiting.
 
         JmcRuntimeUtils.lockAcquiredEventWithoutYield(
                 getInstance(),
@@ -59,7 +60,7 @@ public class JmcReentrantLock {
 
     /** Releases the lock. */
     public void unlock() {
-        lock.unlock();
+        token = 0;
 
         JmcRuntimeUtils.lockReleaseEvent(
                 getInstance(),

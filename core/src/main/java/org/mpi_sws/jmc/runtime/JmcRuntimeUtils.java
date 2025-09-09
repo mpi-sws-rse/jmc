@@ -32,10 +32,10 @@ public class JmcRuntimeUtils {
      *
      * <p>This method updates the JMC runtime event and yields control to the scheduler.
      *
-     * @param owner      the owner of the field
-     * @param name       the name of the field
+     * @param owner the owner of the field
+     * @param name the name of the field
      * @param descriptor the descriptor of the field
-     * @param instance   the instance on which the field is accessed
+     * @param instance the instance on which the field is accessed
      */
     public static void readEvent(String owner, String name, String descriptor, Object instance) {
         JmcRuntimeEvent.Builder builder = new JmcRuntimeEvent.Builder();
@@ -55,9 +55,9 @@ public class JmcRuntimeUtils {
      *
      * <p>This method updates the JMC runtime event without yielding control to the scheduler.
      *
-     * @param instance   the instance on which the field is accessed
-     * @param owner      the owner of the field
-     * @param name       the name of the field
+     * @param instance the instance on which the field is accessed
+     * @param owner the owner of the field
+     * @param name the name of the field
      * @param descriptor the descriptor of the field
      */
     public static void readEventWithoutYield(
@@ -77,11 +77,11 @@ public class JmcRuntimeUtils {
      * Creates a write event for the specified value, owner, name, descriptor, and instance without
      * yielding.
      *
-     * @param value      the new value being written
-     * @param owner      the owner of the field
-     * @param name       the name of the field
+     * @param value the new value being written
+     * @param owner the owner of the field
+     * @param name the name of the field
      * @param descriptor the descriptor of the field
-     * @param instance   the instance on which the field is accessed
+     * @param instance the instance on which the field is accessed
      */
     public static void writeEventWithoutYield(
             Object instance, Object value, String owner, String name, String descriptor) {
@@ -102,11 +102,11 @@ public class JmcRuntimeUtils {
      *
      * <p>This method updates the JMC runtime event and yields control to the scheduler.
      *
-     * @param value      the new value being written
-     * @param owner      the owner of the field
-     * @param name       the name of the field
+     * @param value the new value being written
+     * @param owner the owner of the field
+     * @param name the name of the field
      * @param descriptor the descriptor of the field
-     * @param instance   the instance on which the field is accessed
+     * @param instance the instance on which the field is accessed
      */
     public static void writeEvent(
             Object value, String owner, String name, String descriptor, Object instance) {
@@ -126,11 +126,11 @@ public class JmcRuntimeUtils {
      *
      * <p>This method updates the JMC runtime event and yields control to the scheduler.
      *
-     * @param owner      the owner of the lock
-     * @param name       the name of the lock
-     * @param value      the value of the lock
+     * @param owner the owner of the lock
+     * @param name the name of the lock
+     * @param value the value of the lock
      * @param descriptor the descriptor of the lock
-     * @param instance   the instance on which the lock is acquired
+     * @param instance the instance on which the lock is acquired
      */
     public static void lockAcquireEvent(
             String owner, String name, Object value, String descriptor, Object instance) {
@@ -151,12 +151,12 @@ public class JmcRuntimeUtils {
      *
      * <p>This method updates the JMC runtime event without yielding control to the scheduler.
      *
-     * @param instance   the instance on which the lock is acquired
-     * @param owner      the owner of the lock
-     * @param name       the name of the lock
-     * @param value      the value of the lock
+     * @param instance the instance on which the lock is acquired
+     * @param owner the owner of the lock
+     * @param name the name of the lock
+     * @param value the value of the lock
      * @param descriptor the descriptor of the lock
-     * @param newValue   the new value after acquiring the lock
+     * @param newValue the new value after acquiring the lock
      */
     public static void lockAcquiredEventWithoutYield(
             Object instance,
@@ -183,12 +183,12 @@ public class JmcRuntimeUtils {
      *
      * <p>This method updates the JMC runtime event and yields control to the scheduler.
      *
-     * @param instance   the instance on which the lock is released
-     * @param owner      the owner of the lock
-     * @param name       the name of the lock
-     * @param value      the value of the lock
+     * @param instance the instance on which the lock is released
+     * @param owner the owner of the lock
+     * @param name the name of the lock
+     * @param value the value of the lock
      * @param descriptor the descriptor of the lock
-     * @param newValue   the new value after releasing the lock
+     * @param newValue the new value after releasing the lock
      */
     public static void lockReleaseEvent(
             Object instance,
@@ -231,7 +231,7 @@ public class JmcRuntimeUtils {
      *
      * <p>This method updates the JMC runtime event and yields control to the scheduler.
      *
-     * @param t      the thread to join
+     * @param t the thread to join
      * @param millis the maximum time to wait in milliseconds
      * @throws InterruptedException if the current thread is interrupted while waiting
      */
@@ -245,9 +245,9 @@ public class JmcRuntimeUtils {
      *
      * <p>This method updates the JMC runtime event and yields control to the scheduler.
      *
-     * @param t      the thread to join
+     * @param t the thread to join
      * @param millis the maximum time to wait in milliseconds
-     * @param nanos  additional nanoseconds to wait
+     * @param nanos additional nanoseconds to wait
      * @throws InterruptedException if the current thread is interrupted while waiting
      */
     public static void join(Thread t, long millis, int nanos) throws InterruptedException {
@@ -379,6 +379,19 @@ public class JmcRuntimeUtils {
     }
 
     /**
+     * Retrieves the synchronization lock for the given instance.
+     *
+     * <p>This method returns the lock associated with the instance's hash code, null if none
+     * exists.
+     *
+     * @param instance the instance to get the lock for
+     * @return the JmcReentrantLock associated with the instance
+     */
+    public static JmcReentrantLock getSyncLock(Object instance) {
+        return syncMethodLocksStore.getLock(instance.hashCode());
+    }
+
+    /**
      * Clears all synchronization locks.
      *
      * <p>This method clears the internal store of synchronization locks.
@@ -414,10 +427,21 @@ public class JmcRuntimeUtils {
             return lockMap.get(lockObject.hashCode());
         }
 
+        /**
+         * Returns the JmcReentrantLock for the given hashCode.
+         *
+         * @param hashCode the hash code of the lock object
+         * @return the JmcReentrantLock for the given hashCode, or null if not found
+         */
         public JmcReentrantLock getLock(Integer hashCode) {
             return lockMap.get(hashCode);
         }
 
+        /**
+         * Registers a new JmcReentrantLock for the given hashCode.
+         *
+         * @param hashcode the hash code of the lock object
+         */
         public void registerLock(int hashcode) {
             lockMap.put(hashcode, new JmcReentrantLock());
         }

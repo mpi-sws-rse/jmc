@@ -14,34 +14,30 @@ import org.objectweb.asm.Opcodes;
  *
  * <p>o.notify() -> JmcObject.objectNotify(o)
  *
- * <p>o.notifyAll() -> JmcObject.objectNotifyAll(o)
- * check thread visitor for reference
+ * <p>o.notifyAll() -> JmcObject.objectNotifyAll(o) check thread visitor for reference
  */
 public class JmcWaitNotifyVisitor extends ClassVisitor {
-
-
 
     public JmcWaitNotifyVisitor(ClassVisitor cv) {
         super(Opcodes.ASM9, cv);
     }
 
     @Override
-    public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-        MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
-
-        return new JmcNotifyWaitMethodVisitor(mv);
+    public MethodVisitor visitMethod(
+            int access, String name, String descriptor, String signature, String[] exceptions) {
+        return new JmcNotifyWaitMethodVisitor(
+                super.visitMethod(access, name, descriptor, signature, exceptions));
     }
 
-
-
-    public static class JmcNotifyWaitMethodVisitor  extends MethodVisitor {
+    public static class JmcNotifyWaitMethodVisitor extends MethodVisitor {
 
         public JmcNotifyWaitMethodVisitor(MethodVisitor mv) {
             super(Opcodes.ASM9, mv);
         }
 
         @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+        public void visitMethodInsn(
+                int opcode, String owner, String name, String descriptor, boolean isInterface) {
             switch (name) {
                 case "wait":
                     if (descriptor.equals("()V")) {
@@ -50,8 +46,7 @@ public class JmcWaitNotifyVisitor extends ClassVisitor {
                                 "org/mpi_sws/jmc/api/JmcObject",
                                 "objectWait",
                                 "(Ljava/lang/Object;)V",
-                                false
-                        );
+                                false);
                         return;
                     } else if (descriptor.equals("(J)V")) {
                         super.visitMethodInsn(
@@ -59,10 +54,11 @@ public class JmcWaitNotifyVisitor extends ClassVisitor {
                                 "org/mpi_sws/jmc/api/JmcObject",
                                 "objectWait",
                                 "(Ljava/lang/Object;J)V",
-                                false
-                        );
+                                false);
                         return;
                     }
+                    // It has to be one of the above two, since the wait method is final in Object
+                    // class it cannot be overridden by any other class.
                     break;
                 case "notify":
                     super.visitMethodInsn(
@@ -70,8 +66,7 @@ public class JmcWaitNotifyVisitor extends ClassVisitor {
                             "org/mpi_sws/jmc/api/JmcObject",
                             "objectNotify",
                             "(Ljava/lang/Object;)V",
-                            false
-                    );
+                            false);
                     return;
                 case "notifyAll":
                     super.visitMethodInsn(
@@ -79,16 +74,11 @@ public class JmcWaitNotifyVisitor extends ClassVisitor {
                             "org/mpi_sws/jmc/api/JmcObject",
                             "objectNotifyAll",
                             "(Ljava/lang/Object;)V",
-                            false
-                    );
+                            false);
                     return;
                 default:
                     super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
             }
-
         }
     }
-
-
 }
-

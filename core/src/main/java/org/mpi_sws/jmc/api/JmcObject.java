@@ -1,7 +1,10 @@
 package org.mpi_sws.jmc.api;
 
+import org.mpi_sws.jmc.api.util.concurrent.JmcReentrantLock;
+import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
+import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
 
 public class JmcObject {
     public static void objectWait(Object o) throws InterruptedException {
@@ -9,6 +12,12 @@ public class JmcObject {
     }
 
     public static void objectWait(Object o, long timeoutMillis) throws InterruptedException {
+        JmcReentrantLock lock = JmcRuntimeUtils.getSyncLock(o);
+        if (lock == null) {
+            throw HaltCheckerException.error(
+                    "Object not used in synchronized block: " + o.getClass() + "@" + o.hashCode());
+        }
+        o = lock.getInstance();
         JmcRuntimeEvent event =
                 new JmcRuntimeEvent.Builder()
                         .type(JmcRuntimeEvent.Type.WAIT_EVENT)
@@ -21,7 +30,8 @@ public class JmcObject {
         } catch (Exception e) {
             throw new InterruptedException("Wait interrupted: " + e.getMessage());
         }
-        o.wait(timeoutMillis);
+
+        lock.lock();
 
         event =
                 new JmcRuntimeEvent.Builder()
@@ -30,13 +40,19 @@ public class JmcObject {
                         .param("object", o)
                         .build();
         try {
-            JmcRuntime.updateEvent(event);
+            JmcRuntime.updateEventAndYield(event);
         } catch (Exception e) {
             throw new InterruptedException("Wakeup interrupted: " + e.getMessage());
         }
     }
 
     public static void objectNotify(Object o) {
+        JmcReentrantLock lock = JmcRuntimeUtils.getSyncLock(o);
+        if (lock == null) {
+            throw HaltCheckerException.error(
+                    "Object not used in synchronized block: " + o.getClass() + "@" + o.hashCode());
+        }
+        o = lock.getInstance();
         JmcRuntimeEvent event =
                 new JmcRuntimeEvent.Builder()
                         .type(JmcRuntimeEvent.Type.NOTIFY_EVENT)
@@ -44,14 +60,19 @@ public class JmcObject {
                         .param("object", o)
                         .build();
         try {
-            JmcRuntime.updateEvent(event);
+            JmcRuntime.updateEventAndYield(event);
         } catch (Exception e) {
             // Ignore
         }
-        o.notify();
     }
 
     public static void objectNotifyAll(Object o) {
+        JmcReentrantLock lock = JmcRuntimeUtils.getSyncLock(o);
+        if (lock == null) {
+            throw HaltCheckerException.error(
+                    "Object not used in synchronized block: " + o.getClass() + "@" + o.hashCode());
+        }
+        o = lock.getInstance();
         JmcRuntimeEvent event =
                 new JmcRuntimeEvent.Builder()
                         .type(JmcRuntimeEvent.Type.NOTIFY_ALL_EVENT)
@@ -59,10 +80,9 @@ public class JmcObject {
                         .param("object", o)
                         .build();
         try {
-            JmcRuntime.updateEvent(event);
+            JmcRuntime.updateEventAndYield(event);
         } catch (Exception e) {
             // Ignore
         }
-        o.notifyAll();
     }
 }

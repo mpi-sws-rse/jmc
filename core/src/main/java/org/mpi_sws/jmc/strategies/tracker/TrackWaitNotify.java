@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-public class TrackWaitNotify implements Tracker {
+public class TrackWaitNotify extends TrackLocks {
 
     private static final Logger LOGGER = LogManager.getLogger(TrackWaitNotify.class);
 
@@ -27,18 +27,24 @@ public class TrackWaitNotify implements Tracker {
 
     @Override
     public Set<Long> updateEvent(JmcRuntimeEvent event) {
+        super.updateEvent(event);
         if (!this.trackedTasks.contains(event.getTaskId())) {
             this.activeTasks.add(event.getTaskId());
         }
         this.trackedTasks.add(event.getTaskId());
         switch (event.getType()) {
             case WAIT_EVENT -> {
-                int objectId = event.getParam("object").hashCode();
+                // TODO: need validation to ensure that wait is called on an object that is locked
+                // by the current thread. If not, throw an exception saying error in wait/notify
+                // usage.
+                Object object = event.getParam("object");
+                int objectId = object.hashCode();
                 Set<Long> waitingList =
                         this.waitingTasks.computeIfAbsent(objectId, k -> new HashSet<>());
                 waitingList.add(event.getTaskId());
                 this.waitingTasks.put(objectId, waitingList);
                 this.activeTasks.remove(event.getTaskId());
+                this.unlock(event.getTaskId(), object);
             }
             case WAKEUP_EVENT -> {
                 int objectId = event.getParam("object").hashCode();
@@ -81,11 +87,15 @@ public class TrackWaitNotify implements Tracker {
                 this.waitingTasks.put(objectId, waitingList);
             }
         }
-        return this.activeTasks;
+        Set<Long> result = new HashSet<>(this.activeTasks);
+        result.retainAll(super.getActiveTasks());
+        LOGGER.debug("Active tasks after wait/notify: {}", result);
+        return result;
     }
 
     @Override
     public void reset() {
+        super.reset();
         this.activeTasks.clear();
         this.trackedTasks.clear();
         this.waitingTasks.clear();
