@@ -72,7 +72,9 @@ public class JmcRuntime {
         scheduler.start();
     }
 
-    /** Tears down the runtime by shutting down the scheduler adn clearing the task manager. */
+    /**
+     * Tears down the runtime by shutting down the scheduler adn clearing the task manager.
+     */
     public static void tearDown() {
         LOGGER.debug("Tearing down!");
         taskManager.reset();
@@ -128,7 +130,9 @@ public class JmcRuntime {
         JmcRuntime.yield();
     }
 
-    /** Resets the runtime for a new iteration. */
+    /**
+     * Resets the runtime for a new iteration.
+     */
     public static void resetIteration(int iteration) {
         scheduler.resetIteration(iteration);
         taskManager.reset();
@@ -208,12 +212,12 @@ public class JmcRuntime {
     public static void join(Long taskId) {
         LOGGER.debug("Joining task {}", taskId);
         try {
+            taskManager.terminate(taskId);
             scheduler.yield();
         } catch (TaskAlreadyPaused e) {
             LOGGER.error("Joining an already paused task.");
             throw HaltExecutionException.error("Joining an already paused task.");
         }
-        taskManager.terminate(taskId);
     }
 
     /**

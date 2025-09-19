@@ -21,7 +21,7 @@ public class JmcModelChecker {
 
     private static final Logger LOGGER = LogManager.getLogger(JmcModelChecker.class);
 
-    private JmcCheckerConfiguration config;
+    private final JmcCheckerConfiguration config;
 
     /**
      * Constructs a new JMC model checker with the given configuration.
@@ -76,6 +76,12 @@ public class JmcModelChecker {
                             "Halting execution: {} due to exception: {}",
                             iteration,
                             e.getMessage());
+                    if (e.isReexecutionNeeded()) {
+                        // Since we are going to re-execute, do not count this iteration
+                        iteration--;
+                    } else {
+                        throw e;
+                    }
                 } catch (Exception e) {
                     successfulIteration = false;
                     // Catchall for any other exceptions that may occur

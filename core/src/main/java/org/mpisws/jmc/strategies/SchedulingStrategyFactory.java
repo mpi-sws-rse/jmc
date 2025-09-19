@@ -1,6 +1,6 @@
 package org.mpisws.jmc.strategies;
 
-import org.mpisws.jmc.strategies.estimation.EstimationStrategy;
+import org.mpisws.jmc.strategies.estimation.DagEstimationStrategy;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.util.HashSet;
@@ -17,7 +17,8 @@ public class SchedulingStrategyFactory {
     static {
         validStrategies.add("random");
         validStrategies.add("trust");
-        validStrategies.add("estimation");
+        validStrategies.add("dag-estimation");
+        validStrategies.add("trust-estimation");
     }
 
     /**
@@ -41,8 +42,14 @@ public class SchedulingStrategyFactory {
                     config.getTrustSchedulingPolicy(),
                     config.getDebug(),
                     config.getReportPath());
-        } else if (name.equals("estimation")) {
-            return new EstimationStrategy(config.getSeed());
+        } else if (name.equals("dag-estimation")) {
+            return new DagEstimationStrategy(config.getSeed());
+        } else if (name.equals("trust-estimation")) {
+            return new org.mpisws.jmc.strategies.estimation.TrustEstimationStrategy(
+                    config.getSeed(),
+                    config.getTrustSchedulingPolicy(),
+                    config.getDebug(),
+                    config.getReportPath());
         }
         return null;
     }

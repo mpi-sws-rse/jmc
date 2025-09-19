@@ -68,14 +68,20 @@ public class ReadWriteNTest {
 
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "dag-estimation", debug = false)
     public void runEstimationReadNTest() {
         readNProgram(4);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 10000, strategy = "dag-estimation", debug = false)
     public void runEstimationReadWriteNTest() {
+        readWriteNProgram(5);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation", debug = false)
+    public void runTrustEstimationReadWriteNTest() {
         readWriteNProgram(5);
     }
 }
