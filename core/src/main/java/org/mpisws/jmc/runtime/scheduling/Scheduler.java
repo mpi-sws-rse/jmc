@@ -47,6 +47,8 @@ public class Scheduler {
      */
     private final SchedulerThread schedulerThread;
 
+    private boolean stopAllMode = false;
+
     /**
      * Constructs a new Scheduler object.
      *
@@ -120,7 +122,8 @@ public class Scheduler {
      */
     protected <T extends SchedulingChoiceValue> void scheduleTask(SchedulingChoice<T> choice) {
         if (choice.isBlockExecution()) {
-            taskManager.stopAll();
+            LOGGER.debug("Stopping all tasks.");
+            startStopAllMode();
         } else if (choice.isBlockTask()) {
             Long taskId = choice.getTaskId();
             setCurrentTask(taskId);
@@ -147,6 +150,18 @@ public class Scheduler {
                 LOGGER.error("Resuming a non existent task: {}", e.getMessage());
                 throw HaltExecutionException.error(e.getMessage());
             }
+        }
+    }
+
+    private void startStopAllMode() {
+        stopAllMode = true;
+        doNextStop();
+    }
+
+    private void doNextStop() {
+        boolean isMainTask = taskManager.doNextStop();
+        if (isMainTask) {
+            stopAllMode = false;
         }
     }
 
@@ -177,6 +192,15 @@ public class Scheduler {
         LOGGER.debug("Enabling scheduler thread.");
         schedulerThread.enable();
         return future;
+    }
+
+    public void yieldWithoutPausing() {
+        synchronized (currentTaskLock) {
+            currentTask = null;
+        }
+        // Release the scheduler thread
+        LOGGER.debug("Enabling scheduler thread.");
+        schedulerThread.enable();
     }
 
     /**
@@ -224,6 +248,10 @@ public class Scheduler {
     public void shutdown() {
         schedulerThread.shutdown();
         strategy.teardown();
+    }
+
+    public boolean isInStopAllMode() {
+        return stopAllMode;
     }
 
     /**
@@ -313,6 +341,12 @@ public class Scheduler {
                     // It is possible that the scheduler is enabled but no task is available.
                     // The solution is to just wait for something to become available. and throw an
                     // error otherwise.
+
+                    if (scheduler.isInStopAllMode()) {
+                        scheduler.doNextStop();
+                        continue;
+                    }
+
                     SchedulingChoice<?> nextTask = null;
                     for (int i = 0; i < schedulerTries; i++) {
                         nextTask = strategy.nextTask();

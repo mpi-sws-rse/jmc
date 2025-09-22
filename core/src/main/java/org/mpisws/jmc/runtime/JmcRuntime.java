@@ -196,6 +196,15 @@ public class JmcRuntime {
     public static <T> T wait(Long taskId) {
         try {
             return taskManager.wait(taskId);
+        } catch (HaltExecutionException e) {
+            if (e.isReexecutionNeeded()) {
+                LOGGER.info("Re-execution needed, throwing HaltExecutionException");
+                throw HaltExecutionException.reexecutionNeeded();
+            } else {
+                LOGGER.error("Failed to wait for task: {}", taskId);
+                Throwable cause = e.getCause();
+                throw HaltExecutionException.error(cause.getMessage());
+            }
         } catch (ExecutionException | InterruptedException e) {
             LOGGER.error("Failed to wait for task: {}", taskId);
             Throwable cause = e.getCause();
@@ -211,13 +220,14 @@ public class JmcRuntime {
      */
     public static void join(Long taskId) {
         LOGGER.debug("Joining task {}", taskId);
-        try {
-            taskManager.terminate(taskId);
-            scheduler.yield();
-        } catch (TaskAlreadyPaused e) {
+        //try {
+        taskManager.terminate(taskId);
+        //scheduler.yield();
+        scheduler.yieldWithoutPausing();
+        /*} catch (TaskAlreadyPaused e) {
             LOGGER.error("Joining an already paused task.");
             throw HaltExecutionException.error("Joining an already paused task.");
-        }
+        }*/
     }
 
     /**

@@ -78,7 +78,7 @@ public class JmcModelChecker {
                             e.getMessage());
                     if (e.isReexecutionNeeded()) {
                         // Since we are going to re-execute, do not count this iteration
-                        iteration--;
+                        numIterations++;
                     } else {
                         throw e;
                     }
