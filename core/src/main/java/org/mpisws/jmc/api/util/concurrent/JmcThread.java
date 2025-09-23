@@ -83,7 +83,11 @@ public class JmcThread extends Thread {
             JmcRuntime.yield(jmcThreadId);
             run1();
         } catch (Exception e) {
-            LOGGER.error("Exception running the thread: {}", e.getMessage());
+            if (e instanceof HaltExecutionException && ((HaltExecutionException) e).isReexecutionNeeded()) {
+                LOGGER.debug("Re-execution needed, throwing HaltExecutionException");
+            } else {
+                LOGGER.error("Exception running the thread: {}", e.getMessage());
+            }
         } finally {
             event =
                     new JmcRuntimeEvent.Builder()

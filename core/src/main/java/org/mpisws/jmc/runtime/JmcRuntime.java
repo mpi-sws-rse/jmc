@@ -198,7 +198,7 @@ public class JmcRuntime {
             return taskManager.wait(taskId);
         } catch (HaltExecutionException e) {
             if (e.isReexecutionNeeded()) {
-                LOGGER.info("Re-execution needed, throwing HaltExecutionException");
+                LOGGER.debug("Re-execution needed, throwing HaltExecutionException");
                 throw HaltExecutionException.reexecutionNeeded();
             } else {
                 LOGGER.error("Failed to wait for task: {}", taskId);

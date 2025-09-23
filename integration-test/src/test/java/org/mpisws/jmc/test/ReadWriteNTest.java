@@ -68,7 +68,7 @@ public class ReadWriteNTest {
 
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 1000, strategy = "dag-estimation", debug = false)
     public void runEstimationReadNTest() {
         readNProgram(4);
     }

@@ -70,16 +70,16 @@ public class JmcModelChecker {
                             iteration,
                             e.getMessage());
                 } catch (HaltExecutionException e) {
-                    report.setErrorIteration(iteration);
-                    report.setErrorMessage(e.getMessage());
-                    LOGGER.error(
-                            "Halting execution: {} due to exception: {}",
-                            iteration,
-                            e.getMessage());
                     if (e.isReexecutionNeeded()) {
                         // Since we are going to re-execute, do not count this iteration
                         numIterations++;
                     } else {
+                        report.setErrorIteration(iteration);
+                        report.setErrorMessage(e.getMessage());
+                        LOGGER.error(
+                                "Halting execution: {} due to exception: {}",
+                                iteration,
+                                e.getMessage());
                         throw e;
                     }
                 } catch (Exception e) {

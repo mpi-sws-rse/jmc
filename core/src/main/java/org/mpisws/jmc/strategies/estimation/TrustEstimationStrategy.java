@@ -37,7 +37,7 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
             super.initIteration(iteration, report);
         } catch (HaltCheckerException e) {
             if (e.isOkay() && algoInstance.isStackEmpty()) {
-                LOGGER.info("HaltCheckerException in initIteration: {}, clearing algoInstance", e.getMessage());
+                LOGGER.debug("HaltCheckerException in initIteration: {}, clearing algoInstance", e.getMessage());
                 algoInstance.clear();
             } else {
                 LOGGER.error("HaltExecutionException in initIteration: {}", e.getMessage());
@@ -67,7 +67,7 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     @Override
     public SchedulingChoice<?> nextTask() {
         if (tEst.isReExecutionNeeded()) {
-            LOGGER.info("Re-execution needed, throwing HaltExecutionException");
+            LOGGER.debug("Re-execution needed, throwing HaltExecutionException");
             return SchedulingChoice.blockExecution();
         }
         return super.nextTask();
