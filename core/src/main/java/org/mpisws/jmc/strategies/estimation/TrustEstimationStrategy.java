@@ -35,10 +35,16 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     public void initIteration(int iteration, JmcModelCheckerReport report) {
         try {
             super.initIteration(iteration, report);
-            tEst.resetReExecutionFlag();
         } catch (HaltCheckerException e) {
-            LOGGER.error("HaltExecutionException in initIteration: {}", e.getMessage());
-            throw HaltExecutionException.ok();
+            if (e.isOkay() && algoInstance.isStackEmpty()) {
+                LOGGER.info("HaltCheckerException in initIteration: {}, clearing algoInstance", e.getMessage());
+                algoInstance.clear();
+            } else {
+                LOGGER.error("HaltExecutionException in initIteration: {}", e.getMessage());
+                throw HaltExecutionException.ok();
+            }
+        } finally {
+            tEst.resetReExecutionFlag();
         }
     }
 

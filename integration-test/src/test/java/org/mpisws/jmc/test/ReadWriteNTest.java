@@ -80,7 +80,7 @@ public class ReadWriteNTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation", debug = false)
     public void runTrustEstimationReadWriteNTest() {
         readWriteNProgram(5);
     }

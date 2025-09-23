@@ -48,6 +48,20 @@ public class Algo {
         this.executionGraph.addEvent(Event.init());
     }
 
+    public void clear() {
+        this.guidingTaskSchedule = null;
+        this.isGuiding = false;
+        this.executionGraph.clear();
+        this.explorationStack.clear();
+        this.locationStore.clear();
+        this.mustBlockTask = null;
+        this.executionGraph.addEvent(Event.init());
+    }
+
+    public boolean isStackEmpty() {
+        return this.explorationStack.isEmpty();
+    }
+
     /**
      * Returns the next task to be scheduled according to the execution graph set in place.
      */
