@@ -75,5 +75,6 @@ public class TrustEstimator implements Estimator {
      */
     public void reset() {
         expectedValue = 1;
+        resetReExecutionFlag();
     }
 }

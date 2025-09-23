@@ -61,7 +61,7 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
     @Override
     public void resetIteration(int iteration) {
         super.resetIteration(iteration);
-        LOGGER.info("Finished iteration {} with expected value: {}", iteration, est.getExpectedValue());
+        LOGGER.debug("Finished iteration {} with expected value: {}", iteration, est.getExpectedValue());
         estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
         est.reset();
     }
@@ -71,6 +71,6 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
         super.teardown();
         // TODO : Fix the hard coded path
         FileUtil.unsafeStoreToFile(
-                Paths.get("build/test-results/jmc-report/", "EstimateResult.txt").toString(), estimatorCollector.toString());
+                Paths.get("build/test-results/jmc-report/", "DagEstimateResult.txt").toString(), estimatorCollector.toString());
     }
 }

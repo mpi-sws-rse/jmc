@@ -9,6 +9,9 @@ import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
+import org.mpisws.jmc.util.FileUtil;
+
+import java.nio.file.Paths;
 
 public class TrustEstimationStrategy extends TrustStrategy implements EstimationStrategy {
 
@@ -39,6 +42,8 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
             if (e.isOkay() && algoInstance.isStackEmpty()) {
                 LOGGER.debug("HaltCheckerException in initIteration: {}, clearing algoInstance", e.getMessage());
                 algoInstance.clear();
+                estimatorCollector.append(tEst.getExpectedValue()).append(System.lineSeparator());
+                tEst.reset();
             } else {
                 LOGGER.error("HaltExecutionException in initIteration: {}", e.getMessage());
                 throw HaltExecutionException.ok();
@@ -71,5 +76,15 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
             return SchedulingChoice.blockExecution();
         }
         return super.nextTask();
+    }
+
+    /**
+     *
+     */
+    @Override
+    public void teardown() {
+        super.teardown();
+        FileUtil.unsafeStoreToFile(
+                Paths.get("build/test-results/jmc-report/", "TrustEstimateResult.txt").toString(), estimatorCollector.toString());
     }
 }

@@ -25,7 +25,7 @@ public class DagEstimator implements Estimator {
         if (!events.isEmpty() && activeThreadSize != 0) {
             // The lock acquisition and release events, will be compiled into a pair of ReadEx and WriteEx events
             for (Event e : events) {
-                LOGGER.info("Received event: {}", e);
+                LOGGER.debug("Received event: {}", e);
                 executionGraph.updateEvent(e);
             }
 
@@ -43,7 +43,7 @@ public class DagEstimator implements Estimator {
             }
 
             expectedValue = expectedValue * out / in;
-            LOGGER.info("Expected value: {}", expectedValue);
+            LOGGER.debug("Expected value: {}", expectedValue);
         }
 
     }
