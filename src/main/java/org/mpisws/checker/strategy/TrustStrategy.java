@@ -542,7 +542,9 @@ public class TrustStrategy extends DPORStrategy {
     public Thread pickNextGuidedThread() {
         if (guidingEvents.isEmpty()) {
             handleEmptyGuidingEvents();
-            solver.solveAndUpdateModelSymbolicVariables();
+            if (solver != null) {
+                solver.solveAndUpdateModelSymbolicVariables();
+            }
             return pickNextReadyThread();
         }
 
