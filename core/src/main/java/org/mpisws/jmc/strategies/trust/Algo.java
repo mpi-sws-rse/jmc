@@ -385,7 +385,7 @@ public class Algo {
         LOGGER.debug(sb.toString());
     }
 
-    private void processBWR(ExplorationStack.Item item) {
+    public void processBWR(ExplorationStack.Item item) {
 
         ExecutionGraphNode write = item.getEvent1();
         ExecutionGraph restrictedGraph = item.getGraph();

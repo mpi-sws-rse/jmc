@@ -1,5 +1,7 @@
 package org.mpisws.jmc.annotations;
 
+import org.mpisws.jmc.strategies.trust.TrustStrategy;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -26,6 +28,8 @@ public @interface JmcCheckConfiguration {
      * @return the strategy name
      */
     String strategy() default "random";
+
+    TrustStrategy.SchedulingPolicy schedulingPolicy() default TrustStrategy.SchedulingPolicy.RANDOM;
 
     /**
      * The number of iterations to run for the JMC check.
@@ -61,4 +65,5 @@ public @interface JmcCheckConfiguration {
      * @return the seed value
      */
     long seed() default 0;
+
 }

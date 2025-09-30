@@ -56,7 +56,8 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 .debug(annotation.debug())
                 .seed(seed)
                 .reportPath(annotation.reportPath())
-                .strategyType(annotation.strategy());
+                .strategyType(annotation.strategy())
+                .schedulingPolicy(annotation.schedulingPolicy());
     }
 
     /**
@@ -77,9 +78,9 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
         try {
             methodInstance = testMethod.getDeclaringClass().getDeclaredConstructor().newInstance();
         } catch (NoSuchMethodException
-                | InstantiationException
-                | IllegalAccessException
-                | InvocationTargetException e) {
+                 | InstantiationException
+                 | IllegalAccessException
+                 | InvocationTargetException e) {
             LOGGER.error(
                     "Error creating instance of test class: {}",
                     testMethod.getDeclaringClass().getName(),

@@ -6,10 +6,8 @@ import org.mpisws.jmc.annotations.JmcCheckConfiguration;
 import org.mpisws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpisws.jmc.checker.exceptions.JmcInvalidConfigurationException;
 import org.mpisws.jmc.runtime.JmcRuntimeConfiguration;
-import org.mpisws.jmc.strategies.JmcInvalidStrategyException;
-import org.mpisws.jmc.strategies.SchedulingStrategy;
-import org.mpisws.jmc.strategies.SchedulingStrategyConfiguration;
-import org.mpisws.jmc.strategies.SchedulingStrategyFactory;
+import org.mpisws.jmc.strategies.*;
+import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
 import java.time.Duration;
 
@@ -38,7 +36,10 @@ public class JmcCheckerConfiguration {
 
     private Duration timeout;
 
-    private JmcCheckerConfiguration() {}
+    private TrustStrategy.SchedulingPolicy schedulingPolicy;
+
+    private JmcCheckerConfiguration() {
+    }
 
     /**
      * Returns the number of iterations to run the checker.
@@ -94,6 +95,10 @@ public class JmcCheckerConfiguration {
         this.seed = seed;
     }
 
+    public void setSchedulingPolicy(TrustStrategy.SchedulingPolicy schedulingPolicy) {
+        this.schedulingPolicy = schedulingPolicy;
+    }
+
     /**
      * Returns the timeout duration for the checker.
      *
@@ -103,17 +108,21 @@ public class JmcCheckerConfiguration {
         return timeout;
     }
 
+    public TrustStrategy.SchedulingPolicy getSchedulingPolicy() {
+        return schedulingPolicy;
+    }
+
     /**
      * Converts this configuration to a runtime configuration.
      *
      * @return a {@link JmcRuntimeConfiguration} based on this configuration
      * @throws JmcInvalidStrategyException if the strategy type is invalid or the strategy cannot be
-     *     created
+     *                                     created
      */
     public JmcRuntimeConfiguration toRuntimeConfiguration() throws JmcInvalidStrategyException {
         SchedulingStrategy strategy;
         SchedulingStrategyConfiguration.Builder strategyConfigurationBuilder =
-                new SchedulingStrategyConfiguration.Builder().seed(seed);
+                new SchedulingStrategyConfiguration.Builder().seed(seed).trustSchedulingPolicy(schedulingPolicy);
         if (debug) {
             strategyConfigurationBuilder.debug();
             strategyConfigurationBuilder.reportPath(reportPath);
@@ -153,10 +162,13 @@ public class JmcCheckerConfiguration {
                 .debug(annotation.debug())
                 .reportPath(annotation.reportPath())
                 .seed(annotation.seed())
+                .schedulingPolicy(annotation.schedulingPolicy())
                 .build();
     }
 
-    /** Builder for JmcCheckerConfiguration */
+    /**
+     * Builder for JmcCheckerConfiguration
+     */
     public static class Builder {
         private Integer numIterations;
 
@@ -171,9 +183,12 @@ public class JmcCheckerConfiguration {
 
         private Long seed;
 
+        private TrustStrategy.SchedulingPolicy schedulingPolicy;
+
         public Builder() {
             this.numIterations = 0;
             this.strategyType = "random";
+            this.schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM;
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
             this.seed = System.nanoTime();
@@ -216,6 +231,11 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
+        public Builder schedulingPolicy(TrustStrategy.SchedulingPolicy schedulingPolicy) {
+            this.schedulingPolicy = schedulingPolicy;
+            return this;
+        }
+
         public JmcCheckerConfiguration build() throws JmcInvalidConfigurationException {
             if (numIterations == 0 && timeout == null) {
                 throw new JmcInvalidConfigurationException(
@@ -230,6 +250,7 @@ public class JmcCheckerConfiguration {
             config.reportPath = reportPath;
             config.seed = seed;
             config.timeout = timeout;
+            config.schedulingPolicy = schedulingPolicy;
             return config;
         }
     }

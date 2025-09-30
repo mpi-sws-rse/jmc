@@ -114,6 +114,9 @@ public class TrustStrategy extends TrackActiveTasksStrategy
                     case FIFO -> activeScheduleAbleTasks.isEmpty()
                             ? null
                             : activeScheduleAbleTasks.get(0);
+                    case LIFO -> activeScheduleAbleTasks.isEmpty()
+                            ? null
+                            : activeScheduleAbleTasks.get(activeScheduleAbleTasks.size() - 1);
                     case RANDOM -> {
                         int size = activeScheduleAbleTasks.size();
                         yield size == 0 ? null : activeScheduleAbleTasks.get(random.nextInt(size));
@@ -182,6 +185,8 @@ public class TrustStrategy extends TrackActiveTasksStrategy
 
     public enum SchedulingPolicy {
         FIFO,
-        RANDOM
+        RANDOM,
+        LIFO,
+        // TODO : add RR
     }
 }

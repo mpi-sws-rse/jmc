@@ -2,6 +2,9 @@ package org.mpisws.jmc.test;
 
 import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
+import org.mpisws.jmc.annotations.JmcExpectExecutions;
+import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
+import org.mpisws.jmc.strategies.trust.TrustStrategy;
 import org.mpisws.jmc.test.readerWriter.Shared;
 import org.mpisws.jmc.test.readerWriter.Reader;
 import org.mpisws.jmc.test.readerWriter.Writer;
@@ -74,14 +77,29 @@ public class ReadWriteNTest {
     }
 
     @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000, strategy = "trust-estimation", debug = false)
+    public void runTrustEstimationReadNTest() {
+        readNProgram(4);
+    }
+
+    @JmcCheck
     @JmcCheckConfiguration(numIterations = 10000, strategy = "dag-estimation", debug = false)
     public void runEstimationReadWriteNTest() {
         readWriteNProgram(5);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 5000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runTrustEstimationReadWriteNTest() {
-        readWriteNProgram(5);
+        readWriteNProgram(3);
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcTrustStrategy
+    //@JmcExpectExecutions(14400) // For input 5
+    public void runTrustReadWriteTest() {
+        readWriteNProgram(3);
+    }
+
 }

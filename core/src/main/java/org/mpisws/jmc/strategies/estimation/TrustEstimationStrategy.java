@@ -27,6 +27,9 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
 
     public TrustEstimationStrategy(Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath) {
         super(randomSeed, policy, debug, reportPath);
+        if (policy == SchedulingPolicy.RANDOM) {
+            LOGGER.warn(String.format("Random scheduling policy is %s", SchedulingPolicy.RANDOM.name()));
+        }
         tEst = new TrustEstimator();
     }
 
