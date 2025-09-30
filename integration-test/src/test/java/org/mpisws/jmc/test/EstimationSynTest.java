@@ -13,10 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class ReadWriteNTest {
+public class EstimationSynTest {
 
     /**
-     * This program has 1 distinct execution graph.
+     * R(n): This program has 1 distinct execution graph.
      * The abstract model of this program is like this:
      * Main thread  |  T1       |  T2       |  T3
      * ------------------------------------------------
@@ -49,6 +49,20 @@ public class ReadWriteNTest {
         }
     }
 
+    /**
+     * RW(n): This program has (n!)^2 distinct execution graphs, where n is the number of threads.
+     * the abstract model of this program is like this:
+     * Main thread  |  T1       |  T2       | T3
+     * ------------------------------------------------
+     * W(x)     |           |           |
+     * S(T1)    |    S      |           |
+     * S(T2)    |    R(x)   |     S     |
+     * S(T3)    |    W(x)   |     R(x)  |    S
+     * J(T1)    |    F      |     W(x)  |    R(x)
+     * J(T2)    |           |     F     |    W(x)
+     * J(T3)    |           |           |    F
+     * F        |           |           |
+     */
     private void readWriteNProgram(int numThreads) {
         Shared shared = new Shared(0);
         List<Writer> threads = new ArrayList<>();
@@ -69,36 +83,63 @@ public class ReadWriteNTest {
         }
     }
 
+    /** ----------------------------------------------------*/
 
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000, strategy = "dag-estimation", debug = false)
-    public void runEstimationReadNTest() {
-        readNProgram(4);
-    }
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000, strategy = "trust-estimation", debug = false)
-    public void runTrustEstimationReadNTest() {
-        readNProgram(4);
-    }
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "dag-estimation", debug = false)
-    public void runEstimationReadWriteNTest() {
-        readWriteNProgram(5);
-    }
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
-    public void runTrustEstimationReadWriteNTest() {
-        readWriteNProgram(3);
-    }
+    /**
+     * R(n) test suite for n \in {2,3,4,5}
+     * 1. TruSt model checking
+     * 2. DAG-based estimation
+     * 3. TruSt-based estimation
+     */
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    //@JmcExpectExecutions(14400) // For input 5
+    @JmcExpectExecutions(1) // For any n is 1
+    public void runRnTrust() {
+        readNProgram(2);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000, strategy = "dag-estimation", debug = false)
+    public void runRnDagEstimation() {
+        readNProgram(4);
+    }
+
+    // The scheduling policy can be either FIFO or LIFO, both work fine.
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    public void runRnTrustEstimation() {
+        readNProgram(4);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * RW(n) test suite for n \in {2,3,4,5}
+     * 1. TruSt model checking
+     * 2. DAG-based estimation
+     * 3. TruSt-based estimation
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000)
+    @JmcTrustStrategy
+    //@JmcExpectExecutions(36) // For input n is (n!)^2
     public void runTrustReadWriteTest() {
+        readWriteNProgram(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "dag-estimation", debug = false)
+    public void runEstimationReadWriteNTest() {
+        readWriteNProgram(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    public void runTrustEstimationReadWriteNTest() {
         readWriteNProgram(3);
     }
 

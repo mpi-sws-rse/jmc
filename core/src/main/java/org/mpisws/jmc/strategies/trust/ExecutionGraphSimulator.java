@@ -156,4 +156,20 @@ public class ExecutionGraphSimulator {
     public boolean isJtMax(Event event) {
         return executionGraph.isJtMax(event);
     }
+
+    public long getStarterTid(long tid) {
+        ExecutionGraphNode firstNode = executionGraph.getFirstEventOfTask(tid);
+        if (!EventUtils.isThreadStart(firstNode.getEvent())) {
+            throw new IllegalArgumentException("The first event of the task is not a START event");
+        }
+        return EventUtils.getStartedBy(firstNode.getEvent());
+    }
+
+    public Event getLastEventOfTask(long tid) {
+        ExecutionGraphNode lastNode = executionGraph.getLastNodeOfTask(tid);
+        if (lastNode == null) {
+            throw new IllegalArgumentException("No event found for task: " + tid);
+        }
+        return lastNode.getEvent();
+    }
 }

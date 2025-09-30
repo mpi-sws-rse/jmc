@@ -66,6 +66,14 @@ public class DagEstimator implements Estimator {
                 // We need to check if the START event is PO-MAX regarding the PO-MAX of the starter thread
                 return startedBy == e2.getTaskId() || !executionGraph.isStartMaxWithStarter(e1);
             }
+            /*if (EventUtils.isThreadFinish(e2)) {
+                long tid = e2.getTaskId();
+                // get the tid of the thread which started the e2's thread
+                long startedBy = executionGraph.getStarterTid(tid);
+                LOGGER.debug("Started by: {}", startedBy);
+                Event lastEventOfStartedBy = executionGraph.getLastEventOfTask(startedBy);
+                return EventUtils.isJoinRequest(lastEventOfStartedBy);
+            }*/
         } else { // One of the two events is a write event
             return e1.getLocation().equals(e2.getLocation());
         }

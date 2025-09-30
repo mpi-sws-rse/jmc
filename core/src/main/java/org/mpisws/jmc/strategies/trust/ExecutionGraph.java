@@ -252,10 +252,7 @@ public class ExecutionGraph {
         if (taskId < 0 || taskId >= taskEvents.size()) {
             return false;
         }
-        if (timestamp < 0 || timestamp >= taskEvents.get(taskId).size()) {
-            return false;
-        }
-        return true;
+        return timestamp >= 0 && timestamp < taskEvents.get(taskId).size();
     }
 
     /**
@@ -1325,7 +1322,7 @@ public class ExecutionGraph {
                         throw HaltCheckerException.error(
                                 String.format(
                                         "Dangling edge found from %s to %s",
-                                        node.key().toString(), key.toString()));
+                                        node.key().toString(), key));
                     }
                 }
             }
@@ -1903,6 +1900,28 @@ public class ExecutionGraph {
     }
 
     public ExecutionGraphNode getPoMaxNode(long taskId) {
+        if (taskId < 0 || taskId >= taskEvents.size()) {
+            throw HaltCheckerException.error("Invalid task ID: " + taskId);
+        }
+        List<ExecutionGraphNode> taskEventList = taskEvents.get(Math.toIntExact(taskId));
+        if (taskEventList.isEmpty()) {
+            return null;
+        }
+        return taskEventList.get(taskEventList.size() - 1);
+    }
+
+    public ExecutionGraphNode getFirstEventOfTask(long taskId) {
+        if (taskId < 0 || taskId >= taskEvents.size()) {
+            throw HaltCheckerException.error("Invalid task ID: " + taskId);
+        }
+        List<ExecutionGraphNode> taskEventList = taskEvents.get(Math.toIntExact(taskId));
+        if (taskEventList.isEmpty()) {
+            return null;
+        }
+        return taskEventList.get(0);
+    }
+
+    public ExecutionGraphNode getLastNodeOfTask(long taskId) {
         if (taskId < 0 || taskId >= taskEvents.size()) {
             throw HaltCheckerException.error("Invalid task ID: " + taskId);
         }

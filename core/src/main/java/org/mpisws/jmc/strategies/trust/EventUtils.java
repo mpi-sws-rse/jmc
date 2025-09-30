@@ -53,6 +53,10 @@ public class EventUtils {
         return event.hasAttribute("thread_join");
     }
 
+    public static boolean isJoinRequest(Event event) {
+        return event.hasAttribute("join-req");
+    }
+
     public static int getJoinedTask(Event event) {
         Long joinedTask = event.getAttribute("joined_task");
         if (joinedTask == null) {
