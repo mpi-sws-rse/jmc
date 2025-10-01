@@ -7,6 +7,7 @@ import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
 import org.mpisws.jmc.strategies.estimation.EstimationStrategy;
+import org.mpisws.jmc.strategies.estimation.MetaGraphEstimator;
 import org.mpisws.jmc.strategies.trust.Event;
 import org.mpisws.jmc.strategies.trust.EventFactory;
 import org.mpisws.jmc.strategies.trust.LocationStore;
@@ -19,7 +20,7 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
 
     private final Logger LOGGER = LogManager.getLogger(DagEstimationStrategy.class);
 
-    private final DagEstimator est;
+    private final MetaGraphEstimator est;
 
     private final StringBuilder estimatorCollector = new StringBuilder();
 
@@ -33,6 +34,12 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
         // TODO : Fix the hard coded path
         super(seed, "build/test-results/jmc-report");
         est = new DagEstimator();
+    }
+
+    public DagEstimationStrategy(Long seed, MetaGraphEstimator est) {
+        // TODO : Fix the hard coded path
+        super(seed, "build/test-results/jmc-report");
+        this.est = est;
     }
 
     /**

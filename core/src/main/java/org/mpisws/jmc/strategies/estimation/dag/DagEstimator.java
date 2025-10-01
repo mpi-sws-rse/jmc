@@ -4,12 +4,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
-import org.mpisws.jmc.strategies.estimation.Estimator;
+import org.mpisws.jmc.strategies.estimation.MetaGraphEstimator;
 import org.mpisws.jmc.strategies.trust.*;
 
 import java.util.List;
 
-public class DagEstimator implements Estimator {
+public class DagEstimator implements MetaGraphEstimator {
 
     private static final Logger LOGGER = LogManager.getLogger(DagEstimator.class);
 

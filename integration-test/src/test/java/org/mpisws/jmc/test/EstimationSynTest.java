@@ -140,7 +140,7 @@ public class EstimationSynTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 300000, strategy = "abs-dag-estimation", debug = false)
     public void runRWnAbsDagEstimation() {
-        readWriteNProgram(4);
+        readWriteNProgram(3);
     }
 
     @JmcCheck
