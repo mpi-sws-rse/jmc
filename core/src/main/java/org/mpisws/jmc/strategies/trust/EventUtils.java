@@ -91,4 +91,8 @@ public class EventUtils {
     public static boolean isLockAcquired(Event event) {
         return event.getType() == Event.Type.NOOP && event.hasAttribute("lock_acquired");
     }
+
+    public static boolean isNoop(Event event) {
+        return event.getType() == Event.Type.NOOP;
+    }
 }

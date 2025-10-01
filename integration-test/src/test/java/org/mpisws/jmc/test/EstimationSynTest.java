@@ -127,20 +127,27 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
     @JmcTrustStrategy
     //@JmcExpectExecutions(36) // For input n is (n!)^2
-    public void runTrustReadWriteTest() {
+    public void runRWnTrust() {
         readWriteNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "dag-estimation", debug = false)
-    public void runEstimationReadWriteNTest() {
+    @JmcCheckConfiguration(numIterations = 500000, strategy = "dag-estimation", debug = false)
+    public void runRWnDagEstimation() {
         readWriteNProgram(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 300000, strategy = "abs-dag-estimation", debug = false)
+    public void runRWnAbsDagEstimation() {
+        readWriteNProgram(4);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
-    public void runTrustEstimationReadWriteNTest() {
+    public void runRWnTrustEstimation() {
         readWriteNProgram(3);
     }
+
 
 }

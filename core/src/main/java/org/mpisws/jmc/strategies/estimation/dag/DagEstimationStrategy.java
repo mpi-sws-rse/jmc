@@ -1,4 +1,4 @@
-package org.mpisws.jmc.strategies.estimation;
+package org.mpisws.jmc.strategies.estimation.dag;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -6,6 +6,7 @@ import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.strategies.RandomSchedulingStrategy;
+import org.mpisws.jmc.strategies.estimation.EstimationStrategy;
 import org.mpisws.jmc.strategies.trust.Event;
 import org.mpisws.jmc.strategies.trust.EventFactory;
 import org.mpisws.jmc.strategies.trust.LocationStore;
@@ -70,7 +71,15 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
     public void teardown() {
         super.teardown();
         // TODO : Fix the hard coded path
+        saveResults();
+    }
+
+    protected void saveResults() {
         FileUtil.unsafeStoreToFile(
                 Paths.get("build/test-results/jmc-report/", "DagEstimateResult.txt").toString(), estimatorCollector.toString());
+    }
+
+    public StringBuilder getEstimatorCollector() {
+        return estimatorCollector;
     }
 }

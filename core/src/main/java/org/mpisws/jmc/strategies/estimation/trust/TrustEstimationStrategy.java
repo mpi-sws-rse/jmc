@@ -1,4 +1,4 @@
-package org.mpisws.jmc.strategies.estimation;
+package org.mpisws.jmc.strategies.estimation.trust;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,6 +8,7 @@ import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.runtime.JmcRuntimeEvent;
 import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpisws.jmc.strategies.estimation.EstimationStrategy;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 import org.mpisws.jmc.util.FileUtil;
 
