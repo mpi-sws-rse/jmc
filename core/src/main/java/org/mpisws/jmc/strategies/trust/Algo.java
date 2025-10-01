@@ -305,7 +305,7 @@ public class Algo {
             }
 
             // Handle the forward revisit
-            ExecutionGraph newGraph = explorationStack.getGraph(item);
+            ExecutionGraph newGraph = item.getGraph();
             if (newGraph == null) {
                 // It is not possible for an item to have a null graph. This must be a bug in the
                 // exploration stack.
@@ -457,7 +457,7 @@ public class Algo {
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
-    private List<ExecutionGraphNode> processFLW(ExplorationStack.Item item) {
+    public List<ExecutionGraphNode> processFLW(ExplorationStack.Item item) {
         // Forward revisit of w -> lw (max-co)
         ExecutionGraphNode w = item.getEvent1();
 
@@ -804,6 +804,10 @@ public class Algo {
 
     public ExecutionGraph getExecutionGraph() {
         return executionGraph;
+    }
+
+    public void setExecutionGraph(ExecutionGraph executionGraph) {
+        this.executionGraph = executionGraph;
     }
 
     public ExplorationStack getExplorationStack() {

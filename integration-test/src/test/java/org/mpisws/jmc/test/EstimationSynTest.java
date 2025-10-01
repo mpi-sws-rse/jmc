@@ -124,7 +124,7 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000)
+    @JmcCheckConfiguration(numIterations = 1000000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
     @JmcTrustStrategy
     //@JmcExpectExecutions(36) // For input n is (n!)^2
     public void runTrustReadWriteTest() {
@@ -138,7 +138,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    @JmcCheckConfiguration(numIterations = 1000000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runTrustEstimationReadWriteNTest() {
         readWriteNProgram(3);
     }

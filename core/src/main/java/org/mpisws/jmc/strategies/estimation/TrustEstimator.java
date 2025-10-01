@@ -92,7 +92,8 @@ public class TrustEstimator implements Estimator {
         if (item.getType() != ExplorationStack.ItemType.FLW) {
             // If the next item is not a FLW, we need to track coherency for the event1 of the item
             // Otherwise, the swapCoherency will break, since the FLW event is not processed
-            item.getGraph().trackCoherency(item.getEvent1());
+            alg.setExecutionGraph(item.getGraph());
+            alg.processFLW(item);
         }
         stack.push(item);
         reExecutionNeeded = true;

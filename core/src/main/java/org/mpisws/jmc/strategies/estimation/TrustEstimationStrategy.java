@@ -66,6 +66,9 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
         super.updateEvent(event);
         if (!tEst.isReExecutionNeeded()) {
             tEst.updateTree(algoInstance);
+            if (!algoInstance.isStackEmpty() && algoInstance.getExplorationStack().size() > 1) {
+                throw HaltExecutionException.error("Exploration stack size exceeded 1");
+            }
         }
     }
 

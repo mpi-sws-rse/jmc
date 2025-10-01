@@ -9,10 +9,12 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
-/** Represents a node in the execution graph. */
+/**
+ * Represents a node in the execution graph.
+ */
 public class ExecutionGraphNode {
 
-    private static Relation[] allRelations = Relation.values();
+    private static final Relation[] allRelations = Relation.values();
     // The event that this node represents.
     private final Event event;
     // The attributes of this node.
@@ -68,7 +70,9 @@ public class ExecutionGraphNode {
         this.vectorClock = new LamportVectorClock(node.vectorClock.getVector());
     }
 
-    /** Constructs a new {@link ExecutionGraphNode} copying the given node. */
+    /**
+     * Constructs a new {@link ExecutionGraphNode} copying the given node.
+     */
     public ExecutionGraphNode clone() {
         return new ExecutionGraphNode(this);
     }
@@ -90,7 +94,7 @@ public class ExecutionGraphNode {
      * Adds an edge to this node. The edge is directed from this node to the given node with the
      * given adjacency.
      *
-     * @param to The node to which the edge is directed.
+     * @param to        The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void addEdge(ExecutionGraphNode to, Relation adjacency) {
@@ -106,7 +110,7 @@ public class ExecutionGraphNode {
      * given adjacency. The vector clock of this node is updated with the vector clock of the given
      * node (only if the relation is not CO).
      *
-     * @param from The node from which the edge is directed.
+     * @param from      The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void addBackEdge(ExecutionGraphNode from, Relation adjacency) {
@@ -125,7 +129,7 @@ public class ExecutionGraphNode {
      * <p>Note that removing an edge invalidates the vector clock of all descendants. The concern of
      * fixing the vector clocks is passed to the calling function.
      *
-     * @param to The node to which the edge is directed.
+     * @param to        The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void removeEdge(ExecutionGraphNode to, Relation adjacency) {
@@ -187,7 +191,7 @@ public class ExecutionGraphNode {
     /**
      * Removes the predecessor with the given adjacency from this node.
      *
-     * @param from The node from which the edge is directed.
+     * @param from      The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     public void removePredecessor(ExecutionGraphNode from, Relation adjacency) {
@@ -217,7 +221,7 @@ public class ExecutionGraphNode {
     /**
      * Removes the back edge with the given adjacency from this node.
      *
-     * @param from The node from which the edge is directed.
+     * @param from      The node from which the edge is directed.
      * @param adjacency The adjacency of the edge.
      */
     private void removeBackEdge(ExecutionGraphNode from, Relation adjacency) {
@@ -258,7 +262,7 @@ public class ExecutionGraphNode {
     /**
      * Returns whether this node has an edge to the given node with the given adjacency.
      *
-     * @param to The node to which the edge is directed.
+     * @param to        The node to which the edge is directed.
      * @param adjacency The adjacency of the edge.
      * @return Whether this node has an edge to the given node with the given adjacency.
      */
@@ -353,7 +357,7 @@ public class ExecutionGraphNode {
     /**
      * Adds an attribute to this node.
      *
-     * @param key The key of the attribute.
+     * @param key   The key of the attribute.
      * @param value The value of the attribute.
      */
     public void addAttribute(String key, Object value) {
@@ -504,7 +508,7 @@ public class ExecutionGraphNode {
     /**
      * Checks if this node has a predecessor with the given key and relation.
      *
-     * @param key The key of the predecessor.
+     * @param key      The key of the predecessor.
      * @param relation The relation of the predecessor.
      * @return True if this node has a predecessor with the given key and relation, false otherwise.
      */

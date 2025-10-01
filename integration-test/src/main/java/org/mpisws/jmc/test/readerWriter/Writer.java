@@ -15,5 +15,7 @@ public class Writer extends Thread {
 
     public void write() {
         shared.incValue();
+        shared.incValue();
+        shared.incValue();
     }
 }

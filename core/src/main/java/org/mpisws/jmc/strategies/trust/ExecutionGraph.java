@@ -204,7 +204,9 @@ public class ExecutionGraph {
     protected int getTOIndex(ExecutionGraphNode node) {
         // A slight optimization to get start from the max vector clock value. The assumption is
         // that is at least after this value in the TO.
-        for (int i = node.getVectorClock().max(); i < allEvents.size(); i++) {
+        // TODO : The vector clocks do not work if TruSt does not explore in DFS order, by fixing this issue
+        // TODO : we can start from the max vector clock value instead of 0.
+        for (int i = 0; i < allEvents.size(); i++) {
             if (allEvents.get(i) == node) {
                 return i;
             }
