@@ -129,6 +129,17 @@ public class ExecutionGraphSimulator {
         return events;
     }
 
+    public List<Event> getAllNonNoopPoMaxEvents() {
+        List<ExecutionGraphNode> poMaxEvents = executionGraph.getAllPoMaxNode();
+        List<Event> events = new ArrayList<>();
+        for (ExecutionGraphNode node : poMaxEvents) {
+            if (!EventUtils.isNoop(node.getEvent())) {
+                events.add(node.getEvent());
+            }
+        }
+        return events;
+    }
+
     public boolean isStartMaxWithStarter(Event event) {
         return executionGraph.isStartMaxWithStarter(event);
     }

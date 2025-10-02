@@ -144,6 +144,12 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "fj-dag-estimation", debug = false)
+    public void runRWnFjDagEstimation() {
+        readWriteNProgram(3);
+    }
+
+    @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runRWnTrustEstimation() {
         readWriteNProgram(3);

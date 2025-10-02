@@ -50,17 +50,8 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
     @Override
     public void updateEvent(JmcRuntimeEvent event) throws HaltTaskException, HaltExecutionException {
         super.updateEvent(event);
-        List<Event> events = EventFactory.fromRuntimeEvent(event);
-        if (event.getType() == JmcRuntimeEvent.Type.JOIN_REQUEST_EVENT) {
-            Event e =
-                    new Event(
-                            event.getTaskId() - 1,
-                            LocationStore.ThreadLocation,
-                            Event.Type.NOOP);
-            e.setAttribute("join-req", true);
-            events.add(e);
-        }
-        est.updateEvent(events, getActiveTasks().size());
+        List<Event> events = compileRuntimeEvent(event);
+        est.updateEvent(events, getActiveTasks());
     }
 
     /**

@@ -1,30 +1,38 @@
-package org.mpisws.jmc.strategies.estimation.dag;
+package org.mpisws.jmc.strategies.estimation.fjDag;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
-import org.mpisws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpisws.jmc.strategies.estimation.MetaGraphEstimator;
-import org.mpisws.jmc.strategies.trust.*;
+import org.mpisws.jmc.strategies.trust.Event;
+import org.mpisws.jmc.strategies.trust.EventUtils;
+import org.mpisws.jmc.strategies.trust.ExecutionGraphSimulator;
 
 import java.util.List;
 import java.util.Set;
 
-public class DagEstimator implements MetaGraphEstimator {
+public class FjDagEstimator implements MetaGraphEstimator {
 
-    private static final Logger LOGGER = LogManager.getLogger(DagEstimator.class);
+    private static final Logger LOGGER = LogManager.getLogger(FjDagEstimator.class);
 
     protected final ExecutionGraphSimulator executionGraph;
 
     protected float expectedValue = 1f;
 
-    public DagEstimator() {
+    private boolean forkComplete = false;
+
+    public FjDagEstimator() {
         this.executionGraph = new ExecutionGraphSimulator();
     }
 
+    /**
+     * @param events
+     * @throws HaltTaskException
+     * @throws HaltExecutionException
+     */
+    @Override
     public void updateEvent(List<Event> events, Set<Long> activeTasks) throws HaltTaskException, HaltExecutionException {
-
         if (!events.isEmpty() && activeTasks.size() != 0) {
             // The lock acquisition and release events, will be compiled into a pair of ReadEx and WriteEx events
             for (Event e : events) {
@@ -34,16 +42,43 @@ public class DagEstimator implements MetaGraphEstimator {
 
             // Update the estimation based on the last event
             Event e = events.get(events.size() - 1);
+
+            if (!forkComplete) {
+                if (EventUtils.isJoinRequest(e) && e.getTaskId() == 0) {
+                    // The main task finished forking and is now starting to join
+                    forkComplete = true;
+                }
+                // Since the main task is still forking, we do not update the estimation
+                return;
+            }
+            if (e.getTaskId() == 0) {
+                // We do not update the estimation based on the main task events
+                return;
+            }
             updateEstimation(e, activeTasks);
         }
     }
 
     protected void updateEstimation(Event e, Set<Long> activeTasks) {
+        if (EventUtils.isThreadFinish(e) || EventUtils.isThreadStart(e)) {
+            // If the event is a thread finish event or a thread start event, we do not consider it in the estimation
+            return;
+        }
+        if (activeTasks.contains(1L)) {
+            // If the main task is still active, we do not consider it in the estimation
+            activeTasks.remove(1L);
+            if (activeTasks.isEmpty()) {
+                LOGGER.error("FjDagEstimator has no active tasks to estimate");
+                throw HaltExecutionException.error("FjDagEstimator has no active tasks to estimate");
+            }
+        }
         int in = 1;
         int out = activeTasks.size();
-        List<Event> poMax = executionGraph.getAllPoMaxEvents();
+        List<Event> poMax = executionGraph.getAllNonNoopPoMaxEvents();
         for (Event poMaxEvent : poMax) {
-            if (poMaxEvent.getTaskId() != e.getTaskId() && isScMax(poMaxEvent)) {
+            if (poMaxEvent.getTaskId() != 0L &&
+                    poMaxEvent.getTaskId() != e.getTaskId() &&
+                    isScMax(poMaxEvent)) {
                 if (!conflict(poMaxEvent, e)) {
                     in++;
                 }
@@ -54,8 +89,6 @@ public class DagEstimator implements MetaGraphEstimator {
         LOGGER.debug("Expected value: {}", expectedValue);
     }
 
-    // The given event to this method is already a PoMax event. This method will check if the event is a SCMax event.
-    // A SCMax event is a PO + RF + FR + CO + ST + TC + JT max event.
     protected boolean isScMax(Event e) {
         return executionGraph.isCoMax(e) &&
                 executionGraph.isRfMax(e) &&
@@ -67,33 +100,31 @@ public class DagEstimator implements MetaGraphEstimator {
 
     protected boolean conflict(Event e1, Event e2) {
         if (!EventUtils.isWrite(e1) || !EventUtils.isWrite(e2)) {
-            if (EventUtils.isThreadStart(e1)) {
-                long startedBy = EventUtils.getStartedBy(e1);
-                // We need to check if the START event is PO-MAX regarding the PO-MAX of the starter thread
-                return startedBy == e2.getTaskId() || !executionGraph.isStartMaxWithStarter(e1);
-            }
-            /*if (EventUtils.isThreadFinish(e2)) {
-                long tid = e2.getTaskId();
-                // get the tid of the thread which started the e2's thread
-                long startedBy = executionGraph.getStarterTid(tid);
-                LOGGER.debug("Started by: {}", startedBy);
-                Event lastEventOfStartedBy = executionGraph.getLastEventOfTask(startedBy);
-                return EventUtils.isJoinRequest(lastEventOfStartedBy);
-            }*/
+            return false;
         } else { // One of the two events is a write event
             return e1.getLocation().equals(e2.getLocation());
         }
-
-        // No conflict found
-        return false;
     }
 
+    /**
+     * @return
+     */
+    @Override
     public float getExpectedValue() {
         return expectedValue;
     }
 
+    /**
+     *
+     */
+    @Override
     public void reset() {
+        forkComplete = false;
         expectedValue = 1f;
         executionGraph.reset();
+    }
+
+    public boolean isForkComplete() {
+        return forkComplete;
     }
 }

@@ -15,17 +15,19 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** A random scheduling strategy that selects the next thread to be scheduled randomly. */
+/**
+ * A random scheduling strategy that selects the next thread to be scheduled randomly.
+ */
 public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
         implements ReplayableSchedulingStrategy {
 
     private static final Logger LOGGER = LogManager.getLogger(RandomSchedulingStrategy.class);
 
-    private final ExtRandom random;
-    private final HashMap<Long, Integer> randomValueMap;
+    protected final ExtRandom random;
+    protected final HashMap<Long, Integer> randomValueMap;
 
     private final String reportPath;
-    private RandomSchedulingTrace curTrace;
+    protected RandomSchedulingTrace curTrace;
 
     /**
      * Constructs a new RandomSchedulingStrategy object.
@@ -58,17 +60,21 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
      */
     @Override
     public SchedulingChoice<?> nextTask() {
+        Long taskToSchedule;
         Set<Long> activeThreads = getActiveTasks();
         if (activeThreads.isEmpty()) {
             return null;
         }
         if (activeThreads.size() == 1) {
-            SchedulingChoice<?> choice = SchedulingChoice.task((Long) activeThreads.toArray()[0]);
-            curTrace.addChoice(choice);
-            return choice;
+            taskToSchedule = (Long) activeThreads.toArray()[0];
+        } else {
+            int index = random.nextInt(activeThreads.size());
+            taskToSchedule = (Long) activeThreads.toArray()[index];
         }
-        int index = random.nextInt(activeThreads.size());
-        Long taskToSchedule = (Long) activeThreads.toArray()[index];
+        return makeSchedulingChoice(taskToSchedule);
+    }
+
+    protected SchedulingChoice<?> makeSchedulingChoice(Long taskToSchedule) {
         SchedulingChoice<?> choice = SchedulingChoice.task(taskToSchedule);
         if (randomValueMap.containsKey(taskToSchedule)) {
             int randomValue = randomValueMap.remove(taskToSchedule);
@@ -86,7 +92,7 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
         super.updateEvent(event);
         if (event.getType() == JmcRuntimeEvent.Type.REACTIVE_EVENT_RANDOM_VALUE) {
             Long taskId = event.getTaskId();
-            Integer bits = (Integer) event.getParam("bits");
+            Integer bits = event.getParam("bits");
             int randomValue = random.next(bits);
             randomValueMap.put(taskId, randomValue);
             LOGGER.debug("Generated random value {} for task {}", randomValue, taskId);
@@ -110,7 +116,7 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
      * ExtRandom is a custom random number generator that exposes the seed and mimics the behavior
      * of the default Random class.
      */
-    private static class ExtRandom extends Random {
+    protected static class ExtRandom extends Random {
         private AtomicLong seed;
 
         private static final long multiplier = 0x5DEECE66DL;
@@ -153,9 +159,9 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
         }
     }
 
-    private static class RandomSchedulingTrace {
+    protected static class RandomSchedulingTrace {
         private final long seed;
-        private List<SchedulingChoice<?>> choices;
+        private final List<SchedulingChoice<?>> choices;
 
         public RandomSchedulingTrace(long seed) {
             this.seed = seed;

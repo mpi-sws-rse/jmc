@@ -9,6 +9,7 @@ import org.mpisws.jmc.strategies.trust.Event;
 import org.mpisws.jmc.strategies.trust.EventUtils;
 
 import java.util.List;
+import java.util.Set;
 
 public class AbsDagEstimator extends DagEstimator {
 
@@ -16,13 +17,13 @@ public class AbsDagEstimator extends DagEstimator {
 
     /**
      * @param events
-     * @param activeThreadSize
+     * @param activeTasks
      * @throws HaltTaskException
      * @throws HaltExecutionException
      */
     @Override
-    public void updateEvent(List<Event> events, int activeThreadSize) throws HaltTaskException, HaltExecutionException {
-        if (!events.isEmpty() && activeThreadSize != 0) {
+    public void updateEvent(List<Event> events, Set<Long> activeTasks) throws HaltTaskException, HaltExecutionException {
+        if (!events.isEmpty() && activeTasks.size() != 0) {
             for (Event e : events) {
                 LOGGER.debug("Received event: {}", e);
                 if (EventUtils.isThreadFinish(e) || EventUtils.isThreadJoin(e) || EventUtils.isJoinRequest(e)) {
@@ -34,20 +35,20 @@ public class AbsDagEstimator extends DagEstimator {
             if (EventUtils.isNoop(e)) {
                 return;
             }
-            if (activeThreadSize - 1 > 0) {
-                updateEstimation(e, activeThreadSize - 1);
+            if (activeTasks.size() - 1 > 0) {
+                updateEstimation(e, activeTasks);
             }
         }
     }
 
     /**
      * @param e
-     * @param activeThreadSize
+     * @param activeTasks
      */
     @Override
-    protected void updateEstimation(Event e, int activeThreadSize) {
+    protected void updateEstimation(Event e, Set<Long> activeTasks) {
         int in = 1;
-        int out = activeThreadSize;
+        int out = activeTasks.size() - 1;
         List<Event> poMax = executionGraph.getAllPoMaxEvents();
         for (Event poMaxEvent : poMax) {
             if (!EventUtils.isNoop(poMaxEvent) &&

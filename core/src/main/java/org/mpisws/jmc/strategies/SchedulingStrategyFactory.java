@@ -2,6 +2,7 @@ package org.mpisws.jmc.strategies;
 
 import org.mpisws.jmc.strategies.estimation.absDag.AbsDagEstimationStrategy;
 import org.mpisws.jmc.strategies.estimation.dag.DagEstimationStrategy;
+import org.mpisws.jmc.strategies.estimation.fjDag.FjDagEstimationStrategy;
 import org.mpisws.jmc.strategies.estimation.trust.TrustEstimationStrategy;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 
@@ -21,6 +22,7 @@ public class SchedulingStrategyFactory {
         validStrategies.add("trust");
         validStrategies.add("dag-estimation");
         validStrategies.add("abs-dag-estimation");
+        validStrategies.add("fj-dag-estimation");
         validStrategies.add("trust-estimation");
     }
 
@@ -49,6 +51,8 @@ public class SchedulingStrategyFactory {
             return new DagEstimationStrategy(config.getSeed());
         } else if (name.equals("abs-dag-estimation")) {
             return new AbsDagEstimationStrategy(config.getSeed());
+        } else if (name.equals("fj-dag-estimation")) {
+            return new FjDagEstimationStrategy(config.getSeed());
         } else if (name.equals("trust-estimation")) {
             return new TrustEstimationStrategy(
                     config.getSeed(),
