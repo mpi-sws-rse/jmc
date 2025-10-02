@@ -25,13 +25,18 @@ public class AbsDagEstimator extends DagEstimator {
         if (!events.isEmpty() && activeThreadSize != 0) {
             for (Event e : events) {
                 LOGGER.debug("Received event: {}", e);
+                if (EventUtils.isThreadFinish(e) || EventUtils.isThreadJoin(e) || EventUtils.isJoinRequest(e)) {
+                    return;
+                }
                 executionGraph.updateEvent(e);
             }
             Event e = events.get(events.size() - 1);
             if (EventUtils.isNoop(e)) {
                 return;
             }
-            updateEstimation(e, activeThreadSize);
+            if (activeThreadSize - 1 > 0) {
+                updateEstimation(e, activeThreadSize - 1);
+            }
         }
     }
 
