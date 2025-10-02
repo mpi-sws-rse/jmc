@@ -30,8 +30,8 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-api-kotlin:1.5.0")
     implementation("org.apache.logging.log4j:log4j-core:2.24.3")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
+    implementation("org.junit.jupiter:junit-jupiter:5.7.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.22")
 }
 

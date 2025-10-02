@@ -35,7 +35,7 @@ public class WaitNotifyFunctionalityTest {
         Thread.sleep(100);
 
         synchronized (thread.getLock()) {
-            thread.notify();
+            thread.getLock().notify();
         }
 
         thread.join();
