@@ -2,7 +2,6 @@ package org.mpisws.jmc.strategies.estimation.fjDag;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mpisws.jmc.checker.JmcModelCheckerReport;
 import org.mpisws.jmc.runtime.HaltCheckerException;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;

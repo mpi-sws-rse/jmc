@@ -46,6 +46,7 @@ public class FjDagEstimator implements MetaGraphEstimator {
             if (!forkComplete) {
                 if (EventUtils.isJoinRequest(e) && e.getTaskId() == 0) {
                     // The main task finished forking and is now starting to join
+                    initialExpectedValue(activeTasks);
                     forkComplete = true;
                 }
                 // Since the main task is still forking, we do not update the estimation
@@ -57,6 +58,16 @@ public class FjDagEstimator implements MetaGraphEstimator {
             }
             updateEstimation(e, activeTasks);
         }
+    }
+
+    private void initialExpectedValue(Set<Long> activeTasks) {
+        // If the main task is still active, we do not consider it in the estimation
+        activeTasks.remove(1L);
+        if (activeTasks.isEmpty()) {
+            LOGGER.error("FjDagEstimator has no active tasks to estimate");
+            throw HaltExecutionException.error("FjDagEstimator has no active tasks to estimate");
+        }
+        expectedValue = activeTasks.size();
     }
 
     protected void updateEstimation(Event e, Set<Long> activeTasks) {
