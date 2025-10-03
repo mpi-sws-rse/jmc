@@ -46,7 +46,6 @@ public class FjDagEstimator implements MetaGraphEstimator {
             if (!forkComplete) {
                 if (EventUtils.isJoinRequest(e) && e.getTaskId() == 0) {
                     // The main task finished forking and is now starting to join
-                    initialExpectedValue(activeTasks);
                     forkComplete = true;
                 }
                 // Since the main task is still forking, we do not update the estimation
@@ -60,44 +59,29 @@ public class FjDagEstimator implements MetaGraphEstimator {
         }
     }
 
-    private void initialExpectedValue(Set<Long> activeTasks) {
-        // If the main task is still active, we do not consider it in the estimation
-        activeTasks.remove(1L);
-        if (activeTasks.isEmpty()) {
-            LOGGER.error("FjDagEstimator has no active tasks to estimate");
-            throw HaltExecutionException.error("FjDagEstimator has no active tasks to estimate");
-        }
-        expectedValue = activeTasks.size();
-    }
-
     protected void updateEstimation(Event e, Set<Long> activeTasks) {
-        if (EventUtils.isThreadFinish(e) || EventUtils.isThreadStart(e)) {
+        if (EventUtils.isThreadStart(e)) {
             // If the event is a thread finish event or a thread start event, we do not consider it in the estimation
             return;
         }
-        if (activeTasks.contains(1L)) {
-            // If the main task is still active, we do not consider it in the estimation
-            activeTasks.remove(1L);
-            if (activeTasks.isEmpty()) {
-                LOGGER.error("FjDagEstimator has no active tasks to estimate");
-                throw HaltExecutionException.error("FjDagEstimator has no active tasks to estimate");
-            }
-        }
-        int in = 1;
-        int out = activeTasks.size();
-        List<Event> poMax = executionGraph.getAllNonNoopPoMaxEvents();
-        for (Event poMaxEvent : poMax) {
-            if (poMaxEvent.getTaskId() != 0L &&
-                    poMaxEvent.getTaskId() != e.getTaskId() &&
-                    isScMax(poMaxEvent)) {
-                if (!conflict(poMaxEvent, e)) {
-                    in++;
+        // If the main task is still active, we do not consider it in the estimation
+        activeTasks.remove(1L);
+        if (activeTasks.size() > 0) {
+            int in = 1;
+            int out = activeTasks.size();
+            List<Event> poMax = executionGraph.getAllNonNoopPoMaxEvents();
+            for (Event poMaxEvent : poMax) {
+                if (poMaxEvent.getTaskId() != 0L &&
+                        poMaxEvent.getTaskId() != e.getTaskId() &&
+                        isScMax(poMaxEvent)) {
+                    if (!conflict(poMaxEvent, e)) {
+                        in++;
+                    }
                 }
             }
+            expectedValue = expectedValue * out / in;
+            LOGGER.debug("Expected value: {}", expectedValue);
         }
-
-        expectedValue = expectedValue * out / in;
-        LOGGER.debug("Expected value: {}", expectedValue);
     }
 
     protected boolean isScMax(Event e) {

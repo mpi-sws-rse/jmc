@@ -133,7 +133,7 @@ public class ExecutionGraphSimulator {
         List<ExecutionGraphNode> poMaxEvents = executionGraph.getAllPoMaxNode();
         List<Event> events = new ArrayList<>();
         for (ExecutionGraphNode node : poMaxEvents) {
-            if (!EventUtils.isNoop(node.getEvent())) {
+            if (!EventUtils.isNoop(node.getEvent()) || EventUtils.isThreadFinish(node.getEvent())) {
                 events.add(node.getEvent());
             }
         }
