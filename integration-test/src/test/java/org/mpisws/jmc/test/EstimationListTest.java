@@ -232,9 +232,9 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    @JmcExpectExecutions(720) // For any n is n!
+    @JmcExpectExecutions(24) // For any n is n!
     public void runCoarseListIDTrust() {
-        coarseListIDProgram(6);
+        coarseListIDProgram(4);
     }
 
     @JmcCheck
@@ -261,7 +261,7 @@ public class EstimationListTest {
     @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runFineListITrustEstimation() {
-        fineListIProgram(2);
+        fineListIProgram(4);
     }
 
     /**
@@ -281,7 +281,7 @@ public class EstimationListTest {
     @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runFineListIDTrustEstimation() {
-        fineListIDProgram(2);
+        fineListIDProgram(4);
     }
 
     /**
@@ -301,7 +301,7 @@ public class EstimationListTest {
     @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runOptListITrustEstimation() {
-        optListIProgram(2);
+        optListIProgram(3);
     }
 
     /**

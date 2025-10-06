@@ -1661,7 +1661,9 @@ public class ExecutionGraph {
             try {
                 while (!queue.isEmpty()) {
                     ExecutionGraphNode node = queue.pop();
-                    output.add(node.key());
+                    if (!EventUtils.isBlockingLabel(node.getEvent())) {
+                        output.add(node.key());
+                    }
                     visitor.visit(node);
 
                     List<Event.Key> toAdd = new ArrayList<>();
