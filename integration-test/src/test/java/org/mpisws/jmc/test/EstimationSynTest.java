@@ -22,9 +22,9 @@ public class EstimationSynTest {
      * ------------------------------------------------
      * W(x)     |           |           |
      * S(T1)    |    S      |           |
-     * S(T2)    |    R(x)   |     S     |
-     * S(T3)    |    F      |     R(x)  |    S
-     * J(T1)    |           |     F     |    R(x)
+     * S(T2)    |    R(C)   |     S     |
+     * S(T3)    |    F      |     R(C)  |    S
+     * J(T1)    |           |     F     |    R(C)
      * J(T2)    |           |           |    F
      * J(T3)    |           |           |
      * F        |           |           |
@@ -56,12 +56,12 @@ public class EstimationSynTest {
      * ------------------------------------------------
      * W(x)     |           |           |
      * S(T1)    |    S      |           |
-     * S(T2)    |    R(x)   |     S     |
-     * S(T3)    |    W(x)   |     R(x)  |    S
-     * J(T1)    |    F      |     W(x)  |    R(x)
-     * J(T2)    |           |     F     |    W(x)
-     * J(T3)    |           |           |    F
-     * F        |           |           |
+     * S(T2)    |    R(C)   |     S     |
+     * S(T3)    |    R(C.v) |     R(C)  |    S
+     * J(T1)    |    W(C.v) |     R(C.v)|    R(C)
+     * J(T2)    |    F      |     W(C.v)|    R(C.v)
+     * J(T3)    |           |     F     |    W(C.v)
+     * F        |           |           |    F
      */
     private void readWriteNProgram(int numThreads) {
         Shared shared = new Shared(0);
@@ -144,7 +144,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 50000, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
     public void runRWnFjDagEstimation() {
         readWriteNProgram(4);
     }

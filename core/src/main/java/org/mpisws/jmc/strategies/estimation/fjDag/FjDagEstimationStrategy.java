@@ -15,6 +15,8 @@ import org.mpisws.jmc.util.FileUtil;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGeneratorFactory;
 
 public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements EstimationStrategy {
 
@@ -54,7 +56,7 @@ public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements
                 if (activeThreads.contains(1L) && activeThreads.size() > 1) {
                     activeThreads.remove(1L);
                 }
-                int index = random.nextInt(activeThreads.size());
+                int index = RandomGeneratorFactory.of("Xoshiro256PlusPlus").create().nextInt(activeThreads.size());
                 taskToSchedule = (Long) activeThreads.toArray()[index];
             }
         }
