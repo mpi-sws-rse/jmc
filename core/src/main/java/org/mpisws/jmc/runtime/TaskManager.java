@@ -323,8 +323,7 @@ public class TaskManager {
         }
     }
 
-    public boolean doNextStop() {
-        boolean isMainTask = false;
+    public Long doNextStop() {
         synchronized (tasksLock) {
             List<Long> taskIds = new ArrayList<>(taskStates.keySet());
             taskIds.sort(Long::compareTo);
@@ -332,17 +331,19 @@ public class TaskManager {
                 Long taskId = taskIds.get(i);
                 if (taskStates.get(taskId) != TaskState.TERMINATED &&
                         taskStates.get(taskId) != TaskState.CREATED) {
-                    if (taskId == 1L) {
-                        isMainTask = true;
-                    }
-                    CompletableFuture<?> future = taskFutures.get(taskId);
-                    if (future != null) {
-                        future.completeExceptionally(HaltExecutionException.reexecutionNeeded());
-                    }
-                    break;
+                    return taskId;
                 }
             }
         }
-        return isMainTask;
+        return -1L;
+    }
+
+    public void stopTask(Long taskId) {
+        synchronized (tasksLock) {
+            CompletableFuture<?> future = taskFutures.get(taskId);
+            if (future != null) {
+                future.completeExceptionally(HaltExecutionException.reexecutionNeeded());
+            }
+        }
     }
 }

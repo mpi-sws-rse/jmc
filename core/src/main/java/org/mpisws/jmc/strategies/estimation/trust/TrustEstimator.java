@@ -4,14 +4,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
-import org.mpisws.jmc.strategies.estimation.MetaGraphEstimator;
 import org.mpisws.jmc.strategies.estimation.MetaTreeEstimator;
 import org.mpisws.jmc.strategies.trust.Algo;
 import org.mpisws.jmc.strategies.trust.ExplorationStack;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.random.RandomGeneratorFactory;
 
 public class TrustEstimator implements MetaTreeEstimator {
 
@@ -52,8 +51,7 @@ public class TrustEstimator implements MetaTreeEstimator {
 
     private void pickNextOption(List<ExplorationStack.Item> items, ExplorationStack stack, Algo alg) {
         // Pick a random int value between 0 and items.size() (both inclusive)
-        Random random = new Random();
-        int randomIndex = random.nextInt(items.size() + 1);
+        int randomIndex = RandomGeneratorFactory.of("Xoshiro256PlusPlus").create().nextInt(items.size() + 1);
         if (randomIndex == items.size()) {
             // Do nothing, this means we are continuing the current execution
             return;
@@ -88,8 +86,7 @@ public class TrustEstimator implements MetaTreeEstimator {
     }
 
     private void pickNextOptionBW(List<ExplorationStack.Item> items, ExplorationStack stack, Algo alg) {
-        Random random = new Random();
-        int randomIndex = random.nextInt(items.size());
+        int randomIndex = RandomGeneratorFactory.of("Xoshiro256PlusPlus").create().nextInt(items.size());
         ExplorationStack.Item item = items.get(randomIndex);
         if (item.getType() != ExplorationStack.ItemType.FLW) {
             // If the next item is not a FLW, we need to track coherency for the event1 of the item

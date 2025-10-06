@@ -221,7 +221,7 @@ public class EstimationListTest {
     @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runCoarseListITrustEstimation() {
-        coarseListIProgram(2);
+        coarseListIProgram(3);
     }
 
     /**
@@ -241,7 +241,7 @@ public class EstimationListTest {
     @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runCoarseListIDTrustEstimation() {
-        coarseListIDProgram(2);
+        coarseListIDProgram(4);
     }
 
     /**

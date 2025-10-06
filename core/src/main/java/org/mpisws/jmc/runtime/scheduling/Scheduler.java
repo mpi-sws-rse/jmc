@@ -159,9 +159,17 @@ public class Scheduler {
     }
 
     private void doNextStop() {
-        boolean isMainTask = taskManager.doNextStop();
-        if (isMainTask) {
+        Long taskId = taskManager.doNextStop();
+        if (taskId == -1L) {
+            LOGGER.error("Task ID is null, cannot stop the task.");
+            throw HaltExecutionException.error("Task ID is null, cannot stop the task.");
+        }
+        setCurrentTask(taskId);
+        taskManager.stopTask(taskId);
+        if (taskId == 1L) {
+            // Main task stopped, exit stop all mode
             stopAllMode = false;
+            LOGGER.debug("Exiting stop all mode.");
         }
     }
 
@@ -171,6 +179,9 @@ public class Scheduler {
      * @param event the event to be updated
      */
     public void updateEvent(JmcRuntimeEvent event) throws HaltTaskException {
+        if (isInStopAllMode()) {
+            return;
+        }
         strategy.updateEvent(event);
     }
 
@@ -183,15 +194,18 @@ public class Scheduler {
      * @throws TaskAlreadyPaused if the current task is already paused
      */
     public CompletableFuture<?> yield() throws TaskAlreadyPaused {
-        CompletableFuture<?> future;
-        synchronized (currentTaskLock) {
-            future = taskManager.pause(currentTask);
-            currentTask = null;
+        if (!isInStopAllMode()) {
+            CompletableFuture<?> future;
+            synchronized (currentTaskLock) {
+                future = taskManager.pause(currentTask);
+                currentTask = null;
+            }
+            // Release the scheduler thread
+            LOGGER.debug("Enabling scheduler thread.");
+            schedulerThread.enable();
+            return future;
         }
-        // Release the scheduler thread
-        LOGGER.debug("Enabling scheduler thread.");
-        schedulerThread.enable();
-        return future;
+        return null;
     }
 
     public void yieldWithoutPausing() {
@@ -213,14 +227,17 @@ public class Scheduler {
      * @throws TaskAlreadyPaused if the task is already paused
      */
     public CompletableFuture<?> yield(Long taskId) throws TaskAlreadyPaused {
-        CompletableFuture<?> future = taskManager.pause(taskId);
-        synchronized (currentTaskLock) {
-            currentTask = null;
+        if (!isInStopAllMode()) {
+            CompletableFuture<?> future = taskManager.pause(taskId);
+            synchronized (currentTaskLock) {
+                currentTask = null;
+            }
+            // Release the scheduler thread
+            LOGGER.debug("Enabling scheduler thread.");
+            schedulerThread.enable();
+            return future;
         }
-        // Release the scheduler thread
-        LOGGER.debug("Enabling scheduler thread.");
-        schedulerThread.enable();
-        return future;
+        return null;
     }
 
     /**
