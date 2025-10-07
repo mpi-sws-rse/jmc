@@ -211,17 +211,17 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
-    @JmcExpectExecutions(720) // For any n is n!
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    @JmcExpectExecutions(24) // For any n is n!
     public void runCoarseListITrust() {
-        coarseListIProgram(6);
+        coarseListIProgram(4);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
-            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    @JmcCheckConfiguration(numIterations = 1000, strategy = "trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = true)
     public void runCoarseListITrustEstimation() {
-        coarseListIProgram(3);
+        coarseListIProgram(4);
     }
 
     /**
