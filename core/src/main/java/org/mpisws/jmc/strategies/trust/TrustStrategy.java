@@ -147,11 +147,15 @@ public class TrustStrategy extends TrackActiveTasksStrategy
 
     @Override
     public void resetIteration(int iteration) {
-        LOGGER.debug("Resetting iteration {}", iteration);
+        resetIteration(iteration, true);
+    }
+
+    protected void resetIteration(int iteration, boolean checkConsistency) {
+        LOGGER.debug("Resetting iteration {} with clearGraph={}", iteration, checkConsistency);
         super.resetIteration(iteration);
         if (debug) {
             algoInstance.logStackState();
-            if (!algoInstance.getExecutionGraph().checkExtensiveConsistency()) {
+            if (checkConsistency && !algoInstance.getExecutionGraph().checkExtensiveConsistency()) {
                 throw HaltCheckerException.error("Explored an inconsistent execution graph");
             }
             algoInstance.writeExecutionGraphToFile(

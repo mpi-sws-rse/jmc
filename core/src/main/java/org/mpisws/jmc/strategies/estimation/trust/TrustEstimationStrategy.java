@@ -58,6 +58,14 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     }
 
     /**
+     * @param iteration
+     */
+    @Override
+    public void resetIteration(int iteration) {
+        resetIteration(iteration, false);
+    }
+
+    /**
      * @param event
      * @throws HaltTaskException
      * @throws HaltExecutionException
