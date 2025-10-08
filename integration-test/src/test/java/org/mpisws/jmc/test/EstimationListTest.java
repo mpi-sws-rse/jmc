@@ -292,9 +292,9 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    @JmcExpectExecutions(4) // For n = 2, is 4 and for n = 3, is 67
+    @JmcExpectExecutions(4532) // For n = 2 is 4, for n = 3 is 67, for n = 4 is 4532
     public void runOptListITrust() {
-        optListIProgram(2);
+        optListIProgram(4);
     }
 
     @JmcCheck
@@ -312,9 +312,9 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    @JmcExpectExecutions(42) // For n = 2, is 3, n = 3, is 42
+    @JmcExpectExecutions(1687) // For n = 2, is 3, n = 3, is 42, n = 4 is 1687
     public void runOptListIDTrust() {
-        optListIDProgram(3);
+        optListIDProgram(4);
     }
 
     @JmcCheck
@@ -331,10 +331,10 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
-    @JmcExpectExecutions(4) // For n = 2, is 4 and for n = 3, is 67
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    @JmcExpectExecutions(4383) // For n = 2, is 4 and for n = 3, is 67 and for n = 4 is 4383
     public void runLazyListITrust() {
-        lazyListIProgram(2);
+        lazyListIProgram(4);
     }
 
     @JmcCheck
@@ -352,9 +352,9 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    @JmcExpectExecutions(42) // For n = 2, is 3, n = 3, is 42
+    @JmcExpectExecutions(1687) // For n = 2, is 3, n = 3, is 42 and for n = 4 is 1687
     public void runLazyListIDTrust() {
-        lazyListIDProgram(3);
+        lazyListIDProgram(4);
     }
 
     @JmcCheck

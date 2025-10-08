@@ -207,8 +207,9 @@ public class ExecutionGraph {
         if (node.getEvent().isInit()) {
             return 0;
         }
-
-        for (int i = node.getVectorClock().max() - 1; i < allEvents.size(); i++) {
+        // TODO: When we use node.getVectorClock().max() as a hint to start searching from, sometimes it
+        // TODO: it leads to wrong results. Investigate why.
+        for (int i = 0; i < allEvents.size(); i++) {
             if (allEvents.get(i) == node) {
                 return i;
             }
