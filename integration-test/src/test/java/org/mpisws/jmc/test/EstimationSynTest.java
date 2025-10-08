@@ -114,6 +114,12 @@ public class EstimationSynTest {
         readNProgram(4);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "fj-dag-estimation", debug = false)
+    public void runRnFjDagEstimation() {
+        readNProgram(6);
+    }
+
     /** ----------------------------------------------------*/
 
     /**
