@@ -29,7 +29,7 @@ public class BackwardRevisitView {
      * Creates a new backward revisit view.
      *
      * @param graph The execution graph.
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public BackwardRevisitView(
@@ -66,7 +66,9 @@ public class BackwardRevisitView {
         return read;
     }
 
-    /** Just marks the node as removed, does not update the graph */
+    /**
+     * Just marks the node as removed, does not update the graph
+     */
     public void removeNode(Event.Key key) {
         removedNodes.add(key);
     }
@@ -92,6 +94,11 @@ public class BackwardRevisitView {
                         || node.getEvent().getType() == Event.Type.ASSUME) {
                     continue;
                 }
+
+                if (EventUtils.isFinalLockWrite(node.getEvent())) {
+                    return false;
+                }
+                
                 Predicate<Event.Key> previous =
                         (k) -> {
                             try {

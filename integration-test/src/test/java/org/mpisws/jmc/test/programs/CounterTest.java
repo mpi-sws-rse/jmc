@@ -105,18 +105,18 @@ public class CounterTest {
     @JmcExpectExecutions(720) // For input 6
     public void runCoarseCounterTest() {
         // TODO : Make the test parametric
-        coarseCounter(new String[] {"0", "1", "2", "0", "1", "2"});
+        coarseCounter(new String[]{"0", "1", "2", "0", "1", "2"});
     }
 
     @JmcCheck
     @JmcCheckConfiguration(
             numIterations = 10000,
             debug = true) // , debug = true, seed = 158542095196480L
-    @JmcTrustStrategy(debug = true)
-    //    @JmcExpectExecutions(4)
+    @JmcTrustStrategy(debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    @JmcExpectExecutions(576)
     public void runFineCounterTest() {
         // TODO : Make the test parametric
-        FineCounter(new String[] {"0", "1", "2", "3"});
+        FineCounter(new String[]{"0", "1", "2", "3", "4", "5", "6", "7"});
     }
 
     @JmcCheck
