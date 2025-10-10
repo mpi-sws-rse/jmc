@@ -1,19 +1,19 @@
 package org.mpisws.jmc.test.readerWriter;
 
-public class Reader extends Thread {
+public class Incrementor extends Thread {
 
     Shared shared;
 
-    public Reader(Shared shared) {
+    public Incrementor(Shared shared) {
         this.shared = shared;
     }
 
     @Override
     public void run() {
-        read();
+        write();
     }
 
-    private int read() {
-        return shared.getValue();
+    public void write() {
+        shared.incValue();
     }
 }

@@ -10,10 +10,6 @@ public class Writer extends Thread {
 
     @Override
     public void run() {
-        write();
-    }
-
-    public void write() {
-        shared.incValue();
+        shared.setValue(1);
     }
 }

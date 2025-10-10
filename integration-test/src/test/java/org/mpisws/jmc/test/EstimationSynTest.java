@@ -7,6 +7,7 @@ import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;
 import org.mpisws.jmc.strategies.trust.TrustStrategy;
 import org.mpisws.jmc.test.readerWriter.Shared;
 import org.mpisws.jmc.test.readerWriter.Reader;
+import org.mpisws.jmc.test.readerWriter.Incrementor;
 import org.mpisws.jmc.test.readerWriter.Writer;
 
 import java.util.ArrayList;
@@ -50,24 +51,24 @@ public class EstimationSynTest {
     }
 
     /**
-     * RW(n): This program has (n!)^2 distinct execution graphs, where n is the number of threads.
+     * Inc(n): This program has (n!)^2 distinct execution graphs, where n is the number of threads.
      * the abstract model of this program is like this:
-     * Main thread  |  T1       |  T2       | T3
+     * Main thread  |  T1       |  T2          | T3
      * ------------------------------------------------
-     * W(x)     |           |           |
-     * S(T1)    |    S      |           |
-     * S(T2)    |    R(C)   |     S     |
-     * S(T3)    |    R(C.v) |     R(C)  |    S
-     * J(T1)    |    W(C.v) |     R(C.v)|    R(C)
-     * J(T2)    |    F      |     W(C.v)|    R(C.v)
-     * J(T3)    |           |     F     |    W(C.v)
-     * F        |           |           |    F
+     * W(x)     |             |              |
+     * S(T1)    |    S        |              |
+     * S(T2)    |    R(C)     |     S        |
+     * S(T3)    |    R(C.v)   |     R(C)     |    S
+     * J(T1)    |    W(C.v+1) |     R(C.v)   |    R(C)
+     * J(T2)    |    F        |     W(C.v+1) |    R(C.v)
+     * J(T3)    |             |     F        |    W(C.v+1)
+     * F        |             |              |    F
      */
-    private void readWriteNProgram(int numThreads) {
+    private void incNProgram(int numThreads) {
         Shared shared = new Shared(0);
-        List<Writer> threads = new ArrayList<>();
+        List<Incrementor> threads = new ArrayList<>();
         for (int i = 0; i < numThreads; i++) {
-            Writer thread = new Writer(shared);
+            Incrementor thread = new Incrementor(shared);
             threads.add(thread);
         }
         for (int i = 0; i < numThreads; i++) {
@@ -77,6 +78,79 @@ public class EstimationSynTest {
         for (int i = 0; i < numThreads; i++) {
             try {
                 threads.get(i).join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+    }
+
+    /**
+     * TBA
+     */
+    private void WRNProgram(int numReaders, int numWriters) {
+        Shared shared = new Shared(0);
+        List<Reader> readers = new ArrayList<>();
+        List<Writer> writers = new ArrayList<>();
+        for (int i = 0; i < numReaders; i++) {
+            Reader thread = new Reader(shared);
+            readers.add(thread);
+        }
+        for (int i = 0; i < numWriters; i++) {
+            Writer thread = new Writer(shared);
+            writers.add(thread);
+        }
+        for (int i = 0; i < numReaders; i++) {
+            writers.get(i).start();
+        }
+        for (int i = 0; i < numWriters; i++) {
+            readers.get(i).start();
+        }
+
+        for (int i = 0; i < numReaders; i++) {
+            try {
+                readers.get(i).join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+        for (int i = 0; i < numWriters; i++) {
+            try {
+                writers.get(i).join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+    }
+
+    private void RWNProgram(int numReaders, int numWriters) {
+        Shared shared = new Shared(0);
+        List<Reader> readers = new ArrayList<>();
+        List<Writer> writers = new ArrayList<>();
+        for (int i = 0; i < numReaders; i++) {
+            Reader thread = new Reader(shared);
+            readers.add(thread);
+        }
+        for (int i = 0; i < numWriters; i++) {
+            Writer thread = new Writer(shared);
+            writers.add(thread);
+        }
+        for (int i = 0; i < numWriters; i++) {
+            readers.get(i).start();
+        }
+        for (int i = 0; i < numReaders; i++) {
+            writers.get(i).start();
+        }
+
+        for (int i = 0; i < numReaders; i++) {
+            try {
+                readers.get(i).join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+        for (int i = 0; i < numWriters; i++) {
+            try {
+                writers.get(i).join();
             } catch (InterruptedException e) {
 
             }
@@ -123,7 +197,7 @@ public class EstimationSynTest {
     /** ----------------------------------------------------*/
 
     /**
-     * RW(n) test suite for n \in {2,3,4,5}
+     * Inc(n) test suite for n \in {2,3,4,5}
      * 1. TruSt model checking
      * 2. DAG-based estimation
      * 3. TruSt-based estimation
@@ -133,33 +207,112 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
     @JmcTrustStrategy
     //@JmcExpectExecutions(36) // For input n is (n!)^2
-    public void runRWnTrust() {
-        readWriteNProgram(3);
+    public void runIncnTrust() {
+        incNProgram(3);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 500000, strategy = "dag-estimation", debug = false)
-    public void runRWnDagEstimation() {
-        readWriteNProgram(3);
+    public void runIncnDagEstimation() {
+        incNProgram(3);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000, strategy = "abs-dag-estimation", debug = false)
-    public void runRWnAbsDagEstimation() {
-        readWriteNProgram(3);
+    public void runIncnAbsDagEstimation() {
+        incNProgram(3);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
-    public void runRWnFjDagEstimation() {
-        readWriteNProgram(4);
+    public void runIncnFjDagEstimation() {
+        incNProgram(4);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
-    public void runRWnTrustEstimation() {
-        readWriteNProgram(3);
+    public void runIncnTrustEstimation() {
+        incNProgram(3);
     }
 
+    /** ----------------------------------------------------*/
 
+    /**
+     * RW(n) test suite for n \in {2,3,4,5}
+     * 1. TruSt model checking
+     * 2. DAG-based estimation
+     * 3. TruSt-based estimation
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
+    @JmcTrustStrategy
+    public void runRWNTrust() {
+        RWNProgram(3, 3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 50000, strategy = "dag-estimation", debug = false)
+    public void runRWNnDagEstimation() {
+        RWNProgram(3, 3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "abs-dag-estimation", debug = false)
+    public void runRWNnAbsDagEstimation() {
+        RWNProgram(3, 3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
+    public void runRWNnFjDagEstimation() {
+        RWNProgram(4, 4);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 2000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    public void runRWNnTrustEstimation() {
+        RWNProgram(10, 10);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * WR(n) test suite for n \in {2,3,4,5}
+     * 1. TruSt model checking
+     * 2. DAG-based estimation
+     * 3. TruSt-based estimation
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
+    @JmcTrustStrategy
+    //@JmcExpectExecutions(36) // For input n is n!
+    public void runWRNTrust() {
+        WRNProgram(3, 3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 50000, strategy = "dag-estimation", debug = false)
+    public void runWRNnDagEstimation() {
+        WRNProgram(3, 3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "abs-dag-estimation", debug = false)
+    public void runWRNnAbsDagEstimation() {
+        WRNProgram(3, 3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
+    public void runWRNnFjDagEstimation() {
+        WRNProgram(4, 4);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    public void runWRNnTrustEstimation() {
+        WRNProgram(10, 10);
+    }
 }
