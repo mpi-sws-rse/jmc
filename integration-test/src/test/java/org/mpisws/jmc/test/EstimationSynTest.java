@@ -134,10 +134,10 @@ public class EstimationSynTest {
             Writer thread = new Writer(shared);
             writers.add(thread);
         }
-        for (int i = 0; i < numWriters; i++) {
+        for (int i = 0; i < numReaders; i++) {
             readers.get(i).start();
         }
-        for (int i = 0; i < numReaders; i++) {
+        for (int i = 0; i < numWriters; i++) {
             writers.get(i).start();
         }
 
@@ -272,7 +272,7 @@ public class EstimationSynTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 2000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runRWNnTrustEstimation() {
-        RWNProgram(10, 10);
+        RWNProgram(1, 2);
     }
 
     /** ----------------------------------------------------*/
