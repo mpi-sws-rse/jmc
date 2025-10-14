@@ -16,9 +16,9 @@ public class TrustEstimator implements MetaTreeEstimator {
 
     private static final Logger LOGGER = LogManager.getLogger(TrustEstimator.class);
 
-    private boolean reExecutionNeeded = false;
+    protected boolean reExecutionNeeded = false;
 
-    private int expectedValue = 1;
+    protected int expectedValue = 1;
 
     /**
      * @param alg
@@ -36,9 +36,14 @@ public class TrustEstimator implements MetaTreeEstimator {
             return;
         }
 
+        // Create an item for continuing the current execution
+        ExplorationStack.Item currItem = ExplorationStack.Item.continueCurrent();
+        items.add(currItem);
+
         int size = items.size();
-        expectedValue = (expectedValue * (size + 1));
-        pickNextOption(items, stack, alg);
+        expectedValue = (expectedValue * (size));
+        ExplorationStack.Item nextItem = pickNextOption(items, stack, alg);
+        handleNextItem(nextItem, stack, alg);
     }
 
     private List<ExplorationStack.Item> getAllItems(ExplorationStack stack) {
@@ -49,14 +54,18 @@ public class TrustEstimator implements MetaTreeEstimator {
         return items;
     }
 
-    private void pickNextOption(List<ExplorationStack.Item> items, ExplorationStack stack, Algo alg) {
+    protected ExplorationStack.Item pickNextOption(List<ExplorationStack.Item> items, ExplorationStack stack, Algo alg) {
         // Pick a random int value between 0 and items.size() (both inclusive)
-        int randomIndex = RandomGeneratorFactory.of("Xoshiro256PlusPlus").create().nextInt(items.size() + 1);
-        if (randomIndex == items.size()) {
+        int randomIndex = RandomGeneratorFactory.of("Xoshiro256PlusPlus").create().nextInt(items.size());
+        return items.get(randomIndex);
+    }
+
+    protected void handleNextItem(ExplorationStack.Item item, ExplorationStack stack, Algo alg) {
+        if (item.isContinueCurrent()) {
             // Do nothing, this means we are continuing the current execution
             return;
         }
-        ExplorationStack.Item item = items.get(randomIndex);
+
         if (item.isBackwardRevisit()) {
             // If the next item is a backward revisit, we need to process it and then update the tree again
             // if the stack size is greater than 1, otherwise we need to re-execute

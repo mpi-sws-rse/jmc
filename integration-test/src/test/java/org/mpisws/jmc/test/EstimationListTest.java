@@ -208,6 +208,7 @@ public class EstimationListTest {
      * CoarseListI(n) test suite for n \in {2,3,4,5,6}
      * 1. TruSt model checking
      * 2. TruSt-based estimation
+     * 3. Weighted TruSt-based estimation (Wg-TruSt)
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
@@ -218,16 +219,24 @@ public class EstimationListTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 720, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 1000, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runCoarseListITrustEstimation() {
-        coarseListIProgram(6);
+        coarseListIProgram(4);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    public void runCoarseListIWgTrustEstimation() {
+        coarseListIProgram(4);
     }
 
     /**
      * CoarseListID(n) test suite for n \in {2,3,4,5,6}
      * 1. TruSt model checking
      * 2. TruSt-based estimation
+     * 3. Weighted TruSt-based estimation (Wg-TruSt)
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
@@ -244,10 +253,18 @@ public class EstimationListTest {
         coarseListIDProgram(4);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    public void runCoarseListIDWgTrustEstimation() {
+        coarseListIDProgram(4);
+    }
+
     /**
      * FineListI(n) test suite for n \in {2,3,4,5,6}
      * 1. TruSt model checking
      * 2. TruSt-based estimation
+     * 3. Weighted TruSt-based estimation (Wg-TruSt)
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
@@ -264,10 +281,18 @@ public class EstimationListTest {
         fineListIProgram(4);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    public void runFineListIWgTrustEstimation() {
+        fineListIProgram(4);
+    }
+
     /**
      * FineListID(n) test suite for n \in {2,3,4,5,6}
      * 1. TruSt model checking
      * 2. TruSt-based estimation
+     * 3. Weighted TruSt-based estimation (Wg-TruSt)
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
@@ -284,10 +309,18 @@ public class EstimationListTest {
         fineListIDProgram(4);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    public void runFineListIDWgTrustEstimation() {
+        fineListIDProgram(4);
+    }
+
     /**
      * OptListI(n) test suite for n \in {2,3}
      * 1. TruSt model checking
      * 2. TruSt-based estimation
+     * 3. Weighted TruSt-based estimation (Wg-TruSt)
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
@@ -304,10 +337,18 @@ public class EstimationListTest {
         optListIProgram(3);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    public void runOptListIWgTrustEstimation() {
+        optListIProgram(3);
+    }
+
     /**
      * OptListID(n) test suite for n \in {2,3}
      * 1. TruSt model checking
      * 2. TruSt-based estimation
+     * 3. Weighted TruSt-based estimation (Wg-TruSt)
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
@@ -324,10 +365,18 @@ public class EstimationListTest {
         optListIDProgram(2);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    public void runOptListIDWgTrustEstimation() {
+        optListIDProgram(2);
+    }
+
     /**
      * LazyListI(n) test suite for n \in {2,3}
      * 1. TruSt model checking
      * 2. TruSt-based estimation
+     * 3. Weighted TruSt-based estimation (Wg-TruSt)
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
@@ -344,10 +393,18 @@ public class EstimationListTest {
         lazyListIProgram(2);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    public void runLazyListIWgTrustEstimation() {
+        lazyListIProgram(2);
+    }
+
     /**
      * LazyListID(n) test suite for n \in {2,3}
      * 1. TruSt model checking
      * 2. TruSt-based estimation
+     * 3. Weighted TruSt-based estimation (Wg-TruSt)
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
@@ -361,6 +418,13 @@ public class EstimationListTest {
     @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runLazyListIDTrustEstimation() {
+        lazyListIDProgram(2);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    public void runLazyListIDWgTrustEstimation() {
         lazyListIDProgram(2);
     }
 }

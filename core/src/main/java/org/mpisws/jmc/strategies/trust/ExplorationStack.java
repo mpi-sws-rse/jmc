@@ -17,7 +17,9 @@ public class ExplorationStack {
     private static final Logger LOGGER = LogManager.getLogger(ExplorationStack.class);
     private final List<InnerStack> stack;
 
-    /** Creates a new exploration stack. */
+    /**
+     * Creates a new exploration stack.
+     */
     public ExplorationStack() {
         this.stack = new ArrayList<>();
     }
@@ -113,7 +115,9 @@ public class ExplorationStack {
         return this.stack.isEmpty();
     }
 
-    /** Clears the stack. */
+    /**
+     * Clears the stack.
+     */
     public void clear() {
         this.stack.clear();
     }
@@ -127,7 +131,9 @@ public class ExplorationStack {
         return this.stack.get(0).size();
     }
 
-    /** Logs the current state of the stack. This is a placeholder method for debugging purposes. */
+    /**
+     * Logs the current state of the stack. This is a placeholder method for debugging purposes.
+     */
     public void logStackState() {
         LOGGER.debug("Current stack state:");
         for (int i = 0; i < this.stack.size(); i++) {
@@ -138,7 +144,9 @@ public class ExplorationStack {
         }
     }
 
-    /** Represents an item in the exploration stack. */
+    /**
+     * Represents an item in the exploration stack.
+     */
     public static class Item {
         private int innerStackIndex;
         // The type of the item
@@ -181,7 +189,7 @@ public class ExplorationStack {
         /**
          * Creates a forward revisit item for a read revisiting an alternative write.
          *
-         * @param read The read event
+         * @param read  The read event
          * @param write The write event
          * @param graph The graph to be used in the case of a backward revisit
          * @return The created item
@@ -194,8 +202,8 @@ public class ExplorationStack {
         /**
          * Creates a forward revisit item for a write revisiting an alternative concurrent write.
          *
-         * @param one The first write event
-         * @param two The second write event
+         * @param one   The first write event
+         * @param two   The second write event
          * @param graph The graph to be used in the case of a backward revisit
          * @return The created item
          */
@@ -211,7 +219,7 @@ public class ExplorationStack {
         /**
          * Creates a backward revisit item for a write revisiting a read.
          *
-         * @param one The write event
+         * @param one   The write event
          * @param graph The graph to be used in the case of a backward revisit
          * @return The created item
          */
@@ -219,11 +227,15 @@ public class ExplorationStack {
             return new Item(ItemType.BWR, one, null, graph);
         }
 
+        public static Item continueCurrent() {
+            return new Item(ItemType.CONT, null, null, null);
+        }
+
         /**
          * Creates a backward revisit item for a lock read revisiting another lock read.
          *
-         * @param one The read event
-         * @param two The revisited read
+         * @param one   The read event
+         * @param two   The revisited read
          * @param graph The graph to be used in the case of a backward revisit
          * @return The created item
          */
@@ -295,6 +307,10 @@ public class ExplorationStack {
             return (this.type == ItemType.BRR || this.type == ItemType.BWR) && this.graph != null;
         }
 
+        public boolean isContinueCurrent() {
+            return this.type == ItemType.CONT;
+        }
+
         @Override
         public String toString() {
             // return a string representation of the item type and the events. If the event2 is
@@ -308,7 +324,9 @@ public class ExplorationStack {
         }
     }
 
-    /** Represents the item type in the exploration stack. */
+    /**
+     * Represents the item type in the exploration stack.
+     */
     public enum ItemType {
         // Forward revisit of read reading an alternative write
         FRW,
@@ -320,9 +338,13 @@ public class ExplorationStack {
         BWR,
         // Backward revisit of read revisting an alternative read's read-from
         BRR,
+        // Continue the current execution without any change
+        CONT
     }
 
-    /** Represents an inner stack in the exploration stack. */
+    /**
+     * Represents an inner stack in the exploration stack.
+     */
     private static class InnerStack {
         private ExecutionGraph graph;
         private final ArrayDeque<Item> items;

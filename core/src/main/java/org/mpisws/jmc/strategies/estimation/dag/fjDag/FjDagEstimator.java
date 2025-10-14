@@ -1,4 +1,4 @@
-package org.mpisws.jmc.strategies.estimation.fjDag;
+package org.mpisws.jmc.strategies.estimation.dag.fjDag;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

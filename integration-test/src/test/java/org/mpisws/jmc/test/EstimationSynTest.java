@@ -163,7 +163,9 @@ public class EstimationSynTest {
      * R(n) test suite for n \in {2,3,4,5}
      * 1. TruSt model checking
      * 2. DAG-based estimation
-     * 3. TruSt-based estimation
+     * 3. Fork-Join DAG-based estimation
+     * 4. TruSt-based estimation
+     * 5. Weighted TruSt-based estimation
      */
 
     @JmcCheck
@@ -180,6 +182,12 @@ public class EstimationSynTest {
         readNProgram(4);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "fj-dag-estimation", debug = false)
+    public void runRnFjDagEstimation() {
+        readNProgram(6);
+    }
+
     // The scheduling policy can be either FIFO or LIFO, both work fine.
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10, strategy = "trust-estimation",
@@ -189,9 +197,10 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "fj-dag-estimation", debug = false)
-    public void runRnFjDagEstimation() {
-        readNProgram(6);
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "wg-trust-estimation",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO, debug = false)
+    public void runRnWgTrustEstimation() {
+        readNProgram(4);
     }
 
     /** ----------------------------------------------------*/
@@ -200,7 +209,9 @@ public class EstimationSynTest {
      * Inc(n) test suite for n \in {2,3,4,5}
      * 1. TruSt model checking
      * 2. DAG-based estimation
-     * 3. TruSt-based estimation
+     * 3. Fork-Join DAG-based estimation
+     * 4. TruSt-based estimation
+     * 5. Weighted TruSt-based estimation
      */
 
     @JmcCheck
@@ -218,12 +229,6 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "abs-dag-estimation", debug = false)
-    public void runIncnAbsDagEstimation() {
-        incNProgram(3);
-    }
-
-    @JmcCheck
     @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
     public void runIncnFjDagEstimation() {
         incNProgram(4);
@@ -235,13 +240,21 @@ public class EstimationSynTest {
         incNProgram(3);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    public void runIncnWgTrustEstimation() {
+        incNProgram(3);
+    }
+
     /** ----------------------------------------------------*/
 
     /**
      * RW(n) test suite for n \in {2,3,4,5}
      * 1. TruSt model checking
      * 2. DAG-based estimation
-     * 3. TruSt-based estimation
+     * 3. Fork-Join DAG-based estimation
+     * 4. TruSt-based estimation
+     * 5. Weighted TruSt-based estimation
      */
 
     @JmcCheck
@@ -258,21 +271,21 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "abs-dag-estimation", debug = false)
-    public void runRWNnAbsDagEstimation() {
-        RWNProgram(3, 3);
-    }
-
-    @JmcCheck
     @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
     public void runRWNnFjDagEstimation() {
         RWNProgram(4, 4);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 2000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    @JmcCheckConfiguration(numIterations = 5000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runRWNnTrustEstimation() {
         RWNProgram(1, 2);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    public void runRWNnWgTrustEstimation() {
+        RWNProgram(3, 3);
     }
 
     /** ----------------------------------------------------*/
@@ -281,7 +294,9 @@ public class EstimationSynTest {
      * WR(n) test suite for n \in {2,3,4,5}
      * 1. TruSt model checking
      * 2. DAG-based estimation
-     * 3. TruSt-based estimation
+     * 3. Fork-Join DAG-based estimation
+     * 4. TruSt-based estimation
+     * 5. Weighted TruSt-based estimation
      */
 
     @JmcCheck
@@ -299,12 +314,6 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "abs-dag-estimation", debug = false)
-    public void runWRNnAbsDagEstimation() {
-        WRNProgram(3, 3);
-    }
-
-    @JmcCheck
     @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
     public void runWRNnFjDagEstimation() {
         WRNProgram(4, 4);
@@ -314,5 +323,11 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 10, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runWRNnTrustEstimation() {
         WRNProgram(10, 10);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    public void runWRNnWgTrustEstimation() {
+        WRNProgram(3, 3);
     }
 }

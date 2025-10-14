@@ -18,20 +18,24 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
 
     private final Logger LOGGER = LogManager.getLogger(TrustEstimationStrategy.class);
 
-    private final TrustEstimator tEst;
+    protected final TrustEstimator tEst;
 
-    private final StringBuilder estimatorCollector = new StringBuilder();
+    protected final StringBuilder estimatorCollector = new StringBuilder();
 
     public TrustEstimationStrategy() {
         this(System.nanoTime(), SchedulingPolicy.FIFO, false, "build/test-results/jmc-report");
     }
 
     public TrustEstimationStrategy(Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath) {
+        this(randomSeed, policy, debug, reportPath, new TrustEstimator());
+    }
+
+    public TrustEstimationStrategy(Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, TrustEstimator tEst) {
         super(randomSeed, policy, debug, reportPath);
         if (policy == SchedulingPolicy.RANDOM) {
             LOGGER.warn(String.format("Random scheduling policy is %s", SchedulingPolicy.RANDOM.name()));
         }
-        tEst = new TrustEstimator();
+        this.tEst = tEst;
     }
 
     /**
