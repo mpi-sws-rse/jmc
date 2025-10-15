@@ -22,6 +22,8 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
 
     protected final StringBuilder estimatorCollector = new StringBuilder();
 
+    protected final StringBuilder branchingCollector = new StringBuilder();
+
     public TrustEstimationStrategy() {
         this(System.nanoTime(), SchedulingPolicy.FIFO, false, "build/test-results/jmc-report");
     }
@@ -51,6 +53,8 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
                 LOGGER.debug("HaltCheckerException in initIteration: {}, clearing algoInstance", e.getMessage());
                 algoInstance.clear();
                 estimatorCollector.append(tEst.getExpectedValue()).append(System.lineSeparator());
+                branchingCollector.append(tEst.getTreeLogger().toString()).append(System.lineSeparator());
+                branchingCollector.append("$Iteration_").append(iteration).append(System.lineSeparator());
                 tEst.reset();
             } else {
                 LOGGER.error("HaltExecutionException in initIteration: {}", e.getMessage());
@@ -109,5 +113,7 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     protected void saveResults() {
         FileUtil.unsafeStoreToFile(
                 Paths.get("build/test-results/jmc-report/", "TrustEstimateResult.txt").toString(), estimatorCollector.toString());
+        FileUtil.unsafeStoreToFile(
+                Paths.get("build/test-results/jmc-report/", "TrustBranchingResult.txt").toString(), branchingCollector.toString());
     }
 }

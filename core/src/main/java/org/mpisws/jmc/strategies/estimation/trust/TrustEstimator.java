@@ -9,7 +9,9 @@ import org.mpisws.jmc.strategies.trust.Algo;
 import org.mpisws.jmc.strategies.trust.ExplorationStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.random.RandomGeneratorFactory;
 
 public class TrustEstimator implements MetaTreeEstimator {
@@ -20,6 +22,14 @@ public class TrustEstimator implements MetaTreeEstimator {
 
     protected int expectedValue = 1;
 
+    protected final StringBuilder treeLogger = new StringBuilder().append("$Iteration_0").append(System.lineSeparator());
+
+    protected long graphId = 1L;
+
+    protected long graphCounter = 1L;
+
+    protected Map<ExplorationStack.Item, Long> nextGraphIds = new HashMap<>();
+    
     /**
      * @param alg
      * @throws HaltTaskException
@@ -39,11 +49,28 @@ public class TrustEstimator implements MetaTreeEstimator {
         // Create an item for continuing the current execution
         ExplorationStack.Item currItem = ExplorationStack.Item.continueCurrent();
         items.add(currItem);
-
+        updateTreeLogger(items);
         int size = items.size();
         expectedValue = (expectedValue * (size));
         ExplorationStack.Item nextItem = pickNextOption(items, stack, alg);
+        updateGraphId(nextItem);
         handleNextItem(nextItem, stack, alg);
+        nextGraphIds.clear();
+    }
+
+    private void updateTreeLogger(List<ExplorationStack.Item> items) {
+        treeLogger.append(graphId).append(" -> ");
+        for (int i = 0; i < items.size(); i++) {
+            graphCounter++;
+            nextGraphIds.put(items.get(i), graphCounter);
+            treeLogger.append(graphCounter).append("(")
+                    .append(items.get(i).isBackwardRevisit() ? "B" : "F")
+                    .append(")");
+            if (i < items.size() - 1) {
+                treeLogger.append(", ");
+            }
+        }
+        treeLogger.append(System.lineSeparator());
     }
 
     private List<ExplorationStack.Item> getAllItems(ExplorationStack stack) {
@@ -74,12 +101,19 @@ public class TrustEstimator implements MetaTreeEstimator {
             if (alg.getExplorationStack().size() > 1) {
                 updateTreeBW(alg);
             } else {
+                ExplorationStack.Item topItem = alg.getExplorationStack().peek();
+                updateTreeLogger(List.of(topItem));
+                updateGraphId(topItem);
                 reExecutionNeeded = true;
             }
         } else {
             stack.push(item);
             reExecutionNeeded = true;
         }
+    }
+
+    private void updateGraphId(ExplorationStack.Item item) {
+        graphId = nextGraphIds.get(item);
     }
 
     private void updateTreeBW(Algo alg) throws HaltTaskException, HaltExecutionException {
@@ -89,6 +123,7 @@ public class TrustEstimator implements MetaTreeEstimator {
             throw HaltExecutionException.error("The number of items in the stack is less than 2");
         }
 
+        updateTreeLogger(items);
         int size = items.size();
         expectedValue = (expectedValue * (size));
         pickNextOptionBW(items, stack, alg);
@@ -97,6 +132,7 @@ public class TrustEstimator implements MetaTreeEstimator {
     private void pickNextOptionBW(List<ExplorationStack.Item> items, ExplorationStack stack, Algo alg) {
         int randomIndex = RandomGeneratorFactory.of("Xoshiro256PlusPlus").create().nextInt(items.size());
         ExplorationStack.Item item = items.get(randomIndex);
+        updateGraphId(item);
         if (item.getType() != ExplorationStack.ItemType.FLW) {
             // If the next item is not a FLW, we need to track coherency for the event1 of the item
             // Otherwise, the swapCoherency will break, since the FLW event is not processed
@@ -128,5 +164,17 @@ public class TrustEstimator implements MetaTreeEstimator {
     public void reset() {
         expectedValue = 1;
         resetReExecutionFlag();
+        treeLogger.setLength(0);
+        graphCounter = 1L;
+        graphId = 1L;
+        nextGraphIds.clear();
+    }
+
+    public StringBuilder getTreeLogger() {
+        return treeLogger;
+    }
+
+    public void resetTreeLogger() {
+        treeLogger.setLength(0);
     }
 }

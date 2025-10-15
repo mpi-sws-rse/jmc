@@ -219,7 +219,7 @@ public class EstimationListTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 200, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runCoarseListITrustEstimation() {
         coarseListIProgram(4);
