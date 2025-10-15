@@ -103,6 +103,10 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     @Override
     public void teardown() {
         super.teardown();
+        saveResults();
+    }
+
+    protected void saveResults() {
         FileUtil.unsafeStoreToFile(
                 Paths.get("build/test-results/jmc-report/", "TrustEstimateResult.txt").toString(), estimatorCollector.toString());
     }

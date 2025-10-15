@@ -15,9 +15,9 @@ public class WgTrustEstimator extends TrustEstimator {
 
     private static final Logger LOGGER = LogManager.getLogger(WgTrustEstimator.class);
 
-    private final int FWR_WEIGHT = 7;
+    private final int FWR_WEIGHT = 3;
 
-    private final int BWR_WEIGHT = 2;
+    private final int BWR_WEIGHT = 1;
 
     protected ExplorationStack.Item pickNextOption(List<ExplorationStack.Item> items, ExplorationStack stack, Algo alg) {
         if (!hasBackwardRevisit(items)) {

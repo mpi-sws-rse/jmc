@@ -19,9 +19,11 @@ public class WgTrustEstimationStrategy extends TrustEstimationStrategy {
         super(randomSeed, policy, debug, reportPath, new WgTrustEstimator());
     }
 
+    /**
+     *
+     */
     @Override
-    public void teardown() {
-        super.teardown();
+    protected void saveResults() {
         FileUtil.unsafeStoreToFile(
                 Paths.get("build/test-results/jmc-report/", "WgTrustEstimateResult.txt").toString(), estimatorCollector.toString());
     }
