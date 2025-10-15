@@ -1,4 +1,4 @@
-package org.mpisws.jmc.test;
+package org.mpisws.jmc.test.estimation;
 
 import org.mpisws.jmc.annotations.JmcExpectExecutions;
 import org.mpisws.jmc.annotations.strategies.JmcTrustStrategy;

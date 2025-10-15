@@ -1,4 +1,4 @@
-package org.mpisws.jmc.test;
+package org.mpisws.jmc.test.estimation;
 
 import org.mpisws.jmc.annotations.JmcCheck;
 import org.mpisws.jmc.annotations.JmcCheckConfiguration;
