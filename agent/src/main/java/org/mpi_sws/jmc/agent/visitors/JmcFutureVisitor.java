@@ -41,9 +41,14 @@ public class JmcFutureVisitor {
 
         static {
             SUPPORTED_METHODS.put(
-                    "newSingleThreadExecutor", Set.of("()Ljava/util/concurrent/ExecutorService;"));
+                    "newSingleThreadExecutor",
+                    Set.of("()Ljava/util/concurrent/ExecutorService;",
+                            "(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;"));
+
             SUPPORTED_METHODS.put(
-                    "newFixedThreadPool", Set.of("(I)Ljava/util/concurrent/ExecutorService;"));
+                    "newFixedThreadPool",
+                    Set.of("(I)Ljava/util/concurrent/ExecutorService;",
+                            "(ILjava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;"));
         }
 
         public JmcExecutorsMethodVisitor(MethodVisitor methodVisitor) {

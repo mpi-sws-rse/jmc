@@ -122,7 +122,7 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
             // initialization for the
             // first iteration of the model checker.
 
-//            mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, "$staticInit", "()V", false);
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, "$staticInit", "()V", false);
 
             mv.visitInsn(Opcodes.RETURN);
             mv.visitMaxs(-1, -1);

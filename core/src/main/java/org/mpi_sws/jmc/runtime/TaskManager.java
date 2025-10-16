@@ -299,6 +299,7 @@ public class TaskManager {
 
     /** Stop all the tasks in the task pool. */
     public void stopAll() {
+        System.out.println("******stopAll*****");
         synchronized (tasksLock) {
             for (Map.Entry<Long, CompletableFuture<?>> entry : taskFutures.entrySet()) {
                 entry.getValue()

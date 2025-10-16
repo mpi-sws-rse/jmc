@@ -41,7 +41,7 @@ public class InstrumentationAgent {
     public static void premain(String agentArgs, Instrumentation inst) {
         AgentArgs args = new AgentArgs(agentArgs);
         LOGGER.debug("Starting JMC agent");
-        LOGGER.debug("Arguments: {}", agentArgs);
+        LOGGER.info("Arguments: {}", agentArgs);
         loadDependencyJars(inst, args.getJmcRuntimeJarPath());
 
         try {

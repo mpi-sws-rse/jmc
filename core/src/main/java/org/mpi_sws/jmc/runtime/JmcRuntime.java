@@ -108,6 +108,9 @@ public class JmcRuntime {
      * @param iteration the iteration number
      */
     public static void initIteration(int iteration, JmcModelCheckerReport report) {
+        if (iteration == 0) {
+            JmcRuntimeUtils.invokeStaticInitializedClasses();
+        }
         if (config.getDebug()) {
             updateLoggerFile(iteration);
         }

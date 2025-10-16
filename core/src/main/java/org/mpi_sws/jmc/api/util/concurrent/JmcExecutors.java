@@ -1,6 +1,7 @@
 package org.mpi_sws.jmc.api.util.concurrent;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * A replacement for {@link java.util.concurrent.Executors}. Currently only supports a
@@ -28,4 +29,27 @@ public class JmcExecutors {
     public static ExecutorService newFixedThreadPool(int nThreads) {
         return new JmcExecutorService(nThreads);
     }
+
+    /**
+     * Minimal overload to match java.util.concurrent.Executors.newSingleThreadExecutor(ThreadFactory).
+     * For now we ignore the provided ThreadFactory and delegate to the existing no-arg method.
+     * (If thread factory semantics become important to model, we can incorporate it later.)
+     */
+//        Added for iceberg error : java.util.concurrent.ExecutionException: java.lang.NoSuchMethodError:
+//            'java.util.concurrent.ExecutorService
+//            org.mpi_sws.jmc.api.util.concurrent.JmcExecutors.newFixedThreadPool(int, java.util.concurrent.ThreadFactory)'
+
+//    public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
+//        // Minimal, safe behavior: delegate to the modeled no-arg implementation
+//        return newSingleThreadExecutor();
+//    }
+//
+//    /**
+//     * Minimal overload to match java.util.concurrent.Executors.newFixedThreadPool(int, ThreadFactory).
+//     * For now we ignore the provided ThreadFactory and delegate to the existing implementation.
+//     */
+//    public static ExecutorService newFixedThreadPool(int nThreads, ThreadFactory threadFactory) {
+//        // Minimal, safe behavior: delegate to the modeled int-arg implementation
+//        return newFixedThreadPool(nThreads);
+//    }
 }

@@ -93,14 +93,14 @@ public class PremainInstrumentor implements ClassFileTransformer {
                 // JmcIgnoreInstrumentation annotation
             }
 
-            LOGGER.debug("Instrumenting class: {}", finalClassName);
+            LOGGER.info("Instrumenting class: {}", finalClassName);
             byte[] transformed = JmcVisitor.transform(copiedClassBuffer);
             if (this.agentArgs.isDebug()) {
                 record(className, transformed);
             }
             return transformed;
         } catch (Exception e) {
-            LOGGER.error("Error transforming class: {} {}", finalClassName, e);
+            LOGGER.info("Error transforming class: {} {}", finalClassName, e);
             throw new IllegalClassFormatException(
                     "Error instrumenting class: " + finalClassName + " Error: " + e);
         }

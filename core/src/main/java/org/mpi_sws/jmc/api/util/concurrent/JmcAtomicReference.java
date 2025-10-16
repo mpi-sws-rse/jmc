@@ -16,6 +16,14 @@ public class JmcAtomicReference<V> {
 
     private final JmcReentrantLock lock;
 
+    /** Constructs a new JmcAtomicReference with a null initial value. */
+    // Added because of iceberg error: java.util.concurrent.ExecutionException:
+     //* java.lang.NoSuchMethodError: org.mpi_sws.jmc.api.util.concurrent.JmcAtomicReference:
+     //method void <init>() not found */
+     public JmcAtomicReference() {
+        this(null);
+    }
+
     /**
      * Constructs a new JmcAtomicReference with the specified initial value.
      *
