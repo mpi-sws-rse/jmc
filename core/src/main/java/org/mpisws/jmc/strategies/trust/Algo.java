@@ -84,7 +84,7 @@ public class Algo {
         SchedulingChoiceWrapper choiceW = guidingTaskSchedule.peek();
         SchedulingChoice<?> choice = choiceW.choice();
         if (choice.isBlockTask()) {
-            throw new HaltTaskException(choice.getTaskId());
+            throw HaltTaskException.blocked(choice.getTaskId());
         } else if (choice.isBlockExecution()) {
             throw HaltExecutionException.error("Encountered a block label");
         } else if (choice.isEnd() && !EventUtils.isExclusiveRead(event)) {
@@ -759,7 +759,7 @@ public class Algo {
     private void handleGuidedAssume(Event event) {
         boolean result = event.getAttribute("result");
 
-        if (result) {
+        if (!result) {
             Long taskId = event.getTaskId();
             // Indicate that the task must be blocked
             mustBlockTask = taskId;

@@ -85,6 +85,8 @@ public class JmcThread extends Thread {
         } catch (Exception e) {
             if (e instanceof HaltExecutionException && ((HaltExecutionException) e).isReexecutionNeeded()) {
                 LOGGER.debug("Re-execution needed, throwing HaltExecutionException");
+            } else if (e instanceof HaltTaskException && ((HaltTaskException) e).isBlocked()) {
+                LOGGER.debug("Blocked task execution, throwing HaltTaskException");
             } else {
                 LOGGER.error("Exception running the thread: {}", e.getMessage());
             }

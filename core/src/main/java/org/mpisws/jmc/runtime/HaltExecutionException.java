@@ -42,7 +42,7 @@ public class HaltExecutionException extends RuntimeException {
     }
 
     /**
-     * Error type when the model checker stops the execution.
+     * Exception type when the model checker stops the execution.
      */
     public enum Type {
         PROGRAM_ERROR,
