@@ -6,6 +6,7 @@ import org.mpisws.jmc.runtime.HaltExecutionException;
 import org.mpisws.jmc.runtime.HaltTaskException;
 import org.mpisws.jmc.strategies.estimation.MetaTreeEstimator;
 import org.mpisws.jmc.strategies.trust.Algo;
+import org.mpisws.jmc.strategies.trust.EventUtils;
 import org.mpisws.jmc.strategies.trust.ExplorationStack;
 
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public class TrustEstimator implements MetaTreeEstimator {
     protected long graphCounter = 1L;
 
     protected Map<ExplorationStack.Item, Long> nextGraphIds = new HashMap<>();
-    
+
     /**
      * @param alg
      * @throws HaltTaskException
@@ -107,9 +108,22 @@ public class TrustEstimator implements MetaTreeEstimator {
                 reExecutionNeeded = true;
             }
         } else {
+            updateLoggerForRdx(item);
             stack.push(item);
             reExecutionNeeded = true;
         }
+    }
+
+    private void updateLoggerForRdx(ExplorationStack.Item item) {
+        if (!EventUtils.isLockAcquireRead(item.getEvent1().getEvent())) {
+            return;
+        }
+        graphCounter++;
+        treeLogger.append(graphId).append(" -> ").append(graphCounter).append("(B)").append(System.lineSeparator());
+        graphId = graphCounter;
+        graphCounter++;
+        treeLogger.append(graphId).append(" -> ").append(graphCounter).append("(F)").append(System.lineSeparator());
+        graphId = graphCounter;
     }
 
     private void updateGraphId(ExplorationStack.Item item) {
