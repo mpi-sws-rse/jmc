@@ -52,6 +52,17 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         this.recordedTrace = null;
     }
 
+    public TrustStrategy(
+            Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, boolean hasTreeLogger) {
+        super(List.of(new TrackTasks()));
+        this.random = new Random(randomSeed);
+        this.algoInstance = new Algo(hasTreeLogger);
+        this.policy = policy;
+        this.debug = debug;
+        this.reportPath = reportPath;
+        this.recordedTrace = null;
+    }
+
     @Override
     public void initIteration(int iteration, JmcModelCheckerReport report) {
         super.initIteration(iteration, report);
@@ -172,6 +183,16 @@ public class TrustStrategy extends TrackActiveTasksStrategy
     public void teardown() {
         super.teardown();
         algoInstance.teardown();
+        StringBuilder tLogger = algoInstance.getTreeLog();
+        if (tLogger != null) {
+            recordTreeLoggger(tLogger);
+        }
+    }
+
+    private void recordTreeLoggger(StringBuilder tLogger) {
+        String filePath = Paths.get(this.reportPath, "trust-tree-logger.txt").toString();
+        LOGGER.info("Recording tree logger to {}", filePath);
+        FileUtil.unsafeStoreToFile(filePath, tLogger.toString());
     }
 
     @Override

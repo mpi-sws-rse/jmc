@@ -1938,4 +1938,33 @@ public class ExecutionGraph {
         }
         return taskEventList.get(taskEventList.size() - 1);
     }
+
+    public boolean isRdxInconsistent(ExecutionGraphNode wrxNode) {
+        int wrxNodeIndex = taskEvents.get(Math.toIntExact(wrxNode.getEvent().getTaskId())).indexOf(wrxNode);
+        int rdxNodeIndex = wrxNodeIndex - 1;
+        if (rdxNodeIndex < 0) {
+            throw HaltCheckerException.error("The WRx node does not have a preceding RDX node.");
+        }
+
+        ExecutionGraphNode rdxNode = taskEvents.get(Math.toIntExact(wrxNode.getEvent().getTaskId())).get(rdxNodeIndex);
+
+        if (!EventUtils.isLockAcquireRead(rdxNode.getEvent())) {
+            throw HaltCheckerException.error("The preceding event is not a RDX event.");
+        }
+
+        List<Event.Key> rfPredecessors = rdxNode.getPredecessors(Relation.ReadsFrom);
+        if (rfPredecessors.isEmpty() || rfPredecessors.size() != 1) {
+            throw HaltCheckerException.error("The RDX event does not have exactly one ReadsFrom predecessor.");
+        }
+        Event.Key rfKey = rfPredecessors.get(0);
+        ExecutionGraphNode rfNode;
+        try {
+            rfNode = getEventNode(rfKey);
+        } catch (NoSuchEventException e) {
+            throw HaltCheckerException.error("The ReadsFrom predecessor event does not exist in the execution graph.");
+        }
+
+        List<Event.Key> rfSuccessors = rfNode.getSuccessors(Relation.ReadsFrom);
+        return rfSuccessors.size() <= 1;
+    }
 }

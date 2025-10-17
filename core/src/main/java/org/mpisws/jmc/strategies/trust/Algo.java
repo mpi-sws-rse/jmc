@@ -35,6 +35,8 @@ public class Algo {
 
     private Long mustBlockTask;
 
+    private final TreeLogger tLogger;
+
     /**
      * Creates a new instance of the Trust algorithm.
      */
@@ -44,8 +46,22 @@ public class Algo {
         this.executionGraph = new ExecutionGraph();
         this.explorationStack = new ExplorationStack();
         this.locationStore = new LocationStore();
-
         this.executionGraph.addEvent(Event.init());
+        this.tLogger = null;
+    }
+
+    public Algo(boolean hasTreeLogger) {
+        this.guidingTaskSchedule = null;
+        this.isGuiding = false;
+        this.executionGraph = new ExecutionGraph();
+        this.explorationStack = new ExplorationStack();
+        this.locationStore = new LocationStore();
+        this.executionGraph.addEvent(Event.init());
+        if (hasTreeLogger) {
+            this.tLogger = new TreeLogger();
+        } else {
+            this.tLogger = null;
+        }
     }
 
     /**
@@ -282,7 +298,7 @@ public class Algo {
 
             // Get the next exploration choice from the exploration stack.
             ExplorationStack.Item item = explorationStack.pop();
-
+            logUpdateGraphId(item);
             // Check if the item is a backward revisit.
             if (item.isBackwardRevisit()) { // TODO : Is any backward revisit type allowed? or only
                 // BWR?
@@ -378,11 +394,13 @@ public class Algo {
 
         List<ExecutionGraphNode> alternativeWrites = restrictedGraph.getCoherentPlacings(write);
 
+        logNewBranchs();
         if (!alternativeWrites.isEmpty()) {
             for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
-                explorationStack.push(
-                        ExplorationStack.Item.forwardWW(
-                                write, alternativeWrites.get(i), restrictedGraph));
+                ExplorationStack.Item newItem = ExplorationStack.Item.forwardWW(
+                        write, alternativeWrites.get(i), restrictedGraph);
+                explorationStack.push(newItem);
+                logNewChild(item);
             }
         }
 
@@ -391,6 +409,7 @@ public class Algo {
             forwardLW.addAdditionalEvent(additionalEvent);
         }
         explorationStack.push(forwardLW);
+        logLastChild(forwardLW);
     }
 
     private List<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {
@@ -533,13 +552,19 @@ public class Algo {
             // No alternative writes to revisit.
             return;
         }
-        // We have alternative writes to revisit.
 
+        logNewBranchs();
+
+        // We have alternative writes to revisit.
         for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
-            explorationStack.push(
+            ExplorationStack.Item newItem =
                     ExplorationStack.Item.forwardRW(
-                            read, alternativeWrites.get(i), this.executionGraph));
+                            read, alternativeWrites.get(i), this.executionGraph);
+            explorationStack.push(newItem);
+            logNewChild(newItem);
         }
+        logConCurrChild();
+        logUpdateGraphIdWithLastGraph();
     }
 
     private void handleWrite(Event event) {
@@ -553,15 +578,21 @@ public class Algo {
         /** Check for (w->w) coherent forward revisits * */
         List<ExecutionGraphNode> concurrentWrites = executionGraph.getCoherentPlacings(write);
 
+        boolean hasForwardRevisits = false;
+
         if (!concurrentWrites.isEmpty()) {
             LOGGER.debug("Found concurrent writes to revisit");
 
+            hasForwardRevisits = true;
+            logNewBranchs();
             // We have concurrent writes to revisit.
             // If flag is set, write race warning
             for (int i = concurrentWrites.size() - 1; i >= 0; i--) {
-                explorationStack.push(
+                ExplorationStack.Item newItem =
                         ExplorationStack.Item.forwardWW(
-                                write, concurrentWrites.get(i), executionGraph));
+                                write, concurrentWrites.get(i), executionGraph);
+                explorationStack.push(newItem);
+                logNewChild(newItem);
             }
         } else {
             LOGGER.debug("No concurrent writes to revisit");
@@ -576,6 +607,10 @@ public class Algo {
             // After batching the forward revisits, since there is no backward revisit, we need to
             // continue the exploration by adding the recently added write as the CO max.
             executionGraph.trackCoherency(write);
+            if (hasForwardRevisits) {
+                logConCurrChild();
+                logUpdateGraphIdWithLastGraph();
+            }
             return;
         }
         LOGGER.debug("Found potential reads to revisit");
@@ -586,17 +621,31 @@ public class Algo {
         revisitViews =
                 revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
 
+        boolean hasBackwardRevisits = false;
+        if (!revisitViews.isEmpty()) {
+            hasBackwardRevisits = true;
+            if (!hasForwardRevisits) {
+                logNewBranchs();
+            }
+        }
+
         for (int i = revisitViews.size() - 1; i >= 0; i--) {
-            explorationStack.push(
+            ExplorationStack.Item newItem =
                     ExplorationStack.Item.backwardRevisit(
                             revisitViews.get(i).getWrite(),
-                            revisitViews.get(i).getRestrictedGraph()));
+                            revisitViews.get(i).getRestrictedGraph());
+            explorationStack.push(newItem);
+            logNewChild(newItem);
         }
 
         // After batching the backward and forward revisits, we need to continue the exploration by
         // adding the recently
         // added write as the CO max.
         executionGraph.trackCoherency(write);
+        if (hasBackwardRevisits || hasForwardRevisits) {
+            logConCurrChild();
+            logUpdateGraphIdWithLastGraph();
+        }
     }
 
     private void handleWriteX(Event event) {
@@ -664,6 +713,8 @@ public class Algo {
             return;
         }
 
+        logNewBranchs();
+
         for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
             ExecutionGraphNode altWrite = alternativeWrites.get(i);
             LOGGER.debug("Adding revisit to alternative lock acquire write: {}", altWrite.key());
@@ -677,7 +728,10 @@ public class Algo {
             additionalWrite.setAttribute("lock_acquire", true);
             item.addAdditionalEvent(additionalWrite);
             explorationStack.push(item);
+            logNewChild(item);
         }
+        logConCurrChild();
+        logUpdateGraphIdWithLastGraph();
     }
 
     // Takes a parameter ExecutionGraph only to handle the
@@ -705,13 +759,20 @@ public class Algo {
             revisitViews =
                     revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
 
+            if (!revisitViews.isEmpty()) {
+                logNewBranchs();
+            }
+
             for (int i = revisitViews.size() - 1; i >= 0; i--) {
                 ExplorationStack.Item item =
                         ExplorationStack.Item.backwardRevisit(
                                 revisitViews.get(i).getWrite(),
                                 revisitViews.get(i).getRestrictedGraph());
                 item.addAdditionalEvent(revisitViews.get(i).additionalEvent());
-                explorationStack.push(item);
+                if (item.getGraph().isRdxInconsistent(item.getEvent1())) {
+                    explorationStack.push(item);
+                    logLastChild(item);
+                }
             }
         }
         executionGraph.trackCoherency(write);
@@ -812,5 +873,61 @@ public class Algo {
 
     public boolean isStackEmpty() {
         return this.explorationStack.isEmpty();
+    }
+
+    private void logNewBranchs() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendNewBranchs();
+    }
+
+    private void logNewChild(ExplorationStack.Item item) {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendNewChild(item);
+    }
+
+    private void logLastChild(ExplorationStack.Item item) {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendLastChild(item);
+    }
+
+    private void logConCurrChild() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendContinueCurrent();
+    }
+
+    private void logEndofChilds() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendNextLine();
+    }
+
+    private void logUpdateGraphId(ExplorationStack.Item nextItem) {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.updateLoggerGraphId(nextItem);
+    }
+
+    private void logUpdateGraphIdWithLastGraph() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.updateLoggerGraphIdWithLastGraph();
+    }
+
+    public StringBuilder getTreeLog() {
+        if (tLogger == null) {
+            return null;
+        }
+        return tLogger.getLogger();
     }
 }

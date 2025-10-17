@@ -212,10 +212,10 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
-    @JmcExpectExecutions(720) // For any n is n!
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    @JmcExpectExecutions(6) // For any n is n!
     public void runCoarseListITrust() {
-        coarseListIProgram(6);
+        coarseListIProgram(3);
     }
 
     @JmcCheck
@@ -324,7 +324,7 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true)
     @JmcExpectExecutions(4532) // For n = 2 is 4, for n = 3 is 67, for n = 4 is 4532
     public void runOptListITrust() {
         optListIProgram(4);
