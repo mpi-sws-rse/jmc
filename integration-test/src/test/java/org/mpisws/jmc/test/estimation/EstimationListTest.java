@@ -240,7 +240,7 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true)
     @JmcExpectExecutions(24) // For any n is n!
     public void runCoarseListIDTrust() {
         coarseListIDProgram(4);
@@ -268,7 +268,7 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true)
     @JmcExpectExecutions(720) // For any n is n!
     public void runFineListITrust() {
         fineListIProgram(6);
@@ -296,7 +296,7 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true)
     @JmcExpectExecutions(720) // For any n is n!
     public void runFineListIDTrust() {
         fineListIDProgram(6);
@@ -352,7 +352,7 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true)
     @JmcExpectExecutions(1687) // For n = 2, is 3, n = 3, is 42, n = 4 is 1687
     public void runOptListIDTrust() {
         optListIDProgram(4);
@@ -380,7 +380,7 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     @JmcExpectExecutions(4383) // For n = 2, is 4 and for n = 3, is 67 and for n = 4 is 4383
     public void runLazyListITrust() {
         lazyListIProgram(4);
@@ -408,7 +408,7 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true)
     @JmcExpectExecutions(1687) // For n = 2, is 3, n = 3, is 42 and for n = 4 is 1687
     public void runLazyListIDTrust() {
         lazyListIDProgram(4);

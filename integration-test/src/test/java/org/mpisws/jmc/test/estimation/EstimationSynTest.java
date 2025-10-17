@@ -170,7 +170,7 @@ public class EstimationSynTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true)
     @JmcExpectExecutions(1) // For any n is 1
     public void runRnTrust() {
         readNProgram(2);
@@ -216,7 +216,7 @@ public class EstimationSynTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true)
     //@JmcExpectExecutions(36) // For input n is (n!)^2
     public void runIncnTrust() {
         incNProgram(3);
@@ -259,7 +259,7 @@ public class EstimationSynTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true)
     public void runRWNTrust() {
         RWNProgram(3, 3);
     }
@@ -300,8 +300,8 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
-    @JmcTrustStrategy
+    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcTrustStrategy(loggerTree = true)
     //@JmcExpectExecutions(36) // For input n is n!
     public void runWRNTrust() {
         WRNProgram(3, 3);
