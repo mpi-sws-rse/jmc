@@ -184,12 +184,16 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         super.teardown();
         algoInstance.teardown();
         StringBuilder tLogger = algoInstance.getTreeLog();
+        StringBuilder inConGraphLogger = algoInstance.getInconsistentGraphLog();
         if (tLogger != null) {
-            recordTreeLoggger(tLogger);
+            recordTreeLoggger(tLogger, inConGraphLogger);
         }
     }
 
-    private void recordTreeLoggger(StringBuilder tLogger) {
+    private void recordTreeLoggger(StringBuilder tLogger, StringBuilder inConGraphLogger) {
+        if (inConGraphLogger != null) {
+            tLogger.append(System.lineSeparator()).append("$INCONSISTENT GRAPH:").append(System.lineSeparator()).append(inConGraphLogger);
+        }
         String filePath = Paths.get(this.reportPath, "trust-tree-logger.txt").toString();
         LOGGER.info("Recording tree logger to {}", filePath);
         FileUtil.unsafeStoreToFile(filePath, tLogger.toString());

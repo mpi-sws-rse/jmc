@@ -325,11 +325,16 @@ public class Algo {
                 default -> throw new RuntimeException(
                         "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
+
+            if (nextGraphSchedule.isEmpty()) {
+                LOGGER.debug("The revisit resulted in an inconsistent graph. Continuing to next item.");
+                logInconsistentGraph();
+            }
         }
 
         LOGGER.debug("Found the SC graph");
         //        checkGraphSchedule(nextGraphSchedule);
-        executionGraph.printGraph();
+        //executionGraph.printGraph();
 
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
@@ -400,7 +405,7 @@ public class Algo {
                 ExplorationStack.Item newItem = ExplorationStack.Item.forwardWW(
                         write, alternativeWrites.get(i), restrictedGraph);
                 explorationStack.push(newItem);
-                logNewChild(item);
+                logNewChild(newItem);
             }
         }
 
@@ -493,6 +498,7 @@ public class Algo {
         this.explorationStack.clear();
         this.locationStore.clearAliases();
         this.locationStore.clear();
+        reportInconsistentGraphLogs();
     }
 
     public List<Long> getSchedulableTasks() {
@@ -924,10 +930,31 @@ public class Algo {
         tLogger.updateLoggerGraphIdWithLastGraph();
     }
 
+    private void logInconsistentGraph() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.addInconsistentGraph();
+    }
+
     public StringBuilder getTreeLog() {
         if (tLogger == null) {
             return null;
         }
         return tLogger.getLogger();
+    }
+
+    public StringBuilder getInconsistentGraphLog() {
+        if (tLogger == null) {
+            return null;
+        }
+        return tLogger.getInConsistentGraphLogger();
+    }
+
+    public void reportInconsistentGraphLogs() {
+        if (tLogger == null) {
+            return;
+        }
+        LOGGER.info("Number of Inconsistent Graph: " + tLogger.getNumOfInconsistentGraphs());
     }
 }

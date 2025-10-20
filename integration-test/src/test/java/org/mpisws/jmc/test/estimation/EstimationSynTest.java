@@ -215,8 +215,8 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
-    @JmcTrustStrategy(loggerTree = true)
+    @JmcCheckConfiguration(numIterations = 1000000)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = true)
     //@JmcExpectExecutions(36) // For input n is (n!)^2
     public void runIncnTrust() {
         incNProgram(3);

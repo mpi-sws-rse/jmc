@@ -13,6 +13,10 @@ public class TreeLogger {
 
     private final Map<ExplorationStack.Item, Long> nextGraphIds = new HashMap<>();
 
+    private long numOfInconsistentGraphs = 0L;
+
+    private final StringBuilder inConsistentGraphLogger = new StringBuilder();
+
     public void appendNewBranchs() {
         logger.append(graphId).append(" -> ");
     }
@@ -57,5 +61,25 @@ public class TreeLogger {
 
     public StringBuilder getLogger() {
         return logger;
+    }
+
+    public long getGraphId() {
+        return graphId;
+    }
+
+    public void addInconsistentGraph() {
+        numOfInconsistentGraphs++;
+        inConsistentGraphLogger.append(graphId).append(", ");
+    }
+
+    public StringBuilder getInConsistentGraphLogger() {
+        if (inConsistentGraphLogger.length() == 0) {
+            return null;
+        }
+        return inConsistentGraphLogger;
+    }
+
+    public long getNumOfInconsistentGraphs() {
+        return numOfInconsistentGraphs;
     }
 }

@@ -81,7 +81,7 @@ public class EstimationTacasTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     @JmcExpectExecutions(69112)
     public void runBig0Trust() {
         big0();
