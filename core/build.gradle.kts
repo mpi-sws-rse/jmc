@@ -1,9 +1,9 @@
 plugins {
-    kotlin("jvm") version "1.9.22"
     id("java")
     id("checkstyle")
     id("maven-publish")
     id("java-library")
+//    signing
 }
 
 repositories {
@@ -31,8 +31,16 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.24.3")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.22")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+
+}
+
+tasks.withType<Javadoc> {
+    (options as StandardJavadocDocletOptions).apply {
+        addStringOption("doctitle", "JMC Model Checker API")
+    }
 }
 
 tasks.test {
@@ -45,16 +53,39 @@ publishing {
             pom {
                 name = "JMC Model Checker"
                 description = "A generic model checker for Java programs"
-                url = "github.com/mpi-sws-rse/jmc"
+                url = "jmc.mpi-sws.org"
+                licenses {
+                    license {
+                        name.set("Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("mpi-sws-rse")
+                        name.set("MPI-SWS RSE Team")
+                        email.set("rupak@mpi-sws.org")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:https://github.com/mpi-sws-rse/jmc.git")
+                    developerConnection.set("scm:git:ssh://github.com/mpi-sws-rse/jmc.git")
+                    url.set("https://github.com/mpi-sws-rse/jmc")
+                }
             }
-            groupId = "org.mpisws.jmc"
             artifactId = "jmc"
-            version = "0.1.0"
             from(components["java"])
         }
     }
 
     repositories {
         mavenLocal()
+//        maven {
+//            setUrl(layout.buildDirectory.dir("staging-deploy"))
+//        }
     }
 }
+
+//signing {
+//    sign(publishing.publications["maven"])
+//}

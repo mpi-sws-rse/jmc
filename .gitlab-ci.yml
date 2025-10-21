@@ -56,8 +56,31 @@ test:
     paths:
       - build
       - .gradle
+  artifacts:
+    when: always
+    paths:
+      - integration-test/build/test-results/test**/TEST-*.xml
+    reports:
+      junit: integration-test/build/test-results/test/**/TEST-*.xml
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-
-
+publish:
+  stage: deploy
+  before_script:
+    - apk update && apk add bash zip
+  script:
+    - bash ./scripts/publish.sh
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
+  artifacts:
+    paths:
+      - build/jmc-agent/jmc-agent.zip
+      - build/jmc/jmc.zip
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  when: on_success
