@@ -21,13 +21,15 @@ public class TTASLock {
         return state.getAndSet(1) == 0;
     }
 
-    public void acquire() {
-        while (true) {
+    public boolean acquire() {
+        awaitForLock();
+        return tryAcquire();
+        /*while (true) {
             awaitForLock();
             if (tryAcquire()) {
                 return;
             }
-        }
+        }*/
     }
 
     public void release() {

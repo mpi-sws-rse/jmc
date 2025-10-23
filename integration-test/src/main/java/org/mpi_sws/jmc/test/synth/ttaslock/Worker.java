@@ -14,10 +14,12 @@ public class Worker extends Thread {
 
     @Override
     public void run() {
-        lock.acquire();
-        lockHolder.setId(id);
-        int holderId = lockHolder.getId();
-        assert holderId == id : "BUG!";
-        lock.release();
+        boolean b = lock.acquire();
+        if (b) {
+            lockHolder.setId(id);
+            int holderId = lockHolder.getId();
+            assert holderId == id : "BUG!";
+            lock.release();
+        }
     }
 }
