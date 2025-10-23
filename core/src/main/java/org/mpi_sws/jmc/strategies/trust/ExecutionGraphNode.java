@@ -518,4 +518,12 @@ public class ExecutionGraphNode {
         }
         return backEdges.get(relation).contains(key);
     }
+
+    /**
+     * @return
+     */
+    @Override
+    public String toString() {
+        return event.toString();
+    }
 }

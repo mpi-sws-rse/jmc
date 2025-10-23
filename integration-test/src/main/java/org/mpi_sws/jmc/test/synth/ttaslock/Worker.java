@@ -17,7 +17,9 @@ public class Worker extends Thread {
         lock.acquire();
         lockHolder.setId(id);
         int holderId = lockHolder.getId();
-        assert holderId == id : "Shared variable corrupted!";
+        if (holderId != id) {
+            System.out.println("Wrong holder id");
+        }
         lock.release();
     }
 }

@@ -95,4 +95,8 @@ public class EventUtils {
     public static boolean isNoop(Event event) {
         return event.getType() == Event.Type.NOOP;
     }
+
+    public static boolean isAssume(Event event) {
+        return event.getType() == Event.Type.ASSUME;
+    }
 }

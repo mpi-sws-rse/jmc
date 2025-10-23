@@ -22,7 +22,7 @@ import java.util.Set;
 /**
  * A wrapper around the {@link Algo} algorithm that implements a scheduling strategy based on trust.
  * The class implements the {@link ReplayableSchedulingStrategy} and {@link
- * SchedulingStrategy} and uses the {@link TrackActiveTasksStrategy} to
+ * org.mpi_sws.jmc.strategies.SchedulingStrategy} and uses the {@link TrackActiveTasksStrategy} to
  * track active tasks during the execution.
  */
 public class TrustStrategy extends TrackActiveTasksStrategy

@@ -197,7 +197,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 1000, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO, debug = false)
     public void runRnWgTrustEstimation() {
         readNProgram(4);

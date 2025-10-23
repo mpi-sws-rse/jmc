@@ -32,11 +32,7 @@ public class Algo {
     private ExecutionGraph executionGraph;
     private boolean isGuiding;
     private final ExplorationStack explorationStack;
-
     private final LocationStore locationStore;
-
-    private Long mustBlockTask;
-
     private final TreeLogger tLogger;
 
     /**
@@ -70,11 +66,6 @@ public class Algo {
      * Returns the next task to be scheduled according to the execution graph set in place.
      */
     public SchedulingChoice<?> nextTask() {
-        if (mustBlockTask != null) {
-            Long taskId = mustBlockTask + 1;
-            mustBlockTask = null;
-            return SchedulingChoice.blockTask(taskId);
-        }
 
         if (!isGuiding) {
             return null;
@@ -84,6 +75,7 @@ public class Algo {
         }
         SchedulingChoice<?> out = guidingTaskSchedule.pop().choice();
         if (guidingTaskSchedule.isEmpty()) {
+            LOGGER.debug("End of guiding phase");
             isGuiding = false;
         }
         return out;
@@ -126,11 +118,6 @@ public class Algo {
             if (!locationStore.containsAlias(event.getLocation())) {
                 locationStore.addAlias(location, event.getLocation());
             }
-        }
-
-        switch (event.getType()) {
-            case ASSUME:
-                handleGuidedAssume(event);
         }
     }
 
@@ -335,7 +322,7 @@ public class Algo {
         }
 
         LOGGER.debug("Found the SC graph");
-        //        checkGraphSchedule(nextGraphSchedule);
+        checkGraphSchedule(nextGraphSchedule);
         //executionGraph.printGraph();
 
         // The SC graph is found. We need to set the guiding task schedule.
@@ -383,7 +370,7 @@ public class Algo {
      */
     private void printGuidingTaskSchedule() {
         if (guidingTaskSchedule == null) {
-            System.out.println("Guiding task schedule is null");
+            LOGGER.debug("Guiding task schedule is null");
             return;
         }
         StringBuilder sb = new StringBuilder();
@@ -816,23 +803,6 @@ public class Algo {
 
     private void handleAssume(Event event) {
         executionGraph.addEvent(event);
-        boolean result = event.getAttribute("result");
-
-        if (!result) {
-            Long taskId = event.getTaskId();
-            // Indicate that the task must be blocked
-            mustBlockTask = taskId;
-        }
-    }
-
-    private void handleGuidedAssume(Event event) {
-        boolean result = event.getAttribute("result");
-
-        if (!result) {
-            Long taskId = event.getTaskId();
-            // Indicate that the task must be blocked
-            mustBlockTask = taskId;
-        }
     }
 
     /**
@@ -875,7 +845,6 @@ public class Algo {
         this.executionGraph.clear();
         this.explorationStack.clear();
         this.locationStore.clear();
-        this.mustBlockTask = null;
         this.executionGraph.addEvent(Event.init());
     }
 

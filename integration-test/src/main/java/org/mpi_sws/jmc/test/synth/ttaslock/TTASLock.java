@@ -18,13 +18,13 @@ public class TTASLock {
     }
 
     private boolean tryAcquire() {
-        return state.getAndSet(1) == 1;
+        return state.getAndSet(1) == 0;
     }
 
     public void acquire() {
         while (true) {
             awaitForLock();
-            if (!tryAcquire()) {
+            if (tryAcquire()) {
                 return;
             }
         }
