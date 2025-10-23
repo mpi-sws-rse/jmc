@@ -315,7 +315,7 @@ public class Algo {
                         "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
 
-            if (nextGraphSchedule.isEmpty()) {
+            if (nextGraphSchedule.isEmpty() && !EventUtils.isLockAcquireRead(item.getEvent1().getEvent())) {
                 LOGGER.debug("The revisit resulted in an inconsistent graph. Continuing to next item.");
                 logInconsistentGraph();
             }

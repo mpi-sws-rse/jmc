@@ -2,6 +2,9 @@ package org.mpi_sws.jmc.test;
 
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
+import org.mpi_sws.jmc.annotations.JmcExpectExecutions;
+import org.mpi_sws.jmc.annotations.strategies.JmcTrustStrategy;
+import org.mpi_sws.jmc.strategies.trust.TrustStrategy;
 import org.mpi_sws.jmc.test.det.stack.DeletionThread;
 import org.mpi_sws.jmc.test.det.stack.InsertionThread;
 import org.mpi_sws.jmc.test.det.stack.Stack;
@@ -133,5 +136,13 @@ public class StackTest {
     @JmcCheckConfiguration(numIterations = 10000, strategy = "estimation", debug = false)
     public void runEstimationAGMStackTest() {
         agmStack_50_50_test(6);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    @JmcExpectExecutions(22536) // For n = 5 is 22536
+    public void runTreiberStackTrust() {
+        treiberStack_50_50_test(5);
     }
 }
