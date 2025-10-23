@@ -12,7 +12,9 @@ import java.util.Objects;
  */
 public class JmcReadWriteVisitor {
 
-    /** Class visitor for JMC read-write visitor. */
+    /**
+     * Class visitor for JMC read-write visitor.
+     */
     public static class ReadWriteClassVisitor extends ClassVisitor {
 
         private boolean isInterface;
@@ -54,7 +56,9 @@ public class JmcReadWriteVisitor {
         }
     }
 
-    /** Method visitor for JMC read-write visitor. */
+    /**
+     * Method visitor for JMC read-write visitor.
+     */
     public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor {
 
         private boolean instrumented;
@@ -65,8 +69,8 @@ public class JmcReadWriteVisitor {
         /**
          * Constructor.
          *
-         * @param mv The underlying MethodVisitor
-         * @param access The method's access flags
+         * @param mv         The underlying MethodVisitor
+         * @param access     The method's access flags
          * @param descriptor The method descriptor (e.g., "(I)V")
          */
         public ReadWriteMethodVisitor(
@@ -135,6 +139,7 @@ public class JmcReadWriteVisitor {
             super.visitFieldInsn(opcode, owner, name, descriptor);
             if (instrumented) {
                 VisitorHelper.insertYield(mv);
+                instrumented = false;
             }
         }
 

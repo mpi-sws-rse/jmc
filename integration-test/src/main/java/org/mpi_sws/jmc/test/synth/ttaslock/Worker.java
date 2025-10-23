@@ -17,9 +17,7 @@ public class Worker extends Thread {
         lock.acquire();
         lockHolder.setId(id);
         int holderId = lockHolder.getId();
-        if (holderId != id) {
-            System.out.println("Wrong holder id");
-        }
+        assert holderId == id : "BUG!";
         lock.release();
     }
 }
