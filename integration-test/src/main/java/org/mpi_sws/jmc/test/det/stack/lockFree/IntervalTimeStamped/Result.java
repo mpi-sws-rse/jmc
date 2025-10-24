@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.test.det.stack.lockFree.timeStamped;
+package org.mpi_sws.jmc.test.det.stack.lockFree.IntervalTimeStamped;
 
 public class Result<V> {
 

@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.test.det.stack.lockFree.timeStamped;
+package org.mpi_sws.jmc.test.det.stack.lockFree.IntervalTimeStamped;
 
 public class TimeStamp {
 
@@ -15,7 +15,9 @@ public class TimeStamp {
         this.right = value;
     }
 
-    /** Based on the POPL'15 paper, (a,b) < (c,d) iff b < c */
+    /**
+     * Based on the POPL'15 paper, (a,b) < (c,d) iff b < c
+     */
     public int compareTo(TimeStamp other) {
         return Integer.compare(this.right, other.left);
     }

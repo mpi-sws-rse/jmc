@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.test.det.stack.lockFree.timeStamped;
+package org.mpi_sws.jmc.test.det.stack.lockFree.lockTimeStamped;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -6,7 +6,7 @@ public class TNode<T> {
 
     public T value;
     public TNode<T> next;
-    public TimeStamp timeStamp;
+    public int timeStamp;
     public AtomicBoolean taken;
 
     /**
@@ -16,6 +16,6 @@ public class TNode<T> {
         this.value = value;
         this.taken = new AtomicBoolean(taken);
         this.next = null;
-        this.timeStamp = new TimeStamp(-1);
+        this.timeStamp = -1;
     }
 }

@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.test.det.stack.lockFree.timeStamped;
+package org.mpi_sws.jmc.test.det.stack.lockFree.IntervalTimeStamped;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -18,12 +18,6 @@ public class SPPool<V> {
         TNode<V> newNode = new TNode<>(item, false);
         newNode.next = head.get();
         head.set(newNode);
-
-        TNode<V> next = newNode.next;
-        while (next.next != next && next.taken.get()) {
-            next = next.next;
-        }
-        newNode.next = next;
         return newNode;
     }
 
@@ -42,15 +36,6 @@ public class SPPool<V> {
 
     Result remove(TNode<V> oldTop, TNode<V> node) {
         if (node.taken.compareAndSet(false, true)) {
-            head.compareAndSet(oldTop, node);
-            if (oldTop != node) {
-                oldTop.next = node;
-            }
-            TNode<V> next = node.next;
-            while (next.next != next && next.taken.get()) {
-                next = next.next;
-            }
-            node.next = next;
             return new Result<>(true, node.value);
         }
         return new Result<>(false, null);
