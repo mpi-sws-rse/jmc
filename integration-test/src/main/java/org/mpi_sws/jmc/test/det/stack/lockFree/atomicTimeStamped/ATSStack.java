@@ -1,15 +1,15 @@
-package org.mpi_sws.jmc.test.det.stack.lockFree.lockTimeStamped;
+package org.mpi_sws.jmc.test.det.stack.lockFree.atomicTimeStamped;
 
 import org.mpi_sws.jmc.test.det.stack.Stack;
 import org.mpi_sws.jmc.test.det.stack.lockFree.IntervalTimeStamped.PusherThread;
 
-public class LTSStack<V> implements Stack<V> {
+public class ATSStack<V> implements Stack<V> {
 
     public final int maxThreads;
     public final SPPool[] spPools;
     public final TSCAS ts_cas;
 
-    public LTSStack(int maxThreads, long[] threadIds) {
+    public ATSStack(int maxThreads, long[] threadIds) {
         this.maxThreads = maxThreads;
         this.spPools = new SPPool[maxThreads];
         for (int i = 0; i < maxThreads; i++) {

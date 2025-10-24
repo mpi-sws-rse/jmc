@@ -13,7 +13,7 @@ import org.mpi_sws.jmc.test.det.stack.lockFree.IntervalTimeStamped.PoperThread;
 import org.mpi_sws.jmc.test.det.stack.lockFree.IntervalTimeStamped.PusherThread;
 import org.mpi_sws.jmc.test.det.stack.lockFree.LockFreeStack;
 import org.mpi_sws.jmc.test.det.stack.lockFree.elimination.EliminationBackoffStack;
-import org.mpi_sws.jmc.test.det.stack.lockFree.lockTimeStamped.LTSStack;
+import org.mpi_sws.jmc.test.det.stack.lockFree.atomicTimeStamped.ATSStack;
 import org.mpi_sws.jmc.test.det.stack.treiber.TreiberStack;
 
 import java.util.ArrayList;
@@ -255,7 +255,7 @@ public class EstimationStackTest {
         }
     }
 
-    private void LockBasedTimestampedStackPushProgram(int NUM_OPERATIONS) {
+    private void AtomicTimestampedStackPushProgram(int NUM_OPERATIONS) {
         long[] threadIds = new long[NUM_OPERATIONS];
         List<Integer> items = new ArrayList<>(NUM_OPERATIONS);
         for (int i = 0; i < NUM_OPERATIONS; i++) {
@@ -272,7 +272,7 @@ public class EstimationStackTest {
             threads.add(thread);
         }
 
-        Stack stack = new LTSStack(NUM_OPERATIONS, threadIds);
+        Stack stack = new ATSStack(NUM_OPERATIONS, threadIds);
 
         for (int i = 0; i < NUM_OPERATIONS; i++) {
             threads.get(i).stack = stack;
@@ -291,7 +291,7 @@ public class EstimationStackTest {
         }
     }
 
-    private void LockBasedTimestampedStackPushPopProgram(int NUM_OPERATIONS) {
+    private void AtomicTimestampedStackPushPopProgram(int NUM_OPERATIONS) {
         long[] threadIds = new long[NUM_OPERATIONS];
         int NUM_PUSHES = (int) Math.ceil(NUM_OPERATIONS / 2.0);
         int NUM_POPS = (int) Math.floor(NUM_OPERATIONS / 2.0);
@@ -311,7 +311,7 @@ public class EstimationStackTest {
             pusherThreads.add(pusherThread);
         }
 
-        Stack stack = new LTSStack(NUM_PUSHES, threadIds);
+        Stack stack = new ATSStack(NUM_PUSHES, threadIds);
 
         for (int i = 0; i < NUM_PUSHES; i++) {
             pusherThreads.get(i).stack = stack;
@@ -553,24 +553,24 @@ public class EstimationStackTest {
     }
 
     /**
-     * LockBasedTimestampedStackPush(n) test suite for n \in {2,3,4,5,6}
+     * AtomicTimestampedStackPush(n) test suite for n \in {2,3,4,5,6}
      * 1. TruSt model checking
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    public void runLockBasedTimestampedStackPushTrust() {
-        LockBasedTimestampedStackPushProgram(3);
+    public void runAtomicBasedTimestampedStackPushTrust() {
+        AtomicTimestampedStackPushProgram(3);
     }
 
     /**
-     * LockBasedTimestampedStackPushPop(n/2, n/2) test suite for n \in {2,3,4,5,6}
+     * AtomicTimestampedStackPushPop(n/2, n/2) test suite for n \in {2,3,4,5,6}
      * 1. TruSt model checking
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    public void runLockBasedTimestampedStackPushPopTrust() {
-        LockBasedTimestampedStackPushPopProgram(3);
+    public void runAtomicTimestampedStackPushPopTrust() {
+        AtomicTimestampedStackPushPopProgram(3);
     }
 }

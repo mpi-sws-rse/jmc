@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.test.det.stack.lockFree.lockTimeStamped;
+package org.mpi_sws.jmc.test.det.stack.lockFree.atomicTimeStamped;
 
 
 import java.util.concurrent.atomic.AtomicInteger;
