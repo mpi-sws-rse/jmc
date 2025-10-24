@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -17,13 +18,16 @@ public class FutureTaskCounter {
     }
 
     public FutureTask<Integer> createIncrementTask() {
-        return new FutureTask<>(() -> {
-            lock.lock();
-            try {
-                int val = ++count;
-                return val;
-            } finally {
-                lock.unlock();
+        return new FutureTask<>(new Callable<Integer>() {
+            @Override
+            public Integer call() {
+                lock.lock();
+                try {
+                    int val = ++count;
+                    return val;
+                } finally {
+                    lock.unlock();
+                }
             }
         });
     }

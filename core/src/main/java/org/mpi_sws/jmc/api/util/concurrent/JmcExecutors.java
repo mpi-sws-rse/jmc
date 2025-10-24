@@ -16,7 +16,7 @@ public class JmcExecutors {
      * @return a new single-threaded executor
      */
     public static ExecutorService newSingleThreadExecutor() {
-        return new JmcExecutorService(1);
+        return new JmcThreadPoolExecutor(1);
     }
 
     /**
@@ -27,7 +27,7 @@ public class JmcExecutors {
      * @return a new fixed thread pool executor
      */
     public static ExecutorService newFixedThreadPool(int nThreads) {
-        return new JmcExecutorService(nThreads);
+        return new JmcThreadPoolExecutor(nThreads);
     }
 
     /**
@@ -39,17 +39,11 @@ public class JmcExecutors {
 //            'java.util.concurrent.ExecutorService
 //            org.mpi_sws.jmc.api.util.concurrent.JmcExecutors.newFixedThreadPool(int, java.util.concurrent.ThreadFactory)'
 
-//    public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
-//        // Minimal, safe behavior: delegate to the modeled no-arg implementation
-//        return newSingleThreadExecutor();
-//    }
-//
-//    /**
-//     * Minimal overload to match java.util.concurrent.Executors.newFixedThreadPool(int, ThreadFactory).
-//     * For now we ignore the provided ThreadFactory and delegate to the existing implementation.
-//     */
-//    public static ExecutorService newFixedThreadPool(int nThreads, ThreadFactory threadFactory) {
-//        // Minimal, safe behavior: delegate to the modeled int-arg implementation
-//        return newFixedThreadPool(nThreads);
-//    }
+    public static ExecutorService newFixedThreadPool(int nThreads, ThreadFactory threadFactory) {
+        return new JmcThreadPoolExecutor(nThreads);
+    }
+
+    public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
+        return new JmcThreadPoolExecutor(1);
+    }
 }

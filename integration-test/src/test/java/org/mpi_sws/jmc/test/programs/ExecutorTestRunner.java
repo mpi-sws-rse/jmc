@@ -19,7 +19,16 @@ public class ExecutorTestRunner {
         Future<Integer> f3 = counter.increment();
 
         f1.get(); f2.get(); f3.get();
-        assertTrue(executor.getClass().getName().contains("JmcExecutorService") || executor.getClass().getName().contains("JmcThreadPoolExecutor"));
+        System.out.println("Executor used in test is " + executor.getClass().getName());
+        // An explaination of why this is mapped to JmcThreadPoolExecutor is
+        // because     public static ExecutorService newSingleThreadExecutor() {
+        //        return new FinalizableDelegatedExecutorService
+        //            (new ThreadPoolExecutor(1, 1,
+        //                                    0L, TimeUnit.MILLISECONDS,
+        //                                    new LinkedBlockingQueue<Runnable>()));
+        //    }
+        // uses ThreadpoolExecutor
+        assertTrue(executor.getClass().getName().contains("JmcThreadPoolExecutor"));
         assert counter.getCount() == 3;
     } catch (Exception e) {
         System.err.println("An exception occurred: " + e);

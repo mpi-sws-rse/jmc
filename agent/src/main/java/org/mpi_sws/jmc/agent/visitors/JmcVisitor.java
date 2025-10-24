@@ -41,6 +41,7 @@ public class JmcVisitor {
                 new JmcWaitNotifyVisitor(
                         new JmcStaticMethodVisitor(
                                 new JmcSyncMethodVisitor(
+                                        new JmcFutureVisitor.JmcFutureTaskClassVisitor(
                                         new JmcFutureVisitor.JmcExecutorsClassVisitor(
                                                 new JmcAtomicVisitor(
                                                         new JmcReentrantLockVisitor(
@@ -51,7 +52,7 @@ public class JmcVisitor {
                                                                                         .ThreadCallReplacerClassVisitor(
                                                                                         new JmcReadWriteVisitor
                                                                                                 .ReadWriteClassVisitor(
-                                                                                                cw))))))),
+                                                                                                cw)))))))),
                                         syncScanData)));
         try{
             cr.accept(cv, 0);

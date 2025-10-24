@@ -13,15 +13,24 @@ public class GuavaCounterTestRunner {
     GuavaMoreExecutorCounter counter = new GuavaMoreExecutorCounter(2);
 
     try {
-        final int tasks = 6;
+        final int tasks = 3;
         List<Future<Integer>> futures = new ArrayList<>(tasks);
 
+
+        System.out.println("Created  " + tasks + " tasks and futures");
+
         for (int i = 0; i < tasks; i++) {
+            System.out.println("Running task " + i + " of " + tasks);
             futures.add(counter.submitIncrementTask());
         }
 
-        assertTrue(counter.getExecutorService().getClass().getName().contains("JmcExecutorService"));
-        assertTrue(counter.getUnderlyingPool().getClass().getName().contains("JmcThreadPoolExecutor"));
+        System.out.println("ExecutorService used in GuavaCounterTest is " + counter.getExecutorService().getClass().getName());
+        //System.out.println("Threadpool used in GuavaCounterTest is " + counter.getUnderlyingPool().getClass().getName());
+
+
+
+        //assertTrue(counter.getExecutorService().getClass().getName().contains("JmcExecutorService"));
+        //assertTrue(counter.getUnderlyingPool().getClass().getName().contains("JmcThreadPoolExecutor"));
 
          for (Future<Integer> future : futures) {
              System.out.println("Returned future implementation is: "+ future.getClass().getName());

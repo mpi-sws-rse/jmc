@@ -1,10 +1,6 @@
 package org.mpi_sws.jmc.api.util.concurrent;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * A thread pool executor that runs tasks in new threads. The thread creation is wrapped with the
@@ -12,6 +8,15 @@ import java.util.concurrent.TimeUnit;
  * java.util.concurrent.ThreadPoolExecutor}
  */
 public class JmcThreadPoolExecutor extends ThreadPoolExecutor {
+
+    public JmcThreadPoolExecutor(int nThreads) {
+        super(
+                nThreads,
+                nThreads,
+                0L,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>());
+    }
 
     public JmcThreadPoolExecutor(
             int corePoolSize,

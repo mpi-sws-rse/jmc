@@ -6,30 +6,32 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GuavaMoreExecutorCounter {
-    private final ThreadPoolExecutor underlyingPool;
     private final ExecutorService executorService;
     private final AtomicInteger counter = new AtomicInteger(0);
 
     public GuavaMoreExecutorCounter(int poolSize) {
-        this.underlyingPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(poolSize);
-        this.executorService = MoreExecutors.getExitingExecutorService(underlyingPool);
+        this.executorService = MoreExecutors.getExitingExecutorService((ThreadPoolExecutor) Executors.newFixedThreadPool(poolSize));
+        System.out.println("Executor service used is " + executorService.getClass().getName());
+
     }
 
     public Future<Integer> submitIncrementTask() {
-        Callable<Integer> task = () -> {
-            int newValue = counter.incrementAndGet();
-            System.out.println("New counter: " + newValue);
-            return newValue;
+
+        Callable<Integer> incrementer = new Callable<Integer>() {
+            @Override
+            public Integer call() {
+                System.out.println("CALL start on thread=" + Thread.currentThread().getName()
+                        + " threadClass=" + Thread.currentThread().getClass().getName()); // if such accessor exists
+
+                int val = counter.incrementAndGet();
+                return val;
+            }
         };
-        return executorService.submit(task);
+        return executorService.submit(incrementer);
     }
 
     public int getCount() {
         return counter.get();
-    }
-
-    public ThreadPoolExecutor getUnderlyingPool() {
-        return underlyingPool;
     }
 
     public ExecutorService getExecutorService() {
