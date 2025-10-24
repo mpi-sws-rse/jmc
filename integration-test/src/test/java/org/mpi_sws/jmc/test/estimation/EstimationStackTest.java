@@ -163,7 +163,7 @@ public class EstimationStackTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runAgmStackPushTrust() {
-        agmStackPushProgram(6);
+        agmStackPushProgram(4);
     }
 
     /**

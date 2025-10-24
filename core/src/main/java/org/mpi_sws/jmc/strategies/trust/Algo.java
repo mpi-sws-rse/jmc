@@ -753,10 +753,8 @@ public class Algo {
                             .toList();
             revisitViews =
                     revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
-
-            if (!revisitViews.isEmpty()) {
-                logNewBranchs();
-            }
+            
+            boolean visitedConsistentBWR = false;
 
             for (int i = revisitViews.size() - 1; i >= 0; i--) {
                 ExplorationStack.Item item =
@@ -765,6 +763,10 @@ public class Algo {
                                 revisitViews.get(i).getRestrictedGraph());
                 item.addAdditionalEvent(revisitViews.get(i).additionalEvent());
                 if (item.getGraph().isRdxInconsistent(item.getEvent1())) {
+                    if (!visitedConsistentBWR) {
+                        logNewBranchs();
+                        visitedConsistentBWR = true;
+                    }
                     explorationStack.push(item);
                     logLastChild(item);
                 }
