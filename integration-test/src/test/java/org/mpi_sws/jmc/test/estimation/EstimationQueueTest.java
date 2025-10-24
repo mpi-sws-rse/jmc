@@ -9,6 +9,7 @@ import org.mpi_sws.jmc.test.det.queue.Queue;
 import org.mpi_sws.jmc.test.det.queue.DeletionThread;
 import org.mpi_sws.jmc.test.det.queue.InsertionThread;
 import org.mpi_sws.jmc.test.det.queue.lbQueue.LBQueue;
+import org.mpi_sws.jmc.test.det.queue.msQueue.MSQueue;
 import org.mpi_sws.jmc.test.det.queue.pQueue.PQueue;
 import org.mpi_sws.jmc.test.det.queue.pQueue.linear.LockBasedLinear;
 import org.mpi_sws.jmc.test.det.queue.ubQueue.UnboundedQueue;
@@ -81,6 +82,14 @@ public class EstimationQueueTest {
 
     private void lbArrayPQueueEnqueueDequeueProgram(int NUM_OPERATIONS) {
         pqueue_50_50_test(NUM_OPERATIONS, new LockBasedLinear((int) Math.ceil(NUM_OPERATIONS / 2.0)));
+    }
+
+    private void msQueueEnqueueProgram(int NUM_OPERATIONS) {
+        queue_100_test(NUM_OPERATIONS, new MSQueue());
+    }
+
+    private void msQueueEnqueueDequeueProgram(int NUM_OPERATIONS) {
+        queue_50_50_test(NUM_OPERATIONS, new MSQueue());
     }
 
     /**
@@ -342,5 +351,23 @@ public class EstimationQueueTest {
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLbArrayPQueueEnqueueDequeueTrust() {
         lbArrayPQueueEnqueueDequeueProgram(6);
+    }
+
+    /**
+     * MSQueue(n) test suite for n \in {2,3,4,5,6}
+     * 1. TruSt model checking
+     */
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runMsQueueEnqueueTrust() {
+        msQueueEnqueueProgram(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runMsQueueEnqueueDequeueTrust() {
+        msQueueEnqueueDequeueProgram(4);
     }
 }
