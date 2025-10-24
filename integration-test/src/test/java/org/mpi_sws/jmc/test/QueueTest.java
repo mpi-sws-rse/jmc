@@ -2,7 +2,7 @@ package org.mpi_sws.jmc.test;
 
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
-import org.mpi_sws.jmc.test.det.queue.HWQueue;
+import org.mpi_sws.jmc.test.det.queue.hwQueue.HWQueue;
 import org.mpi_sws.jmc.test.det.queue.InsertionThread;
 import org.mpi_sws.jmc.test.det.queue.Queue;
 

@@ -1,4 +1,6 @@
-package org.mpi_sws.jmc.test.det.queue;
+package org.mpi_sws.jmc.test.det.queue.hwQueue;
+
+import org.mpi_sws.jmc.test.det.queue.Queue;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
