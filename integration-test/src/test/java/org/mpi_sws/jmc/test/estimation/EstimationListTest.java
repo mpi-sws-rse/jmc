@@ -324,7 +324,7 @@ public class EstimationListTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy(loggerTree = true)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     @JmcExpectExecutions(4532) // For n = 2 is 4, for n = 3 is 67, for n = 4 is 4532
     public void runOptListITrust() {
         optListIProgram(4);

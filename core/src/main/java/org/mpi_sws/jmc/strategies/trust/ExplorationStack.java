@@ -123,12 +123,25 @@ public class ExplorationStack {
     }
 
     /**
-     * Gets the size of the stack.
+     * Gets the size of the current inner stack.
      *
      * @return The size of the stack
      */
     public int size() {
         return this.stack.get(0).size();
+    }
+
+    /**
+     * Gets the total size of all inner stacks.
+     *
+     * @return The total size of the stack
+     */
+    public int totalSize() {
+        int total = 0;
+        for (InnerStack innerStack : this.stack) {
+            total += innerStack.size();
+        }
+        return total;
     }
 
     /**

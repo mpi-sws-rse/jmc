@@ -288,6 +288,8 @@ public class Algo {
             // Get the next exploration choice from the exploration stack.
             ExplorationStack.Item item = explorationStack.pop();
             logUpdateGraphId(item);
+            // Read the size of the exploration stack
+            int stackSize = explorationStack.totalSize();
             // Check if the item is a backward revisit.
             if (item.isBackwardRevisit()) { // TODO : Is any backward revisit type allowed? or only
                 // BWR?
@@ -315,9 +317,18 @@ public class Algo {
                         "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
 
-            if (nextGraphSchedule.isEmpty() && !EventUtils.isLockAcquireRead(item.getEvent1().getEvent())) {
-                LOGGER.debug("The revisit resulted in an inconsistent graph. Continuing to next item.");
-                logInconsistentGraph();
+            if (nextGraphSchedule.isEmpty()) {
+                if (EventUtils.isLockAcquireRead(item.getEvent1().getEvent())) {
+                    int newStackSize = explorationStack.totalSize();
+                    if (newStackSize == stackSize) {
+                        LOGGER.debug(
+                                "The forward revisit of lock acquire read resulted in an inconsistent graph. Continuing to next item.");
+                        logInconsistentGraph();
+                    }
+                } else {
+                    LOGGER.debug("The revisit resulted in an inconsistent graph. Continuing to next item.");
+                    logInconsistentGraph();
+                }
             }
         }
 
@@ -421,6 +432,13 @@ public class Algo {
             processAdditionalEvent(additionalEvent);
         }
 
+        // The following is an optimization to avoid doing unnecessary consistency checks. If the read event is
+        // a lock acquire read, we know that the graph is not consistent because the resulted graph has two
+        // lock acquire reads reading from the same lock write.
+        if (EventUtils.isLockAcquireRead(item.getEvent1().getEvent())) {
+            LOGGER.debug("Skipping consistency check for lock acquire read forward revisit");
+            return new ArrayList<>();
+        }
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
@@ -753,7 +771,7 @@ public class Algo {
                             .toList();
             revisitViews =
                     revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
-            
+
             boolean visitedConsistentBWR = false;
 
             for (int i = revisitViews.size() - 1; i >= 0; i--) {
