@@ -73,6 +73,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
                     Paths.get(this.reportPath, "iteration-guiding-" + iteration + ".json")
                             .toString());
         }
+        report.setBlockedIterations(Math.toIntExact(algoInstance.getNumOfBlockedGraphs()));
     }
 
     @Override
@@ -186,14 +187,18 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         algoInstance.teardown();
         StringBuilder tLogger = algoInstance.getTreeLog();
         StringBuilder inConGraphLogger = algoInstance.getInconsistentGraphLog();
+        StringBuilder blockedGraphLogger = algoInstance.getBlockedGraphLog();
         if (tLogger != null) {
-            recordTreeLoggger(tLogger, inConGraphLogger);
+            recordTreeLoggger(tLogger, inConGraphLogger, blockedGraphLogger);
         }
     }
 
-    private void recordTreeLoggger(StringBuilder tLogger, StringBuilder inConGraphLogger) {
+    private void recordTreeLoggger(StringBuilder tLogger, StringBuilder inConGraphLogger, StringBuilder blockedGraphLogger) {
         if (inConGraphLogger != null) {
             tLogger.append(System.lineSeparator()).append("$INCONSISTENT GRAPH:").append(System.lineSeparator()).append(inConGraphLogger);
+        }
+        if (blockedGraphLogger != null) {
+            tLogger.append(System.lineSeparator()).append("$BLOCKED GRAPH:").append(System.lineSeparator()).append(blockedGraphLogger);
         }
         String filePath = Paths.get(this.reportPath, "trust-tree-logger.txt").toString();
         LOGGER.info("Recording tree logger to {}", filePath);

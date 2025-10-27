@@ -99,4 +99,8 @@ public class EventUtils {
     public static boolean isAssume(Event event) {
         return event.getType() == Event.Type.ASSUME;
     }
+
+    public static boolean isBlockedAssume(Event event) {
+        return event.getType() == Event.Type.ASSUME && !(Boolean) event.getAttribute("result");
+    }
 }

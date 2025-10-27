@@ -15,7 +15,11 @@ public class TreeLogger {
 
     private long numOfInconsistentGraphs = 0L;
 
+    private long numOfBlockedGraphs = 0L;
+
     private final StringBuilder inConsistentGraphLogger = new StringBuilder();
+
+    private final StringBuilder blockedGraphLogger = new StringBuilder();
 
     public void appendNewBranchs() {
         logger.append(graphId).append(" -> ");
@@ -72,6 +76,11 @@ public class TreeLogger {
         inConsistentGraphLogger.append(graphId).append(", ");
     }
 
+    public void addBlockedGraph() {
+        numOfBlockedGraphs++;
+        blockedGraphLogger.append(graphId).append(", ");
+    }
+
     public StringBuilder getInConsistentGraphLogger() {
         if (inConsistentGraphLogger.length() == 0) {
             return null;
@@ -79,7 +88,18 @@ public class TreeLogger {
         return inConsistentGraphLogger;
     }
 
+    public StringBuilder getBlockedGraphLogger() {
+        if (blockedGraphLogger.length() == 0) {
+            return null;
+        }
+        return blockedGraphLogger;
+    }
+
     public long getNumOfInconsistentGraphs() {
         return numOfInconsistentGraphs;
+    }
+
+    public long getNumOfBlockedGraphs() {
+        return numOfBlockedGraphs;
     }
 }

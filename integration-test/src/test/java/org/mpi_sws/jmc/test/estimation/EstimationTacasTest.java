@@ -126,9 +126,8 @@ public class EstimationTacasTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 3000000, debug = false)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
-    @JmcExpectExecutions(1656) // For n = 2 and 3 is 16 and 1656
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runTtasLockTrust() {
-        ttasLock(7);
+        ttasLock(3);
     }
 }

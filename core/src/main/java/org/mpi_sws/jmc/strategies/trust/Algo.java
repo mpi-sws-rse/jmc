@@ -34,6 +34,7 @@ public class Algo {
     private final ExplorationStack explorationStack;
     private final LocationStore locationStore;
     private final TreeLogger tLogger;
+    private long numOfBlockedGraphs = 0L;
 
     /**
      * Creates a new instance of the Trust algorithm.
@@ -239,6 +240,10 @@ public class Algo {
         if (iteration == 0) {
             LOGGER.debug("Initializing iteration");
             return;
+        }
+
+        if (executionGraph.isBlocked()) {
+            logBlockedGraph();
         }
 
         // Check if the exploration stack is empty. If so, we are done with the exploration.
@@ -506,6 +511,7 @@ public class Algo {
         this.locationStore.clearAliases();
         this.locationStore.clear();
         reportInconsistentGraphLogs();
+        reportBlockedGraphLogs();
     }
 
     public List<Long> getSchedulableTasks() {
@@ -928,6 +934,14 @@ public class Algo {
         tLogger.addInconsistentGraph();
     }
 
+    private void logBlockedGraph() {
+        numOfBlockedGraphs++;
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.addBlockedGraph();
+    }
+
     public StringBuilder getTreeLog() {
         if (tLogger == null) {
             return null;
@@ -942,10 +956,28 @@ public class Algo {
         return tLogger.getInConsistentGraphLogger();
     }
 
+    public StringBuilder getBlockedGraphLog() {
+        if (tLogger == null) {
+            return null;
+        }
+        return tLogger.getBlockedGraphLogger();
+    }
+
     public void reportInconsistentGraphLogs() {
         if (tLogger == null) {
             return;
         }
         LOGGER.info("Number of Inconsistent Graph: " + tLogger.getNumOfInconsistentGraphs());
+    }
+
+    public void reportBlockedGraphLogs() {
+        if (tLogger == null) {
+            return;
+        }
+        LOGGER.info("Number of Blocked Graph:" + tLogger.getNumOfBlockedGraphs());
+    }
+
+    public long getNumOfBlockedGraphs() {
+        return numOfBlockedGraphs;
     }
 }

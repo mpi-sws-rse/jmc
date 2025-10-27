@@ -1967,4 +1967,25 @@ public class ExecutionGraph {
         List<Event.Key> rfSuccessors = rfNode.getSuccessors(Relation.ReadsFrom);
         return rfSuccessors.size() <= 1;
     }
+
+    public boolean isBlocked() {
+        boolean blocked = false;
+        // Iterate over taskEvents to see if any task has a blocking label as its last event, or
+        // the event before last is a blocked-assume event (the last event is the noop event representing the finish)
+        for (List<ExecutionGraphNode> taskEventList : taskEvents) {
+            if (!taskEventList.isEmpty()) {
+                ExecutionGraphNode lastEvent = taskEventList.get(taskEventList.size() - 1);
+                if (EventUtils.isBlockingLabel(lastEvent.getEvent())) {
+                    blocked = true;
+                    break;
+                }
+                ExecutionGraphNode beforeLastEvent = taskEventList.get(taskEventList.size() - 2);
+                if (EventUtils.isBlockedAssume(beforeLastEvent.getEvent())) {
+                    blocked = true;
+                    break;
+                }
+            }
+        }
+        return blocked;
+    }
 }

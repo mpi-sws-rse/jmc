@@ -128,12 +128,13 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 if (testMethod.getAnnotation(JmcExpectExecutions.class) != null) {
                     JmcExpectExecutions expectExecutions =
                             testMethod.getAnnotation(JmcExpectExecutions.class);
-                    if (report.getTotalIterations() != expectExecutions.value()) {
+                    int completeIteration = report.getTotalIterations() - report.getBlockedIterations();
+                    if (completeIteration != expectExecutions.value()) {
                         throw new JmcCheckerException(
                                 "Expected "
                                         + expectExecutions.value()
                                         + " executions, but got "
-                                        + report.getTotalIterations());
+                                        + completeIteration);
                     }
                 }
             }

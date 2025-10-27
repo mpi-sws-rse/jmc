@@ -122,8 +122,12 @@ public class JmcModelChecker {
             }
         } catch (HaltCheckerException e) {
             if (e.isOkay()) {
-                report.setTotalIterations(iteration - 1);
-                LOGGER.info("Model checking completed covering: {} iterations", iteration - 1);
+                int totalIterations = iteration - 1;
+                report.setTotalIterations(totalIterations);
+                LOGGER.info("Model checking completed covering: {} iterations", totalIterations);
+                LOGGER.info("Model checking explored: {} completed iterations", totalIterations -
+                        report.getBlockedIterations());
+                LOGGER.info("Model checking explored: {} blocked iterations", report.getBlockedIterations());
             } else if (e.isTimeout()) {
                 report.setErrorIteration(-1);
                 report.setErrorMessage(e.getMessage());
