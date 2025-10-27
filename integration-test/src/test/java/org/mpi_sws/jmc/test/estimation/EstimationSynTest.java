@@ -742,7 +742,7 @@ public class EstimationSynTest {
     }
 
     /**
-     * BigShot test suite
+     * BigShotP test suite
      * 1. TruSt model checking
      */
     @JmcCheck
@@ -754,7 +754,7 @@ public class EstimationSynTest {
     }
 
     /**
-     * BigShot test suite
+     * BigShotS test suite
      * 1. TruSt Model checking
      */
     @JmcCheck
