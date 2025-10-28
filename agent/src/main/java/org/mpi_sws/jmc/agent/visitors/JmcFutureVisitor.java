@@ -23,7 +23,6 @@ public class JmcFutureVisitor {
 
         @Override
         public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
-            //System.out.println("visitField: " + name + " " + descriptor);
             String newDescriptor = descriptor;
             if (newDescriptor != null) {
                 if (newDescriptor.contains(JmcExecutorsMethodVisitor.THREADPOOL_EXECUTOR_DESC)) {
@@ -34,9 +33,9 @@ public class JmcFutureVisitor {
                         newDescriptor.contains("L" + JmcExecutorsMethodVisitor.EXECUTORS_FINALIZED_WRAPPER + ";")
                 ) {
                     //newDescriptor = newDescriptor.replace(JmcExecutorsMethodVisitor.EXECUTOR_SERVICE_DESC, JmcExecutorsMethodVisitor.JMC_EXECUTOR_SERVICE_PATH_DESC);
-                    newDescriptor = newDescriptor.replace("L" + JmcExecutorsMethodVisitor.EXECUTORS_DELEGATED_WRAPPER + ";", JmcExecutorsMethodVisitor.JMC_THREADPOOL_EXECUTOR_DESC);
-                    newDescriptor = newDescriptor.replace("L" + JmcExecutorsMethodVisitor.EXECUTORS_FINALIZED_WRAPPER + ";", JmcExecutorsMethodVisitor.JMC_THREADPOOL_EXECUTOR_DESC);
-                    System.out.println("Replaced descriptor in visitfield for name " + name + " with: "+ newDescriptor);
+                    newDescriptor = newDescriptor.replace("L" + JmcExecutorsMethodVisitor.EXECUTORS_DELEGATED_WRAPPER + ";", JmcExecutorsMethodVisitor.JMC_EXECUTOR_SERVICE_PATH_DESC);
+                    newDescriptor = newDescriptor.replace("L" + JmcExecutorsMethodVisitor.EXECUTORS_FINALIZED_WRAPPER + ";", JmcExecutorsMethodVisitor.JMC_EXECUTOR_SERVICE_PATH_DESC);
+
                 }
             }
             return super.visitField(access, name, newDescriptor, signature, value);
@@ -100,16 +99,6 @@ public class JmcFutureVisitor {
                             "(ILjava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;"));
         }
 
-        // for guava MoreExecutors
-        private boolean skipGuavaAllocation = false;
-
-        private void setSkipGuavaAllocation(boolean value) {
-            skipGuavaAllocation = value;
-        }
-
-        private boolean skipGuavaAllocation() {
-            return skipGuavaAllocation;
-        }
 
         public JmcExecutorsMethodVisitor(MethodVisitor methodVisitor) {
             super(Opcodes.ASM9, methodVisitor);
@@ -118,13 +107,7 @@ public class JmcFutureVisitor {
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
-            //System.out.println("JmcExecutorsMethodVisitor visitMethod owner: " + owner);
-            if (owner.equals("com/google/common/util/concurrent/MoreExecutors") &&
-                    name.equals("getExitingExecutorService")) {
-                setSkipGuavaAllocation(true);
-            }
             if (owner.equals(EXECUTORS_PATH)) {
-                //System.out.println("Caught " + EXECUTORS_PATH + " method " + name + descriptor);
                 if (!SUPPORTED_METHODS.containsKey(name)
                         || !SUPPORTED_METHODS.get(name).contains(descriptor)) {
                     throw new RuntimeException(
@@ -145,7 +128,7 @@ public class JmcFutureVisitor {
                 System.out.println("Jmc invoke special Caught " + THREADPOOL_EXECUTOR_PATH + " method " + name);
                 super.visitMethodInsn(
                         opcode,
-                        JMC_THREADPOOL_EXECUTOR_PATH,
+                        JMC_EXECUTOR_SERVICE_PATH,
                         name,
                         replaceDescriptor(descriptor),
                         isInterface
@@ -155,33 +138,21 @@ public class JmcFutureVisitor {
 
             super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
 
-            // reset flag after call
-            if (owner.equals("com/google/common/util/concurrent/MoreExecutors") &&
-                    name.equals("getExitingExecutorService")) {
-                setSkipGuavaAllocation(false);
-            }
         }
 
 
         @Override
         public void visitTypeInsn(int opcode, String type) {
-            //System.out.println("JmcExecutorsMethodVisitor visitTypeInsn(" + opcode + ", " + type +");");
-            //Replace NEW /CHECKCAST/ INSTANCEOF references to ThreadpoolExecutor and JDK wrapper
             if (THREADPOOL_EXECUTOR_PATH.equals(type)) {
-                if (skipGuavaAllocation()) {
-                    System.out.println("Skipping guava allocation");
-                    super.visitTypeInsn(opcode, type); //leave original
-                    return;
-                }
-                super.visitTypeInsn(opcode, JMC_THREADPOOL_EXECUTOR_PATH);
+                super.visitTypeInsn(opcode, JMC_EXECUTOR_SERVICE_PATH);
             }
             if (EXECUTORS_DELEGATED_WRAPPER.equals(type)) {
                 //map wrappers to JmcThreadpool
-                super.visitTypeInsn(opcode, JMC_THREADPOOL_EXECUTOR_PATH);
+                super.visitTypeInsn(opcode, JMC_EXECUTOR_SERVICE_PATH);
             }
             if (EXECUTORS_FINALIZED_WRAPPER.equals(type)) {
                 //map wrappers to JmcThreadpool
-                super.visitTypeInsn(opcode, JMC_THREADPOOL_EXECUTOR_PATH);
+                super.visitTypeInsn(opcode, JMC_EXECUTOR_SERVICE_PATH);
             }
             //default
             super.visitTypeInsn(opcode, type);
@@ -192,11 +163,10 @@ public class JmcFutureVisitor {
         public void visitLocalVariable(
                 String name, String desc, String signature, Label start, Label end, int index
         ) {
-            //System.out.println("JmcExecutorsMethodVisitor visitLocalVariable " + name + " " + desc);
             String newDescriptor = desc;
             if (newDescriptor != null) {
                 if (newDescriptor.contains(THREADPOOL_EXECUTOR_DESC)) {
-                    newDescriptor = newDescriptor.replace(THREADPOOL_EXECUTOR_DESC, JMC_THREADPOOL_EXECUTOR_DESC);
+                    newDescriptor = newDescriptor.replace(THREADPOOL_EXECUTOR_DESC, JMC_EXECUTOR_SERVICE_PATH_DESC);
                 }
                 if (newDescriptor.contains(EXECUTORS_DESC)) {
                     newDescriptor = newDescriptor.replace(EXECUTORS_DESC, JMC_EXECUTORS_PATH_DESC);
@@ -207,14 +177,10 @@ public class JmcFutureVisitor {
                         newDescriptor.contains("L" + EXECUTORS_FINALIZED_WRAPPER + ";")
                 ) {
                     //newDescriptor = newDescriptor.replace(EXECUTOR_SERVICE_DESC, JMC_EXECUTOR_SERVICE_PATH_DESC);
-                    newDescriptor = newDescriptor.replace("L" + EXECUTORS_DELEGATED_WRAPPER + ";", JMC_THREADPOOL_EXECUTOR_DESC);
-                    newDescriptor = newDescriptor.replace("L" + EXECUTORS_FINALIZED_WRAPPER + ";", JMC_THREADPOOL_EXECUTOR_DESC);
+                    newDescriptor = newDescriptor.replace("L" + EXECUTORS_DELEGATED_WRAPPER + ";", JMC_EXECUTOR_SERVICE_PATH_DESC);
+                    newDescriptor = newDescriptor.replace("L" + EXECUTORS_FINALIZED_WRAPPER + ";", JMC_EXECUTOR_SERVICE_PATH_DESC);
                     System.out.println("Replaced descriptor in local variable for name " + name + " with: "+ newDescriptor);
                 }
-//                if (newDescriptor.equals(FUTURE_DESC)) {
-//                    newDescriptor = newDescriptor.replace("Ljava/util/concurrent/Future", "L" + "org/mpi_sws/jmc/api/util/concurrent/JmcFuture" + ";");
-//                    System.out.println("Replaced descriptor for Future: "+ newDescriptor);
-//                }
             }
             super.visitLocalVariable(name, newDescriptor, signature, start, end, index);
         }
@@ -224,8 +190,6 @@ public class JmcFutureVisitor {
         @Override
         public void visitInvokeDynamicInsn(
                 String name, String descriptor, Handle bsm, Object... bsmArgs) {
-            //System.out.println("JmcExecutorsMethodVisitor.visitInvokeDynamicInsn: " + name);
-
             //Replace descriptor
             String newDescriptor = replaceDescriptor(descriptor);
             Handle newBsm = bsm;
@@ -272,15 +236,16 @@ public class JmcFutureVisitor {
             if (newDesc.contains(EXECUTORS_DESC)) {
                 newDesc = newDesc.replace(EXECUTORS_DESC, JMC_EXECUTORS_PATH_DESC);
             }
+//            We do not map ExecutorService to JmcExecutorService since ExecutorService is an interface
 //            if (newDesc.contains(EXECUTOR_SERVICE_DESC)) {
 //                newDesc = newDesc.replace(EXECUTOR_SERVICE_DESC, JMC_EXECUTOR_SERVICE_PATH_DESC);
 //            }
             if (newDesc.contains(THREADPOOL_EXECUTOR_DESC)) {
-                newDesc = newDesc.replace(THREADPOOL_EXECUTOR_DESC, JMC_THREADPOOL_EXECUTOR_DESC);
+                newDesc = newDesc.replace(THREADPOOL_EXECUTOR_DESC, JMC_EXECUTOR_SERVICE_PATH_DESC);
             }
             if (newDesc.contains(EXECUTORS_DELEGATED_WRAPPER) || newDesc.contains(EXECUTORS_FINALIZED_WRAPPER)) {
-                newDesc = newDesc.replace("L" + EXECUTORS_DELEGATED_WRAPPER + ";", JMC_THREADPOOL_EXECUTOR_DESC);
-                newDesc = newDesc.replace("L" + EXECUTORS_FINALIZED_WRAPPER + ";", JMC_THREADPOOL_EXECUTOR_DESC);
+                newDesc = newDesc.replace("L" + EXECUTORS_DELEGATED_WRAPPER + ";", JMC_EXECUTOR_SERVICE_DESC_WRAPPER);
+                newDesc = newDesc.replace("L" + EXECUTORS_FINALIZED_WRAPPER + ";", JMC_EXECUTOR_SERVICE_DESC_WRAPPER);
             }
             return newDesc;
         }
@@ -296,7 +261,7 @@ public class JmcFutureVisitor {
             } else if (type.equals(THREADPOOL_EXECUTOR_PATH)) {
                 return JMC_THREADPOOL_EXECUTOR_PATH;
             } else if ((type.equals(EXECUTORS_DELEGATED_WRAPPER)) || (type.equals(EXECUTORS_FINALIZED_WRAPPER))) {
-                return JMC_THREADPOOL_EXECUTOR_PATH;
+                return JMC_EXECUTOR_SERVICE_PATH;
             }
             return type;
         }
@@ -344,14 +309,12 @@ public class JmcFutureVisitor {
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
-            System.out.println("JmcFutureTaskMethodVisitor visitMethodIns " + owner + " " + name + " " + descriptor);
             if (owner.equals("java/util/concurrent/FutureTask")) {
                 if (name.equals("<init>")) {
                     super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
                     return;
                 }
                 if (name.equals("get") || name.equals("cancel") || name.equals("run")) {
-                    System.out.println("[JmcFutureTaskMethodVisitor] " + name + " " + descriptor);
                     super.visitTypeInsn(Opcodes.CHECKCAST, "org/mpi_sws/jmc/api/util/concurrent/JmcFuture");
 
                 // Replace the call to FutureTask with a call to JmcFuture
@@ -423,6 +386,7 @@ public class JmcFutureVisitor {
                 // Replace NEW CompletableFuture with JmcCompletableFuture
                 if (opcode == Opcodes.NEW
                         && type.equals("java/util/concurrent/CompletableFuture")) {
+                    System.out.println("[CompletableFutureReplacementMethodVisitor] visittypInsn" + type);
                     super.visitTypeInsn(
                             opcode, "org/mpi_sws/jmc/api/util/concurrent/JmcCompletableFuture");
                 } else {
@@ -436,6 +400,7 @@ public class JmcFutureVisitor {
                 // Replace CompletableFuture calls with JmcCompletableFuture calls
                 descriptor = replaceDescriptor(descriptor);
                 if (owner.equals("java/util/concurrent/CompletableFuture")) {
+                    System.out.println("[CompletableFutureReplacementMethodVisitor] visitMethodInsn: " + owner);
                     super.visitMethodInsn(
                             opcode,
                             "org/mpi_sws/jmc/api/util/concurrent/JmcCompletableFuture",

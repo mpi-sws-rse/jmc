@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.api.util.concurrent;
 
+import org.mpi_sws.jmc.runtime.JmcRuntime;
+
 import java.util.concurrent.*;
 
 /**
@@ -15,7 +17,8 @@ public class JmcThreadPoolExecutor extends ThreadPoolExecutor {
                 nThreads,
                 0L,
                 TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>());
+                new LinkedBlockingQueue<>(),
+                new JmcThreadFactory());
     }
 
     public JmcThreadPoolExecutor(
@@ -82,6 +85,17 @@ public class JmcThreadPoolExecutor extends ThreadPoolExecutor {
                 workQueue,
                 new JmcThreadFactory(threadFactory),
                 handler);
+    }
+
+    @Override
+    protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
+        return new JmcFuture<>(callable, JmcRuntime.addNewTask());
+    }
+
+
+    @Override
+    protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+        return new JmcFuture<>(runnable, value, JmcRuntime.addNewTask());
     }
 
 }

@@ -16,6 +16,7 @@ public class GuavaMoreExecutorCounter {
     }
 
     public Future<Integer> submitIncrementTask() {
+        System.out.println("Inside submit IncrementTask");
 
         Callable<Integer> incrementer = new Callable<Integer>() {
             @Override

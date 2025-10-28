@@ -21,7 +21,9 @@ public class GuavaCounterTestRunner {
 
         for (int i = 0; i < tasks; i++) {
             System.out.println("Running task " + i + " of " + tasks);
-            futures.add(counter.submitIncrementTask());
+            Future<Integer> f = counter.submitIncrementTask();
+            System.out.println("Received future " + f.getClass().getName());
+            futures.add(f);
         }
 
         System.out.println("ExecutorService used in GuavaCounterTest is " + counter.getExecutorService().getClass().getName());
@@ -39,11 +41,15 @@ public class GuavaCounterTestRunner {
          for (Future<Integer> future : futures) {
              future.get();
          }
-
+        System.out.println("Done with future gets");
         assert counter.getCount() == tasks;
+        //counter.shutdown();
+
 
     } catch (Exception e) {
         System.out.println("An exception occurred: " + e);
-    }
+    } //finally{
+//        counter.shutdown();
+//    }
 }
 }

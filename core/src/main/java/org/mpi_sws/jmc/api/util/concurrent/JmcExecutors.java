@@ -16,7 +16,7 @@ public class JmcExecutors {
      * @return a new single-threaded executor
      */
     public static ExecutorService newSingleThreadExecutor() {
-        return new JmcThreadPoolExecutor(1);
+        return new JmcExecutorService(1);
     }
 
     /**
@@ -27,7 +27,7 @@ public class JmcExecutors {
      * @return a new fixed thread pool executor
      */
     public static ExecutorService newFixedThreadPool(int nThreads) {
-        return new JmcThreadPoolExecutor(nThreads);
+        return new JmcExecutorService(nThreads);
     }
 
     /**

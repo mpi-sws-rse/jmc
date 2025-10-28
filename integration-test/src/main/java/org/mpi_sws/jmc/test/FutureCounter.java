@@ -1,5 +1,8 @@
 package org.mpi_sws.jmc.test;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -8,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 
 public class FutureCounter {
+    private static final Logger LOGGER = LogManager.getLogger(FutureCounter.class);
     ExecutorService executor = Executors.newSingleThreadExecutor();
     ReentrantLock lock = new ReentrantLock();
     int count = 0;
@@ -20,24 +24,25 @@ public class FutureCounter {
         }
     }
     public Future increment() {
-
+        LOGGER.debug("Inside increment");
         Callable<Integer> incrementer = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
+                LOGGER.debug("Inside call method");
                 int val = 0;
                 lock.lock();
                 val = count++;
+                LOGGER.debug("Inside call method - Counter incremented");
                 lock.unlock();
                 return val;
             }
         };
-
         return executor.submit(incrementer);
 
     }
 
     public ExecutorService getExecutor() {
-        System.out.println("Executor created in FutureCounter is " + executor.getClass().getName());
+        LOGGER.debug("Executor created in FutureCounter is " + executor.getClass().getName());
         return executor;
     }
 }

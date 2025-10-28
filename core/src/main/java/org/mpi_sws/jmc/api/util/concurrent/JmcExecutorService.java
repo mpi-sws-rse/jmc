@@ -9,14 +9,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>Currently, the executor service does not support stopping tasks.
  */
-public class JmcExecutorService implements ExecutorService {
+public class JmcExecutorService extends ThreadPoolExecutor {
 
     private static final Logger LOGGER = LogManager.getLogger(JmcExecutorService.class);
 
@@ -39,6 +32,13 @@ public class JmcExecutorService implements ExecutorService {
     private AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     public JmcExecutorService(int capacity) {
+
+        super(capacity,
+                capacity,
+                0L,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
+                new JmcThreadFactory());
         this.capacity = capacity;
         this.counter = new AtomicInteger(0);
         this.queue = new LinkedBlockingQueue<>();
