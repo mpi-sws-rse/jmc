@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.test.estimation;
 
+import org.mpi_sws.jmc.test.linuxRWLocks.*;
+import org.mpi_sws.jmc.test.mpmcQueue.MPMCQueue;
 import org.mpi_sws.jmc.test.synth.big0.*;
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
@@ -68,6 +70,70 @@ public class EstimationTacasTest {
         }
     }
 
+    /**
+     * TBA
+     */
+    private void linuxRWLocks() {
+        SharedData sharedData = new SharedData();
+        RWLock lock = new RWLock();
+
+        ReaderThread readerThread = new ReaderThread(lock, sharedData);
+        WriterThread writerThread = new WriterThread(lock, sharedData);
+        ReaderWriterThread readerWriterThread = new ReaderWriterThread(lock, sharedData);
+
+        readerThread.start();
+        writerThread.start();
+        readerWriterThread.start();
+
+        try {
+            readerThread.join();
+            writerThread.join();
+            readerWriterThread.join();
+        } catch (InterruptedException e) {
+
+        }
+    }
+
+    private void mpmcQueue(int size, int numWriters, int numReaders) {
+        MPMCQueue queue = new MPMCQueue(size);
+        // Pre-fill
+        Integer idx = queue.writePrepare();
+        if (idx != null) {
+            queue.m_array[idx] = 17;
+            queue.writePublish();
+        }
+
+        // Start writers and readers
+        Thread[] writers = new org.mpi_sws.jmc.test.mpmcQueue.WriterThread[numWriters];
+        Thread[] readers = new org.mpi_sws.jmc.test.mpmcQueue.ReaderThread[numReaders];
+        for (int i = 0; i < numWriters; i++) {
+            writers[i] = new org.mpi_sws.jmc.test.mpmcQueue.WriterThread(queue);
+        }
+        for (int i = 0; i < numReaders; i++) {
+            readers[i] = new org.mpi_sws.jmc.test.mpmcQueue.ReaderThread(queue);
+        }
+        for (int i = 0; i < numWriters; i++) {
+            writers[i].start();
+        }
+        for (int i = 0; i < numReaders; i++) {
+            readers[i].start();
+        }
+        for (int i = 0; i < numWriters; i++) {
+            try {
+                writers[i].join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+        for (int i = 0; i < numReaders; i++) {
+            try {
+                readers[i].join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+    }
+
     /** ----------------------------------------------------*/
 
     /**
@@ -129,5 +195,40 @@ public class EstimationTacasTest {
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runTtasLockTrust() {
         ttasLock(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * linuxRWLocks test suite
+     * 1. TruSt model checking
+     * 2. DAG-based estimation
+     * 3. Fork-Join DAG-based estimation
+     * 4. TruSt-based estimation
+     * 5. Weighted TruSt-based estimation
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, debug = false)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runLinuxRWLocksTrust() {
+        linuxRWLocks();
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * mpmcQueue test suite
+     * 1. TruSt model checking
+     * 2. DAG-based estimation
+     * 3. Fork-Join DAG-based estimation
+     * 4. TruSt-based estimation
+     * 5. Weighted TruSt-based estimation
+     */
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, debug = false)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runMpmcQueueTrust() {
+        mpmcQueue(4, 2, 2);
     }
 }
