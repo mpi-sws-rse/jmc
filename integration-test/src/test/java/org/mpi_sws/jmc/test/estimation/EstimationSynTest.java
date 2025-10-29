@@ -110,18 +110,18 @@ public class EstimationSynTest {
         Shared shared = new Shared(0);
         List<Reader> readers = new ArrayList<>();
         List<Writer> writers = new ArrayList<>();
-        for (int i = 0; i < numReaders; i++) {
-            Reader thread = new Reader(shared);
-            readers.add(thread);
-        }
         for (int i = 0; i < numWriters; i++) {
             Writer thread = new Writer(shared);
             writers.add(thread);
         }
-        for (int i = 0; i < numReaders; i++) {
+        for (int i = 0; i < numWriters; i++) {
             writers.get(i).start();
         }
-        for (int i = 0; i < numWriters; i++) {
+        for (int i = 0; i < numReaders; i++) {
+            Reader thread = new Reader(shared);
+            readers.add(thread);
+        }
+        for (int i = 0; i < numReaders; i++) {
             readers.get(i).start();
         }
 
@@ -485,7 +485,7 @@ public class EstimationSynTest {
     @JmcTrustStrategy(loggerTree = true)
     @JmcExpectExecutions(1) // For any n is 1
     public void runRnTrust() {
-        readNProgram(2);
+        readNProgram(10);
     }
 
     @JmcCheck
@@ -527,11 +527,11 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000)
-    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = true)
+    @JmcCheckConfiguration(numIterations = 2000000)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     //@JmcExpectExecutions(36) // For input n is (n!)^2
     public void runIncnTrust() {
-        incNProgram(3);
+        incNProgram(6);
     }
 
     @JmcCheck
@@ -570,10 +570,10 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM)
-    @JmcTrustStrategy(loggerTree = true)
+    @JmcCheckConfiguration(numIterations = 2000000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runRWNTrust() {
-        RWNProgram(3, 3);
+        RWNProgram(5, 5);
     }
 
     @JmcCheck
@@ -612,11 +612,11 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy(loggerTree = true)
+    @JmcCheckConfiguration(numIterations = 2000000)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     //@JmcExpectExecutions(36) // For input n is n!
     public void runWRNTrust() {
-        WRNProgram(3, 3);
+        WRNProgram(5, 5);
     }
 
     @JmcCheck

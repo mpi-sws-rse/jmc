@@ -74,7 +74,11 @@ public class JmcModelCheckerReport {
     }
 
     public Integer getBlockedIterations() {
-        return getParam("blockedIterations");
+        Object o = getParam("blockedIterations");
+        if (o == null) {
+            return 0;
+        }
+        return (Integer) o;
     }
 
     public void setParam(String key, Object value) {
