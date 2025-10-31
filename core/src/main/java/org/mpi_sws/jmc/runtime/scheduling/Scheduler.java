@@ -262,9 +262,9 @@ public class Scheduler {
     /**
      * Shuts down the scheduler.
      */
-    public void shutdown() {
+    public void shutdown(JmcModelCheckerReport report) {
         schedulerThread.shutdown();
-        strategy.teardown();
+        strategy.teardown(report);
     }
 
     public boolean isInStopAllMode() {

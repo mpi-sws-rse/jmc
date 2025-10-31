@@ -23,13 +23,10 @@ public class TTASLock {
 
     public boolean acquire() {
         awaitForLock();
-        return tryAcquire();
-        /*while (true) {
-            awaitForLock();
-            if (tryAcquire()) {
-                return;
-            }
-        }*/
+        // Modeling the busy-wait loop for trying to acquire the lock
+        boolean b = tryAcquire();
+        JmcAssume.assume(b);
+        return b;
     }
 
     public void release() {

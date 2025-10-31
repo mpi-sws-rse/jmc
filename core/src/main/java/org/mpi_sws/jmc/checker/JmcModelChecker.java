@@ -125,9 +125,6 @@ public class JmcModelChecker {
                 int totalIterations = iteration - 1;
                 report.setTotalIterations(totalIterations);
                 LOGGER.info("Model checking completed covering: {} iterations", totalIterations);
-                LOGGER.info("Model checking explored: {} completed iterations", totalIterations -
-                        report.getBlockedIterations());
-                LOGGER.info("Model checking explored: {} blocked iterations", report.getBlockedIterations());
             } else if (e.isTimeout()) {
                 report.setErrorIteration(-1);
                 report.setErrorMessage(e.getMessage());
@@ -155,8 +152,12 @@ public class JmcModelChecker {
             }
         } finally {
             long endTime = System.nanoTime();
-            JmcRuntime.tearDown();
+            JmcRuntime.tearDown(report);
             report.setTotalTimeMillis(endTime - startTime);
+            int totalIterations = report.getTotalIterations();
+            LOGGER.info("Model checking explored: {} completed iterations", totalIterations -
+                    report.getBlockedIterations());
+            LOGGER.info("Model checking explored: {} blocked iterations", report.getBlockedIterations());
         }
         return report;
     }
@@ -203,7 +204,7 @@ public class JmcModelChecker {
             }
         } finally {
             long endTime = System.currentTimeMillis();
-            JmcRuntime.tearDown();
+            JmcRuntime.tearDown(dummyReport);
             dummyReport.setTotalTimeMillis(endTime - startTime);
         }
     }

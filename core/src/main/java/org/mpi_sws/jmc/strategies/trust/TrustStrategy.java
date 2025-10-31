@@ -73,7 +73,6 @@ public class TrustStrategy extends TrackActiveTasksStrategy
                     Paths.get(this.reportPath, "iteration-guiding-" + iteration + ".json")
                             .toString());
         }
-        report.setBlockedIterations(Math.toIntExact(algoInstance.getNumOfBlockedGraphs()));
     }
 
     @Override
@@ -182,9 +181,9 @@ public class TrustStrategy extends TrackActiveTasksStrategy
     }
 
     @Override
-    public void teardown() {
-        super.teardown();
-        algoInstance.teardown();
+    public void teardown(JmcModelCheckerReport report) {
+        super.teardown(report);
+        algoInstance.teardown(report);
         StringBuilder tLogger = algoInstance.getTreeLog();
         StringBuilder inConGraphLogger = algoInstance.getInconsistentGraphLog();
         StringBuilder blockedGraphLogger = algoInstance.getBlockedGraphLog();

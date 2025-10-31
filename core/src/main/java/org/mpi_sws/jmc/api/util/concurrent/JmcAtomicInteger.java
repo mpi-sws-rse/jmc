@@ -51,16 +51,11 @@ public class JmcAtomicInteger {
      * @return the current value
      */
     public int get() {
-        lock.lock();
-        try {
-            JmcRuntimeUtils.readEventWithoutYield(
-                    this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
-            int out = value;
-            JmcRuntime.yield();
-            return out;
-        } finally {
-            lock.unlock();
-        }
+        JmcRuntimeUtils.readEventWithoutYield(
+                this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
+        int out = value;
+        JmcRuntime.yield();
+        return out;
     }
 
     /**
@@ -70,19 +65,14 @@ public class JmcAtomicInteger {
      * @param newValue the new value to set
      */
     public void set(int newValue) {
-        lock.lock();
-        try {
-            JmcRuntimeUtils.writeEventWithoutYield(
-                    this,
-                    newValue,
-                    "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger",
-                    "value",
-                    "I");
-            value = newValue;
-            JmcRuntime.yield();
-        } finally {
-            lock.unlock();
-        }
+        JmcRuntimeUtils.writeEventWithoutYield(
+                this,
+                newValue,
+                "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger",
+                "value",
+                "I");
+        value = newValue;
+        JmcRuntime.yield();
     }
 
     /**

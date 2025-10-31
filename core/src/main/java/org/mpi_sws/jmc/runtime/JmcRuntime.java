@@ -75,10 +75,10 @@ public class JmcRuntime {
     /**
      * Tears down the runtime by shutting down the scheduler adn clearing the task manager.
      */
-    public static void tearDown() {
+    public static void tearDown(JmcModelCheckerReport report) {
         LOGGER.debug("Tearing down!");
         taskManager.reset();
-        scheduler.shutdown();
+        scheduler.shutdown(report);
     }
 
     private static void updateLoggerFile(int iteration) {

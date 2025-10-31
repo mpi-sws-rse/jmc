@@ -504,7 +504,7 @@ public class Algo {
      * Cleans up the execution graph and the task schedule. This method is called at the end of the
      * exploration.
      */
-    public void teardown() {
+    public void teardown(JmcModelCheckerReport report) {
         // Clean up the execution graph and the task schedule.
         this.executionGraph.clear();
         this.explorationStack.clear();
@@ -512,6 +512,7 @@ public class Algo {
         this.locationStore.clear();
         reportInconsistentGraphLogs();
         reportBlockedGraphLogs();
+        report.setBlockedIterations(Math.toIntExact(numOfBlockedGraphs));
     }
 
     public List<Long> getSchedulableTasks() {
@@ -975,9 +976,5 @@ public class Algo {
             return;
         }
         LOGGER.info("Number of Blocked Graph:" + tLogger.getNumOfBlockedGraphs());
-    }
-
-    public long getNumOfBlockedGraphs() {
-        return numOfBlockedGraphs;
     }
 }

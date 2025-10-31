@@ -40,9 +40,13 @@ public interface SchedulingStrategy {
      */
     SchedulingChoice<?> nextTask();
 
-    /** Resets the strategy for the current Iteration. */
+    /**
+     * Resets the strategy for the current Iteration.
+     */
     void resetIteration(int iteration);
 
-    /** Teardown the strategy. Allows for releasing resources. */
-    void teardown();
+    /**
+     * Teardown the strategy. Allows for releasing resources.
+     */
+    void teardown(JmcModelCheckerReport report);
 }

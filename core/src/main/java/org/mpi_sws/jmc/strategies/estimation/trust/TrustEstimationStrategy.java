@@ -105,8 +105,8 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
      *
      */
     @Override
-    public void teardown() {
-        super.teardown();
+    public void teardown(JmcModelCheckerReport report) {
+        super.teardown(report);
         saveResults();
     }
 

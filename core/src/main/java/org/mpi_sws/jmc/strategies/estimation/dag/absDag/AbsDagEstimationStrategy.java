@@ -2,6 +2,7 @@ package org.mpi_sws.jmc.strategies.estimation.dag.absDag;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
@@ -64,8 +65,8 @@ public class AbsDagEstimationStrategy extends RandomSchedulingStrategy implement
     }
 
     @Override
-    public void teardown() {
-        super.teardown();
+    public void teardown(JmcModelCheckerReport report) {
+        super.teardown(report);
         // TODO : Fix the hard coded path
         saveResults();
     }

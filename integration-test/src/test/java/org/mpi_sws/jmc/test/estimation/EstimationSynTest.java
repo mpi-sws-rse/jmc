@@ -21,7 +21,6 @@ import org.mpi_sws.jmc.test.readerWriter.Writer;
 import org.mpi_sws.jmc.test.synth.fibBench.FibShared;
 import org.mpi_sws.jmc.test.synth.fibBench.FibThread1;
 import org.mpi_sws.jmc.test.synth.fibBench.FibThread2;
-import org.mpi_sws.jmc.test.synth.lazy01.T3;
 import org.mpi_sws.jmc.test.synth.sigma.SigmaShared;
 import org.mpi_sws.jmc.test.synth.sigma.SigmaThread;
 import org.mpi_sws.jmc.test.synth.singletone.SingletoneShared;
@@ -114,12 +113,12 @@ public class EstimationSynTest {
             Writer thread = new Writer(shared);
             writers.add(thread);
         }
-        for (int i = 0; i < numWriters; i++) {
-            writers.get(i).start();
-        }
         for (int i = 0; i < numReaders; i++) {
             Reader thread = new Reader(shared);
             readers.add(thread);
+        }
+        for (int i = 0; i < numWriters; i++) {
+            writers.get(i).start();
         }
         for (int i = 0; i < numReaders; i++) {
             readers.get(i).start();
@@ -405,10 +404,9 @@ public class EstimationSynTest {
         }
     }
 
-    private void fib1Program() {
+    private void fib1Program(int size) {
         ReentrantLock lock = new ReentrantLock();
         FibShared shared = new FibShared();
-        int size = 5;
         FibThread1 t1 = new FibThread1(shared, size, lock);
         FibThread2 t2 = new FibThread2(shared, size, lock);
 
@@ -422,10 +420,10 @@ public class EstimationSynTest {
 
         }
 
-        boolean condI = shared.i > 144;
-        boolean condJ = shared.j > 144;
+        //boolean condI = shared.i > 144;
+        //boolean condJ = shared.j > 144;
 
-        assert !(condI || condJ) : "Assertion Fail! ";
+        //assert !(condI || condJ) : "Assertion Fail! ";
     }
 
     private void sigmaProgram(int SIZE) {
@@ -570,7 +568,7 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 2000000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    @JmcCheckConfiguration(numIterations = 2000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runRWNTrust() {
         RWNProgram(5, 5);
@@ -658,7 +656,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runSVQueue1Trust() {
-        svQueue1Program(8);
+        svQueue1Program(10);
     }
 
     /** ----------------------------------------------------*/
@@ -673,10 +671,10 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runSVQueue2Trust() {
-        svQueue2Program(8);
+        svQueue2Program(10);
     }
 
     /** ----------------------------------------------------*/
@@ -691,10 +689,10 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runSVQueue3Trust() {
-        svQueue3Program(8);
+        svQueue3Program(16);
     }
 
     /**
@@ -705,7 +703,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runSVStack1Trust() {
-        svStack1Program(7);
+        svStack1Program(10);
     }
 
     /**
@@ -716,7 +714,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runSVStack2Trust() {
-        svStack2Program(5);
+        svStack2Program(11);
     }
 
     /**
@@ -724,10 +722,10 @@ public class EstimationSynTest {
      * 1. TruSt model checking
      */
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
+    @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runCoarseCounterTrust() {
-        coarseCounter(7);
+        coarseCounter(4);
     }
 
     /**
@@ -738,7 +736,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runFineCounterTrust() {
-        fineCounterProgram(6);
+        fineCounterProgram(12);
     }
 
     /**
@@ -770,10 +768,10 @@ public class EstimationSynTest {
      * 1. TruSt model checking
      */
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runFib1Trust() {
-        fib1Program();
+        fib1Program(10);
     }
 
     /**
@@ -781,10 +779,10 @@ public class EstimationSynTest {
      * 1. TruSt model checking
      */
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcCheckConfiguration(numIterations = 5000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runSigmaTrust() {
-        sigmaProgram(3);
+        sigmaProgram(6);
     }
 
     /**

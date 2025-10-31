@@ -10,7 +10,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** A strategy that tracks the active tasks. */
+/**
+ * A strategy that tracks the active tasks.
+ */
 public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
 
     private static final Logger LOGGER = LogManager.getLogger(TrackActiveTasksStrategy.class);
@@ -21,14 +23,18 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
 
     private final List<Tracker> trackers;
 
-    /** Constructs a new TrackActiveTasksStrategy object. */
+    /**
+     * Constructs a new TrackActiveTasksStrategy object.
+     */
     public TrackActiveTasksStrategy() {
         this.allTasks = new HashSet<>();
         this.activeTasks = new HashSet<>();
         this.trackers = List.of(new TrackTasks(), new TrackWaitNotify());
     }
 
-    /** Constructs a new TrackActiveTasksStrategy object with the given trackers. */
+    /**
+     * Constructs a new TrackActiveTasksStrategy object with the given trackers.
+     */
     public TrackActiveTasksStrategy(List<Tracker> trackers) {
         this.allTasks = new HashSet<>();
         this.activeTasks = new HashSet<>();
@@ -36,7 +42,8 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void initIteration(int iteration, JmcModelCheckerReport report) {}
+    public void initIteration(int iteration, JmcModelCheckerReport report) {
+    }
 
     @Override
     public void updateEvent(JmcRuntimeEvent event) {
@@ -72,7 +79,7 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void teardown() {
+    public void teardown(JmcModelCheckerReport report) {
         clear();
     }
 
