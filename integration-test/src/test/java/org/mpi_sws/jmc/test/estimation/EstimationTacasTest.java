@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test.estimation;
 
+import org.mpi_sws.jmc.test.det.queue.abaMsQueue.AbaMsQueue;
 import org.mpi_sws.jmc.test.linuxRWLocks.*;
 import org.mpi_sws.jmc.test.mpmcQueue.MPMCQueue;
 import org.mpi_sws.jmc.test.synth.big0.*;
@@ -134,6 +135,46 @@ public class EstimationTacasTest {
         }
     }
 
+    private void abaMsQueue(int DEFAULT_READERS, int DEFAULT_WRITERS, int DEFAULT_RDWR) {
+        int readers = DEFAULT_READERS, writers = DEFAULT_WRITERS, rdwr = DEFAULT_RDWR;
+
+        int numThreads = readers + writers + rdwr;
+        AbaMsQueue queue = new AbaMsQueue(numThreads);
+
+        int[] param = new int[numThreads];
+        int[] input = new int[numThreads];
+        int[] output = new int[numThreads];
+        boolean[] succ = new boolean[numThreads];
+        Thread[] threads = new Thread[numThreads];
+
+        int i = 0;
+        for (int j = 0; j < writers; j++, i++) {
+            param[i] = i;
+            threads[i] = new org.mpi_sws.jmc.test.det.queue.abaMsQueue.WriterThread(i, queue, input);
+            threads[i].start();
+        }
+        for (int j = 0; j < readers; j++, i++) {
+            param[i] = i;
+            threads[i] = new org.mpi_sws.jmc.test.det.queue.abaMsQueue.ReaderThread(i, queue, output, succ);
+            threads[i].start();
+        }
+        for (int j = 0; j < rdwr; j++, i++) {
+            param[i] = i;
+            threads[i] = new org.mpi_sws.jmc.test.det.queue.abaMsQueue.ReaderWriterThread(i, queue, input, output, succ);
+            threads[i].start();
+        }
+
+        // Wait for all threads to finish
+        for (int t = 0; t < numThreads; t++) {
+            try {
+                threads[t].join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+
+    }
+
     /** ----------------------------------------------------*/
 
     /**
@@ -194,7 +235,7 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 3000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runTtasLockTrust() {
-        ttasLock(4);
+        ttasLock(6);
     }
 
     /** ----------------------------------------------------*/
@@ -229,6 +270,17 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 100000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runMpmcQueueTrust() {
-        mpmcQueue(4, 2, 2);
+        mpmcQueue(1, 2, 2);
+    }
+
+    /**
+     * ----------------------------------------------------
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000, debug = false)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runAbaMsQueueTrust() {
+        abaMsQueue(1, 1, 0);
     }
 }

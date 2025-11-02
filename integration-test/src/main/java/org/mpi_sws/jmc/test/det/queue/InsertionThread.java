@@ -4,6 +4,7 @@ public class InsertionThread extends Thread {
 
     Queue queue;
     int value;
+    public int id;
 
     public InsertionThread(Queue q, int v) {
         queue = q;

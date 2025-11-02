@@ -459,9 +459,9 @@ public class EstimationStackTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true, debug = true)
     public void runAgmStackPushPopTrust() {
-        agmStackPushPopProgram(6);
+        agmStackPushPopProgram(2);
     }
 
     /**
