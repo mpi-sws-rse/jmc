@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test.det.stack.lockFree.atomicTimeStamped;
 
+import org.mpi_sws.jmc.api.util.statements.JmcAssume;
 import org.mpi_sws.jmc.test.det.stack.Stack;
 import org.mpi_sws.jmc.test.det.stack.lockFree.IntervalTimeStamped.PusherThread;
 
@@ -37,6 +38,7 @@ public class ATSStack<V> implements Stack<V> {
         Result<V> result = tryRem(startTime);
         success = result.success;
         element = result.element;
+        JmcAssume.assume(success);
         return element;
     }
 

@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test.det.stack.treiber;
 
+import org.mpi_sws.jmc.api.util.statements.JmcAssume;
 import org.mpi_sws.jmc.test.det.stack.Node;
 import org.mpi_sws.jmc.test.det.stack.Stack;
 
@@ -17,7 +18,7 @@ public class TreiberStack<V> implements Stack<V> {
         // Loop unrolled for one iteration
         oldTop = top.get();
         newNode.next = oldTop;
-        top.compareAndSet(oldTop, newNode);
+        JmcAssume.assume(top.compareAndSet(oldTop, newNode));
     }
 
     @Override
@@ -31,9 +32,7 @@ public class TreiberStack<V> implements Stack<V> {
             return null;
         }
         newTop = oldTop.next;
-        if (!top.compareAndSet(oldTop, newTop)) {
-            return null;
-        }
+        JmcAssume.assume(top.compareAndSet(oldTop, newTop));
 
         return oldTop.value;
     }

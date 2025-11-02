@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test.det.stack.lockFree;
 
+import org.mpi_sws.jmc.api.util.statements.JmcAssume;
 import org.mpi_sws.jmc.test.det.stack.Stack;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -17,7 +18,7 @@ public class LockFreeStack<V> implements Stack<V> {
     @Override
     public void push(V value) {
         Node<V> node = new Node<>(value);
-        tryPush(node);
+        JmcAssume.assume(tryPush(node));
     }
 
     protected Node<V> tryPop() {
@@ -38,8 +39,8 @@ public class LockFreeStack<V> implements Stack<V> {
         Node<V> returnNode = tryPop();
         if (returnNode != null) {
             return returnNode.value;
-        } else {
-            return null;
         }
+        JmcAssume.assume(false);
+        return null;
     }
 }

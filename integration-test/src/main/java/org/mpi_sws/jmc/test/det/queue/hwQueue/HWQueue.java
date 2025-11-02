@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test.det.queue.hwQueue;
 
+import org.mpi_sws.jmc.api.util.statements.JmcAssume;
 import org.mpi_sws.jmc.test.det.queue.Queue;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,6 +33,7 @@ public class HWQueue implements Queue {
                 return value;
             }
         }
+        JmcAssume.assume(false);
         return -1;
     }
 }

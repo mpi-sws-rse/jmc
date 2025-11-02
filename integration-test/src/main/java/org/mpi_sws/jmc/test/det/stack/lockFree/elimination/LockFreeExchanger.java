@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.test.det.stack.lockFree.elimination;
 
+import org.mpi_sws.jmc.api.util.statements.JmcAssume;
+
 import java.util.concurrent.atomic.AtomicStampedReference;
 
 public class LockFreeExchanger<V> {
@@ -42,6 +44,7 @@ public class LockFreeExchanger<V> {
                 break;
             default: // impossible
         }
+        JmcAssume.assume(false);
         return null;
     }
 }
