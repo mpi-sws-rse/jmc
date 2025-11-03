@@ -150,17 +150,20 @@ public class EstimationTacasTest {
         int i = 0;
         for (int j = 0; j < writers; j++, i++) {
             param[i] = i;
-            threads[i] = new org.mpi_sws.jmc.test.det.queue.abaMsQueue.WriterThread(i, queue, input);
+            threads[i] = new org.mpi_sws.jmc.test.det.queue.abaMsQueue.WriterThread(
+                    i, queue, input);
             threads[i].start();
         }
         for (int j = 0; j < readers; j++, i++) {
             param[i] = i;
-            threads[i] = new org.mpi_sws.jmc.test.det.queue.abaMsQueue.ReaderThread(i, queue, output, succ);
+            threads[i] = new org.mpi_sws.jmc.test.det.queue.abaMsQueue.ReaderThread(
+                    i, queue, output, succ);
             threads[i].start();
         }
         for (int j = 0; j < rdwr; j++, i++) {
             param[i] = i;
-            threads[i] = new org.mpi_sws.jmc.test.det.queue.abaMsQueue.ReaderWriterThread(i, queue, input, output, succ);
+            threads[i] = new org.mpi_sws.jmc.test.det.queue.abaMsQueue.ReaderWriterThread(
+                    i, queue, input, output, succ);
             threads[i].start();
         }
 
@@ -267,10 +270,10 @@ public class EstimationTacasTest {
      * 5. Weighted TruSt-based estimation
      */
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, debug = false)
+    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runMpmcQueueTrust() {
-        mpmcQueue(1, 2, 2);
+        mpmcQueue(1, 3, 2);
     }
 
     /**

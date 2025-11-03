@@ -14,26 +14,24 @@ public class MPMCQueue {
     private final AtomicInteger m_written = new AtomicInteger(0);
 
     public MPMCQueue(int size) {
-        t_size = size;
-        m_array = new int[size];
+        t_size = Integer.SIZE / 8;
+        m_array = new int[Integer.SIZE / 8];
     }
 
     // Returns pointer to the next slot to read (null if empty)
     public Integer readFetch() {
         int rdwr = m_rdwr.get();
         int rd, wr;
-        while (true) {
-            rd = (rdwr >>> 16) & 0xFFFF;
-            wr = rdwr & 0xFFFF;
-            if (wr == rd) // empty
-                return null;
+        rd = (rdwr >>> 16) & 0xFFFF;
+        wr = rdwr & 0xFFFF;
+        if (wr == rd) // empty
+            return null;
 
-            int newRdwr = ((rd + 1) << 16) | wr;
-            // CAS high-16 bits
-            if (m_rdwr.compareAndSet(rdwr, newRdwr)) break;
+        int newRdwr = ((rd + 1) << 16) | wr;
+        // CAS high-16 bits
+        JmcAssume.assume(m_rdwr.compareAndSet(rdwr, newRdwr));
 
-            rdwr = m_rdwr.get();
-        }
+        //rdwr = m_rdwr.get();
 
         // Wait for write to complete
         JmcAssume.assume((m_written.get() & 0xFFFF) == wr);
@@ -49,15 +47,13 @@ public class MPMCQueue {
     public Integer writePrepare() {
         int rdwr = m_rdwr.get();
         int rd, wr;
-        while (true) {
-            rd = (rdwr >>> 16) & 0xFFFF;
-            wr = rdwr & 0xFFFF;
-            if (wr == ((rd + t_size) & 0xFFFF)) // full
-                return null;
-            int newRdwr = (rd << 16) | ((wr + 1) & 0xFFFF);
-            if (m_rdwr.compareAndSet(rdwr, newRdwr)) break;
-            rdwr = m_rdwr.get();
-        }
+        rd = (rdwr >>> 16) & 0xFFFF;
+        wr = rdwr & 0xFFFF;
+        if (wr == ((rd + t_size) & 0xFFFF)) // full
+            return null;
+        int newRdwr = (rd << 16) | ((wr + 1) & 0xFFFF);
+        JmcAssume.assume(m_rdwr.compareAndSet(rdwr, newRdwr));
+        //rdwr = m_rdwr.get();
 
         // Wait for readers to complete previous cycle
         JmcAssume.assume((m_read.get() & 0xFFFF) == rd);

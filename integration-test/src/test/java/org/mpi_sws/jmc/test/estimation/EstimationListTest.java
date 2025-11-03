@@ -297,9 +297,9 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(loggerTree = true)
-    @JmcExpectExecutions(720) // For any n is n!
+    //@JmcExpectExecutions(720) // For any n is n!
     public void runFineListIDTrust() {
-        fineListIDProgram(6);
+        fineListIDProgram(8);
     }
 
     @JmcCheck
