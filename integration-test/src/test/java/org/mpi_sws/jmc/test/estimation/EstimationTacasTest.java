@@ -74,24 +74,58 @@ public class EstimationTacasTest {
     /**
      * TBA
      */
-    private void linuxRWLocks() {
+    private void linuxRWLocks(int numReaders, int numWriters, int numReadWriters) {
         SharedData sharedData = new SharedData();
         RWLock lock = new RWLock();
 
-        ReaderThread readerThread = new ReaderThread(lock, sharedData);
-        WriterThread writerThread = new WriterThread(lock, sharedData);
-        ReaderWriterThread readerWriterThread = new ReaderWriterThread(lock, sharedData);
+        Thread[] readers = new Thread[numReaders];
+        Thread[] writers = new Thread[numWriters];
+        Thread[] readWriters = new Thread[numReadWriters];
 
-        readerThread.start();
-        writerThread.start();
-        readerWriterThread.start();
+        for (int i = 0; i < numReaders; i++) {
+            readers[i] = new ReaderThread(lock, sharedData);
+        }
+        for (int i = 0; i < numWriters; i++) {
+            writers[i] = new WriterThread(lock, sharedData);
+        }
+        for (int i = 0; i < numReadWriters; i++) {
+            readWriters[i] = new ReaderWriterThread(lock, sharedData);
+        }
 
-        try {
-            readerThread.join();
-            writerThread.join();
-            readerWriterThread.join();
-        } catch (InterruptedException e) {
+        for (int i = 0; i < numReaders; i++) {
+            readers[i].start();
+        }
 
+        for (int i = 0; i < numWriters; i++) {
+            writers[i].start();
+        }
+
+        for (int i = 0; i < numReadWriters; i++) {
+            readWriters[i].start();
+        }
+
+        for (int i = 0; i < numReaders; i++) {
+            try {
+                readers[i].join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+
+        for (int i = 0; i < numWriters; i++) {
+            try {
+                writers[i].join();
+            } catch (InterruptedException e) {
+
+            }
+        }
+
+        for (int i = 0; i < numReadWriters; i++) {
+            try {
+                readWriters[i].join();
+            } catch (InterruptedException e) {
+
+            }
         }
     }
 
@@ -253,10 +287,10 @@ public class EstimationTacasTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, debug = false)
+    @JmcCheckConfiguration(numIterations = 2000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLinuxRWLocksTrust() {
-        linuxRWLocks();
+        linuxRWLocks(2, 2, 0);
     }
 
     /** ----------------------------------------------------*/
@@ -284,6 +318,6 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 100000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runAbaMsQueueTrust() {
-        abaMsQueue(1, 1, 0);
+        abaMsQueue(2, 1, 0);
     }
 }

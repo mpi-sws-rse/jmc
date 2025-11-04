@@ -17,25 +17,24 @@ public class RWLock {
     }
 
     public void readLock() {
-        int prior;
         // Unwinded for one iteration
-        prior = lock.getAndDecrement();
-        if (prior > 0) {
-            return;
+        int prior = lock.getAndDecrement();
+        if (prior <= 0) {
+            lock.getAndIncrement();
+            JmcAssume.assume(lock.get() > 0);
+            prior = lock.getAndDecrement();
+            JmcAssume.assume(prior > 0);
         }
-        lock.incrementAndGet(); // undo
-        JmcAssume.assume(lock.get() > 0);
     }
 
     public void writeLock() {
-        int prior;
-        // Unwinded for one iteration
-        prior = lock.getAndAdd(-RW_LOCK_BIAS);
-        if (prior == RW_LOCK_BIAS) {
-            return;
+        int prior = lock.getAndAdd(-RW_LOCK_BIAS);
+        if (prior != RW_LOCK_BIAS) {
+            lock.getAndAdd(RW_LOCK_BIAS); // undo
+            JmcAssume.assume(lock.get() == RW_LOCK_BIAS);
+            prior = lock.getAndAdd(-RW_LOCK_BIAS);
+            JmcAssume.assume(prior == RW_LOCK_BIAS);
         }
-        lock.addAndGet(RW_LOCK_BIAS); // undo
-        JmcAssume.assume(lock.get() == RW_LOCK_BIAS);
     }
 
     public boolean readTryLock() {
@@ -53,10 +52,10 @@ public class RWLock {
     }
 
     public void readUnlock() {
-        lock.incrementAndGet();
+        lock.getAndIncrement();
     }
 
     public void writeUnlock() {
-        lock.addAndGet(RW_LOCK_BIAS);
+        lock.getAndAdd(RW_LOCK_BIAS);
     }
 }

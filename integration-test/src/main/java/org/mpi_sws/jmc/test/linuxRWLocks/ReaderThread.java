@@ -13,7 +13,7 @@ public class ReaderThread extends Thread {
     @Override
     public void run() {
         mylock.readLock();
-        int r = sharedData.sharedValue;
+        //int r = sharedData.sharedValue;
         mylock.readUnlock();
     }
 }
