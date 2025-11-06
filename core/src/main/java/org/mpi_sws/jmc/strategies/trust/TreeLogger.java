@@ -21,8 +21,13 @@ public class TreeLogger {
 
     private final StringBuilder blockedGraphLogger = new StringBuilder();
 
-    public void appendNewBranchs() {
-        logger.append(graphId).append(" -> ");
+    private final StringBuilder LeafSizeLogger = new StringBuilder();
+
+    private boolean isBranching = false;
+
+    public void appendNewBranchs(int sizeOfGraph) {
+        isBranching = true;
+        logger.append(graphId).append("(").append(sizeOfGraph).append(")").append(" -> ");
     }
 
     public void appendNewChild(ExplorationStack.Item item) {
@@ -50,17 +55,25 @@ public class TreeLogger {
         logger.append(System.lineSeparator());
     }
 
-    public void updateLoggerGraphId(ExplorationStack.Item nextItem) {
+    public void updateLoggerGraphId(ExplorationStack.Item nextItem, int sizeOfGraph) {
+        if (!isBranching) {
+            addLeafSize(sizeOfGraph);
+        }
         Long nextId = nextGraphIds.get(nextItem);
         nextGraphIds.remove(nextItem);
         if (nextId == null || nextId <= 0) {
             throw new IllegalStateException("Next graph ID not found for the given item.");
         }
         graphId = nextId;
+        isBranching = false;
     }
 
-    public void updateLoggerGraphIdWithLastGraph() {
+    public void updateLoggerGraphIdWithLastGraph(int sizeOfGraph) {
+        if (!isBranching) {
+            addLeafSize(sizeOfGraph);
+        }
         graphId = graphCounter;
+        isBranching = false;
     }
 
     public StringBuilder getLogger() {
@@ -81,6 +94,10 @@ public class TreeLogger {
         blockedGraphLogger.append(graphId).append(", ");
     }
 
+    public void addLeafSize(int size) {
+        LeafSizeLogger.append(graphId).append("(").append(size).append(")").append(", ");
+    }
+
     public StringBuilder getInConsistentGraphLogger() {
         if (inConsistentGraphLogger.length() == 0) {
             return null;
@@ -93,6 +110,13 @@ public class TreeLogger {
             return null;
         }
         return blockedGraphLogger;
+    }
+
+    public StringBuilder getLeafSizeLogger() {
+        if (LeafSizeLogger.length() == 0) {
+            return null;
+        }
+        return LeafSizeLogger;
     }
 
     public long getNumOfInconsistentGraphs() {

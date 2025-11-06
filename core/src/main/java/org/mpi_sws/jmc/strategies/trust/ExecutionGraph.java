@@ -1988,4 +1988,8 @@ public class ExecutionGraph {
         }
         return blocked;
     }
+
+    public int size() {
+        return allEvents.size();
+    }
 }

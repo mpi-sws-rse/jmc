@@ -187,17 +187,21 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         StringBuilder tLogger = algoInstance.getTreeLog();
         StringBuilder inConGraphLogger = algoInstance.getInconsistentGraphLog();
         StringBuilder blockedGraphLogger = algoInstance.getBlockedGraphLog();
+        StringBuilder leafSizeLogger = algoInstance.getLeafSizeLog();
         if (tLogger != null) {
-            recordTreeLoggger(tLogger, inConGraphLogger, blockedGraphLogger);
+            recordTreeLoggger(tLogger, inConGraphLogger, blockedGraphLogger, leafSizeLogger);
         }
     }
 
-    private void recordTreeLoggger(StringBuilder tLogger, StringBuilder inConGraphLogger, StringBuilder blockedGraphLogger) {
+    private void recordTreeLoggger(StringBuilder tLogger, StringBuilder inConGraphLogger, StringBuilder blockedGraphLogger, StringBuilder leafSizeLogger) {
         if (inConGraphLogger != null) {
             tLogger.append(System.lineSeparator()).append("$INCONSISTENT GRAPH:").append(System.lineSeparator()).append(inConGraphLogger);
         }
         if (blockedGraphLogger != null) {
             tLogger.append(System.lineSeparator()).append("$BLOCKED GRAPH:").append(System.lineSeparator()).append(blockedGraphLogger);
+        }
+        if (leafSizeLogger != null) {
+            tLogger.append(System.lineSeparator()).append("$LEAF SIZE LOG:").append(System.lineSeparator()).append(leafSizeLogger);
         }
         String filePath = Paths.get(this.reportPath, "trust-tree-logger.txt").toString();
         LOGGER.info("Recording tree logger to {}", filePath);

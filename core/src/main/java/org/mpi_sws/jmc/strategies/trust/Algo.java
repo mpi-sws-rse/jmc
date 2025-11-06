@@ -506,6 +506,7 @@ public class Algo {
      */
     public void teardown(JmcModelCheckerReport report) {
         // Clean up the execution graph and the task schedule.
+        logLastGraphSize();
         this.executionGraph.clear();
         this.explorationStack.clear();
         this.locationStore.clearAliases();
@@ -883,7 +884,7 @@ public class Algo {
         if (tLogger == null) {
             return;
         }
-        tLogger.appendNewBranchs();
+        tLogger.appendNewBranchs(executionGraph.size());
     }
 
     private void logNewChild(ExplorationStack.Item item) {
@@ -918,14 +919,14 @@ public class Algo {
         if (tLogger == null) {
             return;
         }
-        tLogger.updateLoggerGraphId(nextItem);
+        tLogger.updateLoggerGraphId(nextItem, executionGraph.size());
     }
 
     private void logUpdateGraphIdWithLastGraph() {
         if (tLogger == null) {
             return;
         }
-        tLogger.updateLoggerGraphIdWithLastGraph();
+        tLogger.updateLoggerGraphIdWithLastGraph(executionGraph.size());
     }
 
     private void logInconsistentGraph() {
@@ -941,6 +942,13 @@ public class Algo {
             return;
         }
         tLogger.addBlockedGraph();
+    }
+
+    private void logLastGraphSize() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.addLeafSize(executionGraph.size());
     }
 
     public StringBuilder getTreeLog() {
@@ -962,6 +970,13 @@ public class Algo {
             return null;
         }
         return tLogger.getBlockedGraphLogger();
+    }
+
+    public StringBuilder getLeafSizeLog() {
+        if (tLogger == null) {
+            return null;
+        }
+        return tLogger.getLeafSizeLogger();
     }
 
     public void reportInconsistentGraphLogs() {
