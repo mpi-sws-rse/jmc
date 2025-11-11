@@ -546,10 +546,10 @@ public class EstimationStackTest {
      * 1. TruSt model checking
      */
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
+    @JmcCheckConfiguration(numIterations = 100000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runIntervalTimestampedStackPushPopTrust() {
-        IntervalTimestampedStackPushPopProgram(3);
+        IntervalTimestampedStackPushPopProgram(5);
     }
 
     /**
