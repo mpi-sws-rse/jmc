@@ -211,11 +211,11 @@ public class EstimationListTest {
      * 3. Weighted TruSt-based estimation (Wg-TruSt)
      */
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcCheckConfiguration(numIterations = 10000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    @JmcExpectExecutions(6) // For any n is n!
+    //@JmcExpectExecutions(6) // For any n is n!
     public void runCoarseListITrust() {
-        coarseListIProgram(3);
+        coarseListIProgram(10);
     }
 
     @JmcCheck

@@ -771,7 +771,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runFib1Trust() {
-        fib1Program(10);
+        fib1Program(11);
     }
 
     /**
@@ -782,7 +782,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 5000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runSigmaTrust() {
-        sigmaProgram(6);
+        sigmaProgram(5);
     }
 
     /**

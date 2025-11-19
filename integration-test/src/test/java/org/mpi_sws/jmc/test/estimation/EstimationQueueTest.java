@@ -368,6 +368,6 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runMsQueueEnqueueDequeueTrust() {
-        msQueueEnqueueDequeueProgram(4);
+        msQueueEnqueueDequeueProgram(6);
     }
 }
