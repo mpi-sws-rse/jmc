@@ -24,12 +24,16 @@ public class JmcFunctionalTestTarget implements JmcTestTarget {
 
     @Override
     public void invoke() {
-        target.invoke();
+        try {
+            target.invoke();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Represents a target for JMC. */
     @FunctionalInterface
     public interface Target {
-        void invoke();
+        void invoke() throws Exception;
     }
 }

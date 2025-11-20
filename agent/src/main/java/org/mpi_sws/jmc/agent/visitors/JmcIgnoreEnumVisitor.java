@@ -20,9 +20,9 @@ public class JmcIgnoreEnumVisitor extends ClassVisitor {
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         this.className = name;
         this.isEnum = (access & Opcodes.ACC_ENUM) != 0;
-        if (this.isEnum) {
-            System.out.println("JmcIgnoreEnumVisitor ignored the class : " + className);
-        }
+//        if (this.isEnum) {
+//            System.out.println("JmcIgnoreEnumVisitor ignored the class : " + className);
+//        }
         super.visit(version, access, name, signature, superName, interfaces);
     }
 

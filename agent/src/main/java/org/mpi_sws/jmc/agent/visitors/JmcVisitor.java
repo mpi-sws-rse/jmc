@@ -41,10 +41,12 @@ public class JmcVisitor {
                 new JmcWaitNotifyVisitor(
                         new JmcStaticMethodVisitor(
                                 new JmcSyncMethodVisitor(
+                                        //new JmcFutureVisitor.JmcCompletableFutureVisitor(
+                                        new JmcFutureVisitor.JmcFutureTaskClassVisitor(
                                         new JmcFutureVisitor.JmcExecutorsClassVisitor(
                                                 new JmcAtomicVisitor(
                                                         new JmcReentrantLockVisitor(
-                                                                new JmcWaitNotifyVisitor(
+                                                                //new JmcWaitNotifyVisitor(
                                                                         new JmcThreadVisitor
                                                                                 .ThreadClassVisitor(
                                                                                 new JmcThreadVisitor
