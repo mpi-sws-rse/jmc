@@ -1979,10 +1979,12 @@ public class ExecutionGraph {
                     blocked = true;
                     break;
                 }
-                ExecutionGraphNode beforeLastEvent = taskEventList.get(taskEventList.size() - 2);
-                if (EventUtils.isBlockedAssume(beforeLastEvent.getEvent())) {
-                    blocked = true;
-                    break;
+                if (taskEventList.size() > 1) {
+                    ExecutionGraphNode beforeLastEvent = taskEventList.get(taskEventList.size() - 2);
+                    if (EventUtils.isBlockedAssume(beforeLastEvent.getEvent())) {
+                        blocked = true;
+                        break;
+                    }
                 }
             }
         }
