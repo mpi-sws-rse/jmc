@@ -24,15 +24,13 @@ public class FutureCounter {
         }
     }
     public Future increment() {
-        LOGGER.debug("Inside increment");
         Callable<Integer> incrementer = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-                LOGGER.debug("Inside call method");
+
                 int val = 0;
                 lock.lock();
                 val = count++;
-                LOGGER.debug("Inside call method - Counter incremented");
                 lock.unlock();
                 return val;
             }
@@ -42,7 +40,6 @@ public class FutureCounter {
     }
 
     public ExecutorService getExecutor() {
-        LOGGER.debug("Executor created in FutureCounter is " + executor.getClass().getName());
         return executor;
     }
 }

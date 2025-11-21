@@ -51,9 +51,30 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         this.isShutdown.set(false);
     }
 
+    public JmcExecutorService(int capacity, ThreadFactory threadFactory) {
+
+        super(capacity,
+                capacity,
+                0L,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
+                threadFactory);
+        this.capacity = capacity;
+        this.counter = new AtomicInteger(0);
+        this.queue = new LinkedBlockingQueue<>();
+        this.workers = new ArrayList<>();
+        for (int i = 0; i < capacity; i++) {
+            JmcExecutorWorker worker = new JmcExecutorWorker(i, this.queue, this.counter);
+            workers.add(worker);
+            worker.start();
+        }
+        this.isShutdown.set(false);
+    }
+
     /** Stops the executor service. */
     @Override
     public void shutdown() {
+        super.shutdown();
         for (JmcExecutorWorker worker : workers) {
             worker.shutdown();
         }

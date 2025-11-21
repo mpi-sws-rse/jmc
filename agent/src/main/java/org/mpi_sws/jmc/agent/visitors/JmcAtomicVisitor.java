@@ -243,31 +243,52 @@ public class JmcAtomicVisitor extends ClassVisitor {
         @Override
         public void visitInvokeDynamicInsn(
                 String name, String descriptor, Handle bsm, Object... bsmArgs) {
-            Object[] newBsmArgs =
-                    Arrays.stream(bsmArgs)
-                            .map(
-                                    arg -> {
-                                        if (arg instanceof Type t) {
-                                            return Type.getObjectType(
-                                                    replaceType(t.getClassName()));
-                                        }
-                                        if (arg instanceof Handle h) {
-                                            String desc = replaceDescriptor(h.getDesc());
-                                            return new Handle(
-                                                    h.getTag(),
-                                                    h.getOwner(),
-                                                    h.getName(),
-                                                    desc,
-                                                    h.isInterface());
-                                        }
+            boolean isAtomicType = false;
 
-                                        return arg;
-                                    })
-                            .toArray();
+            // Check if descriptor or bootstrap method involves Atomic types
+            if (descriptor.contains("java/util/concurrent/atomic/Atomic")
+                    || (bsm != null && bsm.getOwner().contains("java/util/concurrent/atomic/Atomic"))) {
+                isAtomicType = true;
+            }
+            if (isAtomicType) {
+                //System.out.println("visitInvokeDynamicInsn: " + name + " " + descriptor + " " + bsm);
+                Handle newBsm = bsm;
+                String newDescriptor = replaceDescriptor(descriptor);
+                if (bsm != null) {
+                    String owner = bsm.getOwner();
+                    String newOwner = replaceType(owner);
+                    String bsmDesc = bsm.getDesc();
+                    String newbsmDesc = replaceDescriptor(bsmDesc);
+                    newBsm = new Handle(bsm.getTag(), newOwner, bsm.getName(), newbsmDesc, bsm.isInterface());
+                }
+                Object[] newBsmArgs =
+                        Arrays.stream(bsmArgs)
+                                .map(
+                                        arg -> {
+                                            if (arg instanceof Type t) {
+                                                return Type.getObjectType(
+                                                        replaceType(t.getClassName()));
+                                            }
+                                            if (arg instanceof Handle h) {
+                                                String desc = replaceDescriptor(h.getDesc());
+                                                return new Handle(
+                                                        h.getTag(),
+                                                        h.getOwner(),
+                                                        h.getName(),
+                                                        desc,
+                                                        h.isInterface());
+                                            }
+                                            //System.out.println("arg returned is  " + arg);
+                                            return arg;
+                                        })
+                                .toArray();
 
-            String newDescriptor = replaceDescriptor(descriptor);
 
-            super.visitInvokeDynamicInsn(name, newDescriptor, bsm, newBsmArgs);
+                super.visitInvokeDynamicInsn(name, newDescriptor, newBsm, newBsmArgs);
+            } else {
+                super.visitInvokeDynamicInsn(name, descriptor, bsm, bsmArgs);
+            }
+
         }
     }
 }

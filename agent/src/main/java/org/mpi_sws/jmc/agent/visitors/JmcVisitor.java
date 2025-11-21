@@ -37,11 +37,11 @@ public class JmcVisitor {
 
         ClassReader cr = new ClassReader(classFileBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        //System.out.println("New publish");
         ClassVisitor cv =
                 new JmcWaitNotifyVisitor(
                         new JmcStaticMethodVisitor(
                                 new JmcSyncMethodVisitor(
-                                        //new JmcFutureVisitor.JmcCompletableFutureVisitor(
                                         new JmcFutureVisitor.JmcFutureTaskClassVisitor(
                                         new JmcFutureVisitor.JmcExecutorsClassVisitor(
                                                 new JmcAtomicVisitor(

@@ -17,6 +17,7 @@ public class JmcFutureVisitor {
      */
     public static class JmcExecutorsClassVisitor extends ClassVisitor {
 
+
         public JmcExecutorsClassVisitor(ClassVisitor classVisitor) {
             super(Opcodes.ASM9, classVisitor);
         }
@@ -26,13 +27,11 @@ public class JmcFutureVisitor {
             String newDescriptor = descriptor;
             if (newDescriptor != null) {
                 if (newDescriptor.contains(JmcExecutorsMethodVisitor.THREADPOOL_EXECUTOR_DESC)) {
-                    newDescriptor = newDescriptor.replace(JmcExecutorsMethodVisitor.THREADPOOL_EXECUTOR_DESC, JmcExecutorsMethodVisitor.JMC_THREADPOOL_EXECUTOR_DESC);
+                    newDescriptor = newDescriptor.replace(JmcExecutorsMethodVisitor.THREADPOOL_EXECUTOR_DESC, JmcExecutorsMethodVisitor.JMC_EXECUTOR_SERVICE_PATH_DESC);
                 }
-                //if(newDescriptor.contains(JmcExecutorsMethodVisitor.EXECUTOR_SERVICE_DESC) ||
                        if(newDescriptor.contains("L" + JmcExecutorsMethodVisitor.EXECUTORS_DELEGATED_WRAPPER + ";") ||
                         newDescriptor.contains("L" + JmcExecutorsMethodVisitor.EXECUTORS_FINALIZED_WRAPPER + ";")
                 ) {
-                    //newDescriptor = newDescriptor.replace(JmcExecutorsMethodVisitor.EXECUTOR_SERVICE_DESC, JmcExecutorsMethodVisitor.JMC_EXECUTOR_SERVICE_PATH_DESC);
                     newDescriptor = newDescriptor.replace("L" + JmcExecutorsMethodVisitor.EXECUTORS_DELEGATED_WRAPPER + ";", JmcExecutorsMethodVisitor.JMC_EXECUTOR_SERVICE_PATH_DESC);
                     newDescriptor = newDescriptor.replace("L" + JmcExecutorsMethodVisitor.EXECUTORS_FINALIZED_WRAPPER + ";", JmcExecutorsMethodVisitor.JMC_EXECUTOR_SERVICE_PATH_DESC);
 
@@ -74,9 +73,9 @@ public class JmcFutureVisitor {
         private static final String JMC_EXECUTOR_SERVICE_PATH_DESC = "L" + JMC_EXECUTOR_SERVICE_PATH + ";";
 
         private static final String THREADPOOL_EXECUTOR_PATH = "java/util/concurrent/ThreadPoolExecutor";
-        private static final String JMC_THREADPOOL_EXECUTOR_PATH = "org/mpi_sws/jmc/api/util/concurrent/JmcThreadPoolExecutor";
+        //private static final String JMC_THREADPOOL_EXECUTOR_PATH = "org/mpi_sws/jmc/api/util/concurrent/JmcThreadPoolExecutor";
         protected static final String THREADPOOL_EXECUTOR_DESC = "L" + THREADPOOL_EXECUTOR_PATH + ";";
-        private static final String JMC_THREADPOOL_EXECUTOR_DESC = "L" + JMC_THREADPOOL_EXECUTOR_PATH + ";";
+        //private static final String JMC_THREADPOOL_EXECUTOR_DESC = "L" + JMC_THREADPOOL_EXECUTOR_PATH + ";";
 
         private static final String EXECUTORS_DELEGATED_WRAPPER = "java/util/concurrent/Executors$DelegatedExecutorService";
         private static final String EXECUTORS_FINALIZED_WRAPPER = "java/util/concurrent/Executors$FinalizableDelegatedExecutorService";
@@ -172,11 +171,9 @@ public class JmcFutureVisitor {
                     newDescriptor = newDescriptor.replace(EXECUTORS_DESC, JMC_EXECUTORS_PATH_DESC);
                     System.out.println("Replaced descriptor for executor: "+ newDescriptor);
                 }
-//                if(newDescriptor.contains(EXECUTOR_SERVICE_DESC) ||
                         if(newDescriptor.contains("L" + EXECUTORS_DELEGATED_WRAPPER + ";") ||
                         newDescriptor.contains("L" + EXECUTORS_FINALIZED_WRAPPER + ";")
                 ) {
-                    //newDescriptor = newDescriptor.replace(EXECUTOR_SERVICE_DESC, JMC_EXECUTOR_SERVICE_PATH_DESC);
                     newDescriptor = newDescriptor.replace("L" + EXECUTORS_DELEGATED_WRAPPER + ";", JMC_EXECUTOR_SERVICE_PATH_DESC);
                     newDescriptor = newDescriptor.replace("L" + EXECUTORS_FINALIZED_WRAPPER + ";", JMC_EXECUTOR_SERVICE_PATH_DESC);
                     System.out.println("Replaced descriptor in local variable for name " + name + " with: "+ newDescriptor);
@@ -187,46 +184,64 @@ public class JmcFutureVisitor {
 
 
 
-        @Override
-        public void visitInvokeDynamicInsn(
-                String name, String descriptor, Handle bsm, Object... bsmArgs) {
-            //Replace descriptor
-            String newDescriptor = replaceDescriptor(descriptor);
-            Handle newBsm = bsm;
-            if (bsm != null) {
-                String owner = bsm.getOwner();
-                String newOwner = replaceType(owner);
-                String bsmDesc = bsm.getDesc();
-                String newbsmDesc = replaceDescriptor(bsmDesc);
-                newBsm = new Handle(bsm.getTag(), newOwner, bsm.getName(), newbsmDesc, bsm.isInterface());
-            }
-
-            Object[] newBsmArgs =
-                    Arrays.stream(bsmArgs)
-                            .map(
-                                    arg -> {
-                                        if (arg instanceof Type t) {
-                                            return Type.getObjectType(
-                                                    replaceType(t.getClassName()));
-                                        }
-                                        if (arg instanceof Handle h) {
-                                            String desc = replaceDescriptor(h.getDesc());
-                                            return new Handle(
-                                                    h.getTag(),
-                                                    replaceType(h.getOwner()),
-                                                    h.getName(),
-                                                    desc,
-                                                    h.isInterface());
-                                        }
-
-                                        return arg;
-                                    })
-                            .toArray();
-
-
-
-            super.visitInvokeDynamicInsn(name, newDescriptor, bsm, newBsmArgs);
-        }
+//        @Override
+//        public void visitInvokeDynamicInsn(
+//                String name, String descriptor, Handle bsm, Object... bsmArgs) {
+//            boolean isValidType = false;
+//            if (descriptor.contains(EXECUTORS_PATH)
+//                    || descriptor.contains(EXECUTOR_SERVICE_PATH)
+//                    || descriptor.contains(EXECUTORS_DELEGATED_WRAPPER)
+//                    || descriptor.contains(EXECUTORS_FINALIZED_WRAPPER)
+//                    || descriptor.contains(THREADPOOL_EXECUTOR_PATH)
+//                    || (bsm != null && bsm.getOwner().contains(EXECUTORS_PATH))
+//                    || (bsm != null && bsm.getOwner().contains(EXECUTOR_SERVICE_PATH))
+//                    || (bsm != null && bsm.getOwner().contains(EXECUTORS_DELEGATED_WRAPPER))
+//                    || (bsm != null && bsm.getOwner().contains(EXECUTORS_FINALIZED_WRAPPER))
+//                    || (bsm != null && bsm.getOwner().contains(THREADPOOL_EXECUTOR_PATH))
+//
+//            ) {
+//                isValidType = true;
+//            }
+//            if (isValidType) {
+//                //Replace descriptor
+//                String newDescriptor = replaceDescriptor(descriptor);
+//                Handle newBsm = bsm;
+//                if (bsm != null) {
+//                    String owner = bsm.getOwner();
+//                    String newOwner = replaceType(owner);
+//                    String bsmDesc = bsm.getDesc();
+//                    String newbsmDesc = replaceDescriptor(bsmDesc);
+//                    newBsm = new Handle(bsm.getTag(), newOwner, bsm.getName(), newbsmDesc, bsm.isInterface());
+//                }
+//
+//                Object[] newBsmArgs =
+//                        Arrays.stream(bsmArgs)
+//                                .map(
+//                                        arg -> {
+//                                            if (arg instanceof Type t) {
+//                                                return Type.getObjectType(
+//                                                        replaceType(t.getClassName()));
+//                                            }
+//                                            if (arg instanceof Handle h) {
+//                                                String desc = replaceDescriptor(h.getDesc());
+//                                                return new Handle(
+//                                                        h.getTag(),
+//                                                        replaceType(h.getOwner()),
+//                                                        h.getName(),
+//                                                        desc,
+//                                                        h.isInterface());
+//                                            }
+//
+//                                            return arg;
+//                                        })
+//                                .toArray();
+//                super.visitInvokeDynamicInsn(name, newDescriptor, newBsm, newBsmArgs);
+//            } else {
+//                super.visitInvokeDynamicInsn(name, descriptor, bsm, bsmArgs);
+//            }
+//
+//
+//        }
 
         private String replaceDescriptor(String desc) {
             if (desc == null) {
@@ -259,7 +274,7 @@ public class JmcFutureVisitor {
 //            } else if (type.equals(EXECUTOR_SERVICE_PATH)) {
 //                return JMC_EXECUTOR_SERVICE_PATH;
             } else if (type.equals(THREADPOOL_EXECUTOR_PATH)) {
-                return JMC_THREADPOOL_EXECUTOR_PATH;
+                return JMC_EXECUTOR_SERVICE_PATH;
             } else if ((type.equals(EXECUTORS_DELEGATED_WRAPPER)) || (type.equals(EXECUTORS_FINALIZED_WRAPPER))) {
                 return JMC_EXECUTOR_SERVICE_PATH;
             }
@@ -386,7 +401,6 @@ public class JmcFutureVisitor {
                 // Replace NEW CompletableFuture with JmcCompletableFuture
                 if (opcode == Opcodes.NEW
                         && type.equals("java/util/concurrent/CompletableFuture")) {
-                    System.out.println("[CompletableFutureReplacementMethodVisitor] visittypInsn" + type);
                     super.visitTypeInsn(
                             opcode, "org/mpi_sws/jmc/api/util/concurrent/JmcCompletableFuture");
                 } else {
@@ -400,7 +414,6 @@ public class JmcFutureVisitor {
                 // Replace CompletableFuture calls with JmcCompletableFuture calls
                 descriptor = replaceDescriptor(descriptor);
                 if (owner.equals("java/util/concurrent/CompletableFuture")) {
-                    System.out.println("[CompletableFutureReplacementMethodVisitor] visitMethodInsn: " + owner);
                     super.visitMethodInsn(
                             opcode,
                             "org/mpi_sws/jmc/api/util/concurrent/JmcCompletableFuture",

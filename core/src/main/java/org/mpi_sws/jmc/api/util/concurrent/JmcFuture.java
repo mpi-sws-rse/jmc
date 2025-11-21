@@ -2,6 +2,8 @@ package org.mpi_sws.jmc.api.util.concurrent;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.runtime.JmcRuntime;
+import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
 
 import java.util.concurrent.*;
 
@@ -18,15 +20,21 @@ public class JmcFuture<T> implements RunnableFuture<T> {
     private final CompletableFuture<T> future;
     private final Long taskId;
     private final JmcThread thread;
+    //2 writw events 1. result
 
     public JmcFuture(Callable<T> function, Long taskId) {
         this.future = new CompletableFuture<>();
+        JmcRuntimeUtils.writeEventWithoutYield(
+               this.future ,
+                false, "java/util/concurrent/CompletableFuture", "result", "Z");
+        JmcRuntime.yield();
         this.taskId = taskId;
         this.thread =
                 new JmcThread(
                         () -> {
                             try {
                                 set(function.call());
+                                return;
                             } catch (Exception e) {
                                 future.completeExceptionally(e);
                             }
@@ -36,6 +44,10 @@ public class JmcFuture<T> implements RunnableFuture<T> {
 
     public JmcFuture(Runnable runnable, Long taskId) {
         this.future = new CompletableFuture<>();
+        JmcRuntimeUtils.writeEventWithoutYield(
+                this.future ,
+                false, "java/util/concurrent/CompletableFuture", "result", "Z");
+        JmcRuntime.yield();
         this.taskId = taskId;
         this.thread =
                 new JmcThread(
@@ -52,6 +64,10 @@ public class JmcFuture<T> implements RunnableFuture<T> {
 
     public JmcFuture(Runnable runnable, T result, Long taskId) {
         this.future = new CompletableFuture<>();
+        JmcRuntimeUtils.writeEventWithoutYield(
+                this.future ,
+                false, "java/util/concurrent/CompletableFuture", "result", "Z");
+        JmcRuntime.yield();
         this.taskId = taskId;
         this.thread =
                 new JmcThread(
@@ -68,6 +84,10 @@ public class JmcFuture<T> implements RunnableFuture<T> {
 
     public JmcFuture(JmcThread thread, T result) {
         this.future = new CompletableFuture<>();
+        JmcRuntimeUtils.writeEventWithoutYield(
+                this.future ,
+                false, "java/util/concurrent/CompletableFuture", "result", "Z");
+        JmcRuntime.yield();
         this.taskId = thread.getTaskId();
         this.thread =
                 new JmcThread(
@@ -84,6 +104,10 @@ public class JmcFuture<T> implements RunnableFuture<T> {
 
     public JmcFuture(JmcThread thread) {
         this.future = new CompletableFuture<>();
+        JmcRuntimeUtils.writeEventWithoutYield(
+                this.future ,
+                false, "java/util/concurrent/CompletableFuture", "result", "Z");
+        JmcRuntime.yield();
         this.taskId = thread.getTaskId();
         this.thread = thread;
     }
@@ -107,29 +131,45 @@ public class JmcFuture<T> implements RunnableFuture<T> {
 
     @Override
     public boolean isCancelled() {
-        return future.isCancelled();
+        JmcRuntimeUtils.readEventWithoutYield(
+                this.future, "java/util/concurrent/CompletableFuture", "result", "Z");
+        boolean cancelled = future.isCancelled();
+        JmcRuntime.yield();
+        return cancelled;
     }
 
     @Override
     public boolean isDone() {
-        return future.isDone();
+        JmcRuntimeUtils.readEventWithoutYield(
+                this.future, "java/util/concurrent/CompletableFuture", "result", "Z");
+        boolean done = future.isDone();
+        JmcRuntime.yield();
+        return done;
     }
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
         LOGGER.debug("Waiting on future: {}", thread.getTaskId());
         thread.join1(0L);
-        return future.get();
+        JmcRuntimeUtils.readEventWithoutYield(
+                this.future, "java/util/concurrent/CompletableFuture", "result", "Z");
+        T result = future.get();
+        JmcRuntime.yield();
+        return result;
     }
 
     @Override
     public T get(long l, TimeUnit timeUnit)
             throws InterruptedException, ExecutionException, TimeoutException {
-        // Currently we do not support timeouts, therefore the timeout here is ignored
         long waitTime = timeUnit.toMillis(l);
-        LOGGER.debug("Waiting on future {} with timeout: {}ms", thread.getTaskId(), waitTime);
         thread.join1(waitTime);
-        return future.get(l, timeUnit);
+        LOGGER.debug("Waiting on future {} with timeout: {}ms", thread.getTaskId(), waitTime);
+        // Currently we do not support timeouts, therefore the timeout here is ignored
+        JmcRuntimeUtils.readEventWithoutYield(
+                this.future, "java/util/concurrent/CompletableFuture", "result", "Z");
+        T result = future.get(l, timeUnit);
+        JmcRuntime.yield();
+        return result;
     }
 
     private void set(T value) {

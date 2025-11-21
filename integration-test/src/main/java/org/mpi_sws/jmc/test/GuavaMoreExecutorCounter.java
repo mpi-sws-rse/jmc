@@ -11,19 +11,12 @@ public class GuavaMoreExecutorCounter {
 
     public GuavaMoreExecutorCounter(int poolSize) {
         this.executorService = MoreExecutors.getExitingExecutorService((ThreadPoolExecutor) Executors.newFixedThreadPool(poolSize));
-        System.out.println("Executor service used is " + executorService.getClass().getName());
-
     }
 
     public Future<Integer> submitIncrementTask() {
-        System.out.println("Inside submit IncrementTask");
-
         Callable<Integer> incrementer = new Callable<Integer>() {
             @Override
             public Integer call() {
-                System.out.println("CALL start on thread=" + Thread.currentThread().getName()
-                        + " threadClass=" + Thread.currentThread().getClass().getName()); // if such accessor exists
-
                 int val = counter.incrementAndGet();
                 return val;
             }
@@ -39,8 +32,8 @@ public class GuavaMoreExecutorCounter {
         return executorService;
     }
 
-    public void shutdown() {
-        executorService.shutdown();
-    }
+//    //public void shutdown() {
+//        executorService.shutdown();
+//    }
 
 }

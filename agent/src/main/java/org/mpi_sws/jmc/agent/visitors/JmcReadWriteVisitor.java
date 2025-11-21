@@ -135,6 +135,7 @@ public class JmcReadWriteVisitor {
             super.visitFieldInsn(opcode, owner, name, descriptor);
             if (instrumented) {
                 VisitorHelper.insertYield(mv);
+                instrumented = false;
             }
         }
 
