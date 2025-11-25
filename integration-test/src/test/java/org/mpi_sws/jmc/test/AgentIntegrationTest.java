@@ -100,4 +100,19 @@ public class AgentIntegrationTest {
                         });
         jmcModelChecker.check(target);
     }
+
+    @Test
+    public void testAgentWithFuturePoll() throws JmcCheckerException {
+        JmcCheckerConfiguration config =
+                new JmcCheckerConfiguration.Builder().numIterations(10).debug(true).build();
+        JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+
+        JmcTestTarget target =
+                new JmcFunctionalTestTarget(
+                        "RandomFuturesList",
+                        () -> {
+                            FutureCounterPollTestRunner.main(new String[0]);
+                        });
+        jmcModelChecker.check(target);
+    }
 }

@@ -181,6 +181,7 @@ public class JmcExecutorService extends ThreadPoolExecutor {
             // Otherwise, create a new JmcThread
             future = new JmcFuture<>(runnable, JmcRuntime.addNewTask());
         }
+        offer(future);
         return future;
     }
 
