@@ -4,12 +4,13 @@ package org.mpi_sws.jmc.api.util.concurrent;
  * A redefinition of the {@link java.util.concurrent.atomic.AtomicReferenceArray} class. This class
  * provides an array of references that can be atomically updated. It uses a {@link
  * JmcReentrantLock} to ensure thread safety.
+ * TODO : FIX THIS CLASS
  *
  * @param <V> the type of elements in this array
  */
 public class JmcAtomicReferenceArray<V> {
 
-    private V[] array;
+    private final V[] array;
     private final JmcReentrantLock lock;
 
     public JmcAtomicReferenceArray(int length) {

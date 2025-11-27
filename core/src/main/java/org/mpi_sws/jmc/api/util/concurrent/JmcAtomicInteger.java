@@ -38,7 +38,9 @@ public class JmcAtomicInteger {
         JmcRuntime.yield();
     }
 
-    /** Constructs a new JmcAtomicInteger with an initial value of 0. */
+    /**
+     * Constructs a new JmcAtomicInteger with an initial value of 0.
+     */
     public JmcAtomicInteger() {
         this(0);
     }
@@ -49,16 +51,11 @@ public class JmcAtomicInteger {
      * @return the current value
      */
     public int get() {
-        lock.lock();
-        try {
-            JmcRuntimeUtils.readEventWithoutYield(
-                    this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
-            int out = value;
-            JmcRuntime.yield();
-            return out;
-        } finally {
-            lock.unlock();
-        }
+        JmcRuntimeUtils.readEventWithoutYield(
+                this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
+        int out = value;
+        JmcRuntime.yield();
+        return out;
     }
 
     /**
@@ -68,19 +65,14 @@ public class JmcAtomicInteger {
      * @param newValue the new value to set
      */
     public void set(int newValue) {
-        lock.lock();
-        try {
-            JmcRuntimeUtils.writeEventWithoutYield(
-                    this,
-                    newValue,
-                    "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger",
-                    "value",
-                    "I");
-            value = newValue;
-            JmcRuntime.yield();
-        } finally {
-            lock.unlock();
-        }
+        JmcRuntimeUtils.writeEventWithoutYield(
+                this,
+                newValue,
+                "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger",
+                "value",
+                "I");
+        value = newValue;
+        JmcRuntime.yield();
     }
 
     /**
@@ -88,7 +80,7 @@ public class JmcAtomicInteger {
      * expected value. Invokes a read followed by a write event to the JMC runtime.
      *
      * @param expectedValue the expected value
-     * @param newValue the new value to set if the current value equals the expected value
+     * @param newValue      the new value to set if the current value equals the expected value
      * @return true if successful, false otherwise
      */
     public boolean compareAndSet(int expectedValue, int newValue) {
@@ -183,6 +175,28 @@ public class JmcAtomicInteger {
     public int addAndGet(int delta) {
         lock.lock();
         try {
+            JmcRuntimeUtils.writeEventWithoutYield(
+                    this,
+                    value + delta,
+                    "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger",
+                    "value",
+                    "I");
+            value = value + delta;
+            JmcRuntime.yield();
+
+            JmcRuntimeUtils.readEventWithoutYield(
+                    this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
+            int result = value;
+            JmcRuntime.yield();
+            return result;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public int getAndAdd(int delta) {
+        lock.lock();
+        try {
             JmcRuntimeUtils.readEventWithoutYield(
                     this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
             int result = value;
@@ -196,7 +210,7 @@ public class JmcAtomicInteger {
                     "I");
             value = result + delta;
             JmcRuntime.yield();
-            return value;
+            return result;
         } finally {
             lock.unlock();
         }
@@ -211,22 +225,75 @@ public class JmcAtomicInteger {
     public int incrementAndGet() {
         lock.lock();
         try {
+            JmcRuntimeUtils.writeEventWithoutYield(
+                    this,
+                    value + 1,
+                    "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger",
+                    "value",
+                    "I");
+            value = value + 1;
+            JmcRuntime.yield();
+
             JmcRuntimeUtils.readEventWithoutYield(
-                    this, "org/mpisws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
+                    this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
+            int result = value;
+            JmcRuntime.yield();
+            return result;
+
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public int getAndDecrement() {
+        lock.lock();
+        try {
+            JmcRuntimeUtils.readEventWithoutYield(
+                    this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
             int result = value;
             JmcRuntime.yield();
 
             JmcRuntimeUtils.writeEventWithoutYield(
                     this,
-                    result + 1,
-                    "org/mpisws/jmc/api/util/concurrent/JmcAtomicInteger",
+                    result - 1,
+                    "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger",
                     "value",
                     "I");
-            value = result + 1;
+            value = result - 1;
             JmcRuntime.yield();
             return result;
         } finally {
             lock.unlock();
         }
+    }
+
+    public int decrementAndGet() {
+        lock.lock();
+        try {
+            JmcRuntimeUtils.writeEventWithoutYield(
+                    this,
+                    value - 1,
+                    "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger",
+                    "value",
+                    "I");
+            value = value - 1;
+            JmcRuntime.yield();
+
+            JmcRuntimeUtils.readEventWithoutYield(
+                    this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicInteger", "value", "I");
+            int result = value;
+            JmcRuntime.yield();
+            return result;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public String toString() {
+        return Integer.toString(get());
     }
 }

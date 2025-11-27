@@ -181,6 +181,26 @@ public class JmcAtomicVisitor extends ClassVisitor {
         return type;
     }
 
+    private static boolean checkIfAtomic(String classPath) {
+        return classPath.startsWith("java/util/concurrent/atomic/Atomic");
+    }
+
+    private boolean isExtendingAtomic = false;
+
+    @Override
+    public void visit(
+            int version,
+            int access,
+            String name,
+            String signature,
+            String superName,
+            String[] interfaces) {
+        if (checkIfAtomic(superName)) {
+            isExtendingAtomic = true;
+        }
+        super.visit(version, access, name, signature, replaceType(superName), interfaces);
+    }
+
     @Override
     public FieldVisitor visitField(
             int access, String name, String descriptor, String signature, Object value) {
@@ -190,11 +210,22 @@ public class JmcAtomicVisitor extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(
             int access, String name, String descriptor, String signature, String[] exceptions) {
-        // First let the parent handle the method visitor creation
-        MethodVisitor mv =
-                super.visitMethod(
-                        access, name, replaceDescriptor(descriptor), signature, exceptions);
-
+        MethodVisitor mv;
+        if (isExtendingAtomic && "<init>".equals(name)) {
+            mv =
+                    new AtomicInitMethodVisitor(
+                            super.visitMethod(
+                                    access,
+                                    name,
+                                    replaceDescriptor(descriptor),
+                                    signature,
+                                    exceptions));
+        } else {
+            // First let the parent handle the method visitor creation
+            mv =
+                    super.visitMethod(
+                            access, name, replaceDescriptor(descriptor), signature, exceptions);
+        }
         // Return a new visitor that will handle Atomic types
         return new AtomicReplacementMethodVisitor(mv);
     }
@@ -211,7 +242,7 @@ public class JmcAtomicVisitor extends ClassVisitor {
             if (VisitorHelper.isInstantiation(opcode)) {
                 super.visitTypeInsn(opcode, replaceType(type));
             } else {
-                super.visitTypeInsn(opcode, type);
+                super.visitTypeInsn(opcode, replaceType(type));
             }
         }
 
@@ -243,15 +274,11 @@ public class JmcAtomicVisitor extends ClassVisitor {
         @Override
         public void visitInvokeDynamicInsn(
                 String name, String descriptor, Handle bsm, Object... bsmArgs) {
-            boolean isAtomicType = false;
+            boolean isAtomicType = descriptor.contains("java/util/concurrent/atomic/Atomic")
+                    || (bsm != null && bsm.getOwner().contains("java/util/concurrent/atomic/Atomic"));
 
             // Check if descriptor or bootstrap method involves Atomic types
-            if (descriptor.contains("java/util/concurrent/atomic/Atomic")
-                    || (bsm != null && bsm.getOwner().contains("java/util/concurrent/atomic/Atomic"))) {
-                isAtomicType = true;
-            }
             if (isAtomicType) {
-                //System.out.println("visitInvokeDynamicInsn: " + name + " " + descriptor + " " + bsm);
                 Handle newBsm = bsm;
                 String newDescriptor = replaceDescriptor(descriptor);
                 if (bsm != null) {
@@ -261,34 +288,50 @@ public class JmcAtomicVisitor extends ClassVisitor {
                     String newbsmDesc = replaceDescriptor(bsmDesc);
                     newBsm = new Handle(bsm.getTag(), newOwner, bsm.getName(), newbsmDesc, bsm.isInterface());
                 }
-                Object[] newBsmArgs =
-                        Arrays.stream(bsmArgs)
-                                .map(
-                                        arg -> {
-                                            if (arg instanceof Type t) {
-                                                return Type.getObjectType(
-                                                        replaceType(t.getClassName()));
-                                            }
-                                            if (arg instanceof Handle h) {
-                                                String desc = replaceDescriptor(h.getDesc());
-                                                return new Handle(
-                                                        h.getTag(),
-                                                        h.getOwner(),
-                                                        h.getName(),
-                                                        desc,
-                                                        h.isInterface());
-                                            }
-                                            //System.out.println("arg returned is  " + arg);
-                                            return arg;
-                                        })
-                                .toArray();
-
-
+                Object[] tempBsmArgs = Arrays.stream(bsmArgs).toArray();
+                Object[] newBsmArgs = new Object[tempBsmArgs.length];
+                for (int i = 0; i < tempBsmArgs.length; i++) {
+                    if (tempBsmArgs[i] instanceof Type t) {
+                        String className = t.getInternalName();
+                        newBsmArgs[i] = Type.getType(replaceType(className));
+                    }
+                    if (tempBsmArgs[i] instanceof Handle h) {
+                        String desc = replaceDescriptor(h.getDesc());
+                        newBsmArgs[i] = new Handle(
+                                h.getTag(),
+                                replaceType(h.getOwner()),
+                                h.getName(),
+                                desc,
+                                h.isInterface());
+                    }
+                }
                 super.visitInvokeDynamicInsn(name, newDescriptor, newBsm, newBsmArgs);
             } else {
                 super.visitInvokeDynamicInsn(name, descriptor, bsm, bsmArgs);
             }
+        }
+    }
 
+    private static class AtomicInitMethodVisitor extends MethodVisitor {
+
+        public AtomicInitMethodVisitor(MethodVisitor mv) {
+            super(Opcodes.ASM9, mv);
+        }
+
+        @Override
+        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+            if (opcode == Opcodes.INVOKESPECIAL
+                    && checkIfAtomic(owner)
+                    && name.equals("<init>")) {
+                super.visitMethodInsn(
+                        Opcodes.INVOKESPECIAL,
+                        replaceType(owner),
+                        name,
+                        descriptor,
+                        isInterface);
+            } else {
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+            }
         }
     }
 }

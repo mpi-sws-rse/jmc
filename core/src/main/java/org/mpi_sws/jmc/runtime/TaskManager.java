@@ -30,20 +30,24 @@ public class TaskManager {
         TERMINATED,
     }
 
-    /** Stores a set of custom IDs used by the Runtime. */
+    /**
+     * Stores a set of custom IDs used by the Runtime.
+     */
     private Long idCounter;
 
     private final Object idCounterLock = new Object();
 
-    /** Stores the state of each task. */
+    /**
+     * Stores the state of each task.
+     */
     private final Map<Long, TaskState> taskStates;
 
-    /** Stores the future of blocked tasks. */
+    /**
+     * Stores the future of blocked tasks.
+     */
     private final Map<Long, CompletableFuture<?>> taskFutures;
 
     private final Object tasksLock = new Object();
-
-    private final ReentrantLock lock = new ReentrantLock();
 
     /**
      * Returns the next task ID to be assigned.
@@ -56,14 +60,18 @@ public class TaskManager {
         }
     }
 
-    /** Constructs a new TaskManager object. */
+    /**
+     * Constructs a new TaskManager object.
+     */
     public TaskManager() {
         this.idCounter = 1L;
         this.taskStates = new HashMap<>();
         this.taskFutures = new HashMap<>();
     }
 
-    /** Resets the TaskManager object. */
+    /**
+     * Resets the TaskManager object.
+     */
     public void reset() {
         synchronized (idCounterLock) {
             idCounter = 1L;
@@ -197,7 +205,7 @@ public class TaskManager {
      * Update the state of the task with the specified custom ID.
      *
      * @param taskId the custom ID of the task
-     * @param state the new state of the task
+     * @param state  the new state of the task
      */
     public void markStatus(Long taskId, TaskState state) {
         synchronized (tasksLock) {
@@ -257,7 +265,7 @@ public class TaskManager {
      * provided.
      *
      * @param taskId the custom ID of the task
-     * @param state the state of the task
+     * @param state  the state of the task
      * @return true if the task exists with status
      */
     public boolean isTaskOfStatus(Long taskId, TaskState state) {
@@ -297,7 +305,9 @@ public class TaskManager {
         }
     }
 
-    /** Stop all the tasks in the task pool. */
+    /**
+     * Stop all the tasks in the task pool.
+     */
     public void stopAll() {
         System.out.println("******stopAll*****");
         synchronized (tasksLock) {
