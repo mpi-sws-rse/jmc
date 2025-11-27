@@ -49,8 +49,6 @@ public class TaskManager {
 
     private final Object tasksLock = new Object();
 
-    private final ReentrantLock lock = new ReentrantLock();
-
     /**
      * Returns the next task ID to be assigned.
      *

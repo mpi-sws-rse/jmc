@@ -7,6 +7,7 @@ import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
  * A redefinition of {@link java.util.concurrent.atomic.AtomicReference} to support JMC model
  * checking. This class provides atomic operations on a reference variable, ensuring thread safety
  * through the use of a reentrant lock.
+ * TODO : FIX THIS CLASS
  *
  * @param <V> the type of the reference held by this atomic reference
  */
@@ -126,5 +127,13 @@ public class JmcAtomicReference<V> {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public String toString() {
+        return get().toString();
     }
 }

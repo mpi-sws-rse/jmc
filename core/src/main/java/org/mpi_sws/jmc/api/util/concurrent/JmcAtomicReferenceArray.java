@@ -5,6 +5,7 @@ package org.mpi_sws.jmc.api.util.concurrent;
  * provides an array of references that can be atomically updated. It uses a {@link
  * JmcReentrantLock} to ensure thread safety.
  * TODO: Currently, this implementation does not communicate with the JMC runtime.
+ * TODO : FIX THIS CLASS
  *
  * @param <V> the type of elements in this array
  */

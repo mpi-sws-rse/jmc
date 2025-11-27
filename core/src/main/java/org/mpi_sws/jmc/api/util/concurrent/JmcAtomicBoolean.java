@@ -106,4 +106,12 @@ public class JmcAtomicBoolean {
             lock.unlock();
         }
     }
+
+    /**
+     * @return
+     */
+    @Override
+    public String toString() {
+        return Boolean.toString(get());
+    }
 }

@@ -40,10 +40,10 @@ public class JmcExecutors {
 //            org.mpi_sws.jmc.api.util.concurrent.JmcExecutors.newFixedThreadPool(int, java.util.concurrent.ThreadFactory)'
 
     public static ExecutorService newFixedThreadPool(int nThreads, ThreadFactory threadFactory) {
-        return new JmcThreadPoolExecutor(nThreads);
+        return new JmcExecutorService(nThreads);
     }
 
     public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
-        return new JmcThreadPoolExecutor(1);
+        return new JmcExecutorService(1);
     }
 }

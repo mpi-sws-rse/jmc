@@ -288,4 +288,12 @@ public class JmcAtomicInteger {
             lock.unlock();
         }
     }
+
+    /**
+     * @return
+     */
+    @Override
+    public String toString() {
+        return Integer.toString(get());
+    }
 }
