@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.agent.visitors;
 
+import org.mpi_sws.jmc.checker.exceptions.JmcUnsupportedFeatureException;
 import org.objectweb.asm.*;
 
 import java.util.Arrays;
@@ -126,8 +127,7 @@ public class JmcFutureVisitor {
             if (owner.equals(EXECUTORS_PATH)) {
                 if (!SUPPORTED_METHODS.containsKey(name)
                         || !SUPPORTED_METHODS.get(name).contains(descriptor)) {
-                    // TODO : Clean the following line
-                    throw new RuntimeException(
+                    throw new JmcUnsupportedFeatureException(
                             "Unsupported method: " + name + " with descriptor: " + descriptor);
                 }
                 // Replace the call to Executors with a call to JmcExecutors
@@ -142,8 +142,6 @@ public class JmcFutureVisitor {
 
             //intercepting threadpool calls via invokespecial
             if (opcode == Opcodes.INVOKESPECIAL && owner.equals(THREADPOOL_EXECUTOR_PATH)) {
-                // TODO : Clean the following line
-                System.out.println("Jmc invoke special Caught " + THREADPOOL_EXECUTOR_PATH + " method " + name);
                 super.visitMethodInsn(
                         opcode,
                         JMC_EXECUTOR_SERVICE_PATH,
@@ -165,11 +163,11 @@ public class JmcFutureVisitor {
                 super.visitTypeInsn(opcode, JMC_EXECUTOR_SERVICE_PATH);
             }
             if (EXECUTORS_DELEGATED_WRAPPER.equals(type)) {
-                //map wrappers to JmcThreadpool
+                //map wrappers to JmcExecutorService
                 super.visitTypeInsn(opcode, JMC_EXECUTOR_SERVICE_PATH);
             }
             if (EXECUTORS_FINALIZED_WRAPPER.equals(type)) {
-                //map wrappers to JmcThreadpool
+                //map wrappers to JmcExecutorService
                 super.visitTypeInsn(opcode, JMC_EXECUTOR_SERVICE_PATH);
             }
             //default
@@ -188,16 +186,12 @@ public class JmcFutureVisitor {
                 }
                 if (newDescriptor.contains(EXECUTORS_DESC)) {
                     newDescriptor = newDescriptor.replace(EXECUTORS_DESC, JMC_EXECUTORS_PATH_DESC);
-                    // TODO : Clean the following line
-                    System.out.println("Replaced descriptor for executor: " + newDescriptor);
                 }
                 if (newDescriptor.contains("L" + EXECUTORS_DELEGATED_WRAPPER + ";") ||
                         newDescriptor.contains("L" + EXECUTORS_FINALIZED_WRAPPER + ";")
                 ) {
                     newDescriptor = newDescriptor.replace("L" + EXECUTORS_DELEGATED_WRAPPER + ";", JMC_EXECUTOR_SERVICE_PATH_DESC);
                     newDescriptor = newDescriptor.replace("L" + EXECUTORS_FINALIZED_WRAPPER + ";", JMC_EXECUTOR_SERVICE_PATH_DESC);
-                    // TODO : Clean the following line
-                    System.out.println("Replaced descriptor in local variable for name " + name + " with: " + newDescriptor);
                 }
             }
             super.visitLocalVariable(name, newDescriptor, signature, start, end, index);
@@ -259,8 +253,8 @@ public class JmcFutureVisitor {
 //            } else {
 //                super.visitInvokeDynamicInsn(name, descriptor, bsm, bsmArgs);
 //            }
-//
-//
+
+
 //        }
 
         private String replaceDescriptor(String desc) {
@@ -271,10 +265,6 @@ public class JmcFutureVisitor {
             if (newDesc.contains(EXECUTORS_DESC)) {
                 newDesc = newDesc.replace(EXECUTORS_DESC, JMC_EXECUTORS_PATH_DESC);
             }
-//            We do not map ExecutorService to JmcExecutorService since ExecutorService is an interface
-//            if (newDesc.contains(EXECUTOR_SERVICE_DESC)) {
-//                newDesc = newDesc.replace(EXECUTOR_SERVICE_DESC, JMC_EXECUTOR_SERVICE_PATH_DESC);
-//            }
             if (newDesc.contains(THREADPOOL_EXECUTOR_DESC)) {
                 newDesc = newDesc.replace(THREADPOOL_EXECUTOR_DESC, JMC_EXECUTOR_SERVICE_PATH_DESC);
             }
