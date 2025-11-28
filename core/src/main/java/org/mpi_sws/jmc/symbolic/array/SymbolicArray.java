@@ -7,10 +7,30 @@ import org.mpi_sws.jmc.symbolic.integer.AbstractInteger;
 public class SymbolicArray extends AbstractArray {
 
     private final String name;
+    private final boolean isShared;
 
+    /**
+     * Creates a new symbolic array with the given name and shared status.
+     *
+     * @param name     the name of the symbolic array
+     * @param isShared whether the array is shared across all tasks
+     */
     public SymbolicArray(String name, boolean isShared) {
         Long id = JmcRuntime.currentTask();
         this.name = "SymbolicInteger@" + name + "_" + id;
+        this.isShared = isShared;
+        write();
+    }
+
+    /**
+     * Creates a new symbolic array with the given name. The array is shared across all tasks.
+     *
+     * @param name the name of the symbolic array
+     */
+    public SymbolicArray(String name) {
+        Long id = JmcRuntime.currentTask();
+        this.name = "SymbolicInteger@" + name + "_" + id;
+        this.isShared = true;
         write();
     }
 

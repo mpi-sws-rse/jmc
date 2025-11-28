@@ -7,7 +7,10 @@ import org.mpi_sws.jmc.symbolic.bool.PropositionalFormula;
 import org.mpi_sws.jmc.symbolic.integer.ArithmeticFormula;
 import org.mpi_sws.jmc.symbolic.integer.SymbolicInteger;
 
-
+/**
+ * A simple array implementation that supports symbolic indexing by enumerating all possible
+ * indices (this class will be replaced by a more efficient implementation in the future).
+ */
 public class EnumerationArray<T> {
 
     public T[] array;
