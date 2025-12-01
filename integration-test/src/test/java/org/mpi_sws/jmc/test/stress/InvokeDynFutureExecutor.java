@@ -33,27 +33,27 @@ public class InvokeDynFutureExecutor {
         service.shutdown();
     }
 
-//
-//    public static void executor_seq() throws ExecutionException, InterruptedException {
-//        ExecutorService service = new ThreadPoolExecutor(
-//                1,1,
-//                0L, TimeUnit.MILLISECONDS,
-//                new LinkedBlockingQueue<>()
-//        ) {
-//            private ReentrantLock lock =  new ReentrantLock();
-//            private final AtomicInteger counter = new AtomicInteger();
-//
-//            @Override
-//            public String toString() {
-//                lock.lock();
-//                counter.incrementAndGet();
-//                lock.unlock();
-//                return "ExecutorState=" + counter.get();
-//            }
-//        };
-//        service.submit(() -> service.toString()).get();
-//        service.shutdown();
-//    }
+
+    public static void executor_seq() throws ExecutionException, InterruptedException {
+        ExecutorService service = new ThreadPoolExecutor(
+                1,1,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>()
+        ) {
+            private ReentrantLock lock =  new ReentrantLock();
+            private final AtomicInteger counter = new AtomicInteger();
+
+            @Override
+            public String toString() {
+                lock.lock();
+                counter.incrementAndGet();
+                lock.unlock();
+                return "ExecutorState=" + counter.get();
+            }
+        };
+        service.submit(() -> service.toString()).get();
+        //service.shutdown();
+    }
 
     public static void futureNested_seq() throws Exception {
         ExecutorService service = Executors.newFixedThreadPool(2);
@@ -132,18 +132,21 @@ public class InvokeDynFutureExecutor {
 //        //service.shutdown();
 //
 //    }
+
+
+
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
     public void testFuture_seq() throws Exception {
         future_seq();
     }
 
-    //    @JmcCheck
-//    @JmcCheckConfiguration(numIterations = 10)
-//    public void testExecutor_seq() throws Exception {
-//        executor_seq();
-//    }
-//
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10)
+    public void testExecutor_seq() throws Exception {
+        executor_seq();
+    }
+
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
     public void testFutureNested_seq() throws Exception {
