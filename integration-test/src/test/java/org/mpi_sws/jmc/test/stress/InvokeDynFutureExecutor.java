@@ -36,11 +36,11 @@ public class InvokeDynFutureExecutor {
 
     public static void executor_seq() throws ExecutionException, InterruptedException {
         ExecutorService service = new ThreadPoolExecutor(
-                1,1,
+                1, 1,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>()
         ) {
-            private ReentrantLock lock =  new ReentrantLock();
+            private final ReentrantLock lock = new ReentrantLock();
             private final AtomicInteger counter = new AtomicInteger();
 
             @Override
@@ -52,7 +52,7 @@ public class InvokeDynFutureExecutor {
             }
         };
         service.submit(() -> service.toString()).get();
-        //service.shutdown();
+        service.shutdown();
     }
 
     public static void futureNested_seq() throws Exception {
@@ -132,9 +132,6 @@ public class InvokeDynFutureExecutor {
 //        //service.shutdown();
 //
 //    }
-
-
-
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
     public void testFuture_seq() throws Exception {
