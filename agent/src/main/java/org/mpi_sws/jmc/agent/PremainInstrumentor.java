@@ -3,6 +3,7 @@ package org.mpi_sws.jmc.agent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.agent.visitors.*;
+import org.mpi_sws.jmc.checker.exceptions.JmcUnsupportedFeatureException;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
@@ -70,7 +71,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
             Class<?> classBeingRedefined,
             ProtectionDomain protectionDomain,
             byte[] classFileBuffer)
-            throws IllegalClassFormatException {
+            throws IllegalClassFormatException, JmcUnsupportedFeatureException {
         String finalClassName = className.replace("/", ".");
         byte[] copiedClassBuffer = Arrays.copyOf(classFileBuffer, classFileBuffer.length);
 
@@ -100,9 +101,13 @@ public class PremainInstrumentor implements ClassFileTransformer {
             }
             return transformed;
         } catch (Exception e) {
+            if (e instanceof JmcUnsupportedFeatureException) {
+                throw new JmcUnsupportedFeatureException(e.getMessage());
+            } else {
             LOGGER.info("Error transforming class: {} {}", finalClassName, e);
             throw new IllegalClassFormatException(
                     "Error instrumenting class: " + finalClassName + " Error: " + e);
+            }
         }
     }
 

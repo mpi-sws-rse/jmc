@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.agent.visitors;
 
+import org.mpi_sws.jmc.checker.exceptions.JmcUnsupportedFeatureException;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -58,7 +59,11 @@ public class JmcVisitor {
         try{
             cr.accept(cv, 0);
             } catch (Exception e){
-            System.out.println("Exception in JmcVisitor" + e.getMessage());
+            if (e instanceof JmcUnsupportedFeatureException) {
+                throw (JmcUnsupportedFeatureException) e;
+            } else {
+                throw new RuntimeException(e);
+            }
         }
         return cw.toByteArray();
     }
