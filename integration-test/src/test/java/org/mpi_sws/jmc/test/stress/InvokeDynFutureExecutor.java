@@ -30,7 +30,7 @@ public class InvokeDynFutureExecutor {
             return "done";
         });
         f.get();
-        //service.shutdown();
+        service.shutdown();
     }
 
 //
@@ -58,28 +58,31 @@ public class InvokeDynFutureExecutor {
     public static void futureNested_seq() throws Exception {
         ExecutorService service = Executors.newFixedThreadPool(2);
 
-        Future<String> f = service.submit( () -> {
-            ReentrantLock lock =  new ReentrantLock() {
+        Future<String> f = service.submit(() -> {
+            ReentrantLock lock = new ReentrantLock() {
 
                 @Override
                 public String toString() {
                     this.lock();
-                    try { return "LockNested"; }
-                    finally { this.unlock(); }
+                    try {
+                        return "LockNested";
+                    } finally {
+                        this.unlock();
+                    }
                 }
             };
             return lock.toString();
         });
         f.get();
-        //service.shutdown();
+        service.shutdown();
     }
 
     public static void future_par() throws Exception {
         ExecutorService service = Executors.newFixedThreadPool(3);
-        ReentrantLock lock =  new ReentrantLock();
+        ReentrantLock lock = new ReentrantLock();
         AtomicInteger counter = new AtomicInteger();
 
-        Future<?> f1 = service.submit( () -> {
+        Future<?> f1 = service.submit(() -> {
             lock.lock();
             try {
                 counter.incrementAndGet();
@@ -90,7 +93,7 @@ public class InvokeDynFutureExecutor {
         Future<?> f2 = service.submit(counter::toString);
 
         Future<?> f3 = service.submit(() -> {
-            synchronized(service) {
+            synchronized (service) {
                 counter.incrementAndGet();
             }
         });
@@ -98,10 +101,12 @@ public class InvokeDynFutureExecutor {
         f2.get();
         f3.get();
 
-       // service.shutdown();
+        service.shutdown();
     }
 
-    /**This test is disabled**/
+    /**
+     * This test is disabled
+     **/
 //    public static void executor_par() throws Exception {
 //        ExecutorService service = Executors.newCachedThreadPool();
 //
@@ -127,16 +132,13 @@ public class InvokeDynFutureExecutor {
 //        //service.shutdown();
 //
 //    }
-
-
-
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
     public void testFuture_seq() throws Exception {
         future_seq();
     }
 
-//    @JmcCheck
+    //    @JmcCheck
 //    @JmcCheckConfiguration(numIterations = 10)
 //    public void testExecutor_seq() throws Exception {
 //        executor_seq();

@@ -25,11 +25,11 @@ public class JmcExecutorService extends ThreadPoolExecutor {
 
     // Keeps track of how many current tasks are running.
     // Updated by the worker threads.
-    private AtomicInteger counter;
-    private int capacity;
-    private BlockingQueue<JmcFuture> queue;
-    private List<JmcExecutorWorker> workers;
-    private AtomicBoolean isShutdown = new AtomicBoolean(false);
+    private final AtomicInteger counter;
+    private final int capacity;
+    private final BlockingQueue<JmcFuture> queue;
+    private final List<JmcExecutorWorker> workers;
+    private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     public JmcExecutorService(int capacity) {
 
@@ -71,12 +71,15 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         this.isShutdown.set(false);
     }
 
-    /** Stops the executor service. */
+    /**
+     * Stops the executor service.
+     */
     @Override
     public void shutdown() {
         super.shutdown();
         for (JmcExecutorWorker worker : workers) {
             worker.shutdown();
+            worker.interrupt();
         }
         isShutdown.set(true);
 
@@ -97,7 +100,9 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         counter.decrementAndGet();
     }
 
-    /** Stops the executor service. Currently not supported. */
+    /**
+     * Stops the executor service. Currently not supported.
+     */
     @Override
     public List<Runnable> shutdownNow() {
         // Currently not supported
@@ -108,19 +113,25 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         return new ArrayList<>();
     }
 
-    /** Returns whether the executor service is shutdown. */
+    /**
+     * Returns whether the executor service is shutdown.
+     */
     @Override
     public boolean isShutdown() {
         return isShutdown.get();
     }
 
-    /** Returns whether the executor service is terminated. */
+    /**
+     * Returns whether the executor service is terminated.
+     */
     @Override
     public boolean isTerminated() {
         return false;
     }
 
-    /** Waits for the executor service to terminate. */
+    /**
+     * Waits for the executor service to terminate.
+     */
     @Override
     public boolean awaitTermination(long l, TimeUnit timeUnit) throws InterruptedException {
         boolean allShutdown = true;
@@ -150,7 +161,9 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         }
     }
 
-    /** Submits a callable task to the executor service. */
+    /**
+     * Submits a callable task to the executor service.
+     */
     @Override
     public <T> JmcFuture<T> submit(Callable<T> callable) {
         JmcFuture<T> future = new JmcFuture<>(callable, JmcRuntime.addNewTask());
@@ -244,9 +257,8 @@ public class JmcExecutorService extends ThreadPoolExecutor {
 
     @Override
     public void execute(Runnable runnable) {
-        if (runnable instanceof JmcThread) {
+        if (runnable instanceof JmcThread jmcThread) {
             // If the runnable is already a JmcThread, reuse the taskId
-            JmcThread jmcThread = (JmcThread) runnable;
             JmcFuture jmcFuture = new JmcFuture<>(jmcThread);
             offer(jmcFuture);
         } else {
@@ -259,9 +271,9 @@ public class JmcExecutorService extends ThreadPoolExecutor {
 
         private static final Logger LOGGER = LogManager.getLogger(JmcExecutorWorker.class);
 
-        private BlockingQueue<JmcFuture> queue;
-        private AtomicBoolean isShutdown = new AtomicBoolean(false);
-        private AtomicInteger workCounter;
+        private final BlockingQueue<JmcFuture> queue;
+        private final AtomicBoolean isShutdown = new AtomicBoolean(false);
+        private final AtomicInteger workCounter;
         private final int id;
 
         public JmcExecutorWorker(
