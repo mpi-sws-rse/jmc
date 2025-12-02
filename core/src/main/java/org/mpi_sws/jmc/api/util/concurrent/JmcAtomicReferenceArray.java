@@ -59,4 +59,8 @@ public class JmcAtomicReferenceArray<V> {
             lock.unlock();
         }
     }
+
+    public int length() {
+        return array.length;
+    }
 }
