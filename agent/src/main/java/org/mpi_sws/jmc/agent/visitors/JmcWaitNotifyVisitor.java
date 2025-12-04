@@ -38,6 +38,12 @@ public class JmcWaitNotifyVisitor extends ClassVisitor {
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
+            // Only instrument wait/notify/notifyAll if they're being called on java.lang.Object
+            // TODO reevaluate the second check on Object
+            if (opcode != Opcodes.INVOKEVIRTUAL || !owner.equals("java/lang/Object")) {
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                return;
+            }
             switch (name) {
                 case "wait":
                     if (descriptor.equals("()V")) {
