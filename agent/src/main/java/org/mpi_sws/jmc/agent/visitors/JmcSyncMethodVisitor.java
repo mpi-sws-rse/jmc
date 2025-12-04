@@ -162,6 +162,17 @@ public class JmcSyncMethodVisitor extends ClassVisitor {
 
         // lock
         newMv.visitLabel(l0);
+
+        if (methodInfo.isStatic()) {
+            newMv.visitLdcInsn(className);
+            newMv.visitMethodInsn(
+                    Opcodes.INVOKESTATIC,
+                    "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
+                    "registerSyncLock",
+                    "(Ljava/lang/String;)V",
+                    false
+            );
+        }
         if (methodInfo.isStatic()) {
             newMv.visitLdcInsn(className);
         } else {
