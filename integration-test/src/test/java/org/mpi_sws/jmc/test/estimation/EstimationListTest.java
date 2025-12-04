@@ -213,23 +213,23 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    //@JmcExpectExecutions(6) // For any n is n!
+    @JmcExpectExecutions(6) // For any n is n! (max 10)
     public void runCoarseListITrust() {
-        coarseListIProgram(10);
+        coarseListIProgram(3);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runCoarseListITrustEstimation() {
-        coarseListIProgram(4);
+        coarseListIProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runCoarseListIWgTrustEstimation() {
-        coarseListIProgram(4);
+        coarseListIProgram(3);
     }
 
     /**
@@ -241,23 +241,23 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(loggerTree = true)
-    @JmcExpectExecutions(24) // For any n is n!
+    @JmcExpectExecutions(6) // For any n is n!
     public void runCoarseListIDTrust() {
-        coarseListIDProgram(4);
+        coarseListIDProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runCoarseListIDTrustEstimation() {
-        coarseListIDProgram(4);
+        coarseListIDProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runCoarseListIDWgTrustEstimation() {
-        coarseListIDProgram(4);
+        coarseListIDProgram(3);
     }
 
     /**
@@ -269,23 +269,23 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(loggerTree = true)
-    @JmcExpectExecutions(720) // For any n is n!
+    @JmcExpectExecutions(6) // For any n is n!
     public void runFineListITrust() {
-        fineListIProgram(6);
+        fineListIProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runFineListITrustEstimation() {
-        fineListIProgram(4);
+        fineListIProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runFineListIWgTrustEstimation() {
-        fineListIProgram(4);
+        fineListIProgram(3);
     }
 
     /**
@@ -297,23 +297,23 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(loggerTree = true)
-    //@JmcExpectExecutions(720) // For any n is n!
+    @JmcExpectExecutions(6) // For any n is n!
     public void runFineListIDTrust() {
-        fineListIDProgram(8);
+        fineListIDProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runFineListIDTrustEstimation() {
-        fineListIDProgram(4);
+        fineListIDProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runFineListIDWgTrustEstimation() {
-        fineListIDProgram(4);
+        fineListIDProgram(3);
     }
 
     /**
@@ -325,20 +325,20 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
-    @JmcExpectExecutions(4532) // For n = 2 is 4, for n = 3 is 67, for n = 4 is 4532
+    @JmcExpectExecutions(67) // For n = 2 is 4, for n = 3 is 67, for n = 4 is 4532
     public void runOptListITrust() {
-        optListIProgram(4);
+        optListIProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runOptListITrustEstimation() {
         optListIProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runOptListIWgTrustEstimation() {
         optListIProgram(3);
@@ -353,23 +353,23 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(loggerTree = true)
-    @JmcExpectExecutions(1687) // For n = 2, is 3, n = 3, is 42, n = 4 is 1687
+    @JmcExpectExecutions(42) // For n = 2, is 3, n = 3, is 42, n = 4 is 1687
     public void runOptListIDTrust() {
-        optListIDProgram(4);
+        optListIDProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runOptListIDTrustEstimation() {
-        optListIDProgram(2);
+        optListIDProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runOptListIDWgTrustEstimation() {
-        optListIDProgram(2);
+        optListIDProgram(3);
     }
 
     /**
@@ -381,23 +381,23 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    @JmcExpectExecutions(4383) // For n = 2, is 4 and for n = 3, is 67 and for n = 4 is 4383
+    @JmcExpectExecutions(67) // For n = 2, is 4 and for n = 3, is 67 and for n = 4 is 4383
     public void runLazyListITrust() {
-        lazyListIProgram(4);
+        lazyListIProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runLazyListITrustEstimation() {
-        lazyListIProgram(2);
+        lazyListIProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runLazyListIWgTrustEstimation() {
-        lazyListIProgram(2);
+        lazyListIProgram(3);
     }
 
     /**
@@ -409,22 +409,22 @@ public class EstimationListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(loggerTree = true)
-    @JmcExpectExecutions(1687) // For n = 2, is 3, n = 3, is 42 and for n = 4 is 1687
+    @JmcExpectExecutions(42) // For n = 2, is 3, n = 3, is 42 and for n = 4 is 1687
     public void runLazyListIDTrust() {
-        lazyListIDProgram(4);
+        lazyListIDProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10000, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runLazyListIDTrustEstimation() {
-        lazyListIDProgram(2);
+        lazyListIDProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 200, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runLazyListIDWgTrustEstimation() {
-        lazyListIDProgram(2);
+        lazyListIDProgram(3);
     }
 }

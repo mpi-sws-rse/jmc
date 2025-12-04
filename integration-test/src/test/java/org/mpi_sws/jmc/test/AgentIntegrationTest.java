@@ -6,9 +6,11 @@ import org.mpi_sws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.checker.JmcTestTarget;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
-import org.mpi_sws.jmc.test.programs.*;
+import org.mpi_sws.jmc.test.executor.*;
 
-/** The AgentIntegrationTest class is used to test the agent. */
+/**
+ * The AgentIntegrationTest class is used to test the agent.
+ */
 public class AgentIntegrationTest {
 
     @Test

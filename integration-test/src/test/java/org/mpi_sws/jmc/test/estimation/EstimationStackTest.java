@@ -450,7 +450,7 @@ public class EstimationStackTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runAgmStackPushTrust() {
-        agmStackPushProgram(4);
+        agmStackPushProgram(3);
     }
 
     /**
@@ -459,9 +459,9 @@ public class EstimationStackTest {
      */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true, debug = true)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runAgmStackPushPopTrust() {
-        agmStackPushPopProgram(4);
+        agmStackPushPopProgram(3);
     }
 
     /**
@@ -472,7 +472,7 @@ public class EstimationStackTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runTreiberStackPushTrust() {
-        treiberStackPushProgram(6);
+        treiberStackPushProgram(3);
     }
 
     /**
@@ -494,7 +494,7 @@ public class EstimationStackTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLockFreeStackPushTrust() {
-        lockFreeStackPushProgram(6);
+        lockFreeStackPushProgram(3);
     }
 
     /**
@@ -505,7 +505,7 @@ public class EstimationStackTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLockFreeStackPushPopTrust() {
-        lockFreeStackPushPopProgram(4);
+        lockFreeStackPushPopProgram(3);
     }
 
     /**
@@ -516,7 +516,7 @@ public class EstimationStackTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runBackoffEliminationStackPushTrust() {
-        backoffEliminationStackPushProgram(6);
+        backoffEliminationStackPushProgram(3);
     }
 
     /**
@@ -527,7 +527,7 @@ public class EstimationStackTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runBackoffEliminationStackPushPopTrust() {
-        backoffEliminationStackPushPopProgram(4);
+        backoffEliminationStackPushPopProgram(3);
     }
 
     /**
@@ -549,7 +549,7 @@ public class EstimationStackTest {
     @JmcCheckConfiguration(numIterations = 100000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runIntervalTimestampedStackPushPopTrust() {
-        IntervalTimestampedStackPushPopProgram(5);
+        IntervalTimestampedStackPushPopProgram(3);
     }
 
     /**

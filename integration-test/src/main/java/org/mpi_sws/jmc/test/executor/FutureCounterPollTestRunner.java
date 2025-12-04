@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.test.programs;
+package org.mpi_sws.jmc.test.executor;
 
 import org.mpi_sws.jmc.test.FutureCounterPoll;
 

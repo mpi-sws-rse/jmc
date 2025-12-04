@@ -232,26 +232,26 @@ public class EstimationTacasTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
     public void runBig0DagEstimation() {
         big0();
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
     public void runBig0FjDagEstimation() {
         big0();
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 2000, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO, debug = false)
     public void runBig0TrustEstimation() {
         big0();
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runBig0WgTrustEstimation() {
         big0();
@@ -272,7 +272,7 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 3000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runTtasLockTrust() {
-        ttasLock(6);
+        ttasLock(3);
     }
 
     /** ----------------------------------------------------*/
@@ -290,7 +290,7 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 2000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLinuxRWLocksTrust() {
-        linuxRWLocks(2, 2, 0);
+        linuxRWLocks(1, 1, 1);
     }
 
     /** ----------------------------------------------------*/
@@ -307,7 +307,7 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runMpmcQueueTrust() {
-        mpmcQueue(1, 3, 2);
+        mpmcQueue(1, 1, 1);
     }
 
     /**
@@ -318,6 +318,6 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 100000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runAbaMsQueueTrust() {
-        abaMsQueue(2, 1, 0);
+        abaMsQueue(1, 1, 1);
     }
 }

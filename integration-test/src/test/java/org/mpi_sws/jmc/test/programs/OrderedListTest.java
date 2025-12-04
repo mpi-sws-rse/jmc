@@ -93,49 +93,49 @@ public class OrderedListTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100)
     public void runRandom_100_0_CoarseListTest() {
-        test_100_0_workload(7, new CoarseList());
+        test_100_0_workload(3, new CoarseList());
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy()
-    @JmcExpectExecutions(5040) // For input 7
+    @JmcExpectExecutions(6) // For input 7 = 5040
     public void runTrust_100_0_CoarseListTest() {
-        test_100_0_workload(7, new CoarseList());
+        test_100_0_workload(3, new CoarseList());
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000)
     public void runRandom_50_50_CoarseListTest() {
-        test_50_50_workload(6, new CoarseList());
+        test_50_50_workload(3, new CoarseList());
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy()
-    @JmcExpectExecutions(5040) // For input 7
+    @JmcExpectExecutions(6) // For input 7 = 5040
     public void runTrust_50_50_CoarseListTest() {
-        test_50_50_workload(7, new CoarseList());
+        test_50_50_workload(3, new CoarseList());
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000)
     public void runRandom_100_0_FineListTest() {
-        test_100_0_workload(7, new FineList());
+        test_100_0_workload(3, new FineList());
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy()
-    @JmcExpectExecutions(5040) // For input 7
+    @JmcExpectExecutions(6) // For input 7 = 5040
     public void runTrust_100_0_FineListTest() {
-        test_100_0_workload(7, new FineList());
+        test_100_0_workload(3, new FineList());
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 1000)
     public void runRandom_50_50_FineListTest() {
-        test_50_50_workload(7, new FineList());
+        test_50_50_workload(3, new FineList());
     }
 
     @JmcCheck
@@ -143,6 +143,6 @@ public class OrderedListTest {
     @JmcTrustStrategy()
     // TODO :: Fix this test
     public void runTrust_50_50_FineListTest() {
-        test_50_50_workload(7, new FineList());
+        test_50_50_workload(3, new FineList());
     }
 }

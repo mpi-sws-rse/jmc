@@ -10,8 +10,8 @@ import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 public class StaticSynchronizedMethodTest {
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug = true)
-    public  void testStaticSynchronizedMethod() {
+    @JmcCheckConfiguration(numIterations = 10)
+    public void testStaticSynchronizedMethod() {
         // Call a static synchronized method
         String result = TestClass.getOrCreateValue();
         System.out.println("Result: " + result);

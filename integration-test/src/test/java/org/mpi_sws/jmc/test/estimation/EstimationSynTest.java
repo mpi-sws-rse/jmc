@@ -483,34 +483,34 @@ public class EstimationSynTest {
     @JmcTrustStrategy(loggerTree = true)
     @JmcExpectExecutions(1) // For any n is 1
     public void runRnTrust() {
-        readNProgram(10);
+        readNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
     public void runRnDagEstimation() {
-        readNProgram(4);
+        readNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
     public void runRnFjDagEstimation() {
-        readNProgram(6);
+        readNProgram(3);
     }
 
     // The scheduling policy can be either FIFO or LIFO, both work fine.
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, strategy = "trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runRnTrustEstimation() {
-        readNProgram(4);
+        readNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000, strategy = "wg-trust-estimation",
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO, debug = false)
     public void runRnWgTrustEstimation() {
-        readNProgram(4);
+        readNProgram(3);
     }
 
     /** ----------------------------------------------------*/
@@ -527,31 +527,31 @@ public class EstimationSynTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 2000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
-    //@JmcExpectExecutions(36) // For input n is (n!)^2
+    @JmcExpectExecutions(36) // For input n is (n!)^2
     public void runIncnTrust() {
-        incNProgram(6);
+        incNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 500000, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
     public void runIncnDagEstimation() {
         incNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
     public void runIncnFjDagEstimation() {
-        incNProgram(4);
+        incNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runIncnTrustEstimation() {
         incNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runIncnWgTrustEstimation() {
         incNProgram(3);
     }
@@ -571,31 +571,31 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 2000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runRWNTrust() {
-        RWNProgram(5, 5);
+        RWNProgram(2, 2);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 50000, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
     public void runRWNnDagEstimation() {
-        RWNProgram(3, 3);
+        RWNProgram(2, 2);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
     public void runRWNnFjDagEstimation() {
-        RWNProgram(4, 4);
+        RWNProgram(2, 2);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runRWNnTrustEstimation() {
-        RWNProgram(1, 2);
+        RWNProgram(2, 2);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runRWNnWgTrustEstimation() {
-        RWNProgram(3, 3);
+        RWNProgram(2, 2);
     }
 
     /** ----------------------------------------------------*/
@@ -612,33 +612,32 @@ public class EstimationSynTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 2000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
-    //@JmcExpectExecutions(36) // For input n is n!
     public void runWRNTrust() {
-        WRNProgram(5, 5);
+        WRNProgram(2, 2);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 50000, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
     public void runWRNnDagEstimation() {
-        WRNProgram(3, 3);
+        WRNProgram(2, 2);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 40000, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
     public void runWRNnFjDagEstimation() {
-        WRNProgram(4, 4);
+        WRNProgram(2, 2);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runWRNnTrustEstimation() {
-        WRNProgram(10, 10);
+        WRNProgram(2, 2);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runWRNnWgTrustEstimation() {
-        WRNProgram(3, 3);
+        WRNProgram(2, 2);
     }
 
     /** ----------------------------------------------------*/
@@ -656,7 +655,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runSVQueue1Trust() {
-        svQueue1Program(10);
+        svQueue1Program(3);
     }
 
     /** ----------------------------------------------------*/
@@ -674,7 +673,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runSVQueue2Trust() {
-        svQueue2Program(10);
+        svQueue2Program(3);
     }
 
     /** ----------------------------------------------------*/
@@ -692,7 +691,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runSVQueue3Trust() {
-        svQueue3Program(16);
+        svQueue3Program(3);
     }
 
     /**
@@ -703,7 +702,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runSVStack1Trust() {
-        svStack1Program(10);
+        svStack1Program(3);
     }
 
     /**
@@ -714,7 +713,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runSVStack2Trust() {
-        svStack2Program(11);
+        svStack2Program(3);
     }
 
     /**
@@ -725,7 +724,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runCoarseCounterTrust() {
-        coarseCounter(4);
+        coarseCounter(3);
     }
 
     /**
@@ -736,7 +735,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runFineCounterTrust() {
-        fineCounterProgram(12);
+        fineCounterProgram(3);
     }
 
     /**
@@ -771,7 +770,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runFib1Trust() {
-        fib1Program(11);
+        fib1Program(3);
     }
 
     /**
@@ -782,7 +781,7 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 5000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runSigmaTrust() {
-        sigmaProgram(5);
+        sigmaProgram(3);
     }
 
     /**

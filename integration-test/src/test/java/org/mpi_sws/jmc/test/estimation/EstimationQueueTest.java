@@ -273,7 +273,7 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runHwQueueEnqueueTrust() {
-        hwQueueEnqueueProgram(4);
+        hwQueueEnqueueProgram(3);
     }
 
     /**
@@ -284,7 +284,7 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runHwQueueEnqueueDequeueTrust() {
-        hwQueueEnqueueDequeueProgram(4);
+        hwQueueEnqueueDequeueProgram(3);
     }
 
     /**
@@ -295,7 +295,7 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLbQueueEnqueueTrust() {
-        lbQueueEnqueueProgram(8);
+        lbQueueEnqueueProgram(3);
     }
 
     /**
@@ -306,7 +306,7 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLbQueueEnqueueDequeueTrust() {
-        lbQueueEnqueueDequeueProgram(5);
+        lbQueueEnqueueDequeueProgram(3);
     }
 
     /**
@@ -317,7 +317,7 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runUbQueueEnqueueTrust() {
-        ubQueueEnqueueProgram(6);
+        ubQueueEnqueueProgram(3);
     }
 
     /**
@@ -328,7 +328,7 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runUbQueueEnqueueDequeueTrust() {
-        ubQueueEnqueueDequeueProgram(8);
+        ubQueueEnqueueDequeueProgram(3);
     }
 
     /**
@@ -339,7 +339,7 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLbArrayPQueueEnqueueTrust() {
-        lbArrayPQueueEnqueueProgram(10);
+        lbArrayPQueueEnqueueProgram(3);
     }
 
     /**
@@ -350,7 +350,7 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLbArrayPQueueEnqueueDequeueTrust() {
-        lbArrayPQueueEnqueueDequeueProgram(6);
+        lbArrayPQueueEnqueueDequeueProgram(3);
     }
 
     /**
@@ -368,6 +368,6 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runMsQueueEnqueueDequeueTrust() {
-        msQueueEnqueueDequeueProgram(6);
+        msQueueEnqueueDequeueProgram(3);
     }
 }

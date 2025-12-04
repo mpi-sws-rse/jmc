@@ -71,7 +71,9 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         this.isShutdown.set(false);
     }
 
-    /**Added this constructor for when a class extends ThreadPoolExecutor **/
+    /**
+     * Added this constructor for when a class extends ThreadPoolExecutor
+     **/
     public JmcExecutorService(
             int corePoolSize,
             int maximumPoolSize,
@@ -330,7 +332,7 @@ public class JmcExecutorService extends ThreadPoolExecutor {
                     task.run();
                     workCounter.decrementAndGet();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    LOGGER.debug("Interrupted", e);
                 } finally {
                     if (task != null) {
                         if (queue.isEmpty()) {
