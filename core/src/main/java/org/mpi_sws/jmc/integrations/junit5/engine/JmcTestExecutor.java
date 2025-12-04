@@ -33,7 +33,7 @@ public class JmcTestExecutor {
     public static JmcModelCheckerReport execute(
             Method testMethod, Object instance, JmcCheckerConfiguration config)
             throws JmcCheckerException {
-        LOGGER.debug("JmcTestExecutor Executing test: {}", testMethod.getName());
+        LOGGER.info("JmcTestExecutor Executing test: {}", testMethod.getName());
         JmcModelChecker checker = new JmcModelChecker(config);
         JmcTestTarget target =
                 new JmcFunctionalTestTarget(
