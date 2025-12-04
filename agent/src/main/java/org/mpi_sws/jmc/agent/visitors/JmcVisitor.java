@@ -35,6 +35,16 @@ public class JmcVisitor {
             return classFileBuffer;
         }
 
+        ClassReader finalizerCr = new ClassReader(classFileBuffer);
+        ClassWriter finalizerCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+
+        JmcIgnoreFinalizerVisitor finalizerVisitor = new JmcIgnoreFinalizerVisitor(finalizerCw);
+        finalizerCr.accept(finalizerVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+
+        if (finalizerVisitor.hasFinalizer()) {
+            return classFileBuffer;
+        }
+
 
         ClassReader cr = new ClassReader(classFileBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
