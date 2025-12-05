@@ -8,7 +8,7 @@ import org.mpi_sws.jmc.symbolic.SymbolicOperand;
 public abstract class AbstractBoolean implements SymbolicOperand {
 
     /**
-     * @property {@link #value} is used to store the value of the boolean.
+     * {@link #value} is used to store the value of the boolean.
      */
     public boolean value;
 

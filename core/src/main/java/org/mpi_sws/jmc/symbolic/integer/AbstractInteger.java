@@ -8,7 +8,7 @@ import org.mpi_sws.jmc.symbolic.SymbolicOperand;
 public abstract class AbstractInteger implements SymbolicOperand {
 
     /**
-     * @property {@link #concreteValue} is used to store the concrete value of the integer.
+     * {@link #concreteValue} is used to store the concrete value of the integer.
      */
     public int concreteValue;
 
@@ -34,7 +34,7 @@ public abstract class AbstractInteger implements SymbolicOperand {
     public abstract void write(ArithmeticStatement value);
 
     /**
-     * @property {@link #concreteValue} is used to store the value of the integer.
+     * {@link #concreteValue} is used to store the value of the integer.
      */
     public int getValue() {
         return this.concreteValue;

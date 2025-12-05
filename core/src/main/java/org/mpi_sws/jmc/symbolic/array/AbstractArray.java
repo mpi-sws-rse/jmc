@@ -6,7 +6,7 @@ package org.mpi_sws.jmc.symbolic.array;
 public abstract class AbstractArray {
 
     /**
-     * @property {@link #type} is used to store the type of the array.
+     * {@link #type} is used to store the type of the array.
      */
     public Type type;
 
