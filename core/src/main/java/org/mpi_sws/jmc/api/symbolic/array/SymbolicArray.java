@@ -1,9 +1,13 @@
-package org.mpi_sws.jmc.symbolic.array;
+package org.mpi_sws.jmc.api.symbolic.array;
 
 import org.mpi_sws.jmc.runtime.JmcRuntime;
-import org.mpi_sws.jmc.symbolic.integer.AbstractInteger;
+import org.mpi_sws.jmc.api.symbolic.integer.AbstractInteger;
 
 // TODO: implement symbolic array
+
+/**
+ * The {@link SymbolicArray} class is used to represent a symbolic array value.
+ */
 public class SymbolicArray extends AbstractArray {
 
     private final String name;

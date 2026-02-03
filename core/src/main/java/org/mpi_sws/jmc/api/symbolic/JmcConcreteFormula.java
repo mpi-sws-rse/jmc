@@ -1,42 +1,79 @@
-package org.mpi_sws.jmc.symbolic;
+package org.mpi_sws.jmc.api.symbolic;
 
-import org.mpi_sws.jmc.symbolic.bool.AbstractBoolean;
-import org.mpi_sws.jmc.symbolic.bool.JmcBooleanFormula;
-import org.mpi_sws.jmc.symbolic.bool.ConcreteBoolean;
-import org.mpi_sws.jmc.symbolic.bool.SymbolicBoolean;
-import org.mpi_sws.jmc.symbolic.integer.AbstractInteger;
-import org.mpi_sws.jmc.symbolic.integer.ConcreteInteger;
-import org.mpi_sws.jmc.symbolic.integer.SymbolicInteger;
+import org.mpi_sws.jmc.api.symbolic.bool.AbstractBoolean;
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
+import org.mpi_sws.jmc.api.symbolic.bool.ConcreteBoolean;
+import org.mpi_sws.jmc.api.symbolic.bool.SymbolicBoolean;
+import org.mpi_sws.jmc.api.symbolic.integer.AbstractInteger;
+import org.mpi_sws.jmc.api.symbolic.integer.ConcreteInteger;
+import org.mpi_sws.jmc.api.symbolic.integer.SymbolicInteger;
 
 import java.util.HashSet;
 import java.util.List;
 
-public class JmcFormula {
+public class JmcConcreteFormula {
 
-    public SymbolicOperand leftOperand;
+    /**
+     * The left operand of the formula.
+     */
+    private SymbolicOperand leftOperand;
 
-    public SymbolicOperand rightOperand;
+    /**
+     * The right operand of the formula.
+     */
+    private SymbolicOperand rightOperand;
 
-    public List<SymbolicOperand> operands;
+    /**
+     * The list of operands for operators that take multiple operands.
+     */
+    private List<SymbolicOperand> operands;
 
-    public InstructionType operator;
+    /**
+     * The operator of the formula.
+     */
+    private InstructionType operator;
 
+    /**
+     * Sets the left operand of the formula.
+     *
+     * @param leftOperand the left operand to set
+     */
     public void setLeftOperand(SymbolicOperand leftOperand) {
         this.leftOperand = leftOperand;
     }
 
+    /**
+     * Sets the right operand of the formula.
+     *
+     * @param rightOperand the right operand to set
+     */
     public void setRightOperand(SymbolicOperand rightOperand) {
         this.rightOperand = rightOperand;
     }
 
+    /**
+     * Sets the operator of the formula.
+     *
+     * @param operator the operator to set
+     */
     public void setOperator(InstructionType operator) {
         this.operator = operator;
     }
 
+    /**
+     * Sets the list of operands
+     *
+     * @param operands the list of operands to set
+     */
     public void setOperands(List<SymbolicOperand> operands) {
         this.operands = operands;
     }
 
+    /**
+     * Evaluates the formula based on the operator and operands.
+     *
+     * @return the result of the evaluation
+     */
     public boolean evaluate() {
         if (operator == null) {
             throw new RuntimeException("Operator is not set");
@@ -73,6 +110,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the DISTINCT operator.
+     *
+     * @return true if all operands are distinct, false otherwise
+     */
     private boolean evalDistinct() {
         if (operands == null || operands.size() == 0) {
             throw new RuntimeException("Distinct operator must have at least two operands");
@@ -87,15 +129,24 @@ public class JmcFormula {
             if (operand instanceof AbstractInteger intOp) {
                 int value = getIntValue(intOp);
                 if (!seenValues.add(value)) {
+                    seenValues.clear();
+                    seenValues = null;
                     return false; // Duplicate found
                 }
             } else {
                 throw new RuntimeException("Invalid operand for operator DISTINCT");
             }
         }
+        seenValues.clear();
+        seenValues = null;
         return true; // All elements are distinct
     }
 
+    /**
+     * Evaluates the ATOM operator.
+     *
+     * @return the boolean value of the left operand
+     */
     private boolean evalAtom() {
         if (rightOperand != null) {
             throw new IllegalArgumentException("Right operand must be null for ATOM operator");
@@ -108,6 +159,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the NOT operator.
+     *
+     * @return the negation of the boolean value of the left operand
+     */
     private boolean evalNot() {
         if (rightOperand != null) {
             throw new IllegalArgumentException("Right operand must be null for NOT operator");
@@ -120,6 +176,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the EQ (equal) operator.
+     *
+     * @return true if the left and right operands are equal, false otherwise
+     */
     private boolean evalEqual() {
         if (leftOperand instanceof AbstractInteger left
                 && rightOperand instanceof AbstractInteger right) {
@@ -129,6 +190,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the NEQ (not equal) operator.
+     *
+     * @return true if the left and right operands are not equal, false otherwise
+     */
     private boolean evalNeq() {
         if (leftOperand instanceof AbstractInteger left
                 && rightOperand instanceof AbstractInteger right) {
@@ -138,6 +204,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the GT (greater than) operator.
+     *
+     * @return true if the left operand is greater than the right operand, false otherwise
+     */
     private boolean evalGreater() {
         if (leftOperand instanceof AbstractInteger left
                 && rightOperand instanceof AbstractInteger right) {
@@ -147,6 +218,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the LT (less than) operator.
+     *
+     * @return true if the left operand is less than the right operand, false otherwise
+     */
     private boolean evalLess() {
         if (leftOperand instanceof AbstractInteger left
                 && rightOperand instanceof AbstractInteger right) {
@@ -156,6 +232,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the LEQ (less than or equal to) operator.
+     *
+     * @return true if the left operand is less than or equal to the right operand, false otherwise
+     */
     private boolean evalLessEqual() {
         if (leftOperand instanceof AbstractInteger left
                 && rightOperand instanceof AbstractInteger right) {
@@ -165,6 +246,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the GEQ (greater than or equal to) operator.
+     *
+     * @return true if the left operand is greater than or equal to the right operand, false otherwise
+     */
     private boolean evalGreaterEqual() {
         if (leftOperand instanceof AbstractInteger left
                 && rightOperand instanceof AbstractInteger right) {
@@ -174,6 +260,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the AND operator.
+     *
+     * @return true if both operands are true, false otherwise
+     */
     private boolean evalAnd() {
         if (leftOperand instanceof AbstractBoolean left
                 && rightOperand instanceof AbstractBoolean right) {
@@ -192,6 +283,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the OR operator.
+     *
+     * @return true if at least one operand is true, false otherwise
+     */
     private boolean evalOr() {
         if (leftOperand instanceof AbstractBoolean left
                 && rightOperand instanceof AbstractBoolean right) {
@@ -210,6 +306,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the IMPLIES operator.
+     *
+     * @return true if the implication holds, false otherwise
+     */
     private boolean evalImplies() {
         if (leftOperand instanceof AbstractBoolean left
                 && rightOperand instanceof AbstractBoolean right) {
@@ -228,6 +329,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the IFF (if and only if) operator.
+     *
+     * @return true if both operands are equal, false otherwise
+     */
     private boolean evalIff() {
         if (leftOperand instanceof AbstractBoolean left
                 && rightOperand instanceof AbstractBoolean right) {
@@ -246,6 +352,11 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Evaluates the XOR operator.
+     *
+     * @return true if exactly one operand is true, false otherwise
+     */
     private boolean evalXor() {
         if (leftOperand instanceof AbstractBoolean left
                 && rightOperand instanceof AbstractBoolean right) {
@@ -264,6 +375,12 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Retrieves the integer value from an AbstractInteger.
+     *
+     * @param abstractInteger the AbstractInteger to retrieve the value from
+     * @return the integer value
+     */
     public int getIntValue(AbstractInteger abstractInteger) {
         if (abstractInteger instanceof ConcreteInteger) {
             return abstractInteger.getValue();
@@ -274,6 +391,12 @@ public class JmcFormula {
         }
     }
 
+    /**
+     * Retrieves the boolean value from an AbstractBoolean.
+     *
+     * @param abstractBoolean the AbstractBoolean to retrieve the value from
+     * @return the boolean value
+     */
     public boolean getBoolValue(AbstractBoolean abstractBoolean) {
         if (abstractBoolean instanceof ConcreteBoolean) {
             return abstractBoolean.getValue();

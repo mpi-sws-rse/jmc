@@ -1,11 +1,8 @@
-package org.mpi_sws.jmc.symbolic;
+package org.mpi_sws.jmc.api.symbolic;
 
-import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.solver.SymbolicSolver;
-import org.mpi_sws.jmc.strategies.SchedulingStrategy;
-import org.mpi_sws.jmc.strategies.trust.TrustStrategy;
-import org.mpi_sws.jmc.symbolic.bool.SymBoolVariable;
-import org.mpi_sws.jmc.symbolic.integer.SymIntVariable;
+import org.mpi_sws.jmc.api.symbolic.bool.SymBoolVariable;
+import org.mpi_sws.jmc.api.symbolic.integer.SymIntVariable;
 import org.sosy_lab.java_smt.api.BooleanFormulaManager;
 import org.sosy_lab.java_smt.api.IntegerFormulaManager;
 

@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 public class FinalizerThreadTest {
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10)
+    @JmcCheckConfiguration(numIterations = 10, debug = true)
     public void testFinalizerConflictWithConcurrentTasks() throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(2);
 

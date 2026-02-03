@@ -1,10 +1,10 @@
-package org.mpi_sws.jmc.symbolic;
+package org.mpi_sws.jmc.api.symbolic;
 
 import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
-import org.mpi_sws.jmc.symbolic.bool.JmcBooleanFormula;
-import org.mpi_sws.jmc.symbolic.bool.SymBoolVariable;
-import org.mpi_sws.jmc.symbolic.bool.SymbolicBoolean;
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
+import org.mpi_sws.jmc.api.symbolic.bool.SymBoolVariable;
+import org.mpi_sws.jmc.api.symbolic.bool.SymbolicBoolean;
 
 public class SymbolicFormula {
 

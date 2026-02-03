@@ -1,6 +1,6 @@
-package org.mpi_sws.jmc.symbolic.bool;
+package org.mpi_sws.jmc.api.symbolic.bool;
 
-import org.mpi_sws.jmc.symbolic.SymbolicOperand;
+import org.mpi_sws.jmc.api.symbolic.SymbolicOperand;
 
 /**
  * The {@link AbstractBoolean} class is used to represent a boolean value that can be either symbolic or concrete.

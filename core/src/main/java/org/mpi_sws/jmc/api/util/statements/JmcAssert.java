@@ -2,7 +2,7 @@ package org.mpi_sws.jmc.api.util.statements;
 
 import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
-import org.mpi_sws.jmc.symbolic.bool.JmcBooleanFormula;
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 
 public class JmcAssert {
 

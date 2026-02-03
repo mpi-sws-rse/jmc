@@ -1,9 +1,13 @@
-package org.mpi_sws.jmc.symbolic.integer;
+package org.mpi_sws.jmc.api.symbolic.integer;
 
-import org.mpi_sws.jmc.symbolic.InstructionType;
-import org.mpi_sws.jmc.symbolic.JmcSymbolic;
-import org.mpi_sws.jmc.symbolic.SymbolicOperand;
-import org.mpi_sws.jmc.symbolic.bool.JmcBooleanFormula;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.api.symbolic.InstructionType;
+import org.mpi_sws.jmc.api.symbolic.JmcSymbolic;
+import org.mpi_sws.jmc.api.symbolic.SymbolicOperand;
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
+import org.mpi_sws.jmc.runtime.HaltExecutionException;
+import org.sosy_lab.java_smt.api.BooleanFormula;
 import org.sosy_lab.java_smt.api.BooleanFormulaManager;
 import org.sosy_lab.java_smt.api.IntegerFormulaManager;
 import org.sosy_lab.java_smt.api.NumeralFormula;
@@ -14,7 +18,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Class {@link ArithmeticFormula} is used to create symbolic arithmetic formulas based on
+ * abstract integers.
+ */
 public class ArithmeticFormula {
+
+    /**
+     * @property {@link #LOGGER} is used to print the log messages.
+     */
+    private static final Logger LOGGER = LogManager.getLogger(ArithmeticFormula.class);
 
     /**
      * @property {@link #integerVariableMap} is used to store the symbolic integer variable map.
@@ -377,6 +390,18 @@ public class ArithmeticFormula {
         return lt(var2, var1);
     }
 
+    /**
+     * Creates a symbolic distinct operation based on a list of abstract integers.
+     *
+     * <p>This method creates a symbolic distinct operation based on a list of abstract integers.
+     * First, it clears the integer variable map which stores the symbolic integer variable which
+     * are used in the operation. Then, it creates a symbolic operation object and iterates through
+     * the list of abstract integers to create an integer formula for each abstract integer. It then
+     * creates a boolean formula for the distinct operation using the list of integer formulas.
+     *
+     * @param vars the list of abstract integers.
+     * @return the boolean distinct formula.
+     */
     public JmcBooleanFormula distinct(List<AbstractInteger> vars) {
         integerVariableMap = new HashMap<>();
         JmcBooleanFormula formula = new JmcBooleanFormula();
@@ -385,7 +410,7 @@ public class ArithmeticFormula {
         for (AbstractInteger var : vars) {
             formulas.add(makeIntegerFormula(var));
         }
-        org.sosy_lab.java_smt.api.BooleanFormula distinctFormula = imgr.distinct(formulas);
+        BooleanFormula distinctFormula = imgr.distinct(formulas);
 
         formula.setFormula(distinctFormula);
         formula.setIntegerVariableMap(integerVariableMap);
@@ -397,6 +422,22 @@ public class ArithmeticFormula {
         return formula;
     }
 
+    /**
+     * Creates a symbolic boolean formula based on two abstract integers and an operator.
+     *
+     * <p>This method creates a symbolic boolean formula based on two abstract integers and an
+     * operator. First, it clears the integer variable map which stores the symbolic integer
+     * variable which are used in the operation. Then, it creates a symbolic boolean formula object
+     * and creates integer formulas for the left and right operands using the abstract integers. It
+     * then creates a boolean formula for the operation using the left and right operands and the
+     * operator. Finally, it sets the formula, integer variable map, and JMC formula in the symbolic
+     * boolean formula object and returns it.
+     *
+     * @param var1     the first abstract integer.
+     * @param var2     the second abstract integer.
+     * @param operator the operator for the operation.
+     * @return the symbolic boolean formula.
+     */
     private JmcBooleanFormula makeBooleanFormula(
             AbstractInteger var1, AbstractInteger var2, InstructionType operator) {
         integerVariableMap = new HashMap<>();
@@ -404,7 +445,7 @@ public class ArithmeticFormula {
 
         NumeralFormula.IntegerFormula leftOperand = makeIntegerFormula(var1);
         NumeralFormula.IntegerFormula rightOperand = makeIntegerFormula(var2);
-        org.sosy_lab.java_smt.api.BooleanFormula arithmeticFormula =
+        BooleanFormula arithmeticFormula =
                 makeArithmeticFormula(leftOperand, rightOperand, operator);
 
         formula.setFormula(arithmeticFormula);
@@ -414,7 +455,20 @@ public class ArithmeticFormula {
         return formula;
     }
 
-    private org.sosy_lab.java_smt.api.BooleanFormula makeArithmeticFormula(
+    /**
+     * Creates a symbolic arithmetic formula based on two integer formulas and an operator.
+     *
+     * <p>This method creates a symbolic arithmetic formula based on two integer formulas and an
+     * operator. It uses a switch statement to determine the operator and creates the corresponding
+     * boolean formula using the integer formula manager. If the operator is not supported, it
+     * prints an error message and exits the program.
+     *
+     * @param leftOperand  the left integer formula.
+     * @param rightOperand the right integer formula.
+     * @param operator     the operator for the operation.
+     * @return the boolean formula for the operation.
+     */
+    private BooleanFormula makeArithmeticFormula(
             NumeralFormula.IntegerFormula leftOperand,
             NumeralFormula.IntegerFormula rightOperand,
             InstructionType operator) {
@@ -432,12 +486,25 @@ public class ArithmeticFormula {
             case LT:
                 return imgr.lessThan(leftOperand, rightOperand);
             default:
-                System.out.println("[Symbolic Execution] Unsupported operator [" + operator + "]");
-                System.exit(0);
-                return null;
+                LOGGER.error("[Symbolic Execution] Unsupported operator [{}]", operator);
+                throw HaltExecutionException.error("unsupported operator [" + operator + "]");
+                //System.exit(0);
+                //return null;
         }
     }
 
+    /**
+     * Creates an integer formula based on an abstract integer.
+     *
+     * <p>This method creates an integer formula based on an abstract integer. It checks the type
+     * of the abstract integer and calls the corresponding handler method to create the integer
+     * formula. If the abstract integer is a concrete integer, it calls the {@link
+     * #handleConcrInt(ConcreteInteger)} method. If the abstract integer is a symbolic integer, it
+     * calls the {@link #handleSymbInt(SymbolicInteger)} method.
+     *
+     * @param abstInteger the abstract integer.
+     * @return the integer formula.
+     */
     private NumeralFormula.IntegerFormula makeIntegerFormula(AbstractInteger abstInteger) {
         if (abstInteger instanceof ConcreteInteger concreteInteger) {
             return handleConcrInt(concreteInteger);
@@ -446,6 +513,18 @@ public class ArithmeticFormula {
         }
     }
 
+    /**
+     * Handles the creation of an integer formula for a symbolic integer.
+     *
+     * <p>This method handles the creation of an integer formula for a symbolic integer. If the
+     * symbolic integer has no evaluation, it finds the variable in the integer variable map. If the
+     * symbolic integer has an evaluation, it creates integer formulas for the left and right
+     * operands and creates the corresponding integer formula based on the operator. If the operator
+     * is not supported, it prints an error message and exits the program.
+     *
+     * @param symbolicInteger the symbolic integer.
+     * @return the integer formula.
+     */
     private NumeralFormula.IntegerFormula handleSymbInt(SymbolicInteger symbolicInteger) {
         if (symbolicInteger.getEval() == null) {
             return findVariable(symbolicInteger.getName());
@@ -471,19 +550,42 @@ public class ArithmeticFormula {
             case MOD:
                 return imgr.modulo(leftOperand, rightOperand);
             default:
-                System.out.println(
+                LOGGER.error("[Symbolic Execution] Unsupported operator [{}]", symbolicInteger.getEval().getOperator());
+                throw HaltExecutionException.error("unsupported operator [" + symbolicInteger.getEval().getOperator() + "]");
+                /*System.out.println(
                         "[Symbolic Execution] Unsupported operator ["
                                 + symbolicInteger.getEval().getOperator()
                                 + "]");
                 System.exit(0);
-                return null;
+                return null;*/
         }
     }
 
+    /**
+     * Handles the creation of an integer formula for a concrete integer.
+     *
+     * <p>This method handles the creation of an integer formula for a concrete integer by
+     * creating a number formula using the integer formula manager with the value of the concrete
+     * integer.
+     *
+     * @param concreteInteger the concrete integer.
+     * @return the integer formula.
+     */
     private NumeralFormula.IntegerFormula handleConcrInt(ConcreteInteger concreteInteger) {
         return imgr.makeNumber(concreteInteger.getValue());
     }
 
+    /**
+     * Finds a variable in the integer variable map or creates a new one if it does not exist.
+     *
+     * <p>This method finds a variable in the integer variable map based on its name. If the
+     * variable exists in the map, it returns the corresponding integer formula. If the variable does
+     * not exist in the map, it creates a new symbolic integer variable using the JmcSymbolic
+     * class, adds it to the map, and returns the integer formula.
+     *
+     * @param name the name of the variable.
+     * @return the integer formula for the variable.
+     */
     private NumeralFormula.IntegerFormula findVariable(String name) {
         if (integerVariableMap.containsKey(name)) {
             return integerVariableMap.get(name);

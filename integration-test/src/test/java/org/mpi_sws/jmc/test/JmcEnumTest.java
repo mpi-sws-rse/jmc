@@ -13,13 +13,13 @@ public class JmcEnumTest {
     // Static map initialization
 
 
-    /*@JmcCheck
+    @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
-    @Disabled // TODO : There is an issue with gradlew / with IntelliJ it is fine
+    @Disabled
     public void testMapAccess() {
 
         // Access static map
         JmcEnum.MyEnum value = MY_MAP.get(2);
         assert (JmcEnum.MyEnum.B == value);
-    }*/
+    }
 }

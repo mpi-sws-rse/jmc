@@ -52,6 +52,10 @@ public class JmcReadWriteVisitor {
                 // If this is an interface static initializer, we do not instrument it
                 return mv;
             }
+
+            if ("hashCode".equals(name) && "()I".equals(descriptor)) {
+                return mv;
+            }
             return new ReadWriteMethodVisitor(mv, access, descriptor, "<init>".equals(name));
         }
     }

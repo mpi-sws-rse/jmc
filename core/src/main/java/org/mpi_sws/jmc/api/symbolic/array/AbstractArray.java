@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.symbolic.array;
+package org.mpi_sws.jmc.api.symbolic.array;
 
 /**
  * The {@link AbstractArray} class is used to represent an array value that can be either symbolic or concrete.
@@ -11,7 +11,7 @@ public abstract class AbstractArray {
     public Type type;
 
     /**
-     * The hash code of the array.
+     * Clones the abstract array.
      */
     public abstract AbstractArray clone();
 

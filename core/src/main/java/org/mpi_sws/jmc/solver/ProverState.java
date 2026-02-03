@@ -1,8 +1,8 @@
 package org.mpi_sws.jmc.solver;
 
-import org.mpi_sws.jmc.symbolic.array.SymArrayVariable;
-import org.mpi_sws.jmc.symbolic.bool.SymBoolVariable;
-import org.mpi_sws.jmc.symbolic.integer.SymIntVariable;
+import org.mpi_sws.jmc.api.symbolic.array.SymArrayVariable;
+import org.mpi_sws.jmc.api.symbolic.bool.SymBoolVariable;
+import org.mpi_sws.jmc.api.symbolic.integer.SymIntVariable;
 import org.sosy_lab.java_smt.api.ProverEnvironment;
 
 import java.util.HashMap;

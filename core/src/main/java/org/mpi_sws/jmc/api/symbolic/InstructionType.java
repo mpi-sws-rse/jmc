@@ -1,10 +1,9 @@
-package org.mpi_sws.jmc.symbolic;
+package org.mpi_sws.jmc.api.symbolic;
 
 /**
  * Enum representing different types of operations and relations
  */
 public enum InstructionType {
-
     ADD,
     SUB,
     MUL,

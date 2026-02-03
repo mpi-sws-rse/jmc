@@ -1,6 +1,6 @@
-package org.mpi_sws.jmc.symbolic.integer;
+package org.mpi_sws.jmc.api.symbolic.integer;
 
-import org.mpi_sws.jmc.symbolic.InstructionType;
+import org.mpi_sws.jmc.api.symbolic.InstructionType;
 
 /**
  * ArithmeticStatement class represents an arithmetic operation between two abstract integers.

@@ -1,6 +1,5 @@
 package org.mpi_sws.jmc.test.stress;
 
-import org.junit.jupiter.api.Disabled;
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 
@@ -9,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 
-public class InvokeDynFutureExecutor {
+public class InvokeDynFutureExecutorTest {
 
     public static void future_seq() throws Exception {
         ExecutorService service = Executors.newSingleThreadExecutor();

@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.symbolic.integer;
+package org.mpi_sws.jmc.api.symbolic.integer;
 
 /**
  * Concrete implementation of AbstractInteger.

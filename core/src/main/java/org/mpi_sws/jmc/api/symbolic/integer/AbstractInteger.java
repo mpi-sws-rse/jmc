@@ -1,6 +1,6 @@
-package org.mpi_sws.jmc.symbolic.integer;
+package org.mpi_sws.jmc.api.symbolic.integer;
 
-import org.mpi_sws.jmc.symbolic.SymbolicOperand;
+import org.mpi_sws.jmc.api.symbolic.SymbolicOperand;
 
 /**
  * The {@link AbstractInteger} class is used to represent an integer value that can be either symbolic or concrete.
