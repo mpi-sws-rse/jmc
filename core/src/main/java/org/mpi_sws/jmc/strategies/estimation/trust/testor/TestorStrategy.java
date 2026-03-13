@@ -66,8 +66,8 @@ public class TestorStrategy extends TrustStrategy implements EstimationStrategy 
                 testor.updateStack(algoInstance);
                 algoInstance.initIteration(iteration, report);
                 return;
-            } catch (HaltExecutionException e) {
-                // Continue to the next option
+            } catch (HaltCheckerException e) {
+                LOGGER.debug(e.getMessage());
             }
         }
         recordEstimation(iteration);
