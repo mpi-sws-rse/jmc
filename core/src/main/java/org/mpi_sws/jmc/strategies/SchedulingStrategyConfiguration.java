@@ -16,8 +16,10 @@ public class SchedulingStrategyConfiguration {
     private TrustStrategy.SchedulingPolicy trustSchedulingPolicy;
     private String reportPath;
     private boolean debug;
+    private int budget;
 
-    private SchedulingStrategyConfiguration() {}
+    private SchedulingStrategyConfiguration() {
+    }
 
     public Long getSeed() {
         return seed;
@@ -31,6 +33,10 @@ public class SchedulingStrategyConfiguration {
         return debug;
     }
 
+    public int getBudget() {
+        return budget;
+    }
+
     public TrustStrategy.SchedulingPolicy getTrustSchedulingPolicy() {
         return trustSchedulingPolicy;
     }
@@ -40,12 +46,14 @@ public class SchedulingStrategyConfiguration {
         private TrustStrategy.SchedulingPolicy trustSchedulingPolicy;
         private String reportPath;
         private boolean debug;
+        private int budget;
 
         public Builder() {
             this.seed = null;
             this.trustSchedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM;
             this.reportPath = "build/test-results/jmc-report";
             this.debug = false;
+            this.budget = 2;
         }
 
         public Builder trustSchedulingPolicy(TrustStrategy.SchedulingPolicy trustSchedulingPolicy) {
@@ -68,12 +76,21 @@ public class SchedulingStrategyConfiguration {
             return this;
         }
 
+        public Builder budget(int budget) {
+            if (budget < 1) {
+                throw new IllegalArgumentException("Budget must be at least 1");
+            }
+            this.budget = budget;
+            return this;
+        }
+
         public SchedulingStrategyConfiguration build() {
             SchedulingStrategyConfiguration config = new SchedulingStrategyConfiguration();
             config.seed = this.seed;
             config.trustSchedulingPolicy = this.trustSchedulingPolicy;
             config.reportPath = this.reportPath;
             config.debug = this.debug;
+            config.budget = this.budget;
             return config;
         }
     }

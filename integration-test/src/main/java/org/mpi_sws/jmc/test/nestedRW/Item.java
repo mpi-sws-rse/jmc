@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.test.nestedRW;
 
+import java.util.HashMap;
+
 public class Item {
     private int value;
 
@@ -17,9 +19,36 @@ public class Item {
 
     @Override
     public int hashCode() {
-        super.hashCode();
-        System.out.println("hashCode called");
-        return getValue();
+        System.out.println("Hashcode called");
+        return value;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Item other)) return false;
+        System.out.println("Equals called");
+        int a = this.value;
+        System.out.println("TTTTTTTTT");
+        int b = other.value;
+        boolean equals = a == b;
+        System.out.println("equals " + equals);
+        return equals;
+    }
+
+    public boolean Jmcequals(Object obj) {
+        if (!(obj instanceof Item other)) return false;
+        System.out.println("Equals called");
+        int a = this.value;
+        System.out.println("TTTTTTTTT");
+        int b = other.value;
+        boolean equals = true;
+        System.out.println("equals " + equals);
+        return equals;
+    }
+
+    @Override
+    public String toString() {
+        return "";
     }
 
     /*@Override

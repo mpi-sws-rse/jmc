@@ -66,4 +66,5 @@ public @interface JmcCheckConfiguration {
      */
     long seed() default 0;
 
+    int budget() default 2;
 }

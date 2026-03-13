@@ -13,6 +13,16 @@ public class ReadWriteNestedTest {
     @JmcCheckConfiguration(numIterations = 1, debug = true)
     public void testNestedYieldInHashCode() throws InterruptedException {
         Item i = new Item(1);
+        Item ii = new Item(2);
+        if (i.Jmcequals(ii)) {
+            System.out.println("Unexpected equality");
+        }
+        i.getValue();
+        i.getValue();
+        i.getValue();
+        i.getValue();
+        i.getValue();
+        ii.getValue();
         //i.copy();
         /*Container container = new Container();
 

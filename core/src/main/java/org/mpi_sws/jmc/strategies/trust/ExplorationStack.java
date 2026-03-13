@@ -177,7 +177,7 @@ public class ExplorationStack {
         private final List<Event> additionalEventsToProcess;
 
         // Graph is used only in the case of a backward revisit
-        private final ExecutionGraph graph;
+        private ExecutionGraph graph;
 
         private Item(
                 ItemType type,
@@ -189,6 +189,16 @@ public class ExplorationStack {
             this.event2 = two;
             this.graph = graph;
             this.additionalEventsToProcess = new ArrayList<>();
+        }
+
+        // Do not use this method to create items. It is only used for a temporary workaround in the testor when we
+        // need to create an item without knowing the type of the item.
+        public static Item makeItem(
+                ItemType type,
+                ExecutionGraphNode one,
+                ExecutionGraphNode two,
+                ExecutionGraph graph) {
+            return new Item(type, one, two, graph);
         }
 
         public void addAdditionalEvent(Event event) {
@@ -242,6 +252,10 @@ public class ExplorationStack {
 
         public static Item continueCurrent() {
             return new Item(ItemType.CONT, null, null, null);
+        }
+
+        public static Item continueCurrent(ExecutionGraph graph) {
+            return new Item(ItemType.CONT, null, null, graph);
         }
 
         /**
@@ -311,6 +325,10 @@ public class ExplorationStack {
             return graph;
         }
 
+        public void setGraph(ExecutionGraph graph) {
+            this.graph = graph;
+        }
+
         /**
          * Checks if the item is a forward revisit.
          *
@@ -318,6 +336,10 @@ public class ExplorationStack {
          */
         public boolean isBackwardRevisit() {
             return (this.type == ItemType.BRR || this.type == ItemType.BWR) && this.graph != null;
+        }
+
+        public boolean isLastWriteRevisit() {
+            return this.type == ItemType.FLW;
         }
 
         public boolean isContinueCurrent() {

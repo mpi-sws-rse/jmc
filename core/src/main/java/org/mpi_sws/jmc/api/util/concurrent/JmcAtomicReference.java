@@ -134,6 +134,6 @@ public class JmcAtomicReference<V> {
      */
     @Override
     public String toString() {
-        return get().toString();
+        return super.toString();
     }
 }

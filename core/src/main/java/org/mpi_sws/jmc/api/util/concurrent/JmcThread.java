@@ -25,12 +25,16 @@ public class JmcThread extends Thread {
     // TODO: extend to all constructors of Thread and handle ThreadGroups, also all join methods
     //      Should be a drop in replacement for all possible ways to use Threads
 
-    /** Constructs a new JmcThread object. */
+    /**
+     * Constructs a new JmcThread object.
+     */
     public JmcThread() {
         this(JmcRuntime.addNewTask());
     }
 
-    /** Constructs a new JmcThread object with the given Runnable. */
+    /**
+     * Constructs a new JmcThread object with the given Runnable.
+     */
     public JmcThread(Runnable r) {
         this(r, JmcRuntime.addNewTask());
     }
@@ -61,7 +65,9 @@ public class JmcThread extends Thread {
         LOGGER = LogManager.getLogger(JmcThread.class.getName() + " Task=" + jmcThreadId);
     }
 
-    /** Constructs a new JmcThread object with the given Runnable and JMC thread ID. */
+    /**
+     * Constructs a new JmcThread object with the given Runnable and JMC thread ID.
+     */
     public JmcThread(Runnable r, Long jmcThreadId) {
         super(r);
         this.jmcThreadId = jmcThreadId;
@@ -180,7 +186,9 @@ public class JmcThread extends Thread {
         JmcRuntime.wait(taskId);
     }
 
-    /** This method is overridden by the user. */
+    /**
+     * This method is overridden by the user.
+     */
     public void run1() throws HaltTaskException {
         super.run();
     }
@@ -208,7 +216,9 @@ public class JmcThread extends Thread {
         join1(0L);
     }
 
-    /** Replacing the Thread join to intercept the join Event. */
+    /**
+     * Replacing the Thread join to intercept the join Event.
+     */
     public void join1(Long millis) throws InterruptedException {
         Long requestingTask = JmcRuntime.currentTask();
         JmcRuntimeEvent requestEvent =
@@ -234,5 +244,16 @@ public class JmcThread extends Thread {
         } catch (HaltTaskException e) {
             LOGGER.error("Failed to complete join task : {}", e.getMessage());
         }
+    }
+
+    /**
+     * Returns a string representation of this thread, including the
+     * thread's name, priority, and thread group.
+     *
+     * @return a string representation of this thread.
+     */
+    @Override
+    public String toString() {
+        return "JmcThread-" + jmcThreadId;
     }
 }

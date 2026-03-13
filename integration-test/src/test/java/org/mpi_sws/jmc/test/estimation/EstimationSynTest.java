@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test.estimation;
 
+import org.junit.jupiter.api.Disabled;
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 import org.mpi_sws.jmc.annotations.JmcExpectExecutions;
@@ -33,6 +34,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 
 public class EstimationSynTest {
+
+    /** ---------------------------------------------------------------------------------------------------------
+     *  Synthetic programs for testing the estimation strategies. The programs are designed to have a known number
+     *  of distinct execution graphs, which can be used to evaluate the accuracy of the estimation strategies.
+     *  ----------------------------------------------------------------------------------------------------------*/
 
     /**
      * R(n): This program has 1 distinct execution graph.
@@ -140,6 +146,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void RWNProgram(int numReaders, int numWriters) {
         Shared shared = new Shared(0);
         List<Reader> readers = new ArrayList<>();
@@ -175,6 +184,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void svQueue1Program(int size) {
         int[] arr = new int[size]; // Data domain is {0,1,2}
         for (int i = 0; i < size; i++) {
@@ -199,6 +211,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void svQueue2Program(int size) {
         int[] arr = new int[size]; // Data domain is {0,1,2}
         for (int i = 0; i < size; i++) {
@@ -223,6 +238,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void svQueue3Program(int size) {
         int[] arr = new int[size]; // Data domain is {0,1,2}
         for (int i = 0; i < size; i++) {
@@ -247,6 +265,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void svStack1Program(int size) {
         Integer[] arr = new Integer[size];
         for (int i = 0; i < size; i++) {
@@ -267,6 +288,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void svStack2Program(int size) {
         Integer[] arr = new Integer[size];
         for (int i = 0; i < size; i++) {
@@ -288,6 +312,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void coarseCounter(int size) {
         CCounter counter = new CCounter();
         int NUM_INSERTIONS = (int) Math.ceil(size / 2.0);
@@ -329,6 +356,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void fineCounterProgram(int size) {
         FCounter counter = new FCounter();
         int NUM_INSERTIONS = (int) Math.ceil(size / 2.0);
@@ -368,6 +398,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void bigShotP() {
         Str s = new Str();
         T1 t1 = new T1(s);
@@ -386,6 +419,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void bigShotS() {
         Str s = new Str();
         T1 t1 = new T1(s);
@@ -404,6 +440,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void fib1Program(int size) {
         ReentrantLock lock = new ReentrantLock();
         FibShared shared = new FibShared();
@@ -426,6 +465,9 @@ public class EstimationSynTest {
         //assert !(condI || condJ) : "Assertion Fail! ";
     }
 
+    /**
+     * TBA
+     */
     private void sigmaProgram(int SIZE) {
         SigmaShared shared = new SigmaShared(SIZE);
         ArrayList<SigmaThread> threads = new ArrayList<>(SIZE);
@@ -452,6 +494,9 @@ public class EstimationSynTest {
         }
     }
 
+    /**
+     * TBA
+     */
     private void singleToneWUPProgram() {
         SingletoneShared shared = new SingletoneShared();
         ReentrantLock lock = new ReentrantLock();
@@ -467,15 +512,21 @@ public class EstimationSynTest {
 
     }
 
-    /** ----------------------------------------------------*/
+    /** ---------------------------------------------------------------------------------------------------------
+     *  Test suites for the synthetic programs. Each test suite includes 2 tests: one for running the TruSt
+     *  model checking, and the other for running the Testor strategy. Note that in the TruSt model checking test,
+     *  make sure the {@JmcTrustStrategy} annotation has the loggerTree set to true, so that we can get the tree of
+     *  Trust. In Testor tests, make sure to set the strategy to "testor" and the scheduling policy to FIFO, or LIFO,
+     *  to make the scheduler deterministic. This is important for fixing the structure of the tree of Trust.
+     *  In order to set the budget for Testor, we can use the budget parameter in the {@JmcCheckConfiguration}
+     *  annotation. Also, you can modify the size of tests (e.g., the number of threads) by changing the input
+     *  parameters of the program methods (e.g., readNProgram, incNProgram, etc.).
+     *  ----------------------------------------------------------------------------------------------------------*/
 
     /**
      * R(n) test suite for n \in {2,3,4,5}
      * 1. TruSt model checking
-     * 2. DAG-based estimation
-     * 3. Fork-Join DAG-based estimation
-     * 4. TruSt-based estimation
-     * 5. Weighted TruSt-based estimation
+     * 2. Testor strategy
      */
 
     @JmcCheck
@@ -486,6 +537,341 @@ public class EstimationSynTest {
         readNProgram(3);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runRnTestor() {
+        readNProgram(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * Inc(n) test suite for n \in {2,3,4,5}
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 2000000)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
+    @JmcExpectExecutions(576) // For input n is (n!)^2
+    public void runIncnTrust() {
+        incNProgram(4);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runIncnTestor() {
+        incNProgram(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * RW(n) test suite for n \in {2,3,4,5}
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 2000000)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    public void runRWNTrust() {
+        RWNProgram(2, 2);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runRWNTestor() {
+        RWNProgram(2, 2);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * WR(n) test suite for n \in {2,3,4,5}
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 2000000)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    public void runWRNTrust() {
+        WRNProgram(2, 2);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runWRNTestor() {
+        WRNProgram(2, 2);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * SVQueue(1) test suite
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    public void runSVQueue1Trust() {
+        svQueue1Program(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runSVQueue1Testor() {
+        svQueue1Program(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * SVQueue(2) test suite
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    public void runSVQueue2Trust() {
+        svQueue2Program(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runSVQueue2Testor() {
+        svQueue2Program(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * SVQueue(3) test suite
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000)
+    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
+    public void runSVQueue3Trust() {
+        svQueue3Program(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runSVQueue3Testor() {
+        svQueue3Program(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * SVStack1 test suite for size in {2,3,4,5,6}
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runSVStack1Trust() {
+        svStack1Program(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runSVStack1Testor() {
+        svStack1Program(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * SVStack2 test suite for size in {2,3,4,5,6}
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runSVStack2Trust() {
+        svStack2Program(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runSVStack2Testor() {
+        svStack2Program(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * Coarse Counter test suite for size in {2,3,4,5,6}
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runCoarseCounterTrust() {
+        coarseCounter(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runCoarseCounterTestor() {
+        coarseCounter(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * Fine Counter test suite for size in {2,3,4,5,6}
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runFineCounterTrust() {
+        fineCounterProgram(4);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runFineCounterTestor() {
+        fineCounterProgram(4);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * BigShotP test suite
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    @JmcExpectExecutions(3)
+    public void runBigShotPTest() {
+        bigShotP();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runBigShotPTestor() {
+        bigShotP();
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * BigShotS test suite
+     * 1. TruSt Model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    @JmcExpectExecutions(1)
+    public void runBigShotSTest() {
+        bigShotS();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runBigShotSTestor() {
+        bigShotS();
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * FibBench1 test suite
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000000)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runFib1Trust() {
+        fib1Program(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runFib1Testor() {
+        fib1Program(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * Sigma test suite
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000000)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runSigmaTrust() {
+        sigmaProgram(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    public void runSigmaTestor() {
+        sigmaProgram(3);
+    }
+
+    /** ----------------------------------------------------*/
+
+    /**
+     * Singletone WUP test suite
+     * 1. TruSt model checking
+     * 2. Testor strategy
+     */
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
+    public void runSingletoneWUPTrust() {
+        singleToneWUPProgram();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @Disabled
+    public void runSingletoneWUPTestor() {
+        singleToneWUPProgram();
+    }
+
+    /** ---------------------------------------------------------------------------------------------------------
+     *  Deprecated Test suites for the synthetic programs. Each test suite includes 4 tests: 1. DAG-based estimation,
+     *  2. Fork-Join DAG-based estimation, 3. TruSt-based estimation (budget = 1), and 4. Weighted TruSt-based estimation
+     *  (budget = 1).
+     *  ----------------------------------------------------------------------------------------------------------*/
+
+
+    /**
+     * R(n) test suite for n \in {2,3,4,5}
+     * 1. Dag-based estimation
+     * 2. Fork-Join DAG-based estimation
+     * 3. TruSt-based estimation (budget = 1)
+     * 4. Weighted TruSt-based estimation (budget = 1)
+     */
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
     public void runRnDagEstimation() {
@@ -517,20 +903,11 @@ public class EstimationSynTest {
 
     /**
      * Inc(n) test suite for n \in {2,3,4,5}
-     * 1. TruSt model checking
-     * 2. DAG-based estimation
-     * 3. Fork-Join DAG-based estimation
-     * 4. TruSt-based estimation
-     * 5. Weighted TruSt-based estimation
+     * 1. DAG-based estimation
+     * 2. Fork-Join DAG-based estimation
+     * 3. TruSt-based estimation (budget = 1)
+     * 4. Weighted TruSt-based estimation (budget = 1)
      */
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 2000000)
-    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
-    @JmcExpectExecutions(36) // For input n is (n!)^2
-    public void runIncnTrust() {
-        incNProgram(3);
-    }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
@@ -560,19 +937,11 @@ public class EstimationSynTest {
 
     /**
      * RW(n) test suite for n \in {2,3,4,5}
-     * 1. TruSt model checking
-     * 2. DAG-based estimation
-     * 3. Fork-Join DAG-based estimation
-     * 4. TruSt-based estimation
-     * 5. Weighted TruSt-based estimation
+     * 1. DAG-based estimation
+     * 2. Fork-Join DAG-based estimation
+     * 3. TruSt-based estimation (budget = 1)
+     * 4. Weighted TruSt-based estimation (budget = 1)
      */
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 2000000)
-    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
-    public void runRWNTrust() {
-        RWNProgram(2, 2);
-    }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
@@ -602,19 +971,11 @@ public class EstimationSynTest {
 
     /**
      * WR(n) test suite for n \in {2,3,4,5}
-     * 1. TruSt model checking
-     * 2. DAG-based estimation
-     * 3. Fork-Join DAG-based estimation
-     * 4. TruSt-based estimation
-     * 5. Weighted TruSt-based estimation
+     * 1. DAG-based estimation
+     * 2. Fork-Join DAG-based estimation
+     * 3. TruSt-based estimation (budget = 1)
+     * 4. Weighted TruSt-based estimation (budget = 1)
      */
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 2000000)
-    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
-    public void runWRNTrust() {
-        WRNProgram(2, 2);
-    }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
@@ -641,157 +1002,4 @@ public class EstimationSynTest {
     }
 
     /** ----------------------------------------------------*/
-
-    /**
-     * SVQueue(1) test suite
-     * 1. TruSt model checking
-     * 2. DAG-based estimation
-     * 3. Fork-Join DAG-based estimation
-     * 4. TruSt-based estimation
-     * 5. Weighted TruSt-based estimation
-     */
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
-    public void runSVQueue1Trust() {
-        svQueue1Program(3);
-    }
-
-    /** ----------------------------------------------------*/
-
-    /**
-     * SVQueue(2) test suite
-     * 1. TruSt model checking
-     * 2. DAG-based estimation
-     * 3. Fork-Join DAG-based estimation
-     * 4. TruSt-based estimation
-     * 5. Weighted TruSt-based estimation
-     */
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000)
-    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
-    public void runSVQueue2Trust() {
-        svQueue2Program(3);
-    }
-
-    /** ----------------------------------------------------*/
-
-    /**
-     * SVQueue(3) test suite
-     * 1. TruSt model checking
-     * 2. DAG-based estimation
-     * 3. Fork-Join DAG-based estimation
-     * 4. TruSt-based estimation
-     * 5. Weighted TruSt-based estimation
-     */
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000)
-    @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
-    public void runSVQueue3Trust() {
-        svQueue3Program(3);
-    }
-
-    /**
-     * SVStack1 test suite for size in {2,3,4,5,6}
-     * 1. TruSt model checking
-     */
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    public void runSVStack1Trust() {
-        svStack1Program(3);
-    }
-
-    /**
-     * SVStack2 test suite for size in {2,3,4,5,6}
-     * 1. TruSt model checking
-     */
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    public void runSVStack2Trust() {
-        svStack2Program(3);
-    }
-
-    /**
-     * Coarse Counter test suite for size in {2,3,4,5,6}
-     * 1. TruSt model checking
-     */
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    public void runCoarseCounterTrust() {
-        coarseCounter(3);
-    }
-
-    /**
-     * Fine Counter test suite for size in {2,3,4,5,6}
-     * 1. TruSt model checking
-     */
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000, debug = false)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    public void runFineCounterTrust() {
-        fineCounterProgram(3);
-    }
-
-    /**
-     * BigShotP test suite
-     * 1. TruSt model checking
-     */
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    @JmcExpectExecutions(3)
-    public void runBigShotPTest() {
-        bigShotP();
-    }
-
-    /**
-     * BigShotS test suite
-     * 1. TruSt Model checking
-     */
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    @JmcExpectExecutions(1)
-    public void runBigShotSTest() {
-        bigShotS();
-    }
-
-    /**
-     * FibBench1 test suite
-     * 1. TruSt model checking
-     */
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000000)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    public void runFib1Trust() {
-        fib1Program(3);
-    }
-
-    /**
-     * Sigma test suite
-     * 1. TruSt model checking
-     */
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000000)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    public void runSigmaTrust() {
-        sigmaProgram(3);
-    }
-
-    /**
-     * Singletone WUP test suite
-     * 1. TruSt model checking
-     */
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
-    @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
-    public void runSingletoneWUPTrust() {
-        singleToneWUPProgram();
-    }
 }

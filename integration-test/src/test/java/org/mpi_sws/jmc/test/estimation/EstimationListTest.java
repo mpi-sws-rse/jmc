@@ -232,6 +232,13 @@ public class EstimationListTest {
         coarseListIProgram(3);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100, strategy = "testor",
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, budget = 2, debug = false)
+    public void runCoarseListITestor() {
+        coarseListIProgram(3);
+    }
+
     /**
      * CoarseListID(n) test suite for n \in {2,3,4,5,6}
      * 1. TruSt model checking

@@ -4,6 +4,7 @@ import org.mpi_sws.jmc.strategies.estimation.dag.DagEstimationStrategy;
 import org.mpi_sws.jmc.strategies.estimation.dag.absDag.AbsDagEstimationStrategy;
 import org.mpi_sws.jmc.strategies.estimation.dag.fjDag.FjDagEstimationStrategy;
 import org.mpi_sws.jmc.strategies.estimation.trust.TrustEstimationStrategy;
+import org.mpi_sws.jmc.strategies.estimation.trust.testor.TestorStrategy;
 import org.mpi_sws.jmc.strategies.estimation.trust.wgTrust.WgTrustEstimationStrategy;
 import org.mpi_sws.jmc.strategies.trust.TrustStrategy;
 
@@ -26,12 +27,13 @@ public class SchedulingStrategyFactory {
         validStrategies.add("fj-dag-estimation");
         validStrategies.add("trust-estimation");
         validStrategies.add("wg-trust-estimation");
+        validStrategies.add("testor");
     }
 
     /**
      * Creates a new scheduling strategy.
      *
-     * @param name the name of the strategy
+     * @param name   the name of the strategy
      * @param config the configuration for the strategy
      * @return the scheduling strategy
      */
@@ -67,6 +69,14 @@ public class SchedulingStrategyFactory {
                     config.getTrustSchedulingPolicy(),
                     config.getDebug(),
                     config.getReportPath()
+            );
+        } else if (name.equals("testor")) {
+            return new TestorStrategy(
+                    config.getSeed(),
+                    config.getTrustSchedulingPolicy(),
+                    config.getDebug(),
+                    config.getReportPath(),
+                    config.getBudget()
             );
         }
         return null;

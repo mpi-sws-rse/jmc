@@ -2,6 +2,7 @@ package org.mpi_sws.jmc.test.stress;
 
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
+import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 
 import java.util.ArrayList;
 import java.util.List;

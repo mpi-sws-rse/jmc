@@ -318,6 +318,7 @@ public class Algo {
                 case FRW -> nextGraphSchedule = processFRW(item);
                 case FWW -> nextGraphSchedule = processFWW(item);
                 case FLW -> nextGraphSchedule = processFLW(item);
+                case CONT -> nextGraphSchedule = processCont(item);
                 default -> throw new RuntimeException(
                         "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
@@ -497,6 +498,13 @@ public class Algo {
             processAdditionalEvent(additionalEvent);
         }
 
+        return executionGraph.checkConsistencyAndTopologicallySort();
+    }
+
+    // This method must not be called during the Trust model checking procedure.
+    // This will be used for cases like estimation where we are not following the DFS exploration order strictly.
+    private List<ExecutionGraphNode> processCont(ExplorationStack.Item item) {
+        // Just continue the exploration with the current graph
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
