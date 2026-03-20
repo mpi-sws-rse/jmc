@@ -32,6 +32,8 @@ public class JmcCheckerConfiguration {
 
     private Long seed;
 
+    private int budget;
+
     private String reportPath;
 
     private Duration timeout;
@@ -86,6 +88,10 @@ public class JmcCheckerConfiguration {
         return seed;
     }
 
+    public int getBudget() {
+        return budget;
+    }
+
     /**
      * Sets the seed for the checker.
      *
@@ -93,6 +99,10 @@ public class JmcCheckerConfiguration {
      */
     public void setSeed(Long seed) {
         this.seed = seed;
+    }
+
+    public void setBudget(int budget) {
+        this.budget = budget;
     }
 
     public void setSchedulingPolicy(TrustStrategy.SchedulingPolicy schedulingPolicy) {
@@ -122,7 +132,7 @@ public class JmcCheckerConfiguration {
     public JmcRuntimeConfiguration toRuntimeConfiguration() throws JmcInvalidStrategyException {
         SchedulingStrategy strategy;
         SchedulingStrategyConfiguration.Builder strategyConfigurationBuilder =
-                new SchedulingStrategyConfiguration.Builder().seed(seed).trustSchedulingPolicy(schedulingPolicy);
+                new SchedulingStrategyConfiguration.Builder().seed(seed).budget(budget).trustSchedulingPolicy(schedulingPolicy);
         if (debug) {
             strategyConfigurationBuilder.debug();
             strategyConfigurationBuilder.reportPath(reportPath);
@@ -162,6 +172,7 @@ public class JmcCheckerConfiguration {
                 .debug(annotation.debug())
                 .reportPath(annotation.reportPath())
                 .seed(annotation.seed())
+                .budget(annotation.budget())
                 .schedulingPolicy(annotation.schedulingPolicy())
                 .build();
     }
@@ -183,6 +194,8 @@ public class JmcCheckerConfiguration {
 
         private Long seed;
 
+        private int budget;
+
         private TrustStrategy.SchedulingPolicy schedulingPolicy;
 
         public Builder() {
@@ -192,6 +205,7 @@ public class JmcCheckerConfiguration {
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
             this.seed = System.nanoTime();
+            this.budget = 2;
             this.timeout = null;
         }
 
@@ -226,6 +240,11 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
+        public Builder budget(int budget) {
+            this.budget = budget;
+            return this;
+        }
+
         public Builder timeout(Duration timeout) {
             this.timeout = timeout;
             return this;
@@ -249,6 +268,7 @@ public class JmcCheckerConfiguration {
             config.debug = debug;
             config.reportPath = reportPath;
             config.seed = seed;
+            config.budget = budget;
             config.timeout = timeout;
             config.schedulingPolicy = schedulingPolicy;
             return config;

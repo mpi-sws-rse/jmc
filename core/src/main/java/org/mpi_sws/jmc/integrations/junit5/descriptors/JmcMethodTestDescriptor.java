@@ -48,12 +48,14 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
     private JmcCheckerConfiguration.Builder buildFromAnnotation(
             JmcCheckerConfiguration.Builder builder, JmcCheckConfiguration annotation) {
         long seed = annotation.seed();
+        int budget = annotation.budget();
         if (annotation.seed() == 0L) {
             seed = System.nanoTime();
         }
         return builder.numIterations(annotation.numIterations())
                 .debug(annotation.debug())
                 .seed(seed)
+                .budget(budget)
                 .reportPath(annotation.reportPath())
                 .strategyType(annotation.strategy())
                 .schedulingPolicy(annotation.schedulingPolicy());
