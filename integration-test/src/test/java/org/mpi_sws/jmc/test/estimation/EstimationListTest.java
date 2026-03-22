@@ -204,6 +204,12 @@ public class EstimationListTest {
      */
 
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 4000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 20, timeout = 60000L)
+    public void runCoarseListITestor() {
+        coarseListIProgram(5);
+    }
+
     /**
      * CoarseListI(n) test suite for n \in {2,3,4,5,6}
      * 1. TruSt model checking
@@ -216,12 +222,6 @@ public class EstimationListTest {
     @JmcExpectExecutions(6) // For any n is n! (max 10)
     public void runCoarseListITrust() {
         coarseListIProgram(4);
-    }
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 20)
-    public void runCoarseListITestor() {
-        coarseListIProgram(5);
     }
 
     @JmcCheck

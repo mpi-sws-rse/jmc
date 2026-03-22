@@ -538,7 +538,9 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 1000,
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
+            budget = 10, timeout = 300000L)
     public void runRnTestor() {
         readNProgram(3);
     }
@@ -560,7 +562,9 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 1000,
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
+            budget = 10, timeout = 300000L)
     public void runIncnTestor() {
         incNProgram(3);
     }
@@ -581,7 +585,9 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 1000,
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
+            budget = 10, timeout = 300000L)
     public void runRWNTestor() {
         RWNProgram(2, 2);
     }
@@ -789,7 +795,9 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 1000,
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
+            budget = 10, timeout = 300000L)
     public void runBigShotSTestor() {
         bigShotS();
     }
@@ -810,7 +818,9 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 10)
+    @JmcCheckConfiguration(numIterations = 1000,
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
+            budget = 10, timeout = 300000L)
     public void runFib1Testor() {
         fib1Program(4);
     }

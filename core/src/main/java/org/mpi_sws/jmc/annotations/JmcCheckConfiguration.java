@@ -6,6 +6,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.time.Duration;
 
 /**
  * Configuration annotation for JMC checks.
@@ -67,4 +68,6 @@ public @interface JmcCheckConfiguration {
     long seed() default 0;
 
     int budget() default 2;
+
+    long timeout() default -1L;
 }

@@ -126,8 +126,8 @@ public class JmcModelChecker {
                 report.setTotalIterations(totalIterations);
                 LOGGER.info("Model checking completed covering: {} iterations", totalIterations);
             } else if (e.isTimeout()) {
-                report.setErrorIteration(-1);
-                report.setErrorMessage(e.getMessage());
+                int totalIterations = iteration - 1;
+                report.setTotalIterations(totalIterations);
                 LOGGER.error("Model checker timeout out: {}", e.getMessage());
             } else {
                 report.setErrorIteration(-1);

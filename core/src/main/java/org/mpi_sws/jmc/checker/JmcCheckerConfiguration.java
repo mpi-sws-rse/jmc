@@ -173,6 +173,7 @@ public class JmcCheckerConfiguration {
                 .reportPath(annotation.reportPath())
                 .seed(annotation.seed())
                 .budget(annotation.budget())
+                .timeout(annotation.timeout())
                 .schedulingPolicy(annotation.schedulingPolicy())
                 .build();
     }
@@ -247,6 +248,15 @@ public class JmcCheckerConfiguration {
 
         public Builder timeout(Duration timeout) {
             this.timeout = timeout;
+            return this;
+        }
+
+        public Builder timeout(long timeout) {
+            if (timeout < 0L) {
+                this.timeout = null;
+                return this;
+            }
+            this.timeout = Duration.ofMillis(timeout);
             return this;
         }
 

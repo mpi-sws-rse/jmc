@@ -49,6 +49,7 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
             JmcCheckerConfiguration.Builder builder, JmcCheckConfiguration annotation) {
         long seed = annotation.seed();
         int budget = annotation.budget();
+        long timeout = annotation.timeout();
         if (annotation.seed() == 0L) {
             seed = System.nanoTime();
         }
@@ -56,6 +57,7 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 .debug(annotation.debug())
                 .seed(seed)
                 .budget(budget)
+                .timeout(timeout)
                 .reportPath(annotation.reportPath())
                 .strategyType(annotation.strategy())
                 .schedulingPolicy(annotation.schedulingPolicy());
