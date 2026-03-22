@@ -215,7 +215,13 @@ public class EstimationListTest {
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     @JmcExpectExecutions(6) // For any n is n! (max 10)
     public void runCoarseListITrust() {
-        coarseListIProgram(3);
+        coarseListIProgram(4);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 20)
+    public void runCoarseListITestor() {
+        coarseListIProgram(5);
     }
 
     @JmcCheck
@@ -229,13 +235,6 @@ public class EstimationListTest {
     @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation",
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
     public void runCoarseListIWgTrustEstimation() {
-        coarseListIProgram(3);
-    }
-
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "testor",
-            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, budget = 2, debug = false)
-    public void runCoarseListITestor() {
         coarseListIProgram(3);
     }
 

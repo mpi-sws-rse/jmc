@@ -140,9 +140,12 @@ public class Testor implements MetaTreeEstimator {
         return true;
     }
 
-    private void updateEstimation() {
+    private void updateProd() {
         float d = (float) next.size() / (float) countFrontier();
         prod = prod * d;
+    }
+
+    private void updateEstimation() {
         expectedValue = expectedValue + (prod * ((float) countLeaves() / (float) countFrontier()));
     }
 
@@ -279,6 +282,7 @@ public class Testor implements MetaTreeEstimator {
             // We have explored all nodes in the current frontier, we can update the frontier with the next frontier
             // and continue the exploration.
             updateEstimation();
+            updateProd();
             updateFrontier();
             exploreNextFrontier(alg);
         }
@@ -309,7 +313,12 @@ public class Testor implements MetaTreeEstimator {
      */
     @Override
     public int getExpectedValue() {
-        return (int) (expectedValue + prod);
+        return (int) (getRealExpectedValue());
+    }
+
+    public float getRealExpectedValue() {
+        updateEstimation();
+        return expectedValue;
     }
 
     /**

@@ -806,13 +806,13 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runFib1Trust() {
-        fib1Program(3);
+        fib1Program(4);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 1000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 10)
     public void runFib1Testor() {
-        fib1Program(3);
+        fib1Program(4);
     }
 
     /** ----------------------------------------------------*/

@@ -76,8 +76,7 @@ public class TestorStrategy extends TrustStrategy implements EstimationStrategy 
     }
 
     private void recordEstimation(int iteration) {
-        estimatorCollector.append(testor.getExpectedValue()).append(System.lineSeparator());
-        //estimatorCollector.append("$Iteration_").append(iteration).append(System.lineSeparator());
+        estimatorCollector.append(testor.getRealExpectedValue()).append(System.lineSeparator());
     }
 
     /**
@@ -98,6 +97,11 @@ public class TestorStrategy extends TrustStrategy implements EstimationStrategy 
         super.updateEvent(event);
         if (!testor.isReExecutionNeeded()) {
             testor.updateTree(algoInstance);
+        }
+        if (event.getTaskId() == 1L && event.getType() == JmcRuntimeEvent.Type.FINISH_EVENT) {
+            if (!testor.isDone()) {
+                throw HaltExecutionException.reexecutionNeeded();
+            }
         }
     }
 

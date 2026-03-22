@@ -261,6 +261,11 @@ public class JmcRuntime {
             LOGGER.error("Failed to update event: {}", event);
             taskManager.terminate(event.getTaskId());
             throw e;
+        } catch (HaltExecutionException e) {
+            if (e.isReexecutionNeeded()) {
+                throw HaltExecutionException.reexecutionNeeded();
+            }
+            throw e;
         } catch (Exception e) {
             LOGGER.error("Failed to update event: {}", event, e);
             throw HaltExecutionException.error(e.getMessage());
