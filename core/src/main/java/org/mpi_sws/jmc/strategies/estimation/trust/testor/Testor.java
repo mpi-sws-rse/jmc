@@ -159,8 +159,13 @@ public class Testor implements MetaTreeEstimator {
             return count;
         }
 
-        for (Boolean isLeaf : currentLeaves.values()) {
+        /*for (Boolean isLeaf : currentLeaves.values()) {
             if (isLeaf) {
+                count++;
+            }
+        }*/
+        for (Map.Entry<ExplorationStack.Item, Boolean> entry : currentLeaves.entrySet()) {
+            if (entry.getValue() && entry.getKey().getGraph().isConsistent()) {
                 count++;
             }
         }

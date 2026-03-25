@@ -43,6 +43,8 @@ public class ExecutionGraph {
 
     private final HashMap<Integer, List<Long>> blockedLocks;
 
+    private boolean isConsistent = true;
+
     /**
      * Initializes a new execution graph.
      */
@@ -107,6 +109,14 @@ public class ExecutionGraph {
         // in the backward revisits, we ignore it.
         // Start fresh
         this.blockedLocks = new HashMap<>();
+    }
+
+    public boolean isConsistent() {
+        return isConsistent;
+    }
+
+    public void setConsistent(boolean consistent) {
+        isConsistent = consistent;
     }
 
     /**

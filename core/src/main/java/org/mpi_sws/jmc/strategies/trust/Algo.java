@@ -330,10 +330,12 @@ public class Algo {
                         LOGGER.debug(
                                 "The forward revisit of lock acquire read resulted in an inconsistent graph. Continuing to next item.");
                         logInconsistentGraph();
+                        item.getGraph().setConsistent(false);
                     }
                 } else {
                     LOGGER.debug("The revisit resulted in an inconsistent graph. Continuing to next item.");
                     logInconsistentGraph();
+                    item.getGraph().setConsistent(false);
                 }
             }
         }
