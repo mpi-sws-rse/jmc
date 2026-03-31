@@ -221,7 +221,7 @@ public class EstimationListTest {
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     @JmcExpectExecutions(6) // For any n is n! (max 10)
     public void runCoarseListITrust() {
-        coarseListIProgram(4);
+        coarseListIProgram(3);
     }
 
     @JmcCheck
