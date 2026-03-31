@@ -861,12 +861,14 @@ public class EstimationSynTest {
         singleToneWUPProgram();
     }
 
-    @JmcCheck
+    // This test is disabled
+
+    /*@JmcCheck
     @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     @Disabled
     public void runSingletoneWUPTestor() {
         singleToneWUPProgram();
-    }
+    }*/
 
     /** ---------------------------------------------------------------------------------------------------------
      *  Deprecated Test suites for the synthetic programs. Each test suite includes 4 tests: 1. DAG-based estimation,
