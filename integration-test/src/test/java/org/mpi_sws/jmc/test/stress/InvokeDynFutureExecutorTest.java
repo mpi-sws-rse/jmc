@@ -106,31 +106,32 @@ public class InvokeDynFutureExecutorTest {
     /**
      * This test is disabled
      **/
-//    public static void executor_par() throws Exception {
-//        ExecutorService service = Executors.newCachedThreadPool();
-//
-//        Object syncObject = new Object();
-//        AtomicInteger counter = new AtomicInteger();
-//
-//        Runnable r1 = () -> {
-//            synchronized(syncObject) {
-//                counter.incrementAndGet();
-//            }
-//        };
-//
-//        Runnable r2 = () -> counter.incrementAndGet();
-//
-//        Future<?> f1 = service.submit(r1);
-//        Future<?> f2 = service.submit(r2);
-//        Future<?> f3 = service.submit(syncObject::toString);
-//
-//        f1.get();
-//        f2.get();
-//        f3.get();
-//
-//        //service.shutdown();
-//
-//    }
+/*    public static void executor_par() throws Exception {
+        ExecutorService service = Executors.newCachedThreadPool();
+
+        Object syncObject = new Object();
+        AtomicInteger counter = new AtomicInteger();
+
+        Runnable r1 = () -> {
+            synchronized(syncObject) {
+                counter.incrementAndGet();
+            }
+        };
+
+        Runnable r2 = () -> counter.incrementAndGet();
+
+        Future<?> f1 = service.submit(r1);
+        Future<?> f2 = service.submit(r2);
+        Future<?> f3 = service.submit(syncObject::toString);
+
+        f1.get();
+        f2.get();
+        f3.get();
+
+        //service.shutdown();
+
+    }*/
+
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
     public void testFuture_seq() throws Exception {
@@ -155,11 +156,10 @@ public class InvokeDynFutureExecutorTest {
         future_par();
     }
 
-//    @JmcCheck
-//    @JmcCheckConfiguration(numIterations = 10)
-//    @Disabled
-//    public void testExecutor_par() throws Exception {
-//        executor_par();
-//    }
+/*    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10)
+    public void testExecutor_par() throws Exception {
+        executor_par();
+    }*/
 
 }
