@@ -65,8 +65,11 @@ test:
         awk -v className="$CLASS_NAME" '
           /^[[:space:]]*@JmcCheck/ { want=1; next }
           /^[[:space:]]*@Test/ { want=1; next }
-          want && match($0, /void[[:space:]]+([[:alnum:]_]+)[[:space:]]*\(/, m) {
-            print className "." m[1]
+          want && $0 ~ /void[[:space:]]+[[:alnum:]_]+[[:space:]]*\(/ {
+            line=$0
+            sub(/^.*void[[:space:]]+/, "", line)
+            sub(/[[:space:]]*\(.*/, "", line)
+            print className "." line
             want=0
           }
         ' "$FILE"
