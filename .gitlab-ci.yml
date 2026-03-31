@@ -63,11 +63,28 @@ test:
       TEST_METHODS=$(for FILE in $TEST_FILES; do
         CLASS_NAME=$(printf "%s" "$FILE" | sed 's|integration-test/src/test/java/||; s|/|.|g; s|\.java$||')
         awk -v className="$CLASS_NAME" '
+          BEGIN { in_block=0; want=0; disabled=0 }
+          {
+            line=$0
+            if (in_block) {
+              if (line ~ /\*\//) { sub(/^.*\*\//, "", line); in_block=0 } else { next }
+            }
+            if (line ~ /\/\*/) { in_block=1; sub(/\/\*.*$/, "", line) }
+            sub(/^[[:space:]]+/, "", line)
+            if (line ~ /^\/\// || line == "") { next }
+          }
+          /^[[:space:]]*@Disabled/ { disabled=1; next }
           /^[[:space:]]*@JmcCheck/ { want=1; next }
           /^[[:space:]]*@Test/ { want=1; next }
-          want && match($0, /void[[:space:]]+([[:alnum:]_]+)[[:space:]]*\(/, m) {
-            print className "." m[1]
+          want && $0 ~ /void[[:space:]]+[[:alnum:]_]+[[:space:]]*\(/ {
+            if (!disabled) {
+              line=$0
+              sub(/^.*void[[:space:]]+/, "", line)
+              sub(/[[:space:]]*\(.*/, "", line)
+              print className "." line
+            }
             want=0
+            disabled=0
           }
         ' "$FILE"
       done)
