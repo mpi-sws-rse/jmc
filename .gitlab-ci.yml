@@ -49,7 +49,15 @@ compile-integration-test:
 
 test:
   stage: test
-  script: ./gradlew :integration-test:test
+  script:
+    # Run each test class in its own Gradle invocation to avoid shared static state.
+    - |
+      set -eu
+      TEST_CLASSES=$(find integration-test/src/test/java -name "*Test.java" \
+        | sed 's|integration-test/src/test/java/||; s|/|.|g; s|\.java$||')
+      for TEST_CLASS in $TEST_CLASSES; do
+        ./gradlew --no-daemon :integration-test:test --tests "$TEST_CLASS"
+      done
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
