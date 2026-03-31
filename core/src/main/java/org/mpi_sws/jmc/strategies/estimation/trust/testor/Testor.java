@@ -165,7 +165,9 @@ public class Testor implements MetaTreeEstimator {
             }
         }*/
         for (Map.Entry<ExplorationStack.Item, Boolean> entry : currentLeaves.entrySet()) {
-            if (entry.getValue() && entry.getKey().getGraph().isConsistent()) {
+            if (entry.getValue() &&
+                    entry.getKey().getGraph() != null &&
+                    entry.getKey().getGraph().isConsistent()) {
                 count++;
             }
         }
