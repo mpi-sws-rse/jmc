@@ -15,9 +15,7 @@ public class JmcEnumTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
-    @Disabled
     public void testMapAccess() {
-
         // Access static map
         JmcEnum.MyEnum value = MY_MAP.get(2);
         assert (JmcEnum.MyEnum.B == value);

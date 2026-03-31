@@ -320,6 +320,14 @@ public class EstimationQueueTest {
         ubQueueEnqueueProgram(3);
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100,
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
+            budget = 2, timeout = 60000L)
+    public void runUbQueueEnqueueTestor() {
+        ubQueueEnqueueProgram(3);
+    }
+
     /**
      * UnboundedQueue(n/2, n/2) test suite for n \in {2,3,4,5,6}
      * 1. TruSt model checking
@@ -328,6 +336,14 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runUbQueueEnqueueDequeueTrust() {
+        ubQueueEnqueueDequeueProgram(3);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100,
+            schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
+            budget = 2, timeout = 60000L)
+    public void runUbQueueEnqueueDequeueTestor() {
         ubQueueEnqueueDequeueProgram(3);
     }
 

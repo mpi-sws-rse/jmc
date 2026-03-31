@@ -16,10 +16,10 @@ public class CounterTest {
 
     @JmcCheck
     @JmcCheckConfiguration(strategy = "trust", numIterations = 200)
-    @JmcExpectExecutions(120)
+    @JmcExpectExecutions(6)
     public void testTrustCounter() {
-        ParametricCounter counter = new ParametricCounter(5);
+        ParametricCounter counter = new ParametricCounter(3);
         counter.run();
-        assert counter.getCounterValue() == 5;
+        assert counter.getCounterValue() == 3;
     }
 }

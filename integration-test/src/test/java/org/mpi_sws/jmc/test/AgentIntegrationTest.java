@@ -16,7 +16,7 @@ public class AgentIntegrationTest {
     @Test
     public void testAgentWithFuture() throws JmcCheckerException {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).debug(true).build();
+                new JmcCheckerConfiguration.Builder().numIterations(10).debug(false).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
@@ -46,7 +46,7 @@ public class AgentIntegrationTest {
     @Test
     public void testAgentWithExecutor() throws JmcCheckerException {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).debug(true).build();
+                new JmcCheckerConfiguration.Builder().numIterations(10).debug(false).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
@@ -61,7 +61,7 @@ public class AgentIntegrationTest {
     @Test
     public void testAgentWithGuavaMoreExecutor() throws JmcCheckerException {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).debug(true).build();
+                new JmcCheckerConfiguration.Builder().numIterations(10).debug(false).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
@@ -76,7 +76,7 @@ public class AgentIntegrationTest {
     @Test
     public void testAgentWithFutureList() throws JmcCheckerException {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).debug(true).build();
+                new JmcCheckerConfiguration.Builder().numIterations(10).debug(false).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
@@ -91,7 +91,7 @@ public class AgentIntegrationTest {
     @Test
     public void testAgentWithFutureDone() throws JmcCheckerException {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).debug(true).build();
+                new JmcCheckerConfiguration.Builder().numIterations(10).debug(false).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
@@ -106,7 +106,7 @@ public class AgentIntegrationTest {
     @Test
     public void testAgentWithFuturePoll() throws JmcCheckerException {
         JmcCheckerConfiguration config =
-                new JmcCheckerConfiguration.Builder().numIterations(10).debug(true).build();
+                new JmcCheckerConfiguration.Builder().numIterations(10).debug(false).build();
         JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
 
         JmcTestTarget target =
