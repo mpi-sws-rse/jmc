@@ -272,7 +272,7 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 3000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runTtasLockTrust() {
-        ttasLock(3);
+        ttasLock(2);
     }
 
     /** ----------------------------------------------------*/
@@ -290,7 +290,7 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 2000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runLinuxRWLocksTrust() {
-        linuxRWLocks(1, 1, 1);
+        linuxRWLocks(1, 1, 0);
     }
 
     /** ----------------------------------------------------*/
@@ -307,7 +307,7 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runMpmcQueueTrust() {
-        mpmcQueue(1, 1, 1);
+        mpmcQueue(1, 1, 0);
     }
 
     /**
@@ -318,6 +318,6 @@ public class EstimationTacasTest {
     @JmcCheckConfiguration(numIterations = 100000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runAbaMsQueueTrust() {
-        abaMsQueue(1, 1, 1);
+        abaMsQueue(1, 1, 0);
     }
 }

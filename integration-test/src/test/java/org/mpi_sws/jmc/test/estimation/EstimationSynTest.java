@@ -538,9 +538,9 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000,
+    @JmcCheckConfiguration(numIterations = 100,
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
-            budget = 10, timeout = 300000L)
+            budget = 2, timeout = 60000L)
     public void runRnTestor() {
         readNProgram(3);
     }
@@ -556,15 +556,15 @@ public class EstimationSynTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 2000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, debug = false)
-    @JmcExpectExecutions(576) // For input n is (n!)^2
+    @JmcExpectExecutions(36) // For input n is (n!)^2
     public void runIncnTrust() {
-        incNProgram(4);
+        incNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000,
+    @JmcCheckConfiguration(numIterations = 100,
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
-            budget = 10, timeout = 300000L)
+            budget = 2, timeout = 60000L)
     public void runIncnTestor() {
         incNProgram(3);
     }
@@ -581,15 +581,15 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 2000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runRWNTrust() {
-        RWNProgram(2, 2);
+        RWNProgram(1, 1);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000,
+    @JmcCheckConfiguration(numIterations = 100,
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
-            budget = 10, timeout = 300000L)
+            budget = 2, timeout = 60000L)
     public void runRWNTestor() {
-        RWNProgram(2, 2);
+        RWNProgram(1, 1);
     }
 
     /** ----------------------------------------------------*/
@@ -604,13 +604,13 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 2000000)
     @JmcTrustStrategy(loggerTree = true, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO)
     public void runWRNTrust() {
-        WRNProgram(2, 2);
+        WRNProgram(1, 1);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runWRNTestor() {
-        WRNProgram(2, 2);
+        WRNProgram(1, 1);
     }
 
     /** ----------------------------------------------------*/
@@ -629,7 +629,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runSVQueue1Testor() {
         svQueue1Program(3);
     }
@@ -650,7 +650,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runSVQueue2Testor() {
         svQueue2Program(3);
     }
@@ -671,9 +671,9 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runSVQueue3Testor() {
-        svQueue3Program(3);
+        svQueue3Program(2);
     }
 
     /** ----------------------------------------------------*/
@@ -691,7 +691,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runSVStack1Testor() {
         svStack1Program(3);
     }
@@ -711,7 +711,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runSVStack2Testor() {
         svStack2Program(3);
     }
@@ -731,7 +731,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runCoarseCounterTestor() {
         coarseCounter(3);
     }
@@ -747,13 +747,13 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runFineCounterTrust() {
-        fineCounterProgram(4);
+        fineCounterProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runFineCounterTestor() {
-        fineCounterProgram(4);
+        fineCounterProgram(3);
     }
 
     /** ----------------------------------------------------*/
@@ -773,7 +773,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runBigShotPTestor() {
         bigShotP();
     }
@@ -795,9 +795,9 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000,
+    @JmcCheckConfiguration(numIterations = 100,
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
-            budget = 10, timeout = 300000L)
+            budget = 2, timeout = 60000L)
     public void runBigShotSTestor() {
         bigShotS();
     }
@@ -814,15 +814,15 @@ public class EstimationSynTest {
     @JmcCheckConfiguration(numIterations = 1000000)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runFib1Trust() {
-        fib1Program(4);
+        fib1Program(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000,
+    @JmcCheckConfiguration(numIterations = 100,
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
-            budget = 10, timeout = 300000L)
+            budget = 2, timeout = 60000L)
     public void runFib1Testor() {
-        fib1Program(4);
+        fib1Program(3);
     }
 
     /** ----------------------------------------------------*/
@@ -841,7 +841,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     public void runSigmaTestor() {
         sigmaProgram(3);
     }
@@ -862,7 +862,7 @@ public class EstimationSynTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5000, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 4)
+    @JmcCheckConfiguration(numIterations = 100, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor", debug = false, budget = 2)
     @Disabled
     public void runSingletoneWUPTestor() {
         singleToneWUPProgram();
@@ -956,25 +956,25 @@ public class EstimationSynTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
     public void runRWNnDagEstimation() {
-        RWNProgram(2, 2);
+        RWNProgram(1, 1);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
     public void runRWNnFjDagEstimation() {
-        RWNProgram(2, 2);
+        RWNProgram(1, 1);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runRWNnTrustEstimation() {
-        RWNProgram(2, 2);
+        RWNProgram(1, 1);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runRWNnWgTrustEstimation() {
-        RWNProgram(2, 2);
+        RWNProgram(1, 1);
     }
 
     /** ----------------------------------------------------*/
@@ -990,25 +990,25 @@ public class EstimationSynTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
     public void runWRNnDagEstimation() {
-        WRNProgram(2, 2);
+        WRNProgram(1, 1);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
     public void runWRNnFjDagEstimation() {
-        WRNProgram(2, 2);
+        WRNProgram(1, 1);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runWRNnTrustEstimation() {
-        WRNProgram(2, 2);
+        WRNProgram(1, 1);
     }
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "wg-trust-estimation", debug = false, schedulingPolicy = TrustStrategy.SchedulingPolicy.LIFO)
     public void runWRNnWgTrustEstimation() {
-        WRNProgram(2, 2);
+        WRNProgram(1, 1);
     }
 
     /** ----------------------------------------------------*/

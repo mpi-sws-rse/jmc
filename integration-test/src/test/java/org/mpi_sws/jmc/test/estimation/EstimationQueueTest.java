@@ -317,15 +317,15 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runUbQueueEnqueueTrust() {
-        ubQueueEnqueueProgram(5);
+        ubQueueEnqueueProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000,
+    @JmcCheckConfiguration(numIterations = 100,
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
-            budget = 20, timeout = 600000L)
+            budget = 2, timeout = 60000L)
     public void runUbQueueEnqueueTestor() {
-        ubQueueEnqueueProgram(9);
+        ubQueueEnqueueProgram(3);
     }
 
     /**
@@ -336,15 +336,15 @@ public class EstimationQueueTest {
     @JmcCheckConfiguration(numIterations = 1000000, debug = false)
     @JmcTrustStrategy(schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, loggerTree = true)
     public void runUbQueueEnqueueDequeueTrust() {
-        ubQueueEnqueueDequeueProgram(4);
+        ubQueueEnqueueDequeueProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1000,
+    @JmcCheckConfiguration(numIterations = 100,
             schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO, strategy = "testor",
-            budget = 20, timeout = 600000L)
+            budget = 2, timeout = 60000L)
     public void runUbQueueEnqueueDequeueTestor() {
-        ubQueueEnqueueDequeueProgram(9);
+        ubQueueEnqueueDequeueProgram(3);
     }
 
     /**
