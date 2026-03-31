@@ -53,7 +53,14 @@ test:
     # Run each test class in its own Gradle invocation to avoid shared static state.
     - |
       set -eu
-      TEST_CLASSES=$(find integration-test/src/test/java -name "*Test.java" \
+      TEST_FILES=$(find integration-test/src/test/java -name "*Test.java" \
+        -exec grep -l -E "^[[:space:]]*@JmcCheck|^[[:space:]]*@Test" {} + \
+        | sort)
+      if [ -z "$TEST_FILES" ]; then
+        echo "No test classes found under integration-test/src/test/java."
+        exit 0
+      fi
+      TEST_CLASSES=$(printf "%s\n" "$TEST_FILES" \
         | sed 's|integration-test/src/test/java/||; s|/|.|g; s|\.java$||')
       for TEST_CLASS in $TEST_CLASSES; do
         ./gradlew --no-daemon :integration-test:test --tests "$TEST_CLASS"
