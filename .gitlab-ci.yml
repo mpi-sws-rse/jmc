@@ -60,10 +60,23 @@ test:
         echo "No test classes found under integration-test/src/test/java."
         exit 0
       fi
-      TEST_CLASSES=$(printf "%s\n" "$TEST_FILES" \
-        | sed 's|integration-test/src/test/java/||; s|/|.|g; s|\.java$||')
-      for TEST_CLASS in $TEST_CLASSES; do
-        ./gradlew --no-daemon :integration-test:test --tests "$TEST_CLASS"
+      TEST_METHODS=$(for FILE in $TEST_FILES; do
+        CLASS_NAME=$(printf "%s" "$FILE" | sed 's|integration-test/src/test/java/||; s|/|.|g; s|\.java$||')
+        awk -v className="$CLASS_NAME" '
+          /^[[:space:]]*@JmcCheck/ { want=1; next }
+          /^[[:space:]]*@Test/ { want=1; next }
+          want && match($0, /void[[:space:]]+([[:alnum:]_]+)[[:space:]]*\(/, m) {
+            print className "." m[1]
+            want=0
+          }
+        ' "$FILE"
+      done)
+      if [ -z "$TEST_METHODS" ]; then
+        echo "No test methods found under integration-test/src/test/java."
+        exit 0
+      fi
+      for TEST_METHOD in $TEST_METHODS; do
+        ./gradlew --no-daemon :integration-test:test --tests "$TEST_METHOD"
       done
   cache:
     key: "$CI_COMMIT_REF_NAME"
