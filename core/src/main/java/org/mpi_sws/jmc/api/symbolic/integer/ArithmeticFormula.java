@@ -3,10 +3,10 @@ package org.mpi_sws.jmc.api.symbolic.integer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.api.symbolic.InstructionType;
-import org.mpi_sws.jmc.api.symbolic.JmcSymbolic;
 import org.mpi_sws.jmc.api.symbolic.SymbolicOperand;
 import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
+import org.mpi_sws.jmc.solver.SolverUtil;
 import org.sosy_lab.java_smt.api.BooleanFormula;
 import org.sosy_lab.java_smt.api.BooleanFormulaManager;
 import org.sosy_lab.java_smt.api.IntegerFormulaManager;
@@ -48,8 +48,8 @@ public class ArithmeticFormula {
      * Initializes a newly created {@link ArithmeticFormula} object.
      */
     public ArithmeticFormula() {
-        bmgr = JmcSymbolic.getBmgr();
-        imgr = JmcSymbolic.getImgr();
+        bmgr = SolverUtil.getBmgr();
+        imgr = SolverUtil.getImgr();
     }
 
     /**
@@ -580,8 +580,8 @@ public class ArithmeticFormula {
      *
      * <p>This method finds a variable in the integer variable map based on its name. If the
      * variable exists in the map, it returns the corresponding integer formula. If the variable does
-     * not exist in the map, it creates a new symbolic integer variable using the JmcSymbolic
-     * class, adds it to the map, and returns the integer formula.
+     * not exist in the map, it creates a new symbolic integer variable using SolverUtil, adds it to
+     * the map, and returns the integer formula.
      *
      * @param name the name of the variable.
      * @return the integer formula for the variable.
@@ -590,7 +590,7 @@ public class ArithmeticFormula {
         if (integerVariableMap.containsKey(name)) {
             return integerVariableMap.get(name);
         } else {
-            SymIntVariable symIntVariable = JmcSymbolic.getSymIntVariable(name);
+            SymIntVariable symIntVariable = SolverUtil.getSymIntVariable(name);
             integerVariableMap.put(name, symIntVariable.getVar());
             return symIntVariable.getVar();
         }

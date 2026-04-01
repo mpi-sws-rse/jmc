@@ -21,7 +21,10 @@ public class SymbolicSolverSingletonFactory {
 
     public static IncrementalSolver getIncrementalSolver(SMTSolverTypes solverType) {
         if (solver != null) {
-            return (IncrementalSolver) solver;
+            if (solver instanceof IncrementalSolver incrementalSolver) {
+                return incrementalSolver;
+            }
+            throw new IllegalStateException("Solver singleton is not an IncrementalSolver");
         }
 
         if (solverType == null) {

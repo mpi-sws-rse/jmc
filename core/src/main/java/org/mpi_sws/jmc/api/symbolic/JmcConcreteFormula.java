@@ -7,6 +7,7 @@ import org.mpi_sws.jmc.api.symbolic.bool.SymbolicBoolean;
 import org.mpi_sws.jmc.api.symbolic.integer.AbstractInteger;
 import org.mpi_sws.jmc.api.symbolic.integer.ConcreteInteger;
 import org.mpi_sws.jmc.api.symbolic.integer.SymbolicInteger;
+import org.mpi_sws.jmc.solver.SolverUtil;
 
 import java.util.HashSet;
 import java.util.List;
@@ -404,7 +405,7 @@ public class JmcConcreteFormula {
             if (symbolicBoolean.getEval() != null) {
                 return symbolicBoolean.getEval().concreteEvaluation();
             } else {
-                return JmcSymbolic.getSymBoolVarValue(symbolicBoolean.getName());
+                return SolverUtil.getSymBoolVarValue(symbolicBoolean.getName());
             }
         } else {
             throw new RuntimeException("Unsupported type of AbstractBoolean");

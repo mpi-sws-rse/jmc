@@ -1,7 +1,7 @@
 package org.mpi_sws.jmc.api.symbolic.bool;
 
 import org.mpi_sws.jmc.api.symbolic.InstructionType;
-import org.mpi_sws.jmc.api.symbolic.JmcSymbolic;
+import org.mpi_sws.jmc.solver.SolverUtil;
 import org.sosy_lab.java_smt.api.*;
 
 import java.util.HashMap;
@@ -28,7 +28,7 @@ public class PropositionalFormula {
      * Constructs a PropositionalFormula instance and initializes the BooleanFormulaManager.
      */
     public PropositionalFormula() {
-        bmgr = JmcSymbolic.getBmgr();
+        bmgr = SolverUtil.getBmgr();
     }
 
     /**
@@ -509,7 +509,7 @@ public class PropositionalFormula {
         if (booleanVariableMap.containsKey(name)) {
             return booleanVariableMap.get(name);
         } else {
-            SymBoolVariable symBoolVariable = JmcSymbolic.getSymBoolVariable(name);
+            SymBoolVariable symBoolVariable = SolverUtil.getSymBoolVariable(name);
             booleanVariableMap.put(name, symBoolVariable.getVar());
             return symBoolVariable.getVar();
         }

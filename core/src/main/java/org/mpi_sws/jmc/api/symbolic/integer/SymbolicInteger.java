@@ -1,8 +1,8 @@
 package org.mpi_sws.jmc.api.symbolic.integer;
 
 import org.mpi_sws.jmc.runtime.JmcRuntime;
-import org.mpi_sws.jmc.api.symbolic.JmcSymbolic;
 import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
+import org.mpi_sws.jmc.solver.SolverUtil;
 
 /**
  * The {@link SymbolicInteger} class represents a symbolic integer variable.
@@ -237,7 +237,7 @@ public class SymbolicInteger extends AbstractInteger {
                             "[JMC Formula Message] Unsupported operator");
             }
         } else {
-            return JmcSymbolic.getSymIntVarValue(this.getName());
+            return SolverUtil.getSymIntVarValue(this.getName());
         }
     }
 }
