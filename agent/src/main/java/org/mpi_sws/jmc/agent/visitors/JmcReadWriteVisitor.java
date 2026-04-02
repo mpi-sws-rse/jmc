@@ -1,10 +1,14 @@
 package org.mpi_sws.jmc.agent.visitors;
 
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
+
 
 /**
  * Represents a JMC read-write visitor. Adds instrumentation to change field accesses to
@@ -16,6 +20,10 @@ public class JmcReadWriteVisitor {
     public static class ReadWriteClassVisitor extends ClassVisitor {
 
         private boolean isInterface;
+        private boolean skipInstrumentation;
+
+        /** Set of final field names in this class (format: "owner/name") */
+        private final Set<String> finalFields = new HashSet<>();
 
         /**
          * Constructor.
@@ -26,6 +34,8 @@ public class JmcReadWriteVisitor {
             super(Opcodes.ASM9, cv);
         }
 
+        private String className;
+
         @Override
         public void visit(
                 int version,
@@ -34,23 +44,43 @@ public class JmcReadWriteVisitor {
                 String signature,
                 String superName,
                 String[] interfaces) {
+            className = name;
 
             if ((access & Opcodes.ACC_INTERFACE) != 0) {
                 isInterface = true;
             }
 
+//            if ("org/apache/iceberg/ManifestFile".equals(name) || "org/apache/iceberg/Metrics".equals(name) || "org/apache/iceberg/MetadataColumns".equals(name)) {
+//                skipInstrumentation = true;
+//            }
+
             super.visit(version, access, name, signature, superName, interfaces);
         }
+
+        @Override
+        public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
+            // Track final fields
+            if ((access & Opcodes.ACC_FINAL) != 0) {
+                finalFields.add(className + "/" + name);
+            }
+            return super.visitField(access, name, descriptor, signature, value);
+        }
+
+
 
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
             MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+            if (skipInstrumentation) {
+                return mv;
+            }
             if (isInterface && Objects.equals(name, "<clinit>")) {
                 // If this is an interface static initializer, we do not instrument it
                 return mv;
             }
-            return new ReadWriteMethodVisitor(mv, access, descriptor, "<init>".equals(name));
+
+            return new ReadWriteMethodVisitor(mv, access, descriptor, "<init>".equals(name), className, finalFields);
         }
     }
 
@@ -62,19 +92,30 @@ public class JmcReadWriteVisitor {
         private final boolean constructor;
         private boolean constructorInitialized = false;
 
+        private final String className;
+        private final Set<String> finalFields;
+
+
         /**
          * Constructor.
          *
          * @param mv The underlying MethodVisitor
          * @param access The method's access flags
          * @param descriptor The method descriptor (e.g., "(I)V")
+         * @param constructor Whether this is a constructor
+         * @param className The name of the class being visited
+         * @param finalFields Set of final field keys (format: "owner/name")
          */
         public ReadWriteMethodVisitor(
-                MethodVisitor mv, int access, String descriptor, boolean constructor) {
+                MethodVisitor mv, int access, String descriptor, boolean constructor,
+                String className, Set<String> finalFields) {
             super(Opcodes.ASM9, mv, access, descriptor);
             this.instrumented = false;
             this.constructor = constructor;
+            this.className = className;
+            this.finalFields = finalFields;
         }
+
 
         private void insertUpdateEventCall(
                 String owner, boolean isStatic, boolean isWrite, String name, String descriptor) {
@@ -87,6 +128,11 @@ public class JmcReadWriteVisitor {
                 return;
             }
             if (constructorNotInitialized()) {
+                return;
+            }
+            // Skip final fields - they don't need synchronization
+            String fieldKey = owner + "/" + name;
+            if (finalFields.contains(fieldKey)) {
                 return;
             }
             instrumented = true;
@@ -115,29 +161,88 @@ public class JmcReadWriteVisitor {
         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
             boolean shouldInstrument = false;
             boolean isWrite = false;
-            if (opcode == Opcodes.GETFIELD || opcode == Opcodes.GETSTATIC) {
+            boolean isStatic = false;
+
+            if (opcode == Opcodes.GETFIELD) {
                 shouldInstrument = true;
+            } else if (opcode == Opcodes.GETSTATIC) {
+                shouldInstrument = true;
+                isStatic = true;
             } else if (opcode == Opcodes.PUTFIELD) {
                 shouldInstrument = true;
                 isWrite = true;
             } else if (opcode == Opcodes.PUTSTATIC) {
                 shouldInstrument = true;
                 isWrite = true;
+                isStatic = true;
             }
-            if (shouldInstrument) {
-                insertUpdateEventCall(
-                        owner,
-                        opcode == Opcodes.GETSTATIC || opcode == Opcodes.PUTSTATIC,
-                        isWrite,
-                        name,
-                        descriptor);
-            }
-            super.visitFieldInsn(opcode, owner, name, descriptor);
-            if (instrumented) {
-                VisitorHelper.insertYield(mv);
-                instrumented = false;
+
+            if (shouldInstrument && isStatic && !isWrite) {
+                // For static field READS (GETSTATIC): execute field access first, then instrument
+                super.visitFieldInsn(opcode, owner, name, descriptor);
+                insertStaticReadAfterCall(owner, name, descriptor);
+                if (instrumented) {
+                    VisitorHelper.insertYield(mv);
+                    instrumented = false;
+                }
+            } else if (shouldInstrument && isStatic && isWrite) {
+                // For static field WRITES (PUTSTATIC): duplicate value, execute write, then instrument
+                if (shouldInstrumentField(owner, name)) {
+                    VisitorHelper.insertStaticWriteBefore(mv, descriptor);
+                    instrumented = true;
+                    super.visitFieldInsn(opcode, owner, name, descriptor);
+                    VisitorHelper.insertStaticWriteAfter(mv, owner, name, descriptor);
+                    VisitorHelper.insertYield(mv);
+                    instrumented = false;
+                } else {
+                    // Field should not be instrumented, just execute the instruction
+                    super.visitFieldInsn(opcode, owner, name, descriptor);
+                }
+            } else if (shouldInstrument) {
+                // For instance fields: instrument first, then execute
+                insertUpdateEventCall(owner, false, isWrite, name, descriptor);
+                super.visitFieldInsn(opcode, owner, name, descriptor);
+                if (instrumented) {
+                    VisitorHelper.insertYield(mv);
+                    instrumented = false;
+                }
+            } else {
+                // No instrumentation needed
+                super.visitFieldInsn(opcode, owner, name, descriptor);
             }
         }
+
+        /**
+         * Checks if a field should be instrumented based on various filters.
+         */
+        private boolean shouldInstrumentField(String owner, String name) {
+            if (Objects.equals(owner, "java/lang/System")) {
+                return false;
+            }
+            if (Objects.equals(name, "$assertionsDisabled")) {
+                return false;
+            }
+            if (constructorNotInitialized()) {
+                return false;
+            }
+            String fieldKey = owner + "/" + name;
+            if (finalFields.contains(fieldKey)) {
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * Inserts instrumentation for static field reads after the GETSTATIC instruction.
+         */
+        private void insertStaticReadAfterCall(String owner, String name, String descriptor) {
+            if (!shouldInstrumentField(owner, name)) {
+                return;
+            }
+            instrumented = true;
+            VisitorHelper.insertStaticReadAfter(mv, owner, name, descriptor);
+        }
+
 
         @Override
         public void visitMethodInsn(

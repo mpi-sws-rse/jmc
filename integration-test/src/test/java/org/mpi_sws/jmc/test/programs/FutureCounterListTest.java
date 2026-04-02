@@ -15,7 +15,6 @@ public class FutureCounterListTest {
     public static void main(String[] args) {
     AtomicInteger counter = new AtomicInteger();
     ExecutorService executor = Executors.newFixedThreadPool(2);
-        System.out.println(" Executor implementation: " + executor.getClass().getName());
     //ExecutorService executor = Executors.newSingleThreadExecutor();
     List<Future<Integer>> futures = new ArrayList<>();
 

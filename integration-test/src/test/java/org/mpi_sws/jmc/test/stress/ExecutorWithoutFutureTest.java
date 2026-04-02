@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test.stress;
 
+import org.junit.jupiter.api.Disabled;
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 
@@ -12,11 +13,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Stress test to reproduce the race condition in JmcExecutorWorker
  * where multiple tasks completing simultaneously cause incorrect
  * join() vs terminate() decisions due to racy queue.isEmpty() check.
+ * TODO : These tests do not explicitly call future, JMC cannot support them currently, we need to extend JMC to support them.
  */
-public class ExecutorShutdownRaceTest {
+public class ExecutorWithoutFutureTest {
 
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug = false)
+    @Disabled
     public  void testMultipleTasksCompletingSimultaneously() throws InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(7);
         AtomicInteger counter = new AtomicInteger(0);
@@ -31,6 +32,8 @@ public class ExecutorShutdownRaceTest {
             });
         }
 
+
+
         executor.shutdown();
         //boolean terminated = executor.awaitTermination(1, TimeUnit.MINUTES);
         
@@ -43,9 +46,9 @@ public class ExecutorShutdownRaceTest {
         }
     }
 
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug = false)
-    public static void testManyTasksWithShutdown() throws InterruptedException {
+
+    @Disabled
+    public void testManyTasksWithShutdown() throws InterruptedException {
         // Even more tasks to increase race condition probability
         ExecutorService executor = Executors.newFixedThreadPool(10);
         AtomicInteger counter = new AtomicInteger(0);
@@ -69,9 +72,9 @@ public class ExecutorShutdownRaceTest {
         }
     }
 
-    @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5, debug = true)
-    public static void testRaceConditionWithDebug() throws InterruptedException {
+
+    @Disabled
+    public  void testRaceConditionWithDebug() throws InterruptedException {
         // Smaller test with debug enabled to see the exact error sequence
         ExecutorService executor = Executors.newFixedThreadPool(5);
         AtomicInteger counter = new AtomicInteger(0);

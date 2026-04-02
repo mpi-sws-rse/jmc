@@ -14,8 +14,10 @@ import org.mpi_sws.jmc.runtime.scheduling.Scheduler;
 import org.mpi_sws.jmc.strategies.JmcReplayUnsupported;
 import org.mpi_sws.jmc.strategies.ReplayableSchedulingStrategy;
 import org.mpi_sws.jmc.strategies.SchedulingStrategy;
+import org.mpi_sws.jmc.strategies.tracker.TrackExecutors;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
 /**
  * The Runtime environment complete with a scheduler and configuration options used by the model
@@ -108,9 +110,6 @@ public class JmcRuntime {
      * @param iteration the iteration number
      */
     public static void initIteration(int iteration, JmcModelCheckerReport report) {
-        if (iteration == 0) {
-            JmcRuntimeUtils.invokeStaticInitializedClasses();
-        }
         if (config.getDebug()) {
             updateLoggerFile(iteration);
         }
@@ -131,7 +130,10 @@ public class JmcRuntime {
             LOGGER.error("Failed to start main thread.");
         }
         JmcRuntime.yield();
-        JmcRuntimeUtils.invokeStaticInitializedClasses();
+        if (iteration != 0) {
+            JmcRuntimeUtils.invokeStaticInitializedClasses(iteration);
+        }
+
     }
 
     /**

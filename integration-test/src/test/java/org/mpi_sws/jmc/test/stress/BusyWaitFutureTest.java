@@ -142,18 +142,14 @@ public class BusyWaitFutureTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5, debug = true)
+    @JmcCheckConfiguration(numIterations = 5, debug = false)
     public void testBusyWaitScenario() throws Exception {
-        System.out.println("Testing busy-wait scenario...");
         testBusyWait();
-        System.out.println("Busy-wait test completed!");
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5, debug = true)
+    @JmcCheckConfiguration(numIterations = 5, debug = false)
     public void testBlockingWaitScenario() throws Exception {
-        System.out.println("Testing blocking-wait scenario...");
         testBlockingWait();
-        System.out.println("Blocking-wait test completed!");
     }
 }

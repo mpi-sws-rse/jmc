@@ -69,13 +69,11 @@ public class InvokeDynamicTest {
             @Override
             public String toString() {
                 reentrantLock.lock();
-                System.out.println(reentrantLock);
                 reentrantLock.unlock();
                 return super.toString();
             }
         };
 
-        System.out.println(atomicInteger);
     }
 
     public static void reentrantLock_par() {

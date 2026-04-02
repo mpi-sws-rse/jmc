@@ -3,6 +3,7 @@ package org.mpi_sws.jmc.api.util.concurrent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.runtime.JmcRuntime;
+import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +50,7 @@ public class JmcExecutorService extends ThreadPoolExecutor {
             worker.start();
         }
         this.isShutdown.set(false);
+        JmcRuntimeUtils.registerExecutor(this);
     }
 
     public JmcExecutorService(int capacity, ThreadFactory threadFactory) {
@@ -69,6 +71,7 @@ public class JmcExecutorService extends ThreadPoolExecutor {
             worker.start();
         }
         this.isShutdown.set(false);
+        JmcRuntimeUtils.registerExecutor(this);
     }
 
     /**Added this constructor for when a class extends ThreadPoolExecutor **/
@@ -96,6 +99,7 @@ public class JmcExecutorService extends ThreadPoolExecutor {
             worker.start();
         }
         this.isShutdown.set(false);
+        JmcRuntimeUtils.registerExecutor(this);
     }
 
     /** Stops the executor service. */
@@ -330,7 +334,7 @@ public class JmcExecutorService extends ThreadPoolExecutor {
                     task.run();
                     workCounter.decrementAndGet();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 } finally {
                     if (task != null) {
                         if (queue.isEmpty()) {

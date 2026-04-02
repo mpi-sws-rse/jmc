@@ -13,15 +13,12 @@ public class InvokeDynFutureExecutor {
 
     public static void future_seq() throws Exception {
         ExecutorService service = Executors.newSingleThreadExecutor();
-        System.out.println("Invoked future_seq");
 
         Future<String> f = service.submit(() -> {
-            System.out.println("Inside future submit");
             AtomicInteger newCounter = new AtomicInteger(0) {
 
                 @Override
                 public String toString() {
-                    System.out.println("Inside toString override");
                     incrementAndGet();
                     return super.toString() + get();
                 }

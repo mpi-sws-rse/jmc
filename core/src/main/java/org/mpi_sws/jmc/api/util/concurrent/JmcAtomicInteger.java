@@ -294,6 +294,6 @@ public class JmcAtomicInteger {
      */
     @Override
     public String toString() {
-        return "JmcAtomicInteger";
+        return super.toString();
     }
 }

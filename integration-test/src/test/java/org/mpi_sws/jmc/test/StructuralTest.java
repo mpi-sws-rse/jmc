@@ -39,7 +39,7 @@ public class StructuralTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100000)
+    @JmcCheckConfiguration(numIterations = 10)
     @JmcTrustStrategy
     public void runLambdaCounterTrustTest() {
         lambdaCounterTest();

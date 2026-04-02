@@ -6,6 +6,7 @@ import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mpi_sws.jmc.test.JmcEnum.MY_MAP;
 
 public class JmcEnumTest{
@@ -19,6 +20,6 @@ public class JmcEnumTest{
 
         // Access static map
         JmcEnum.MyEnum value = MY_MAP.get(2);
-        assert(JmcEnum.MyEnum.B == value);
+        assertEquals(JmcEnum.MyEnum.B , value);
     }
 }

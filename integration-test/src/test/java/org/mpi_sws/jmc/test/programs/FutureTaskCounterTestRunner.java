@@ -9,7 +9,7 @@ import java.util.concurrent.FutureTask;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class FutureTaskCounterTestRunner {
+public class  FutureTaskCounterTestRunner {
 
     public static void main(String[] args){
         FutureTaskCounter counter = new FutureTaskCounter();

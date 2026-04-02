@@ -105,6 +105,94 @@ public class VisitorHelper {
         mv.visitInsn(Opcodes.POP);
     }
 
+
+    /**
+     * Inserts instrumentation for a static field read AFTER the GETSTATIC instruction.
+     * At this point, the field value is on top of the stack and must remain there.
+     *
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param owner The internal name of the class containing the field.
+     * @param name The name of the field.
+     * @param descriptor The descriptor of the field.
+     */
+    public static void insertStaticReadAfter(
+            MethodVisitor mv, String owner, String name, String descriptor) {
+        // Stack before: [value from GETSTATIC]
+        // Stack after: [value from GETSTATIC] (unchanged)
+
+        // The readEventWithoutYield call doesn't need the field value,
+        // just the metadata, so we don't touch the stack value
+        mv.visitInsn(Opcodes.ACONST_NULL); // null object reference for static field
+        mv.visitLdcInsn(owner);
+        mv.visitLdcInsn(name);
+        mv.visitLdcInsn(descriptor);
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
+                "readEventWithoutYield",
+                "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+                false);
+        // Stack: [value] - original value remains untouched
+    }
+
+    /**
+     * Inserts instrumentation BEFORE a static field write to prepare for post-write event.
+     * This duplicates the value so it can be used after PUTSTATIC consumes it.
+     *
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param descriptor The descriptor of the field.
+     */
+    public static void insertStaticWriteBefore(
+            MethodVisitor mv, String descriptor) {
+        // Stack before: [value to write]
+        // Stack after: [value to write, value copy]
+
+        Type fieldType = Type.getType(descriptor);
+        boolean isLongOrDouble = fieldType.getSize() == 2;
+
+        if (isLongOrDouble) {
+            mv.visitInsn(Opcodes.DUP2); // Duplicate long/double value
+        } else {
+            mv.visitInsn(Opcodes.DUP); // Duplicate regular value
+        }
+        // Stack: [value, value] - one will be consumed by PUTSTATIC, one for event
+    }
+
+    /**
+     * Inserts instrumentation for a static field write AFTER the PUTSTATIC instruction.
+     * Assumes the value was duplicated before PUTSTATIC via insertStaticWriteBefore.
+     *
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param owner The internal name of the class containing the field.
+     * @param name The name of the field.
+     * @param descriptor The descriptor of the field.
+     */
+    public static void insertStaticWriteAfter(
+            MethodVisitor mv, String owner, String name, String descriptor) {
+        // Stack before: [value copy] (the duplicate from insertStaticWriteBefore)
+        // Stack after: [] (clean)
+
+        Type fieldType = Type.getType(descriptor);
+
+        // Convert the value to an Object if necessary
+        addObjectConverter(mv, fieldType);
+
+        // Now we have: [Object value]
+        mv.visitInsn(Opcodes.ACONST_NULL); // null object reference for static field
+        mv.visitInsn(Opcodes.SWAP); // Stack: [null, Object value]
+
+        mv.visitLdcInsn(owner);
+        mv.visitLdcInsn(name);
+        mv.visitLdcInsn(descriptor);
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
+                "writeEventWithoutYield",
+                "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+                false);
+        // Stack: [] - clean
+    }
+
     /**
      * Adds instructions to convert a primitive type on the stack to its corresponding wrapper
      * object.

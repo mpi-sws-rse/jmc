@@ -112,6 +112,6 @@ public class JmcAtomicBoolean {
      */
     @Override
     public String toString() {
-        return Boolean.toString(get());
+        return super.toString();
     }
 }

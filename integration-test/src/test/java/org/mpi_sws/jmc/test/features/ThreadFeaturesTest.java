@@ -7,7 +7,6 @@ import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 public class ThreadFeaturesTest {
     public static void getCurrentThread() {
         Thread t = Thread.currentThread();
-        System.out.println("Current thread: " + t.getName());
     }
 
     public static class TestClass {
