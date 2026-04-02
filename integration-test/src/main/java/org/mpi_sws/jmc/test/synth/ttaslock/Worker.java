@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test.synth.ttaslock;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Worker extends Thread {
     private final TTASLock lock;
@@ -17,7 +18,7 @@ public class Worker extends Thread {
         lock.acquire();
         lockHolder.setId(id);
         int holderId = lockHolder.getId();
-        assert holderId == id : "BUG!";
+        assertEquals(id, holderId, "BUG!");
         lock.release();
     }
 }

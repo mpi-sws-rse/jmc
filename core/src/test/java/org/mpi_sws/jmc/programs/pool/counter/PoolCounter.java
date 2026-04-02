@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class PoolCounter {
 
     public static void main(String[] args) {
@@ -33,8 +35,8 @@ public class PoolCounter {
 
         executorService.shutdown();
 
-        assert (counter.value == 4)
-                : " ***The assert did not pass, the counter value is " + counter.value + "***";
+        assertEquals(4, counter.value,
+                " ***The assert did not pass, the counter value is " + counter.value + "***");
         System.out.println(
                 "If you see this message, the assert passed. The counter value is "
                         + counter.value);

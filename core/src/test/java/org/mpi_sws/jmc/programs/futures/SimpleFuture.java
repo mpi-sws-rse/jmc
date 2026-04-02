@@ -6,6 +6,8 @@ import org.mpi_sws.jmc.api.util.concurrent.JmcReentrantLock;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class SimpleFuture {
     /** A calculator that increments a count. */
     public static class CountIncrementorCalculator {
@@ -43,7 +45,7 @@ public class SimpleFuture {
             future1.get();
             future2.get();
             future3.get();
-            assert calculator.getCount() == 3;
+            assertEquals(3, calculator.getCount());
             System.out.println("All futures returned the expected values.");
         } catch (Exception e) {
             System.out.println("An exception occurred: " + e);

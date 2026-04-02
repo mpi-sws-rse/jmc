@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 public class EstimationSynTest {
 
@@ -413,7 +415,7 @@ public class EstimationSynTest {
             t1.join();
             t2.join();
 
-            assert s.v == "" || s.v.charAt(0) == 'b' : "Assertion Fail! ";
+            assertTrue(s.v == "" || s.v.charAt(0) == 'b', "Assertion Fail! ");
         } catch (InterruptedException e) {
 
         }
@@ -434,7 +436,7 @@ public class EstimationSynTest {
             t2.start();
             t2.join();
 
-            assert Objects.equals(s.v, "") || s.v.charAt(0) == 'b' : "Assertion Fail! ";
+            assertTrue(Objects.equals(s.v, "") || s.v.charAt(0) == 'b', "Assertion Fail! ");
         } catch (InterruptedException e) {
 
         }
@@ -508,7 +510,7 @@ public class EstimationSynTest {
         } catch (InterruptedException e) {
 
         }
-        assert (shared.c == 'X' || shared.c == 'Y') : "shared.c != X";
+        assertTrue(shared.c == 'X' || shared.c == 'Y', "shared.c != X");
 
     }
 

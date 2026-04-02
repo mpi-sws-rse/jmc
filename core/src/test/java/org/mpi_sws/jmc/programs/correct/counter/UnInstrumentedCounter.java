@@ -2,6 +2,8 @@ package org.mpi_sws.jmc.programs.correct.counter;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class UnInstrumentedCounter extends Thread {
     ReentrantLock lock;
     Counter counter;
@@ -32,7 +34,7 @@ public class UnInstrumentedCounter extends Thread {
             thread1.join();
             thread2.join();
             thread3.join();
-            assert counter.get() == 3;
+            assertEquals(3, counter.get());
             System.out.println(
                     "[Uninstrumented Counter message] : If you see this message, the assert passed. The"
                             + " counter value is "

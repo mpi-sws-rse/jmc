@@ -11,6 +11,8 @@ import org.mpi_sws.jmc.test.bigShot.T2;
 
 import java.util.Objects;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class BigShotTest {
 
     private void bigShotP() {
@@ -25,7 +27,7 @@ public class BigShotTest {
             t1.join();
             t2.join();
 
-            assert s.v == "" || s.v.charAt(0) == 'b' : "Assertion Fail! ";
+            assertTrue(s.v == "" || s.v.charAt(0) == 'b', "Assertion Fail! ");
         } catch (InterruptedException e) {
 
         }
@@ -43,7 +45,7 @@ public class BigShotTest {
             t2.start();
             t2.join();
 
-            assert Objects.equals(s.v, "") || s.v.charAt(0) == 'b' : "Assertion Fail! ";
+            assertTrue(Objects.equals(s.v, "") || s.v.charAt(0) == 'b', "Assertion Fail! ");
         } catch (InterruptedException e) {
 
         }
@@ -61,7 +63,7 @@ public class BigShotTest {
             t2.start();
             t2.join();
 
-            assert !Objects.equals(s.v, "") && s.v.charAt(0) == 'b' : "Assertion Fail! ";
+            assertTrue(!Objects.equals(s.v, "") && s.v.charAt(0) == 'b', "Assertion Fail! ");
         } catch (InterruptedException e) {
 
         }

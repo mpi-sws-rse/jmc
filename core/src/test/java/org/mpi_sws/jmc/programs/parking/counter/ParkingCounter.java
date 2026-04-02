@@ -2,6 +2,8 @@ package org.mpi_sws.jmc.programs.parking.counter;
 
 import java.util.concurrent.locks.LockSupport;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class ParkingCounter extends Thread {
 
     private final Counter counter;
@@ -35,7 +37,7 @@ public class ParkingCounter extends Thread {
         }
 
         System.out.println("The counter value is: " + counter.getValue());
-        assert (counter.getValue() == 2) : " ***The assert did not pass***";
+        assertEquals(2, counter.getValue(), " ***The assert did not pass***");
         System.out.println("If you see this message, the test passed!");
     }
 }

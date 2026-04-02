@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.programs.simple.counter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class SimpleCounter extends Thread {
 
     private final Counter counter;
@@ -27,7 +29,7 @@ public class SimpleCounter extends Thread {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assert counter.getValue() == 2 : "Counter value is not 4";
+        assertEquals(2, counter.getValue(), "Counter value is not 4");
         System.out.println("Counter value is 4");
     }
 }

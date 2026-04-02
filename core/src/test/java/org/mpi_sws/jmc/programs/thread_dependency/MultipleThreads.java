@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.programs.thread_dependency;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class MultipleThreads implements Runnable {
     Integer counter;
 
@@ -38,6 +40,6 @@ public class MultipleThreads implements Runnable {
         t2.run();
         t1.join();
         t2.join();
-        assert (counter >= 4);
+        assertTrue(counter >= 4);
     }
 }

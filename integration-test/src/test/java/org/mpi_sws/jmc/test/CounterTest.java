@@ -4,6 +4,8 @@ import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 import org.mpi_sws.jmc.annotations.JmcExpectExecutions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class CounterTest {
 
     @JmcCheck
@@ -11,7 +13,7 @@ public class CounterTest {
     public void testRandomCounter() {
         ParametricCounter counter = new ParametricCounter(2);
         counter.run();
-        assert counter.getCounterValue() == 2;
+        assertEquals(2, counter.getCounterValue());
     }
 
     @JmcCheck
@@ -20,6 +22,6 @@ public class CounterTest {
     public void testTrustCounter() {
         ParametricCounter counter = new ParametricCounter(3);
         counter.run();
-        assert counter.getCounterValue() == 3;
+        assertEquals(3, counter.getCounterValue());
     }
 }

@@ -2,6 +2,8 @@ package org.mpi_sws.jmc.programs.twophasecommit;
 
 import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class TwoPhaseCommit {
 
     public static void main(String[] args) {
@@ -13,7 +15,7 @@ public class TwoPhaseCommit {
                         coordinator.start();
 
                         // Simulate sending a request to the coordinator
-                        assert coordinator.acceptRequest(1);
+                        assertTrue(coordinator.acceptRequest(1));
 
                         coordinator.stop();
                     });

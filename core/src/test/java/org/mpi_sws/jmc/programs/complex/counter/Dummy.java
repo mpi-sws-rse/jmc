@@ -2,6 +2,8 @@ package org.mpi_sws.jmc.programs.complex.counter;
 
 import org.mpi_sws.jmc.api.util.concurrent.JmcReentrantLock;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class Dummy {
 
     public void exe() throws InterruptedException {
@@ -13,7 +15,7 @@ public class Dummy {
         thread2.exe();
         thread1.join1();
         thread2.join1();
-        assert counter.count == 2;
+        assertEquals(2, counter.count);
         System.out.println(
                 "["
                         + Thread.currentThread().getName()
