@@ -7,6 +7,9 @@ import org.mpi_sws.jmc.test.concrete.gcd.Numbers;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class GcdTest {
 
     private void parallelGcd(int a, int b) {
@@ -31,9 +34,9 @@ public class GcdTest {
             JmcAssume.assume(a % guessed_gcd == 0);
             JmcAssume.assume(b % guessed_gcd == 0);
 
-            assert (a % n.a == 0) : " ***The assert did not pass, a % gcd != 0";
-            assert (b % n.a == 0) : " ***The assert did not pass, b % gcd != 0";
-            assert (n.a >= guessed_gcd) : " ***The assert did not pass, gcd < guessed_gcd";
+            assertEquals(0, a % n.a, " ***The assert did not pass, a % gcd != 0");
+            assertEquals(0, b % n.a, " ***The assert did not pass, b % gcd != 0");
+            assertTrue(n.a >= guessed_gcd, " ***The assert did not pass, gcd < guessed_gcd");
         } catch (InterruptedException e) {
 
         }

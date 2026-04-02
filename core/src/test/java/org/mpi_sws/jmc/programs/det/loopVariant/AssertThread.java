@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.programs.det.loopVariant;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class AssertThread extends Thread {
 
     Numbers numbers;
@@ -11,6 +13,6 @@ public class AssertThread extends Thread {
     @Override
     public void run() {
         // assert (numbers.x < numbers.n) : "x >= n";
-        assert (numbers.x <= numbers.n) : "x >= n - 1";
+        assertTrue(numbers.x <= numbers.n, "x >= n - 1");
     }
 }

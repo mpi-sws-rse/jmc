@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class GuavaCounterTestRunner {
     public static void main(String[] args) {
         GuavaMoreExecutorCounter counter = new GuavaMoreExecutorCounter(2);
@@ -23,7 +25,7 @@ public class GuavaCounterTestRunner {
             for (Future<Integer> future : futures) {
                 future.get();
             }
-            assert counter.getCount() == tasks;
+            assertEquals(tasks, counter.getCount());
             //counter.shutdown();
 
 

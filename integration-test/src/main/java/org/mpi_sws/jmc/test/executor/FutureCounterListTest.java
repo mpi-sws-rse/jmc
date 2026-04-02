@@ -1,10 +1,11 @@
 package org.mpi_sws.jmc.test.executor;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FutureCounterListTest {
     public static void main(String[] args) {
@@ -37,7 +38,6 @@ public class FutureCounterListTest {
             }
         }
         executor.shutdown();
-        assert (counter.get() == 3);
+        assertEquals(3, counter.get());
     }
 }
-

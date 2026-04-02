@@ -2,6 +2,8 @@ package org.mpi_sws.jmc.programs.atomic.counter;
 
 import org.mpi_sws.jmc.api.util.concurrent.JmcAtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class AtomicCounter {
 
     public static void main(String[] args) {
@@ -16,7 +18,7 @@ public class AtomicCounter {
         } catch (InterruptedException e) {
             System.out.println("Interrupted");
         }
-        assert counter.get() == 1;
+        assertEquals(1, counter.get());
         System.out.println("Counter value: " + counter.get());
     }
 }

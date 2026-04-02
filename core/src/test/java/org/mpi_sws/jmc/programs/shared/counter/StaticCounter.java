@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.programs.shared.counter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class StaticCounter extends Thread {
 
     @Override
@@ -15,8 +17,8 @@ public class StaticCounter extends Thread {
         c1.join();
         c2.join();
         try {
-            assert (Counter.value == 2)
-                    : " ***The assert did not pass, the counter value is " + Counter.value + "***";
+            assertEquals(2, Counter.value,
+                    " ***The assert did not pass, the counter value is " + Counter.value + "***");
         } catch (AssertionError e) {
             System.out.println(e.getMessage());
         }
