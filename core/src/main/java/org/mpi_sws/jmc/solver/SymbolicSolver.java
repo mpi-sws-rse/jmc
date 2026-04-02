@@ -121,13 +121,13 @@ public abstract class SymbolicSolver {
             imgr = fmgr.getIntegerFormulaManager();
             amgr = fmgr.getArrayFormulaManager();
             long endTime = System.nanoTime();
-            incSolverTime(endTime - startTime);
+            advanceSolverTime(endTime - startTime);
         } catch (InvalidConfigurationException e) {
             throw new RuntimeException("Error creating solver context", e);
         }
     }
 
-    protected void incSolverTime(long time) {
+    protected void advanceSolverTime(long time) {
         solverTime += time;
     }
 

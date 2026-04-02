@@ -9,6 +9,7 @@ import org.mpi_sws.jmc.api.symbolic.array.SymArrayVariable;
 import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.api.symbolic.bool.SymBoolVariable;
 import org.mpi_sws.jmc.api.symbolic.integer.SymIntVariable;
+import org.sosy_lab.java_smt.api.BooleanFormula;
 import org.sosy_lab.java_smt.api.ProverEnvironment;
 import org.sosy_lab.java_smt.api.SolverContext;
 import org.sosy_lab.java_smt.api.SolverException;
@@ -55,7 +56,7 @@ public class IncrementalSolver extends SymbolicSolver {
         long startTime = System.nanoTime();
         boolean concreteEval = symbolicFormula.concreteEvaluation();
         long endTime = System.nanoTime();
-        incSolverTime(endTime - startTime);
+        advanceSolverTime(endTime - startTime);
         boolean symbolicEval;
         if (concreteEval) {
             symbolicEval = disSolveSymbolicFormula(symbolicFormula);
@@ -80,7 +81,7 @@ public class IncrementalSolver extends SymbolicSolver {
         long startTime = System.nanoTime();
         boolean concreteEval = symbolicOperation.concreteEvaluation();
         long endTime = System.nanoTime();
-        incSolverTime(endTime - startTime);
+        advanceSolverTime(endTime - startTime);
         if (concreteEval) {
             push(symbolicOperation);
             // solver result is true
@@ -102,7 +103,7 @@ public class IncrementalSolver extends SymbolicSolver {
         long startTime = System.nanoTime();
         boolean concreteEval = symbolicOperation.concreteEvaluation();
         long endTime = System.nanoTime();
-        incSolverTime(endTime - startTime);
+        advanceSolverTime(endTime - startTime);
         if (concreteEval) {
             push(symbolicOperation);
         } else {
@@ -130,7 +131,7 @@ public class IncrementalSolver extends SymbolicSolver {
                 if (!isUnsat) {
                     model = prover.getModel();
                     long endTime = System.nanoTime();
-                    incSolverTime(endTime - startTime);
+                    advanceSolverTime(endTime - startTime);
                     updateModel();
                 } else {
                     throw new RuntimeException("[Incremental Solver Message] The formula is unsatisfiable");
@@ -148,7 +149,7 @@ public class IncrementalSolver extends SymbolicSolver {
         long startTime = System.nanoTime();
         prover.pop();
         long endTime = System.nanoTime();
-        incSolverTime(endTime - startTime);
+        advanceSolverTime(endTime - startTime);
     }
 
     @Override
@@ -157,26 +158,26 @@ public class IncrementalSolver extends SymbolicSolver {
             long startTime = System.nanoTime();
             prover.push();
             long endTime = System.nanoTime();
-            incSolverTime(endTime - startTime);
+            advanceSolverTime(endTime - startTime);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    protected void push(org.sosy_lab.java_smt.api.BooleanFormula formula) {
+    protected void push(BooleanFormula formula) {
         try {
             long startTime = System.nanoTime();
             prover.push(formula);
             long endTime = System.nanoTime();
-            incSolverTime(endTime - startTime);
+            advanceSolverTime(endTime - startTime);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    protected boolean solve(org.sosy_lab.java_smt.api.BooleanFormula formula) {
+    protected boolean solve(BooleanFormula formula) {
         try {
             long startTime = System.nanoTime();
             push(formula);
@@ -184,12 +185,12 @@ public class IncrementalSolver extends SymbolicSolver {
             if (!isUnsat) {
                 model = prover.getModel();
                 long endTime = System.nanoTime();
-                incSolverTime(endTime - startTime);
+                advanceSolverTime(endTime - startTime);
                 // The formula is satisfiable
                 return true;
             } else {
                 long endTime = System.nanoTime();
-                incSolverTime(endTime - startTime);
+                advanceSolverTime(endTime - startTime);
                 // The formula is unsatisfiable
                 return false;
             }
@@ -213,7 +214,7 @@ public class IncrementalSolver extends SymbolicSolver {
             long startTime = System.nanoTime();
             ProverEnvironment prover = context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS);
             long endTime = System.nanoTime();
-            incSolverTime(endTime - startTime);
+            advanceSolverTime(endTime - startTime);
             return new ProverState(prover);
         } else {
             return this.proverPool.remove(0);
@@ -241,7 +242,7 @@ public class IncrementalSolver extends SymbolicSolver {
             prover.pop();
         }
         long endTime = System.nanoTime();
-        incSolverTime(endTime - startTime);
+        advanceSolverTime(endTime - startTime);
     }
 
     private void updateModel() {
@@ -263,7 +264,7 @@ public class IncrementalSolver extends SymbolicSolver {
                 }
             });
             long endTime = System.nanoTime();
-            incSolverTime(endTime - startTime);
+            advanceSolverTime(endTime - startTime);
         }
     }
 
