@@ -125,7 +125,8 @@ public class JmcDescriptorUtil {
                     annotation.schedulingPolicy(),
                     annotation.debug(),
                     annotation.reportPath(),
-                    annotation.loggerTree());
+                    annotation.loggerTree(),
+                    annotation.solver());
         };
     }
 }

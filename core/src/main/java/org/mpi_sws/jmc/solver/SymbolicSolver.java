@@ -152,6 +152,7 @@ public abstract class SymbolicSolver {
             case CVC4 -> SolverContextFactory.Solvers.CVC4;
             case CVC5 -> SolverContextFactory.Solvers.CVC5;
             case YICES2 -> SolverContextFactory.Solvers.YICES2;
+            case OFF -> throw new IllegalArgumentException("Solver type cannot be OFF");
         };
     }
 
@@ -188,7 +189,7 @@ public abstract class SymbolicSolver {
      * @param formula the boolean formula to solve.
      * @return true if the formula is satisfiable, false otherwise.
      */
-    protected abstract boolean solve(org.sosy_lab.java_smt.api.BooleanFormula formula);
+    protected abstract boolean solve(BooleanFormula formula);
 
     /**
      * Negates the given boolean formula and returns the result.
@@ -196,7 +197,7 @@ public abstract class SymbolicSolver {
      * @param formula the boolean formula to negate.
      * @return the negated boolean formula.
      */
-    public org.sosy_lab.java_smt.api.BooleanFormula negateFormula(JmcBooleanFormula formula) {
+    public BooleanFormula negateFormula(JmcBooleanFormula formula) {
         return bmgr.not(formula.getFormula());
     }
 
@@ -285,7 +286,7 @@ public abstract class SymbolicSolver {
             return symBoolVariableMap.get(name);
         } else {
             //Create a new SymBoolVariable
-            org.sosy_lab.java_smt.api.BooleanFormula symBool = bmgr.makeVariable(name);
+            BooleanFormula symBool = bmgr.makeVariable(name);
             SymBoolVariable variable = new SymBoolVariable(symBool);
             symBoolVariableMap.put(name, variable);
             return variable;
@@ -320,7 +321,7 @@ public abstract class SymbolicSolver {
 
     protected abstract void push();
 
-    protected abstract void push(org.sosy_lab.java_smt.api.BooleanFormula formula);
+    protected abstract void push(BooleanFormula formula);
 
     protected abstract void push(JmcBooleanFormula operation);
 

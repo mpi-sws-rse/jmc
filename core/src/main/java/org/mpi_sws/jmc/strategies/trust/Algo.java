@@ -8,6 +8,9 @@ import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.solver.SMTSolverTypes;
+import org.mpi_sws.jmc.solver.SolverUtil;
+import org.mpi_sws.jmc.solver.incremental.IncrementalSolver;
 import org.mpi_sws.jmc.util.FileUtil;
 
 import java.util.*;
@@ -35,6 +38,11 @@ public class Algo {
     private final LocationStore locationStore;
     private final TreeLogger tLogger;
     private long numOfBlockedGraphs = 0L;
+    /**
+     * @property {@link #solver} is used to store the {@link org.mpi_sws.jmc.solver.SymbolicSolver} object that is used
+     * to solve symbolic operations.
+     */
+    private final IncrementalSolver solver;
 
     /**
      * Creates a new instance of the Trust algorithm.
@@ -47,9 +55,10 @@ public class Algo {
         this.locationStore = new LocationStore();
         this.executionGraph.addEvent(Event.init());
         this.tLogger = null;
+        this.solver = null;
     }
 
-    public Algo(boolean hasTreeLogger) {
+    public Algo(boolean hasTreeLogger, String solverType) {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
         this.executionGraph = new ExecutionGraph();
@@ -61,6 +70,37 @@ public class Algo {
         } else {
             this.tLogger = null;
         }
+        this.solver = initSolver(solverType);
+    }
+
+    private IncrementalSolver initSolver(String solverType) {
+        SMTSolverTypes type = getSolverType(solverType);
+        if (type == SMTSolverTypes.OFF) {
+            return null;
+        }
+        return SolverUtil.getIncrementalSolver(type);
+    }
+
+    private SMTSolverTypes getSolverType(String solverType) {
+        if (solverType == null) {
+            return null;
+        }
+        return switch (solverType.toLowerCase()) {
+            case "z3" -> SMTSolverTypes.Z3;
+            case "cvc5" -> SMTSolverTypes.CVC5;
+            case "cvc4" -> SMTSolverTypes.CVC4;
+            case "mathsat5" -> SMTSolverTypes.MATHSAT5;
+            case "yices2" -> SMTSolverTypes.YICES2;
+            case "opensmt" -> SMTSolverTypes.OPENSMT;
+            case "smtinterpol" -> SMTSolverTypes.SMTINTERPOL;
+            case "princess" -> SMTSolverTypes.PRINCESS;
+            case "booleanor" -> SMTSolverTypes.BOOLECTOR;
+            case "off" -> SMTSolverTypes.OFF;
+            default -> {
+                LOGGER.warn("Unknown solver type: {}. Defaulting to Z3.", solverType);
+                yield SMTSolverTypes.Z3;
+            }
+        };
     }
 
     /**

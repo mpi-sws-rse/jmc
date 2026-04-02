@@ -9,5 +9,6 @@ public enum SMTSolverTypes {
     BOOLECTOR,
     CVC4,
     CVC5,
-    YICES2
+    YICES2,
+    OFF
 }

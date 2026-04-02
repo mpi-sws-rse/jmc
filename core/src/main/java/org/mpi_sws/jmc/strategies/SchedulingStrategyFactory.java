@@ -50,7 +50,8 @@ public class SchedulingStrategyFactory {
                     config.getSeed(),
                     config.getTrustSchedulingPolicy(),
                     config.getDebug(),
-                    config.getReportPath());
+                    config.getReportPath(),
+                    config.getSolver());
         } else if (name.equals("dag-estimation")) {
             return new DagEstimationStrategy(config.getSeed());
         } else if (name.equals("abs-dag-estimation")) {

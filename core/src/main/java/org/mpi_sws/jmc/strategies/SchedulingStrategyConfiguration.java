@@ -17,12 +17,17 @@ public class SchedulingStrategyConfiguration {
     private String reportPath;
     private boolean debug;
     private int budget;
+    private String solver;
 
     private SchedulingStrategyConfiguration() {
     }
 
     public Long getSeed() {
         return seed;
+    }
+
+    public String getSolver() {
+        return solver;
     }
 
     public String getReportPath() {
@@ -47,6 +52,7 @@ public class SchedulingStrategyConfiguration {
         private String reportPath;
         private boolean debug;
         private int budget;
+        private String solver;
 
         public Builder() {
             this.seed = null;
@@ -54,6 +60,7 @@ public class SchedulingStrategyConfiguration {
             this.reportPath = "build/test-results/jmc-report";
             this.debug = false;
             this.budget = 2;
+            this.solver = "off";
         }
 
         public Builder trustSchedulingPolicy(TrustStrategy.SchedulingPolicy trustSchedulingPolicy) {
@@ -63,6 +70,11 @@ public class SchedulingStrategyConfiguration {
 
         public Builder reportPath(String reportPath) {
             this.reportPath = reportPath;
+            return this;
+        }
+
+        public Builder solver(String solver) {
+            this.solver = solver;
             return this;
         }
 
@@ -91,6 +103,7 @@ public class SchedulingStrategyConfiguration {
             config.reportPath = this.reportPath;
             config.debug = this.debug;
             config.budget = this.budget;
+            config.solver = this.solver;
             return config;
         }
     }

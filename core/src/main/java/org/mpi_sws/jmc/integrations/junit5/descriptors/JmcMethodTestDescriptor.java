@@ -60,6 +60,7 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 .timeout(timeout)
                 .reportPath(annotation.reportPath())
                 .strategyType(annotation.strategy())
+                .solver(annotation.solver())
                 .schedulingPolicy(annotation.schedulingPolicy());
     }
 

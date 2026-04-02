@@ -43,4 +43,6 @@ public @interface JmcTrustStrategy {
     String reportPath() default "build/test-results/jmc-report";
 
     boolean loggerTree() default false;
+
+    String solver() default "off";
 }

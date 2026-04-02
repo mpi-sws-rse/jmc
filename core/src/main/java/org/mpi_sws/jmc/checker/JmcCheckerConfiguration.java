@@ -26,6 +26,9 @@ public class JmcCheckerConfiguration {
     private Integer numIterations;
 
     private String strategyType;
+
+    private String solver;
+
     private SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor;
 
     private boolean debug;
@@ -59,6 +62,10 @@ public class JmcCheckerConfiguration {
      */
     public String getReportPath() {
         return reportPath;
+    }
+
+    public String getSolver() {
+        return solver;
     }
 
     /**
@@ -101,6 +108,10 @@ public class JmcCheckerConfiguration {
         this.seed = seed;
     }
 
+    public void setSolver(String solver) {
+        this.solver = solver;
+    }
+
     public void setBudget(int budget) {
         this.budget = budget;
     }
@@ -132,7 +143,7 @@ public class JmcCheckerConfiguration {
     public JmcRuntimeConfiguration toRuntimeConfiguration() throws JmcInvalidStrategyException {
         SchedulingStrategy strategy;
         SchedulingStrategyConfiguration.Builder strategyConfigurationBuilder =
-                new SchedulingStrategyConfiguration.Builder().seed(seed).budget(budget).trustSchedulingPolicy(schedulingPolicy);
+                new SchedulingStrategyConfiguration.Builder().seed(seed).budget(budget).solver(solver).trustSchedulingPolicy(schedulingPolicy);
         if (debug) {
             strategyConfigurationBuilder.debug();
             strategyConfigurationBuilder.reportPath(reportPath);
@@ -169,6 +180,7 @@ public class JmcCheckerConfiguration {
         return new Builder()
                 .numIterations(annotation.numIterations())
                 .strategyType(annotation.strategy())
+                .solver(annotation.solver())
                 .debug(annotation.debug())
                 .reportPath(annotation.reportPath())
                 .seed(annotation.seed())
@@ -185,6 +197,9 @@ public class JmcCheckerConfiguration {
         private Integer numIterations;
 
         private String strategyType;
+
+        private String solver;
+
         private SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor;
 
         private boolean debug;
@@ -205,6 +220,7 @@ public class JmcCheckerConfiguration {
             this.schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM;
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
+            this.solver = "off";
             this.seed = System.nanoTime();
             this.budget = 2;
             this.timeout = null;
@@ -217,6 +233,11 @@ public class JmcCheckerConfiguration {
 
         public Builder strategyType(String strategyType) {
             this.strategyType = strategyType;
+            return this;
+        }
+
+        public Builder solver(String solver) {
+            this.solver = solver;
             return this;
         }
 
@@ -277,6 +298,7 @@ public class JmcCheckerConfiguration {
             config.strategyConstructor = strategyConstructor;
             config.debug = debug;
             config.reportPath = reportPath;
+            config.solver = solver;
             config.seed = seed;
             config.budget = budget;
             config.timeout = timeout;

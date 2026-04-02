@@ -46,7 +46,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
             Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath) {
         super(List.of(new TrackTasks()));
         this.random = new Random(randomSeed);
-        this.algoInstance = new Algo();
+        this.algoInstance = new Algo(false, "off");
         this.policy = policy;
         this.debug = debug;
         this.reportPath = reportPath;
@@ -54,10 +54,21 @@ public class TrustStrategy extends TrackActiveTasksStrategy
     }
 
     public TrustStrategy(
-            Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, boolean hasTreeLogger) {
+            Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, String solver) {
         super(List.of(new TrackTasks()));
         this.random = new Random(randomSeed);
-        this.algoInstance = new Algo(hasTreeLogger);
+        this.algoInstance = new Algo(false, solver);
+        this.policy = policy;
+        this.debug = debug;
+        this.reportPath = reportPath;
+        this.recordedTrace = null;
+    }
+
+    public TrustStrategy(
+            Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, boolean hasTreeLogger, String solver) {
+        super(List.of(new TrackTasks()));
+        this.random = new Random(randomSeed);
+        this.algoInstance = new Algo(hasTreeLogger, solver);
         this.policy = policy;
         this.debug = debug;
         this.reportPath = reportPath;

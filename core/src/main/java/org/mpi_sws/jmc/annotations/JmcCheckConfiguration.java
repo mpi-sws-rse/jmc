@@ -30,6 +30,8 @@ public @interface JmcCheckConfiguration {
      */
     String strategy() default "random";
 
+    String solver() default "off";
+
     TrustStrategy.SchedulingPolicy schedulingPolicy() default TrustStrategy.SchedulingPolicy.RANDOM;
 
     /**
