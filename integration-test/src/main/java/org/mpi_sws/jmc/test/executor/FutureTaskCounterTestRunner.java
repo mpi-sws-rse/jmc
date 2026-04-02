@@ -1,12 +1,8 @@
 package org.mpi_sws.jmc.test.executor;
 
-import org.mpi_sws.jmc.test.FutureCounter;
 import org.mpi_sws.jmc.test.FutureTaskCounter;
-
-
 import java.util.concurrent.FutureTask;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class  FutureTaskCounterTestRunner {

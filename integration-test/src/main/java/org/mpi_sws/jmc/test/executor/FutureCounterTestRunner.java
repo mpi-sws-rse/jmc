@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 public class FutureCounterTestRunner {
-    private static final Logger LOGGER = LogManager.getLogger(FutureTaskCounterTestRunner.class);
+    private static final Logger LOGGER = LogManager.getLogger(FutureCounterTestRunner.class);
 
     public static void main(String[] args) {
         FutureCounter calculator = new FutureCounter();
