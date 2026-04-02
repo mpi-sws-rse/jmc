@@ -4,6 +4,8 @@ import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 import org.mpi_sws.jmc.test.features.StaticInitBlock;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class StaticInitTest {
 
     @JmcCheck
@@ -15,7 +17,7 @@ public class StaticInitTest {
         // If the static block is not called, the value of x will not be reset to 0,
         // and the assertion will fail after the first iteration.
         StaticInitBlock.setX(StaticInitBlock.getX() + 1);
-        assert StaticInitBlock.getX() == 1 : "Static initialization block did not reset x to 0";
+        assertEquals(1, StaticInitBlock.getX());
     }
 
     @JmcCheck
@@ -23,6 +25,6 @@ public class StaticInitTest {
     public void testStaticInitBlockMultipleIterations() {
         StaticInitBlock.setX(StaticInitBlock.getX() + 1);
 
-        assert StaticInitBlock.getX() == 1 : "Static initialization block only executed once";
+        assertEquals(1, StaticInitBlock.getX());
     }
 }

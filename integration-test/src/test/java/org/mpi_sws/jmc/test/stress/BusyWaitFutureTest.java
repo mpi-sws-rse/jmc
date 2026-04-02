@@ -10,11 +10,11 @@ import java.util.concurrent.*;
 
 /**
  * Stress test that reproduces the Iceberg busy-wait scenario.
- * <p>
+ *
  * This test simulates:
  * 1. A main thread that busy-waits on futures using isDone()
  * 2. Worker threads that do heavy field access work
- * <p>
+ *
  * This pattern causes performance issues because:
  * - Every isDone() call reads CompletableFuture.result field
  * - Every field read is instrumented and causes a yield

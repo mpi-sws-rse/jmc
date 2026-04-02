@@ -2,6 +2,8 @@ package org.mpi_sws.jmc.strategies.trust;
 
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 
+import static org.mpi_sws.jmc.api.JmcObject.handleHashCode;
+
 public class Location {
     Object instance;
     String param;
@@ -23,6 +25,6 @@ public class Location {
 
     @Override
     public int hashCode() {
-        return (instance.hashCode() + param).hashCode();
+        return (handleHashCode(instance) + param).hashCode();
     }
 }

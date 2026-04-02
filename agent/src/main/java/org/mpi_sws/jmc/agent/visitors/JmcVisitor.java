@@ -48,23 +48,23 @@ public class JmcVisitor {
 
         ClassReader cr = new ClassReader(classFileBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-        //System.out.println("New publish");
         ClassVisitor cv =
                 new JmcWaitNotifyVisitor(
                         new JmcStaticMethodVisitor(
                                 new JmcSyncMethodVisitor(
+                                        new JmcScheduledExecutorVisitor.JmcScheduledExecutorClassVisitor(
                                         new JmcFutureVisitor.JmcFutureTaskClassVisitor(
                                         new JmcFutureVisitor.JmcExecutorsClassVisitor(
                                                 new JmcAtomicVisitor(
                                                         new JmcReentrantLockVisitor(
-                                                                //new JmcWaitNotifyVisitor(
                                                                         new JmcThreadVisitor
                                                                                 .ThreadClassVisitor(
                                                                                 new JmcThreadVisitor
                                                                                         .ThreadCallReplacerClassVisitor(
-                                                                                        new JmcReadWriteVisitor
-                                                                                                .ReadWriteClassVisitor(
-                                                                                                cw))))))),
+                                                                                                    new JmcNativeMethodVisitor(
+                                                                                                        new JmcReadWriteVisitor
+                                                                                                                .ReadWriteClassVisitor(
+                                                                                                                cw))))))))),
                                         syncScanData)));
         try{
             cr.accept(cv, 0);

@@ -14,7 +14,6 @@ public class StaticSynchronizedMethodTest {
     public void testStaticSynchronizedMethod() {
         // Call a static synchronized method
         String result = TestClass.getOrCreateValue();
-        System.out.println("Result: " + result);
     }
 
     /**

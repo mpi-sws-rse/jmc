@@ -29,7 +29,10 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     public TrackActiveTasksStrategy() {
         this.allTasks = new HashSet<>();
         this.activeTasks = new HashSet<>();
-        this.trackers = List.of(new TrackTasks(), new TrackWaitNotify());
+        this.trackers = List.of(new TrackTasks(),
+                new TrackWaitNotify(),
+                new TrackStaticInit(),
+                new TrackExecutors());
     }
 
     /**

@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.mpi_sws.jmc.api.JmcObject.handleHashCode;
+
 public class TrackWaitNotify extends TrackLocks {
 
     private static final Logger LOGGER = LogManager.getLogger(TrackWaitNotify.class);
@@ -38,7 +40,7 @@ public class TrackWaitNotify extends TrackLocks {
                 // by the current thread. If not, throw an exception saying error in wait/notify
                 // usage.
                 Object object = event.getParam("object");
-                int objectId = object.hashCode();
+                int objectId = handleHashCode(object);
                 Set<Long> waitingList =
                         this.waitingTasks.computeIfAbsent(objectId, k -> new HashSet<>());
                 waitingList.add(event.getTaskId());

@@ -28,7 +28,6 @@ public class FinalizerThreadTest {
 
         // Submit concurrent tasks while finalizers might run
         Future<Integer> f1 = executor.submit(() -> {
-            System.out.println("Task 1 running");
             // Trigger GC while task is running
             System.gc();
             Thread.sleep(50);
@@ -36,7 +35,6 @@ public class FinalizerThreadTest {
         });
 
         Future<Integer> f2 = executor.submit(() -> {
-            System.out.println("Task 2 running");
             Thread.sleep(50);
             return 2;
         });
@@ -46,7 +44,6 @@ public class FinalizerThreadTest {
         f2.get();
 
         executor.shutdown();
-        System.out.println("Test completed");
     }
 
     /**

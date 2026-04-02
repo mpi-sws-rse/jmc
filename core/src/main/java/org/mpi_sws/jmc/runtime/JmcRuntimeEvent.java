@@ -3,10 +3,13 @@ package org.mpi_sws.jmc.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mpi_sws.jmc.api.JmcObject.handleToString;
+
 /**
  * Represents an event that occurs during the execution of a program.
  */
 public class JmcRuntimeEvent {
+
 
     // The type of the event
     private Type type;
@@ -118,9 +121,26 @@ public class JmcRuntimeEvent {
         return (T) params.get(key);
     }
 
+    private String paramToString(Map<String, Object> params) {
+        if (params == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            if (!sb.isEmpty()) {
+                sb.append(", ");
+            }
+            Object o = entry.getValue();
+            if (entry.getKey().equals("instance")) {
+                sb.append(handleToString(o));
+            } else {
+                sb.append(o);
+            }
+        }
+        return sb.toString();
+    }
+
     @Override
     public String toString() {
-        return "RuntimeEvent{" + "type=" + type + ", taskId=" + taskId + ", params=" + params + '}';
+        return "RuntimeEvent{" + "type=" + type + ", taskId=" + taskId + ", params=" + paramToString(params) + '}';
     }
 
     /**
@@ -249,5 +269,12 @@ public class JmcRuntimeEvent {
         SYMB_OP_EVENT,
         SYMB_ASSUME_EVENT,
         SYMB_ASSERT_EVENT,
+
+        // Static Initialization Event
+        START_STATIC_INIT_EVENT,
+        END_STATIC_INIT_EVENT,
+
+        //Executor tracking event
+        EXECUTOR_SHUTDOWN_EVENT,
     }
 }
