@@ -32,15 +32,13 @@ public class IncrementalSolver extends SymbolicSolver {
 
     public IncrementalSolver() {
         super();
-        initProver();
+        ProverState proverState = createNewProver();
+        proverMap.put(1, proverState);
+        setProver(proverState, 1);
     }
 
     public IncrementalSolver(SMTSolverTypes solverType) {
         super(solverType);
-        initProver();
-    }
-
-    private void initProver() {
         ProverState proverState = createNewProver();
         proverMap.put(1, proverState);
         setProver(proverState, 1);

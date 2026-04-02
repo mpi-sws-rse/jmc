@@ -1,22 +1,15 @@
 package org.mpi_sws.jmc.api.symbolic;
 
-import org.mpi_sws.jmc.runtime.JmcRuntime;
-import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.api.symbolic.bool.SymBoolVariable;
 import org.mpi_sws.jmc.api.symbolic.bool.SymbolicBoolean;
+import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
 import org.mpi_sws.jmc.solver.SolverUtil;
 
 public class SymbolicFormula {
 
     public boolean evaluate(JmcBooleanFormula operation) {
-        JmcRuntimeEvent event =
-                new JmcRuntimeEvent.Builder()
-                        .type(JmcRuntimeEvent.Type.SYMB_OP_EVENT)
-                        .taskId(JmcRuntime.currentTask())
-                        .param("booleanFormula", operation)
-                        .build();
-        return JmcRuntime.updateEventAndYield(event);
+        return JmcRuntimeUtils.SymEvent(operation);
     }
 
     public boolean evaluate(SymbolicBoolean symBool) {
