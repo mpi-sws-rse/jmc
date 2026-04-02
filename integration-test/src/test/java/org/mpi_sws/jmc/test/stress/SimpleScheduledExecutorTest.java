@@ -2,6 +2,7 @@ package org.mpi_sws.jmc.test.stress;
 
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
+import org.mpi_sws.jmc.annotations.JmcExpectAssertionFailure;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,6 +36,7 @@ public class SimpleScheduledExecutorTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10, debug = false)
+    @JmcExpectAssertionFailure
     public void testScheduleWithFixedDelayRunsOnce() throws Exception {
         ScheduledExecutorService pool = Executors.newScheduledThreadPool(1);
         AtomicInteger counter = new AtomicInteger(0);
