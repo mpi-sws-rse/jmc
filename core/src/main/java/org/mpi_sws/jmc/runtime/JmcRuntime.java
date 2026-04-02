@@ -77,10 +77,10 @@ public class JmcRuntime {
     /**
      * Tears down the runtime by shutting down the scheduler adn clearing the task manager.
      */
-    public static void tearDown() {
+    public static void tearDown(JmcModelCheckerReport report) {
         LOGGER.debug("Tearing down!");
         taskManager.reset();
-        scheduler.shutdown();
+        scheduler.shutdown(report);
     }
 
     private static void updateLoggerFile(int iteration) {
@@ -202,6 +202,15 @@ public class JmcRuntime {
     public static <T> T wait(Long taskId) {
         try {
             return taskManager.wait(taskId);
+        } catch (HaltExecutionException e) {
+            if (e.isReexecutionNeeded()) {
+                LOGGER.debug("Re-execution needed, throwing HaltExecutionException");
+                throw HaltExecutionException.reexecutionNeeded();
+            } else {
+                LOGGER.error("Failed to wait for task: {}", taskId);
+                Throwable cause = e.getCause();
+                throw HaltExecutionException.error(cause.getMessage());
+            }
         } catch (ExecutionException | InterruptedException e) {
             LOGGER.error("Failed to wait for task: {}", taskId);
             Throwable cause = e.getCause();
@@ -217,13 +226,14 @@ public class JmcRuntime {
      */
     public static void join(Long taskId) {
         LOGGER.debug("Joining task {}", taskId);
-        try {
-            scheduler.yield();
-        } catch (TaskAlreadyPaused e) {
+        //try {
+        taskManager.terminate(taskId);
+        //scheduler.yield();
+        scheduler.yieldWithoutPausing();
+        /*} catch (TaskAlreadyPaused e) {
             LOGGER.error("Joining an already paused task.");
             throw HaltExecutionException.error("Joining an already paused task.");
-        }
-        taskManager.terminate(taskId);
+        }*/
     }
 
     /**
@@ -252,6 +262,11 @@ public class JmcRuntime {
         } catch (HaltTaskException e) {
             LOGGER.error("Failed to update event: {}", event);
             taskManager.terminate(event.getTaskId());
+            throw e;
+        } catch (HaltExecutionException e) {
+            if (e.isReexecutionNeeded()) {
+                throw HaltExecutionException.reexecutionNeeded();
+            }
             throw e;
         } catch (Exception e) {
             LOGGER.error("Failed to update event: {}", event, e);

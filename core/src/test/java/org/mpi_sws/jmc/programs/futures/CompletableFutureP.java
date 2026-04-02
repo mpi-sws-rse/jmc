@@ -5,6 +5,9 @@ import org.mpi_sws.jmc.api.util.concurrent.JmcReentrantLock;
 
 import java.util.concurrent.CompletableFuture;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class CompletableFutureP {
     public static class CountIncrementorCalculator {
         JmcReentrantLock lock = new JmcReentrantLock();
@@ -33,8 +36,8 @@ public class CompletableFutureP {
                 .thenApply((result) -> calculator.increment())
                 .thenApply((result) -> calculator.increment());
         try {
-            assert future instanceof JmcCompletableFuture;
-            assert future.get() == 3;
+            assertTrue(future instanceof JmcCompletableFuture);
+            assertEquals(3, future.get());
             System.out.println("All futures returned the expected values.");
         } catch (Exception e) {
             System.out.println("An exception occurred: " + e);

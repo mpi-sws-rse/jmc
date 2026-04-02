@@ -9,12 +9,14 @@ import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 import java.util.Iterator;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 public class JmcBlockingTest {
 
     void testProgram() {
         JmcThread t = new JmcThread(() -> {
             // Your test code here
-            assert false;
+            fail("Unexpected execution");
         });
 
         t.start();

@@ -2,7 +2,7 @@ package org.mpi_sws.jmc.api.util.concurrent;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
+import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
@@ -75,7 +75,6 @@ public class JmcThread extends Thread {
         super.setUncaughtExceptionHandler(this::handleInterrupt);
     }
 
-    @NotNull
     public static JmcThread currentThread() {
         Thread t = Thread.currentThread();
         if (t instanceof JmcThread) {
@@ -111,7 +110,13 @@ public class JmcThread extends Thread {
             JmcRuntime.yield(jmcThreadId);
             run1();
         } catch (Exception e) {
-            LOGGER.error("Exception running the thread: {}", e.getMessage());
+            if (e instanceof HaltExecutionException && ((HaltExecutionException) e).isReexecutionNeeded()) {
+                LOGGER.debug("Re-execution needed, throwing HaltExecutionException");
+            } else if (e instanceof HaltTaskException && ((HaltTaskException) e).isBlocked()) {
+                LOGGER.debug("Blocked task execution, throwing HaltTaskException");
+            } else {
+                LOGGER.error("Exception running the thread: {}", e.getMessage());
+            }
         } finally {
             event =
                     new JmcRuntimeEvent.Builder()
@@ -239,5 +244,16 @@ public class JmcThread extends Thread {
         } catch (HaltTaskException e) {
             LOGGER.error("Failed to complete join task : {}", e.getMessage());
         }
+    }
+
+    /**
+     * Returns a string representation of this thread, including the
+     * thread's name, priority, and thread group.
+     *
+     * @return a string representation of this thread.
+     */
+    @Override
+    public String toString() {
+        return "JmcThread-" + jmcThreadId;
     }
 }

@@ -3,6 +3,8 @@ package org.mpi_sws.jmc.programs.correct.counter;
 import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 import org.mpi_sws.jmc.api.util.concurrent.JmcReentrantLock;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class CorrectCounter extends JmcThread {
     JmcReentrantLock lock;
     Counter counter;
@@ -39,7 +41,7 @@ public class CorrectCounter extends JmcThread {
             thread3.join1();
             thread4.join1();
             thread5.join1();
-            assert counter.get() == 5;
+            assertEquals(5, counter.get());
         } catch (InterruptedException e) {
             System.out.println("JMCInterruptException thrown");
         }

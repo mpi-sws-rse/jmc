@@ -1,15 +1,13 @@
 package org.mpi_sws.jmc.test.det.stack.lockFree;
 
+import org.mpi_sws.jmc.api.util.statements.JmcAssume;
 import org.mpi_sws.jmc.test.det.stack.Stack;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 public class LockFreeStack<V> implements Stack<V> {
 
-    //public final int MIN_DELAY = 1;
-    //public final int MAX_DELAY = 10;
     public AtomicReference<Node<V>> top = new AtomicReference<>(null);
-    //public Backoff backoff = new Backoff(MIN_DELAY, MAX_DELAY);
 
     protected boolean tryPush(Node<V> node) {
         Node<V> oldTop = top.get();
@@ -20,11 +18,7 @@ public class LockFreeStack<V> implements Stack<V> {
     @Override
     public void push(V value) {
         Node<V> node = new Node<>(value);
-        /*while (!tryPush(node)) {
-            backoff.backoff();
-        }*/
-        // Unwinding the loop for one iteration
-        tryPush(node);
+        JmcAssume.assume(tryPush(node));
     }
 
     protected Node<V> tryPop() {
@@ -42,20 +36,11 @@ public class LockFreeStack<V> implements Stack<V> {
 
     @Override
     public V pop() {
-        /*while (true) {
-            Node<V> returnNode = tryPop();
-            if (returnNode != null) {
-                return returnNode.value;
-            } else {
-                //backoff.backoff();
-            }
-        }*/
-        // Unwinding the loop for one iteration
         Node<V> returnNode = tryPop();
         if (returnNode != null) {
             return returnNode.value;
-        } else {
-            return null;
         }
+        JmcAssume.assume(false);
+        return null;
     }
 }

@@ -27,7 +27,9 @@ public class JmcFunctionalTestTarget implements JmcTestTarget {
         target.invoke();
     }
 
-    /** Represents a target for JMC. */
+    /**
+     * Represents a target for JMC.
+     */
     @FunctionalInterface
     public interface Target {
         void invoke();

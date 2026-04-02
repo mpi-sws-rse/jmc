@@ -1,7 +1,5 @@
 package org.mpi_sws.jmc.test.features.channels;
 
-import org.mpi_sws.jmc.api.JmcObject;
-
 public class ChannelWaitNotify implements Channel {
 
     private Object item;

@@ -6,10 +6,8 @@ import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.checker.exceptions.JmcInvalidConfigurationException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeConfiguration;
-import org.mpi_sws.jmc.strategies.JmcInvalidStrategyException;
-import org.mpi_sws.jmc.strategies.SchedulingStrategy;
-import org.mpi_sws.jmc.strategies.SchedulingStrategyConfiguration;
-import org.mpi_sws.jmc.strategies.SchedulingStrategyFactory;
+import org.mpi_sws.jmc.strategies.*;
+import org.mpi_sws.jmc.strategies.trust.TrustStrategy;
 
 import java.time.Duration;
 
@@ -28,17 +26,25 @@ public class JmcCheckerConfiguration {
     private Integer numIterations;
 
     private String strategyType;
+
+    private String solver;
+
     private SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor;
 
     private boolean debug;
 
     private Long seed;
 
+    private int budget;
+
     private String reportPath;
 
     private Duration timeout;
 
-    private JmcCheckerConfiguration() {}
+    private TrustStrategy.SchedulingPolicy schedulingPolicy;
+
+    private JmcCheckerConfiguration() {
+    }
 
     /**
      * Returns the number of iterations to run the checker.
@@ -56,6 +62,10 @@ public class JmcCheckerConfiguration {
      */
     public String getReportPath() {
         return reportPath;
+    }
+
+    public String getSolver() {
+        return solver;
     }
 
     /**
@@ -85,6 +95,10 @@ public class JmcCheckerConfiguration {
         return seed;
     }
 
+    public int getBudget() {
+        return budget;
+    }
+
     /**
      * Sets the seed for the checker.
      *
@@ -92,6 +106,18 @@ public class JmcCheckerConfiguration {
      */
     public void setSeed(Long seed) {
         this.seed = seed;
+    }
+
+    public void setSolver(String solver) {
+        this.solver = solver;
+    }
+
+    public void setBudget(int budget) {
+        this.budget = budget;
+    }
+
+    public void setSchedulingPolicy(TrustStrategy.SchedulingPolicy schedulingPolicy) {
+        this.schedulingPolicy = schedulingPolicy;
     }
 
     /**
@@ -103,17 +129,21 @@ public class JmcCheckerConfiguration {
         return timeout;
     }
 
+    public TrustStrategy.SchedulingPolicy getSchedulingPolicy() {
+        return schedulingPolicy;
+    }
+
     /**
      * Converts this configuration to a runtime configuration.
      *
      * @return a {@link JmcRuntimeConfiguration} based on this configuration
      * @throws JmcInvalidStrategyException if the strategy type is invalid or the strategy cannot be
-     *     created
+     *                                     created
      */
     public JmcRuntimeConfiguration toRuntimeConfiguration() throws JmcInvalidStrategyException {
         SchedulingStrategy strategy;
         SchedulingStrategyConfiguration.Builder strategyConfigurationBuilder =
-                new SchedulingStrategyConfiguration.Builder().seed(seed);
+                new SchedulingStrategyConfiguration.Builder().seed(seed).budget(budget).solver(solver).trustSchedulingPolicy(schedulingPolicy);
         if (debug) {
             strategyConfigurationBuilder.debug();
             strategyConfigurationBuilder.reportPath(reportPath);
@@ -150,17 +180,26 @@ public class JmcCheckerConfiguration {
         return new Builder()
                 .numIterations(annotation.numIterations())
                 .strategyType(annotation.strategy())
+                .solver(annotation.solver())
                 .debug(annotation.debug())
                 .reportPath(annotation.reportPath())
                 .seed(annotation.seed())
+                .budget(annotation.budget())
+                .timeout(annotation.timeout())
+                .schedulingPolicy(annotation.schedulingPolicy())
                 .build();
     }
 
-    /** Builder for JmcCheckerConfiguration */
+    /**
+     * Builder for JmcCheckerConfiguration
+     */
     public static class Builder {
         private Integer numIterations;
 
         private String strategyType;
+
+        private String solver;
+
         private SchedulingStrategyConfiguration.SchedulingStrategyConstructor strategyConstructor;
 
         private boolean debug;
@@ -171,12 +210,19 @@ public class JmcCheckerConfiguration {
 
         private Long seed;
 
+        private int budget;
+
+        private TrustStrategy.SchedulingPolicy schedulingPolicy;
+
         public Builder() {
             this.numIterations = 0;
             this.strategyType = "random";
+            this.schedulingPolicy = TrustStrategy.SchedulingPolicy.RANDOM;
             this.debug = false;
             this.reportPath = "build/test-results/jmc-report";
+            this.solver = "off";
             this.seed = System.nanoTime();
+            this.budget = 2;
             this.timeout = null;
         }
 
@@ -187,6 +233,11 @@ public class JmcCheckerConfiguration {
 
         public Builder strategyType(String strategyType) {
             this.strategyType = strategyType;
+            return this;
+        }
+
+        public Builder solver(String solver) {
+            this.solver = solver;
             return this;
         }
 
@@ -211,8 +262,27 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
+        public Builder budget(int budget) {
+            this.budget = budget;
+            return this;
+        }
+
         public Builder timeout(Duration timeout) {
             this.timeout = timeout;
+            return this;
+        }
+
+        public Builder timeout(long timeout) {
+            if (timeout < 0L) {
+                this.timeout = null;
+                return this;
+            }
+            this.timeout = Duration.ofMillis(timeout);
+            return this;
+        }
+
+        public Builder schedulingPolicy(TrustStrategy.SchedulingPolicy schedulingPolicy) {
+            this.schedulingPolicy = schedulingPolicy;
             return this;
         }
 
@@ -228,8 +298,11 @@ public class JmcCheckerConfiguration {
             config.strategyConstructor = strategyConstructor;
             config.debug = debug;
             config.reportPath = reportPath;
+            config.solver = solver;
             config.seed = seed;
+            config.budget = budget;
             config.timeout = timeout;
+            config.schedulingPolicy = schedulingPolicy;
             return config;
         }
     }

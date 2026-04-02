@@ -2,6 +2,7 @@ package org.mpi_sws.jmc.runtime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.api.util.concurrent.JmcReentrantLock;
 import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 
@@ -32,6 +33,25 @@ public class JmcRuntimeUtils {
     // TODO: check if we need to change the type of the list here
     private static final List<Class<?>> staticInitializedClassesList = new ArrayList<>();
     private static final Set<String> staticInitializedClasses = new HashSet<>();
+
+    private JmcRuntimeUtils() {
+        // Private constructor to prevent instantiation
+    }
+
+    public static boolean SymEvent(JmcBooleanFormula formula) {
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.SYMB_OP_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param("booleanFormula", formula)
+                        .build();
+        Object result = JmcRuntime.updateEventAndYield(event);
+        // If result is not boolean, throw an exception
+        if (!(result instanceof Boolean)) {
+            throw new RuntimeException("Expected a boolean result from symbolic event evaluation");
+        }
+        return (Boolean) result;
+    }
 
     /**
      * Creates a read event for the specified instance, owner, name, and descriptor.

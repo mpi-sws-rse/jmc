@@ -1,0 +1,35 @@
+package org.mpi_sws.jmc.test.synth.ttaslock;
+
+import org.mpi_sws.jmc.api.util.statements.JmcAssume;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class TTASLock {
+
+    private final AtomicInteger state = new AtomicInteger(0);
+
+    public void init() {
+        state.set(0);
+    }
+
+    private void awaitForLock() {
+        // Modeling the busy-wait loop of TTAS lock
+        JmcAssume.assume(state.get() == 0);
+    }
+
+    private boolean tryAcquire() {
+        return state.getAndSet(1) == 0;
+    }
+
+    public boolean acquire() {
+        awaitForLock();
+        // Modeling the busy-wait loop for trying to acquire the lock
+        boolean b = tryAcquire();
+        JmcAssume.assume(b);
+        return b;
+    }
+
+    public void release() {
+        state.set(0);
+    }
+}

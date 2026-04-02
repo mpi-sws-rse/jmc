@@ -27,7 +27,7 @@ public class JmcAssume {
         JmcRuntime.updateEventAndYield(event);
 
         if (!condition) {
-            throw new HaltTaskException(JmcRuntime.currentTask(), "Assumption failed");
+            throw HaltTaskException.blocked(JmcRuntime.currentTask());
         }
     }
 }

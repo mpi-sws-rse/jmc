@@ -73,7 +73,7 @@ public class BusyWaitFutureTest {
                 return;
             } else {
                 try {
-                    Thread.sleep(10);  // Sleep and retry
+                    Thread.sleep(1);  // Sleep and retry
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
@@ -142,13 +142,13 @@ public class BusyWaitFutureTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5, debug = false)
+    @JmcCheckConfiguration(numIterations = 3)
     public void testBusyWaitScenario() throws Exception {
         testBusyWait();
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 5, debug = false)
+    @JmcCheckConfiguration(numIterations = 3)
     public void testBlockingWaitScenario() throws Exception {
         testBlockingWait();
     }

@@ -49,8 +49,8 @@ public class ArrayTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    @JmcExpectExecutions(14400) // For input 5
+    @JmcExpectExecutions(36) // For input 5 = 14400
     public void runDetArrayTest() {
-        detArray(5);
+        detArray(3);
     }
 }

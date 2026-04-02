@@ -9,25 +9,33 @@ public class HaltTaskException extends RuntimeException {
     // The ID of the task that threw the exception.
     private final Long taskId;
 
-    /**
-     * Constructs a new HaltTaskException object.
-     *
-     * @param taskId the ID of the task that threw the exception
-     */
-    public HaltTaskException(Long taskId) {
-        super();
-        this.taskId = taskId;
-    }
+    private final Type type;
 
     /**
      * Constructs a new HaltTaskException object.
      *
      * @param taskId the ID of the task that threw the exception
-     * @param message the message to be displayed
      */
-    public HaltTaskException(Long taskId, String message) {
-        super(message);
+    public HaltTaskException(Long taskId, Type type) {
+        super();
         this.taskId = taskId;
+        this.type = type;
+    }
+
+    public static HaltTaskException error(Long taskId, Type type) {
+        return new HaltTaskException(taskId, type);
+    }
+
+    public static HaltTaskException blocked(Long taskId) {
+        return new HaltTaskException(taskId, Type.BLOCKED);
+    }
+
+    public boolean isBlocked() {
+        return type == Type.BLOCKED;
+    }
+
+    public boolean isTaskError() {
+        return type == Type.TASK_ERROR;
     }
 
     /**
@@ -37,5 +45,13 @@ public class HaltTaskException extends RuntimeException {
      */
     public Long getTaskId() {
         return taskId;
+    }
+
+    /**
+     * Exception type when the model checker stops a task.
+     */
+    public enum Type {
+        TASK_ERROR,
+        BLOCKED
     }
 }

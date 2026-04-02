@@ -298,8 +298,9 @@ public class TaskManager {
             Throwable cause = e.getCause();
             if (cause instanceof HaltTaskException) {
                 throw (HaltTaskException) cause;
+            } else if (cause instanceof HaltExecutionException && ((HaltExecutionException) cause).isReexecutionNeeded()) {
+                throw HaltExecutionException.reexecutionNeeded();
             } else {
-                LOGGER.error("Error waiting for task: {}, {}", taskId, e.getMessage());
                 throw e;
             }
         }
@@ -314,9 +315,34 @@ public class TaskManager {
             for (Map.Entry<Long, CompletableFuture<?>> entry : taskFutures.entrySet()) {
                 entry.getValue()
                         .completeExceptionally(HaltExecutionException.error("Stopping execution"));
+                // wait
             }
             taskFutures.clear();
             taskStates.clear();
+        }
+    }
+
+    public Long doNextStop() {
+        synchronized (tasksLock) {
+            List<Long> taskIds = new ArrayList<>(taskStates.keySet());
+            taskIds.sort(Long::compareTo);
+            for (int i = taskIds.size() - 1; i >= 0; i--) {
+                Long taskId = taskIds.get(i);
+                if (taskStates.get(taskId) != TaskState.TERMINATED &&
+                        taskStates.get(taskId) != TaskState.CREATED) {
+                    return taskId;
+                }
+            }
+        }
+        return -1L;
+    }
+
+    public void stopTask(Long taskId) {
+        synchronized (tasksLock) {
+            CompletableFuture<?> future = taskFutures.get(taskId);
+            if (future != null) {
+                future.completeExceptionally(HaltExecutionException.reexecutionNeeded());
+            }
         }
     }
 }

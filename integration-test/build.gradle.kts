@@ -23,6 +23,7 @@ dependencies {
     implementation(project(":core"))
     implementation("com.google.guava:guava:32.1.2-jre")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
+    implementation("org.junit.jupiter:junit-jupiter:5.7.1")
 }
 
 tasks.test {

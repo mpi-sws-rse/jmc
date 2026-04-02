@@ -8,6 +8,9 @@ import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.solver.SMTSolverTypes;
+import org.mpi_sws.jmc.solver.SolverUtil;
+import org.mpi_sws.jmc.solver.incremental.IncrementalSolver;
 import org.mpi_sws.jmc.util.FileUtil;
 
 import java.util.*;
@@ -32,29 +35,78 @@ public class Algo {
     private ExecutionGraph executionGraph;
     private boolean isGuiding;
     private final ExplorationStack explorationStack;
-
     private final LocationStore locationStore;
+    private final TreeLogger tLogger;
+    private long numOfBlockedGraphs = 0L;
+    /**
+     * @property {@link #solver} is used to store the {@link org.mpi_sws.jmc.solver.SymbolicSolver} object that is used
+     * to solve symbolic operations.
+     */
+    private final IncrementalSolver solver;
 
-    private Long mustBlockTask;
-
-    /** Creates a new instance of the Trust algorithm. */
+    /**
+     * Creates a new instance of the Trust algorithm.
+     */
     public Algo() {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
         this.executionGraph = new ExecutionGraph();
         this.explorationStack = new ExplorationStack();
         this.locationStore = new LocationStore();
-
         this.executionGraph.addEvent(Event.init());
+        this.tLogger = null;
+        this.solver = null;
     }
 
-    /** Returns the next task to be scheduled according to the execution graph set in place. */
-    public SchedulingChoice<?> nextTask() {
-        if (mustBlockTask != null) {
-            Long taskId = mustBlockTask + 1;
-            mustBlockTask = null;
-            return SchedulingChoice.blockTask(taskId);
+    public Algo(boolean hasTreeLogger, String solverType) {
+        this.guidingTaskSchedule = null;
+        this.isGuiding = false;
+        this.executionGraph = new ExecutionGraph();
+        this.explorationStack = new ExplorationStack();
+        this.locationStore = new LocationStore();
+        this.executionGraph.addEvent(Event.init());
+        if (hasTreeLogger) {
+            this.tLogger = new TreeLogger();
+        } else {
+            this.tLogger = null;
         }
+        this.solver = initSolver(solverType);
+    }
+
+    private IncrementalSolver initSolver(String solverType) {
+        SMTSolverTypes type = getSolverType(solverType);
+        if (type == SMTSolverTypes.OFF) {
+            return null;
+        }
+        return SolverUtil.getIncrementalSolver(type);
+    }
+
+    private SMTSolverTypes getSolverType(String solverType) {
+        if (solverType == null) {
+            return null;
+        }
+        return switch (solverType.toLowerCase()) {
+            case "z3" -> SMTSolverTypes.Z3;
+            case "cvc5" -> SMTSolverTypes.CVC5;
+            case "cvc4" -> SMTSolverTypes.CVC4;
+            case "mathsat5" -> SMTSolverTypes.MATHSAT5;
+            case "yices2" -> SMTSolverTypes.YICES2;
+            case "opensmt" -> SMTSolverTypes.OPENSMT;
+            case "smtinterpol" -> SMTSolverTypes.SMTINTERPOL;
+            case "princess" -> SMTSolverTypes.PRINCESS;
+            case "booleanor" -> SMTSolverTypes.BOOLECTOR;
+            case "off" -> SMTSolverTypes.OFF;
+            default -> {
+                LOGGER.warn("Unknown solver type: {}. Defaulting to Z3.", solverType);
+                yield SMTSolverTypes.Z3;
+            }
+        };
+    }
+
+    /**
+     * Returns the next task to be scheduled according to the execution graph set in place.
+     */
+    public SchedulingChoice<?> nextTask() {
 
         if (!isGuiding) {
             return null;
@@ -64,6 +116,7 @@ public class Algo {
         }
         SchedulingChoice<?> out = guidingTaskSchedule.pop().choice();
         if (guidingTaskSchedule.isEmpty()) {
+            LOGGER.debug("End of guiding phase");
             isGuiding = false;
         }
         return out;
@@ -82,7 +135,7 @@ public class Algo {
         SchedulingChoiceWrapper choiceW = guidingTaskSchedule.peek();
         SchedulingChoice<?> choice = choiceW.choice();
         if (choice.isBlockTask()) {
-            throw new HaltTaskException(choice.getTaskId());
+            throw HaltTaskException.blocked(choice.getTaskId());
         } else if (choice.isBlockExecution()) {
             throw HaltExecutionException.error("Encountered a block label");
         } else if (choice.isEnd() && !EventUtils.isExclusiveRead(event)) {
@@ -106,11 +159,6 @@ public class Algo {
             if (!locationStore.containsAlias(event.getLocation())) {
                 locationStore.addAlias(location, event.getLocation());
             }
-        }
-
-        switch (event.getType()) {
-            case ASSUME:
-                handleGuidedAssume(event);
         }
     }
 
@@ -234,6 +282,10 @@ public class Algo {
             return;
         }
 
+        if (executionGraph.isBlocked()) {
+            logBlockedGraph();
+        }
+
         // Check if the exploration stack is empty. If so, we are done with the exploration.
         if (explorationStack.isEmpty()) {
             LOGGER.debug("Exploration stack is empty. We are done with the exploration.");
@@ -254,8 +306,10 @@ public class Algo {
         findNextExplorationChoice();
     }
 
-    /** Checks if we are guiding the execution. */
-    private boolean areWeGuiding() {
+    /**
+     * Checks if we are guiding the execution.
+     */
+    public boolean areWeGuiding() {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
     }
 
@@ -278,7 +332,9 @@ public class Algo {
 
             // Get the next exploration choice from the exploration stack.
             ExplorationStack.Item item = explorationStack.pop();
-
+            logUpdateGraphId(item);
+            // Read the size of the exploration stack
+            int stackSize = explorationStack.totalSize();
             // Check if the item is a backward revisit.
             if (item.isBackwardRevisit()) { // TODO : Is any backward revisit type allowed? or only
                 // BWR?
@@ -287,7 +343,7 @@ public class Algo {
             }
 
             // Handle the forward revisit
-            ExecutionGraph newGraph = explorationStack.getGraph(item);
+            ExecutionGraph newGraph = item.getGraph();
             if (newGraph == null) {
                 // It is not possible for an item to have a null graph. This must be a bug in the
                 // exploration stack.
@@ -302,15 +358,31 @@ public class Algo {
                 case FRW -> nextGraphSchedule = processFRW(item);
                 case FWW -> nextGraphSchedule = processFWW(item);
                 case FLW -> nextGraphSchedule = processFLW(item);
-                default ->
-                        throw new RuntimeException(
-                                "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
+                case CONT -> nextGraphSchedule = processCont(item);
+                default -> throw new RuntimeException(
+                        "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
+            }
+
+            if (nextGraphSchedule.isEmpty()) {
+                if (EventUtils.isLockAcquireRead(item.getEvent1().getEvent())) {
+                    int newStackSize = explorationStack.totalSize();
+                    if (newStackSize == stackSize) {
+                        LOGGER.debug(
+                                "The forward revisit of lock acquire read resulted in an inconsistent graph. Continuing to next item.");
+                        logInconsistentGraph();
+                        item.getGraph().setConsistent(false);
+                    }
+                } else {
+                    LOGGER.debug("The revisit resulted in an inconsistent graph. Continuing to next item.");
+                    logInconsistentGraph();
+                    item.getGraph().setConsistent(false);
+                }
             }
         }
 
         LOGGER.debug("Found the SC graph");
-        //        checkGraphSchedule(nextGraphSchedule);
-        executionGraph.printGraph();
+        checkGraphSchedule(nextGraphSchedule);
+        //executionGraph.printGraph();
 
         // The SC graph is found. We need to set the guiding task schedule.
         // TODO : To increase efficiency, we can use the topological sort which
@@ -357,7 +429,7 @@ public class Algo {
      */
     private void printGuidingTaskSchedule() {
         if (guidingTaskSchedule == null) {
-            System.out.println("Guiding task schedule is null");
+            LOGGER.debug("Guiding task schedule is null");
             return;
         }
         StringBuilder sb = new StringBuilder();
@@ -368,18 +440,20 @@ public class Algo {
         LOGGER.debug(sb.toString());
     }
 
-    private void processBWR(ExplorationStack.Item item) {
+    public void processBWR(ExplorationStack.Item item) {
 
         ExecutionGraphNode write = item.getEvent1();
         ExecutionGraph restrictedGraph = item.getGraph();
 
         List<ExecutionGraphNode> alternativeWrites = restrictedGraph.getCoherentPlacings(write);
 
+        logNewBranchs();
         if (!alternativeWrites.isEmpty()) {
             for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
-                explorationStack.push(
-                        ExplorationStack.Item.forwardWW(
-                                write, alternativeWrites.get(i), restrictedGraph));
+                ExplorationStack.Item newItem = ExplorationStack.Item.forwardWW(
+                        write, alternativeWrites.get(i), restrictedGraph);
+                explorationStack.push(newItem);
+                logNewChild(newItem);
             }
         }
 
@@ -388,6 +462,7 @@ public class Algo {
             forwardLW.addAdditionalEvent(additionalEvent);
         }
         explorationStack.push(forwardLW);
+        logLastChild(forwardLW);
     }
 
     private List<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {
@@ -405,6 +480,13 @@ public class Algo {
             processAdditionalEvent(additionalEvent);
         }
 
+        // The following is an optimization to avoid doing unnecessary consistency checks. If the read event is
+        // a lock acquire read, we know that the graph is not consistent because the resulted graph has two
+        // lock acquire reads reading from the same lock write.
+        if (EventUtils.isLockAcquireRead(item.getEvent1().getEvent())) {
+            LOGGER.debug("Skipping consistency check for lock acquire read forward revisit");
+            return new ArrayList<>();
+        }
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
@@ -440,7 +522,7 @@ public class Algo {
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
-    private List<ExecutionGraphNode> processFLW(ExplorationStack.Item item) {
+    public List<ExecutionGraphNode> processFLW(ExplorationStack.Item item) {
         // Forward revisit of w -> lw (max-co)
         ExecutionGraphNode w = item.getEvent1();
 
@@ -461,16 +543,27 @@ public class Algo {
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
+    // This method must not be called during the Trust model checking procedure.
+    // This will be used for cases like estimation where we are not following the DFS exploration order strictly.
+    private List<ExecutionGraphNode> processCont(ExplorationStack.Item item) {
+        // Just continue the exploration with the current graph
+        return executionGraph.checkConsistencyAndTopologicallySort();
+    }
+
     /**
      * Cleans up the execution graph and the task schedule. This method is called at the end of the
      * exploration.
      */
-    public void teardown() {
+    public void teardown(JmcModelCheckerReport report) {
         // Clean up the execution graph and the task schedule.
+        logLastGraphSize();
         this.executionGraph.clear();
         this.explorationStack.clear();
         this.locationStore.clearAliases();
         this.locationStore.clear();
+        reportInconsistentGraphLogs();
+        reportBlockedGraphLogs();
+        report.setBlockedIterations(Math.toIntExact(numOfBlockedGraphs));
     }
 
     public List<Long> getSchedulableTasks() {
@@ -530,13 +623,19 @@ public class Algo {
             // No alternative writes to revisit.
             return;
         }
-        // We have alternative writes to revisit.
 
+        logNewBranchs();
+
+        // We have alternative writes to revisit.
         for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
-            explorationStack.push(
+            ExplorationStack.Item newItem =
                     ExplorationStack.Item.forwardRW(
-                            read, alternativeWrites.get(i), this.executionGraph));
+                            read, alternativeWrites.get(i), this.executionGraph);
+            explorationStack.push(newItem);
+            logNewChild(newItem);
         }
+        logConCurrChild();
+        logUpdateGraphIdWithLastGraph();
     }
 
     private void handleWrite(Event event) {
@@ -550,15 +649,21 @@ public class Algo {
         /** Check for (w->w) coherent forward revisits * */
         List<ExecutionGraphNode> concurrentWrites = executionGraph.getCoherentPlacings(write);
 
+        boolean hasForwardRevisits = false;
+
         if (!concurrentWrites.isEmpty()) {
             LOGGER.debug("Found concurrent writes to revisit");
 
+            hasForwardRevisits = true;
+            logNewBranchs();
             // We have concurrent writes to revisit.
             // If flag is set, write race warning
             for (int i = concurrentWrites.size() - 1; i >= 0; i--) {
-                explorationStack.push(
+                ExplorationStack.Item newItem =
                         ExplorationStack.Item.forwardWW(
-                                write, concurrentWrites.get(i), executionGraph));
+                                write, concurrentWrites.get(i), executionGraph);
+                explorationStack.push(newItem);
+                logNewChild(newItem);
             }
         } else {
             LOGGER.debug("No concurrent writes to revisit");
@@ -573,6 +678,10 @@ public class Algo {
             // After batching the forward revisits, since there is no backward revisit, we need to
             // continue the exploration by adding the recently added write as the CO max.
             executionGraph.trackCoherency(write);
+            if (hasForwardRevisits) {
+                logConCurrChild();
+                logUpdateGraphIdWithLastGraph();
+            }
             return;
         }
         LOGGER.debug("Found potential reads to revisit");
@@ -583,17 +692,31 @@ public class Algo {
         revisitViews =
                 revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
 
+        boolean hasBackwardRevisits = false;
+        if (!revisitViews.isEmpty()) {
+            hasBackwardRevisits = true;
+            if (!hasForwardRevisits) {
+                logNewBranchs();
+            }
+        }
+
         for (int i = revisitViews.size() - 1; i >= 0; i--) {
-            explorationStack.push(
+            ExplorationStack.Item newItem =
                     ExplorationStack.Item.backwardRevisit(
                             revisitViews.get(i).getWrite(),
-                            revisitViews.get(i).getRestrictedGraph()));
+                            revisitViews.get(i).getRestrictedGraph());
+            explorationStack.push(newItem);
+            logNewChild(newItem);
         }
 
         // After batching the backward and forward revisits, we need to continue the exploration by
         // adding the recently
         // added write as the CO max.
         executionGraph.trackCoherency(write);
+        if (hasBackwardRevisits || hasForwardRevisits) {
+            logConCurrChild();
+            logUpdateGraphIdWithLastGraph();
+        }
     }
 
     private void handleWriteX(Event event) {
@@ -661,6 +784,8 @@ public class Algo {
             return;
         }
 
+        logNewBranchs();
+
         for (int i = alternativeWrites.size() - 1; i >= 0; i--) {
             ExecutionGraphNode altWrite = alternativeWrites.get(i);
             LOGGER.debug("Adding revisit to alternative lock acquire write: {}", altWrite.key());
@@ -674,7 +799,10 @@ public class Algo {
             additionalWrite.setAttribute("lock_acquire", true);
             item.addAdditionalEvent(additionalWrite);
             explorationStack.push(item);
+            logNewChild(item);
         }
+        logConCurrChild();
+        logUpdateGraphIdWithLastGraph();
     }
 
     // Takes a parameter ExecutionGraph only to handle the
@@ -702,13 +830,22 @@ public class Algo {
             revisitViews =
                     revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
 
+            boolean visitedConsistentBWR = false;
+
             for (int i = revisitViews.size() - 1; i >= 0; i--) {
                 ExplorationStack.Item item =
                         ExplorationStack.Item.backwardRevisit(
                                 revisitViews.get(i).getWrite(),
                                 revisitViews.get(i).getRestrictedGraph());
                 item.addAdditionalEvent(revisitViews.get(i).additionalEvent());
-                explorationStack.push(item);
+                if (item.getGraph().isRdxInconsistent(item.getEvent1())) {
+                    if (!visitedConsistentBWR) {
+                        logNewBranchs();
+                        visitedConsistentBWR = true;
+                    }
+                    explorationStack.push(item);
+                    logLastChild(item);
+                }
             }
         }
         executionGraph.trackCoherency(write);
@@ -744,26 +881,11 @@ public class Algo {
 
     private void handleAssume(Event event) {
         executionGraph.addEvent(event);
-        boolean result = event.getAttribute("result");
-
-        if (!result) {
-            Long taskId = event.getTaskId();
-            // Indicate that the task must be blocked
-            mustBlockTask = taskId;
-        }
     }
 
-    private void handleGuidedAssume(Event event) {
-        boolean result = event.getAttribute("result");
-
-        if (result) {
-            Long taskId = event.getTaskId();
-            // Indicate that the task must be blocked
-            mustBlockTask = taskId;
-        }
-    }
-
-    /** */
+    /**
+     *
+     */
     public void logStackState() {
         explorationStack.logStackState();
     }
@@ -785,5 +907,139 @@ public class Algo {
 
     public ExecutionGraph getExecutionGraph() {
         return executionGraph;
+    }
+
+    public void setExecutionGraph(ExecutionGraph executionGraph) {
+        this.executionGraph = executionGraph;
+    }
+
+    public ExplorationStack getExplorationStack() {
+        return explorationStack;
+    }
+
+    public void clear() {
+        this.guidingTaskSchedule = null;
+        this.isGuiding = false;
+        this.executionGraph.clear();
+        this.explorationStack.clear();
+        this.locationStore.clear();
+        this.executionGraph.addEvent(Event.init());
+    }
+
+    public boolean isStackEmpty() {
+        return this.explorationStack.isEmpty();
+    }
+
+    private void logNewBranchs() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendNewBranchs(executionGraph.size());
+    }
+
+    private void logNewChild(ExplorationStack.Item item) {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendNewChild(item);
+    }
+
+    private void logLastChild(ExplorationStack.Item item) {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendLastChild(item);
+    }
+
+    private void logConCurrChild() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendContinueCurrent();
+    }
+
+    private void logEndofChilds() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.appendNextLine();
+    }
+
+    private void logUpdateGraphId(ExplorationStack.Item nextItem) {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.updateLoggerGraphId(nextItem, executionGraph.size());
+    }
+
+    private void logUpdateGraphIdWithLastGraph() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.updateLoggerGraphIdWithLastGraph(executionGraph.size());
+    }
+
+    private void logInconsistentGraph() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.addInconsistentGraph();
+    }
+
+    private void logBlockedGraph() {
+        numOfBlockedGraphs++;
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.addBlockedGraph();
+    }
+
+    private void logLastGraphSize() {
+        if (tLogger == null) {
+            return;
+        }
+        tLogger.addLeafSize(executionGraph.size());
+    }
+
+    public StringBuilder getTreeLog() {
+        if (tLogger == null) {
+            return null;
+        }
+        return tLogger.getLogger();
+    }
+
+    public StringBuilder getInconsistentGraphLog() {
+        if (tLogger == null) {
+            return null;
+        }
+        return tLogger.getInConsistentGraphLogger();
+    }
+
+    public StringBuilder getBlockedGraphLog() {
+        if (tLogger == null) {
+            return null;
+        }
+        return tLogger.getBlockedGraphLogger();
+    }
+
+    public StringBuilder getLeafSizeLog() {
+        if (tLogger == null) {
+            return null;
+        }
+        return tLogger.getLeafSizeLogger();
+    }
+
+    public void reportInconsistentGraphLogs() {
+        if (tLogger == null) {
+            return;
+        }
+        LOGGER.info("Number of Inconsistent Graph: " + tLogger.getNumOfInconsistentGraphs());
+    }
+
+    public void reportBlockedGraphLogs() {
+        if (tLogger == null) {
+            return;
+        }
+        LOGGER.info("Number of Blocked Graph:" + tLogger.getNumOfBlockedGraphs());
     }
 }

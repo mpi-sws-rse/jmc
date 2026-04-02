@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class StaticInitTest {
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 1)
+    @JmcCheckConfiguration(numIterations = 10)
     public void testStaticInitBlock() {
         // The function will be called multiple times
         // If the initialization is correct, and the static block is called at the beginning of each

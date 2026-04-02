@@ -25,8 +25,8 @@ public class JmcDescriptorUtil {
      * checker configuration builder accordingly.
      *
      * @param builder The JMC checker configuration builder to update.
-     * @param clazz The class to check for annotations.
-     * @param method The method to check for annotations.
+     * @param clazz   The class to check for annotations.
+     * @param method  The method to check for annotations.
      * @return An updated JMC checker configuration builder.
      */
     public static JmcCheckerConfiguration.Builder checkStrategyConfig(
@@ -86,10 +86,10 @@ public class JmcDescriptorUtil {
     }
 
     private static SchedulingStrategyConfiguration.SchedulingStrategyConstructor
-            getCoverageStrategyConstructor(
-                    JmcMeasureGraphCoverage coverageAnnotation,
-                    SchedulingStrategyConfiguration.SchedulingStrategyConstructor constructor)
-                    throws JmcInvalidConfigurationException {
+    getCoverageStrategyConstructor(
+            JmcMeasureGraphCoverage coverageAnnotation,
+            SchedulingStrategyConfiguration.SchedulingStrategyConstructor constructor)
+            throws JmcInvalidConfigurationException {
         if (coverageAnnotation.recordFrequency() != 0L && coverageAnnotation.recordPerIteration()) {
             throw new JmcInvalidConfigurationException(
                     "Cannot set both recordFrequency and recordPerIteration to true in JmcMeasureGraphCoverage annotation.");
@@ -114,7 +114,7 @@ public class JmcDescriptorUtil {
     }
 
     private static SchedulingStrategyConfiguration.SchedulingStrategyConstructor
-            getStrategyConstructor(JmcTrustStrategy annotation) {
+    getStrategyConstructor(JmcTrustStrategy annotation) {
         return (config) -> {
             long seed = config.getSeed();
             if (annotation.seed() != 0L) {
@@ -124,7 +124,9 @@ public class JmcDescriptorUtil {
                     seed,
                     annotation.schedulingPolicy(),
                     annotation.debug(),
-                    annotation.reportPath());
+                    annotation.reportPath(),
+                    annotation.loggerTree(),
+                    annotation.solver());
         };
     }
 }

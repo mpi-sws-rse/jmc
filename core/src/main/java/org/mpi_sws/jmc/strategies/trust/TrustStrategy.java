@@ -2,7 +2,6 @@ package org.mpi_sws.jmc.strategies.trust;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.mpi_sws.jmc.strategies.SchedulingStrategy;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
@@ -23,7 +22,7 @@ import java.util.Set;
 /**
  * A wrapper around the {@link Algo} algorithm that implements a scheduling strategy based on trust.
  * The class implements the {@link ReplayableSchedulingStrategy} and {@link
- * SchedulingStrategy} and uses the {@link TrackActiveTasksStrategy} to
+ * org.mpi_sws.jmc.strategies.SchedulingStrategy} and uses the {@link TrackActiveTasksStrategy} to
  * track active tasks during the execution.
  */
 public class TrustStrategy extends TrackActiveTasksStrategy
@@ -31,7 +30,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
 
     private final Logger LOGGER = LogManager.getLogger(TrustStrategy.class);
 
-    private final Algo algoInstance;
+    protected final Algo algoInstance;
     private final SchedulingPolicy policy;
     private final Random random;
 
@@ -47,7 +46,29 @@ public class TrustStrategy extends TrackActiveTasksStrategy
             Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath) {
         super(List.of(new TrackTasks()));
         this.random = new Random(randomSeed);
-        this.algoInstance = new Algo();
+        this.algoInstance = new Algo(false, "off");
+        this.policy = policy;
+        this.debug = debug;
+        this.reportPath = reportPath;
+        this.recordedTrace = null;
+    }
+
+    public TrustStrategy(
+            Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, String solver) {
+        super(List.of(new TrackTasks()));
+        this.random = new Random(randomSeed);
+        this.algoInstance = new Algo(false, solver);
+        this.policy = policy;
+        this.debug = debug;
+        this.reportPath = reportPath;
+        this.recordedTrace = null;
+    }
+
+    public TrustStrategy(
+            Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, boolean hasTreeLogger, String solver) {
+        super(List.of(new TrackTasks()));
+        this.random = new Random(randomSeed);
+        this.algoInstance = new Algo(hasTreeLogger, solver);
         this.policy = policy;
         this.debug = debug;
         this.reportPath = reportPath;
@@ -116,6 +137,9 @@ public class TrustStrategy extends TrackActiveTasksStrategy
                     case FIFO -> activeScheduleAbleTasks.isEmpty()
                             ? null
                             : activeScheduleAbleTasks.get(0);
+                    case LIFO -> activeScheduleAbleTasks.isEmpty()
+                            ? null
+                            : activeScheduleAbleTasks.get(activeScheduleAbleTasks.size() - 1);
                     case RANDOM -> {
                         int size = activeScheduleAbleTasks.size();
                         yield size == 0 ? null : activeScheduleAbleTasks.get(random.nextInt(size));
@@ -146,11 +170,15 @@ public class TrustStrategy extends TrackActiveTasksStrategy
 
     @Override
     public void resetIteration(int iteration) {
-        LOGGER.debug("Resetting iteration {}", iteration);
+        resetIteration(iteration, true);
+    }
+
+    protected void resetIteration(int iteration, boolean checkConsistency) {
+        LOGGER.debug("Resetting iteration {} with clearGraph={}", iteration, checkConsistency);
         super.resetIteration(iteration);
         if (debug) {
             algoInstance.logStackState();
-            if (!algoInstance.getExecutionGraph().checkExtensiveConsistency()) {
+            if (checkConsistency && !algoInstance.getExecutionGraph().checkExtensiveConsistency()) {
                 throw HaltCheckerException.error("Explored an inconsistent execution graph");
             }
             algoInstance.writeExecutionGraphToFile(
@@ -164,9 +192,31 @@ public class TrustStrategy extends TrackActiveTasksStrategy
     }
 
     @Override
-    public void teardown() {
-        super.teardown();
-        algoInstance.teardown();
+    public void teardown(JmcModelCheckerReport report) {
+        super.teardown(report);
+        algoInstance.teardown(report);
+        StringBuilder tLogger = algoInstance.getTreeLog();
+        StringBuilder inConGraphLogger = algoInstance.getInconsistentGraphLog();
+        StringBuilder blockedGraphLogger = algoInstance.getBlockedGraphLog();
+        StringBuilder leafSizeLogger = algoInstance.getLeafSizeLog();
+        if (tLogger != null) {
+            recordTreeLoggger(tLogger, inConGraphLogger, blockedGraphLogger, leafSizeLogger);
+        }
+    }
+
+    private void recordTreeLoggger(StringBuilder tLogger, StringBuilder inConGraphLogger, StringBuilder blockedGraphLogger, StringBuilder leafSizeLogger) {
+        if (inConGraphLogger != null) {
+            tLogger.append(System.lineSeparator()).append("$INCONSISTENT GRAPH:").append(System.lineSeparator()).append(inConGraphLogger);
+        }
+        if (blockedGraphLogger != null) {
+            tLogger.append(System.lineSeparator()).append("$BLOCKED GRAPH:").append(System.lineSeparator()).append(blockedGraphLogger);
+        }
+        if (leafSizeLogger != null) {
+            tLogger.append(System.lineSeparator()).append("$LEAF SIZE LOG:").append(System.lineSeparator()).append(leafSizeLogger);
+        }
+        String filePath = Paths.get(this.reportPath, "trust-tree-logger.txt").toString();
+        LOGGER.info("Recording tree logger to {}", filePath);
+        FileUtil.unsafeStoreToFile(filePath, tLogger.toString());
     }
 
     @Override
@@ -184,6 +234,8 @@ public class TrustStrategy extends TrackActiveTasksStrategy
 
     public enum SchedulingPolicy {
         FIFO,
-        RANDOM
+        RANDOM,
+        LIFO,
+        // TODO : add RR
     }
 }

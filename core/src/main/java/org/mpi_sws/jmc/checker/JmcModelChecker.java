@@ -20,7 +20,7 @@ public class JmcModelChecker {
 
     private static final Logger LOGGER = LogManager.getLogger(JmcModelChecker.class);
 
-    private JmcCheckerConfiguration config;
+    private final JmcCheckerConfiguration config;
 
     /**
      * Constructs a new JMC model checker with the given configuration.
@@ -69,12 +69,18 @@ public class JmcModelChecker {
                             iteration,
                             e.getMessage());
                 } catch (HaltExecutionException e) {
-                    report.setErrorIteration(iteration);
-                    report.setErrorMessage(e.getMessage());
-                    LOGGER.error(
-                            "Halting execution: {} due to exception: {}",
-                            iteration,
-                            e.getMessage());
+                    if (e.isReexecutionNeeded()) {
+                        // Since we are going to re-execute, do not count this iteration
+                        numIterations++;
+                    } else {
+                        report.setErrorIteration(iteration);
+                        report.setErrorMessage(e.getMessage());
+                        LOGGER.error(
+                                "Halting execution: {} due to exception: {}",
+                                iteration,
+                                e.getMessage());
+                        throw e;
+                    }
                 } catch (Exception e) {
                     successfulIteration = false;
                     // Catchall for any other exceptions that may occur
@@ -116,11 +122,12 @@ public class JmcModelChecker {
             }
         } catch (HaltCheckerException e) {
             if (e.isOkay()) {
-                report.setTotalIterations(iteration - 1);
-                LOGGER.info("Model checking completed covering: {} iterations", iteration - 1);
+                int totalIterations = iteration - 1;
+                report.setTotalIterations(totalIterations);
+                LOGGER.info("Model checking completed covering: {} iterations", totalIterations);
             } else if (e.isTimeout()) {
-                report.setErrorIteration(-1);
-                report.setErrorMessage(e.getMessage());
+                int totalIterations = iteration - 1;
+                report.setTotalIterations(totalIterations);
                 LOGGER.error("Model checker timeout out: {}", e.getMessage());
             } else {
                 report.setErrorIteration(-1);
@@ -145,8 +152,12 @@ public class JmcModelChecker {
             }
         } finally {
             long endTime = System.nanoTime();
-            JmcRuntime.tearDown();
+            JmcRuntime.tearDown(report);
             report.setTotalTimeMillis(endTime - startTime);
+            int totalIterations = report.getTotalIterations();
+            LOGGER.info("Model checking explored: {} completed iterations", totalIterations -
+                    report.getBlockedIterations());
+            LOGGER.info("Model checking explored: {} blocked iterations", report.getBlockedIterations());
         }
         return report;
     }
@@ -193,7 +204,7 @@ public class JmcModelChecker {
             }
         } finally {
             long endTime = System.currentTimeMillis();
-            JmcRuntime.tearDown();
+            JmcRuntime.tearDown(dummyReport);
             dummyReport.setTotalTimeMillis(endTime - startTime);
         }
     }

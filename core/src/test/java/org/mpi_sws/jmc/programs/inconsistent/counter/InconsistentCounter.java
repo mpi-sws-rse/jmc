@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.programs.inconsistent.counter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * This is a simple concurrent counter program that is expected to increment the counter by 3.
  * However, the program is expected to fail because the counter is not thread-safe. In details,
@@ -32,8 +34,8 @@ public class InconsistentCounter extends Thread {
         thread2.join();
         thread3.join();
 
-        assert (counter.count == 3)
-                : " ***The assert did not pass, the counter value is " + counter.count + "***";
+        assertEquals(3, counter.count,
+                " ***The assert did not pass, the counter value is " + counter.count + "***");
 
         System.out.println(
                 "[Final Program Message] : If you see this message, the assert passed. The counter"

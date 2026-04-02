@@ -16,7 +16,9 @@ import java.util.Set;
  */
 public class JmcReadWriteVisitor {
 
-    /** Class visitor for JMC read-write visitor. */
+    /**
+     * Class visitor for JMC read-write visitor.
+     */
     public static class ReadWriteClassVisitor extends ClassVisitor {
 
         private boolean isInterface;
@@ -50,10 +52,6 @@ public class JmcReadWriteVisitor {
                 isInterface = true;
             }
 
-//            if ("org/apache/iceberg/ManifestFile".equals(name) || "org/apache/iceberg/Metrics".equals(name) || "org/apache/iceberg/MetadataColumns".equals(name)) {
-//                skipInstrumentation = true;
-//            }
-
             super.visit(version, access, name, signature, superName, interfaces);
         }
 
@@ -84,7 +82,9 @@ public class JmcReadWriteVisitor {
         }
     }
 
-    /** Method visitor for JMC read-write visitor. */
+    /**
+     * Method visitor for JMC read-write visitor.
+     */
     public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor {
 
         private boolean instrumented;
@@ -99,8 +99,8 @@ public class JmcReadWriteVisitor {
         /**
          * Constructor.
          *
-         * @param mv The underlying MethodVisitor
-         * @param access The method's access flags
+         * @param mv         The underlying MethodVisitor
+         * @param access     The method's access flags
          * @param descriptor The method descriptor (e.g., "(I)V")
          * @param constructor Whether this is a constructor
          * @param className The name of the class being visited
@@ -115,7 +115,6 @@ public class JmcReadWriteVisitor {
             this.className = className;
             this.finalFields = finalFields;
         }
-
 
         private void insertUpdateEventCall(
                 String owner, boolean isStatic, boolean isWrite, String name, String descriptor) {

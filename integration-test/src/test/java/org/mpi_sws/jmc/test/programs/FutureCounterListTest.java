@@ -1,7 +1,5 @@
 package org.mpi_sws.jmc.test.programs;
 
-import org.mpi_sws.jmc.test.FutureCounter;
-import org.mpi_sws.jmc.test.FutureTaskCounter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +7,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FutureCounterListTest {
     public static void main(String[] args) {
