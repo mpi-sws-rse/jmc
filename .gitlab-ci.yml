@@ -1,5 +1,11 @@
 image: gradle:jdk17-alpine
 
+stages:
+  - build
+  - test
+  - review
+  - deploy
+
 before_script:
   - GRADLE_USER_HOME="$(pwd)/.gradle"
   - export GRADLE_USER_HOME
@@ -15,7 +21,6 @@ check:
       - .gradle
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
 
 compile-agent:
   stage: build
@@ -50,7 +55,6 @@ compile-integration-test:
 test:
   stage: test
   script:
-    # Run each test class in its own Gradle invocation to avoid shared static state.
     - |
       set -eu
       TEST_FILES=$(find integration-test/src/test/java -name "*Test.java" \
@@ -107,6 +111,35 @@ test:
       - integration-test/build/test-results/test**/TEST-*.xml
     reports:
       junit: integration-test/build/test-results/test/**/TEST-*.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+claude_review:
+  stage: review
+  image: node:24-alpine3.21
+  before_script:
+    - apk update
+    - apk add --no-cache git bash
+    - npm install -g @anthropic-ai/claude-code
+  script:
+    - echo "Running Claude review in read-only mode..."
+    - >
+      claude
+      -p "Review this merge request in read-only mode.
+      Focus on bugs, risky logic, security issues, missing tests, and confusing code.
+      Do not modify files.
+      Do not create commits.
+      Do not push changes.
+      If you find issues, explain them briefly and clearly."
+      --allowedTools "Read,Grep,Glob"
+      > claude-review.txt
+    - echo "----- Claude review output -----"
+    - cat claude-review.txt
+  artifacts:
+    when: always
+    paths:
+      - claude-review.txt
+    expire_in: 7 days
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
