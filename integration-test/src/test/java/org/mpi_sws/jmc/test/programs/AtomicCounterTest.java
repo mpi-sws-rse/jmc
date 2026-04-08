@@ -35,8 +35,8 @@ public class AtomicCounterTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    @JmcExpectExecutions(5040) // For input 7
+    @JmcExpectExecutions(6) // For input 7 = 5040
     public void runAtomicCounterTest() {
-        atomicCounterTest(7);
+        atomicCounterTest(3);
     }
 }

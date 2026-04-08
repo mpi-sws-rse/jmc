@@ -16,6 +16,10 @@ public class SynchronizedMethodCounter implements SynchronizedCounter {
         }
     }
 
+    public synchronized void increment(int value) {
+        count += value;
+    }
+
     public synchronized int getCount() {
         return count;
     }

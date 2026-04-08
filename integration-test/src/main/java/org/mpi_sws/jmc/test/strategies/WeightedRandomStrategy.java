@@ -4,7 +4,7 @@ import org.mpi_sws.jmc.annotations.JmcIgnoreInstrumentation;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
-import org.mpi_sws.jmc.strategies.TrackActiveTasksStrategy;
+import org.mpi_sws.jmc.strategies.tracker.TrackActiveTasksStrategy;
 
 import java.util.*;
 

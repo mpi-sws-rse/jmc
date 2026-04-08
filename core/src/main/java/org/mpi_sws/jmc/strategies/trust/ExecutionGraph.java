@@ -43,7 +43,11 @@ public class ExecutionGraph {
 
     private final HashMap<Integer, List<Long>> blockedLocks;
 
-    /** Initializes a new execution graph. */
+    private boolean isConsistent = true;
+
+    /**
+     * Initializes a new execution graph.
+     */
     public ExecutionGraph() {
         this.allEvents = new ArrayList<>();
         this.coherencyOrder = new HashMap<>();
@@ -105,6 +109,14 @@ public class ExecutionGraph {
         // in the backward revisits, we ignore it.
         // Start fresh
         this.blockedLocks = new HashMap<>();
+    }
+
+    public boolean isConsistent() {
+        return isConsistent;
+    }
+
+    public void setConsistent(boolean consistent) {
+        isConsistent = consistent;
     }
 
     /**
@@ -202,7 +214,12 @@ public class ExecutionGraph {
     protected int getTOIndex(ExecutionGraphNode node) {
         // A slight optimization to get start from the max vector clock value. The assumption is
         // that is at least after this value in the TO.
-        for (int i = node.getVectorClock().max(); i < allEvents.size(); i++) {
+        if (node.getEvent().isInit()) {
+            return 0;
+        }
+        // TODO: When we use node.getVectorClock().max() as a hint to start searching from, sometimes it
+        // TODO: it leads to wrong results. Investigate why.
+        for (int i = 0; i < allEvents.size(); i++) {
             if (allEvents.get(i) == node) {
                 return i;
             }
@@ -250,10 +267,7 @@ public class ExecutionGraph {
         if (taskId < 0 || taskId >= taskEvents.size()) {
             return false;
         }
-        if (timestamp < 0 || timestamp >= taskEvents.get(taskId).size()) {
-            return false;
-        }
-        return true;
+        return timestamp >= 0 && timestamp < taskEvents.get(taskId).size();
     }
 
     /**
@@ -517,7 +531,7 @@ public class ExecutionGraph {
      * Returns the nodes that are not _porf_-before the given node except the last node in the
      * returned list. Assumes that the given nodes are ordered in reverse CO order.
      *
-     * @param node The node to split before.
+     * @param node  The node to split before.
      * @param nodes The nodes to split.
      * @return The nodes that are not _porf_-before the given node.
      */
@@ -695,7 +709,7 @@ public class ExecutionGraph {
      * Constructs a backward revisit view of the ExecutionGraph.
      *
      * @param write The write event
-     * @param read The read event that the write needs to backward revisit
+     * @param read  The read event that the write needs to backward revisit
      * @return The backward revisit view of the ExecutionGraph
      */
     public BackwardRevisitView revisitView(ExecutionGraphNode write, ExecutionGraphNode read) {
@@ -840,7 +854,7 @@ public class ExecutionGraph {
      * <p>Invalidates the total order and the vector clocks of events in the graph. The concern of
      * fixing the total order and the vector clocks is passed to the calling function.
      *
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public void changeReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
@@ -862,7 +876,7 @@ public class ExecutionGraph {
      *
      * <p>Does not validate if there is an existing reads-from edge to the corresponding read
      *
-     * @param read The read event.
+     * @param read  The read event.
      * @param write The write event.
      */
     public void setReadsFrom(ExecutionGraphNode read, ExecutionGraphNode write) {
@@ -999,7 +1013,9 @@ public class ExecutionGraph {
     //        }
     //    }
 
-    /** Recomputes the vector clocks of all nodes in the execution graph. */
+    /**
+     * Recomputes the vector clocks of all nodes in the execution graph.
+     */
     public void recomputeVectorClocks() {
 
         TopologicalSorter topoSorter = new TopologicalSorter(this);
@@ -1135,12 +1151,16 @@ public class ExecutionGraph {
         }
     }
 
-    /** Returns an iterator walking through the nodes in a topological sort order. */
+    /**
+     * Returns an iterator walking through the nodes in a topological sort order.
+     */
     public List<ExecutionGraphNode> iterator() throws TopologicalSorter.GraphCycleException {
         return (new TopologicalSorter(this)).sort();
     }
 
-    /** Returns List of nodes while silently ignoring any errors with cycles * */
+    /**
+     * Returns List of nodes while silently ignoring any errors with cycles *
+     */
     public List<ExecutionGraphNode> unsafeIterator() {
         try {
             return (new TopologicalSorter(this)).sort();
@@ -1317,7 +1337,7 @@ public class ExecutionGraph {
                         throw HaltCheckerException.error(
                                 String.format(
                                         "Dangling edge found from %s to %s",
-                                        node.key().toString(), key.toString()));
+                                        node.key().toString(), key));
                     }
                 }
             }
@@ -1344,7 +1364,7 @@ public class ExecutionGraph {
                 ExecutionGraphNode next = topologicalSort.get(i + 1);
                 if (EventUtils.isLockAcquireWrite(next.getEvent())
                         && Objects.equals(
-                                node.getEvent().getTaskId(), next.getEvent().getTaskId())) {
+                        node.getEvent().getTaskId(), next.getEvent().getTaskId())) {
                     // Next event is a WriteEx event of the same task ID
                     continue;
                 }
@@ -1354,7 +1374,7 @@ public class ExecutionGraph {
                     ExecutionGraphNode nextNode = topologicalSort.get(j);
                     if (EventUtils.isLockAcquireWrite(nextNode.getEvent())
                             && Objects.equals(
-                                    node.getEvent().getTaskId(), nextNode.getEvent().getTaskId())) {
+                            node.getEvent().getTaskId(), nextNode.getEvent().getTaskId())) {
                         // Move the WriteEx event before the ReadEx event
                         fixedTopologicalSort.add(nextNode);
 
@@ -1368,12 +1388,16 @@ public class ExecutionGraph {
         return fixedTopologicalSort;
     }
 
-    /** Returns true if the graph contains only the initial event. */
+    /**
+     * Returns true if the graph contains only the initial event.
+     */
     public boolean isEmpty() {
         return allEvents.size() == 1 && allEvents.get(0).getEvent().isInit();
     }
 
-    /** Clears the execution graph. */
+    /**
+     * Clears the execution graph.
+     */
     public void clear() {
         allEvents.clear();
         coherencyOrder.clear();
@@ -1535,7 +1559,9 @@ public class ExecutionGraph {
         return blockedLocks.get(location).contains(taskId);
     }
 
-    /** Generic visitor interface for the execution graph nodes. */
+    /**
+     * Generic visitor interface for the execution graph nodes.
+     */
     public interface ExecutionGraphNodeVisitor {
         void visit(ExecutionGraphNode node);
     }
@@ -1646,7 +1672,9 @@ public class ExecutionGraph {
             try {
                 while (!queue.isEmpty()) {
                     ExecutionGraphNode node = queue.pop();
-                    output.add(node.key());
+                    if (!EventUtils.isBlockingLabel(node.getEvent())) {
+                        output.add(node.key());
+                    }
                     visitor.visit(node);
 
                     List<Event.Key> toAdd = new ArrayList<>();
@@ -1682,7 +1710,9 @@ public class ExecutionGraph {
             }
         }
 
-        /** Exception thrown when the graph has cycles. */
+        /**
+         * Exception thrown when the graph has cycles.
+         */
         public static class GraphCycleException extends Exception {
             /**
              * Initializes a new graph cycle exception with the given message.
@@ -1756,5 +1786,222 @@ public class ExecutionGraph {
             }
         }
         return true;
+    }
+
+    public List<ExecutionGraphNode> getAllPoMaxNode() {
+        List<ExecutionGraphNode> result = new ArrayList<>();
+        // loop over all the lists of the taskEvents and collect the last event of each list
+        for (List<ExecutionGraphNode> taskEventList : taskEvents) {
+            if (!taskEventList.isEmpty()) {
+                result.add(taskEventList.get(taskEventList.size() - 1));
+            }
+        }
+        return result;
+    }
+
+    public boolean isCoMax(Event event) {
+        if (EventUtils.isWrite(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> succ = node.getSuccessors(Relation.Coherency);
+                if (succ != null && !succ.isEmpty()) {
+                    return false;
+                }
+            } catch (NoSuchEventException e) {
+                throw HaltCheckerException.error(
+                        "The write event does not exist in the execution graph.");
+            }
+
+        }
+        return true;
+    }
+
+    public boolean isRfMax(Event event) {
+        if (EventUtils.isWrite(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> succ = node.getSuccessors(Relation.ReadsFrom);
+                if (succ != null && !succ.isEmpty()) {
+                    return false;
+                }
+            } catch (NoSuchEventException e) {
+                throw HaltCheckerException.error(
+                        "The write event does not exist in the execution graph.");
+            }
+        }
+        return true;
+    }
+
+    public boolean isFrMax(Event event) {
+        if (EventUtils.isRead(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> pred = node.getPredecessors(Relation.ReadsFrom);
+                if (pred == null || pred.isEmpty()) {
+                    throw HaltCheckerException.error(
+                            "The read event does not have a FR predecessor.");
+                }
+                ExecutionGraphNode w = getEventNode(pred.get(0));
+                return isCoMax(w.getEvent());
+            } catch (NoSuchEventException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return true;
+    }
+
+    public boolean isTcMax(Event event) {
+        if (EventUtils.isThreadStart(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> succ = node.getSuccessors(Relation.ThreadCreation);
+                if (succ != null && !succ.isEmpty()) {
+                    return false;
+                }
+            } catch (NoSuchEventException e) {
+                throw HaltCheckerException.error(
+                        "The thread start event does not exist in the execution graph.");
+            }
+        }
+        return true;
+    }
+
+    public boolean isStMax(Event event) {
+        try {
+            ExecutionGraphNode node = getEventNode(event.key());
+            List<Event.Key> succ = node.getSuccessors(Relation.ThreadStart);
+            if (succ != null && !succ.isEmpty()) {
+                return false;
+            }
+        } catch (NoSuchEventException e) {
+            throw HaltCheckerException.error(
+                    "The thread start event does not exist in the execution graph.");
+        }
+
+        return true;
+    }
+
+    public boolean isJtMax(Event event) {
+        if (EventUtils.isThreadFinish(event)) {
+            try {
+                ExecutionGraphNode node = getEventNode(event.key());
+                List<Event.Key> succ = node.getSuccessors(Relation.ThreadJoin);
+                if (succ != null && !succ.isEmpty()) {
+                    return false;
+                }
+            } catch (NoSuchEventException e) {
+                throw HaltCheckerException.error(
+                        "The thread join event does not exist in the execution graph.");
+            }
+        }
+
+        return true;
+    }
+
+    public boolean isStartMaxWithStarter(Event e) {
+        if (e == null) {
+            throw HaltCheckerException.error(
+                    "The event parameter is null");
+        }
+
+        if (EventUtils.isThreadStart(e)) {
+            long startedBy = EventUtils.getStartedBy(e);
+            ExecutionGraphNode starterPoMaxNode = getPoMaxNode(startedBy);
+            List<Event.Key> succ = starterPoMaxNode.getSuccessors(Relation.ThreadStart);
+            // The following if checks if the PO-MAX event of the starter thread is still the cause event
+            return !succ.isEmpty();
+        } else {
+            throw HaltCheckerException.error(
+                    "The event parameter is not a start event");
+        }
+    }
+
+    public ExecutionGraphNode getPoMaxNode(long taskId) {
+        if (taskId < 0 || taskId >= taskEvents.size()) {
+            throw HaltCheckerException.error("Invalid task ID: " + taskId);
+        }
+        List<ExecutionGraphNode> taskEventList = taskEvents.get(Math.toIntExact(taskId));
+        if (taskEventList.isEmpty()) {
+            return null;
+        }
+        return taskEventList.get(taskEventList.size() - 1);
+    }
+
+    public ExecutionGraphNode getFirstEventOfTask(long taskId) {
+        if (taskId < 0 || taskId >= taskEvents.size()) {
+            throw HaltCheckerException.error("Invalid task ID: " + taskId);
+        }
+        List<ExecutionGraphNode> taskEventList = taskEvents.get(Math.toIntExact(taskId));
+        if (taskEventList.isEmpty()) {
+            return null;
+        }
+        return taskEventList.get(0);
+    }
+
+    public ExecutionGraphNode getLastNodeOfTask(long taskId) {
+        if (taskId < 0 || taskId >= taskEvents.size()) {
+            throw HaltCheckerException.error("Invalid task ID: " + taskId);
+        }
+        List<ExecutionGraphNode> taskEventList = taskEvents.get(Math.toIntExact(taskId));
+        if (taskEventList.isEmpty()) {
+            return null;
+        }
+        return taskEventList.get(taskEventList.size() - 1);
+    }
+
+    public boolean isRdxInconsistent(ExecutionGraphNode wrxNode) {
+        int wrxNodeIndex = taskEvents.get(Math.toIntExact(wrxNode.getEvent().getTaskId())).indexOf(wrxNode);
+        int rdxNodeIndex = wrxNodeIndex - 1;
+        if (rdxNodeIndex < 0) {
+            throw HaltCheckerException.error("The WRx node does not have a preceding RDX node.");
+        }
+
+        ExecutionGraphNode rdxNode = taskEvents.get(Math.toIntExact(wrxNode.getEvent().getTaskId())).get(rdxNodeIndex);
+
+        if (!EventUtils.isLockAcquireRead(rdxNode.getEvent())) {
+            throw HaltCheckerException.error("The preceding event is not a RDX event.");
+        }
+
+        List<Event.Key> rfPredecessors = rdxNode.getPredecessors(Relation.ReadsFrom);
+        if (rfPredecessors.isEmpty() || rfPredecessors.size() != 1) {
+            throw HaltCheckerException.error("The RDX event does not have exactly one ReadsFrom predecessor.");
+        }
+        Event.Key rfKey = rfPredecessors.get(0);
+        ExecutionGraphNode rfNode;
+        try {
+            rfNode = getEventNode(rfKey);
+        } catch (NoSuchEventException e) {
+            throw HaltCheckerException.error("The ReadsFrom predecessor event does not exist in the execution graph.");
+        }
+
+        List<Event.Key> rfSuccessors = rfNode.getSuccessors(Relation.ReadsFrom);
+        return rfSuccessors.size() <= 1;
+    }
+
+    public boolean isBlocked() {
+        boolean blocked = false;
+        // Iterate over taskEvents to see if any task has a blocking label as its last event, or
+        // the event before last is a blocked-assume event (the last event is the noop event representing the finish)
+        for (List<ExecutionGraphNode> taskEventList : taskEvents) {
+            if (!taskEventList.isEmpty()) {
+                ExecutionGraphNode lastEvent = taskEventList.get(taskEventList.size() - 1);
+                if (EventUtils.isBlockingLabel(lastEvent.getEvent())) {
+                    blocked = true;
+                    break;
+                }
+                if (taskEventList.size() > 1) {
+                    ExecutionGraphNode beforeLastEvent = taskEventList.get(taskEventList.size() - 2);
+                    if (EventUtils.isBlockedAssume(beforeLastEvent.getEvent())) {
+                        blocked = true;
+                        break;
+                    }
+                }
+            }
+        }
+        return blocked;
+    }
+
+    public int size() {
+        return allEvents.size();
     }
 }

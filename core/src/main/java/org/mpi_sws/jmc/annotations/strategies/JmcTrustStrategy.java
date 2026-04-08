@@ -19,7 +19,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JmcTrustStrategy {
 
-    /** The seed for the scheduling strategy. */
+    /**
+     * The seed for the scheduling strategy.
+     */
     long seed() default 0;
 
     /**
@@ -30,9 +32,17 @@ public @interface JmcTrustStrategy {
      */
     TrustStrategy.SchedulingPolicy schedulingPolicy() default TrustStrategy.SchedulingPolicy.RANDOM;
 
-    /** Debug flag to enable graph logging. */
+    /**
+     * Debug flag to enable graph logging.
+     */
     boolean debug() default false;
 
-    /** The path to store the execution graphs explored. */
+    /**
+     * The path to store the execution graphs explored.
+     */
     String reportPath() default "build/test-results/jmc-report";
+
+    boolean loggerTree() default false;
+
+    String solver() default "off";
 }

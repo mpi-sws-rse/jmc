@@ -6,6 +6,8 @@ import org.mpi_sws.jmc.test.sync.SynchronizedBlockCounter;
 import org.mpi_sws.jmc.test.sync.SynchronizedMethodCounter;
 import org.mpi_sws.jmc.test.sync.SynchronizedCounterThread;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class SynchronizedCounterTest {
 
     public void twoCounterProgram() {
@@ -27,15 +29,14 @@ public class SynchronizedCounterTest {
             e.printStackTrace();
         }
 
-        assert counter.getCount() == 3;
+        assertEquals(3, counter.getCount());
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug = true)
+    @JmcCheckConfiguration(numIterations = 10)
     public void testRandomSynchronizedCounter() {
         twoCounterProgram();
     }
-
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "trust")
@@ -64,11 +65,11 @@ public class SynchronizedCounterTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assert counter.getCount() == 4;
+        assertEquals(4, counter.getCount());
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug = true)
+    @JmcCheckConfiguration(numIterations = 10)
     public void testRandomSynchronizedBlockCounter() {
         testCounterSyncBlockProgram();
     }

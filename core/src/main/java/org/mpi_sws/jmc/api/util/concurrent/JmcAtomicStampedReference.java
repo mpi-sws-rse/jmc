@@ -3,13 +3,14 @@ package org.mpi_sws.jmc.api.util.concurrent;
 import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
 
+// TODO : FIX THIS CLASS
 public class JmcAtomicStampedReference<V> {
 
     private int stamp;
 
     private V value;
 
-    private JmcReentrantLock lock;
+    private final JmcReentrantLock lock;
 
     public JmcAtomicStampedReference(V initialValue, int initialStamp) {
         JmcRuntimeUtils.writeEventWithoutYield(

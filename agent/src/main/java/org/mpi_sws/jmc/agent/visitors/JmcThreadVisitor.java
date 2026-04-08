@@ -2,6 +2,9 @@ package org.mpi_sws.jmc.agent.visitors;
 
 import org.objectweb.asm.*;
 
+import java.util.Arrays;
+import java.util.Set;
+
 /**
  * Represents a JMC thread visitor. Adds instrumentation to change Thread calls to JmcThread calls
  */
@@ -105,7 +108,6 @@ public class JmcThreadVisitor {
             @Override
             public void visitMethodInsn(
                     int opcode, String owner, String name, String descriptor, boolean isInterface) {
-                // Modify constructor calls to use JmcThread
                 super.visitMethodInsn(
                         opcode,
                         replaceType(owner),
@@ -129,6 +131,46 @@ public class JmcThreadVisitor {
                     int index) {
                 super.visitLocalVariable(
                         name, replaceDescriptor(descriptor), signature, start, end, index);
+            }
+
+            @Override
+            public void visitInvokeDynamicInsn(
+                    String name, String descriptor, Handle bsm, Object... bsmArgs) {
+                boolean isThreadType = descriptor.contains(THREAD_PATH)
+                        || (bsm != null && bsm.getOwner().contains(THREAD_PATH));
+
+                // Check if descriptor or bootstrap method involves Atomic types
+                if (isThreadType) {
+                    Handle newBsm = bsm;
+                    String newDescriptor = replaceDescriptor(descriptor);
+                    if (bsm != null) {
+                        String owner = bsm.getOwner();
+                        String newOwner = replaceType(owner);
+                        String bsmDesc = bsm.getDesc();
+                        String newbsmDesc = replaceDescriptor(bsmDesc);
+                        newBsm = new Handle(bsm.getTag(), newOwner, bsm.getName(), newbsmDesc, bsm.isInterface());
+                    }
+                    Object[] tempBsmArgs = Arrays.stream(bsmArgs).toArray();
+                    Object[] newBsmArgs = new Object[tempBsmArgs.length];
+                    for (int i = 0; i < tempBsmArgs.length; i++) {
+                        if (tempBsmArgs[i] instanceof Type t) {
+                            String className = t.getInternalName();
+                            newBsmArgs[i] = Type.getType(replaceType(className));
+                        }
+                        if (tempBsmArgs[i] instanceof Handle h) {
+                            String desc = replaceDescriptor(h.getDesc());
+                            newBsmArgs[i] = new Handle(
+                                    h.getTag(),
+                                    replaceType(h.getOwner()),
+                                    h.getName(),
+                                    desc,
+                                    h.isInterface());
+                        }
+                    }
+                    super.visitInvokeDynamicInsn(name, newDescriptor, newBsm, newBsmArgs);
+                } else {
+                    super.visitInvokeDynamicInsn(name, descriptor, bsm, bsmArgs);
+                }
             }
         }
 
@@ -188,6 +230,7 @@ public class JmcThreadVisitor {
      * calls to "run1" and "join1" respectively.
      */
     public static class ThreadCallReplacerMethodVisitor extends MethodVisitor {
+        private static final Set<String> JOIN_DESCRIPTORS = Set.of("()V", "(J)V", "(JI)V", "(Ljava/time/Duration;)Z");
 
         /**
          * Constructor.
@@ -205,7 +248,7 @@ public class JmcThreadVisitor {
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
-            if (name.equals("join") && opcode == Opcodes.INVOKEVIRTUAL) {
+            if (name.equals("join") && opcode == Opcodes.INVOKEVIRTUAL && JOIN_DESCRIPTORS.contains(descriptor)) {
                 // Duplicate top of the stack (the object on which join() is called)
                 mv.visitInsn(Opcodes.DUP);
 

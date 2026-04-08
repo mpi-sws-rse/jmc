@@ -6,7 +6,7 @@ plugins {
     id("maven-publish")
     id("com.gradleup.shadow") version "9.0.0-beta9"
     id("java-library")
-    signing
+//    signing
 }
 
 repositories {
@@ -33,6 +33,9 @@ dependencies {
     implementation("org.ow2.asm:asm:9.8")
     implementation("org.ow2.asm:asm-util:9.8")
     implementation(project(":core"))
+    implementation("org.apache.logging.log4j:log4j-api:2.24.3")
+    implementation("org.apache.logging.log4j:log4j-api-kotlin:1.5.0")
+    implementation("org.apache.logging.log4j:log4j-core:2.24.3")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
@@ -113,12 +116,12 @@ publishing {
     }
     repositories {
         mavenLocal()
-        maven {
-            setUrl(layout.buildDirectory.dir("staging-deploy"))
-        }
+//        maven {
+//            setUrl(layout.buildDirectory.dir("staging-deploy"))
+//        }
     }
 }
 
-signing {
-    sign(publishing.publications["maven"])
-}
+//signing {
+//    sign(publishing.publications["maven"])
+//}

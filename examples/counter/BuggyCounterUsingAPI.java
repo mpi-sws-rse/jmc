@@ -4,6 +4,8 @@ import org.mpisws.jmc.runtime.JmcRuntime;
 import org.mpisws.jmc.runtime.RuntimeEvent;
 import org.mpisws.jmc.util.concurrent.JmcThread;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class BuggyCounterUsingAPI {
     private int counter;
 
@@ -70,7 +72,7 @@ public class BuggyCounterUsingAPI {
         try {
             thread1.join1();
             thread2.join1();
-            assert counter.getCounter() == 2;
+            assertEquals(2, counter.getCounter());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

@@ -3,8 +3,13 @@ package org.mpi_sws.jmc.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Represents an event that occurs during the execution of a program. */
+import static org.mpi_sws.jmc.api.JmcObject.handleToString;
+
+/**
+ * Represents an event that occurs during the execution of a program.
+ */
 public class JmcRuntimeEvent {
+
 
     // The type of the event
     private Type type;
@@ -16,7 +21,7 @@ public class JmcRuntimeEvent {
     /**
      * Constructs a new runtime event with the specified type, task ID, and parameters.
      *
-     * @param type the type of the event
+     * @param type   the type of the event
      * @param taskId the ID of the task that generated the event
      * @param params the parameters of the event
      */
@@ -31,7 +36,7 @@ public class JmcRuntimeEvent {
      *
      * <p>The parameters of the event are initialized to an empty map.
      *
-     * @param type the type of the event
+     * @param type   the type of the event
      * @param taskId the ID of the task that generated the event
      */
     public JmcRuntimeEvent(Type type, Long taskId) {
@@ -97,7 +102,7 @@ public class JmcRuntimeEvent {
     /**
      * Sets the value of the parameter with the specified key.
      *
-     * @param key the key of the parameter
+     * @param key   the key of the parameter
      * @param value the value of the parameter
      */
     public void setParam(String key, Object value) {
@@ -110,42 +115,69 @@ public class JmcRuntimeEvent {
      *
      * @param key the key of the parameter
      * @return the value of the parameter as an object of the specified class. Can throw an
-     *     exception when casting.
+     * exception when casting.
      */
     public <T> T getParam(String key) {
         return (T) params.get(key);
     }
 
-    @Override
-    public String toString() {
-        return "RuntimeEvent{" + "type=" + type + ", taskId=" + taskId + ", params=" + params + '}';
+    private String paramToString(Map<String, Object> params) {
+        if (params == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            if (!sb.isEmpty()) {
+                sb.append(", ");
+            }
+            Object o = entry.getValue();
+            if (entry.getKey().equals("instance")) {
+                sb.append(handleToString(o));
+            } else {
+                sb.append(o);
+            }
+        }
+        return sb.toString();
     }
 
-    /** A builder for constructing a {@link JmcRuntimeEvent} object. */
+    @Override
+    public String toString() {
+        return "RuntimeEvent{" + "type=" + type + ", taskId=" + taskId + ", params=" + paramToString(params) + '}';
+    }
+
+    /**
+     * A builder for constructing a {@link JmcRuntimeEvent} object.
+     */
     public static class Builder {
         private Type type;
         private Long taskId;
         private Map<String, Object> params;
 
-        /** Sets the type of the event. */
+        /**
+         * Sets the type of the event.
+         */
         public Builder type(Type type) {
             this.type = type;
             return this;
         }
 
-        /** Sets the ID of the task that generated the event. */
+        /**
+         * Sets the ID of the task that generated the event.
+         */
         public Builder taskId(Long taskId) {
             this.taskId = taskId;
             return this;
         }
 
-        /** Sets the parameters of the event. */
+        /**
+         * Sets the parameters of the event.
+         */
         public Builder params(Map<String, Object> params) {
             this.params = params;
             return this;
         }
 
-        /** Adds a parameter to the event. */
+        /**
+         * Adds a parameter to the event.
+         */
         public Builder param(String key, Object value) {
             if (params == null) {
                 params = new HashMap<>();
@@ -154,7 +186,9 @@ public class JmcRuntimeEvent {
             return this;
         }
 
-        /** Builds the {@link JmcRuntimeEvent} object. */
+        /**
+         * Builds the {@link JmcRuntimeEvent} object.
+         */
         public JmcRuntimeEvent build() {
             return new JmcRuntimeEvent(type, taskId, params);
         }
@@ -213,7 +247,11 @@ public class JmcRuntimeEvent {
         CON_ASSUME_EVENT,
         SYM_ASSUME_EVENT,
         ASSUME_BLOCKED_EVENT,
+
         WAIT_EVENT,
+        WAKEUP_EVENT,
+        NOTIFY_EVENT,
+        NOTIFY_ALL_EVENT,
 
         // Task events when using an executor
         TASK_ASSIGNED_EVENT,
@@ -231,5 +269,12 @@ public class JmcRuntimeEvent {
         SYMB_OP_EVENT,
         SYMB_ASSUME_EVENT,
         SYMB_ASSERT_EVENT,
+
+        // Static Initialization Event
+        START_STATIC_INIT_EVENT,
+        END_STATIC_INIT_EVENT,
+
+        //Executor tracking event
+        EXECUTOR_SHUTDOWN_EVENT,
     }
 }

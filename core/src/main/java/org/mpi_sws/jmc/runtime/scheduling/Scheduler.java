@@ -25,19 +25,29 @@ public class Scheduler {
 
     private static final Logger LOGGER = LogManager.getLogger(Scheduler.class.getName());
 
-    /** The thread manager used to manage the thread states. */
+    /**
+     * The thread manager used to manage the thread states.
+     */
     private TaskManager taskManager;
 
-    /** The scheduling strategy used to decide which thread to schedule. */
+    /**
+     * The scheduling strategy used to decide which thread to schedule.
+     */
     private final SchedulingStrategy strategy;
 
-    /** The ID of the current thread. Protected by the lock for accesses to read and write */
+    /**
+     * The ID of the current thread. Protected by the lock for accesses to read and write
+     */
     private Long currentTask;
 
     private final Object currentTaskLock = new Object();
 
-    /** The scheduler thread instance. */
+    /**
+     * The scheduler thread instance.
+     */
     private final SchedulerThread schedulerThread;
+
+    private boolean stopAllMode = false;
 
     /**
      * Constructs a new Scheduler object.
@@ -52,7 +62,9 @@ public class Scheduler {
         this.currentTask = 0L;
     }
 
-    /** Starts the scheduler thread. */
+    /**
+     * Starts the scheduler thread.
+     */
     public void start() {
         schedulerThread.start();
     }
@@ -61,7 +73,7 @@ public class Scheduler {
      * Initializes the scheduler with the task manager and the main thread.
      *
      * @param taskManager the task manager
-     * @param mainTaskId the ID of the main thread
+     * @param mainTaskId  the ID of the main thread
      */
     public void init(TaskManager taskManager, Long mainTaskId) {
         this.taskManager = taskManager;
@@ -75,6 +87,8 @@ public class Scheduler {
      */
     public void initIteration(int iteration, JmcModelCheckerReport report)
             throws HaltCheckerException {
+        // Ask the tastManager if the all thread are finished. If not block it
+        // clear the threads state
         strategy.initIteration(iteration, report);
     }
 
@@ -108,11 +122,12 @@ public class Scheduler {
      */
     protected <T extends SchedulingChoiceValue> void scheduleTask(SchedulingChoice<T> choice) {
         if (choice.isBlockExecution()) {
-            taskManager.stopAll();
+            LOGGER.debug("Stopping all tasks.");
+            startStopAllMode();
         } else if (choice.isBlockTask()) {
             Long taskId = choice.getTaskId();
             setCurrentTask(taskId);
-            taskManager.error(taskId, new HaltTaskException(taskId));
+            taskManager.error(taskId, HaltTaskException.blocked(taskId));
         } else {
             Long taskId = choice.getTaskId();
             if (taskId == null) {
@@ -138,12 +153,35 @@ public class Scheduler {
         }
     }
 
+    private void startStopAllMode() {
+        stopAllMode = true;
+        doNextStop();
+    }
+
+    private void doNextStop() {
+        Long taskId = taskManager.doNextStop();
+        if (taskId == -1L) {
+            LOGGER.error("Task ID is null, cannot stop the task.");
+            throw HaltExecutionException.error("Task ID is null, cannot stop the task.");
+        }
+        setCurrentTask(taskId);
+        taskManager.stopTask(taskId);
+        if (taskId == 1L) {
+            // Main task stopped, exit stop all mode
+            stopAllMode = false;
+            LOGGER.debug("Exiting stop all mode.");
+        }
+    }
+
     /**
      * Updates the event in the scheduling strategy.
      *
      * @param event the event to be updated
      */
     public void updateEvent(JmcRuntimeEvent event) throws HaltTaskException {
+        if (isInStopAllMode()) {
+            return;
+        }
         strategy.updateEvent(event);
     }
 
@@ -156,15 +194,27 @@ public class Scheduler {
      * @throws TaskAlreadyPaused if the current task is already paused
      */
     public CompletableFuture<?> yield() throws TaskAlreadyPaused {
-        CompletableFuture<?> future;
+        if (!isInStopAllMode()) {
+            CompletableFuture<?> future;
+            synchronized (currentTaskLock) {
+                future = taskManager.pause(currentTask);
+                currentTask = null;
+            }
+            // Release the scheduler thread
+            LOGGER.debug("Enabling scheduler thread.");
+            schedulerThread.enable();
+            return future;
+        }
+        return null;
+    }
+
+    public void yieldWithoutPausing() {
         synchronized (currentTaskLock) {
-            future = taskManager.pause(currentTask);
             currentTask = null;
         }
         // Release the scheduler thread
         LOGGER.debug("Enabling scheduler thread.");
         schedulerThread.enable();
-        return future;
     }
 
     /**
@@ -177,17 +227,22 @@ public class Scheduler {
      * @throws TaskAlreadyPaused if the task is already paused
      */
     public CompletableFuture<?> yield(Long taskId) throws TaskAlreadyPaused {
-        CompletableFuture<?> future = taskManager.pause(taskId);
-        synchronized (currentTaskLock) {
-            currentTask = null;
+        if (!isInStopAllMode()) {
+            CompletableFuture<?> future = taskManager.pause(taskId);
+            synchronized (currentTaskLock) {
+                currentTask = null;
+            }
+            // Release the scheduler thread
+            LOGGER.debug("Enabling scheduler thread.");
+            schedulerThread.enable();
+            return future;
         }
-        // Release the scheduler thread
-        LOGGER.debug("Enabling scheduler thread.");
-        schedulerThread.enable();
-        return future;
+        return null;
     }
 
-    /** Resets the TaskManager and the scheduling strategy for a new iteration. */
+    /**
+     * Resets the TaskManager and the scheduling strategy for a new iteration.
+     */
     public void resetIteration(int iteration) {
         strategy.resetIteration(iteration);
     }
@@ -204,21 +259,33 @@ public class Scheduler {
         }
     }
 
-    /** Shuts down the scheduler. */
-    public void shutdown() {
+    /**
+     * Shuts down the scheduler.
+     */
+    public void shutdown(JmcModelCheckerReport report) {
         schedulerThread.shutdown();
-        strategy.teardown();
+        strategy.teardown(report);
     }
 
-    /** The SchedulerThread class is responsible for scheduling the tasks. */
+    public boolean isInStopAllMode() {
+        return stopAllMode;
+    }
+
+    /**
+     * The SchedulerThread class is responsible for scheduling the tasks.
+     */
     private static class SchedulerThread extends Thread {
 
         private static final Logger LOGGER = LogManager.getLogger(SchedulerThread.class.getName());
 
-        /** The scheduler instance. */
+        /**
+         * The scheduler instance.
+         */
         private final Scheduler scheduler;
 
-        /** The scheduling strategy used by the scheduler. */
+        /**
+         * The scheduling strategy used by the scheduler.
+         */
         private final SchedulingStrategy strategy;
 
         /**
@@ -235,7 +302,7 @@ public class Scheduler {
          * Constructs a new SchedulerThread object.
          *
          * @param scheduler the scheduler instance
-         * @param strategy the scheduling strategy
+         * @param strategy  the scheduling strategy
          */
         public SchedulerThread(
                 Scheduler scheduler,
@@ -249,7 +316,9 @@ public class Scheduler {
             this.schedulerTrySleepTimeNanos = schedulerTrySleepTimeNanos;
         }
 
-        /** Enables the scheduler. */
+        /**
+         * Enables the scheduler.
+         */
         public void enable() {
             try {
                 enablingQueue.put(false);
@@ -258,7 +327,9 @@ public class Scheduler {
             }
         }
 
-        /** Shuts down the scheduler. */
+        /**
+         * Shuts down the scheduler.
+         */
         public void shutdown() {
             try {
                 enablingQueue.put(true);
@@ -268,7 +339,9 @@ public class Scheduler {
             }
         }
 
-        /** The main loop of the scheduler thread. */
+        /**
+         * The main loop of the scheduler thread.
+         */
         @Override
         public void run() {
             LOGGER.info("Scheduler thread started.");
@@ -285,6 +358,12 @@ public class Scheduler {
                     // It is possible that the scheduler is enabled but no task is available.
                     // The solution is to just wait for something to become available. and throw an
                     // error otherwise.
+
+                    if (scheduler.isInStopAllMode()) {
+                        scheduler.doNextStop();
+                        continue;
+                    }
+
                     SchedulingChoice<?> nextTask = null;
                     for (int i = 0; i < schedulerTries; i++) {
                         nextTask = strategy.nextTask();

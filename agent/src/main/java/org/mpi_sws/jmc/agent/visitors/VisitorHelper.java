@@ -1,8 +1,11 @@
 package org.mpi_sws.jmc.agent.visitors;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+
+import java.util.*;
 
 /**
  * Helper class for inserting instrumentation to generate RuntimeEvents for field read and write
@@ -102,7 +105,102 @@ public class VisitorHelper {
         mv.visitInsn(Opcodes.POP);
     }
 
-    private static void addObjectConverter(MethodVisitor mv, Type fieldType) {
+
+    /**
+     * Inserts instrumentation for a static field read AFTER the GETSTATIC instruction.
+     * At this point, the field value is on top of the stack and must remain there.
+     *
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param owner The internal name of the class containing the field.
+     * @param name The name of the field.
+     * @param descriptor The descriptor of the field.
+     */
+    public static void insertStaticReadAfter(
+            MethodVisitor mv, String owner, String name, String descriptor) {
+        // Stack before: [value from GETSTATIC]
+        // Stack after: [value from GETSTATIC] (unchanged)
+
+        // The readEventWithoutYield call doesn't need the field value,
+        // just the metadata, so we don't touch the stack value
+        mv.visitInsn(Opcodes.ACONST_NULL); // null object reference for static field
+        mv.visitLdcInsn(owner);
+        mv.visitLdcInsn(name);
+        mv.visitLdcInsn(descriptor);
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
+                "readEventWithoutYield",
+                "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+                false);
+        // Stack: [value] - original value remains untouched
+    }
+
+    /**
+     * Inserts instrumentation BEFORE a static field write to prepare for post-write event.
+     * This duplicates the value so it can be used after PUTSTATIC consumes it.
+     *
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param descriptor The descriptor of the field.
+     */
+    public static void insertStaticWriteBefore(
+            MethodVisitor mv, String descriptor) {
+        // Stack before: [value to write]
+        // Stack after: [value to write, value copy]
+
+        Type fieldType = Type.getType(descriptor);
+        boolean isLongOrDouble = fieldType.getSize() == 2;
+
+        if (isLongOrDouble) {
+            mv.visitInsn(Opcodes.DUP2); // Duplicate long/double value
+        } else {
+            mv.visitInsn(Opcodes.DUP); // Duplicate regular value
+        }
+        // Stack: [value, value] - one will be consumed by PUTSTATIC, one for event
+    }
+
+    /**
+     * Inserts instrumentation for a static field write AFTER the PUTSTATIC instruction.
+     * Assumes the value was duplicated before PUTSTATIC via insertStaticWriteBefore.
+     *
+     * @param mv The MethodVisitor to which the instrumentation will be added.
+     * @param owner The internal name of the class containing the field.
+     * @param name The name of the field.
+     * @param descriptor The descriptor of the field.
+     */
+    public static void insertStaticWriteAfter(
+            MethodVisitor mv, String owner, String name, String descriptor) {
+        // Stack before: [value copy] (the duplicate from insertStaticWriteBefore)
+        // Stack after: [] (clean)
+
+        Type fieldType = Type.getType(descriptor);
+
+        // Convert the value to an Object if necessary
+        addObjectConverter(mv, fieldType);
+
+        // Now we have: [Object value]
+        mv.visitInsn(Opcodes.ACONST_NULL); // null object reference for static field
+        mv.visitInsn(Opcodes.SWAP); // Stack: [null, Object value]
+
+        mv.visitLdcInsn(owner);
+        mv.visitLdcInsn(name);
+        mv.visitLdcInsn(descriptor);
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                "org/mpi_sws/jmc/runtime/JmcRuntimeUtils",
+                "writeEventWithoutYield",
+                "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+                false);
+        // Stack: [] - clean
+    }
+
+    /**
+     * Adds instructions to convert a primitive type on the stack to its corresponding wrapper
+     * object.
+     *
+     * @param mv The MethodVisitor to which the conversion instructions will be added.
+     * @param fieldType The Type of the field to be converted.
+     */
+    public static void addObjectConverter(MethodVisitor mv, Type fieldType) {
         switch (fieldType.getSort()) {
             case Type.OBJECT:
                 return;
@@ -224,19 +322,24 @@ public class VisitorHelper {
     public static class MethodInfo {
 
         /** Access flags of the method. */
-        public int access;
+        private final int access;
 
         /** Name of the method. */
-        public String name;
+        private final String name;
 
         /** Descriptor of the method. */
-        public String descriptor;
+        private final String descriptor;
 
         /** Signature of the method. */
-        public String signature;
+        private final String signature;
 
         /** Exceptions of the method. */
-        public String[] exceptions;
+        private final String[] exceptions;
+
+        private final List<AnnotationInfo> annotations;
+
+        private final List<String> parameterNames = new ArrayList<>();
+        private final List<Integer> parameterAccesses = new ArrayList<>();
 
         public MethodInfo(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -245,6 +348,7 @@ public class VisitorHelper {
             this.descriptor = descriptor;
             this.signature = signature;
             this.exceptions = exceptions;
+            this.annotations = new ArrayList<>();
         }
 
         /** Returns true if the method is synchronized. */
@@ -262,9 +366,254 @@ public class VisitorHelper {
             return name + "$synchronized";
         }
 
+        public String getName() {
+            return name;
+        }
+
+        public String getDescriptor() {
+            return descriptor;
+        }
+
+        public String getSignature() {
+            return signature;
+        }
+
+        public String[] getExceptions() {
+            return exceptions;
+        }
+
         /** Changes the name of the method to have a suffix of "$unsynchronized". */
         public String getUnsyncName() {
             return name + "$unsynchronized";
+        }
+
+        public void addAnnotation(AnnotationInfo annotation) {
+            this.annotations.add(annotation);
+        }
+
+        public List<AnnotationInfo> getAnnotations() {
+            return annotations;
+        }
+
+        public void addParameter(String name, int access) {
+            parameterNames.add(name);
+            parameterAccesses.add(access);
+        }
+
+        public List<String> getParameterNames() {
+            return parameterNames;
+        }
+
+        public List<Integer> getParameterAccesses() {
+            return parameterAccesses;
+        }
+    }
+
+    private static final Set<String> SUPPORTED_CONCURRENT_FEATURES =
+            Set.of(
+                    "java.util.concurrent.atomic.AtomicBoolean.<init>",
+                    "java.util.concurrent.atomic.AtomicBoolean.get",
+                    "java.util.concurrent.atomic.AtomicBoolean.set",
+                    "java.util.concurrent.atomic.AtomicBoolean.compareAndSet",
+                    "java.util.concurrent.atomic.AtomicInteger.<init>",
+                    "java.util.concurrent.atomic.AtomicInteger.get",
+                    "java.util.concurrent.atomic.AtomicInteger.set",
+                    "java.util.concurrent.atomic.AtomicInteger.compareAndSet",
+                    "java.util.concurrent.atomic.AtomicInteger.getAndIncrement",
+                    "java.util.concurrent.atomic.AtomicInteger.getAndSet",
+                    "java.util.concurrent.atomic.AtomicInteger.addAndGet",
+                    "java.util.concurrent.atomic.AtomicReference.<init>",
+                    "java.util.concurrent.atomic.AtomicReference.get",
+                    "java.util.concurrent.atomic.AtomicReference.set",
+                    "java.util.concurrent.atomic.AtomicReference.compareAndSet",
+                    "java.util.concurrent.atomic.AtomicReference.getAndSet",
+                    "java.util.concurrent.atomic.AtomicReferenceArray.<init>",
+                    "java.util.concurrent.atomic.AtomicReferenceArray.get",
+                    "java.util.concurrent.atomic.AtomicReferenceArray.set",
+                    "java.util.concurrent.atomic.AtomicReferenceArray.getAndSet",
+                    "java.util.concurrent.CompletableFuture.<init>",
+                    "java.util.concurrent.ExecutorService.<init>",
+                    "java.util.concurrent.ExecutorService.shutdownNow",
+                    "java.util.concurrent.ExecutorService.shutdown",
+                    "java.util.concurrent.ExecutorService.awaitTermination",
+                    "java.util.concurrent.ExecutorService.isTerminated",
+                    "java.util.concurrent.ExecutorService.isShutdown",
+                    "java.util.concurrent.RunnableFuture.<init>",
+                    "java.util.concurrent.RunnableFuture.cancel",
+                    "java.util.concurrent.Executors.newSingleThreadExecutor",
+                    "java.util.concurrent.Executors.newFixedThreadPool",
+                    "java.util.concurrent.locks.LockSupport.park",
+                    "java.util.concurrent.locks.LockSupport.unpark",
+                    "java.util.concurrent.locks.ReentrantLock.lock",
+                    "java.util.concurrent.locks.ReentrantLock.unlock",
+                    "java.lang.Thread.run",
+                    "java.lang.Thread.join",
+                    "java.util.concurrent.ThreadFactory.newThread",
+                    "java.util.concurrent.ThreadPoolExecutor.<init>");
+
+    public static boolean isConcurrentFeatureSupported(String feature) {
+        return SUPPORTED_CONCURRENT_FEATURES.contains(feature);
+    }
+
+    public static Set<String> supportedFeatures() {
+        return SUPPORTED_CONCURRENT_FEATURES;
+    }
+
+    public static class AnnotationInfo {
+        private final String descriptor;
+        private final boolean visible;
+        private final Map<String, AnnotationValue> values = new HashMap<>();
+
+        public AnnotationInfo(String descriptor, boolean visible) {
+            this.descriptor = descriptor;
+            this.visible = visible;
+        }
+
+        public void addValue(String name, AnnotationValue value) {
+            values.put(name, value);
+        }
+
+        public Map<String, AnnotationValue> getValues() {
+            return values;
+        }
+
+        public String getDescriptor() {
+            return descriptor;
+        }
+
+        public boolean getVisibility() {
+            return visible;
+        }
+
+        @Override
+        public String toString() {
+            return descriptor + " " + values;
+        }
+    }
+
+    public interface AnnotationValue {
+        Type type();
+
+        enum Type {
+            Primitive,
+            Enum,
+            Array,
+            Nested
+        }
+    }
+
+    public static class PrimitiveValue implements AnnotationValue {
+        private final Object value;
+
+        public PrimitiveValue(Object value) {
+            this.value = value;
+        }
+
+        @Override
+        public Type type() {
+            return Type.Primitive;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+    }
+
+    public static class EnumValue implements AnnotationValue {
+        private final String descriptor;
+        private final String value;
+
+        public EnumValue(String descriptor, String value) {
+            this.descriptor = descriptor;
+            this.value = value;
+        }
+
+        @Override
+        public Type type() {
+            return Type.Enum;
+        }
+
+        public String getDescriptor() {
+            return descriptor;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    public static class ArrayValue implements AnnotationValue {
+        private final List<AnnotationValue> values = new ArrayList<>();
+
+        @Override
+        public Type type() {
+            return Type.Array;
+        }
+
+        public void addValue(AnnotationValue value) {
+            values.add(value);
+        }
+
+        public List<AnnotationValue> getValues() {
+            return values;
+        }
+    }
+
+    public static class NestedAnnotationValue implements AnnotationValue {
+        private final VisitorHelper.AnnotationInfo nested;
+
+        public NestedAnnotationValue(VisitorHelper.AnnotationInfo nested) {
+            this.nested = nested;
+        }
+
+        @Override
+        public Type type() {
+            return Type.Nested;
+        }
+
+        public VisitorHelper.AnnotationInfo getNested() {
+            return nested;
+        }
+    }
+
+    public static class JmcAnnotationRecordVisitor extends AnnotationVisitor {
+        AnnotationInfo annotationInfo;
+
+        public JmcAnnotationRecordVisitor(AnnotationInfo annotationInfo) {
+            super(Opcodes.ASM9);
+            this.annotationInfo = annotationInfo;
+        }
+
+        @Override
+        public void visit(String name, Object value) {
+            annotationInfo.addValue(name, new PrimitiveValue(value));
+        }
+
+        @Override
+        public void visitEnum(String name, String descriptor, String value) {
+            annotationInfo.addValue(name, new VisitorHelper.EnumValue(descriptor, value));
+        }
+
+        @Override
+        public AnnotationVisitor visitArray(String name) {
+            VisitorHelper.ArrayValue arr = new VisitorHelper.ArrayValue();
+            AnnotationVisitor av =
+                    new AnnotationVisitor(Opcodes.ASM8) {
+                        @Override
+                        public void visit(String n, Object v) {
+                            arr.getValues().add(new VisitorHelper.PrimitiveValue(v));
+                        }
+                    };
+            annotationInfo.addValue(name, arr);
+            return av;
+        }
+
+        @Override
+        public AnnotationVisitor visitAnnotation(String name, String descriptor) {
+            VisitorHelper.AnnotationInfo nested =
+                    new VisitorHelper.AnnotationInfo(descriptor, true);
+            annotationInfo.addValue(name, new NestedAnnotationValue(nested));
+            return new JmcAnnotationRecordVisitor(nested);
         }
     }
 }

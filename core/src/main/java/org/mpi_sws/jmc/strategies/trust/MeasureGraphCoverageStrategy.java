@@ -162,7 +162,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
     }
 
     @Override
-    public void teardown() {
+    public void teardown(JmcModelCheckerReport report) {
         if (!config.isRecordPerIteration()) {
             measuringThread.stopMeasuring();
             try {
@@ -175,7 +175,7 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         long timeDiff = System.currentTimeMillis() - timeStart;
         Duration d = Duration.ofMillis(timeDiff);
         simulator.reset();
-        schedulingStrategy.teardown();
+        schedulingStrategy.teardown(report);
         if (config.shouldRecordGraphs()) {
             FileOutputStream fileOutputStream =
                     FileUtil.unsafeCreateFile(

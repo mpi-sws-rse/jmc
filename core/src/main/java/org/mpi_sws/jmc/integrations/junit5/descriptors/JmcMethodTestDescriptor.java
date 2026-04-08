@@ -48,14 +48,20 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
     private JmcCheckerConfiguration.Builder buildFromAnnotation(
             JmcCheckerConfiguration.Builder builder, JmcCheckConfiguration annotation) {
         long seed = annotation.seed();
+        int budget = annotation.budget();
+        long timeout = annotation.timeout();
         if (annotation.seed() == 0L) {
             seed = System.nanoTime();
         }
         return builder.numIterations(annotation.numIterations())
                 .debug(annotation.debug())
                 .seed(seed)
+                .budget(budget)
+                .timeout(timeout)
                 .reportPath(annotation.reportPath())
-                .strategyType(annotation.strategy());
+                .strategyType(annotation.strategy())
+                .solver(annotation.solver())
+                .schedulingPolicy(annotation.schedulingPolicy());
     }
 
     /**
@@ -76,9 +82,9 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
         try {
             methodInstance = testMethod.getDeclaringClass().getDeclaredConstructor().newInstance();
         } catch (NoSuchMethodException
-                | InstantiationException
-                | IllegalAccessException
-                | InvocationTargetException e) {
+                 | InstantiationException
+                 | IllegalAccessException
+                 | InvocationTargetException e) {
             LOGGER.error(
                     "Error creating instance of test class: {}",
                     testMethod.getDeclaringClass().getName(),
@@ -127,12 +133,13 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 if (testMethod.getAnnotation(JmcExpectExecutions.class) != null) {
                     JmcExpectExecutions expectExecutions =
                             testMethod.getAnnotation(JmcExpectExecutions.class);
-                    if (report.getTotalIterations() != expectExecutions.value()) {
+                    int completeIteration = report.getTotalIterations() - report.getBlockedIterations();
+                    if (completeIteration != expectExecutions.value()) {
                         throw new JmcCheckerException(
                                 "Expected "
                                         + expectExecutions.value()
                                         + " executions, but got "
-                                        + report.getTotalIterations());
+                                        + completeIteration);
                     }
                 }
             }

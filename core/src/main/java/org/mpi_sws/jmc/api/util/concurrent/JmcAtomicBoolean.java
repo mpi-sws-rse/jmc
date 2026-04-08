@@ -37,7 +37,9 @@ public class JmcAtomicBoolean {
         JmcRuntime.yield();
     }
 
-    /** Constructs a new JmcAtomicBoolean with an initial value of false. */
+    /**
+     * Constructs a new JmcAtomicBoolean with an initial value of false.
+     */
     public JmcAtomicBoolean() {
         this(false);
     }
@@ -48,16 +50,11 @@ public class JmcAtomicBoolean {
      * @return the current value
      */
     public boolean get() {
-        lock.lock();
-        try {
-            JmcRuntimeUtils.readEventWithoutYield(
-                    this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicBoolean", "value", "Z");
-            boolean out = value;
-            JmcRuntime.yield();
-            return out;
-        } finally {
-            lock.unlock();
-        }
+        JmcRuntimeUtils.readEventWithoutYield(
+                this, "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicBoolean", "value", "Z");
+        boolean out = value;
+        JmcRuntime.yield();
+        return out;
     }
 
     /**
@@ -67,19 +64,14 @@ public class JmcAtomicBoolean {
      * @param newValue the new value to set
      */
     public void set(boolean newValue) {
-        lock.lock();
-        try {
-            JmcRuntimeUtils.writeEventWithoutYield(
-                    this,
-                    newValue,
-                    "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicBoolean",
-                    "value",
-                    "Z");
-            value = newValue;
-            JmcRuntime.yield();
-        } finally {
-            lock.unlock();
-        }
+        JmcRuntimeUtils.writeEventWithoutYield(
+                this,
+                newValue,
+                "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicBoolean",
+                "value",
+                "Z");
+        value = newValue;
+        JmcRuntime.yield();
     }
 
     /**
@@ -87,7 +79,7 @@ public class JmcAtomicBoolean {
      * expected value. Invokes a read event followed by a write event to the JMC runtime.
      *
      * @param expectedValue the expected value
-     * @param newValue the new value to set if the current value equals the expected value
+     * @param newValue      the new value to set if the current value equals the expected value
      * @return true if successful, false otherwise
      */
     public boolean compareAndSet(boolean expectedValue, boolean newValue) {
@@ -113,5 +105,13 @@ public class JmcAtomicBoolean {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public String toString() {
+        return super.toString();
     }
 }

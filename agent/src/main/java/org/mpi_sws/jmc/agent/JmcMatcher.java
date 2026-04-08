@@ -9,6 +9,9 @@ import java.util.List;
  */
 public class JmcMatcher {
 
+    private static final org.apache.logging.log4j.Logger LOGGER =
+            org.apache.logging.log4j.LogManager.getLogger(JmcMatcher.class);
+
     private final List<String> matchingPackages;
     private final List<String> excludedPackages;
 
@@ -26,7 +29,7 @@ public class JmcMatcher {
     /**
      * Matches the class name.
      *
-     * @param className the class name
+     * @param className   the class name
      * @param classLoader the class loader
      * @return true if the class name matches
      */
@@ -53,11 +56,8 @@ public class JmcMatcher {
         if (!excludedPackages.isEmpty()) {
             for (String exclude : excludedPackages) {
                 if (!exclude.isEmpty() && typeName.startsWith(exclude)) {
-                    System.out.println(
-                            "Excluding class: "
-                                    + typeName
-                                    + " due to excluded package: "
-                                    + exclude);
+                    //LOGGER.debug(
+                      //      "Excluding class: {} due to excluded package: {}", typeName, exclude);
                     return false;
                 }
             }

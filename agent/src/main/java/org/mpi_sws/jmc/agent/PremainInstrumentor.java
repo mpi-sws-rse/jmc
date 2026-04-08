@@ -1,12 +1,15 @@
 package org.mpi_sws.jmc.agent;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.agent.visitors.*;
+import org.mpi_sws.jmc.checker.exceptions.JmcUnsupportedFeatureException;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
 import java.io.File;
 import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.IllegalClassFormatException;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
@@ -17,6 +20,8 @@ import java.util.Arrays;
  * specified criteria.
  */
 public class PremainInstrumentor implements ClassFileTransformer {
+    private static final Logger LOGGER = LogManager.getLogger(PremainInstrumentor.class);
+
     private final AgentArgs agentArgs;
     private final JmcMatcher matcher;
 
@@ -65,58 +70,44 @@ public class PremainInstrumentor implements ClassFileTransformer {
             String className,
             Class<?> classBeingRedefined,
             ProtectionDomain protectionDomain,
-            byte[] classFileBuffer) {
+            byte[] classFileBuffer)
+            throws IllegalClassFormatException, JmcUnsupportedFeatureException {
         String finalClassName = className.replace("/", ".");
         byte[] copiedClassBuffer = Arrays.copyOf(classFileBuffer, classFileBuffer.length);
 
         if (!this.matcher.matches(finalClassName, loader)) {
             return copiedClassBuffer;
         }
-        ClassReader tempCr = new ClassReader(copiedClassBuffer);
-        ClassWriter tempCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-
-        JmcIgnoreVisitor ignoreVisitor = new JmcIgnoreVisitor(tempCw);
-        tempCr.accept(
-                ignoreVisitor,
-                ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
-        if (ignoreVisitor.hasIgnoreAnnotation()) {
-            return copiedClassBuffer; // Skip instrumentation if the class has
-            // JmcIgnoreInstrumentation annotation
-        }
 
         try {
-            ClassReader syncCr = new ClassReader(copiedClassBuffer);
-            ClassWriter syncCw =
+            ClassReader tempCr = new ClassReader(copiedClassBuffer);
+            ClassWriter tempCw =
                     new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
-            JmcSyncScanData syncScanData = new JmcSyncScanData();
-            JmcSyncScanVisitor syncScanVisitor = new JmcSyncScanVisitor(syncCw, syncScanData);
-            syncCr.accept(syncScanVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            JmcIgnoreVisitor ignoreVisitor = new JmcIgnoreVisitor(tempCw);
+            tempCr.accept(
+                    ignoreVisitor,
+                    ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
-            ClassReader cr = new ClassReader(copiedClassBuffer);
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-            ClassVisitor cv =
-                    new JmcSyncMethodVisitor(
-                            new JmcFutureVisitor.JmcExecutorsClassVisitor(
-                                    new JmcAtomicVisitor(
-                                            new JmcReentrantLockVisitor(
-                                                    new JmcThreadVisitor.ThreadClassVisitor(
-                                                            new JmcThreadVisitor
-                                                                    .ThreadCallReplacerClassVisitor(
-                                                                    new JmcReadWriteVisitor
-                                                                            .ReadWriteClassVisitor(
-                                                                            cw)))))),
-                            syncScanData);
-            cr.accept(cv, 0);
+            if (ignoreVisitor.hasIgnoreAnnotation()) {
+                return copiedClassBuffer; // Skip instrumentation if the class has
+                // JmcIgnoreInstrumentation annotation
+            }
+
+            LOGGER.info("Instrumenting class: {}", finalClassName);
+            byte[] transformed = JmcVisitor.transform(copiedClassBuffer);
             if (this.agentArgs.isDebug()) {
-                byte[] transformed = cw.toByteArray();
                 record(className, transformed);
             }
-            return cw.toByteArray();
+            return transformed;
         } catch (Exception e) {
-            System.out.println("Error transforming class: " + finalClassName + " " + e);
-            throw new RuntimeException("Error instrumenting class: " + finalClassName, e);
+            if (e instanceof JmcUnsupportedFeatureException) {
+                throw new JmcUnsupportedFeatureException(e.getMessage());
+            } else {
+            LOGGER.info("Error transforming class: {} {}", finalClassName, e);
+            throw new IllegalClassFormatException(
+                    "Error instrumenting class: " + finalClassName + " Error: " + e);
+            }
         }
     }
 
@@ -124,10 +115,11 @@ public class PremainInstrumentor implements ClassFileTransformer {
         String outputDir = this.agentArgs.getDebugSavePath();
         File outFile = new File(outputDir + "/" + className + ".class");
         try {
+            LOGGER.debug("Recording instrumented class: {}", className);
             outFile.getParentFile().mkdirs();
             Files.write(outFile.toPath(), classFileBuffer);
         } catch (Exception e) {
-            System.out.println("Error writing to file: " + outFile.getAbsolutePath() + " " + e);
+            LOGGER.error("Error writing to file: {} {}", outFile.getAbsolutePath(), e);
         }
     }
 }

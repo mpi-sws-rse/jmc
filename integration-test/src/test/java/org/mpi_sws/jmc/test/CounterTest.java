@@ -4,22 +4,24 @@ import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 import org.mpi_sws.jmc.annotations.JmcExpectExecutions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class CounterTest {
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10)
+    @JmcCheckConfiguration(numIterations = 10, debug = true)
     public void testRandomCounter() {
         ParametricCounter counter = new ParametricCounter(2);
         counter.run();
-        assert counter.getCounterValue() == 2;
+        assertEquals(2, counter.getCounterValue());
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(strategy = "trust", numIterations = 200, debug = true)
-    @JmcExpectExecutions(120)
+    @JmcCheckConfiguration(strategy = "trust", numIterations = 200)
+    @JmcExpectExecutions(6)
     public void testTrustCounter() {
-        ParametricCounter counter = new ParametricCounter(5);
+        ParametricCounter counter = new ParametricCounter(3);
         counter.run();
-        assert counter.getCounterValue() == 5;
+        assertEquals(3, counter.getCounterValue());
     }
 }

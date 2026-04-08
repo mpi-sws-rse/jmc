@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.programs.sync.counter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class SyncCounter extends Thread {
 
     public Counter counter;
@@ -22,8 +24,8 @@ public class SyncCounter extends Thread {
         thread1.join();
         thread2.join();
         try {
-            assert (counter.count == 2)
-                    : " ***The assert did not pass, the counter value is " + counter.count + "***";
+            assertEquals(2, counter.count,
+                    " ***The assert did not pass, the counter value is " + counter.count + "***");
         } catch (AssertionError e) {
             System.out.println(e.getMessage());
         }

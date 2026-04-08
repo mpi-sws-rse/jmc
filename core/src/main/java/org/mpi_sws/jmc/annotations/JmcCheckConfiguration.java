@@ -1,9 +1,12 @@
 package org.mpi_sws.jmc.annotations;
 
+import org.mpi_sws.jmc.strategies.trust.TrustStrategy;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.time.Duration;
 
 /**
  * Configuration annotation for JMC checks.
@@ -26,6 +29,10 @@ public @interface JmcCheckConfiguration {
      * @return the strategy name
      */
     String strategy() default "random";
+
+    String solver() default "off";
+
+    TrustStrategy.SchedulingPolicy schedulingPolicy() default TrustStrategy.SchedulingPolicy.RANDOM;
 
     /**
      * The number of iterations to run for the JMC check.
@@ -61,4 +68,8 @@ public @interface JmcCheckConfiguration {
      * @return the seed value
      */
     long seed() default 0;
+
+    int budget() default 2;
+
+    long timeout() default -1L;
 }

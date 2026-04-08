@@ -1,9 +1,9 @@
 package org.mpi_sws.jmc.agent.visitors;
 
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.*;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * This class is an ASM ClassVisitor that replaces standard Java Atomic classes with JMC Atomic
@@ -108,32 +108,48 @@ public class JmcAtomicVisitor extends ClassVisitor {
             "L" + JMC_ATOMIC_REFERENCE_FIELD_PATH + ";";
 
     private static String replaceDescriptor(String desc) {
-        if (desc.contains(ATOMIC_INTEGER_DESC)) {
-            return desc.replace(ATOMIC_INTEGER_DESC, JMC_ATOMIC_INTEGER_DESC);
-        } else if (desc.contains(ATOMIC_LONG_DESC)) {
-            return desc.replace(ATOMIC_LONG_DESC, JMC_ATOMIC_LONG_DESC);
-        } else if (desc.contains(ATOMIC_BOOLEAN_DESC)) {
-            return desc.replace(ATOMIC_BOOLEAN_DESC, JMC_ATOMIC_BOOLEAN_DESC);
-        } else if (desc.contains(ATOMIC_REFERENCE_DESC)) {
-            return desc.replace(ATOMIC_REFERENCE_DESC, JMC_ATOMIC_REFERENCE_DESC);
-        } else if (desc.contains(ATOMIC_MARKABLE_REFERENCE_DESC)) {
-            return desc.replace(ATOMIC_MARKABLE_REFERENCE_DESC, JMC_ATOMIC_MARKABLE_REFERENCE_DESC);
-        } else if (desc.contains(ATOMIC_INTEGER_ARRAY_DESC)) {
-            return desc.replace(ATOMIC_INTEGER_ARRAY_DESC, JMC_ATOMIC_INTEGER_ARRAY_DESC);
-        } else if (desc.contains(ATOMIC_LONG_ARRAY_DESC)) {
-            return desc.replace(ATOMIC_LONG_ARRAY_DESC, JMC_ATOMIC_LONG_ARRAY_DESC);
-        } else if (desc.contains(ATOMIC_REFERENCE_ARRAY_DESC)) {
-            return desc.replace(ATOMIC_REFERENCE_ARRAY_DESC, JMC_ATOMIC_REFERENCE_ARRAY_DESC);
-        } else if (desc.contains(ATOMIC_STAMPED_REFERENCE_DESC)) {
-            return desc.replace(ATOMIC_STAMPED_REFERENCE_DESC, JMC_ATOMIC_STAMPED_REFERENCE_DESC);
-        } else if (desc.contains(ATOMIC_INTEGER_FIELD_DESC)) {
-            return desc.replace(ATOMIC_INTEGER_FIELD_DESC, JMC_ATOMIC_INTEGER_FIELD_DESC);
-        } else if (desc.contains(ATOMIC_LONG_FIELD_DESC)) {
-            return desc.replace(ATOMIC_LONG_FIELD_DESC, JMC_ATOMIC_LONG_FIELD_DESC);
-        } else if (desc.contains(ATOMIC_REFERENCE_FIELD_DESC)) {
-            return desc.replace(ATOMIC_REFERENCE_FIELD_DESC, JMC_ATOMIC_REFERENCE_FIELD_DESC);
+        String newDesc = desc;
+        if (newDesc.contains(ATOMIC_INTEGER_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_INTEGER_DESC, JMC_ATOMIC_INTEGER_DESC);
         }
-        return desc;
+        if (newDesc.contains(ATOMIC_LONG_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_LONG_DESC, JMC_ATOMIC_LONG_DESC);
+        }
+        if (newDesc.contains(ATOMIC_BOOLEAN_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_BOOLEAN_DESC, JMC_ATOMIC_BOOLEAN_DESC);
+        }
+        if (newDesc.contains(ATOMIC_REFERENCE_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_REFERENCE_DESC, JMC_ATOMIC_REFERENCE_DESC);
+        }
+        if (newDesc.contains(ATOMIC_MARKABLE_REFERENCE_DESC)) {
+            newDesc =
+                    newDesc.replace(
+                            ATOMIC_MARKABLE_REFERENCE_DESC, JMC_ATOMIC_MARKABLE_REFERENCE_DESC);
+        }
+        if (newDesc.contains(ATOMIC_INTEGER_ARRAY_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_INTEGER_ARRAY_DESC, JMC_ATOMIC_INTEGER_ARRAY_DESC);
+        }
+        if (newDesc.contains(ATOMIC_LONG_ARRAY_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_LONG_ARRAY_DESC, JMC_ATOMIC_LONG_ARRAY_DESC);
+        }
+        if (newDesc.contains(ATOMIC_REFERENCE_ARRAY_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_REFERENCE_ARRAY_DESC, JMC_ATOMIC_REFERENCE_ARRAY_DESC);
+        }
+        if (newDesc.contains(ATOMIC_STAMPED_REFERENCE_DESC)) {
+            newDesc =
+                    newDesc.replace(
+                            ATOMIC_STAMPED_REFERENCE_DESC, JMC_ATOMIC_STAMPED_REFERENCE_DESC);
+        }
+        if (newDesc.contains(ATOMIC_INTEGER_FIELD_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_INTEGER_FIELD_DESC, JMC_ATOMIC_INTEGER_FIELD_DESC);
+        }
+        if (newDesc.contains(ATOMIC_LONG_FIELD_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_LONG_FIELD_DESC, JMC_ATOMIC_LONG_FIELD_DESC);
+        }
+        if (newDesc.contains(ATOMIC_REFERENCE_FIELD_DESC)) {
+            newDesc = newDesc.replace(ATOMIC_REFERENCE_FIELD_DESC, JMC_ATOMIC_REFERENCE_FIELD_DESC);
+        }
+        return newDesc;
     }
 
     private static String replaceType(String type) {
@@ -165,6 +181,26 @@ public class JmcAtomicVisitor extends ClassVisitor {
         return type;
     }
 
+    private static boolean checkIfAtomic(String classPath) {
+        return classPath.startsWith("java/util/concurrent/atomic/Atomic");
+    }
+
+    private boolean isExtendingAtomic = false;
+
+    @Override
+    public void visit(
+            int version,
+            int access,
+            String name,
+            String signature,
+            String superName,
+            String[] interfaces) {
+        if (checkIfAtomic(superName)) {
+            isExtendingAtomic = true;
+        }
+        super.visit(version, access, name, signature, replaceType(superName), interfaces);
+    }
+
     @Override
     public FieldVisitor visitField(
             int access, String name, String descriptor, String signature, Object value) {
@@ -174,11 +210,22 @@ public class JmcAtomicVisitor extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(
             int access, String name, String descriptor, String signature, String[] exceptions) {
-        // First let the parent handle the method visitor creation
-        MethodVisitor mv =
-                super.visitMethod(
-                        access, name, replaceDescriptor(descriptor), signature, exceptions);
-
+        MethodVisitor mv;
+        if (isExtendingAtomic && "<init>".equals(name)) {
+            mv =
+                    new AtomicInitMethodVisitor(
+                            super.visitMethod(
+                                    access,
+                                    name,
+                                    replaceDescriptor(descriptor),
+                                    signature,
+                                    exceptions));
+        } else {
+            // First let the parent handle the method visitor creation
+            mv =
+                    super.visitMethod(
+                            access, name, replaceDescriptor(descriptor), signature, exceptions);
+        }
         // Return a new visitor that will handle Atomic types
         return new AtomicReplacementMethodVisitor(mv);
     }
@@ -195,7 +242,7 @@ public class JmcAtomicVisitor extends ClassVisitor {
             if (VisitorHelper.isInstantiation(opcode)) {
                 super.visitTypeInsn(opcode, replaceType(type));
             } else {
-                super.visitTypeInsn(opcode, type);
+                super.visitTypeInsn(opcode, replaceType(type));
             }
         }
 
@@ -222,6 +269,69 @@ public class JmcAtomicVisitor extends ClassVisitor {
                 int index) {
             super.visitLocalVariable(
                     name, replaceDescriptor(descriptor), signature, start, end, index);
+        }
+
+        @Override
+        public void visitInvokeDynamicInsn(
+                String name, String descriptor, Handle bsm, Object... bsmArgs) {
+            boolean isAtomicType = descriptor.contains("java/util/concurrent/atomic/Atomic")
+                    || (bsm != null && bsm.getOwner().contains("java/util/concurrent/atomic/Atomic"));
+
+            // Check if descriptor or bootstrap method involves Atomic types
+            if (isAtomicType) {
+                Handle newBsm = bsm;
+                String newDescriptor = replaceDescriptor(descriptor);
+                if (bsm != null) {
+                    String owner = bsm.getOwner();
+                    String newOwner = replaceType(owner);
+                    String bsmDesc = bsm.getDesc();
+                    String newbsmDesc = replaceDescriptor(bsmDesc);
+                    newBsm = new Handle(bsm.getTag(), newOwner, bsm.getName(), newbsmDesc, bsm.isInterface());
+                }
+                Object[] tempBsmArgs = Arrays.stream(bsmArgs).toArray();
+                Object[] newBsmArgs = new Object[tempBsmArgs.length];
+                for (int i = 0; i < tempBsmArgs.length; i++) {
+                    if (tempBsmArgs[i] instanceof Type t) {
+                        String className = t.getInternalName();
+                        newBsmArgs[i] = Type.getType(replaceType(className));
+                    }
+                    if (tempBsmArgs[i] instanceof Handle h) {
+                        String desc = replaceDescriptor(h.getDesc());
+                        newBsmArgs[i] = new Handle(
+                                h.getTag(),
+                                replaceType(h.getOwner()),
+                                h.getName(),
+                                desc,
+                                h.isInterface());
+                    }
+                }
+                super.visitInvokeDynamicInsn(name, newDescriptor, newBsm, newBsmArgs);
+            } else {
+                super.visitInvokeDynamicInsn(name, descriptor, bsm, bsmArgs);
+            }
+        }
+    }
+
+    private static class AtomicInitMethodVisitor extends MethodVisitor {
+
+        public AtomicInitMethodVisitor(MethodVisitor mv) {
+            super(Opcodes.ASM9, mv);
+        }
+
+        @Override
+        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+            if (opcode == Opcodes.INVOKESPECIAL
+                    && checkIfAtomic(owner)
+                    && name.equals("<init>")) {
+                super.visitMethodInsn(
+                        Opcodes.INVOKESPECIAL,
+                        replaceType(owner),
+                        name,
+                        descriptor,
+                        isInterface);
+            } else {
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+            }
         }
     }
 }

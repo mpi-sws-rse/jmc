@@ -53,6 +53,10 @@ public class EventUtils {
         return event.hasAttribute("thread_join");
     }
 
+    public static boolean isJoinRequest(Event event) {
+        return event.hasAttribute("join-req");
+    }
+
     public static int getJoinedTask(Event event) {
         Long joinedTask = event.getAttribute("joined_task");
         if (joinedTask == null) {
@@ -86,5 +90,17 @@ public class EventUtils {
 
     public static boolean isLockAcquired(Event event) {
         return event.getType() == Event.Type.NOOP && event.hasAttribute("lock_acquired");
+    }
+
+    public static boolean isNoop(Event event) {
+        return event.getType() == Event.Type.NOOP;
+    }
+
+    public static boolean isAssume(Event event) {
+        return event.getType() == Event.Type.ASSUME;
+    }
+
+    public static boolean isBlockedAssume(Event event) {
+        return event.getType() == Event.Type.ASSUME && !(Boolean) event.getAttribute("result");
     }
 }

@@ -7,6 +7,7 @@ import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
  * A redefinition of {@link java.util.concurrent.atomic.AtomicReference} to support JMC model
  * checking. This class provides atomic operations on a reference variable, ensuring thread safety
  * through the use of a reentrant lock.
+ * TODO : FIX THIS CLASS
  *
  * @param <V> the type of the reference held by this atomic reference
  */
@@ -15,6 +16,16 @@ public class JmcAtomicReference<V> {
     private V value;
 
     private final JmcReentrantLock lock;
+
+    /**
+     * Constructs a new JmcAtomicReference with a null initial value.
+     */
+    // Added because of iceberg error: java.util.concurrent.ExecutionException:
+    //* java.lang.NoSuchMethodError: org.mpi_sws.jmc.api.util.concurrent.JmcAtomicReference:
+    //method void <init>() not found */
+    public JmcAtomicReference() {
+        this(null);
+    }
 
     /**
      * Constructs a new JmcAtomicReference with the specified initial value.
@@ -41,7 +52,9 @@ public class JmcAtomicReference<V> {
         JmcRuntime.yield();
     }
 
-    /** Constructs a new JmcAtomicReference with a null initial value. */
+    /**
+     * Constructs a new JmcAtomicReference with a null initial value.
+     */
     public boolean compareAndSet(V expectedReference, V newReference) {
         lock.lock();
         try {
@@ -70,35 +83,25 @@ public class JmcAtomicReference<V> {
     }
 
     public V get() {
-        lock.lock();
-        try {
-            JmcRuntimeUtils.readEventWithoutYield(
-                    this,
-                    "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicReference",
-                    "value",
-                    "Ljava/lang/Object;");
-            V result = value;
-            JmcRuntime.yield();
-            return result;
-        } finally {
-            lock.unlock();
-        }
+        JmcRuntimeUtils.readEventWithoutYield(
+                this,
+                "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicReference",
+                "value",
+                "Ljava/lang/Object;");
+        V result = value;
+        JmcRuntime.yield();
+        return result;
     }
 
     public void set(V newValue) {
-        lock.lock();
-        try {
-            JmcRuntimeUtils.writeEventWithoutYield(
-                    this,
-                    newValue,
-                    "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicReference",
-                    "value",
-                    "Ljava/lang/Object;");
-            value = newValue;
-            JmcRuntime.yield();
-        } finally {
-            lock.unlock();
-        }
+        JmcRuntimeUtils.writeEventWithoutYield(
+                this,
+                newValue,
+                "org/mpi_sws/jmc/api/util/concurrent/JmcAtomicReference",
+                "value",
+                "Ljava/lang/Object;");
+        value = newValue;
+        JmcRuntime.yield();
     }
 
     public V getAndSet(V newValue) {
@@ -124,5 +127,13 @@ public class JmcAtomicReference<V> {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public String toString() {
+        return super.toString();
     }
 }

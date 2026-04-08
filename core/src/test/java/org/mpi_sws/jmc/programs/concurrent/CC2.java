@@ -4,6 +4,8 @@ import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 public class CC2 {
 
     public static class Value {
@@ -90,6 +92,6 @@ public class CC2 {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assert counter.value() != 0;
+        assertNotEquals(0, counter.value());
     }
 }

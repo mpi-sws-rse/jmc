@@ -10,6 +10,8 @@ import org.mpi_sws.jmc.test.det.counter.DecThread;
 import org.mpi_sws.jmc.test.det.counter.IncThread;
 import org.mpi_sws.jmc.test.det.counter.FCounter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class CounterTest {
 
     private void coarseCounter(String[] args) {
@@ -103,18 +105,16 @@ public class CounterTest {
     @JmcExpectExecutions(720) // For input 6
     public void runCoarseCounterTest() {
         // TODO : Make the test parametric
-        coarseCounter(new String[] {"0", "1", "2", "0", "1", "2"});
+        coarseCounter(new String[]{"0", "1", "2", "0", "1", "2"});
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(
-            numIterations = 10000,
-            debug = true) // , debug = true, seed = 158542095196480L
-    @JmcTrustStrategy(debug = true)
-    //    @JmcExpectExecutions(4)
+    @JmcCheckConfiguration(numIterations = 10000) // , debug = true, seed = 158542095196480L
+    @JmcTrustStrategy()
+    @JmcExpectExecutions(576) // For input n the expected executions is (n/2)!^2
     public void runFineCounterTest() {
         // TODO : Make the test parametric
-        FineCounter(new String[] {"0", "1", "2", "3"});
+        FineCounter(new String[]{"0", "1", "2", "3", "4", "5", "6", "7"});
     }
 
     @JmcCheck
@@ -122,7 +122,7 @@ public class CounterTest {
     public void testRandomCounter() {
         ParametricCounter counter = new ParametricCounter(2);
         counter.run();
-        assert counter.getCounterValue() == 2;
+        assertEquals(2, counter.getCounterValue());
     }
 
     @JmcCheck
@@ -130,6 +130,6 @@ public class CounterTest {
     public void testTrustCounter() {
         ParametricCounter counter = new ParametricCounter(5);
         counter.run();
-        assert counter.getCounterValue() == 5;
+        assertEquals(5, counter.getCounterValue());
     }
 }

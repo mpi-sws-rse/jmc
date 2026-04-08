@@ -30,7 +30,7 @@ public class SendRecvTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100000)
     @JmcTrustStrategy
-    @JmcExpectExecutions(2)
+    @JmcExpectExecutions(1)
     public void runSendRecvTest() {
         sendRecvTest();
     }

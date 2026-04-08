@@ -1,10 +1,22 @@
 package org.mpi_sws.jmc.runtime;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.api.util.concurrent.JmcReentrantLock;
 import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+
+import static org.mpi_sws.jmc.api.JmcObject.handleHashCode;
+import static org.mpi_sws.jmc.api.JmcObject.handleToString;
 
 /**
  * Utility class for JMC runtime operations.
@@ -14,8 +26,32 @@ import java.util.Map;
  * and is not intended for direct use within the codebase.
  */
 public class JmcRuntimeUtils {
+    private static final Logger LOGGER = LogManager.getLogger(JmcRuntimeUtils.class);
 
     private static final JmcSyncLocksStore syncMethodLocksStore = new JmcSyncLocksStore();
+
+    // TODO: check if we need to change the type of the list here
+    private static final List<Class<?>> staticInitializedClassesList = new ArrayList<>();
+    private static final Set<String> staticInitializedClasses = new HashSet<>();
+
+    private JmcRuntimeUtils() {
+        // Private constructor to prevent instantiation
+    }
+
+    public static boolean SymEvent(JmcBooleanFormula formula) {
+        JmcRuntimeEvent event =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.SYMB_OP_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param("booleanFormula", formula)
+                        .build();
+        Object result = JmcRuntime.updateEventAndYield(event);
+        // If result is not boolean, throw an exception
+        if (!(result instanceof Boolean)) {
+            throw new RuntimeException("Expected a boolean result from symbolic event evaluation");
+        }
+        return (Boolean) result;
+    }
 
     /**
      * Creates a read event for the specified instance, owner, name, and descriptor.
@@ -288,7 +324,7 @@ public class JmcRuntimeUtils {
      * @param instance the instance to lock
      */
     public static void syncMethodLock(Object instance) {
-        syncMethodLocksStore.getLock(instance.hashCode()).lock();
+        syncMethodLocksStore.getLock(handleHashCode(instance)).lock();
     }
 
     /**
@@ -299,7 +335,7 @@ public class JmcRuntimeUtils {
      * @param instance the instance to unlock
      */
     public static void syncMethodUnLock(Object instance) {
-        syncMethodLocksStore.getLock(instance.hashCode()).unlock();
+        syncMethodLocksStore.getLock(handleHashCode(instance)).unlock();
     }
 
     /**
@@ -310,7 +346,7 @@ public class JmcRuntimeUtils {
      * @param className the class name to lock
      */
     public static void syncMethodLock(String className) {
-        syncMethodLocksStore.getLock(className.hashCode()).lock();
+        syncMethodLocksStore.getLock(handleHashCode(className)).lock();
     }
 
     /**
@@ -321,7 +357,7 @@ public class JmcRuntimeUtils {
      * @param className the class name to unlock
      */
     public static void syncMethodUnLock(String className) {
-        syncMethodLocksStore.getLock(className.hashCode()).unlock();
+        syncMethodLocksStore.getLock(handleHashCode(className)).unlock();
     }
 
     /**
@@ -332,7 +368,7 @@ public class JmcRuntimeUtils {
      * @param instance the instance to register a lock for
      */
     public static void registerSyncLock(Object instance) {
-        syncMethodLocksStore.registerLock(instance.hashCode());
+        syncMethodLocksStore.registerLock(handleHashCode(instance));
     }
 
     /**
@@ -343,7 +379,7 @@ public class JmcRuntimeUtils {
      * @param className the class name to register a lock for
      */
     public static void registerSyncLock(String className) {
-        syncMethodLocksStore.registerLock(className.hashCode());
+        syncMethodLocksStore.registerLock(handleHashCode(className));
     }
 
     /**
@@ -354,7 +390,7 @@ public class JmcRuntimeUtils {
      * @param instance the instance to lock
      */
     public static void syncBlockLock(Object instance) {
-        syncMethodLocksStore.getWithRegister(instance.hashCode()).lock();
+        syncMethodLocksStore.getWithRegister(handleHashCode(instance)).lock();
     }
 
     /**
@@ -365,7 +401,20 @@ public class JmcRuntimeUtils {
      * @param instance the instance to unlock
      */
     public static void syncBlockUnLock(Object instance) {
-        syncMethodLocksStore.getWithRegister(instance.hashCode()).unlock();
+        syncMethodLocksStore.getWithRegister(handleHashCode(instance)).unlock();
+    }
+
+    /**
+     * Retrieves the synchronization lock for the given instance.
+     *
+     * <p>This method returns the lock associated with the instance's hash code, null if none
+     * exists.
+     *
+     * @param instance the instance to get the lock for
+     * @return the JmcReentrantLock associated with the instance
+     */
+    public static JmcReentrantLock getSyncLock(Object instance) {
+        return syncMethodLocksStore.getLock(handleHashCode(instance));
     }
 
     /**
@@ -398,18 +447,197 @@ public class JmcRuntimeUtils {
          * @return the JmcReentrantLock for the given lockObject
          */
         public JmcReentrantLock getWithRegister(Object lockObject) {
-            if (!lockMap.containsKey(lockObject.hashCode())) {
-                lockMap.put(lockObject.hashCode(), new JmcReentrantLock(lockObject));
+            if (!lockMap.containsKey(handleHashCode(lockObject))) {
+                lockMap.put(handleHashCode(lockObject), new JmcReentrantLock(lockObject));
             }
-            return lockMap.get(lockObject.hashCode());
+            return lockMap.get(handleHashCode(lockObject));
         }
 
+        /**
+         * Returns the JmcReentrantLock for the given hashCode.
+         *
+         * @param hashCode the hash code of the lock object
+         * @return the JmcReentrantLock for the given hashCode, or null if not found
+         */
         public JmcReentrantLock getLock(Integer hashCode) {
             return lockMap.get(hashCode);
         }
 
+        /**
+         * Registers a new JmcReentrantLock for the given hashCode.
+         *
+         * @param hashcode the hash code of the lock object
+         */
         public void registerLock(int hashcode) {
             lockMap.put(hashcode, new JmcReentrantLock());
         }
     }
+
+    public static void registerStaticInitializedClass(Class<?> clazz) {
+        if (!staticInitializedClasses.contains(clazz.getName())) {
+            LOGGER.debug("Static classes registered are : {}", clazz.getName());
+            staticInitializedClasses.add(clazz.getName());
+            staticInitializedClassesList.add(clazz);
+
+        }
+    }
+
+    private static URL renameClassURL(URL url) {
+        String urlString = url.toString();
+        urlString = urlString.replace("build/classes/java/main/", "build/generated/instrumented/");
+        urlString = urlString.replace("build/classes/java/test/", "build/generated/instrumented/");
+        try {
+            return new URL(urlString);
+        } catch (Exception e) {
+            LOGGER.error("Error renaming class URL: {}", urlString, e);
+            return url; // Fallback to original URL in case of error
+        }
+    }
+
+    // Relic from a different method to deal with static initialized classes
+    // Would reload the classes and trigger static initializers.
+    //    private static void reloadStaticInitializedClasses() {
+    //        if (staticInitializedClasses.isEmpty()) {
+    //            LOGGER.info("No static initialized classes to reload.");
+    //            return;
+    //        }
+    //        URL[] urls = new URL[staticInitializedClassesList.size()];
+    //        for (Class<?> clazz : staticInitializedClassesList) {
+    //            URL url = clazz.getResource(clazz.getSimpleName() + ".class");
+    //            urls[staticInitializedClassesList.indexOf(clazz)] = renameClassURL(url);
+    //        }
+    //
+    //        try (ReloadingClassLoader classLoader = new ReloadingClassLoader(urls)) {
+    //            // This will load the classes and trigger static initializers
+    //            for (Class<?> clazz : staticInitializedClassesList) {
+    //                try {
+    //                    classLoader.reloadClass(clazz.getCanonicalName());
+    //                } catch (ClassNotFoundException e) {
+    //                    LOGGER.error("Could not reload class: {}", clazz.getCanonicalName(), e);
+    //                }
+    //            }
+    //        } catch (Exception e) {
+    //            LOGGER.error("Error initializing the custom class loader", e);
+    //        }
+    //    }
+
+    private static void invokeInstrumentedStaticMethod() {
+        if (staticInitializedClasses.isEmpty()) {
+            LOGGER.debug("No static initialized classes to invoke.");
+            return;
+        }
+        List<Class<?>> snapshot = new ArrayList<>(staticInitializedClassesList);
+
+        // Determine which method to call based on iteration
+        String methodName = "$staticInitExplicit";
+
+        for (Class<?> clazz : snapshot) {
+            try {
+                Method m = clazz.getDeclaredMethod(methodName);
+                m.setAccessible(true);
+                m.invoke(null);
+                LOGGER.debug("Invoked {} in class: {}", methodName, clazz.getName());
+            } catch (InvocationTargetException ite) {
+                ite.getCause().printStackTrace();
+                LOGGER.error("Error invoking {} in {}", methodName, clazz.getName(), ite.getCause());
+            } catch (IllegalAccessException e) {
+                LOGGER.error("Error invoking {} in {}", methodName, clazz.getName(), e.getCause());
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+
+
+    /**
+     * Invokes static initializer of the instrumented classes.
+     *
+     * <p>The instrumentation introduces a special method `$staticInit` for each class that has a
+     * non-empty static initializer. Here we invoke that method.
+     */
+    public static void invokeStaticInitializedClasses(int iteration) {
+        // reloadStaticInitializedClasses();
+        invokeInstrumentedStaticMethod();
+    }
+
+    private static class ReloadingClassLoader extends URLClassLoader {
+        public ReloadingClassLoader(URL[] urls) {
+            super(urls, null);
+        }
+
+        public void reloadClass(String className) throws ClassNotFoundException {
+            // TODO: this is not working. Need to figure out why?
+            // This method is used to reload a class by its name
+            Class<?> clazz = loadClass(className, true);
+            if (clazz != null) {
+                LOGGER.info("Reloaded class: {}", className);
+            } else {
+                throw new ClassNotFoundException("Class not found: " + className);
+            }
+        }
+    }
+
+
+    // Add these methods to JmcRuntimeUtils class:
+
+    /**
+     * Creates a start static init event without yielding.
+     * This marks the beginning of static initialization for a class.
+     */
+    public static void startStaticInitEventWithoutYield() {
+        JmcRuntimeEvent.Builder builder = new JmcRuntimeEvent.Builder();
+        builder.type(JmcRuntimeEvent.Type.START_STATIC_INIT_EVENT)
+                .taskId(JmcRuntime.currentTask());
+        JmcRuntime.updateEvent(builder.build());
+    }
+
+    /**
+     * Creates an end static init event without yielding.
+     * This marks the end of static initialization for a class.
+     */
+    public static void endStaticInitEventWithoutYield() {
+        JmcRuntimeEvent.Builder builder = new JmcRuntimeEvent.Builder();
+        builder.type(JmcRuntimeEvent.Type.END_STATIC_INIT_EVENT)
+                .taskId(JmcRuntime.currentTask());
+        JmcRuntime.updateEvent(builder.build());
+    }
+
+    /**
+     * Registers a static ExecutorService field for tracking.
+     * Uses reflection to avoid triggering field read instrumentation.
+     *
+     * @param className the fully qualified class name
+     * @param fieldName the name of the static ExecutorService field
+     */
+    public static void registerStaticExecutorField(String className, String fieldName) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            java.lang.reflect.Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            Object executorService = field.get(null);
+
+            if (executorService instanceof java.util.concurrent.ExecutorService) {
+                registerExecutor((java.util.concurrent.ExecutorService) executorService);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to register static executor field: {}.{}", className, fieldName, e);
+        }
+    }
+
+    /**
+     * Registers an ExecutorService for tracking and automatic shutdown.
+     *
+     * @param executor the ExecutorService to register
+     */
+    public static void registerExecutor(java.util.concurrent.ExecutorService executor) {
+        // This will be called by TrackExecutors
+        JmcRuntimeEvent.Builder builder = new JmcRuntimeEvent.Builder();
+        builder.type(JmcRuntimeEvent.Type.EXECUTOR_SHUTDOWN_EVENT)
+                .taskId(JmcRuntime.currentTask())
+                .param("executor", executor)
+                .param("action", "register");
+        JmcRuntime.updateEvent(builder.build());
+    }
+
 }
