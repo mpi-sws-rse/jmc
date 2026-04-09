@@ -6,62 +6,61 @@ import org.gradle.api.tasks.testing.Test
 
 /**
  * Gradle plugin for applying the JMC agent to test tasks.
+ *
+ * Usage in build.gradle.kts:
+ * ```
+ * plugins {
+ *     id("org.mpi_sws.jmc.gradle") version "0.1.2"
+ * }
+ *
+ * jmc {
+ *     version = "0.1.2"
+ *     instrumentingPackage = listOf("com.example.myapp")
+ * }
+ * ```
  */
 class JmcPlugin : Plugin<Project> {
-    /**
-     * Applies the JMC agent to test tasks that contain the @JmcCheck annotation.
-     *
-     * This plugin adds the JMC agent as a Java agent to test tasks, allowing for runtime
-     * instrumentation of the code under test. It also adds the necessary dependencies for
-     * JMC to the test implementation configuration.
-     */
     override fun apply(target: Project) {
-        // Add dependencies of core testImplementation
         val extension = target.extensions.create("jmc", JmcExtension::class.java)
-        val agentDependency = "${extension.agentJar}:${extension.version}"
-        val libraryDependency = "${extension.libraryJar}:${extension.version}"
-        val agentJar = target.configurations.detachedConfiguration(
-            target.dependencies.create(agentDependency)
-        ).resolve().first()
-        val libraryJar = target.configurations.detachedConfiguration(
-            target.dependencies.create(libraryDependency)
-        ).resolve().first()
 
-        target.dependencies.add("testImplementation", libraryDependency)
+        // Defer all dependency resolution and task configuration until after
+        // the user's build script has finished configuring the extension.
+        target.afterEvaluate {
+            val agentDependency = "${extension.agentJar}:${extension.version}"
+            val libraryDependency = "${extension.libraryJar}:${extension.version}"
 
-        target.tasks.withType(Test::class.java).configureEach { testTask ->
-            testTask.doFirst {
-                if (shouldApplyAgent(testTask)) {
-                    var agentArg = "-javaagent:$agentJar=jmcRuntimeJarPath=$libraryJar"
-                    var addArgs = ""
+            val agentJarFile = target.configurations.detachedConfiguration(
+                target.dependencies.create(agentDependency)
+            ).resolve().first()
+
+            val libraryJarFile = target.configurations.detachedConfiguration(
+                target.dependencies.create(libraryDependency)
+            ).resolve().first()
+
+            target.dependencies.add("testImplementation", libraryDependency)
+
+            target.tasks.withType(Test::class.java).configureEach { testTask ->
+                testTask.doFirst {
+                    val args = mutableListOf<String>()
+
+                    args.add("jmcRuntimeJarPath=$libraryJarFile")
+
                     if (extension.debug) {
-                        addArgs += ",debug,debugSavePath=${extension.debugPath}"
+                        args.add("debug")
+                        args.add("debugSavePath=${extension.debugPath}")
                     }
+
                     if (extension.instrumentingPackage.isNotEmpty()) {
-                        if (addArgs.isNotEmpty()) {
-                            addArgs += ","
-                        }
-                        addArgs += "instrumentingPackages=${extension.instrumentingPackage.joinToString(";")}"
+                        args.add("instrumentingPackages=${extension.instrumentingPackage.joinToString(";")}")
                     }
+
                     if (extension.excludedPackages.isNotEmpty()) {
-                        if (addArgs.isNotEmpty()) {
-                            addArgs += ","
-                        }
-                        addArgs += "excludedPackages=${extension.excludedPackages.joinToString(";")}"
+                        args.add("excludedPackages=${extension.excludedPackages.joinToString(";")}")
                     }
-                    if (addArgs.isNotEmpty()) {
-                        agentArg += addArgs
-                    }
+
+                    val agentArg = "-javaagent:$agentJarFile=${args.joinToString(",")}"
                     testTask.jvmArgs(agentArg)
                 }
-            }
-        }
-    }
-
-    private fun shouldApplyAgent(testTask: Test): Boolean {
-        return testTask.testClassesDirs.files.any { classDir ->
-            classDir.walkTopDown().any { file ->
-                file.extension == "class" && file.readText().contains("@JmcCheck")
             }
         }
     }
@@ -71,46 +70,24 @@ class JmcPlugin : Plugin<Project> {
  * Extension for configuring the JMC plugin.
  */
 open class JmcExtension {
-    // Default values for the JMC plugin configuration
-    /**
-     * The version of the JMC agent and library to use.
-     * Default is "0.1.1".
-     */
-    var version: String = "0.1.1"
+    /** The version of the JMC agent and library to use. */
+    var version: String = "0.1.2"
 
-    /**
-     * The Maven coordinates of the JMC agent JAR.
-     * Default is "org.mpi_sws.jmc:jmc-agent".
-     */
-    var agentJar: String = "org.mpi_sws.jmc:jmc-agent"
+    /** The Maven coordinates of the JMC agent JAR. */
+    var agentJar: String = "org.mpi-sws.jmc:jmc-agent"
 
-    /**
-     * The Maven coordinates of the JMC library JAR.
-     * Default is "org.mpi_sws.jmc:jmc".
-     */
-    var libraryJar: String = "org.mpi_sws.jmc:jmc"
+    /** The Maven coordinates of the JMC library JAR. */
+    var libraryJar: String = "org.mpi-sws.jmc:jmc"
 
-    /**
-     * Whether to enable debug mode for the JMC agent.
-     * Default is false.
-     */
+    /** Whether to enable debug mode for the JMC agent. */
     var debug: Boolean = false
 
-    /**
-     * The path where debug information will be saved.
-     * Default is "build/generated/instrumented".
-     */
+    /** The path where debug information will be saved. */
     var debugPath: String = "build/generated/instrumented"
 
-    /**
-     * The list of packages to instrument.
-     * Default is an empty list.
-     */
+    /** The list of packages to instrument. */
     var instrumentingPackage: List<String> = ArrayList()
 
-    /**
-     * The list of packages to exclude from instrumentation.
-     * Default is an empty list.
-     */
+    /** The list of packages to exclude from instrumentation. */
     var excludedPackages: List<String> = ArrayList()
 }

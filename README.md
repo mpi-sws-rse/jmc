@@ -1,127 +1,367 @@
-# JMC model checker
+# JMC — Java Model Checker
 
-A simple, easy to use, intuitive Java model checker.
+A systematic concurrency testing tool for Java. JMC explores thread interleavings
+to find concurrency bugs such as data races, atomicity violations, and deadlocks.
 
-Take the following example use case:
+## Requirements
 
-```java
+- Java 17+
+- Gradle 8.4+
 
-@Test
-void testRandomBuggyCounter() {
-    JmcCheckerConfiguration config =
-            new JmcCheckerConfiguration.Builder().numIterations(10).build();
-    JmcModelChecker jmcModelChecker = new JmcModelChecker(config);
+## Quick Start
 
-    JmcTestTarget target =
-            new JmcFunctionalTestTarget(
-                    "RandomBuggyCounter",
-                    () -> {
-                        BuggyCounter.main(new String[0]);
-                    });
+Add the JMC Gradle plugin to your `build.gradle.kts`:
 
-    jmcModelChecker.check(target);
+```kotlin
+plugins {
+    java
+    id("org.mpi_sws.jmc.gradle") version "0.1.2"
+}
+
+jmc {
+    version = "0.1.2"
+    instrumentingPackage = listOf("com.example")
 }
 ```
 
-where `BuggyCounter` is a simple buggy counter class:
+The plugin automatically resolves the JMC agent and library JARs, adds the
+library as a `testImplementation` dependency, and attaches the agent to all
+`Test` tasks.
+
+If building from source, add `mavenLocal()` to both `repositories` and
+`pluginManagement.repositories` in your `settings.gradle.kts`:
+
+```kotlin
+pluginManagement {
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+```
+
+### Plugin Configuration
+
+```kotlin
+jmc {
+    version = "0.1.2"                                    // JMC version
+    instrumentingPackage = listOf("com.example.myapp")   // packages to instrument
+    excludedPackages = listOf("com.example.thirdparty")  // packages to skip
+    debug = true                                         // dump instrumented bytecode
+    debugPath = "build/generated/instrumented"            // where to dump it
+}
+```
+
+## How JMC Works
+
+JMC operates in two phases: bytecode instrumentation and controlled execution.
+
+A Java agent instruments your compiled bytecode at class-load time, inserting
+yield points at concurrency-relevant operations. During execution, the JMC
+runtime serializes thread execution — only one thread runs at a time, with a
+pluggable scheduler deciding which thread to resume at each yield point. Across
+multiple iterations, different scheduling decisions explore different
+interleavings.
+
+You write normal Java code. The agent handles everything automatically.
+
+### Example: Detecting a Data Race
+
+Consider a simple shared counter:
 
 ```java
-public class BuggyCounter {
-    private int count = 0;
+class Counter {
+    int value = 0;
 
-    public static void main(String[] args) {
-        BuggyCounter buggyCounter = new BuggyCounter();
+    void increment() {
+        value++;
+    }
+}
+```
 
-        JmcThread thread1 = new JmcThread(() -> count++);
-        JmcThread thread2 = new JmcThread(() -> count++);
+`value++` looks atomic in source code, but compiles to separate `GETFIELD`,
+`IADD`, and `PUTFIELD` bytecode instructions. Between the read and write,
+another thread can read the same stale value — the classic lost-update race.
 
-        thread1.start();
-        thread2.start();
+Two threads each incrementing once should produce `value == 2`, but under
+certain interleavings the result is `1`:
 
+```
+T1: read value (0)
+T2: read value (0)
+T1: write value (1)
+T2: write value (1)    ← lost update
+```
+
+### What the Agent Does
+
+The agent transforms your code at load time. You write standard Java
+concurrency primitives — `Thread`, `ReentrantLock`, `ExecutorService`, etc. —
+and the agent replaces them with JMC-controlled equivalents and inserts yield
+points at field accesses.
+
+Before instrumentation:
+
+```java
+public class CounterRaceTest extends Thread {
+    ReentrantLock lock;
+    Counter counter;
+
+    @Override
+    public void run() {
         try {
-            thread1.join1();
-            thread2.join1();
-            assert buggyCounter.getCount() == 2;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            lock.lock();
+            counter.increment();
+        } finally {
+            lock.unlock();
         }
     }
 }
 ```
 
-Without any locks in place to synchronize shared access between the threads, the model checker will find the execution
-where the assertion fails.
-
-It will do so by exploring all possible interleavings of the threads. We gain control of the interleaving by extending
-the Thread class to JmcThread and implementing control yields in the start and join1 methods.
-
-Alternatively by using locks to synchronize access to the shared variable count:
+After instrumentation by the JMC agent:
 
 ```java
-public class CorrectCounter {
-    private int count = 0;
-    private JmcRenetrantLock lock = new JmcRenetrantLock();
+public class CounterRaceTest extends JmcThread {
+    JmcReentrantLock lock;
+    Counter counter;
 
-    public static void main(String[] args) {
-        BuggyCounter buggyCounter = new BuggyCounter();
-
-        JmcThread thread1 = new JmcThread(() -> {
-            lock.lock();
-            count++;
-            lock.unlock();
-        });
-        JmcThread thread2 = new JmcThread(() -> {
-            lock.lock();
-            count++;
-            lock.unlock();
-        });
-
-        thread1.start();
-        thread2.start();
-
+    @Override
+    public void run1() {
         try {
-            thread1.join1();
-            thread2.join1();
-            assert buggyCounter.getCount() == 2;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            JmcRuntimeUtils.readEventWithoutYield(...);
+            JmcReentrantLock var10000 = this.lock;
+            JmcRuntime.yield();
+            var10000.lock();
+            JmcRuntimeUtils.readEventWithoutYield(...);
+            Counter var4 = this.counter;
+            JmcRuntime.yield();
+            var4.increment();
+        } finally {
+            JmcRuntimeUtils.readEventWithoutYield(...);
+            JmcReentrantLock var5 = this.lock;
+            JmcRuntime.yield();
+            var5.unlock();
         }
     }
 }
 ```
 
-we can verify that the assertion will never fail by exploring all possible interleavings of the threads.
+`Thread` → `JmcThread`, `ReentrantLock` → `JmcReentrantLock`, and
+`JmcRuntime.yield()` calls are inserted at field accesses to create scheduling
+points where the model checker can switch threads.
 
-## Running integration tests
+## Writing a Test
 
-To run the tests, you can use the following command:
+Annotate test methods with `@JmcCheck` to run them under the model checker.
+No special types needed in your test code — use standard Java concurrency.
+
+```java
+import org.mpi_sws.jmc.annotations.JmcCheck;
+import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class CounterTest {
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 100, strategy = "random")
+    void testCounterRace() throws Exception {
+        Counter counter = new Counter();
+
+        Thread t1 = new Thread(() -> counter.increment());
+        Thread t2 = new Thread(() -> counter.increment());
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+
+        assertEquals(2, counter.getValue());
+    }
+}
+```
+
+Run it:
 
 ```bash
-./gradlew clean
-./gradlew :core:publish
-./gradlew :integration-test:test --tests org.mpi_sws.jmc.test.<test name>
+./gradlew test --tests com.example.CounterTest.testCounterRace
 ```
 
-An integration test brings together the different components to effectively test the system using JMC.
-The different components are
+JMC will systematically explore interleavings and report the schedule that
+triggers the assertion failure.
 
-1. **Instrumentation Agent** - Located in `agent` directory and build using `./gradlew :agent:agentJar`. The resulting
-   Jar should be passed as an `-agent` argument to the JVM.
-2. **JMC Model Checker** - Located in `core` directory and build using `./gradlew :core:publish`. The resulting Jar
-   should be passed as a dependency to the test.
-3. **JMC Test Target** - Located in `integration-test` directory and build using `./gradlew :integration-test:test`
+### Using Different Strategies
 
-## Concurrent primitives supported
+The same test with the `trust` strategy for systematic exploration:
 
-As evident in the example, we provide support for concurrent primitives by extending the Thread and ReentrantLock
-classes.
+```java
 
-Currently supported primitives are:
+@JmcCheck
+@JmcCheckConfiguration(numIterations = 100, strategy = "trust", debug = true)
+void testCounterRaceTrust() throws Exception {
+    Counter counter = new Counter();
 
-- `JmcThread` (extends Thread)
-- `JmcRenetrantLock` (extends ReentrantLock)
-- `JmcExecutorService` (extends ExecutorService)
-- `JmcFuture` (extends Future)
+    Thread t1 = new Thread(() -> counter.increment());
+    Thread t2 = new Thread(() -> counter.increment());
 
-By replacing the Thread primitives with the JmcThread primitives, we can control the interleaving of the threads across
-different use cases such as ThreadPools and Executors.
+    t1.start();
+    t2.start();
+
+    t1.join();
+    t2.join();
+
+    assertEquals(2, counter.getValue());
+}
+```
+
+With `debug = true` and the `trust` strategy, JMC records execution graphs
+that can be visualized (see [Visualizing Execution Graphs](#visualizing-execution-graphs)).
+
+## Configuration
+
+### @JmcCheckConfiguration
+
+| Parameter       | Type    | Description                                 | Default                         |
+|-----------------|---------|---------------------------------------------|---------------------------------|
+| `strategy`      | String  | Scheduling strategy                         | `"random"`                      |
+| `numIterations` | int     | Upper bound on interleavings to explore     | —                               |
+| `debug`         | boolean | Store execution graphs and exploration logs | `false`                         |
+| `reportPath`    | String  | Path for generated reports                  | `build/test-results/jmc-report` |
+| `seed`          | long    | RNG seed for reproducibility                | —                               |
+
+### @JmcTimeout
+
+Sets a time limit on the exploration. Accepts a `value` (long) and a `unit`
+(TimeUnit).
+
+Either `@JmcTimeout` or `numIterations` is required — the test will fail if
+neither is specified.
+
+## Scheduling Strategies
+
+| Strategy              | Type         | Description                                  |
+|-----------------------|--------------|----------------------------------------------|
+| `random`              | Randomized   | Randomly selects thread interleavings        |
+| `trust`               | Systematic   | Execution-graph-based exhaustive exploration |
+| `dag-estimation`      | Estimation   | DAG-based interleaving estimation            |
+| `abs-dag-estimation`  | Estimation   | Abstract DAG estimation                      |
+| `fj-dag-estimation`   | Estimation   | Fork-join DAG estimation                     |
+| `trust-estimation`    | Estimation   | Trust-based estimation                       |
+| `wg-trust-estimation` | Estimation   | Weighted-graph trust estimation              |
+| `testor`              | Budget-aware | Budget-constrained testing strategy          |
+
+## Bytecode Instrumentation
+
+The JMC agent (`jmc-agent`) instruments classes at load time using ASM visitors.
+Most concurrency-relevant operations are intercepted automatically without
+requiring source-level changes.
+
+What the agent instruments:
+
+- Field reads and writes (instance and static) — scheduling yield points
+- Synchronized methods and blocks
+- Static initializers (class loading races)
+- `wait()` / `notify()` / `notifyAll()`
+- Native method bridges
+- Atomic operations (`AtomicInteger`, `AtomicReference`, etc.)
+- `Future` and `CompletableFuture` interactions
+- `ReentrantLock` operations
+- `ScheduledExecutorService` scheduling
+- Lambda and `invokedynamic` call sites
+- Enum classes are skipped (no mutable state)
+- Final fields are skipped (immutable after construction)
+
+## Supported Concurrency Primitives
+
+JMC provides model-checker-aware replacements for standard `java.util.concurrent`
+types. The agent swaps these in automatically during instrumentation.
+
+**Threading:**
+
+- `JmcThread` — Thread
+- `JmcThreadFactory` — ThreadFactory
+
+**Executors:**
+
+- `JmcExecutorService` — ExecutorService
+- `JmcScheduledExecutorService` — ScheduledExecutorService
+- `JmcThreadPoolExecutor` — ThreadPoolExecutor
+- `JmcExecutors` — Executors factory methods
+
+**Futures:**
+
+- `JmcFuture` — Future
+- `JmcScheduledFuture` — ScheduledFuture
+- `JmcCompletableFuture` — CompletableFuture
+
+**Atomics:**
+
+- `JmcAtomicBoolean` — AtomicBoolean
+- `JmcAtomicInteger` — AtomicInteger
+- `JmcAtomicLong` — AtomicLong
+- `JmcAtomicReference` — AtomicReference
+- `JmcAtomicReferenceArray` — AtomicReferenceArray
+- `JmcAtomicStampedReference` — AtomicStampedReference
+
+**Synchronization:**
+
+- `JmcReentrantLock` — ReentrantLock
+- `JmcLockSupport` — LockSupport
+
+**Utilities:**
+
+- `JmcRandom` — deterministic Random for reproducible runs
+- `JmcAssert` / `JmcAssume` — model-checker-aware assertions and assumptions
+
+## Visualizing Execution Graphs
+
+When using the `trust` strategy with `debug = true`, JMC records execution
+graphs to `build/test-results/jmc-report/`.
+
+Visualize them with:
+
+```bash
+./scripts/visualize.sh <path-to-graph-files>
+```
+
+This starts a local web server at `http://localhost:8000`.
+
+## Project Structure
+
+| Module             | Description                                              |
+|--------------------|----------------------------------------------------------|
+| `core`             | Model checker engine, strategies, runtime, and API types |
+| `agent`            | Bytecode instrumentation agent (ASM-based)               |
+| `gradle-plugin`    | Gradle plugin for automatic agent attachment             |
+| `integration-test` | Integration tests exercising the full stack              |
+
+## Building from Source
+
+```bash
+git clone https://github.com/mpi-sws-rse/jmc.git
+cd jmc
+./gradlew clean
+./gradlew :core:publish
+./gradlew :agent:publish
+./gradlew :gradle-plugin:publishToMavenLocal
+```
+
+To run integration tests:
+
+```bash
+./gradlew :integration-test:test --tests org.mpi_sws.jmc.test.<TestName>
+```
+
+## Documentation
+
+See the `docs/` directory for detailed guides:
+
+- [User Guide](docs/User%20guide.md)
+- [Configuration API](docs/Configuration%20API.md)
+- [Gradle Example Project Setup](docs/Gradle%20Example%20Project%20Setup.md)
+
+## License
+
+Apache License 2.0
