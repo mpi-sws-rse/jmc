@@ -1,7 +1,129 @@
 # JMC — Java Model Checker
 
-A systematic concurrency testing tool for Java. JMC explores thread interleavings
-to find concurrency bugs such as data races, atomicity violations, and deadlocks.
+A simple, easy to use, intuitive stateless model checker for finding concurrency bugs such as data races, atomicity 
+violations, assertion failures, and deadlocks in Java programs.
+
+Take the following example where we have a counter class with two methods to increment and get the value of the counter:
+
+```java
+class Counter {
+    int value = 0;
+    
+    void inc() {
+        value++;
+    }
+    
+    int get() {
+        return value;
+    }
+}
+```
+Normally, you would write a test that spawns multiple threads to increment the counter and check the final value:
+
+```java
+void testCounter() {
+    Counter counter = new Counter();
+    
+    Thread t1 = new Thread(() -> counter.inc());
+    Thread t2 = new Thread(() -> counter.inc());
+    
+    t1.start();
+    t2.start();
+    
+    t1.join();
+    t2.join();
+    
+    assertEquals(2, counter.get());
+}
+```
+In order to find any potential bugs in this test, all you have to do is annotate the test method with `JmcCheck` and 
+`JmcCheckConfiguration` as shown below:
+
+```java
+@JmcCheck
+@JmcCheckConfiguration(numIterations = 100)
+void testCounter() {
+    // ... same code as above
+}
+```
+Then, when you run the test, JMC systematically explores thread interleavings to find any concurrency bugs.
+If it finds a bug, it will report the schedule that triggers the failure, allowing you to reproduce and fix the issue.
+
+As a result of running the test, JMC will find a bug in the `Counter` class where the final value of the counter is `1`
+instead of `2` due to a lost update race. JMC will report the interleaving that leads to this bug, which is:
+
+```text
+Main               | T1                  | T2
+-------------------|---------------------|--------------------
+1. Start(T1)       |                     |
+2. Start(T2)       |                     |
+                   | 3. Read(value, 0)   |
+                   |                     | 4. Read(value, 0)
+                   | 5. Write(value, 1)  |
+                   |                     | 6. Write(value, 1)
+7. Join(T1)        |                     |
+8. Join(T2)        |                     |
+9. Read(value, 1)  |                     |
+```
+## Exploration Strategies
+
+JMC supports multiple scheduling strategies to explore thread interleavings. Mainly JMC supports 4 types of strategies,
+`random`, `systematic`, `estimation`, and `replay`.
+
+### Random Testing
+
+The `random` strategy employs a randomized approach to explore thread interleavings. It randomly selects 
+enabled threads at each scheduling point, providing a quick way to find bugs without exhaustive exploration. While it
+may not guarantee finding all bugs, it can be effective for large state spaces where systematic exploration is infeasible.
+
+Note that `random` is the default strategy in the `JmcCheckConfiguration`, so you don't need to specify it explicitly
+if you want to use it.
+
+### Systematic Exploration
+
+The `systematic` strategy explores systematically all the necessary and sufficient interleavings to find all existing bugs.
+This strategy employs dynamic partial-order reduction (DPOR) to reduce the exhaustive search space into the minimal set
+of interleavings that none of them is equivalent to another, and thus guarantees finding all bugs. Note that you should 
+expect a longer execution time when using this strategy compared to `random`, especially for tests with a large state space.
+
+#### Trust
+
+The `trust` strategy is a state-of-the-art DPOR-based model checking algorithm for shared-memory concurrent programs. 
+Simply put, `trust` starts with a random schedule and enumerates all possible distinct interleavings by commuting
+thread operations based on some dependence relation. 
+
+In order to use the `trust` strategy, you can specify it in the `JmcCheckConfiguration` annotation as shown below:
+
+```java
+@JmcCheck
+@JmcCheckConfiguration(numIterations = 100, strategy = "trust")
+void testCounter() {
+    // ... same code as above
+        
+}
+```
+
+#### Must
+
+TBA
+
+#### ConDpor
+
+TBA
+
+### Estimation-Based Strategies
+
+#### Testor
+
+TBA
+
+#### Pestor
+
+TBA
+
+### Replay
+
+TBA
 
 ## Requirements
 
