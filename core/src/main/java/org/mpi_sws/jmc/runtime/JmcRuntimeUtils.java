@@ -6,17 +6,15 @@ import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.api.util.concurrent.JmcReentrantLock;
 import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
 
-import java.lang.reflect.Field;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
 
 import static org.mpi_sws.jmc.api.JmcObject.handleHashCode;
-import static org.mpi_sws.jmc.api.JmcObject.handleToString;
+
 
 /**
  * Utility class for JMC runtime operations.
