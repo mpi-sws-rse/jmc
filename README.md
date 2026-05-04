@@ -1,6 +1,6 @@
 # JMC — Java Model Checker
 
-A simple, easy to use, intuitive stateless model checker for finding concurrency bugs such as data races, atomicity 
+A simple, easy to use, intuitive stateless model checker for finding concurrency bugs such as data races, atomicity
 violations, assertion failures, and deadlocks in Java programs.
 
 Take the following example where we have a counter class with two methods to increment and get the value of the counter:
@@ -8,44 +8,48 @@ Take the following example where we have a counter class with two methods to inc
 ```java
 class Counter {
     int value = 0;
-    
+
     void inc() {
         value++;
     }
-    
+
     int get() {
         return value;
     }
 }
 ```
+
 Normally, you would write a test that spawns multiple threads to increment the counter and check the final value:
 
 ```java
 void testCounter() {
     Counter counter = new Counter();
-    
+
     Thread t1 = new Thread(() -> counter.inc());
     Thread t2 = new Thread(() -> counter.inc());
-    
+
     t1.start();
     t2.start();
-    
+
     t1.join();
     t2.join();
-    
+
     assertEquals(2, counter.get());
 }
 ```
-In order to find any potential bugs in this test, all you have to do is annotate the test method with `JmcCheck` and 
+
+In order to find any potential bugs in this test, all you have to do is annotate the test method with `JmcCheck` and
 `JmcCheckConfiguration` as shown below:
 
 ```java
+
 @JmcCheck
 @JmcCheckConfiguration(numIterations = 100)
 void testCounter() {
     // ... same code as above
 }
 ```
+
 Then, when you run the test, JMC systematically explores thread interleavings to find any concurrency bugs.
 If it finds a bug, it will report the schedule that triggers the failure, allowing you to reproduce and fix the issue.
 
@@ -65,6 +69,7 @@ Main               | T1                  | T2
 8. Join(T2)        |                     |
 9. Read(value, 1)  |                     |
 ```
+
 ## Exploration Strategies
 
 JMC supports multiple scheduling strategies to explore thread interleavings. Mainly JMC supports 4 types of strategies,
@@ -72,34 +77,38 @@ JMC supports multiple scheduling strategies to explore thread interleavings. Mai
 
 ### Random Testing
 
-The `random` strategy employs a randomized approach to explore thread interleavings. It randomly selects 
+The `random` strategy employs a randomized approach to explore thread interleavings. It randomly selects
 enabled threads at each scheduling point, providing a quick way to find bugs without exhaustive exploration. While it
-may not guarantee finding all bugs, it can be effective for large state spaces where systematic exploration is infeasible.
+may not guarantee finding all bugs, it can be effective for large state spaces where systematic exploration is
+infeasible.
 
 Note that `random` is the default strategy in the `JmcCheckConfiguration`, so you don't need to specify it explicitly
 if you want to use it.
 
 ### Systematic Exploration
 
-The `systematic` strategy explores systematically all the necessary and sufficient interleavings to find all existing bugs.
+The `systematic` strategy explores systematically all the necessary and sufficient interleavings to find all existing
+bugs.
 This strategy employs dynamic partial-order reduction (DPOR) to reduce the exhaustive search space into the minimal set
-of interleavings that none of them is equivalent to another, and thus guarantees finding all bugs. Note that you should 
-expect a longer execution time when using this strategy compared to `random`, especially for tests with a large state space.
+of interleavings that none of them is equivalent to another, and thus guarantees finding all bugs. Note that you should
+expect a longer execution time when using this strategy compared to `random`, especially for tests with a large state
+space.
 
 #### Trust
 
-The `trust` strategy is a state-of-the-art DPOR-based model checking algorithm for shared-memory concurrent programs. 
+The `trust` strategy is a state-of-the-art DPOR-based model checking algorithm for shared-memory concurrent programs.
 Simply put, `trust` starts with a random schedule and enumerates all possible distinct interleavings by commuting
-thread operations based on some dependence relation. 
+thread operations based on some dependence relation.
 
 In order to use the `trust` strategy, you can specify it in the `JmcCheckConfiguration` annotation as shown below:
 
 ```java
+
 @JmcCheck
 @JmcCheckConfiguration(numIterations = 100, strategy = "trust")
 void testCounter() {
     // ... same code as above
-        
+
 }
 ```
 
@@ -132,6 +141,8 @@ TBA
 
 ## Quick Start
 
+### Simple Project
+
 Add the JMC Gradle plugin to your `build.gradle.kts`:
 
 ```kotlin
@@ -146,9 +157,13 @@ jmc {
 }
 ```
 
-The plugin automatically resolves the JMC agent and library JARs, adds the
-library as a `testImplementation` dependency, and attaches the agent to all
-`Test` tasks.
+The plugin resolves the JMC agent and library JARs, adds the library as a
+`testImplementation` dependency, and attaches the agent to all `Test` tasks.
+Run tests normally:
+
+```bash
+./gradlew test --tests com.example.CounterTest
+```
 
 If building from source, add `mavenLocal()` to both `repositories` and
 `pluginManagement.repositories` in your `settings.gradle.kts`:
@@ -163,17 +178,55 @@ pluginManagement {
 }
 ```
 
-### Plugin Configuration
+### Multi-Project Build
 
-```kotlin
+For projects that mix JMC and non-JMC tests (e.g. Apache Iceberg), use
+`target` to point at a subproject and `testTask` to create a dedicated task.
+This keeps the regular `test` task unaffected.
+
+In the root `build.gradle`:
+
+```groovy
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'org.mpi_sws.jmc.gradle:org.mpi_sws.jmc.gradle.gradle.plugin:0.1.2'
+    }
+}
+
+apply plugin: 'org.mpi_sws.jmc.gradle'
 jmc {
-    version = "0.1.2"                                    // JMC version
-    instrumentingPackage = listOf("com.example.myapp")   // packages to instrument
-    excludedPackages = listOf("com.example.thirdparty")  // packages to skip
-    debug = true                                         // dump instrumented bytecode
-    debugPath = "build/generated/instrumented"            // where to dump it
+    version = "0.1.2"
+    target = ":iceberg-core"
+    testTask = "jmcTest"
+    instrumentingPackage = ["org.apache.iceberg"]
+    excludedPackages = ["org.apache.iceberg.relocated"]
 }
 ```
+
+The plugin creates a `jmcTest` task on the target subproject. Run JMC tests
+with:
+
+```bash
+./gradlew :iceberg-core:jmcTest --tests org.apache.iceberg.TestInMemoryCatalogJmc
+```
+
+Regular tests still run normally with `./gradlew :iceberg-core:test`.
+
+### Plugin Configuration
+
+| Property               | Type    | Description                                                                                 | Default                          |
+|------------------------|---------|---------------------------------------------------------------------------------------------|----------------------------------|
+| `version`              | String  | JMC version                                                                                 | `"0.1.2"`                        |
+| `instrumentingPackage` | List    | Packages to instrument                                                                      | `[]`                             |
+| `excludedPackages`     | List    | Packages to skip                                                                            | `[]`                             |
+| `target`               | String  | Subproject path (e.g. `":iceberg-core"`). Empty = current project.                          | `""`                             |
+| `testTask`             | String  | Task name (e.g. `"jmcTest"`). Creates the task if it doesn't exist. Empty = all Test tasks. | `""`                             |
+| `debug`                | boolean | Dump instrumented bytecode to disk                                                          | `false`                          |
+| `debugPath`            | String  | Where to dump instrumented bytecode                                                         | `"build/generated/instrumented"` |
 
 ## How JMC Works
 
@@ -282,6 +335,7 @@ No special types needed in your test code — use standard Java concurrency.
 ```java
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CounterTest {
@@ -464,17 +518,59 @@ This starts a local web server at `http://localhost:8000`.
 ```bash
 git clone https://github.com/mpi-sws-rse/jmc.git
 cd jmc
+```
+
+### Publishing All Modules
+
+To build and publish all modules to your local Maven repository (`~/.m2`):
+
+```bash
 ./gradlew clean
 ./gradlew :core:publish
 ./gradlew :agent:publish
 ./gradlew :gradle-plugin:publishToMavenLocal
 ```
 
-To run integration tests:
+This makes the artifacts available as `org.mpi-sws.jmc:jmc:0.1.2`,
+`org.mpi-sws.jmc:jmc-agent:0.1.2`, and the Gradle plugin
+`org.mpi_sws.jmc.gradle` for use in other projects via `mavenLocal()`.
+
+### Building Individual Modules
+
+**Core** (model checker engine, runtime, API types, scheduling strategies):
+
+```bash
+./gradlew :core:build        # compile + test
+./gradlew :core:publish      # publish to mavenLocal
+```
+
+**Agent** (bytecode instrumentation, ASM visitors):
+
+```bash
+./gradlew :agent:agentJar    # build the fat JAR with all dependencies
+./gradlew :agent:publish     # publish to mavenLocal
+```
+
+The agent JAR is a shadow/fat JAR that bundles ASM and other dependencies.
+It's produced at `agent/build/libs/agent.jar`.
+
+**Gradle Plugin** (automatic agent attachment for test tasks):
+
+```bash
+./gradlew :gradle-plugin:build              # compile + test
+./gradlew :gradle-plugin:publishToMavenLocal  # publish to mavenLocal
+```
+
+### Running Integration Tests
+
+Integration tests bring together the agent, core, and test targets:
 
 ```bash
 ./gradlew :integration-test:test --tests org.mpi_sws.jmc.test.<TestName>
 ```
+
+The integration test module depends on the agent JAR being built first
+(`./gradlew :agent:agentJar`).
 
 ## Documentation
 
