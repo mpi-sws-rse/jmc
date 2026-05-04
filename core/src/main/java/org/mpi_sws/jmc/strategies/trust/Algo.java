@@ -8,6 +8,7 @@ import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.solver.ProverState;
 import org.mpi_sws.jmc.solver.SMTSolverTypes;
 import org.mpi_sws.jmc.solver.SolverUtil;
 import org.mpi_sws.jmc.solver.incremental.IncrementalSolver;
@@ -342,6 +343,11 @@ public class Algo {
                 continue;
             }
 
+            if (item.isRemoveProver()) {
+                processRMP(item);
+                continue;
+            }
+
             // Handle the forward revisit
             ExecutionGraph newGraph = item.getGraph();
             if (newGraph == null) {
@@ -440,7 +446,18 @@ public class Algo {
         LOGGER.debug(sb.toString());
     }
 
+    public void processRMP(ExplorationStack.Item item) {
+        int id = explorationStack.getProverId();
+        if ( id < 0 ) {
+            throw new RuntimeException("No prover can exist with id 0");
+        }
+        solver.removeProver(id);
+    }
+
     public void processBWR(ExplorationStack.Item item) {
+
+        int newProverId = createNewProver();
+        addRemoveProverItem(newProverId);
 
         ExecutionGraphNode write = item.getEvent1();
         ExecutionGraph restrictedGraph = item.getGraph();
@@ -463,6 +480,33 @@ public class Algo {
         }
         explorationStack.push(forwardLW);
         logLastChild(forwardLW);
+    }
+
+    private int createNewProver() {
+        // If no solver is configured, ignore.
+        if (solver == null) {
+            return -1;
+        }
+        // Create a new prover
+        ProverState newProver = solver.createNewProver();
+        // Update prover's model with current prover state
+        solver.cloneCurrentProverState(newProver);
+        // Register the new prover
+        int newProverId = solver.registerNewProver(newProver);
+        // update the solver with the new prover
+        solver.setProverById(newProverId);
+        // Update the current inner_stack state
+        explorationStack.setProverId(newProverId);
+        return newProverId;
+    }
+
+    private void addRemoveProverItem(int proverId) {
+        if (solver == null || proverId < 0) {
+            return;
+        }
+
+        ExplorationStack.Item removeProverItem = ExplorationStack.Item.removeProver();
+        explorationStack.push(removeProverItem);
     }
 
     private List<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {

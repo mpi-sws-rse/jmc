@@ -268,8 +268,8 @@ public class IncrementalSolver extends SymbolicSolver {
         }
     }
 
-    public void updateProver(int id) {
-        if (id == 0) {
+    public void setProverById(int id) {
+        if (id < 0) {
             throw new RuntimeException("Cannot update prover with zero id");
         }
 
@@ -290,7 +290,12 @@ public class IncrementalSolver extends SymbolicSolver {
         }
     }
 
-    public void updateWithCurrentProver(ProverState p) {
+    /**
+     * Clones the current prover state into the given prover state. This is useful when we want to create a new prover
+     * state that is identical to the current prover state, but with a different prover environment.
+     * @param p the prover state to clone into
+     */
+    public void cloneCurrentProverState(ProverState p) {
         for (Map.Entry<String, SymIntVariable> entry : symIntVariableMap.entrySet()) {
             p.symIntVariableMap.put(entry.getKey(), entry.getValue().clone());
         }
@@ -306,6 +311,13 @@ public class IncrementalSolver extends SymbolicSolver {
 
     public int getLastProverId() {
         return lastProverId;
+    }
+
+
+    public int registerNewProver(ProverState prover) {
+        int newProverId = getLastProverId();
+        updateProverMap(newProverId, prover);
+        return newProverId;
     }
 
     public void updateProverMap(int id, ProverState proverState) {
