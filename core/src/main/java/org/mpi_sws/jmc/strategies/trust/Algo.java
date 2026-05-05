@@ -2,6 +2,7 @@ package org.mpi_sws.jmc.strategies.trust;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
@@ -10,6 +11,7 @@ import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpi_sws.jmc.solver.ProverState;
 import org.mpi_sws.jmc.solver.SMTSolverTypes;
+import org.mpi_sws.jmc.solver.SolverResult;
 import org.mpi_sws.jmc.solver.SolverUtil;
 import org.mpi_sws.jmc.solver.incremental.IncrementalSolver;
 import org.mpi_sws.jmc.util.FileUtil;
@@ -161,6 +163,23 @@ public class Algo {
                 locationStore.addAlias(location, event.getLocation());
             }
         }
+
+        if (event.isSymbolic()) {
+            handleGuidedSymEvent(event);
+        }
+    }
+
+    private void handleGuidedSymEvent(Event event) {
+        boolean result = event.getAttribute("result");
+
+        if (solver.isFreshProver()) {
+            JmcBooleanFormula formula = event.getAttribute("booleanFormula");
+            if (result) {
+                solver.addFormula(formula);
+            } else {
+                solver.addNegatedFormula(formula);
+            }
+        }
     }
 
     /**
@@ -205,6 +224,9 @@ public class Algo {
         switch (event.getType()) {
             case END:
                 handleBot(event);
+                break;
+            case SYMBOLIC:
+                handleSymbolic(event);
                 break;
             case READ:
                 handleRead(event);
@@ -268,6 +290,28 @@ public class Algo {
             this.executionGraph.trackThreadJoins(eventNode);
             this.executionGraph.trackThreadJoinCompletion(eventNode);
         }
+    }
+
+    public void handleSymbolic(Event event) {
+        boolean result = processNewSymbOp(event);
+        // TODO: Return the result
+    }
+
+    private boolean processNewSymbOp(Event event) {
+        JmcBooleanFormula symbolicOperation = event.getAttribute("booleanFormula");
+        SolverResult solverResult = solver.computeNewSymbolicOperation(symbolicOperation);
+
+        event.setAttribute("result", solverResult.result());
+        event.setAttribute("isNegatable", solverResult.isNegatable());
+
+        ExecutionGraphNode symb = this.executionGraph.addEvent(event);
+        if (solverResult.isNegatable()) {
+            explorationStack.push(
+                    ExplorationStack.Item.symbolicForwardRevisit(
+                            symb,
+                            this.executionGraph));
+        }
+        return solverResult.result();
     }
 
     /**

@@ -39,7 +39,7 @@ public class JmcRuntimeUtils {
     public static boolean SymEvent(JmcBooleanFormula formula) {
         JmcRuntimeEvent event =
                 new JmcRuntimeEvent.Builder()
-                        .type(JmcRuntimeEvent.Type.SYMB_OP_EVENT)
+                        .type(JmcRuntimeEvent.Type.SYMBOLIC_EVENT)
                         .taskId(JmcRuntime.currentTask())
                         .param("booleanFormula", formula)
                         .build();
