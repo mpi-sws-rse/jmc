@@ -255,6 +255,11 @@ public class ExplorationStack {
             return new Item(ItemType.FLW, one, null, graph);
         }
 
+        public static Item symbolicForwardRevisit(
+                ExecutionGraphNode one, ExecutionGraph graph) {
+            return new Item(ItemType.FSYMB, one, null, graph);
+        }
+
         public static Item createProver() {
             return new Item(ItemType.CRP, null, null, null);
         }
