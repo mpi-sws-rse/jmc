@@ -293,11 +293,11 @@ public class Algo {
     }
 
     public void handleSymbolic(Event event) {
-        boolean result = processNewSymbOp(event);
+        boolean result = processNewSymEvent(event);
         // TODO: Return the result
     }
 
-    private boolean processNewSymbOp(Event event) {
+    private boolean processNewSymEvent(Event event) {
         JmcBooleanFormula symbolicOperation = event.getAttribute("booleanFormula");
         SolverResult solverResult = solver.computeNewSymbolicOperation(symbolicOperation);
 
@@ -553,6 +553,15 @@ public class Algo {
         explorationStack.push(removeProverItem);
     }
 
+    private void restrictSolverStack(GraphRestrictView restrictView) {
+        // We need to check if the solver object exists, if there are any symbolic events,
+        // and if the solver is not fresh.
+        if (solver != null && restrictView != null &&
+                restrictView.getNumOfSymEvents() > 0 && !solver.isFreshProver()) {
+            solver.restrictSolverStack(restrictView.getNumOfSymEvents());
+        }
+    }
+
     private List<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {
         // Forward revisit of w -> r
         ExecutionGraphNode read = item.getEvent1();
@@ -561,7 +570,8 @@ public class Algo {
         LOGGER.debug("Processing forward revisit of w {} -> r {}", write.key(), read.key());
 
         executionGraph.changeReadsFrom(read, write);
-        executionGraph.restrict(read);
+        GraphRestrictView restrictView = executionGraph.restrict(read);
+        restrictSolverStack(restrictView);
         executionGraph.recomputeVectorClocks();
 
         for (Event additionalEvent : item.getAdditionalEventsToProcess()) {
@@ -606,7 +616,8 @@ public class Algo {
         LOGGER.debug("Processing forward revisit of w {} -> w {}", write1.key(), write2.key());
 
         executionGraph.swapCoherency(write1, write2);
-        executionGraph.restrict(write1);
+        GraphRestrictView restrictView = executionGraph.restrict(write1);
+        restrictSolverStack(restrictView);
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
@@ -617,7 +628,9 @@ public class Algo {
         LOGGER.debug("Processing forward revisit of w {} -> lw", w.key());
         // set the co
         executionGraph.trackCoherency(w);
-        executionGraph.restrict(w);
+
+        GraphRestrictView restrictView = executionGraph.restrict(w);
+        restrictSolverStack(restrictView);
 
         List<Event> additionalEvents = item.getAdditionalEventsToProcess();
         if (additionalEvents.size() > 1) {

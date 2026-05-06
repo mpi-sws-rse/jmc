@@ -1074,7 +1074,10 @@ public class ExecutionGraph {
         }
     }
 
-    public void restrict(ExecutionGraphNode restrictingNode) {
+    public GraphRestrictView restrict(ExecutionGraphNode restrictingNode) {
+        // Keep the number of symbolic events among the removed events
+        int numOfSymEvent = 0;
+
         // We use the following map to track the modified locations of write events.
         // It is used to update the CO-edges.
         Map<Integer, List<ExecutionGraphNode>> modifiedLocations = new HashMap<>();
@@ -1099,6 +1102,10 @@ public class ExecutionGraph {
         allEvents = newAllEvents;
         // Iterating over these nodes and remove them from the taskEvents and coherencyOrder
         for (ExecutionGraphNode node : removedNodes) {
+
+            if (node.getEvent().isSymbolic()) {
+                numOfSymEvent = numOfSymEvent + 1;
+            }
 
             if (node.getEvent().isWrite() || node.getEvent().isWriteEx()) {
                 // Based on the assumption that the init node is never removed. So, we only have to
@@ -1149,6 +1156,14 @@ public class ExecutionGraph {
         for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : modifiedLocations.entrySet()) {
             recomputeCoEdges(entry.getKey(), entry.getValue());
         }
+
+        if (numOfSymEvent == 0) {
+            return null;
+        }
+
+        GraphRestrictView restrictView = new GraphRestrictView();
+        restrictView.setNumOfSymEvents(numOfSymEvent);
+        return restrictView;
     }
 
     /**
