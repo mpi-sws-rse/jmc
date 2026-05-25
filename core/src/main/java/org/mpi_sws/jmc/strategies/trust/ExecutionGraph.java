@@ -2019,4 +2019,18 @@ public class ExecutionGraph {
     public int size() {
         return allEvents.size();
     }
+
+    public List<ExecutionGraphNode> getAllEvents() {
+        return allEvents;
+    }
+
+    public List<ExecutionGraphNode> getAllSymbolicEvents() {
+        List<ExecutionGraphNode> symbolicEvents = new ArrayList<>();
+        for (ExecutionGraphNode node : allEvents) {
+            if (node.getEvent().isSymbolic()) {
+                symbolicEvents.add(node);
+            }
+        }
+        return symbolicEvents;
+    }
 }

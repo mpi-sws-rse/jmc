@@ -145,7 +145,7 @@ public class IncrementalSolver extends SymbolicSolver {
     }
 
     @Override
-    protected void pop() {
+    public void pop() {
         long startTime = System.nanoTime();
         prover.pop();
         long endTime = System.nanoTime();
@@ -243,6 +243,11 @@ public class IncrementalSolver extends SymbolicSolver {
         }
         long endTime = System.nanoTime();
         advanceSolverTime(endTime - startTime);
+    }
+
+    @Override
+    public void resetCurrentProver() {
+        resetProver(this.prover);
     }
 
     private void updateModel() {

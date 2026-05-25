@@ -17,7 +17,7 @@ public class SchedulingChoice<T extends SchedulingChoiceValue> {
     private Long taskId;
     private boolean isBlockTask;
     private boolean isBlockExecution;
-    private final T value;
+    private T value;
 
     /**
      * Constructs a new SchedulingChoice object.
@@ -62,6 +62,15 @@ public class SchedulingChoice<T extends SchedulingChoiceValue> {
      */
     public T getValue() {
         return value;
+    }
+
+    /**
+     * Set the value associated with this scheduling choice.
+     *
+     * @param value the value to set
+     */
+    public void setValue(Object value) {
+        this.value = (T) value;
     }
 
     /**

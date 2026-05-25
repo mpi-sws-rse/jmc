@@ -10,49 +10,73 @@ public class SolverUtil {
     private SolverUtil() {
     }
 
-    public static SymbolicSolver getSolver() {
-        return SymbolicSolverSingletonFactory.getSolver(null);
-    }
-
-    public static SymbolicSolver getSolver(SMTSolverTypes solverType) {
+    public static SymbolicSolver createSymbolicSolver(SMTSolverTypes solverType) {
         return SymbolicSolverSingletonFactory.getSolver(solverType);
     }
 
-    public static IncrementalSolver getIncrementalSolver() {
-        return SymbolicSolverSingletonFactory.getIncrementalSolver(null);
+    public static IncrementalSolver createIncrementalSolver(SMTSolverTypes solverType) {
+        return SymbolicSolverSingletonFactory.getIncrementalSolver(solverType);
     }
 
-    public static IncrementalSolver getIncrementalSolver(SMTSolverTypes solverType) {
-        return SymbolicSolverSingletonFactory.getIncrementalSolver(solverType);
+    public static SymbolicSolver getSolver() {
+        return SymbolicSolverSingletonFactory.getSolver();
+    }
+
+    public static IncrementalSolver getIncrementalSolver() {
+        return SymbolicSolverSingletonFactory.getIncrementalSolver();
     }
 
     public static BooleanFormulaManager getBmgr() {
         SymbolicSolver solver = getSolver();
+        if (solver == null) {
+            throw new IllegalStateException("SymbolicSolver has not been initialized. Please create a SymbolicSolver" +
+                    " before accessing the BooleanFormulaManager.");
+        }
         return solver.getBmgr();
     }
 
     public static IntegerFormulaManager getImgr() {
         SymbolicSolver solver = getSolver();
+        if (solver == null) {
+            throw new IllegalStateException("SymbolicSolver has not been initialized. Please create a SymbolicSolver" +
+                    " before accessing the IntegerFormulaManager.");
+        }
         return solver.getImgr();
     }
 
     public static SymBoolVariable getSymBoolVariable(String name) {
         SymbolicSolver solver = getSolver();
+        if (solver == null) {
+            throw new IllegalStateException("SymbolicSolver has not been initialized. Please create a SymbolicSolver" +
+                    " before accessing symbolic variables.");
+        }
         return solver.getSymBoolVariable(name);
     }
 
     public static SymIntVariable getSymIntVariable(String name) {
         SymbolicSolver solver = getSolver();
+        if (solver == null) {
+            throw new IllegalStateException("SymbolicSolver has not been initialized. Please create a SymbolicSolver" +
+                    " before accessing symbolic variables.");
+        }
         return solver.getSymIntVariable(name);
     }
 
     public static int getSymIntVarValue(String name) {
         SymbolicSolver solver = getSolver();
+        if (solver == null) {
+            throw new IllegalStateException("SymbolicSolver has not been initialized. Please create a SymbolicSolver" +
+                    " before accessing symbolic variable values.");
+        }
         return solver.getSymIntVarValue(name);
     }
 
     public static boolean getSymBoolVarValue(String name) {
         SymbolicSolver solver = getSolver();
+        if (solver == null) {
+            throw new IllegalStateException("SymbolicSolver has not been initialized. Please create a SymbolicSolver" +
+                    " before accessing symbolic variable values.");
+        }
         return solver.getSymBoolVarValue(name);
     }
 }
