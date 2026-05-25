@@ -90,7 +90,8 @@ public class Algo {
 
     private SMTSolverTypes getSolverType(String solverType) {
         if (solverType == null) {
-            throw new IllegalArgumentException("Solver type cannot be null");
+            LOGGER.warn("No solver type specified. Thus, the solver will be turned off.");
+            return SMTSolverTypes.OFF;
         }
         return switch (solverType.toLowerCase()) {
             case "z3" -> SMTSolverTypes.Z3;
