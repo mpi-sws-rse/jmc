@@ -10,6 +10,8 @@ stages:
 before_script:
   - apt-get update && apt-get install -y --no-install-recommends z3 libz3-dev libz3-java zip
   - export JAVA_TOOL_OPTIONS="-Djava.library.path=/usr/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jni"
+  - export LD_LIBRARY_PATH="/usr/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:${LD_LIBRARY_PATH:-}"
+  - find /usr -name 'libz3java.so*' -o -name 'libz3.so*' | sort
   - GRADLE_USER_HOME="$(pwd)/.gradle"
   - export GRADLE_USER_HOME
 
