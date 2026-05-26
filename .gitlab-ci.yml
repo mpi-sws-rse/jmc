@@ -114,41 +114,6 @@ test:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-claude_review:
-  stage: review
-  image: node:24-alpine3.21
-  allow_failure: true
-  before_script:
-    - apk update
-    - apk add --no-cache git bash
-    - npm install -g @anthropic-ai/claude-code@1.0.117
-  script:
-    - echo "Running Claude review on the full MR diff..."
-    - |
-      set -eu
-      if [ -z "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}" ]; then
-        echo "CI_MERGE_REQUEST_DIFF_BASE_SHA is missing; this job must run in a merge request pipeline."
-        exit 1
-      fi
-      git fetch --unshallow || true
-      git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --depth=2000 || true
-      BASE_SHA="$CI_MERGE_REQUEST_DIFF_BASE_SHA"
-      HEAD_SHA="$CI_COMMIT_SHA"
-      git diff --no-ext-diff "$BASE_SHA" "$HEAD_SHA" > mr.diff
-      claude \
-        -p "Read ./AGENTS.md first, then review the full merge request diff contained in mr.diff. This MR may include many commits, so review the complete patch rather than only the latest commit. Focus on bugs, risky logic, security issues, missing tests, and confusing code. Do not modify files. Do not create commits. Do not push changes. If you find issues, explain them briefly and clearly." \
-        --allowedTools "Read,Grep,Glob" > claude-review.txt
-      echo "----- Claude review output -----"
-      cat claude-review.txt
-  artifacts:
-    when: always
-    paths:
-      - claude-review.txt
-      - mr.diff
-    expire_in: 7 days
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
 publish:
   stage: deploy
   before_script:
