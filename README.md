@@ -3,7 +3,7 @@
 A simple, easy to use, intuitive stateless model checker for finding concurrency bugs such as data races, atomicity
 violations, assertion failures, and deadlocks in Java programs.
 
-Take the following example where we have a counter class with two methods to increment and get the value of the counter:
+Take the following example where we have a counter class with two methods to `increment` and `get` the value of the counter:
 
 ```java
 class Counter {
@@ -112,14 +112,21 @@ void testCounter() {
 }
 ```
 
-#### Must
-
-TBA
-
 #### ConDpor
 
 TBA
 
+#### Must
+
+In order to specify and model check distributed protocols implemented in Java, JMC provides the `must` strategy
+which is a DPOR-based algorithm that is designed to handle different types of communication models,
+such as FIFO peer-to-peer, mailbox-based, and fully asynchronous. This strategy is also coupled
+with an API for users to specify the communication model of their protocol, and thus allows JMC to explore the necessary
+and sufficient interleavings to find all bugs in the protocol under the specified communication model.
+
+Unfortunately, the `must` strategy is not yet available in the current version of JMC. However, you can find an early
+implementation of it in the `old-main` branch of the repository. We are planning to merge the refactored version of the
+`must` strategy into the main branch in the near future.
 ### Estimation-Based Strategies
 
 #### Testor
