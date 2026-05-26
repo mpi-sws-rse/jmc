@@ -1,4 +1,5 @@
-image: gradle:jdk17-alpine
+# Use a glibc-based image for JavaSMT/Z3 native libraries.
+image: gradle:jdk17
 
 stages:
   - build
