@@ -8,6 +8,8 @@ import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
+import org.mpi_sws.jmc.runtime.scheduling.ObjectValue;
+import org.mpi_sws.jmc.runtime.scheduling.PrimitiveValue;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpi_sws.jmc.solver.ProverState;
 import org.mpi_sws.jmc.solver.SMTSolverTypes;
@@ -42,7 +44,8 @@ public class Algo {
     private final LocationStore locationStore;
     private final TreeLogger tLogger;
     private long numOfBlockedGraphs = 0L;
-    private ValueTracker valueTracker;
+    private ValueTracker externalValueTracker;
+    private ValueTracker internalValueTracker;
     /**
      * @property {@link #solver} is used to store the {@link org.mpi_sws.jmc.solver.SymbolicSolver} object that is used
      * to solve symbolic operations.
@@ -56,10 +59,12 @@ public class Algo {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
         this.executionGraph = new ExecutionGraph();
-        this.explorationStack = new ExplorationStack();
+        // Initialize exploration stack with an empty inner stack with the initialized execution graph and prover id 1
+        this.explorationStack = new ExplorationStack(this.executionGraph);
         this.locationStore = new LocationStore();
         this.executionGraph.addEvent(Event.init());
-        this.valueTracker = new ValueTracker();
+        this.externalValueTracker = new ValueTracker();
+        this.internalValueTracker = new ValueTracker();
         this.tLogger = null;
         this.solver = null;
     }
@@ -71,7 +76,8 @@ public class Algo {
         this.explorationStack = new ExplorationStack();
         this.locationStore = new LocationStore();
         this.executionGraph.addEvent(Event.init());
-        this.valueTracker = new ValueTracker();
+        this.externalValueTracker = new ValueTracker();
+        this.internalValueTracker = new ValueTracker();
         if (hasTreeLogger) {
             this.tLogger = new TreeLogger();
         } else {
@@ -129,7 +135,23 @@ public class Algo {
             LOGGER.debug("End of guiding phase");
             isGuiding = false;
         }
+
+        // Check for symbolic choice
+        if (out.isSymbolic()) {
+            SolverResult solverResult = extractSolverResult(out);
+            // The task id in algo must be adjusted
+            storeInternalValue(out.getTaskId() - 1, solverResult);
+        }
         return out;
+    }
+
+    private SolverResult extractSolverResult(SchedulingChoice<?> choice) {
+        Object value = choice.getValue();
+        if (value instanceof ObjectValue objectValue
+                && objectValue.asObject() instanceof SolverResult solverResult) {
+            return solverResult;
+        }
+        throw new RuntimeException("Expected symbolic scheduling choice to carry a SolverResult");
     }
 
     /**
@@ -137,12 +159,15 @@ public class Algo {
      *
      * @param task scheduling choice to update its value
      */
-    public void updateValue(SchedulingChoice<?> task) {
-        long id = task.getTaskId();
-        if (valueTracker.containsValue(id)) {
-            Object value = valueTracker.getValue(id);
-            valueTracker.removeValue(id);
-            task.setValue(value);
+    public void updateExternalValue(SchedulingChoice<?> task) {
+        // Since the task we receive is from runtime, the task id must be treated adjusted in algo
+        long id = task.getTaskId() - 1;
+        if (externalValueTracker.containsValue(id)) {
+            Object value = externalValueTracker.getValue(id);
+            externalValueTracker.removeValue(id);
+
+            PrimitiveValue val = new  PrimitiveValue(value);
+            task.setValue(val);
         }
     }
 
@@ -190,26 +215,49 @@ public class Algo {
         }
     }
 
-    private void storeValue(long id, Object value) {
-        if (valueTracker.containsValue(id)) {
+    private void storeExternalValue(long id, Object value) {
+        if (externalValueTracker.containsValue(id)) {
             throw new RuntimeException("Value for id " + id + " already exists");
         }
 
-        valueTracker.setValue(id, value);
+        externalValueTracker.setValue(id, value);
+    }
+
+    private void storeInternalValue(long id, Object value) {
+        if (internalValueTracker.containsValue(id)) {
+            throw new RuntimeException("Value for id " + id + " already exists");
+        }
+
+        internalValueTracker.setValue(id, value);
     }
 
     private void handleGuidedSymEvent(Event event) {
-        boolean result = event.getAttribute("result");
+        long taskId = event.getTaskId();
+        if (!internalValueTracker.containsValue(taskId)) {
+            throw HaltExecutionException.error(
+                    "Missing guided symbolic result for task " + taskId);
+        }
+        Object rawValue = internalValueTracker.getValue(taskId);
+        // clear the entry related to taskId in tracker
+        internalValueTracker.removeValue(taskId);
+        if (!(rawValue instanceof SolverResult solverResult)) {
+            throw HaltExecutionException.error(
+                    "Expected SolverResult for guided symbolic event on task " + taskId);
+        }
+
+        event.setAttribute("result", solverResult.result());
+        event.setAttribute("isNegatable", solverResult.isNegatable());
 
         if (solver.isFreshProver()) {
             JmcBooleanFormula formula = event.getAttribute("booleanFormula");
-            if (result) {
+            if (solverResult.result()) {
                 solver.addFormula(formula);
             } else {
                 solver.addNegatedFormula(formula);
             }
         }
-        storeValue(event.getKey().getTaskId(), result);
+        // Store the value in tracker
+        storeExternalValue(event.getKey().getTaskId(), solverResult.result());
     }
 
     /**
@@ -324,7 +372,7 @@ public class Algo {
 
     public void handleSymbolic(Event event) {
         boolean result = processNewSymEvent(event);
-        storeValue(event.getKey().getTaskId(), result);
+        storeExternalValue(event.getKey().getTaskId(), result);
     }
 
     private boolean processNewSymEvent(Event event) {

@@ -1,10 +1,10 @@
 package org.mpi_sws.jmc.test.symb.rCounter;
 
-public class RCounter {
+public class SharedCounter {
 
     private int value;
 
-    public RCounter() {
+    public SharedCounter() {
         this.value = 0;
     }
 

@@ -9,6 +9,10 @@ import java.util.Map;
  * any symbolic event. Trust strategy uses this tracker in order to keep these results. These values must be returned
  * to the program in execution via the yield point. Thus, upon calling the nextTask method of a strategy, these values
  * can be store into the corresponding future object and be retrieved after completing the future object.
+ *
+ * The other example is when the guiding mode in trust strategy is enabled, the strategy needs to keep the values of
+ * the symbolic events in order to use them for guiding the execution. In this case, the strategy can use this tracker
+ * to store these values and retrieve them when needed.
  */
 public class ValueTracker {
 

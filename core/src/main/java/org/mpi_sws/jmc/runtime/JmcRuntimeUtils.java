@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.api.util.concurrent.JmcReentrantLock;
 import org.mpi_sws.jmc.api.util.concurrent.JmcThread;
+import org.mpi_sws.jmc.runtime.scheduling.PrimitiveValue;
 
 
 import java.lang.reflect.InvocationTargetException;
@@ -44,11 +45,14 @@ public class JmcRuntimeUtils {
                         .param("booleanFormula", formula)
                         .build();
         Object result = JmcRuntime.updateEventAndYield(event);
-        // If result is not boolean, throw an exception
-        if (!(result instanceof Boolean)) {
-            throw new RuntimeException("Expected a boolean result from symbolic event evaluation");
+        // If result is not a PrimitiveValue, throw an exception
+        if (!(result instanceof PrimitiveValue)) {
+            throw new RuntimeException("Expected a PrimitiveValue result from SYM_EVENT, but got: " + result);
         }
-        return (Boolean) result;
+        PrimitiveValue pv = (PrimitiveValue) result;
+        // If the PrimitiveValue is not a boolean, an exception will be thrown when calling asBoolean(),
+        // which is the expected behavior
+        return pv.asBoolean();
     }
 
     /**

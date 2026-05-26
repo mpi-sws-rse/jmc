@@ -5,7 +5,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
+import org.mpi_sws.jmc.runtime.scheduling.ObjectValue;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.solver.SolverResult;
 import org.mpi_sws.jmc.util.LamportVectorClock;
 
 import java.util.*;
@@ -173,6 +175,15 @@ public class ExecutionGraph {
                 oldLocation = newLocation;
                 newLocation = null;
                 result.add(new SchedulingChoiceWrapper(SchedulingChoice.task(taskId), oldLocation));
+            } else if (EventUtils.isSymbolic(node.getEvent())) {
+                // Adding 1 to the task ID since the task ID is 0-indexed inside Trust but 1-indexed
+                // in JMC
+                Long taskId = node.getEvent().getTaskId() + 1;
+                boolean res = node.getEvent().getAttribute("result");
+                boolean isNeg = node.getEvent().getAttribute("isNegatable");
+                SolverResult solverResult = new SolverResult(res, isNeg);
+                ObjectValue obVal = new ObjectValue(solverResult);
+                result.add(new SchedulingChoiceWrapper(SchedulingChoice.task(taskId, obVal), oldLocation));
             } else {
                 // Adding 1 to the task ID since the task ID is 0-indexed inside Trust but 1-indexed
                 // in JMC

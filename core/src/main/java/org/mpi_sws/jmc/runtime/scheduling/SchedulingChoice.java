@@ -2,6 +2,7 @@ package org.mpi_sws.jmc.runtime.scheduling;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.solver.SolverResult;
 
 /**
  * Represents a scheduling choice in the JMC runtime.
@@ -98,6 +99,20 @@ public class SchedulingChoice<T extends SchedulingChoiceValue> {
      */
     public boolean isBlockExecution() {
         return isBlockExecution;
+    }
+
+    /**
+     * Checks if this scheduling choice is a symbolic operation
+     *
+     * @return true if it has solverResult object as it's value
+     */
+    public boolean isSymbolic() {
+        if (value instanceof ObjectValue objectValue) {
+            if (objectValue.asObject() instanceof SolverResult) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

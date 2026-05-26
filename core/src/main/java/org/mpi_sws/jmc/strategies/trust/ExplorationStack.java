@@ -24,6 +24,11 @@ public class ExplorationStack {
         this.stack = new ArrayList<>();
     }
 
+    public ExplorationStack(ExecutionGraph graph) {
+        this.stack = new ArrayList<>();
+        this.stack.add(new InnerStack(graph));
+    }
+
     /**
      * Pushes an item onto the stack. If the stack is empty, a new InnerStack is created and added
      * to the stack. If the item is a backward revisit, a new InnerStack is created and added to the
@@ -435,7 +440,7 @@ public class ExplorationStack {
         }
 
         public InnerStack(ExecutionGraph graph) {
-            this(graph, -1);
+            this(graph, 1);
         }
 
         public void push(Item item) {
