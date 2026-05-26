@@ -81,6 +81,10 @@ public class BackwardRevisitView {
         removedNodes.add(key);
     }
 
+    public void removeSymNode(Event.Key key) {
+        removedSymNodes.add(key);
+    }
+
     public boolean isMaximalSymbolicExtension() {
         IncrementalSolver solver = SolverUtil.getIncrementalSolver();
         if (solver == null || removedSymNodes == null) {
@@ -205,7 +209,8 @@ public class BackwardRevisitView {
                     throw HaltExecutionException.error("The event does not have a TO index.");
                 }
                 if (node.getEvent().getType() == Event.Type.NOOP
-                        || node.getEvent().getType() == Event.Type.ASSUME) {
+                        || node.getEvent().getType() == Event.Type.ASSUME
+                        || node.getEvent().getType() == Event.Type.SYMBOLIC) {
                     continue;
                 }
 

@@ -736,6 +736,9 @@ public class ExecutionGraph {
             ExecutionGraphNode node = allEvents.get(i);
             if (!node.happensBefore(write)) {
                 restrictedView.removeNode(node.key());
+                if (EventUtils.isSymbolic(node.getEvent())) {
+                    restrictedView.removeSymNode(node.key());
+                }
             }
         }
         return restrictedView;
