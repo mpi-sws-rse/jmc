@@ -21,8 +21,8 @@ java {
 }
 
 dependencies {
-    implementation("org.sosy-lab:java-smt:5.0.1")
-    implementation("org.sosy-lab:javasmt-solver-z3:4.14.0")
+    implementation("org.sosy-lab:java-smt:6.0.0")
+    implementation("org.sosy-lab:javasmt-solver-z3:4.16.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.9.22") // 1.9.22
     implementation("commons-cli:commons-cli:1.6.0")

@@ -142,6 +142,9 @@ public abstract class SymbolicSolver {
      * @return the corresponding SolverContextFactory.Solvers enum value.
      */
     public SolverContextFactory.Solvers findSolverType(SMTSolverTypes type) {
+        if (type == null) {
+            throw new NullPointerException("type is null");
+        }
         return switch (type) {
             case OPENSMT -> SolverContextFactory.Solvers.OPENSMT;
             case MATHSAT5 -> SolverContextFactory.Solvers.MATHSAT5;
@@ -317,7 +320,7 @@ public abstract class SymbolicSolver {
         push(negateFormula(formula));
     }
 
-    protected abstract void pop();
+    public abstract void pop();
 
     protected abstract void push();
 
@@ -342,4 +345,6 @@ public abstract class SymbolicSolver {
     public abstract int getProverId();
 
     public abstract void resetProver(ProverEnvironment prover);
+
+    public abstract void resetCurrentProver();
 }

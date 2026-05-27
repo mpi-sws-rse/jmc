@@ -41,7 +41,7 @@ public @interface JmcCheckConfiguration {
      *
      * @return the number of iterations
      */
-    int numIterations() default 0;
+    int numIterations() default 100;
 
     /**
      * Enables debug logs and additional information based on the strategy used.

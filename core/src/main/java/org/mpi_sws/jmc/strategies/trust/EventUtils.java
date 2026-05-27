@@ -33,6 +33,10 @@ public class EventUtils {
         return event.getType() == Event.Type.BLOCK;
     }
 
+    public static boolean isSymbolic(Event event) {
+        return event.getType() == Event.Type.SYMBOLIC;
+    }
+
     public static Long getStartedBy(Event event) {
         return event.getAttribute("started_by");
     }

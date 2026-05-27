@@ -2,8 +2,11 @@ package org.mpi_sws.jmc.strategies.trust;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
+import org.mpi_sws.jmc.solver.SolverUtil;
+import org.mpi_sws.jmc.solver.incremental.IncrementalSolver;
 
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +20,7 @@ public class BackwardRevisitView {
     private static final Logger LOGGER = LogManager.getLogger(BackwardRevisitView.class);
     private final ExecutionGraph graph;
     private final HashSet<Event.Key> removedNodes;
+    private final HashSet<Event.Key> removedSymNodes;
     private final ExecutionGraphNode read;
     private final ExecutionGraphNode write;
 
@@ -35,6 +39,11 @@ public class BackwardRevisitView {
             ExecutionGraph graph, ExecutionGraphNode read, ExecutionGraphNode write) {
         this.graph = graph.clone();
         this.removedNodes = new HashSet<>();
+        if (SolverUtil.getSolver() != null) {
+            removedSymNodes = new HashSet<>();
+        } else {
+            removedSymNodes = null;
+        }
         if (EventUtils.isLockAcquireRead(read.getEvent())) {
             // The read event is the additional event to be added
             // When revisiting this backward revisit
@@ -72,6 +81,116 @@ public class BackwardRevisitView {
         removedNodes.add(key);
     }
 
+    public void removeSymNode(Event.Key key) {
+        removedSymNodes.add(key);
+    }
+
+    public boolean isMaximalSymbolicExtension() {
+        IncrementalSolver solver = SolverUtil.getIncrementalSolver();
+        if (solver == null || removedSymNodes == null) {
+            throw new IllegalStateException("Solver is not initialized.");
+        }
+
+        if (removedSymNodes.isEmpty()) {
+            return true;
+        }
+
+        // At this point the backward revisit view contains symbolic events among the deleted set. Thus,
+        // we need to check their maximality condition.
+
+        // First we need to reset the current solver's stack
+        solver.resetCurrentProver();
+
+        List<ExecutionGraphNode> symNodes = graph.getAllSymbolicEvents();
+        if (symNodes.isEmpty()) {
+            return true;
+        }
+
+        boolean maximal = true;
+
+        // Then, we need to add all symbolic formulas among symbolic events in the graph, which are not in
+        // the removed set, to the solver.
+        for (ExecutionGraphNode node : symNodes) {
+            if (removedSymNodes.contains(node.key())) {
+                continue;
+            }
+
+            Event s =  node.getEvent();
+            if (!s.isSymbolic()) {
+                throw new IllegalStateException("The event is not symbolic.");
+            }
+            boolean result = s.getAttribute("result");
+            JmcBooleanFormula formula = s.getAttribute("booleanFormula");
+            if (result) {
+                solver.addFormula(formula);
+            } else {
+                solver.addNegatedFormula(formula);
+            }
+
+        }
+
+        // Next, we start checking the maximality of each symbolic event among deleted set.
+        // We should do this check based on the insertion order of these events.
+        for (ExecutionGraphNode node : symNodes) {
+            if (removedNodes.contains(node.key())) {
+                Event sym = node.getEvent();
+                if (!sym.isSymbolic()) {
+                    throw new IllegalStateException("The event is not symbolic.");
+                }
+
+                boolean SAT = false;
+                boolean UNSAT = false;
+                JmcBooleanFormula formula = sym.getAttribute("booleanFormula");
+                boolean result = sym.getAttribute("result");
+
+                SAT = solver.solveSymbolicFormula(formula);
+                solver.pop();
+                UNSAT = solver.disSolveSymbolicFormula(formula);
+                solver.pop();
+
+                if (SAT && UNSAT) {
+                    if (!result) {
+                        // We found a symbolic event which does not meet maximality condition. Thus, the revisit
+                        // is not maximal.
+                        maximal = false;
+                        break;
+                    }
+                }
+
+                // If we are here, then it means the current symbolic event is maximal and we can add it back to
+                // the solver for checking the next symbolic event in the deleted set.
+                if (SAT) {
+                    solver.addFormula(formula);
+                } else if (UNSAT) {
+                    solver.addNegatedFormula(formula);
+                } else {
+                    throw new IllegalStateException(
+                            "The symbolic formula is neither satisfiable nor unsatisfiable.");
+                }
+            }
+        }
+
+        // Finally, before returning the result, we should restore the solver's stack state. Thus, we need to
+        // reset the solver's stack again and push back symbolic constraints in the execution graph
+        solver.resetCurrentProver();
+        for (ExecutionGraphNode node : symNodes) {
+            Event sym = node.getEvent();
+            if (!sym.isSymbolic()) {
+                throw new IllegalStateException("The event is not symbolic.");
+            }
+            boolean result = sym.getAttribute("result");
+            JmcBooleanFormula formula = sym.getAttribute("booleanFormula");
+
+            if (result) {
+                solver.addFormula(formula);
+            }  else {
+                solver.addNegatedFormula(formula);
+            }
+        }
+
+        return maximal;
+    }
+
     /**
      * Checks if the restricted view is a maximal extension
      *
@@ -90,7 +209,8 @@ public class BackwardRevisitView {
                     throw HaltExecutionException.error("The event does not have a TO index.");
                 }
                 if (node.getEvent().getType() == Event.Type.NOOP
-                        || node.getEvent().getType() == Event.Type.ASSUME) {
+                        || node.getEvent().getType() == Event.Type.ASSUME
+                        || node.getEvent().getType() == Event.Type.SYMBOLIC) {
                     continue;
                 }
 

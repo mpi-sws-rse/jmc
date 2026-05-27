@@ -5,7 +5,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
+import org.mpi_sws.jmc.runtime.scheduling.ObjectValue;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.solver.SolverResult;
 import org.mpi_sws.jmc.util.LamportVectorClock;
 
 import java.util.*;
@@ -173,6 +175,15 @@ public class ExecutionGraph {
                 oldLocation = newLocation;
                 newLocation = null;
                 result.add(new SchedulingChoiceWrapper(SchedulingChoice.task(taskId), oldLocation));
+            } else if (EventUtils.isSymbolic(node.getEvent())) {
+                // Adding 1 to the task ID since the task ID is 0-indexed inside Trust but 1-indexed
+                // in JMC
+                Long taskId = node.getEvent().getTaskId() + 1;
+                boolean res = node.getEvent().getAttribute("result");
+                boolean isNeg = node.getEvent().getAttribute("isNegatable");
+                SolverResult solverResult = new SolverResult(res, isNeg);
+                ObjectValue obVal = new ObjectValue(solverResult);
+                result.add(new SchedulingChoiceWrapper(SchedulingChoice.task(taskId, obVal), oldLocation));
             } else {
                 // Adding 1 to the task ID since the task ID is 0-indexed inside Trust but 1-indexed
                 // in JMC
@@ -725,6 +736,9 @@ public class ExecutionGraph {
             ExecutionGraphNode node = allEvents.get(i);
             if (!node.happensBefore(write)) {
                 restrictedView.removeNode(node.key());
+                if (EventUtils.isSymbolic(node.getEvent())) {
+                    restrictedView.removeSymNode(node.key());
+                }
             }
         }
         return restrictedView;
@@ -1074,7 +1088,10 @@ public class ExecutionGraph {
         }
     }
 
-    public void restrict(ExecutionGraphNode restrictingNode) {
+    public GraphRestrictView restrict(ExecutionGraphNode restrictingNode) {
+        // Keep the number of symbolic events among the removed events
+        int numOfSymEvent = 0;
+
         // We use the following map to track the modified locations of write events.
         // It is used to update the CO-edges.
         Map<Integer, List<ExecutionGraphNode>> modifiedLocations = new HashMap<>();
@@ -1099,6 +1116,10 @@ public class ExecutionGraph {
         allEvents = newAllEvents;
         // Iterating over these nodes and remove them from the taskEvents and coherencyOrder
         for (ExecutionGraphNode node : removedNodes) {
+
+            if (node.getEvent().isSymbolic()) {
+                numOfSymEvent = numOfSymEvent + 1;
+            }
 
             if (node.getEvent().isWrite() || node.getEvent().isWriteEx()) {
                 // Based on the assumption that the init node is never removed. So, we only have to
@@ -1149,6 +1170,14 @@ public class ExecutionGraph {
         for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : modifiedLocations.entrySet()) {
             recomputeCoEdges(entry.getKey(), entry.getValue());
         }
+
+        if (numOfSymEvent == 0) {
+            return null;
+        }
+
+        GraphRestrictView restrictView = new GraphRestrictView();
+        restrictView.setNumOfSymEvents(numOfSymEvent);
+        return restrictView;
     }
 
     /**
@@ -2003,5 +2032,19 @@ public class ExecutionGraph {
 
     public int size() {
         return allEvents.size();
+    }
+
+    public List<ExecutionGraphNode> getAllEvents() {
+        return allEvents;
+    }
+
+    public List<ExecutionGraphNode> getAllSymbolicEvents() {
+        List<ExecutionGraphNode> symbolicEvents = new ArrayList<>();
+        for (ExecutionGraphNode node : allEvents) {
+            if (node.getEvent().isSymbolic()) {
+                symbolicEvents.add(node);
+            }
+        }
+        return symbolicEvents;
     }
 }

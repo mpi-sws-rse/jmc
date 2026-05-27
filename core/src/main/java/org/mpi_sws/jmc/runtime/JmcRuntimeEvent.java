@@ -266,7 +266,7 @@ public class JmcRuntimeEvent {
         ASSUME_EVENT,
         ASSERT_EVENT,
 
-        SYMB_OP_EVENT,
+        SYMBOLIC_EVENT,
         SYMB_ASSUME_EVENT,
         SYMB_ASSERT_EVENT,
 

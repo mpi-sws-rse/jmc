@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.strategies.trust;
 
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 
 import java.util.ArrayList;
@@ -116,6 +117,17 @@ public class EventFactory {
                 Event event = new Event(runtimeEvent.getTaskId() - 1, null, Event.Type.ASSUME);
                 boolean result = runtimeEvent.getParam("result");
                 event.setAttribute("result", result);
+                return List.of(event);
+            }
+            case SYMBOLIC_EVENT -> {
+                Event event =
+                        new Event(
+                                runtimeEvent.getTaskId() - 1,
+                                null,
+                                Event.Type.SYMBOLIC);
+                JmcBooleanFormula formula =
+                        runtimeEvent.getParam("booleanFormula");
+                event.setAttribute("booleanFormula", formula);
                 return List.of(event);
             }
         }

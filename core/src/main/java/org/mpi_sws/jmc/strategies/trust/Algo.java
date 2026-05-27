@@ -2,15 +2,21 @@ package org.mpi_sws.jmc.strategies.trust;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.api.symbolic.bool.JmcBooleanFormula;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
+import org.mpi_sws.jmc.runtime.scheduling.ObjectValue;
+import org.mpi_sws.jmc.runtime.scheduling.PrimitiveValue;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.solver.ProverState;
 import org.mpi_sws.jmc.solver.SMTSolverTypes;
+import org.mpi_sws.jmc.solver.SolverResult;
 import org.mpi_sws.jmc.solver.SolverUtil;
 import org.mpi_sws.jmc.solver.incremental.IncrementalSolver;
+import org.mpi_sws.jmc.strategies.ValueTracker;
 import org.mpi_sws.jmc.util.FileUtil;
 
 import java.util.*;
@@ -38,6 +44,8 @@ public class Algo {
     private final LocationStore locationStore;
     private final TreeLogger tLogger;
     private long numOfBlockedGraphs = 0L;
+    private ValueTracker externalValueTracker;
+    private ValueTracker internalValueTracker;
     /**
      * @property {@link #solver} is used to store the {@link org.mpi_sws.jmc.solver.SymbolicSolver} object that is used
      * to solve symbolic operations.
@@ -51,9 +59,12 @@ public class Algo {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
         this.executionGraph = new ExecutionGraph();
-        this.explorationStack = new ExplorationStack();
+        // Initialize exploration stack with an empty inner stack with the initialized execution graph and prover id 1
+        this.explorationStack = new ExplorationStack(this.executionGraph);
         this.locationStore = new LocationStore();
         this.executionGraph.addEvent(Event.init());
+        this.externalValueTracker = new ValueTracker();
+        this.internalValueTracker = new ValueTracker();
         this.tLogger = null;
         this.solver = null;
     }
@@ -65,6 +76,8 @@ public class Algo {
         this.explorationStack = new ExplorationStack();
         this.locationStore = new LocationStore();
         this.executionGraph.addEvent(Event.init());
+        this.externalValueTracker = new ValueTracker();
+        this.internalValueTracker = new ValueTracker();
         if (hasTreeLogger) {
             this.tLogger = new TreeLogger();
         } else {
@@ -78,12 +91,13 @@ public class Algo {
         if (type == SMTSolverTypes.OFF) {
             return null;
         }
-        return SolverUtil.getIncrementalSolver(type);
+        return SolverUtil.createIncrementalSolver(type);
     }
 
     private SMTSolverTypes getSolverType(String solverType) {
         if (solverType == null) {
-            return null;
+            LOGGER.warn("No solver type specified. Thus, the solver will be turned off.");
+            return SMTSolverTypes.OFF;
         }
         return switch (solverType.toLowerCase()) {
             case "z3" -> SMTSolverTypes.Z3;
@@ -108,18 +122,53 @@ public class Algo {
      */
     public SchedulingChoice<?> nextTask() {
 
+        // If we are not in guiding mode, then there is no constraint from Trust over the next candidate
         if (!isGuiding) {
             return null;
         }
         if (guidingTaskSchedule == null || guidingTaskSchedule.isEmpty()) {
             return null;
         }
+        // Otherwise, the next task must be the tail of trace sequence which Trust is going to explore its extension.
         SchedulingChoice<?> out = guidingTaskSchedule.pop().choice();
         if (guidingTaskSchedule.isEmpty()) {
             LOGGER.debug("End of guiding phase");
             isGuiding = false;
         }
+
+        // Check for symbolic choice
+        if (out.isSymbolic()) {
+            SolverResult solverResult = extractSolverResult(out);
+            // The task id in algo must be adjusted
+            storeInternalValue(out.getTaskId() - 1, solverResult);
+        }
         return out;
+    }
+
+    private SolverResult extractSolverResult(SchedulingChoice<?> choice) {
+        Object value = choice.getValue();
+        if (value instanceof ObjectValue objectValue
+                && objectValue.asObject() instanceof SolverResult solverResult) {
+            return solverResult;
+        }
+        throw new RuntimeException("Expected symbolic scheduling choice to carry a SolverResult");
+    }
+
+    /**
+     * This method updates the value of a give scheduling choice according to the value tracker
+     *
+     * @param task scheduling choice to update its value
+     */
+    public void updateExternalValue(SchedulingChoice<?> task) {
+        // Since the task we receive is from runtime, the task id must be treated adjusted in algo
+        long id = task.getTaskId() - 1;
+        if (externalValueTracker.containsValue(id)) {
+            Object value = externalValueTracker.getValue(id);
+            externalValueTracker.removeValue(id);
+
+            PrimitiveValue val = new  PrimitiveValue(value);
+            task.setValue(val);
+        }
     }
 
     private void handleGuidedEvent(Event event) {
@@ -160,6 +209,55 @@ public class Algo {
                 locationStore.addAlias(location, event.getLocation());
             }
         }
+
+        if (event.isSymbolic()) {
+            handleGuidedSymEvent(event);
+        }
+    }
+
+    private void storeExternalValue(long id, Object value) {
+        if (externalValueTracker.containsValue(id)) {
+            throw new RuntimeException("Value for id " + id + " already exists");
+        }
+
+        externalValueTracker.setValue(id, value);
+    }
+
+    private void storeInternalValue(long id, Object value) {
+        if (internalValueTracker.containsValue(id)) {
+            throw new RuntimeException("Value for id " + id + " already exists");
+        }
+
+        internalValueTracker.setValue(id, value);
+    }
+
+    private void handleGuidedSymEvent(Event event) {
+        long taskId = event.getTaskId();
+        if (!internalValueTracker.containsValue(taskId)) {
+            throw HaltExecutionException.error(
+                    "Missing guided symbolic result for task " + taskId);
+        }
+        Object rawValue = internalValueTracker.getValue(taskId);
+        // clear the entry related to taskId in tracker
+        internalValueTracker.removeValue(taskId);
+        if (!(rawValue instanceof SolverResult solverResult)) {
+            throw HaltExecutionException.error(
+                    "Expected SolverResult for guided symbolic event on task " + taskId);
+        }
+
+        event.setAttribute("result", solverResult.result());
+        event.setAttribute("isNegatable", solverResult.isNegatable());
+
+        if (solver.isFreshProver()) {
+            JmcBooleanFormula formula = event.getAttribute("booleanFormula");
+            if (solverResult.result()) {
+                solver.addFormula(formula);
+            } else {
+                solver.addNegatedFormula(formula);
+            }
+        }
+        // Store the value in tracker
+        storeExternalValue(event.getKey().getTaskId(), solverResult.result());
     }
 
     /**
@@ -204,6 +302,9 @@ public class Algo {
         switch (event.getType()) {
             case END:
                 handleBot(event);
+                break;
+            case SYMBOLIC:
+                handleSymbolic(event);
                 break;
             case READ:
                 handleRead(event);
@@ -267,6 +368,28 @@ public class Algo {
             this.executionGraph.trackThreadJoins(eventNode);
             this.executionGraph.trackThreadJoinCompletion(eventNode);
         }
+    }
+
+    public void handleSymbolic(Event event) {
+        boolean result = processNewSymEvent(event);
+        storeExternalValue(event.getKey().getTaskId(), result);
+    }
+
+    private boolean processNewSymEvent(Event event) {
+        JmcBooleanFormula symbolicOperation = event.getAttribute("booleanFormula");
+        SolverResult solverResult = solver.computeNewSymbolicOperation(symbolicOperation);
+
+        event.setAttribute("result", solverResult.result());
+        event.setAttribute("isNegatable", solverResult.isNegatable());
+
+        ExecutionGraphNode symb = this.executionGraph.addEvent(event);
+        if (solverResult.isNegatable()) {
+            explorationStack.push(
+                    ExplorationStack.Item.symbolicForwardRevisit(
+                            symb,
+                            this.executionGraph));
+        }
+        return solverResult.result();
     }
 
     /**
@@ -342,6 +465,11 @@ public class Algo {
                 continue;
             }
 
+            if (item.isRemoveProver()) {
+                processRMP(item);
+                continue;
+            }
+
             // Handle the forward revisit
             ExecutionGraph newGraph = item.getGraph();
             if (newGraph == null) {
@@ -354,11 +482,15 @@ public class Algo {
                 executionGraph = newGraph;
             }
 
+            // Update solver
+            updateSolver();
+
             switch (item.getType()) {
                 case FRW -> nextGraphSchedule = processFRW(item);
                 case FWW -> nextGraphSchedule = processFWW(item);
                 case FLW -> nextGraphSchedule = processFLW(item);
                 case CONT -> nextGraphSchedule = processCont(item);
+                case FSYMB -> nextGraphSchedule = processFSYMB(item);
                 default -> throw new RuntimeException(
                         "The exploration stack item has an invalid type. This must be a bug in the exploration stack.");
             }
@@ -388,6 +520,23 @@ public class Algo {
         // TODO : To increase efficiency, we can use the topological sort which
         guidingTaskSchedule = new ArrayDeque<>(ExecutionGraph.getTaskSchedule(nextGraphSchedule));
         printGuidingTaskSchedule();
+    }
+
+    private void updateSolver() {
+        if (solver != null) {
+            // Update the solver with the corresponding prover
+            int newProverId = explorationStack.getProverId();
+            solver.setProverById(newProverId);
+
+            // We must check if the solver is fresh or not.
+            // If the solver is empty, we need to set the fresh prover flag to true ( This is a new prover)
+            // This is needed for guiding the execution.
+            if (solver.size() == 0) {
+                solver.setFreshProverFlag(true);
+            } else {
+                solver.setFreshProverFlag(false);
+            }
+        }
     }
 
     private void checkGraphSchedule(List<ExecutionGraphNode> graphSchedule) {
@@ -440,7 +589,18 @@ public class Algo {
         LOGGER.debug(sb.toString());
     }
 
+    public void processRMP(ExplorationStack.Item item) {
+        int id = explorationStack.getProverId();
+        if ( id < 0 ) {
+            throw new RuntimeException("No prover can exist with id 0");
+        }
+        solver.removeProver(id);
+    }
+
     public void processBWR(ExplorationStack.Item item) {
+
+        int newProverId = createNewProver();
+        addRemoveProverItem(newProverId);
 
         ExecutionGraphNode write = item.getEvent1();
         ExecutionGraph restrictedGraph = item.getGraph();
@@ -465,6 +625,82 @@ public class Algo {
         logLastChild(forwardLW);
     }
 
+    private int createNewProver() {
+        // If no solver is configured, ignore.
+        if (solver == null) {
+            return -1;
+        }
+        // Create a new prover
+        ProverState newProver = solver.createNewProver();
+        // Update prover's model with current prover state
+        solver.cloneCurrentProverState(newProver);
+        // Register the new prover
+        int newProverId = solver.registerNewProver(newProver);
+        // update the solver with the new prover
+        solver.setProverById(newProverId);
+        // Update the current inner_stack state
+        explorationStack.setProverId(newProverId);
+        return newProverId;
+    }
+
+    private void addRemoveProverItem(int proverId) {
+        if (solver == null || proverId < 0) {
+            return;
+        }
+
+        ExplorationStack.Item removeProverItem = ExplorationStack.Item.removeProver();
+        explorationStack.push(removeProverItem);
+    }
+
+    private void restrictSolverStack(GraphRestrictView restrictView) {
+        // We need to check if the solver object exists, if there are any symbolic events,
+        // and if the solver is not fresh.
+        if (solver != null && restrictView != null &&
+                restrictView.getNumOfSymEvents() > 0 && !solver.isFreshProver()) {
+            solver.restrictSolverStack(restrictView.getNumOfSymEvents());
+        }
+    }
+
+    public void restrictSolverStack(int numOfSymbEvents) {
+        // We need to check if the solver object exists, if there are any symbolic events,
+        // and if the solver is not fresh.
+        if (solver != null && numOfSymbEvents > 0 && !solver.isFreshProver()) {
+            solver.restrictSolverStack(numOfSymbEvents);
+        }
+    }
+
+    private List<ExecutionGraphNode> processFSYMB(ExplorationStack.Item item) {
+        ExecutionGraphNode node = item.getEvent1();
+
+        LOGGER.debug("Processing symbolic forward revisit of s {} to explore the other outcome", node.key());
+
+        GraphRestrictView view = executionGraph.restrict(node);
+        restrictSolverStack(view);
+
+        Event s = node.getEvent();
+        if (!s.isSymbolic()) {
+            throw new RuntimeException("The event is not a symbolic operation");
+        }
+
+        // Negate the result of the symbolic operation
+        boolean result = s.getAttribute("result");
+        s.setAttribute("result", !result);
+
+        if (!solver.isFreshProver()) {
+            // To pop the formula(event) from the solver
+            restrictSolverStack(1);
+            JmcBooleanFormula formula = s.getAttribute("booleanFormula");
+            boolean newResult = s.getAttribute("result");
+            if (newResult) {
+                solver.addFormula(formula);
+            } else {
+                solver.addNegatedFormula(formula);
+            }
+            solver.solveAndUpdateModel();
+        }
+        return executionGraph.checkConsistencyAndTopologicallySort();
+    }
+
     private List<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {
         // Forward revisit of w -> r
         ExecutionGraphNode read = item.getEvent1();
@@ -473,7 +709,8 @@ public class Algo {
         LOGGER.debug("Processing forward revisit of w {} -> r {}", write.key(), read.key());
 
         executionGraph.changeReadsFrom(read, write);
-        executionGraph.restrict(read);
+        GraphRestrictView restrictView = executionGraph.restrict(read);
+        restrictSolverStack(restrictView);
         executionGraph.recomputeVectorClocks();
 
         for (Event additionalEvent : item.getAdditionalEventsToProcess()) {
@@ -518,7 +755,8 @@ public class Algo {
         LOGGER.debug("Processing forward revisit of w {} -> w {}", write1.key(), write2.key());
 
         executionGraph.swapCoherency(write1, write2);
-        executionGraph.restrict(write1);
+        GraphRestrictView restrictView = executionGraph.restrict(write1);
+        restrictSolverStack(restrictView);
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
@@ -529,7 +767,9 @@ public class Algo {
         LOGGER.debug("Processing forward revisit of w {} -> lw", w.key());
         // set the co
         executionGraph.trackCoherency(w);
-        executionGraph.restrict(w);
+
+        GraphRestrictView restrictView = executionGraph.restrict(w);
+        restrictSolverStack(restrictView);
 
         List<Event> additionalEvents = item.getAdditionalEventsToProcess();
         if (additionalEvents.size() > 1) {
@@ -691,6 +931,12 @@ public class Algo {
 
         revisitViews =
                 revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
+
+        // If symbolic exploration is enabled, maximality condition must be checked for symbolic events
+        if (solver != null) {
+            revisitViews =
+                    revisitViews.stream().filter(BackwardRevisitView::isMaximalSymbolicExtension).toList();
+        }
 
         boolean hasBackwardRevisits = false;
         if (!revisitViews.isEmpty()) {
