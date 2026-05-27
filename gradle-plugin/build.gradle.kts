@@ -5,8 +5,13 @@ plugins {
     signing
 }
 
+signing {
+    // Only sign when publishing to remote repositories, not mavenLocal
+    isRequired = false
+}
+
 group = "org.mpi_sws.jmc.gradle"
-version = "0.1.1"
+version = "0.1.2"
 
 repositories {
     mavenCentral()

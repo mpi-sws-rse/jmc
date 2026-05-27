@@ -232,13 +232,13 @@ public class EstimationTacasTest {
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "pestor", debug = false)
     public void runBig0DagEstimation() {
         big0();
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-pestor", debug = false)
     public void runBig0FjDagEstimation() {
         big0();
     }
