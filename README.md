@@ -114,8 +114,47 @@ void testCounter() {
 
 #### ConDpor
 
-TBA
+The `ConDpor` strategy is a state-of-the-art optimal concolic DPOR-based model checking algorithm that is 
+designed to handle data non-determinism in addition to scheduling non-determinism.
+In concurrent programs, data non-determinism arises from sources such as user input, network delays, random value
+generation, and so on. ConDpor uses an optimized symbolic execution engine resolving data non-determinism together
+with a DPOR-based exploration technique to find all bugs in concurrent programs caused by both scheduling and 
+data non-determinism.
 
+Consider the counter example above, if we modify threads such that they toss a coin to decide whether to increment the
+counter or not, then we will have data non-determinism in addition to scheduling non-determinism. Using ConDpor API,
+one can model such behavior as follows:
+
+```java
+   Thread t1 = new Thread(() -> {
+       SymbolicBoolean x = new SymbolicBoolean("x"); // Define a symbolic boolean variable x
+       SymbolicFormula smFrm = new SymbolicFormula(); // Create a symbolic formula manager 
+       if (smFrm.evaluate(x)) { // Evaluate x
+          counter.inc();
+       } 
+   });
+
+   Thread t2 = new Thread(() -> {
+       // Same code as t1
+   });
+```
+Under the hood, ConDpor will explore all possible interleavings of the threads while also considering both possible
+values of the symbolic variable `x` (true and false). In order to use the `ConDpor` strategy, you can specify it in the
+`JmcCheckConfiguration` annotation as shown below:
+
+```java
+@JmcCheck
+@JmcCheckConfiguration(numIterations = 100, strategy = "trust", solver = "z3")
+void testCounter() {
+    // ... same code as above
+}
+```
+You can specify the solver to use for concolic execution (e.g., Z3) by adding the `solver` parameter to the configuration.
+Supported solvers include `z3`, `cvc5`, `cvc4`, `mathsat5`, `yices2`, `opensmt`, `smtinterpol`, `princess`, and `boolector`.
+
+The `ConDpor` api supports boolean, and integer theories, and thus you can define symbolic variables of these types
+and use them to create symbolic unquantified formulas that can be evaluated to get concrete values for the symbolic 
+variables.
 #### Must
 
 In order to specify and model check distributed protocols implemented in Java, JMC provides the `must` strategy
