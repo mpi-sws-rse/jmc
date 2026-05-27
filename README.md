@@ -182,13 +182,11 @@ To reduce the variance of Algorithm T, we implemented a variant, `wg-trust-estim
 ```java
 @JmcCheck
 @JmcCheckConfiguration(numIterations = 10, schedulingPolicy = TrustStrategy.SchedulingPolicy.FIFO,
-        strategy = "wg-trust-estimation-1-3", timeout = 60000L)
+        strategy = "wg-trust-estimation", timeout = 60000L)
 public void testCounter() {
    // ... same code as above
 }
 ```
-
-In the `wg-trust-estimation-x-y` variant, `x` and `y` set the weights assigned to the forward and backward revisit options of Algorithm T, respectively.
 
 #### Pestor
 
