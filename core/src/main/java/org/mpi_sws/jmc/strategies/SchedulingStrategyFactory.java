@@ -22,9 +22,9 @@ public class SchedulingStrategyFactory {
     static {
         validStrategies.add("random");
         validStrategies.add("trust");
-        validStrategies.add("dag-estimation");
+        validStrategies.add("pestor");
         validStrategies.add("abs-dag-estimation");
-        validStrategies.add("fj-dag-estimation");
+        validStrategies.add("fj-pestor");
         validStrategies.add("trust-estimation");
         validStrategies.add("wg-trust-estimation");
         validStrategies.add("testor");
@@ -52,11 +52,11 @@ public class SchedulingStrategyFactory {
                     config.getDebug(),
                     config.getReportPath(),
                     config.getSolver());
-        } else if (name.equals("dag-estimation")) {
+        } else if (name.equals("pestor")) {
             return new DagEstimationStrategy(config.getSeed());
         } else if (name.equals("abs-dag-estimation")) {
             return new AbsDagEstimationStrategy(config.getSeed());
-        } else if (name.equals("fj-dag-estimation")) {
+        } else if (name.equals("fj-pestor")) {
             return new FjDagEstimationStrategy(config.getSeed());
         } else if (name.equals("trust-estimation")) {
             return new TrustEstimationStrategy(

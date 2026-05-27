@@ -887,13 +887,13 @@ public class EstimationSynTest {
      * 4. Weighted TruSt-based estimation (budget = 1)
      */
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "pestor", debug = false)
     public void runRnDagEstimation() {
         readNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-pestor", debug = false)
     public void runRnFjDagEstimation() {
         readNProgram(3);
     }
@@ -924,13 +924,13 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "pestor", debug = false)
     public void runIncnDagEstimation() {
         incNProgram(3);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-pestor", debug = false)
     public void runIncnFjDagEstimation() {
         incNProgram(3);
     }
@@ -958,13 +958,13 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "pestor", debug = false)
     public void runRWNnDagEstimation() {
         RWNProgram(1, 1);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-pestor", debug = false)
     public void runRWNnFjDagEstimation() {
         RWNProgram(1, 1);
     }
@@ -992,13 +992,13 @@ public class EstimationSynTest {
      */
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "pestor", debug = false)
     public void runWRNnDagEstimation() {
         WRNProgram(1, 1);
     }
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-dag-estimation", debug = false)
+    @JmcCheckConfiguration(numIterations = 100, strategy = "fj-pestor", debug = false)
     public void runWRNnFjDagEstimation() {
         WRNProgram(1, 1);
     }
