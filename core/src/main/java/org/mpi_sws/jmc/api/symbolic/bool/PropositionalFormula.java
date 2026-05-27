@@ -182,7 +182,7 @@ public class PropositionalFormula {
      * @return a new JmcBooleanFormula representing the conjunction
      */
     public JmcBooleanFormula and(SymbolicBoolean var, JmcBooleanFormula op) {
-        return and(var, op);
+        return and(op, var);
     }
 
     /**
@@ -229,7 +229,7 @@ public class PropositionalFormula {
      * @return a new JmcBooleanFormula representing the disjunction
      */
     public JmcBooleanFormula or(SymbolicBoolean var, JmcBooleanFormula op) {
-        return or(var, op);
+        return or(op, var);
     }
 
     /**
@@ -276,7 +276,7 @@ public class PropositionalFormula {
      * @return a new JmcBooleanFormula representing the implication
      */
     public JmcBooleanFormula implies(SymbolicBoolean var, JmcBooleanFormula op) {
-        return implies(var, op);
+        return implies(op, var);
     }
 
     /**
@@ -323,7 +323,7 @@ public class PropositionalFormula {
      * @return a new JmcBooleanFormula representing the biconditional
      */
     public JmcBooleanFormula iff(SymbolicBoolean var, JmcBooleanFormula op) {
-        return iff(var, op);
+        return iff(op, var);
     }
 
     /**
@@ -370,7 +370,7 @@ public class PropositionalFormula {
      * @return a new JmcBooleanFormula representing the exclusive disjunction
      */
     public JmcBooleanFormula xor(SymbolicBoolean var, JmcBooleanFormula op) {
-        return xor(var, op);
+        return xor(op, var);
     }
 
     /**

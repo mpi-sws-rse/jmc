@@ -231,7 +231,8 @@ public class Event {
         ERROR,
         LOCK_ACQUIRE,
         LOCK_RELEASE,
-        NOOP,
+        SYMBOLIC,
+        NOOP
     }
 
     /**
@@ -380,6 +381,9 @@ public class Event {
         return type == Type.WRITE_EX;
     }
 
+    public boolean isSymbolic() {
+        return type == Type.SYMBOLIC;
+    }
     @Override
     public String toString() {
         return "Event(" + type.toString() + ")" + key;

@@ -12,7 +12,7 @@ public class SymbolicSolverSingletonFactory {
         }
 
         if (solverType == null) {
-            solver = new IncrementalSolver();
+            throw new IllegalStateException("Solver type must be provided when creating a new SymbolicSolver");
         } else {
             solver = new IncrementalSolver(solverType);
         }
@@ -28,10 +28,25 @@ public class SymbolicSolverSingletonFactory {
         }
 
         if (solverType == null) {
-            solver = new IncrementalSolver();
+            throw new IllegalStateException("Solver type must be provided when creating a new IncrementalSolver");
         } else {
             solver = new IncrementalSolver(solverType);
         }
         return (IncrementalSolver) solver;
+    }
+
+    public static SymbolicSolver getSolver() {
+        return solver;
+    }
+
+    public static IncrementalSolver getIncrementalSolver() {
+        if (solver == null) {
+            return null;
+        }
+
+        if (solver instanceof IncrementalSolver incrementalSolver) {
+            return incrementalSolver;
+        }
+        throw new IllegalStateException("Solver singleton is not an IncrementalSolver");
     }
 }

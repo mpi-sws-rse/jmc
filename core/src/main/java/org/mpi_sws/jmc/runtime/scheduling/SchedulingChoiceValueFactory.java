@@ -23,6 +23,7 @@ public class SchedulingChoiceValueFactory {
         registerAdapter("int", new PrimitiveValueAdapter());
         registerAdapter("string", new PrimitiveValueAdapter());
         registerAdapter("boolean", new PrimitiveValueAdapter());
+        registerAdapter("object", new ObjectValueAdapter());
     }
     /**
      * Registers an adapter for a specific type of {@link SchedulingChoiceValue}.

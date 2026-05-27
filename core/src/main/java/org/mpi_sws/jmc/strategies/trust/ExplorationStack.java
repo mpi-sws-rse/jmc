@@ -24,6 +24,11 @@ public class ExplorationStack {
         this.stack = new ArrayList<>();
     }
 
+    public ExplorationStack(ExecutionGraph graph) {
+        this.stack = new ArrayList<>();
+        this.stack.add(new InnerStack(graph));
+    }
+
     /**
      * Pushes an item onto the stack. If the stack is empty, a new InnerStack is created and added
      * to the stack. If the item is a backward revisit, a new InnerStack is created and added to the
@@ -129,6 +134,22 @@ public class ExplorationStack {
      */
     public int size() {
         return this.stack.get(0).size();
+    }
+
+    /**
+     * Sets the given proverId to the current inner stack (the latest inner stack).
+     * @param proverId
+     */
+    public void setProverId(int proverId) {
+        this.stack.get(this.stack.size() - 1).setProverId(proverId);
+    }
+
+    /**
+     * Gets the proverId of the current inner stack (the latest inner stack).
+     * @return The proverId of the current inner stack
+     */
+    public int getProverId() {
+        return this.stack.get(this.stack.size() - 1).getProverId();
     }
 
     /**
@@ -239,6 +260,19 @@ public class ExplorationStack {
             return new Item(ItemType.FLW, one, null, graph);
         }
 
+        public static Item symbolicForwardRevisit(
+                ExecutionGraphNode one, ExecutionGraph graph) {
+            return new Item(ItemType.FSYMB, one, null, graph);
+        }
+
+        public static Item createProver() {
+            return new Item(ItemType.CRP, null, null, null);
+        }
+
+        public static Item removeProver() {
+            return new Item(ItemType.RMP, null, null, null);
+        }
+
         /**
          * Creates a backward revisit item for a write revisiting a read.
          *
@@ -338,6 +372,10 @@ public class ExplorationStack {
             return (this.type == ItemType.BRR || this.type == ItemType.BWR) && this.graph != null;
         }
 
+        public boolean isRemoveProver() {
+            return this.type == ItemType.RMP;
+        }
+
         public boolean isLastWriteRevisit() {
             return this.type == ItemType.FLW;
         }
@@ -374,7 +412,13 @@ public class ExplorationStack {
         // Backward revisit of read revisting an alternative read's read-from
         BRR,
         // Continue the current execution without any change
-        CONT
+        CONT,
+        // Forward revisit of symbolic event to explore the other possible outcome
+        FSYMB,
+        // Create prover
+        CRP,
+        // Remove prover
+        RMP
     }
 
     /**
@@ -383,10 +427,20 @@ public class ExplorationStack {
     private static class InnerStack {
         private ExecutionGraph graph;
         private final ArrayDeque<Item> items;
+        /**
+         * The prover id is used to identify the prover that is used to reason symbolically for the existing items
+         * in the InnerStack object. If no symbolic reasoning is needed, the prover id is -1.
+         */
+        private int proverId;
 
-        public InnerStack(ExecutionGraph graph) {
+        public InnerStack(ExecutionGraph graph, int proverId) {
             this.graph = graph;
             this.items = new ArrayDeque<>();
+            this.proverId = proverId;
+        }
+
+        public InnerStack(ExecutionGraph graph) {
+            this(graph, 1);
         }
 
         public void push(Item item) {
@@ -415,6 +469,14 @@ public class ExplorationStack {
 
         public int size() {
             return this.items.size();
+        }
+
+        public int getProverId() {
+            return proverId;
+        }
+
+        public void setProverId(int proverId) {
+            this.proverId = proverId;
         }
     }
 }
