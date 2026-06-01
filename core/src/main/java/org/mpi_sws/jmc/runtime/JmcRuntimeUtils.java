@@ -25,18 +25,37 @@ import static org.mpi_sws.jmc.api.JmcObject.handleHashCode;
  * and is not intended for direct use within the codebase.
  */
 public class JmcRuntimeUtils {
+    /** Logger used to trace utility operations (static-init invocation, executor registration). */
     private static final Logger LOGGER = LogManager.getLogger(JmcRuntimeUtils.class);
 
+    /**
+     * Store of {@link JmcReentrantLock}s backing instrumented {@code synchronized} methods and
+     * blocks, keyed by the hash code of the locked instance or class name.
+     */
     private static final JmcSyncLocksStore syncMethodLocksStore = new JmcSyncLocksStore();
 
     // TODO: check if we need to change the type of the list here
+    /** Instrumented classes with a non-empty static initializer, in registration order. */
     private static final List<Class<?>> staticInitializedClassesList = new ArrayList<>();
+    /** Names of the registered static-initialized classes, used to deduplicate registrations. */
     private static final Set<String> staticInitializedClasses = new HashSet<>();
 
+    /** Private constructor to prevent instantiation of this utility class. */
     private JmcRuntimeUtils() {
         // Private constructor to prevent instantiation
     }
 
+    /**
+     * Reports a symbolic boolean event and returns the concrete boolean decided by the strategy.
+     *
+     * <p>Emits a {@link JmcRuntimeEvent.Type#SYMBOLIC_EVENT} carrying the given boolean formula and
+     * yields; the strategy resumes the task with a {@link PrimitiveValue}. Throws a {@link
+     * RuntimeException} if the result is not a {@link PrimitiveValue}, and a {@link
+     * ClassCastException} (from {@link PrimitiveValue#asBoolean()}) if it is not a boolean.
+     *
+     * @param formula the symbolic boolean formula to evaluate
+     * @return the boolean value chosen by the strategy for this formula
+     */
     public static boolean SymEvent(JmcBooleanFormula formula) {
         JmcRuntimeEvent event =
                 new JmcRuntimeEvent.Builder()
@@ -428,13 +447,20 @@ public class JmcRuntimeUtils {
         syncMethodLocksStore.clear();
     }
 
+    /**
+     * Maps instance/class-name hash codes to the {@link JmcReentrantLock}s that back instrumented
+     * {@code synchronized} methods and blocks.
+     */
     private static class JmcSyncLocksStore {
+        /** The hash-code-to-lock map. */
         private final Map<Integer, JmcReentrantLock> lockMap;
 
+        /** Constructs an empty lock store. */
         public JmcSyncLocksStore() {
             lockMap = new HashMap<>();
         }
 
+        /** Removes all registered locks. */
         public void clear() {
             lockMap.clear();
         }
@@ -475,6 +501,15 @@ public class JmcRuntimeUtils {
         }
     }
 
+    /**
+     * Registers an instrumented class that has a static initializer.
+     *
+     * <p>Registration is idempotent (deduplicated by class name). Registered classes have their
+     * synthetic static initializer re-invoked at the start of subsequent iterations by {@link
+     * #invokeStaticInitializedClasses(int)}.
+     *
+     * @param clazz the instrumented class to register
+     */
     public static void registerStaticInitializedClass(Class<?> clazz) {
         if (!staticInitializedClasses.contains(clazz.getName())) {
             LOGGER.debug("Static classes registered are : {}", clazz.getName());
@@ -484,6 +519,16 @@ public class JmcRuntimeUtils {
         }
     }
 
+    /**
+     * Rewrites a compiled-class URL to point at the corresponding instrumented class location.
+     *
+     * <p>Maps {@code build/classes/java/{main,test}/} paths to {@code build/generated/instrumented/}.
+     * On any failure the original URL is returned. Used only by the (currently disabled)
+     * class-reloading path.
+     *
+     * @param url the original class URL
+     * @return the rewritten URL, or the original URL if rewriting fails
+     */
     private static URL renameClassURL(URL url) {
         String urlString = url.toString();
         urlString = urlString.replace("build/classes/java/main/", "build/generated/instrumented/");
@@ -523,6 +568,14 @@ public class JmcRuntimeUtils {
     //        }
     //    }
 
+    /**
+     * Invokes the synthetic {@code $staticInitExplicit} method on every registered static-initialized
+     * class.
+     *
+     * <p>Iterates over a snapshot of the registered classes and reflectively calls the generated
+     * static-init method on each, logging (but not propagating) reflective invocation failures.
+     * Called by {@link #invokeStaticInitializedClasses(int)}.
+     */
     private static void invokeInstrumentedStaticMethod() {
         if (staticInitializedClasses.isEmpty()) {
             LOGGER.debug("No static initialized classes to invoke.");
@@ -553,21 +606,42 @@ public class JmcRuntimeUtils {
 
 
     /**
-     * Invokes static initializer of the instrumented classes.
+     * Invokes the static initializers of all registered instrumented classes.
      *
-     * <p>The instrumentation introduces a special method `$staticInit` for each class that has a
-     * non-empty static initializer. Here we invoke that method.
+     * <p>The instrumentation introduces a synthetic {@code $staticInitExplicit} method for each class
+     * that has a non-empty static initializer; this method invokes it on every registered class (via
+     * {@link #invokeInstrumentedStaticMethod()}) so static state is re-established deterministically
+     * in later iterations.
+     *
+     * @param iteration the current iteration number (the static initializers are re-run from the
+     *     second iteration onward)
      */
     public static void invokeStaticInitializedClasses(int iteration) {
         // reloadStaticInitializedClasses();
         invokeInstrumentedStaticMethod();
     }
 
+    /**
+     * Class loader used by the (currently disabled) approach to reload instrumented classes and
+     * re-trigger their static initializers. Retained for reference; not used by the active code
+     * path.
+     */
     private static class ReloadingClassLoader extends URLClassLoader {
+        /**
+         * Creates a reloading class loader over the given URLs with no parent.
+         *
+         * @param urls the URLs to load classes from
+         */
         public ReloadingClassLoader(URL[] urls) {
             super(urls, null);
         }
 
+        /**
+         * Loads (reloads) the class with the given name through this loader.
+         *
+         * @param className the fully qualified class name to reload
+         * @throws ClassNotFoundException if the class cannot be found
+         */
         public void reloadClass(String className) throws ClassNotFoundException {
             // TODO: this is not working. Need to figure out why?
             // This method is used to reload a class by its name
@@ -579,9 +653,6 @@ public class JmcRuntimeUtils {
             }
         }
     }
-
-
-    // Add these methods to JmcRuntimeUtils class:
 
     /**
      * Creates a start static init event without yielding.

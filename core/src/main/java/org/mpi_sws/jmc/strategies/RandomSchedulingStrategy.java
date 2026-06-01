@@ -42,6 +42,13 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
         this.curTrace = new RandomSchedulingTrace(seed);
     }
 
+    /**
+     * This method initializes the strategy for a new iteration. It sets the replay seed in the report and
+     * clears the random value map for the new iteration. It also initializes the current trace with the seed.
+     * @param iteration the number of the iteration.
+     * @param report
+     * @throws HaltExecutionException
+     */
     @Override
     public void initIteration(int iteration, JmcModelCheckerReport report)
             throws HaltExecutionException {
@@ -113,35 +120,65 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
         // TODO: complete this
     }
 
-    /*
-     * ExtRandom is a custom random number generator that exposes the seed and mimics the behavior
-     * of the default Random class.
+    /**
+     * ExtRandom mirrors {@link Random} while exposing its internal seed for replay and
+     * validating that the local Linear Congruential Generator (LCG) step matches {@link Random#next(int)}.
      */
     protected static class ExtRandom extends Random {
+        /**
+         * Current LCG state (scrambled seed), kept as an {@link AtomicLong} for atomic updates.
+         */
         private AtomicLong seed;
 
+        /**
+         * LCG multiplier used by {@link Random}.
+         */
         private static final long multiplier = 0x5DEECE66DL;
+        /**
+         * LCG addend used by {@link Random}.
+         */
         private static final long addend = 0xBL;
+        /**
+         * Bit mask for the 48-bit LCG state used by {@link Random}.
+         */
         private static final long mask = (1L << 48) - 1;
 
+        /**
+         * Creates a new random generator initialized with the provided seed.
+         * The {@link Random} constructor invokes {@link #setSeed(long)}.
+         */
         public ExtRandom(long seed) {
             super(seed);
         }
 
+        /**
+         * Scrambles the external seed to the 48-bit internal LCG state.
+         */
         private static long initialScramble(long seed) {
             return (seed ^ multiplier) & mask;
         }
 
+        /**
+         * Resets the generator with a new seed and updates the exposed atomic state.
+         */
         @Override
         public synchronized void setSeed(long seed) {
             super.setSeed(seed);
             this.seed = new AtomicLong(initialScramble(seed));
         }
 
+        /**
+         * Returns the current scrambled LCG seed (used for replay reporting and
+         * reinitializing the current trace's seed)
+         */
         public Long getSeed() {
             return seed.get();
         }
 
+        /**
+         * Advances the LCG state, verifies it matches {@link Random#next(int)},
+         * and returns the generated value for the requested bit width.
+         */
         @Override
         public int next(int bits) {
             int orig = super.next(bits);
