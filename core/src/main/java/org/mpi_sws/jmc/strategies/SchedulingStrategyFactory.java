@@ -16,7 +16,7 @@ import java.util.Set;
  */
 public class SchedulingStrategyFactory {
 
-    // Set of valid strategies
+    /** Set of recognized strategy names accepted by {@link #createSchedulingStrategy}. */
     private static final Set<String> validStrategies = new HashSet<>();
 
     static {
@@ -36,6 +36,7 @@ public class SchedulingStrategyFactory {
      * @param name   the name of the strategy
      * @param config the configuration for the strategy
      * @return the scheduling strategy
+     * @throws JmcInvalidStrategyException if {@code name} is not a recognized strategy
      */
     public static SchedulingStrategy createSchedulingStrategy(
             String name, SchedulingStrategyConfiguration config)

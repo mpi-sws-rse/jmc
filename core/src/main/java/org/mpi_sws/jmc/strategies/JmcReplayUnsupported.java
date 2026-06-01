@@ -9,6 +9,7 @@ import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
  * which may be required for certain operations or analyses.
  */
 public class JmcReplayUnsupported extends JmcCheckerException {
+    /** Constructs a new exception with a fixed "replay not supported" message. */
     public JmcReplayUnsupported() {
         super("Replay is not supported by this strategy.");
     }

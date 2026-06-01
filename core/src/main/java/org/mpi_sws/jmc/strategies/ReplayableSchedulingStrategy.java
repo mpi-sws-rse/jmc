@@ -19,9 +19,17 @@ import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
  * allow replaying in the subsequent iteration.
  */
 public interface ReplayableSchedulingStrategy extends SchedulingStrategy {
-    /** Records the current execution trace of the scheduling strategy. */
+    /**
+     * Records the current execution trace of the scheduling strategy.
+     *
+     * @throws JmcCheckerException if the trace cannot be recorded
+     */
     void recordTrace() throws JmcCheckerException;
 
-    /** Replays the recorded execution trace of the scheduling strategy. */
+    /**
+     * Replays the recorded execution trace of the scheduling strategy.
+     *
+     * @throws JmcCheckerException if the recorded trace cannot be loaded or replayed
+     */
     void replayRecordedTrace() throws JmcCheckerException;
 }
