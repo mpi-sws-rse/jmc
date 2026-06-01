@@ -3,11 +3,15 @@ package org.mpi_sws.jmc.runtime.scheduling;
 import com.google.gson.JsonElement;
 
 /**
- * A value that the strategy uses to communicate with the runtime yields.
+ * A value that the strategy passes back to the runtime when resuming a task (delivered through the
+ * yield return value).
  *
- * <p>The abstraction helps record the values when a buggy trace is found.</p>
+ * <p>The abstraction also allows such values to be serialized so they can be recorded as part of a
+ * buggy trace and replayed later.</p>
  *
- * <p>For each {@link SchedulingChoiceValue}, there should be a </p>
+ * <p>For each {@link SchedulingChoiceValue} subclass there should be a corresponding {@link
+ * SchedulingChoiceValueAdapter} registered with the {@link SchedulingChoiceValueFactory} to
+ * reconstruct it from JSON.</p>
  */
 public abstract class SchedulingChoiceValue {
 
