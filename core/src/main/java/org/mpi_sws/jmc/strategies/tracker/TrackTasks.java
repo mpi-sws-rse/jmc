@@ -11,9 +11,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * Tracks the tasks start finish and join request events.
  */
 public class TrackTasks implements Tracker {
+    /** Tasks that have started and not yet finished or blocked on a join. */
     private final Set<Long> activeTasks;
+    /** For each target task, the set of tasks blocked joining on it. */
     private final Map<Long, Set<Long>> waitingTasks;
+    /** Tasks that have finished. */
     private final Set<Long> completedTasks;
+    /** Lock guarding {@link #activeTasks}, {@link #waitingTasks}, and {@link #completedTasks}. */
     private final Object tasksLock = new Object();
 
     /**
@@ -25,6 +29,18 @@ public class TrackTasks implements Tracker {
         this.waitingTasks = new ConcurrentHashMap<>();
     }
 
+    /**
+     * Tracks task start, finish, and join events.
+     *
+     * <p>On {@link JmcRuntimeEvent.Type#START_EVENT} the task becomes active. On {@link
+     * JmcRuntimeEvent.Type#FINISH_EVENT} the task is moved to completed and any tasks joining on it
+     * are released back to active. On {@link JmcRuntimeEvent.Type#JOIN_REQUEST_EVENT}, if the target
+     * task (param {@code waitingTask}) has not yet completed, the requesting task is blocked until it
+     * does.
+     *
+     * @param event the event to process
+     * @return the set of currently active tasks
+     */
     @Override
     public Set<Long> updateEvent(JmcRuntimeEvent event) {
         if (event.getType() == JmcRuntimeEvent.Type.START_EVENT) {
@@ -63,12 +79,18 @@ public class TrackTasks implements Tracker {
         return getActiveTasks();
     }
 
+    /**
+     * Returns a snapshot copy of the currently active tasks.
+     *
+     * @return a copy of the active task set
+     */
     private Set<Long> getActiveTasks() {
         synchronized (tasksLock) {
             return new HashSet<>(activeTasks);
         }
     }
 
+    /** Clears all tracked task state. */
     @Override
     public void reset() {
         synchronized (tasksLock) {
