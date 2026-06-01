@@ -12,8 +12,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Tracks ExecutorService instances to ensure proper shutdown and prevent memory leaks.
- * Prioritizes tasks related to executor shutdown when executors are not properly closed.
+ * Tracks {@link ExecutorService} instances so they can be shut down between iterations, preventing
+ * leaked threads.
+ *
+ * <p>As a {@link Tracker} it does not restrict the runnable set during normal operation; its
+ * {@link #updateEvent(JmcRuntimeEvent)} simply records executors reported via {@code
+ * EXECUTOR_SHUTDOWN_EVENT} (action {@code "register"}) and otherwise returns all active tasks. Its
+ * real work happens in {@link #reset()}, which force-shuts-down any registered executor that was not
+ * already closed.
  */
 public class TrackExecutors implements Tracker {
 
