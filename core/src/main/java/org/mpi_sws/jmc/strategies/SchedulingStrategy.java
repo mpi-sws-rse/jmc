@@ -15,8 +15,10 @@ import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
  * <p>It is used by the {@link Scheduler} to decide which thread to schedule next. The {@link
  * Scheduler} is in turn used by the {@link JmcRuntime} to manage the execution of threads.
  *
- * <p>Implementations of this interface should be thread-safe. Multiple threads can make concurrent
- * calls to the {@link SchedulingStrategy#updateEvent} function.
+ * <p>Because JMC serializes execution, a strategy is never entered concurrently: {@link
+ * SchedulingStrategy#updateEvent} runs on the single currently-running task, while {@link
+ * SchedulingStrategy#nextTask} runs on the scheduler thread while all program tasks are paused. The
+ * two therefore alternate rather than overlap.
  */
 public interface SchedulingStrategy {
     /**
