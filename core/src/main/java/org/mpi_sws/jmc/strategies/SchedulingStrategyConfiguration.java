@@ -24,6 +24,14 @@ public class SchedulingStrategyConfiguration {
     private int budget;
     /** Solver selection for symbolic execution (e.g. {@code "off"}). */
     private String solver;
+    /** Target bug depth {@code d} for the PCT strategies (always &ge; 1). */
+    private int bugDepth;
+    /**
+     * Fair-suffix bound for the {@code fair-pct} strategy: the number of priority-controlled
+     * scheduling decisions before switching to a uniform-random ("fair") suffix. A value
+     * {@code <= 0} selects automatic mode (switch once a run exceeds the learned step bound).
+     */
+    private int pctFairBound;
 
     /** Private constructor; instances are created through {@link Builder}. */
     private SchedulingStrategyConfiguration() {
@@ -84,10 +92,29 @@ public class SchedulingStrategyConfiguration {
     }
 
     /**
+     * Returns the target bug depth {@code d} used by the PCT strategies.
+     *
+     * @return the bug depth (always &ge; 1)
+     */
+    public int getBugDepth() {
+        return bugDepth;
+    }
+
+    /**
+     * Returns the fair-suffix bound used by the {@code fair-pct} strategy.
+     *
+     * @return the fair bound; a value {@code <= 0} means automatic mode
+     */
+    public int getPctFairBound() {
+        return pctFairBound;
+    }
+
+    /**
      * Builder for {@link SchedulingStrategyConfiguration}.
      *
      * <p>All values start with defaults (no seed, {@code RANDOM} trust policy, the default report
-     * path, debug off, budget 2, solver {@code "off"}) and can be overridden fluently.
+     * path, debug off, budget 2, solver {@code "off"}, bug depth 3, fair bound 0 = auto) and can be
+     * overridden fluently.
      */
     public static class Builder {
         /** The RNG seed to build with. */
@@ -102,6 +129,10 @@ public class SchedulingStrategyConfiguration {
         private int budget;
         /** The solver selection to build with. */
         private String solver;
+        /** The PCT bug depth to build with. */
+        private int bugDepth;
+        /** The fair-pct fair-suffix bound to build with ({@code <= 0} = auto). */
+        private int pctFairBound;
 
         /** Creates a builder pre-populated with the default configuration values. */
         public Builder() {
@@ -111,6 +142,8 @@ public class SchedulingStrategyConfiguration {
             this.debug = false;
             this.budget = 2;
             this.solver = "off";
+            this.bugDepth = 3;
+            this.pctFairBound = 0;
         }
 
         /**
@@ -183,6 +216,33 @@ public class SchedulingStrategyConfiguration {
         }
 
         /**
+         * Sets the target bug depth {@code d} for the PCT strategies.
+         *
+         * @param bugDepth the bug depth (must be at least 1)
+         * @return this builder, for chaining
+         * @throws IllegalArgumentException if {@code bugDepth} is less than 1
+         */
+        public Builder bugDepth(int bugDepth) {
+            if (bugDepth < 1) {
+                throw new IllegalArgumentException("bugDepth must be at least 1");
+            }
+            this.bugDepth = bugDepth;
+            return this;
+        }
+
+        /**
+         * Sets the fair-suffix bound for the {@code fair-pct} strategy.
+         *
+         * @param pctFairBound the number of priority-controlled decisions before switching to the
+         *     fair random suffix; a value {@code <= 0} selects automatic mode
+         * @return this builder, for chaining
+         */
+        public Builder pctFairBound(int pctFairBound) {
+            this.pctFairBound = pctFairBound;
+            return this;
+        }
+
+        /**
          * Builds an immutable {@link SchedulingStrategyConfiguration} from the configured values.
          *
          * @return a new {@link SchedulingStrategyConfiguration} instance
@@ -195,6 +255,8 @@ public class SchedulingStrategyConfiguration {
             config.debug = this.debug;
             config.budget = this.budget;
             config.solver = this.solver;
+            config.bugDepth = this.bugDepth;
+            config.pctFairBound = this.pctFairBound;
             return config;
         }
     }

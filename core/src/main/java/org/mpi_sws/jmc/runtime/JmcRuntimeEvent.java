@@ -243,8 +243,8 @@ public class JmcRuntimeEvent {
      *
      * <p>Each event type corresponds to a specific action or occurrence in the program's execution,
      * such as thread creation, locking, reading, writing, and more.
-     * TODO :: Refactor this enum
      */
+    // TODO :: Refactor this enum
     public enum Type {
         // Thread creation and termination events
         START_EVENT,
