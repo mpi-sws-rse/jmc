@@ -32,4 +32,15 @@ public class ThreadFeaturesTest {
         // But for jdk classes like Thread, it causes issues.
         getCurrentThread();
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void testGetCurrentThreadPct() {
+        // Static method invocations on extended class are fine.
+        // So the following is okay.
+        callTestClass();
+
+        // But for jdk classes like Thread, it causes issues.
+        getCurrentThread();
+    }
 }

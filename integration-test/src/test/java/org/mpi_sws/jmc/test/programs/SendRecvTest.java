@@ -34,4 +34,10 @@ public class SendRecvTest {
     public void runSendRecvTest() {
         sendRecvTest();
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runSendRecvTestPct() {
+        sendRecvTest();
+    }
 }
