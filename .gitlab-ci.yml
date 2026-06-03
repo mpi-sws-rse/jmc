@@ -59,6 +59,8 @@ compile-integration-test:
 
 test:
   stage: test
+  # Test-stage timeout, increased by 20 minutes (60m default -> 1h 20m).
+  timeout: 1h 20m
   script:
     - |
       set -eu
@@ -134,5 +136,5 @@ publish:
       - build/jmc-agent/jmc-agent.zip
       - build/jmc/jmc.zip
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"
   when: on_success

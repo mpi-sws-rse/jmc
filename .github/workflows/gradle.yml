@@ -1,67 +1,207 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+# Faithful GitHub Actions port of .gitlab-ci.yml.
+#
+# GitLab runs the pipeline on the `master` branch; GitHub runs it on `main`.
+# Both branches are listed in the triggers/conditions below so the pipeline
+# behaves identically on either platform without further edits.
+#
+# This workflow uses actions provided by a third-party (gradle/actions); they
+# are governed by separate terms of service, privacy policy and support docs.
 
-name: Java CI with Gradle
+name: JMC CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main", "master" ]
+
+# Cancel superseded runs for the same ref to save runner minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Mirrors the GitLab `before_script` exports so the JavaSMT / Z3 native
+# libraries are found at runtime. The paths are where apt installs libz3.
+env:
+  JAVA_TOOL_OPTIONS: "-Djava.library.path=/usr/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/jni"
+  LD_LIBRARY_PATH: "/usr/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/jni"
 
 jobs:
-  build:
+  # ---------------------------------------------------------------------------
+  # stage: build
+  # ---------------------------------------------------------------------------
 
+  # GitLab `check` job. rules: merge_request_event only -> pull_request only.
+  checkstyle:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Install Z3 native libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends z3 libz3-dev libz3-java zip
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Checkstyle
+        run: ./gradlew checkstyleMain checkstyleTest
 
-    # Configure Gradle for optimal use in GiHub Actions, including caching of downloaded dependencies.
-    # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+  # GitLab `compile-agent` / `compile-core` / `compile-integration-test`.
+  # No rules in GitLab -> runs on every pipeline (pushes and pull requests).
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        task:
+          - ":agent:compileJava"
+          - ":core:compileJava"
+          - ":integration-test:compileTestJava"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Install Z3 native libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends z3 libz3-dev libz3-java zip
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Compile ${{ matrix.task }}
+        run: ./gradlew ${{ matrix.task }}
 
-    - name: Build with Gradle Wrapper
-      run: ./gradlew build
+  # ---------------------------------------------------------------------------
+  # stage: test
+  # ---------------------------------------------------------------------------
 
-    # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
-    # If your project does not have the Gradle Wrapper configured, you can use the following configuration to run Gradle with a specified version.
-    #
-    # - name: Setup Gradle
-    #   uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
-    #   with:
-    #     gradle-version: '8.5'
-    #
-    # - name: Build with Gradle 8.5
-    #   run: gradle build
+  # GitLab `test` job. rules: merge_request_event only -> pull_request only.
+  test:
+    if: github.event_name == 'pull_request'
+    needs: [ checkstyle, compile ]
+    runs-on: ubuntu-latest
+    # GitLab test-stage timeout, increased by 20 minutes (60m baseline -> 80m).
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Install Z3 native libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends z3 libz3-dev libz3-java zip
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Run JMC tests (one method per invocation)
+        run: |
+          set -eu
+          TEST_FILES=$(find integration-test/src/test/java -name "*Test.java" \
+            -exec grep -l -E "^[[:space:]]*@JmcCheck|^[[:space:]]*@Test" {} + \
+            | sort)
+          if [ -z "$TEST_FILES" ]; then
+            echo "No test classes found under integration-test/src/test/java."
+            exit 0
+          fi
+          TEST_METHODS=$(for FILE in $TEST_FILES; do
+            CLASS_NAME=$(printf "%s" "$FILE" | sed 's|integration-test/src/test/java/||; s|/|.|g; s|\.java$||')
+            awk -v className="$CLASS_NAME" '
+              BEGIN { in_block=0; want=0; disabled=0 }
+              {
+                line=$0
+                if (in_block) {
+                  if (line ~ /\*\//) { sub(/^.*\*\//, "", line); in_block=0 } else { next }
+                }
+                if (line ~ /\/\*/) { in_block=1; sub(/\/\*.*$/, "", line) }
+                sub(/^[[:space:]]+/, "", line)
+                if (line ~ /^\/\// || line == "") { next }
+              }
+              /^[[:space:]]*@Disabled/ { disabled=1; next }
+              /^[[:space:]]*@JmcCheck/ { want=1; next }
+              /^[[:space:]]*@Test/ { want=1; next }
+              want && $0 ~ /void[[:space:]]+[[:alnum:]_]+[[:space:]]*\(/ {
+                if (!disabled) {
+                  line=$0
+                  sub(/^.*void[[:space:]]+/, "", line)
+                  sub(/[[:space:]]*\(.*/, "", line)
+                  print className "." line
+                }
+                want=0
+                disabled=0
+              }
+            ' "$FILE"
+          done)
+          if [ -z "$TEST_METHODS" ]; then
+            echo "No test methods found under integration-test/src/test/java."
+            exit 0
+          fi
+          for TEST_METHOD in $TEST_METHODS; do
+            ./gradlew --no-daemon :integration-test:test --tests "$TEST_METHOD"
+          done
+      # GitLab `artifacts: reports: junit:` equivalent.
+      - name: Upload JUnit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-test-results
+          path: integration-test/build/test-results/test/**/TEST-*.xml
+          if-no-files-found: warn
 
+  # ---------------------------------------------------------------------------
+  # stage: deploy
+  # ---------------------------------------------------------------------------
+
+  # GitLab `publish` job. rules: $CI_COMMIT_BRANCH == "main"
+  # (extended to master so it also publishes from the GitLab default branch).
+  publish:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    needs: [ compile ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Install Z3 native libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends z3 libz3-dev libz3-java zip
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Publish
+        run: bash ./scripts/publish.sh
+      - name: Upload distribution archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmc-distributions
+          path: |
+            build/jmc-agent/jmc-agent.zip
+            build/jmc/jmc.zip
+
+  # Retained from the original GitHub starter workflow: generates and submits a
+  # dependency graph, enabling Dependabot alerts. Runs only on the main branches.
   dependency-submission:
-
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-
-    # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
-    # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
-    - name: Generate and submit dependency graph
-      uses: gradle/actions/dependency-submission@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Generate and submit dependency graph
+        uses: gradle/actions/dependency-submission@v4
