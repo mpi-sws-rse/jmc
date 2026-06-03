@@ -153,6 +153,30 @@ public class InvokeDynFutureExecutorTest {
         future_par();
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testFuture_seqPct() throws Exception {
+        future_seq();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testExecutor_seqPct() throws Exception {
+        executor_seq();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testFutureNested_seqPct() throws Exception {
+        futureNested_seq();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testFuture_parPct() throws Exception {
+        future_par();
+    }
+
 /*    @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
     public void testExecutor_par() throws Exception {

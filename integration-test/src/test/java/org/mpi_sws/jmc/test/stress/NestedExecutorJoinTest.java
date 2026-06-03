@@ -61,4 +61,44 @@ public class NestedExecutorJoinTest {
 
         mainExecutor.shutdown();
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testNestedExecutorPatternPct() throws Exception {
+        final ExecutorService WORKER_POOL = Executors.newFixedThreadPool(2);
+
+        // Main executor (like the one created in the test)
+        ExecutorService mainExecutor = Executors.newFixedThreadPool(2);
+        List<Future<Integer>> futures = new ArrayList<>();
+
+        // Submit 3 tasks that each use the worker pool internally
+        for (int i = 0; i < 3; i++) {
+            final int taskId = i;
+            futures.add(mainExecutor.submit(() -> {
+
+                // Each task submits work to the shared worker pool
+                List<Future<String>> workerFutures = new ArrayList<>();
+                for (int j = 0; j < 2; j++) {
+                    final int workerId = j;
+                    workerFutures.add(WORKER_POOL.submit(() -> {
+                        return "result-" + taskId + "-" + workerId;
+                    }));
+                }
+
+                // Wait for worker tasks
+                for (Future<String> wf : workerFutures) {
+                    wf.get();
+                }
+
+                return taskId;
+            }));
+        }
+
+        // Main thread waits for all tasks
+        for (int i = 0; i < futures.size(); i++) {
+            Integer result = futures.get(i).get();
+        }
+
+        mainExecutor.shutdown();
+    }
 }
