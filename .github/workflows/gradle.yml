@@ -144,12 +144,12 @@ jobs:
             echo "No test methods found under integration-test/src/test/java."
             exit 0
           fi
-          # Per-method wall-clock hang guard. Defaults to 300s; override by setting
+          # Per-method wall-clock hang guard. Defaults to 30s; override by setting
           # a PER_TEST_TIMEOUT environment variable on the job/workflow. A stuck test
           # is killed (SIGTERM, then SIGKILL 30s later) so one deadlock can't consume
           # the whole job timeout. Timed-out/failed tests are summarised at the end and
           # fail the job, but the rest of the suite still runs.
-          PER_TEST_TIMEOUT="${PER_TEST_TIMEOUT:-300}"
+          PER_TEST_TIMEOUT="${PER_TEST_TIMEOUT:-30}"
           TIMED_OUT=""
           FAILED=""
           for TEST_METHOD in $TEST_METHODS; do
