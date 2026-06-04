@@ -144,9 +144,40 @@ jobs:
             echo "No test methods found under integration-test/src/test/java."
             exit 0
           fi
+          # Per-method wall-clock hang guard. Defaults to 300s; override by setting
+          # a PER_TEST_TIMEOUT environment variable on the job/workflow. A stuck test
+          # is killed (SIGTERM, then SIGKILL 30s later) so one deadlock can't consume
+          # the whole job timeout. Timed-out/failed tests are summarised at the end and
+          # fail the job, but the rest of the suite still runs.
+          PER_TEST_TIMEOUT="${PER_TEST_TIMEOUT:-300}"
+          TIMED_OUT=""
+          FAILED=""
           for TEST_METHOD in $TEST_METHODS; do
-            ./gradlew --no-daemon :integration-test:test --tests "$TEST_METHOD"
+            echo ">>> running $TEST_METHOD (timeout ${PER_TEST_TIMEOUT}s)"
+            rc=0
+            timeout -k 30s "${PER_TEST_TIMEOUT}s" \
+              ./gradlew --no-daemon :integration-test:test --tests "$TEST_METHOD" || rc=$?
+            if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+              echo ">>> TIMEOUT after ${PER_TEST_TIMEOUT}s: $TEST_METHOD"
+              TIMED_OUT="${TIMED_OUT}${TIMED_OUT:+ }$TEST_METHOD"
+            elif [ "$rc" -ne 0 ]; then
+              echo ">>> FAILED (exit $rc): $TEST_METHOD"
+              FAILED="${FAILED}${FAILED:+ }$TEST_METHOD"
+            fi
           done
+          echo "===================== test summary ====================="
+          if [ -n "$TIMED_OUT" ]; then
+            echo "Timed out (> ${PER_TEST_TIMEOUT}s):"
+            for t in $TIMED_OUT; do echo "  - $t"; done
+          fi
+          if [ -n "$FAILED" ]; then
+            echo "Failed:"
+            for t in $FAILED; do echo "  - $t"; done
+          fi
+          if [ -n "$TIMED_OUT" ] || [ -n "$FAILED" ]; then
+            exit 1
+          fi
+          echo "All executed tests passed within ${PER_TEST_TIMEOUT}s."
       # GitLab `artifacts: reports: junit:` equivalent.
       - name: Upload JUnit results
         if: always()
