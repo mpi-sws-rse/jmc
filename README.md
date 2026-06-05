@@ -305,10 +305,35 @@ Regular tests still run normally with `./gradlew :iceberg-core:test`.
 | `version`              | String  | JMC version                                                                                 | `"0.1.2"`                        |
 | `instrumentingPackage` | List    | Packages to instrument                                                                      | `[]`                             |
 | `excludedPackages`     | List    | Packages to skip                                                                            | `[]`                             |
+| `instrumentationLevel` | String  | Instrumentation granularity: `"full"` or `"sync_points_only"` (see below)                   | `"full"`                         |
 | `target`               | String  | Subproject path (e.g. `":iceberg-core"`). Empty = current project.                          | `""`                             |
 | `testTask`             | String  | Task name (e.g. `"jmcTest"`). Creates the task if it doesn't exist. Empty = all Test tasks. | `""`                             |
 | `debug`                | boolean | Dump instrumented bytecode to disk                                                          | `false`                          |
 | `debugPath`            | String  | Where to dump instrumented bytecode                                                         | `"build/generated/instrumented"` |
+
+### Instrumentation Levels
+
+JMC supports two instrumentation levels that control how much bytecode instrumentation is applied:
+
+- **`full`** (default) — instruments every field read/write (`GETFIELD`/`PUTFIELD`/`GETSTATIC`/`PUTSTATIC`) with yield points. This provides the finest-grained interleaving exploration and maximum bug-finding power, but creates a large state space that can be slow for big codebases.
+
+- **`sync_points_only`** — only instruments synchronization operations: lock acquire/release, thread start/join, atomic operations, and volatile accesses. Plain field read/write instrumentation is skipped. This dramatically reduces the state space and is suitable for initial exploration of large projects where most fields are accessed under locks or via atomics.
+
+Example usage:
+
+```kotlin
+jmc {
+    version = "0.1.2"
+    instrumentingPackage = listOf("com.github.benmanes.caffeine.cache")
+    instrumentationLevel = "sync_points_only"
+}
+```
+
+When using the agent directly (without the plugin):
+
+```
+-javaagent:jmc-agent.jar=instrumentingPackages=com.example,instrumentationLevel=sync_points_only,jmcRuntimeJarPath=jmc.jar
+```
 
 ## Documentation
 

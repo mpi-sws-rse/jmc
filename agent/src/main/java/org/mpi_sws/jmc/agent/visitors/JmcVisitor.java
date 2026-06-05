@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.agent.visitors;
 
+import org.mpi_sws.jmc.agent.InstrumentationLevel;
 import org.mpi_sws.jmc.checker.exceptions.JmcUnsupportedFeatureException;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -10,11 +11,24 @@ public class JmcVisitor {
 
     /**
      * The main method that applies all the visitors in the correct order.
+     * Uses FULL instrumentation level (default behavior).
      *
      * @param classFileBuffer the input class file as a byte array
      * @return the transformed class file as a byte array
      */
     public static byte[] transform(byte[] classFileBuffer) {
+        return transform(classFileBuffer, InstrumentationLevel.FULL);
+    }
+
+    /**
+     * The main method that applies all the visitors in the correct order,
+     * respecting the given instrumentation level.
+     *
+     * @param classFileBuffer the input class file as a byte array
+     * @param level the instrumentation level controlling which visitors are applied
+     * @return the transformed class file as a byte array
+     */
+    public static byte[] transform(byte[] classFileBuffer, InstrumentationLevel level) {
         ClassReader syncCr = new ClassReader(classFileBuffer);
         ClassWriter syncCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
@@ -48,6 +62,17 @@ public class JmcVisitor {
 
         ClassReader cr = new ClassReader(classFileBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+
+        // Build the visitor chain. When SYNC_POINTS_ONLY, skip ReadWriteVisitor
+        // so that plain field accesses don't get yield points.
+        ClassVisitor innermost;
+        if (level == InstrumentationLevel.SYNC_POINTS_ONLY) {
+            // Skip JmcReadWriteVisitor — no field read/write instrumentation
+            innermost = cw;
+        } else {
+            innermost = new JmcReadWriteVisitor.ReadWriteClassVisitor(cw);
+        }
+
         ClassVisitor cv =
                 new JmcWaitNotifyVisitor(
                         new JmcStaticMethodVisitor(
@@ -62,9 +87,7 @@ public class JmcVisitor {
                                                                                 new JmcThreadVisitor
                                                                                         .ThreadCallReplacerClassVisitor(
                                                                                                     new JmcNativeMethodVisitor(
-                                                                                                        new JmcReadWriteVisitor
-                                                                                                                .ReadWriteClassVisitor(
-                                                                                                                cw))))))))),
+                                                                                                        innermost)))))))),
                                         syncScanData)));
         try{
             cr.accept(cv, 0);

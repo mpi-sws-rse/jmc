@@ -10,11 +10,13 @@ public class AgentArgs {
     private static final String INSTRUMENTING_PKG_FLAG = "instrumentingPackages";
     private static final String EXCLUDED_PKG_FLAG = "excludedPackages";
     private static final String JMC_RUNTIME_JAR_PATH_FLAG = "jmcRuntimeJarPath";
+    private static final String INSTRUMENTATION_LEVEL_FLAG = "instrumentationLevel";
     private boolean debug = false;
     private String debugSavePath = "build/generated/instrumented";
     private List<String> instrumentingPackages = new ArrayList<>();
     private List<String> excludedPackages = new ArrayList<>();
     private String jmcRuntimeJarPath = "build/deps/jmc-0.1.1.jar";
+    private InstrumentationLevel instrumentationLevel = InstrumentationLevel.FULL;
 
     /**
      * The AgentArgs constructor is used to parse the agent arguments.
@@ -37,6 +39,8 @@ public class AgentArgs {
                         excludedPackages = List.of(parts[1].split(";"));
                     } else if (parts[0].equals(JMC_RUNTIME_JAR_PATH_FLAG)) {
                         jmcRuntimeJarPath = parts[1];
+                    } else if (parts[0].equals(INSTRUMENTATION_LEVEL_FLAG)) {
+                        instrumentationLevel = InstrumentationLevel.fromString(parts[1]);
                     }
                 } else {
                     if (arg.equals(DEBUG_FLAG)) {
@@ -92,6 +96,15 @@ public class AgentArgs {
         return jmcRuntimeJarPath;
     }
 
+    /**
+     * Gets the instrumentation level controlling how much bytecode instrumentation is applied.
+     *
+     * @return the instrumentation level
+     */
+    public InstrumentationLevel getInstrumentationLevel() {
+        return instrumentationLevel;
+    }
+
     public String toString() {
         return "AgentArgs{"
                 + "debug="
@@ -106,6 +119,8 @@ public class AgentArgs {
                 + ", jmcRuntimeJarPath='"
                 + jmcRuntimeJarPath
                 + '\''
+                + ", instrumentationLevel="
+                + instrumentationLevel
                 + '}';
     }
 }
