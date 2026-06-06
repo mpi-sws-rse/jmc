@@ -161,8 +161,9 @@ public class Scheduler {
     private void doNextStop() {
         Long taskId = taskManager.doNextStop();
         if (taskId == -1L) {
-            LOGGER.error("Task ID is null, cannot stop the task.");
-            throw HaltExecutionException.error("Task ID is null, cannot stop the task.");
+            LOGGER.debug("No pausable tasks remain in stop-all mode; exiting.");
+            stopAllMode = false;
+            return;
         }
         setCurrentTask(taskId);
         taskManager.stopTask(taskId);
@@ -194,18 +195,15 @@ public class Scheduler {
      * @throws TaskAlreadyPaused if the current task is already paused
      */
     public CompletableFuture<?> yield() throws TaskAlreadyPaused {
-        if (!isInStopAllMode()) {
-            CompletableFuture<?> future;
-            synchronized (currentTaskLock) {
-                future = taskManager.pause(currentTask);
-                currentTask = null;
-            }
-            // Release the scheduler thread
-            LOGGER.debug("Enabling scheduler thread.");
-            schedulerThread.enable();
-            return future;
+        CompletableFuture<?> future;
+        synchronized (currentTaskLock) {
+            future = taskManager.pause(currentTask);
+            currentTask = null;
         }
-        return null;
+        // Release the scheduler thread
+        LOGGER.debug("Enabling scheduler thread.");
+        schedulerThread.enable();
+        return future;
     }
 
     public void yieldWithoutPausing() {
@@ -227,17 +225,14 @@ public class Scheduler {
      * @throws TaskAlreadyPaused if the task is already paused
      */
     public CompletableFuture<?> yield(Long taskId) throws TaskAlreadyPaused {
-        if (!isInStopAllMode()) {
-            CompletableFuture<?> future = taskManager.pause(taskId);
-            synchronized (currentTaskLock) {
-                currentTask = null;
-            }
-            // Release the scheduler thread
-            LOGGER.debug("Enabling scheduler thread.");
-            schedulerThread.enable();
-            return future;
+        CompletableFuture<?> future = taskManager.pause(taskId);
+        synchronized (currentTaskLock) {
+            currentTask = null;
         }
-        return null;
+        // Release the scheduler thread
+        LOGGER.debug("Enabling scheduler thread.");
+        schedulerThread.enable();
+        return future;
     }
 
     /**
@@ -269,6 +264,20 @@ public class Scheduler {
 
     public boolean isInStopAllMode() {
         return stopAllMode;
+    }
+
+    /**
+     * When the strategy returns no choice but tasks are paused on the scheduler, resume one so
+     * exploration can continue. This avoids a global stall when every live task is blocked in
+     * {@link TaskManager#pause(Long)} waiting for a scheduling decision.
+     */
+    Long resumeBlockedTaskIfNeeded() {
+        for (Long taskId : taskManager.findTasksWithStatus(TaskManager.TaskState.BLOCKED)) {
+            LOGGER.debug("Resuming blocked task {} because the strategy returned no choice.", taskId);
+            scheduleTask(SchedulingChoice.task(taskId));
+            return taskId;
+        }
+        return null;
     }
 
     /**
@@ -377,10 +386,15 @@ public class Scheduler {
                     if (nextTask != null) {
                         scheduler.scheduleTask(nextTask);
                     } else {
-                        LOGGER.error("No task to schedule.");
+                        Long blockedTask = scheduler.resumeBlockedTaskIfNeeded();
+                        if (blockedTask == null) {
+                            LOGGER.error("No task to schedule.");
+                        }
                     }
+                } catch (HaltExecutionException e) {
+                    LOGGER.debug("Scheduler thread halt: {}", e.getMessage());
                 } catch (Exception e) {
-                    LOGGER.error("Scheduler thread threw an exception: {}", e.getMessage());
+                    LOGGER.error("Scheduler thread threw an exception: {}", e.getMessage(), e);
                     break;
                 }
             }

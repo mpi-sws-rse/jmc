@@ -232,7 +232,7 @@ public class JmcThread extends Thread {
         } catch (HaltTaskException e) {
             LOGGER.error("Failed to join task : {}", e.getMessage());
         }
-        super.join(millis);
+        JmcRuntime.waitForTaskTermination(jmcThreadId);
         JmcRuntimeEvent completedEvent =
                 new JmcRuntimeEvent.Builder()
                         .type(JmcRuntimeEvent.Type.JOIN_COMPLETE_EVENT)

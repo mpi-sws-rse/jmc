@@ -426,6 +426,11 @@ public class ExecutionGraph {
 
         // Tracking thread starts in the coherency order with a special static location object.
         List<ExecutionGraphNode> threadStarts = coherencyOrder.get(LocationStore.ThreadLocation);
+        if (threadStarts == null || threadStarts.isEmpty()) {
+            threadStarts = new ArrayList<>();
+            threadStarts.add(allEvents.get(0));
+            coherencyOrder.put(LocationStore.ThreadLocation, threadStarts);
+        }
         ExecutionGraphNode lastThreadStart = threadStarts.get(threadStarts.size() - 1);
         lastThreadStart.addEdge(node, Relation.ThreadCreation);
         coherencyOrder.get(LocationStore.ThreadLocation).add(node);

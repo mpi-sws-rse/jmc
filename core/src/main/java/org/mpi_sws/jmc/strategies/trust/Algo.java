@@ -160,6 +160,9 @@ public class Algo {
      * @param task scheduling choice to update its value
      */
     public void updateExternalValue(SchedulingChoice<?> task) {
+        if (task.getTaskId() == null) {
+            return;
+        }
         // Since the task we receive is from runtime, the task id must be treated adjusted in algo
         long id = task.getTaskId() - 1;
         if (externalValueTracker.containsValue(id)) {

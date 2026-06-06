@@ -122,6 +122,13 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         // If the algorithm has a task to execute, return it
         SchedulingChoice<?> nextTask = algoInstance.nextTask();
         if (nextTask != null) {
+            if (nextTask.isBlockExecution() || nextTask.isBlockTask()) {
+                return nextTask;
+            }
+            if (nextTask.getTaskId() == null) {
+                LOGGER.debug("Guiding trace returned a scheduling choice without a task id: {}", nextTask);
+                return null;
+            }
             if (!activeTasks.contains(nextTask.getTaskId())) {
                 LOGGER.debug("Guiding trace led us to a task that is not active: {}", nextTask);
             }
@@ -137,25 +144,20 @@ public class TrustStrategy extends TrackActiveTasksStrategy
                         .filter(activeTasks::contains)
                         .toList();
 
-        // If the policy is FIFO, return the first active, schedule-able task
-        SchedulingChoice<?> next = SchedulingChoice.task(
-                switch (policy) {
-                    case FIFO -> activeScheduleAbleTasks.isEmpty()
-                            ? null
-                            : activeScheduleAbleTasks.get(0);
-                    case LIFO -> activeScheduleAbleTasks.isEmpty()
-                            ? null
-                            : activeScheduleAbleTasks.get(activeScheduleAbleTasks.size() - 1);
-                    case RANDOM -> {
-                        int size = activeScheduleAbleTasks.size();
-                        yield size == 0 ? null : activeScheduleAbleTasks.get(random.nextInt(size));
-                    }
-                });
-
-        // Update it's value based on value tracker in the algo
-        if (next != null) {
-            algoInstance.updateExternalValue(next);
+        if (activeScheduleAbleTasks.isEmpty()) {
+            return null;
         }
+
+        // If the policy is FIFO, return the first active, schedule-able task
+        Long chosenTask =
+                switch (policy) {
+                    case FIFO -> activeScheduleAbleTasks.get(0);
+                    case LIFO -> activeScheduleAbleTasks.get(activeScheduleAbleTasks.size() - 1);
+                    case RANDOM -> activeScheduleAbleTasks.get(random.nextInt(activeScheduleAbleTasks.size()));
+                };
+
+        SchedulingChoice<?> next = SchedulingChoice.task(chosenTask);
+        algoInstance.updateExternalValue(next);
         return next;
     }
 

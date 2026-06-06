@@ -199,6 +199,23 @@ public class JmcRuntime {
         }
     }
 
+    /**
+     * Cooperatively waits until the task with the given ID is terminated.
+     *
+     * <p>Unlike {@link Thread#join()}, this keeps the waiting task in the scheduler's task pool so
+     * {@link TaskManager#stopTask(Long)} can interrupt it during stop-all (e.g. trust-estimation
+     * re-execution). A native join would block the OS thread outside JMC's pause/resume machinery.
+     */
+    public static void waitForTaskTermination(Long taskId) {
+        while (true) {
+            TaskManager.TaskState status = taskManager.getStatus(taskId);
+            if (status == null || status == TaskManager.TaskState.TERMINATED) {
+                return;
+            }
+            JmcRuntime.yield();
+        }
+    }
+
     public static <T> T wait(Long taskId) {
         try {
             return taskManager.wait(taskId);
