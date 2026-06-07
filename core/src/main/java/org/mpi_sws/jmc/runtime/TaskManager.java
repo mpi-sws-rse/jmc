@@ -151,7 +151,8 @@ public class TaskManager {
                 throw new TaskNotExists(taskId);
             }
             future.complete(null);
-            taskFutures.remove(taskId);
+            //taskFutures.remove(taskId); nstead, we let the future be removed when the waiting thread is
+            // resumed and reaches the line after future.get() in wait()
             taskStates.put(taskId, TaskState.RUNNING);
         }
     }
@@ -178,12 +179,14 @@ public class TaskManager {
                 // The task is not paused or has been completed.
                 throw new TaskNotExists(taskId);
             }
-            taskFutures.remove(taskId);
+            //taskFutures.remove(taskId); Instead, we let the future be removed when the waiting thread is
+            // resumed and reaches the line after future.get() in wait()
             taskStates.put(taskId, TaskState.RUNNING);
         }
         try {
             CompletableFuture<T> castedFuture = (CompletableFuture<T>) future;
             castedFuture.complete(value);
+            LOGGER.debug("Task {} is resumed with value {} on future {}", taskId, value, future);
         } catch (ClassCastException e) {
             LOGGER.error("Failed to cast future for task: {}", taskId);
             throw new TaskNotExists(taskId);
@@ -207,7 +210,8 @@ public class TaskManager {
                 return;
             }
             future.completeExceptionally(e);
-            taskFutures.remove(taskId);
+            //taskFutures.remove(taskId); nstead, we let the future be removed when the waiting thread is
+            // resumed and reaches the line after future.get() in wait()
         }
     }
 
@@ -225,7 +229,8 @@ public class TaskManager {
                 return;
             }
             future.complete(null);
-            taskFutures.remove(taskId);
+            //taskFutures.remove(taskId); instead, we let the future be removed when the waiting thread is
+            // resumed and reaches the line after future.get() in wait()
         }
     }
 
@@ -338,16 +343,25 @@ public class TaskManager {
             future = taskFutures.get(taskId);
         }
         if (future == null) {
+            LOGGER.debug("Task {} has no pending future to wait on", taskId);
             return null;
         }
         try {
             CompletableFuture<T> castedFuture = (CompletableFuture<T>) future;
-            return castedFuture.get();
+            LOGGER.debug("Task {} is waiting on future {}", taskId, future);
+            T result = castedFuture.get();
+            // A thread will reach this line only if the scheduler has completed it's corresponding future object.
+            // Thus, it is now safe to remove the future from taskFutures map
+            taskFutures.remove(taskId);
+            LOGGER.debug("Task {} is now resumed with value {} from future {}", taskId, result, future);
+            return result;
         } catch (Exception e) {
             Throwable cause = e.getCause();
             if (cause instanceof HaltTaskException) {
                 throw (HaltTaskException) cause;
             } else if (cause instanceof HaltExecutionException && ((HaltExecutionException) cause).isReexecutionNeeded()) {
+                LOGGER.debug("The future related to task {} has been completed exceptionally" +
+                        " for re-execution purpose", taskId);
                 throw HaltExecutionException.reexecutionNeeded();
             } else {
                 throw e;

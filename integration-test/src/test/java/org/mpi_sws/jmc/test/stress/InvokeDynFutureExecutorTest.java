@@ -137,6 +137,7 @@ public class InvokeDynFutureExecutorTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
+    // TODO :: There is an unknown exception in the agent
     public void testExecutor_seq() throws Exception {
         executor_seq();
     }
@@ -161,6 +162,7 @@ public class InvokeDynFutureExecutorTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    // TODO :: There is an unknown exception in the agent
     public void testExecutor_seqPct() throws Exception {
         executor_seq();
     }

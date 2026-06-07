@@ -144,7 +144,7 @@ public class Scheduler {
             }
             setCurrentTask(taskId);
             try {
-                LOGGER.debug("Resuming task: {}", taskId);
+                LOGGER.debug("Resuming task {} with value {}", taskId, choice.getValue());
                 if (taskId == null) {
                     LOGGER.error("Task ID is null, cannot resume task.");
                     throw HaltExecutionException.error("Task ID is null, cannot resume task.");
@@ -185,13 +185,15 @@ public class Scheduler {
             LOGGER.error("Task ID is null, cannot stop the task.");
             throw HaltExecutionException.error("Task ID is null, cannot stop the task.");
         }
+        LOGGER.debug("The next task to be stopped: {}", taskId);
         setCurrentTask(taskId);
-        taskManager.stopTask(taskId);
+        // We must reset the stopAllMode flag before trying to stop the main (last remaining active) thread
         if (taskId == 1L) {
             // Main task stopped, exit stop all mode
             stopAllMode = false;
             LOGGER.debug("Exiting stop all mode.");
         }
+        taskManager.stopTask(taskId);
     }
 
     /**
@@ -204,6 +206,7 @@ public class Scheduler {
      */
     public void updateEvent(JmcRuntimeEvent event) throws HaltTaskException {
         if (isInStopAllMode()) {
+            LOGGER.debug("Event {} received while in stop all mode, ignoring.", event);
             return;
         }
         strategy.updateEvent(event);
