@@ -79,4 +79,16 @@ public class SynchronizedCounterTest {
     public void testTrustSynchronizedBlockCounter() {
         testCounterSyncBlockProgram();
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void testPctSynchronizedCounter() {
+        twoCounterProgram();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void testPctSynchronizedBlockCounter() {
+        testCounterSyncBlockProgram();
+    }
 }

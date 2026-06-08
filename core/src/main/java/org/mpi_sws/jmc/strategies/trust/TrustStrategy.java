@@ -123,7 +123,8 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         SchedulingChoice<?> nextTask = algoInstance.nextTask();
         if (nextTask != null) {
             if (!activeTasks.contains(nextTask.getTaskId())) {
-                LOGGER.debug("Guiding trace led us to a task that is not active: {}", nextTask);
+                LOGGER.debug("Guiding trace led us to a task={} that is not" +
+                        " in active={}", nextTask, activeTasks);
             }
             // Update it's value based on value tracker in the algo
             algoInstance.updateExternalValue(nextTask);

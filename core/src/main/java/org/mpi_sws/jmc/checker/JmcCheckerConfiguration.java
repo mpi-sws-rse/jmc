@@ -37,6 +37,10 @@ public class JmcCheckerConfiguration {
 
     private int budget;
 
+    private int bugDepth;
+
+    private int pctFairBound;
+
     private String reportPath;
 
     private Duration timeout;
@@ -100,6 +104,24 @@ public class JmcCheckerConfiguration {
     }
 
     /**
+     * Returns the target bug depth {@code d} used by the PCT strategies.
+     *
+     * @return the bug depth
+     */
+    public int getBugDepth() {
+        return bugDepth;
+    }
+
+    /**
+     * Returns the fair-suffix bound used by the {@code fair-pct} strategy.
+     *
+     * @return the fair bound; a value {@code <= 0} means automatic mode
+     */
+    public int getPctFairBound() {
+        return pctFairBound;
+    }
+
+    /**
      * Sets the seed for the checker.
      *
      * @param seed the seed to set.
@@ -143,7 +165,13 @@ public class JmcCheckerConfiguration {
     public JmcRuntimeConfiguration toRuntimeConfiguration() throws JmcInvalidStrategyException {
         SchedulingStrategy strategy;
         SchedulingStrategyConfiguration.Builder strategyConfigurationBuilder =
-                new SchedulingStrategyConfiguration.Builder().seed(seed).budget(budget).solver(solver).trustSchedulingPolicy(schedulingPolicy);
+                new SchedulingStrategyConfiguration.Builder()
+                        .seed(seed)
+                        .budget(budget)
+                        .solver(solver)
+                        .trustSchedulingPolicy(schedulingPolicy)
+                        .bugDepth(bugDepth)
+                        .pctFairBound(pctFairBound);
         if (debug) {
             strategyConfigurationBuilder.debug();
             strategyConfigurationBuilder.reportPath(reportPath);
@@ -185,6 +213,8 @@ public class JmcCheckerConfiguration {
                 .reportPath(annotation.reportPath())
                 .seed(annotation.seed())
                 .budget(annotation.budget())
+                .bugDepth(annotation.bugDepth())
+                .pctFairBound(annotation.pctFairBound())
                 .timeout(annotation.timeout())
                 .schedulingPolicy(annotation.schedulingPolicy())
                 .build();
@@ -212,6 +242,10 @@ public class JmcCheckerConfiguration {
 
         private int budget;
 
+        private int bugDepth;
+
+        private int pctFairBound;
+
         private TrustStrategy.SchedulingPolicy schedulingPolicy;
 
         public Builder() {
@@ -223,6 +257,8 @@ public class JmcCheckerConfiguration {
             this.solver = "off";
             this.seed = System.nanoTime();
             this.budget = 2;
+            this.bugDepth = 3;
+            this.pctFairBound = 0;
             this.timeout = null;
         }
 
@@ -267,6 +303,16 @@ public class JmcCheckerConfiguration {
             return this;
         }
 
+        public Builder bugDepth(int bugDepth) {
+            this.bugDepth = bugDepth;
+            return this;
+        }
+
+        public Builder pctFairBound(int pctFairBound) {
+            this.pctFairBound = pctFairBound;
+            return this;
+        }
+
         public Builder timeout(Duration timeout) {
             this.timeout = timeout;
             return this;
@@ -301,6 +347,8 @@ public class JmcCheckerConfiguration {
             config.solver = solver;
             config.seed = seed;
             config.budget = budget;
+            config.bugDepth = bugDepth;
+            config.pctFairBound = pctFairBound;
             config.timeout = timeout;
             config.schedulingPolicy = schedulingPolicy;
             return config;

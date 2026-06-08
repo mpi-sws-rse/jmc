@@ -2,15 +2,31 @@ package org.mpi_sws.jmc.runtime;
 
 /** Exception thrown to halt execution of the current and all subsequent executions. */
 public class HaltCheckerException extends RuntimeException {
+    /** Whether the exploration stopped successfully without any error. */
     private boolean okay = false;
+    /** Whether the exploration was halted because of a timeout. */
     private boolean timeout = false;
 
+    /**
+     * Constructs a new {@link HaltCheckerException} with explicit success and timeout flags.
+     *
+     * @param ok whether the exploration stopped successfully
+     * @param message the exception message
+     * @param timeout whether the exploration was halted due to a timeout
+     */
     private HaltCheckerException(boolean ok, String message, boolean timeout) {
         super(message);
         this.okay = ok;
         this.timeout = timeout;
     }
 
+    /**
+     * Constructs a new {@link HaltCheckerException} from an error message and cause. The success and
+     * timeout flags are both set to {@code false}.
+     *
+     * @param message the error message
+     * @param cause the underlying cause
+     */
     private HaltCheckerException(String message, Throwable cause) {
         super(message, cause);
         this.okay = false;

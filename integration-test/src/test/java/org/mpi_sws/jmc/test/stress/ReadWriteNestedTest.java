@@ -50,4 +50,46 @@ public class ReadWriteNestedTest {
         t1.join();
         t2.join();
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testNestedYieldInHashCodePct() throws InterruptedException {
+        Container container = new Container();
+
+
+        Item i = new Item(1);
+        container.addItem(i);
+        Item i2 = new Item(2);
+        container.addItem(i2);
+        i = new Item(3);
+        container.addItem(i);
+
+        if (!i.equals(i2)) {
+            System.out.println("Unexpected equality");
+            System.out.println(i.hashCode());
+        }
+
+
+        Thread t1 = new Thread(() -> {
+            int hash = container.computeHash();
+
+            if (hash < 0) {
+                System.out.println("Unexpected");
+            }
+        });
+
+
+        Thread t2 = new Thread(() -> {
+            int hash = container.computeHash();
+
+            if (hash < 0) {
+                System.out.println("Unexpected");
+            }
+        });
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+    }
 }

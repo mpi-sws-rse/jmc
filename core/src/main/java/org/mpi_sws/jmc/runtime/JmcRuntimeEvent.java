@@ -6,16 +6,24 @@ import java.util.Map;
 import static org.mpi_sws.jmc.api.JmcObject.handleToString;
 
 /**
- * Represents an event that occurs during the execution of a program.
+ * Represents an event that occurs during the execution of an instrumented program.
+ *
+ * <p>An event marks an interesting point in a task's execution at which a scheduling decision can
+ * be made (e.g. thread start/finish, lock acquire/release, field read/write, wait/notify). Events
+ * are typically reported to the runtime via {@link JmcRuntime#updateEvent(JmcRuntimeEvent)} just
+ * before a {@link JmcRuntime#yield()} and are forwarded to the scheduling strategy.
+ *
+ * <p>Each event carries a {@link Type}, the ID of the originating task, and an arbitrary map of
+ * parameters. Instances are usually built with the fluent {@link Builder}.
  */
 public class JmcRuntimeEvent {
 
 
-    // The type of the event
+    /** The type of the event. */
     private Type type;
-    // The ID of the task that generated the event
+    /** The ID of the task that generated the event. */
     private Long taskId;
-    // The parameters of the event
+    /** The additional parameters of the event, keyed by name. */
     private Map<String, Object> params;
 
     /**
@@ -110,17 +118,29 @@ public class JmcRuntimeEvent {
     }
 
     /**
-     * Returns the value of the parameter with the specified key as an object of the specified
-     * class.
+     * Returns the value of the parameter with the specified key, cast to the caller's expected type.
      *
+     * <p>The cast is unchecked; a {@link ClassCastException} may be thrown at the call site if the
+     * stored value is not of the expected type.
+     *
+     * @param <T> the expected type of the parameter value
      * @param key the key of the parameter
-     * @return the value of the parameter as an object of the specified class. Can throw an
-     * exception when casting.
+     * @return the value of the parameter, or {@code null} if no such parameter exists
      */
     public <T> T getParam(String key) {
         return (T) params.get(key);
     }
 
+    /**
+     * Renders the parameter map into a human-readable string for {@link #toString()}.
+     *
+     * <p>The {@code "instance"} parameter is rendered via {@code handleToString} so that
+     * instrumented object handles print meaningfully; all other values use their own
+     * {@code toString}.
+     *
+     * @param params the parameter map to render (may be {@code null})
+     * @return a comma-separated string of the parameter values, or an empty string if {@code null}
+     */
     private String paramToString(Map<String, Object> params) {
         if (params == null) return "";
         StringBuilder sb = new StringBuilder();
@@ -138,6 +158,12 @@ public class JmcRuntimeEvent {
         return sb.toString();
     }
 
+    /**
+     * Returns a human-readable representation of this event, including its type, task ID, and
+     * rendered parameters. Used for debug logging of events.
+     *
+     * @return a string representation of this event
+     */
     @Override
     public String toString() {
         return "RuntimeEvent{" + "type=" + type + ", taskId=" + taskId + ", params=" + paramToString(params) + '}';
@@ -147,12 +173,18 @@ public class JmcRuntimeEvent {
      * A builder for constructing a {@link JmcRuntimeEvent} object.
      */
     public static class Builder {
+        /** The event type to build with. */
         private Type type;
+        /** The originating task ID to build with. */
         private Long taskId;
+        /** The accumulated event parameters; lazily created by {@link #param(String, Object)}. */
         private Map<String, Object> params;
 
         /**
          * Sets the type of the event.
+         *
+         * @param type the type of the event
+         * @return this builder, for chaining
          */
         public Builder type(Type type) {
             this.type = type;
@@ -161,6 +193,9 @@ public class JmcRuntimeEvent {
 
         /**
          * Sets the ID of the task that generated the event.
+         *
+         * @param taskId the ID of the originating task
+         * @return this builder, for chaining
          */
         public Builder taskId(Long taskId) {
             this.taskId = taskId;
@@ -168,7 +203,10 @@ public class JmcRuntimeEvent {
         }
 
         /**
-         * Sets the parameters of the event.
+         * Sets the full parameter map of the event, replacing any parameters added so far.
+         *
+         * @param params the parameter map
+         * @return this builder, for chaining
          */
         public Builder params(Map<String, Object> params) {
             this.params = params;
@@ -176,7 +214,11 @@ public class JmcRuntimeEvent {
         }
 
         /**
-         * Adds a parameter to the event.
+         * Adds a single parameter to the event, creating the parameter map if necessary.
+         *
+         * @param key the parameter key
+         * @param value the parameter value
+         * @return this builder, for chaining
          */
         public Builder param(String key, Object value) {
             if (params == null) {
@@ -187,7 +229,9 @@ public class JmcRuntimeEvent {
         }
 
         /**
-         * Builds the {@link JmcRuntimeEvent} object.
+         * Builds the {@link JmcRuntimeEvent} from the configured type, task ID, and parameters.
+         *
+         * @return a new {@link JmcRuntimeEvent} instance
          */
         public JmcRuntimeEvent build() {
             return new JmcRuntimeEvent(type, taskId, params);
@@ -200,6 +244,7 @@ public class JmcRuntimeEvent {
      * <p>Each event type corresponds to a specific action or occurrence in the program's execution,
      * such as thread creation, locking, reading, writing, and more.
      */
+    // TODO :: Refactor this enum
     public enum Type {
         // Thread creation and termination events
         START_EVENT,
@@ -242,7 +287,6 @@ public class JmcRuntimeEvent {
         FUTURE_EXCEPTION_EVENT,
         FUTURE_SET_EVENT,
 
-        // TODO: explain
         TAKE_WORK_QUEUE,
         CON_ASSUME_EVENT,
         SYM_ASSUME_EVENT,

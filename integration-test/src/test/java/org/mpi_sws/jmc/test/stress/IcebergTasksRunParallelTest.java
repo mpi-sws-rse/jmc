@@ -616,4 +616,351 @@ public class IcebergTasksRunParallelTest {
             executor.shutdown();
         }
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testBasicParallelExecutionPct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        AtomicInteger counter = new AtomicInteger(0);
+        List<Integer> items = List.of(1, 2, 3, 4, 5);
+
+        try {
+            boolean result = new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .throwFailureWhenFinished(false)
+                    .run(item -> {
+                        counter.incrementAndGet();
+                    });
+
+            assertTrue(result);
+            assertEquals(5, counter.get());
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testParallelExecutionWithFailuresPct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentLinkedQueue<Integer> executed = new ConcurrentLinkedQueue<>();
+        ConcurrentLinkedQueue<Integer> failed = new ConcurrentLinkedQueue<>();
+        List<Integer> items = List.of(1, 2, 3, 4, 5);
+
+        try {
+            boolean result = new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .stopOnFailure()
+                    .throwFailureWhenFinished(false)
+                    .onFailure((item, exception) -> {
+                        failed.add(item);
+                    })
+                    .run(item -> {
+                        executed.add(item);
+                        if (item == 2) {
+                            throw new RuntimeException("Task 2 fails");
+                        }
+                    });
+
+            assertFalse(result);
+            assertTrue(failed.contains(2));
+            assertTrue(executed.contains(1) || executed.contains(2));
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testAbortMechanismRacePct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentLinkedQueue<Integer> executed = new ConcurrentLinkedQueue<>();
+        ConcurrentLinkedQueue<Integer> aborted = new ConcurrentLinkedQueue<>();
+        List<Integer> items = List.of(1, 2, 3, 4, 5);
+
+        try {
+            new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .stopOnFailure()
+                    .throwFailureWhenFinished(false)
+                    .abortWith(item -> {
+                        aborted.add(item);
+                    })
+                    .run(item -> {
+                        executed.add(item);
+                        if (item == 1) {
+                            throw new RuntimeException("Task 1 fails");
+                        }
+                    });
+
+            // Verify no task is both executed and aborted
+            for (Integer item : executed) {
+                assertFalse(aborted.contains(item),
+                        "Item " + item + " was both executed and aborted");
+            }
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testRevertMechanismRacePct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentLinkedQueue<Integer> executed = new ConcurrentLinkedQueue<>();
+        ConcurrentLinkedQueue<Integer> reverted = new ConcurrentLinkedQueue<>();
+        List<Integer> items = List.of(1, 2, 3, 4, 5);
+
+        try {
+            new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .stopOnFailure()
+                    .throwFailureWhenFinished(false)
+                    .revertWith(item -> {
+                        reverted.add(item);
+                    })
+                    .run(item -> {
+                        executed.add(item);
+                        if (item >= 4) {
+                            throw new RuntimeException("Task " + item + " fails");
+                        }
+                    });
+
+            // Only successful tasks should be reverted
+            for (Integer item : reverted) {
+                assertTrue(executed.contains(item),
+                        "Reverted item " + item + " was never executed");
+            }
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testMultipleConcurrentFailuresPct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentLinkedQueue<Integer> failedItems = new ConcurrentLinkedQueue<>();
+        List<Integer> items = List.of(1, 2, 3, 4, 5);
+
+        try {
+            new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .throwFailureWhenFinished(false)
+                    .onFailure((item, exception) -> {
+                        failedItems.add(item);
+                    })
+                    .run(item -> {
+                        if (item % 2 == 0) {
+                            throw new RuntimeException("Even item fails");
+                        }
+                    });
+
+            // All even items should have failed
+            assertTrue(failedItems.contains(2));
+            assertTrue(failedItems.contains(4));
+            assertFalse(failedItems.contains(1));
+            assertFalse(failedItems.contains(3));
+            assertFalse(failedItems.contains(5));
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testRetryMechanismWithParallelExecutionPct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentHashMap<Integer, AtomicInteger> attemptCounts = new ConcurrentHashMap<>();
+        List<Integer> items = List.of(1, 2, 3);
+
+        for (int i : items) {
+            attemptCounts.put(i, new AtomicInteger(0));
+        }
+
+        try {
+            boolean result = new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .retry(2)
+                    .throwFailureWhenFinished(false)
+                    .run(item -> {
+                        int attempt = attemptCounts.get(item).incrementAndGet();
+                        if (item == 2 && attempt < 2) {
+                            throw new RuntimeException("Task 2 fails on attempt " + attempt);
+                        }
+                    });
+
+            assertTrue(result);
+            assertEquals(1, attemptCounts.get(1).get());
+            assertEquals(2, attemptCounts.get(2).get());
+            assertEquals(1, attemptCounts.get(3).get());
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    /**
+     * PCT variant of {@link #testStopAbortsOnFailureFlag()}.
+     *  TODO This needs JmcAtomicBoolean.getAndSet(boolean), currently throws NoSuchMEthodException
+     */
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    @Disabled
+    public void testStopAbortsOnFailureFlagPct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentLinkedQueue<Integer> aborted = new ConcurrentLinkedQueue<>();
+        AtomicBoolean firstAbortFailed = new AtomicBoolean(false);
+        List<Integer> items = List.of(1, 2, 3, 4, 5);
+
+        try {
+            new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .stopOnFailure()
+                    .stopAbortsOnFailure()
+                    .throwFailureWhenFinished(false)
+                    .abortWith(item -> {
+                        aborted.add(item);
+                        if (item == 3 && !firstAbortFailed.getAndSet(true)) {
+                            throw new RuntimeException("Abort fails for item 3");
+                        }
+                    })
+                    .run(item -> {
+                        if (item == 1) {
+                            throw new RuntimeException("Task 1 fails");
+                        }
+                    });
+
+            // With stopAbortsOnFailure, aborts should stop after first failure
+            assertTrue(aborted.size() <= items.size());
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    /**
+     * PCT variant of {@link #testStopRevertsOnFailureFlag()}.
+     *  TODO This needs JmcAtomicBoolean.getAndSet(boolean), currently throws NoSuchMEthodException
+     */
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    @Disabled
+    public void testStopRevertsOnFailureFlagPct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentLinkedQueue<Integer> reverted = new ConcurrentLinkedQueue<>();
+        AtomicBoolean firstRevertFailed = new AtomicBoolean(false);
+        List<Integer> items = List.of(1, 2, 3, 4, 5);
+
+        try {
+            new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .stopOnFailure()
+                    .stopRevertsOnFailure()
+                    .throwFailureWhenFinished(false)
+                    .revertWith(item -> {
+                        reverted.add(item);
+                        if (item == 2 && !firstRevertFailed.getAndSet(true)) {
+                            throw new RuntimeException("Revert fails for item 2");
+                        }
+                    })
+                    .run(item -> {
+                        if (item >= 4) {
+                            throw new RuntimeException("Task " + item + " fails");
+                        }
+                    });
+
+            // With stopRevertsOnFailure, reverts should stop after first failure
+            assertTrue(reverted.size() <= 3);
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testFutureGetVisibilityPct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentLinkedQueue<Integer> completed = new ConcurrentLinkedQueue<>();
+        List<Integer> items = List.of(1, 2, 3, 4, 5);
+
+        try {
+            boolean result = new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .throwFailureWhenFinished(false)
+                    .run(item -> {
+                        completed.add(item);
+                    });
+
+            assertTrue(result);
+            // All items should be visible after Future.get() returns
+            assertEquals(5, completed.size());
+            for (int i = 1; i <= 5; i++) {
+                assertTrue(completed.contains(i), "Item " + i + " not found in completed queue");
+            }
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testComplexScenarioAllFeaturesPct() {
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentLinkedQueue<Integer> executed = new ConcurrentLinkedQueue<>();
+        ConcurrentLinkedQueue<Integer> failed = new ConcurrentLinkedQueue<>();
+        ConcurrentLinkedQueue<Integer> aborted = new ConcurrentLinkedQueue<>();
+        ConcurrentLinkedQueue<Integer> reverted = new ConcurrentLinkedQueue<>();
+        ConcurrentHashMap<Integer, AtomicInteger> attempts = new ConcurrentHashMap<>();
+        List<Integer> items = List.of(1, 2, 3, 4, 5);
+
+        for (int i : items) {
+            attempts.put(i, new AtomicInteger(0));
+        }
+
+        try {
+            new TasksBuilder<>(items)
+                    .executeWith(executor)
+                    .stopOnFailure()
+                    .retry(1)
+                    .throwFailureWhenFinished(false)
+                    .onFailure((item, exception) -> {
+                        failed.add(item);
+                    })
+                    .abortWith(item -> {
+                        aborted.add(item);
+                    })
+                    .revertWith(item -> {
+                        reverted.add(item);
+                    })
+                    .run(item -> {
+                        int attempt = attempts.get(item).incrementAndGet();
+                        executed.add(item);
+
+                        // Item 3 fails even after retry
+                        if (item == 3) {
+                            throw new RuntimeException("Task 3 always fails");
+                        }
+                    });
+
+            // Verify invariants
+            assertTrue(failed.contains(3), "Task 3 should have failed");
+
+            // No item should be both executed successfully and aborted
+            for (Integer item : executed) {
+                if (!failed.contains(item)) {
+                    assertFalse(aborted.contains(item),
+                            "Item " + item + " was both successful and aborted");
+                }
+            }
+
+            // Only successful tasks should be reverted
+            for (Integer item : reverted) {
+                assertTrue(executed.contains(item),
+                        "Reverted item " + item + " was never executed");
+                assertFalse(failed.contains(item),
+                        "Reverted item " + item + " was marked as failed");
+            }
+        } finally {
+            executor.shutdown();
+        }
+    }
 }

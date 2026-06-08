@@ -18,8 +18,13 @@ public class TrackLocks implements Tracker {
      */
     private final Map<Object, Set<Long>> waitingTasks;
 
+    /**
+     * For each lock, the set of tasks that have requested it while it was free but have not yet been
+     * confirmed as the owner (via a {@code LOCK_ACQUIRED_EVENT}).
+     */
     private final Map<Object, Set<Long>> wantingTasks;
 
+    /** Maps each known task to the lock it currently holds, if any. */
     private final Map<Long, Optional<Object>> activeTasks;
 
     /** Constructs a new TrackLocks object. */
@@ -70,6 +75,15 @@ public class TrackLocks implements Tracker {
         return getActiveTasks();
     }
 
+    /**
+     * Handles a lock-acquire request for a task. Three cases: the task already holds the lock
+     * (reentrant, allowed); the lock is held by another task (the task is blocked and removed from
+     * active); or the lock is free (the task is recorded as wanting it and stays active).
+     *
+     * @param taskId the requesting task
+     * @param lock the lock instance being requested
+     * @return {@code true} if the task may proceed (reentrant case), {@code false} otherwise
+     */
     protected boolean tryLock(Long taskId, Object lock) {
         // Want the lock. Three cases.
         // 1. Current task already has the lock. Ignore.
@@ -98,6 +112,13 @@ public class TrackLocks implements Tracker {
         return false;
     }
 
+    /**
+     * Records that a task has acquired a lock. The task becomes the owner; every other task that was
+     * wanting the same lock is moved to the waiting set (blocked) and removed from active.
+     *
+     * @param taskId the task that acquired the lock
+     * @param lock the lock instance that was acquired
+     */
     protected void lockAcquired(Long taskId, Object lock) {
         // The lock is acquired by the current task. Remove it from the wanting list and add
         // the rest to waiting
@@ -120,6 +141,13 @@ public class TrackLocks implements Tracker {
         }
     }
 
+    /**
+     * Records that a task has released a lock. The owner is cleared and every task waiting on the
+     * lock is made active again (re-contending as wanting).
+     *
+     * @param taskId the task releasing the lock
+     * @param lock the lock instance being released
+     */
     protected void unlock(Long taskId, Object lock) {
         // The lock is released. The waiting tasks are marked as active.
         LOGGER.debug("Task {} released lock {}", taskId, lock.hashCode());
@@ -135,10 +163,16 @@ public class TrackLocks implements Tracker {
         }
     }
 
+    /**
+     * Returns the set of tasks not currently blocked on a lock (the keys of {@link #activeTasks}).
+     *
+     * @return the set of active (non-lock-blocked) tasks
+     */
     protected Set<Long> getActiveTasks() {
         return activeTasks.keySet();
     }
 
+    /** Clears all tracked lock state. */
     @Override
     public void reset() {
         activeTasks.clear();

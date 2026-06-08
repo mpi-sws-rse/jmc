@@ -37,6 +37,16 @@ public class SchedulingChoiceValueFactory {
         ADAPTERS.put(type, adapter);
     }
 
+    /**
+     * Creates a {@link SchedulingChoiceValue} from its type tag and JSON representation.
+     *
+     * <p>Looks up the adapter registered for {@code type} and delegates to its {@code fromJson}.
+     *
+     * @param type the type tag (as returned by {@link SchedulingChoiceValue#type()})
+     * @param valueObject the JSON representation of the value
+     * @return the reconstructed scheduling choice value
+     * @throws IllegalArgumentException if no adapter is registered for the given type
+     */
     public static SchedulingChoiceValue create(String type, JsonElement valueObject) throws IllegalArgumentException{
         if (!ADAPTERS.containsKey(type)) {
             throw new IllegalArgumentException("No adapter registered for type: " + type);
@@ -46,6 +56,12 @@ public class SchedulingChoiceValueFactory {
         return adapter.fromJson(valueObject);
     }
 
+    /**
+     * Returns whether an adapter is registered for the given type tag.
+     *
+     * @param type the type tag to check
+     * @return {@code true} if an adapter is registered for the type
+     */
     public static boolean containsType(String type) {
         return ADAPTERS.containsKey(type);
     }

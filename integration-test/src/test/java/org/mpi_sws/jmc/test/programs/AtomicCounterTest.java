@@ -39,4 +39,10 @@ public class AtomicCounterTest {
     public void runAtomicCounterTest() {
         atomicCounterTest(3);
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runAtomicCounterTestPct() {
+        atomicCounterTest(3);
+    }
 }

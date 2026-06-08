@@ -12,41 +12,57 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Encapsulates all the operations related to Task objects used by the runtime Except the
- * SchedulerTask The encapsulation ensures no memory leak when creating many tasks.
+ * Owns all per-task state used by the runtime (except the scheduler thread itself).
+ *
+ * <p>A <em>task</em> is any concurrent computation managed by JMC (a thread, a future, an executor
+ * task, ...). For each task this class tracks its {@link TaskState} and, while the task is paused,
+ * the {@link CompletableFuture} it is blocked on. Resuming a task amounts to completing that future,
+ * optionally with a value.
+ *
+ * <p>Centralizing task ownership here ensures futures are completed and dropped consistently,
+ * avoiding memory leaks when many tasks are created. Used by {@link JmcRuntime} and by the {@code
+ * Scheduler} (via the runtime) to pause, resume, block, and terminate tasks.
  */
 public class TaskManager {
 
+    /** Logger used to trace task resume failures and the "stop all" path. */
     private static final Logger LOGGER = LogManager.getLogger(TaskManager.class);
 
     /**
-     * The state of each task managed by the @RuntimeEnvironment is represented by one of the
-     * following.
+     * The lifecycle state of a task managed by the {@link TaskManager}.
      */
     public enum TaskState {
+        /** The task is currently executing (it has been resumed by the scheduler). */
         RUNNING,
+        /** The task is paused, waiting on its future to be completed. */
         BLOCKED,
+        /** The task has been allocated an ID but has not started running yet. */
         CREATED,
+        /** The task has finished (or been terminated) and will not run again. */
         TERMINATED,
     }
 
     /**
-     * Stores a set of custom IDs used by the Runtime.
+     * Monotonic counter for the next task ID to assign. Starts at 1 (the main task) and is handed
+     * out by {@link #nextTaskId()}. Guarded by {@link #idCounterLock}.
      */
     private Long idCounter;
 
+    /** Lock guarding {@link #idCounter}. */
     private final Object idCounterLock = new Object();
 
     /**
-     * Stores the state of each task.
+     * Maps each task ID to its current {@link TaskState}. Guarded by {@link #tasksLock}.
      */
     private final Map<Long, TaskState> taskStates;
 
     /**
-     * Stores the future of blocked tasks.
+     * Maps each currently-paused task ID to the {@link CompletableFuture} it is blocked on.
+     * Completing the future resumes the task. Guarded by {@link #tasksLock}.
      */
     private final Map<Long, CompletableFuture<?>> taskFutures;
 
+    /** Lock guarding {@link #taskStates} and {@link #taskFutures}. */
     private final Object tasksLock = new Object();
 
     /**
@@ -135,11 +151,25 @@ public class TaskManager {
                 throw new TaskNotExists(taskId);
             }
             future.complete(null);
-            taskFutures.remove(taskId);
+            //taskFutures.remove(taskId); nstead, we let the future be removed when the waiting thread is
+            // resumed and reaches the line after future.get() in wait()
             taskStates.put(taskId, TaskState.RUNNING);
         }
     }
 
+    /**
+     * Resumes the task with the specified custom ID, delivering a value to it.
+     *
+     * <p>The task's future is removed and the task is marked {@link TaskState#RUNNING}, then the
+     * future is completed with {@code value}. The value becomes the return of the task's pending
+     * {@link #wait(Long)} call (used to deliver reactive/symbolic results). If the stored future
+     * cannot be cast to the expected type, a {@link TaskNotExists} is thrown.
+     *
+     * @param <T> the type of the value delivered to the task
+     * @param taskId the custom ID of the task
+     * @param value the value to deliver to the resumed task
+     * @throws TaskNotExists if the task with the specified custom ID does not exist
+     */
     @SuppressWarnings("unchecked")
     public <T> void resume(Long taskId, T value) throws TaskNotExists {
         CompletableFuture<?> future;
@@ -149,18 +179,30 @@ public class TaskManager {
                 // The task is not paused or has been completed.
                 throw new TaskNotExists(taskId);
             }
-            taskFutures.remove(taskId);
+            //taskFutures.remove(taskId); Instead, we let the future be removed when the waiting thread is
+            // resumed and reaches the line after future.get() in wait()
             taskStates.put(taskId, TaskState.RUNNING);
         }
         try {
             CompletableFuture<T> castedFuture = (CompletableFuture<T>) future;
             castedFuture.complete(value);
+            LOGGER.debug("Task {} is resumed with value {} on future {}", taskId, value, future);
         } catch (ClassCastException e) {
             LOGGER.error("Failed to cast future for task: {}", taskId);
             throw new TaskNotExists(taskId);
         }
     }
 
+    /**
+     * Completes the task's future exceptionally with the given exception.
+     *
+     * <p>Used to unblock a paused task by signalling a failure to its pending {@link #wait(Long)}
+     * call (for example, blocking a task with a {@link HaltTaskException}). Does nothing if the task
+     * has no pending future.
+     *
+     * @param taskId the custom ID of the task
+     * @param e the exception to complete the task's future with
+     */
     public void error(Long taskId, Exception e) {
         synchronized (tasksLock) {
             CompletableFuture<?> future = taskFutures.get(taskId);
@@ -168,7 +210,8 @@ public class TaskManager {
                 return;
             }
             future.completeExceptionally(e);
-            taskFutures.remove(taskId);
+            //taskFutures.remove(taskId); nstead, we let the future be removed when the waiting thread is
+            // resumed and reaches the line after future.get() in wait()
         }
     }
 
@@ -186,7 +229,8 @@ public class TaskManager {
                 return;
             }
             future.complete(null);
-            taskFutures.remove(taskId);
+            //taskFutures.remove(taskId); instead, we let the future be removed when the waiting thread is
+            // resumed and reaches the line after future.get() in wait()
         }
     }
 
@@ -278,9 +322,19 @@ public class TaskManager {
     }
 
     /**
-     * Wait for the task with the specified custom ID to complete.
+     * Blocks until the task with the specified custom ID is resumed, returning any delivered value.
      *
+     * <p>Blocks on the task's future via {@code get()}. Returns {@code null} immediately if the task
+     * has no pending future. A {@link HaltTaskException} or a re-execution {@link
+     * HaltExecutionException} wrapped as the future's cause is unwrapped and rethrown; any other
+     * failure is propagated as {@link ExecutionException}. Invoked by {@link JmcRuntime#wait(Long)}.
+     *
+     * @param <T> the type of the value delivered when the task is resumed
      * @param taskId the custom ID of the task
+     * @return the value delivered when the task is resumed, or {@code null} if there is no pending
+     *     future
+     * @throws InterruptedException if the waiting thread is interrupted
+     * @throws ExecutionException if the task's future completed exceptionally
      */
     @SuppressWarnings("unchecked")
     public <T> T wait(Long taskId) throws InterruptedException, ExecutionException {
@@ -289,16 +343,31 @@ public class TaskManager {
             future = taskFutures.get(taskId);
         }
         if (future == null) {
+            LOGGER.debug("Task {} has no pending future to wait on", taskId);
             return null;
         }
         try {
             CompletableFuture<T> castedFuture = (CompletableFuture<T>) future;
-            return castedFuture.get();
+            LOGGER.debug("Task {} is waiting on future {}", taskId, future);
+            T result = castedFuture.get();
+            // A thread will reach this line only if the scheduler has completed it's corresponding future object.
+            // Thus, it is now safe to remove the future from taskFutures map
+            synchronized (tasksLock) {
+                taskFutures.remove(taskId);
+            }
+            LOGGER.debug("Task {} is now resumed with value {} from future {}", taskId, result, future);
+            return result;
         } catch (Exception e) {
+            // The future must be removed from the tasksLock even if an exception happens
+            synchronized (tasksLock) {
+                taskFutures.remove(taskId);
+            }
             Throwable cause = e.getCause();
             if (cause instanceof HaltTaskException) {
                 throw (HaltTaskException) cause;
             } else if (cause instanceof HaltExecutionException && ((HaltExecutionException) cause).isReexecutionNeeded()) {
+                LOGGER.debug("The future related to task {} has been completed exceptionally" +
+                        " for re-execution purpose", taskId);
                 throw HaltExecutionException.reexecutionNeeded();
             } else {
                 throw e;
@@ -307,10 +376,13 @@ public class TaskManager {
     }
 
     /**
-     * Stop all the tasks in the task pool.
+     * Stops every task in the pool at once.
+     *
+     * <p>Completes all pending task futures exceptionally with a {@link HaltExecutionException}
+     * error and then clears both the futures and the state map. This is the bulk counterpart to the
+     * incremental {@link #doNextStop()} / {@link #stopTask(Long)} teardown.
      */
     public void stopAll() {
-        System.out.println("******stopAll*****");
         synchronized (tasksLock) {
             for (Map.Entry<Long, CompletableFuture<?>> entry : taskFutures.entrySet()) {
                 entry.getValue()
@@ -322,6 +394,15 @@ public class TaskManager {
         }
     }
 
+    /**
+     * Selects the next task to stop while the scheduler is unwinding an execution.
+     *
+     * <p>Returns the highest task ID that is neither {@link TaskState#TERMINATED} nor {@link
+     * TaskState#CREATED} (i.e. a started task that can still be stopped), or {@code -1} if none
+     * remain. Used by the scheduler's "stop all" mode to tear tasks down in descending ID order.
+     *
+     * @return the ID of the next task to stop, or {@code -1L} if there is none
+     */
     public Long doNextStop() {
         synchronized (tasksLock) {
             List<Long> taskIds = new ArrayList<>(taskStates.keySet());
@@ -337,6 +418,16 @@ public class TaskManager {
         return -1L;
     }
 
+    /**
+     * Stops a single paused task by failing its future with a re-execution signal.
+     *
+     * <p>Completes the task's future exceptionally with {@link
+     * HaltExecutionException#reexecutionNeeded()}, causing its pending {@link #wait(Long)} to
+     * unwind. Does nothing if the task has no pending future. Invoked by the scheduler's "stop all"
+     * mode (after {@link #doNextStop()} selects the task).
+     *
+     * @param taskId the custom ID of the task to stop
+     */
     public void stopTask(Long taskId) {
         synchronized (tasksLock) {
             CompletableFuture<?> future = taskFutures.get(taskId);

@@ -146,5 +146,77 @@ public class StaticThreadPoolLeakTest {
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testEagerInitializationLeakPct() throws Exception {
+        // Get the thread pool (will be a DIFFERENT instance each iteration)
+        ExecutorService pool = EagerThreadPool.getPool();
+
+        // Submit a simple task
+        Future<Integer> future = pool.submit(() -> {
+            return 42;
+        });
+
+        // Wait for result
+        assertEquals(42, future.get());
+
+        // Print thread count to see it growing
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        int threadCount = threadBean.getThreadCount();
+
+        // With eager initialization, thread count keeps growing!
+        // Iteration 1: ~10 threads
+        // Iteration 10: ~30 threads
+        // Iteration 1000: OutOfMemoryError!
+    }
+
+    /**
+     * PCT variant of {@link #testLazyInitializationNoLeak()}.
+     */
+    // TODO :: Investigate and fix the hang
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    @Disabled
+    public void testLazyInitializationNoLeakPct() throws Exception {
+        // Get the thread pool (will be the SAME instance each iteration)
+        ExecutorService pool = LazyThreadPool.getPool();
+
+        // Submit a simple task
+        Future<Integer> future = pool.submit(() -> {
+            return 42;
+        });
+
+        // Wait for result
+        assertEquals(42, future.get());
+
+        // With lazy initialization, thread count stays stable!
+        // All iterations: ~10-15 threads (stable)
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testMultipleEagerPoolsLeakPct() throws Exception {
+        // Each of these creates a NEW pool on every iteration
+        ExecutorService pool1 = Executors.newFixedThreadPool(2);
+        ExecutorService pool2 = Executors.newFixedThreadPool(2);
+        ExecutorService pool3 = Executors.newFixedThreadPool(2);
+
+        // Submit tasks
+        Future<Integer> f1 = pool1.submit(() -> 1);
+        Future<Integer> f2 = pool2.submit(() -> 2);
+        Future<Integer> f3 = pool3.submit(() -> 3);
+
+        assertEquals(1, f1.get());
+        assertEquals(2, f2.get());
+        assertEquals(3, f3.get());
+
+        // This creates 6 threads per iteration
+        // After 10 iterations: 60 threads
+        // After 100 iterations: 600 threads
+        // After 1000 iterations: OutOfMemoryError!
+
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+    }
+
 }
 
