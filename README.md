@@ -75,9 +75,39 @@ The `random` strategy explores thread interleavings with a randomized approach, 
 
 `random` is the default strategy in `JmcCheckConfiguration`, so you do not need to specify it explicitly.
 
+#### PCT
+
+The `pct` strategy implements Probabilistic Concurrency Testing (PCT) [5], a randomized, priority-based scheduler that provides a probabilistic guarantee of finding a bug in every run. Unlike `random`, which makes a fresh random choice at every scheduling point, PCT randomizes sparingly: it assigns each thread a random priority and always runs the enabled thread with the highest priority, inserting only a small number of random priority-change points at which it demotes the running thread to force a preemption.
+
+PCT characterizes a bug by its *depth* `d`, the minimum number of ordering constraints between instructions required to trigger it. Many common concurrency bugs have a small depth: ordering errors are typically depth 1, while atomicity violations and circular-lock deadlocks are typically depth 2. For a program that runs at most `n` threads and `k` scheduling steps, a single run of PCT finds a bug of depth `d` with probability at least `1 / (n · k^(d-1))`. Running more iterations increases the probability of finding the bug to any desired level.
+
+You select the target depth with the `bugDepth` parameter (default `3`); PCT then places `d - 1` priority-change points. The step bound `k` is learned automatically across iterations, so you do not need to provide it. To use the `pct` strategy, specify it in the `JmcCheckConfiguration` annotation:
+
+```java
+@JmcCheck
+@JmcCheckConfiguration(numIterations = 100, strategy = "pct", bugDepth = 2)
+void testCounter() {
+    // ... same code as above
+}
+```
+
+#### Fair-PCT
+
+The `fair-pct` strategy is a fair variant of `pct`. Because pure PCT is a strict priority scheduler, a high-priority thread that busy-waits on a value produced by a lower-priority thread can starve it and prevent the run from terminating. To guarantee progress, `fair-pct` schedules with PCT priorities for a bounded prefix of each run and then switches to uniform-random ("fair") scheduling for the remainder. This preserves PCT's bug-finding ability over the prefix while ensuring the run makes progress.
+
+The switch point is controlled by the `pctFairBound` parameter. A positive value sets an explicit number of priority-controlled scheduling decisions before the switch; the default (`0`) selects automatic mode, in which the bound is the largest number of decisions seen in any previous run, so that only an abnormally long run — the signature of a spin-loop livelock — switches to the fair suffix. To use the `fair-pct` strategy, specify it in the `JmcCheckConfiguration` annotation:
+
+```java
+@JmcCheck
+@JmcCheckConfiguration(numIterations = 100, strategy = "fair-pct", bugDepth = 2)
+void testCounter() {
+    // ... same code as above
+}
+```
+
 ### Systematic Exploration
 
-The `systematic` strategy explores all of the necessary and sufficient interleavings to find every existing bug. It uses dynamic partial-order reduction (DPOR) to reduce the exhaustive search space to a minimal set of interleavings, none of which is equivalent to another, and thus guarantees that all bugs are found. Expect a longer execution time than with `random`, especially for tests with a large state space.
+The `systematic` strategy explores all the necessary and sufficient interleavings to find every existing bug. It uses dynamic partial-order reduction (DPOR) to reduce the exhaustive search space to a minimal set of interleavings, none of which is equivalent to another, and thus guarantees that all bugs are found. Expect a longer execution time than with `random`, especially for tests with a large state space.
 
 #### Trust
 
@@ -323,6 +353,8 @@ See the [User Guide](https://jmc.mpi-sws.org/user_guide/) for a comprehensive in
 [3] Constantin Enea, Dimitra Giannakopoulou, Michalis Kokologiannakis, and Rupak Majumdar. "Model checking distributed protocols in must." Proceedings of the ACM on Programming Languages 8, no. OOPSLA2 (2024): 1900–1927.
 
 [4] A. R. Balasubramanian, Mohammad Hossein Khoshechin Jorshari, Rupak Majumdar, Umang Mathur, and Minjian Zhang. "State Space Estimation for DPOR-based Model Checkers." arXiv e-prints (2025): arXiv-2512.
+
+[5] Sebastian Burckhardt, Pravesh Kothari, Madanlal Musuvathi, and Santosh Nagarakatte. "A Randomized Scheduler with Probabilistic Guarantees of Finding Bugs." In Proceedings of the 15th International Conference on Architectural Support for Programming Languages and Operating Systems (ASPLOS 2010), pp. 167–178.
 
 ## License
 
