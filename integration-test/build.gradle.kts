@@ -1,3 +1,15 @@
+buildscript {
+    // Force patched plexus-utils to fix the Directory Traversal vulnerability in
+    // org.codehaus.plexus.util.Expand.extractFile. It is pulled transitively by
+    // com.gradleup.shadow:9.0.0-beta9, which bundles the vulnerable 4.0.2.
+    // Remove this once a Shadow release bundles plexus-utils >= 4.0.3.
+    configurations.classpath {
+        resolutionStrategy {
+            force("org.codehaus.plexus:plexus-utils:4.0.3")
+        }
+    }
+}
+
 plugins {
     id("java")
     id("checkstyle")
