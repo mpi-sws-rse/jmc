@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TrackStaticInit implements Tracker {
 
+    /** Logger for this tracker. */
     private static final Logger LOGGER = LogManager.getLogger(TrackStaticInit.class);
 
     /**
@@ -35,10 +36,22 @@ public class TrackStaticInit implements Tracker {
      */
     private final Set<Long> activeTasks;
 
+    /** Constructs a new static-init tracker with empty state. */
     public TrackStaticInit() {
         this.activeTasks = ConcurrentHashMap.newKeySet();
     }
 
+    /**
+     * Tracks static-initialization events to enforce JVM-like single-threaded {@code <clinit>}.
+     *
+     * <p>{@code START_STATIC_INIT_EVENT} marks the task as performing static init (with a
+     * re-entrancy count); {@code END_STATIC_INIT_EVENT} decrements/clears it. While any task is
+     * performing static init, only that task is reported as runnable; otherwise all active tasks are
+     * returned.
+     *
+     * @param event the event to process
+     * @return the runnable task set (the single initializing task, or all active tasks)
+     */
     @Override
     public Set<Long> updateEvent(JmcRuntimeEvent event) {
         Long taskId = event.getTaskId();
@@ -83,10 +96,16 @@ public class TrackStaticInit implements Tracker {
     }
 
 
+    /**
+     * Returns a snapshot copy of all active tasks.
+     *
+     * @return a copy of the active task set
+     */
     private Set<Long> getActiveTasks() {
         return new HashSet<>(activeTasks);
     }
 
+    /** Clears all tracked static-initialization state. */
     @Override
     public void reset() {
         activeTasks.clear();

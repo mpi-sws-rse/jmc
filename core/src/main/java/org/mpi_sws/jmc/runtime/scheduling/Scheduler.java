@@ -23,6 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class Scheduler {
 
+    /** Logger used to trace scheduling decisions and the "stop all" path. */
     private static final Logger LOGGER = LogManager.getLogger(Scheduler.class.getName());
 
     /**
@@ -40,6 +41,7 @@ public class Scheduler {
      */
     private Long currentTask;
 
+    /** Lock guarding {@link #currentTask}. */
     private final Object currentTaskLock = new Object();
 
     /**
@@ -47,12 +49,16 @@ public class Scheduler {
      */
     private final SchedulerThread schedulerThread;
 
+    /** Whether the scheduler is currently unwinding all tasks to end the execution. */
     private boolean stopAllMode = false;
 
     /**
      * Constructs a new Scheduler object.
      *
      * @param strategy the scheduling strategy
+     * @param schedulerTries the number of times the scheduler thread retries obtaining a runnable
+     *     task before giving up
+     * @param schedulerTrySleepTimeNanos the sleep, in nanoseconds, between those retries
      */
     public Scheduler(
             SchedulingStrategy strategy, int schedulerTries, long schedulerTrySleepTimeNanos) {
@@ -84,6 +90,8 @@ public class Scheduler {
      * Initializes the strategy for a new iteration.
      *
      * @param iteration the number of the iteration
+     * @param report the model checker report, forwarded to the strategy
+     * @throws HaltCheckerException if the strategy decides the whole check must stop
      */
     public void initIteration(int iteration, JmcModelCheckerReport report)
             throws HaltCheckerException {
@@ -136,7 +144,7 @@ public class Scheduler {
             }
             setCurrentTask(taskId);
             try {
-                LOGGER.debug("Resuming task: {}", taskId);
+                LOGGER.debug("Resuming task {} with value {}", taskId, choice.getValue());
                 if (taskId == null) {
                     LOGGER.error("Task ID is null, cannot resume task.");
                     throw HaltExecutionException.error("Task ID is null, cannot resume task.");
@@ -153,33 +161,52 @@ public class Scheduler {
         }
     }
 
+    /**
+     * Enters "stop all" mode and stops the first task.
+     *
+     * <p>Sets {@link #stopAllMode} and immediately stops one task via {@link #doNextStop()}; the
+     * remaining tasks are stopped incrementally as the scheduler thread runs.
+     */
     private void startStopAllMode() {
         stopAllMode = true;
         doNextStop();
     }
 
+    /**
+     * Stops the next task while unwinding the execution.
+     *
+     * <p>Selects the next task to stop via {@link TaskManager#doNextStop()}, makes it current, and
+     * stops it via {@link TaskManager#stopTask(Long)}. When the main task (id {@code 1}) is stopped,
+     * "stop all" mode is exited. Throws a {@link HaltExecutionException} if no task can be selected.
+     */
     private void doNextStop() {
         Long taskId = taskManager.doNextStop();
         if (taskId == -1L) {
             LOGGER.error("Task ID is null, cannot stop the task.");
             throw HaltExecutionException.error("Task ID is null, cannot stop the task.");
         }
+        LOGGER.debug("The next task to be stopped: {}", taskId);
         setCurrentTask(taskId);
-        taskManager.stopTask(taskId);
+        // We must reset the stopAllMode flag before trying to stop the main (last remaining active) thread
         if (taskId == 1L) {
             // Main task stopped, exit stop all mode
             stopAllMode = false;
             LOGGER.debug("Exiting stop all mode.");
         }
+        taskManager.stopTask(taskId);
     }
 
     /**
-     * Updates the event in the scheduling strategy.
+     * Forwards an event to the scheduling strategy.
      *
-     * @param event the event to be updated
+     * <p>No-op while the scheduler is in "stop all" mode.
+     *
+     * @param event the event to be forwarded
+     * @throws HaltTaskException if the strategy requires the originating task to be halted
      */
     public void updateEvent(JmcRuntimeEvent event) throws HaltTaskException {
         if (isInStopAllMode()) {
+            LOGGER.debug("Event {} received while in stop all mode, ignoring.", event);
             return;
         }
         strategy.updateEvent(event);
@@ -208,6 +235,12 @@ public class Scheduler {
         return null;
     }
 
+    /**
+     * Yields control to the scheduler thread without pausing the current task.
+     *
+     * <p>Clears the current task and enables the scheduler thread, but does not create a pausing
+     * future for the caller. Used when the caller must not block (e.g. {@code JmcRuntime.join}).
+     */
     public void yieldWithoutPausing() {
         synchronized (currentTaskLock) {
             currentTask = null;
@@ -241,12 +274,20 @@ public class Scheduler {
     }
 
     /**
-     * Resets the TaskManager and the scheduling strategy for a new iteration.
+     * Resets the scheduling strategy for a new iteration.
+     *
+     * @param iteration the iteration number being reset
      */
     public void resetIteration(int iteration) {
         strategy.resetIteration(iteration);
     }
 
+    /**
+     * Records the current schedule if the strategy supports replay.
+     *
+     * <p>If the strategy is a {@link ReplayableSchedulingStrategy}, records its trace; otherwise logs
+     * a warning. Recording failures are logged and swallowed.
+     */
     public void recordTrace() {
         if (strategy instanceof ReplayableSchedulingStrategy) {
             try {
@@ -261,12 +302,21 @@ public class Scheduler {
 
     /**
      * Shuts down the scheduler.
+     *
+     * <p>Stops the scheduler thread and tears down the strategy.
+     *
+     * @param report the model checker report, forwarded to the strategy teardown
      */
     public void shutdown(JmcModelCheckerReport report) {
         schedulerThread.shutdown();
         strategy.teardown(report);
     }
 
+    /**
+     * Returns whether the scheduler is currently unwinding all tasks.
+     *
+     * @return {@code true} if in "stop all" mode
+     */
     public boolean isInStopAllMode() {
         return stopAllMode;
     }
@@ -276,6 +326,7 @@ public class Scheduler {
      */
     private static class SchedulerThread extends Thread {
 
+        /** Logger used to trace the scheduler thread's lifecycle and per-step activity. */
         private static final Logger LOGGER = LogManager.getLogger(SchedulerThread.class.getName());
 
         /**
@@ -294,8 +345,10 @@ public class Scheduler {
          */
         private final LinkedBlockingQueue<Boolean> enablingQueue;
 
+        /** Number of times {@link SchedulingStrategy#nextTask()} is retried per scheduling step. */
         private final int schedulerTries;
 
+        /** Sleep, in nanoseconds, between retries of {@link SchedulingStrategy#nextTask()}. */
         private final long schedulerTrySleepTimeNanos;
 
         /**
@@ -303,6 +356,8 @@ public class Scheduler {
          *
          * @param scheduler the scheduler instance
          * @param strategy  the scheduling strategy
+         * @param schedulerTries the number of retries to obtain a runnable task per step
+         * @param schedulerTrySleepTimeNanos the sleep, in nanoseconds, between those retries
          */
         public SchedulerThread(
                 Scheduler scheduler,
@@ -341,6 +396,12 @@ public class Scheduler {
 
         /**
          * The main loop of the scheduler thread.
+         *
+         * <p>Blocks on {@link #enablingQueue} until enabled by a yielding task (or signalled to shut
+         * down). On each step it either advances "stop all" mode, or asks the strategy for the next
+         * task (retrying up to {@link #schedulerTries} times with a sleep of {@link
+         * #schedulerTrySleepTimeNanos}) and applies the resulting choice via {@link
+         * Scheduler#scheduleTask(SchedulingChoice)}. Any exception ends the loop.
          */
         @Override
         public void run() {

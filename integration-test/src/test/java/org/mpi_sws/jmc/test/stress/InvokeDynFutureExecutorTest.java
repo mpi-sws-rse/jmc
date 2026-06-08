@@ -137,6 +137,7 @@ public class InvokeDynFutureExecutorTest {
 
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
+    // TODO :: There is an unknown exception in the agent
     public void testExecutor_seq() throws Exception {
         executor_seq();
     }
@@ -150,6 +151,31 @@ public class InvokeDynFutureExecutorTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
     public void testFuture_par() throws Exception {
+        future_par();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testFuture_seqPct() throws Exception {
+        future_seq();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    // TODO :: There is an unknown exception in the agent
+    public void testExecutor_seqPct() throws Exception {
+        executor_seq();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testFutureNested_seqPct() throws Exception {
+        futureNested_seq();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testFuture_parPct() throws Exception {
         future_par();
     }
 

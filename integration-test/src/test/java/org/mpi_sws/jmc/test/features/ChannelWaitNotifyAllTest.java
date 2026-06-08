@@ -28,4 +28,11 @@ public class ChannelWaitNotifyAllTest {
     public void testChannel() {
         testProgramWaitNotifyAll();
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    // TODO :: Check this test
+    public void testChannelPct() {
+        testProgramWaitNotifyAll();
+    }
 }

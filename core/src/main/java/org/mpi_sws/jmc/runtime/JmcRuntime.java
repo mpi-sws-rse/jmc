@@ -25,19 +25,39 @@ import java.util.concurrent.ExecutorService;
  *
  * <p>Calls to the runtime are made by the instrumented byte code. These calls are used to record
  * events occurring during the execution of tasks or allow for scheduling changes. For example, the
- * runtime can be used to record Thread creation and deletion.
+ * runtime can be used to record thread creation and deletion.
  *
  * <p>The runtime is a static class that stores minimal states and delegates calls to the {@link
  * Scheduler} which retains all the state.
  */
 public class JmcRuntime {
 
+    /** Logger used to trace runtime setup, task switching, and event handling. */
     private static final Logger LOGGER = LogManager.getLogger(JmcRuntime.class);
 
+    /**
+     * Owns all per-task state (state machine and pausing futures).
+     *
+     * <p>Created once and reused across iterations; reset by {@link #resetIteration(int)} and {@link
+     * #tearDown(JmcModelCheckerReport)}.
+     */
     private static final TaskManager taskManager = new TaskManager();
 
+    /**
+     * The scheduler that owns the scheduler thread and the configured {@link SchedulingStrategy}.
+     *
+     * <p>Instantiated in {@link #setup(JmcRuntimeConfiguration)} or {@link
+     * #setupReplay(JmcRuntimeConfiguration)} and shut down in {@link
+     * #tearDown(JmcModelCheckerReport)}.
+     */
     private static Scheduler scheduler;
 
+    /**
+     * The active runtime configuration.
+     *
+     * <p>Set during setup and read by {@link #initIteration(int, JmcModelCheckerReport)} to configure
+     * the scheduler and the strategy.
+     */
     private static JmcRuntimeConfiguration config;
 
     /**
@@ -56,6 +76,17 @@ public class JmcRuntime {
         scheduler.start();
     }
 
+    /**
+     * Sets up the runtime to replay a previously recorded schedule.
+     *
+     * <p>The configured strategy must implement {@link ReplayableSchedulingStrategy}; otherwise a
+     * {@link JmcReplayUnsupported} exception is thrown. The recorded trace is loaded via {@link
+     * ReplayableSchedulingStrategy#replayRecordedTrace()} before the scheduler is created and
+     * started.
+     *
+     * @param config the configuration (instance of {@link JmcRuntimeConfiguration})
+     * @throws JmcCheckerException if the strategy does not support replay
+     */
     public static void setupReplay(JmcRuntimeConfiguration config) throws JmcCheckerException {
         LOGGER.debug("Setting up for replay!");
         JmcRuntime.config = config;
@@ -75,7 +106,11 @@ public class JmcRuntime {
     }
 
     /**
-     * Tears down the runtime by shutting down the scheduler adn clearing the task manager.
+     * Tears down the runtime by clearing the task manager and shutting down the scheduler.
+     *
+     * <p>Called once after all iterations are complete.
+     *
+     * @param report the report passed to the strategy teardown via the scheduler
      */
     public static void tearDown(JmcModelCheckerReport report) {
         LOGGER.debug("Tearing down!");
@@ -83,6 +118,15 @@ public class JmcRuntime {
         scheduler.shutdown(report);
     }
 
+    /**
+     * Reconfigures log4j to write runtime logs to a per-iteration file.
+     *
+     * <p>The file is named {@code jmc-runtime-<iteration>.log} under the configured report path.
+     * Only invoked from {@link #initIteration(int, JmcModelCheckerReport)} when debug logging is
+     * enabled.
+     *
+     * @param iteration the iteration number, used in the log file name
+     */
     private static void updateLoggerFile(int iteration) {
         String fileName = config.getReportPath() + "/jmc-runtime-" + iteration + ".log";
         ConfigurationBuilder<BuiltConfiguration> builder =
@@ -103,11 +147,16 @@ public class JmcRuntime {
     }
 
     /**
-     * Initializes the runtime with the main thread for a given iteration.
+     * Initializes the runtime for a given iteration and starts the main task.
      *
-     * <p>Initializes the scheduler with the main thread and marks it as ready.
+     * <p>When debug logging is enabled, redirects logs to a per-iteration file. Initializes the
+     * strategy for the iteration, creates the main task (marking it {@link
+     * TaskManager.TaskState#BLOCKED}), binds the scheduler to the task manager, emits the {@link
+     * JmcRuntimeEvent.Type#START_EVENT} for the main task, and yields control to the scheduler. From
+     * the second iteration onward, re-invokes the static initializers of instrumented classes.
      *
      * @param iteration the iteration number
+     * @param report the model checker report, forwarded to the strategy via the scheduler
      */
     public static void initIteration(int iteration, JmcModelCheckerReport report) {
         if (config.getDebug()) {
@@ -137,7 +186,12 @@ public class JmcRuntime {
     }
 
     /**
-     * Resets the runtime for a new iteration.
+     * Resets the runtime at the end of an iteration.
+     *
+     * <p>Resets the strategy, clears the task manager, and clears the synchronized-method/-block
+     * lock store so the next iteration starts from a clean state.
+     *
+     * @param iteration the iteration number being reset
      */
     public static void resetIteration(int iteration) {
         scheduler.resetIteration(iteration);
@@ -145,13 +199,23 @@ public class JmcRuntime {
         JmcRuntimeUtils.clearSyncLocks();
     }
 
+    /**
+     * Records the current schedule via the scheduler.
+     *
+     * <p>Effective only when the configured strategy is replayable; used to persist a buggy
+     * schedule for later replay.
+     */
     public static void recordTrace() {
         scheduler.recordTrace();
     }
 
     /**
-     * Pauses the current task that invokes this method and yields the control to the scheduler. The
+     * Pauses the current task that invokes this method and yields control to the scheduler. The
      * call returns only when the task that invoked this method is resumed.
+     *
+     * @param <T> the type of the value delivered when the task is resumed
+     * @return the value the scheduler attached when resuming the task (used for reactive events such
+     *     as a strategy-provided random value or a symbolic result); may be {@code null}
      */
     public static <T> T yield() {
         Long currentTask = scheduler.currentTask();
@@ -199,6 +263,17 @@ public class JmcRuntime {
         }
     }
 
+    /**
+     * Blocks until the task with the given ID is resumed and returns the delivered value.
+     *
+     * <p>Delegates to {@link TaskManager#wait(Long)}. If re-execution of the iteration is requested,
+     * a {@link HaltExecutionException#reexecutionNeeded()} is propagated; any other failure is
+     * rethrown as a {@link HaltExecutionException} error.
+     *
+     * @param <T> the type of the value delivered when the task is resumed
+     * @param taskId the ID of the task to wait on
+     * @return the value delivered when the task is resumed; may be {@code null}
+     */
     public static <T> T wait(Long taskId) {
         try {
             return taskManager.wait(taskId);

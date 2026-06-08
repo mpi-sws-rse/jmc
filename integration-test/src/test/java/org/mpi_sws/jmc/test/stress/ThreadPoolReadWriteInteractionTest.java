@@ -310,4 +310,152 @@ public class ThreadPoolReadWriteInteractionTest {
         int finalCounter = store.getCounter();
         assertEquals(10, finalCounter);
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testMinimalThreadPoolWithFieldAccessPct() throws Exception {
+        SharedDataStore store = new SharedDataStore();
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        List<Future<Integer>> futures = new ArrayList<>();
+
+        // Submit 2 tasks that access shared fields
+        for (int i = 0; i < 2; i++) {
+            final int taskId = i;
+            Future<Integer> future = executor.submit(() -> {
+                store.performOperation("task-" + taskId);
+                return taskId;
+            });
+            futures.add(future);
+        }
+
+        // Wait for completion
+        for (Future<Integer> f : futures) {
+            f.get();
+        }
+
+        executor.shutdown();
+
+        // Verify results
+        int finalCounter = store.getCounter();
+        assertEquals(2, finalCounter);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testThreadPoolWithMultipleFieldAccessesPct() throws Exception {
+        SharedDataStore store = new SharedDataStore();
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        List<Future<Void>> futures = new ArrayList<>();
+
+        // Each task performs multiple operations
+        for (int i = 0; i < 2; i++) {
+            final int taskId = i;
+            Future<Void> future = executor.submit(() -> {
+                for (int j = 0; j < 3; j++) {
+                    store.performOperation("task-" + taskId + "-op-" + j);
+                    // Read operations to trigger more yields
+                    int counter = store.getCounter();
+                    String lastOp = store.getLastOperation();
+                }
+                return null;
+            });
+            futures.add(future);
+        }
+
+        // Wait for completion
+        for (Future<Void> f : futures) {
+            f.get();
+        }
+
+        executor.shutdown();
+
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testThreadPoolWithNestedFieldAccessesPct() throws Exception {
+        NestedDataStructure data = new NestedDataStructure();
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        List<Future<Void>> futures = new ArrayList<>();
+
+        for (int i = 0; i < 2; i++) {
+            final int taskId = i;
+            Future<Void> future = executor.submit(() -> {
+                data.performNestedOperation(taskId);
+                return null;
+            });
+            futures.add(future);
+        }
+
+        for (Future<Void> f : futures) {
+            f.get();
+        }
+
+        executor.shutdown();
+
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testIcebergLikeCommitPatternPct() throws Exception {
+        CatalogSimulator catalog = new CatalogSimulator();
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        List<Future<Boolean>> futures = new ArrayList<>();
+
+        // Simulate concurrent commits
+        for (int i = 0; i < 3; i++) {
+            final int fileId = i;
+            Future<Boolean> future = executor.submit(() -> {
+                boolean success = catalog.commit(fileId);
+                return success;
+            });
+            futures.add(future);
+        }
+
+        // Wait for all commits
+        int successCount = 0;
+        for (Future<Boolean> f : futures) {
+            if (f.get()) {
+                successCount++;
+            }
+        }
+
+        executor.shutdown();
+
+        assertEquals(3, successCount);
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, debug = false, strategy = "pct", timeout = 10000L)
+    public void testStressThreadPoolWithManyOperationsPct() throws Exception {
+        SharedDataStore store = new SharedDataStore();
+
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        List<Future<Void>> futures = new ArrayList<>();
+
+        // Submit many tasks
+        for (int i = 0; i < 5; i++) {
+            final int taskId = i;
+            Future<Void> future = executor.submit(() -> {
+                for (int j = 0; j < 2; j++) {
+                    store.performOperation("task-" + taskId + "-" + j);
+                }
+                return null;
+            });
+            futures.add(future);
+        }
+
+        for (Future<Void> f : futures) {
+            f.get();
+        }
+
+        executor.shutdown();
+
+        int finalCounter = store.getCounter();
+        assertEquals(10, finalCounter);
+    }
 }

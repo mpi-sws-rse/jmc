@@ -11,15 +11,29 @@ import java.util.Set;
 
 import static org.mpi_sws.jmc.api.JmcObject.handleHashCode;
 
+/**
+ * Tracks Java monitor {@code wait}/{@code notify} semantics on top of {@link TrackLocks}.
+ *
+ * <p>Maintains, per monitor object, a set of tasks parked in {@code wait()} and a set of tasks that
+ * have been notified and are eligible to re-acquire the monitor. A waiting task is blocked (and its
+ * lock released); {@code notify}/{@code notifyAll} move waiters back toward active. The runnable set
+ * it reports is intersected with the lock tracker's runnable set.
+ */
 public class TrackWaitNotify extends TrackLocks {
 
+    /** Logger used to trace the runnable set after wait/notify processing. */
     private static final Logger LOGGER = LogManager.getLogger(TrackWaitNotify.class);
 
+    /** Tasks considered runnable by this tracker (not parked in a wait set). */
     private final Set<Long> activeTasks;
+    /** All tasks this tracker has observed at least one event from. */
     private final Set<Long> trackedTasks;
+    /** For each monitor object (by hash code), the tasks currently parked in {@code wait()}. */
     private final HashMap<Integer, Set<Long>> waitingTasks;
+    /** For each monitor object (by hash code), the notified tasks eligible to re-acquire it. */
     private final HashMap<Integer, Set<Long>> availableTasks;
 
+    /** Constructs a new wait/notify tracker with empty state. */
     public TrackWaitNotify() {
         this.activeTasks = new HashSet<>();
         this.trackedTasks = new HashSet<>();
@@ -27,6 +41,19 @@ public class TrackWaitNotify extends TrackLocks {
         this.availableTasks = new HashMap<>();
     }
 
+    /**
+     * Tracks wait/notify events on top of lock tracking.
+     *
+     * <p>After delegating to {@link TrackLocks#updateEvent(JmcRuntimeEvent)}: {@code WAIT_EVENT}
+     * parks the task on the object's wait set and releases its lock; {@code NOTIFY_EVENT} moves the
+     * object's waiters to the available set and back to active; {@code NOTIFY_ALL_EVENT} moves all
+     * waiters (and previously available tasks) to active; {@code WAKEUP_EVENT} consumes an available
+     * notification (and errors if none is available). The result is intersected with the lock
+     * tracker's active set.
+     *
+     * @param event the event to process
+     * @return the set of tasks runnable according to both this tracker and the lock tracker
+     */
     @Override
     public Set<Long> updateEvent(JmcRuntimeEvent event) {
         super.updateEvent(event);
@@ -95,6 +122,7 @@ public class TrackWaitNotify extends TrackLocks {
         return result;
     }
 
+    /** Clears all wait/notify state and the underlying lock state. */
     @Override
     public void reset() {
         super.reset();

@@ -9,10 +9,14 @@ import java.util.Set;
 /** Tracks the active tasks based on events. */
 public interface Tracker {
     /**
-     * Updates the event.
+     * Processes an event and returns the tasks this tracker currently considers runnable.
      *
-     * @param event the event to update
-     * @return the set of active tasks
+     * <p>The owning {@link TrackActiveTasksStrategy} intersects the returned set with those of the
+     * other trackers, so a tracker effectively blocks any task it omits.
+     *
+     * @param event the event to process
+     * @return the set of tasks this tracker considers runnable
+     * @throws HaltCheckerException if the tracker detects a condition that must stop the whole check
      */
     Set<Long> updateEvent(JmcRuntimeEvent event) throws HaltCheckerException;
 

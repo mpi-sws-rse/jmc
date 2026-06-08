@@ -24,11 +24,19 @@ public class ChannelWaitNotifyTest {
         }
     }
 
-    // TODO : Fix the following test
+    // TODO :: Fix the following test
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
     @Disabled
     public void testChannel() {
+        testProgram();
+    }
+
+    // TODO :: Fix the following test
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    @Disabled
+    public void testChannelPct() {
         testProgram();
     }
 }

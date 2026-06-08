@@ -6,6 +6,8 @@ import org.mpi_sws.jmc.strategies.estimation.dag.fjDag.FjDagEstimationStrategy;
 import org.mpi_sws.jmc.strategies.estimation.trust.TrustEstimationStrategy;
 import org.mpi_sws.jmc.strategies.estimation.trust.testor.TestorStrategy;
 import org.mpi_sws.jmc.strategies.estimation.trust.wgTrust.WgTrustEstimationStrategy;
+import org.mpi_sws.jmc.strategies.pct.FairPCTSchedulingStrategy;
+import org.mpi_sws.jmc.strategies.pct.PCTSchedulingStrategy;
 import org.mpi_sws.jmc.strategies.trust.TrustStrategy;
 
 import java.util.HashSet;
@@ -16,11 +18,13 @@ import java.util.Set;
  */
 public class SchedulingStrategyFactory {
 
-    // Set of valid strategies
+    /** Set of recognized strategy names accepted by {@link #createSchedulingStrategy}. */
     private static final Set<String> validStrategies = new HashSet<>();
 
     static {
         validStrategies.add("random");
+        validStrategies.add("pct");
+        validStrategies.add("fair-pct");
         validStrategies.add("trust");
         validStrategies.add("pestor");
         validStrategies.add("abs-dag-estimation");
@@ -36,6 +40,7 @@ public class SchedulingStrategyFactory {
      * @param name   the name of the strategy
      * @param config the configuration for the strategy
      * @return the scheduling strategy
+     * @throws JmcInvalidStrategyException if {@code name} is not a recognized strategy
      */
     public static SchedulingStrategy createSchedulingStrategy(
             String name, SchedulingStrategyConfiguration config)
@@ -45,6 +50,15 @@ public class SchedulingStrategyFactory {
         }
         if (name.equals("random")) {
             return new RandomSchedulingStrategy(config.getSeed(), config.getReportPath());
+        } else if (name.equals("pct")) {
+            return new PCTSchedulingStrategy(
+                    config.getSeed(), config.getReportPath(), config.getBugDepth());
+        } else if (name.equals("fair-pct")) {
+            return new FairPCTSchedulingStrategy(
+                    config.getSeed(),
+                    config.getReportPath(),
+                    config.getBugDepth(),
+                    config.getPctFairBound());
         } else if (name.equals("trust")) {
             return new TrustStrategy(
                     config.getSeed(),

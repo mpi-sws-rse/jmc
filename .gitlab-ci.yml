@@ -59,6 +59,9 @@ compile-integration-test:
 
 test:
   stage: test
+  # Hard backstop above the in-script 3h budget (TOTAL_BUDGET below); the extra
+  # ~10 min lets the summary print and catches a wedged Gradle teardown.
+  timeout: 3h 10m
   script:
     - |
       set -eu
@@ -101,9 +104,66 @@ test:
         echo "No test methods found under integration-test/src/test/java."
         exit 0
       fi
+      # Per-method wall-clock hang guard (default 600s = 10 min) plus an overall
+      # budget for the whole stage (default 10800s = 3h). Override with the
+      # PER_TEST_TIMEOUT / TOTAL_BUDGET CI/CD variables. A stuck test is killed
+      # (SIGTERM, then SIGKILL 30s later). Once the 3h budget is gone no further
+      # tests start, and a test near the boundary is capped so the stage stays
+      # within budget. Timed-out, failed, and budget-skipped tests are summarised
+      # at the end; the job fails if any test timed out or failed.
+      PER_TEST_TIMEOUT="${PER_TEST_TIMEOUT:-600}"
+      TOTAL_BUDGET="${TOTAL_BUDGET:-10800}"
+      TIMED_OUT=""
+      FAILED=""
+      NOT_RUN=""
+      # $SECONDS = elapsed wall-clock seconds since this shell started.
       for TEST_METHOD in $TEST_METHODS; do
-        ./gradlew --no-daemon :integration-test:test --tests "$TEST_METHOD"
+        remaining=$(( TOTAL_BUDGET - SECONDS ))
+        if [ "$remaining" -le 0 ]; then
+          echo ">>> budget (${TOTAL_BUDGET}s) exhausted; not running: $TEST_METHOD"
+          NOT_RUN="${NOT_RUN}${NOT_RUN:+ }$TEST_METHOD"
+          continue
+        fi
+        this_to="$PER_TEST_TIMEOUT"
+        clamped=0
+        if [ "$this_to" -gt "$remaining" ]; then
+          this_to="$remaining"
+          clamped=1
+        fi
+        echo ">>> running $TEST_METHOD (timeout ${this_to}s; ${remaining}s left in budget)"
+        rc=0
+        timeout -k 30s "${this_to}s" \
+          ./gradlew --no-daemon :integration-test:test --tests "$TEST_METHOD" || rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+          if [ "$clamped" -eq 1 ]; then
+            echo ">>> BUDGET CUTOFF (ran ${this_to}s, 3h budget reached): $TEST_METHOD"
+            NOT_RUN="${NOT_RUN}${NOT_RUN:+ }$TEST_METHOD"
+          else
+            echo ">>> TIMEOUT after ${this_to}s: $TEST_METHOD"
+            TIMED_OUT="${TIMED_OUT}${TIMED_OUT:+ }$TEST_METHOD"
+          fi
+        elif [ "$rc" -ne 0 ]; then
+          echo ">>> FAILED (exit $rc): $TEST_METHOD"
+          FAILED="${FAILED}${FAILED:+ }$TEST_METHOD"
+        fi
       done
+      echo "===================== test summary (elapsed ${SECONDS}s) ====================="
+      if [ -n "$TIMED_OUT" ]; then
+        echo "Timed out (> ${PER_TEST_TIMEOUT}s):"
+        for t in $TIMED_OUT; do echo "  - $t"; done
+      fi
+      if [ -n "$FAILED" ]; then
+        echo "Failed:"
+        for t in $FAILED; do echo "  - $t"; done
+      fi
+      if [ -n "$NOT_RUN" ]; then
+        echo "Not run / cut short (3h budget):"
+        for t in $NOT_RUN; do echo "  - $t"; done
+      fi
+      if [ -n "$TIMED_OUT" ] || [ -n "$FAILED" ]; then
+        exit 1
+      fi
+      echo "All executed tests passed within ${PER_TEST_TIMEOUT}s each (total ${SECONDS}s)."
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
@@ -134,5 +194,5 @@ publish:
       - build/jmc-agent/jmc-agent.zip
       - build/jmc/jmc.zip
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"
   when: on_success

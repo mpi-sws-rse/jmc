@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.test.stress;
 
+import org.junit.jupiter.api.Disabled;
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 
@@ -148,8 +149,21 @@ public class BusyWaitFutureTest {
     }
 
     @JmcCheck
+    @JmcCheckConfiguration(numIterations = 3, strategy = "fair-pct", pctFairBound = 10, timeout = 10000L)
+    @Disabled
+    public void testBusyWaitScenarioPct() throws Exception {
+        testBusyWait();
+    }
+
+    @JmcCheck
     @JmcCheckConfiguration(numIterations = 3)
     public void testBlockingWaitScenario() throws Exception {
+        testBlockingWait();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 3, strategy = "pct", timeout = 10000L)
+    public void testBlockingWaitScenarioPct() throws Exception {
         testBlockingWait();
     }
 }

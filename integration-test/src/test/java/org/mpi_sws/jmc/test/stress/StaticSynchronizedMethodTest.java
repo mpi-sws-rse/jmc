@@ -16,6 +16,13 @@ public class StaticSynchronizedMethodTest {
         String result = TestClass.getOrCreateValue();
     }
 
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testStaticSynchronizedMethodPct() {
+        // Call a static synchronized method
+        String result = TestClass.getOrCreateValue();
+    }
+
     /**
      * Test class with a static synchronized method, similar to HadoopTables.
      * No explicit static initializer block.
