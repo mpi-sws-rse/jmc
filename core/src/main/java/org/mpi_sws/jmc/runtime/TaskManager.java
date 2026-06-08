@@ -352,10 +352,16 @@ public class TaskManager {
             T result = castedFuture.get();
             // A thread will reach this line only if the scheduler has completed it's corresponding future object.
             // Thus, it is now safe to remove the future from taskFutures map
-            taskFutures.remove(taskId);
+            synchronized (tasksLock) {
+                taskFutures.remove(taskId);
+            }
             LOGGER.debug("Task {} is now resumed with value {} from future {}", taskId, result, future);
             return result;
         } catch (Exception e) {
+            // The future must be removed from the tasksLock even if an exception happens
+            synchronized (tasksLock) {
+                taskFutures.remove(taskId);
+            }
             Throwable cause = e.getCause();
             if (cause instanceof HaltTaskException) {
                 throw (HaltTaskException) cause;
