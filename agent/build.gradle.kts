@@ -1,13 +1,16 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 buildscript {
-    // Force patched plexus-utils to fix the Directory Traversal vulnerability in
-    // org.codehaus.plexus.util.Expand.extractFile. It is pulled transitively by
-    // com.gradleup.shadow:9.0.0-beta9, which bundles the vulnerable 4.0.2.
-    // Remove this once a Shadow release bundles plexus-utils >= 4.0.3.
+    // Pin patched versions of vulnerable dependencies pulled transitively onto the
+    // Shadow plugin classpath by com.gradleup.shadow:9.0.0-beta9:
+    //  - plexus-utils 4.0.2: Directory Traversal in Expand.extractFile (< 4.0.3)
+    //  - log4j-core 2.24.3: log injection / TLS hostname verification issues (< 2.25.4)
+    // Remove each once a Shadow release bundles the patched version.
     configurations.classpath {
         resolutionStrategy {
             force("org.codehaus.plexus:plexus-utils:4.0.3")
+            force("org.apache.logging.log4j:log4j-core:2.25.4")
+            force("org.apache.logging.log4j:log4j-api:2.25.4")
         }
     }
 }
@@ -45,9 +48,9 @@ dependencies {
     implementation("org.ow2.asm:asm:9.8")
     implementation("org.ow2.asm:asm-util:9.8")
     implementation(project(":core"))
-    implementation("org.apache.logging.log4j:log4j-api:2.24.3")
+    implementation("org.apache.logging.log4j:log4j-api:2.25.4")
     implementation("org.apache.logging.log4j:log4j-api-kotlin:1.5.0")
-    implementation("org.apache.logging.log4j:log4j-core:2.24.3")
+    implementation("org.apache.logging.log4j:log4j-core:2.25.4")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
