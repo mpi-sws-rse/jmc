@@ -118,11 +118,26 @@ public class CounterTest {
     }
 
     @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runFineCounterTestPct() {
+        // TODO : Make the test parametric
+        FineCounter(new String[]{"0", "1", "2", "3", "4", "5", "6", "7"});
+    }
+
+    @JmcCheck
     @JmcCheckConfiguration(numIterations = 10)
     public void testRandomCounter() {
         ParametricCounter counter = new ParametricCounter(2);
         counter.run();
         assertEquals(2, counter.getCounterValue());
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void testRandomCounterPct() {
+        ParametricCounter counter = new ParametricCounter(3);
+        counter.run();
+        assertEquals(3, counter.getCounterValue());
     }
 
     @JmcCheck

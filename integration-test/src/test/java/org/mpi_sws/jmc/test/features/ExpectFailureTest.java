@@ -14,4 +14,12 @@ public class ExpectFailureTest {
         // This test is expected to fail due to an assertion failure.
         fail("This assertion is expected to fail.");
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1, strategy = "pct")
+    @JmcExpectAssertionFailure
+    public void testExpectFailurePct() {
+        // This test is expected to fail due to an assertion failure.
+        fail("This assertion is expected to fail.");
+    }
 }

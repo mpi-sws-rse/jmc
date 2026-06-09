@@ -179,4 +179,34 @@ public class InvokeDynamicTest {
     public void testSynchronizedBlock_seq() {
         synchronizedBlock_seq();
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testAtomicInteger_seqPct() {
+        atomicInteger_seq();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testReentrantLock_seqPct() {
+        reentrantLock_seq();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testLockAtomic_seqPct() {
+        lockAtomic_seq();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testReentrantLock_parPct() {
+        reentrantLock_par();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct", timeout = 10000L)
+    public void testSynchronizedBlock_seqPct() {
+        synchronizedBlock_seq();
+    }
 }

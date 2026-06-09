@@ -15,4 +15,11 @@ public class SynchronisedAnnotationTest {
         SynchronisedExtension e = new SynchronisedExtension();
         assertEquals(1, e.doSomething());
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void testSynchronisedAnnotationPct() {
+        SynchronisedExtension e = new SynchronisedExtension();
+        assertEquals(1, e.doSomething());
+    }
 }

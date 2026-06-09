@@ -13,4 +13,11 @@ public class StaticFinalFieldTest {
         ConcreteFields f = new ConcreteFields();
         assertEquals(3, f.getInitCounter());
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void testStaticFinalInterfaceFieldPct() {
+        ConcreteFields f = new ConcreteFields();
+        assertEquals(3, f.getInitCounter());
+    }
 }

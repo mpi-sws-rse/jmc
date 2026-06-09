@@ -4,13 +4,20 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 
 /**
- * Represents a primitive (Number|String|Boolean) value used in scheduling choices.
+ * Adapter that reconstructs a {@link PrimitiveValue} from its JSON representation.
  *
- * <p>This class extends {@link SchedulingChoiceValue} to provide a specific implementation
- * for integer, string or boolean values, allowing them to be serialized to JSON and identified by type.</p>
+ * <p>Handles JSON primitives of string, number, and boolean kind. Registered with the {@link
+ * SchedulingChoiceValueFactory} for the primitive type tags.</p>
  */
 public class PrimitiveValueAdapter extends SchedulingChoiceValueAdapter<PrimitiveValue> {
 
+    /**
+     * Reconstructs a {@link PrimitiveValue} from a JSON primitive (string, number, or boolean).
+     *
+     * @param json the JSON element to convert
+     * @return the reconstructed primitive value
+     * @throws IllegalArgumentException if {@code json} is not a supported JSON primitive
+     */
     @Override
     public PrimitiveValue fromJson(JsonElement json) {
         if (json.isJsonPrimitive()) {

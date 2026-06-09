@@ -92,4 +92,23 @@ public class BigShotTest {
     public void runBigShotS2Test() {
         bigShotS2();
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runBigShotPTestPct() {
+        bigShotP();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runBigShotSTestPct() {
+        bigShotS();
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    @JmcExpectAssertionFailure
+    public void runBigShotS2TestPct() {
+        bigShotS2();
+    }
 }

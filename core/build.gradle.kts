@@ -26,9 +26,9 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.jetbrains.kotlin", "kotlin-compiler", "1.9.22") // 1.9.22
     implementation("commons-cli:commons-cli:1.6.0")
-    implementation("org.apache.logging.log4j:log4j-api:2.24.3")
+    implementation("org.apache.logging.log4j:log4j-api:2.25.4")
     implementation("org.apache.logging.log4j:log4j-api-kotlin:1.5.0")
-    implementation("org.apache.logging.log4j:log4j-core:2.24.3")
+    implementation("org.apache.logging.log4j:log4j-core:2.25.4")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.22")

@@ -53,4 +53,10 @@ public class ArrayTest {
     public void runDetArrayTest() {
         detArray(3);
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runDetArrayTestPct() {
+        detArray(3);
+    }
 }

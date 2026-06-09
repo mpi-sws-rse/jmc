@@ -23,6 +23,10 @@ public @interface JmcCheckConfiguration {
      *
      * <ul>
      *   <li><code>random</code> - Randomly explores the state space.
+     *   <li><code>pct</code> - Probabilistic Concurrency Testing: a priority-based randomized
+     *       scheduler with a probabilistic guarantee of finding bugs of a given {@link #bugDepth()}.
+     *   <li><code>fair-pct</code> - PCT followed by a fair (uniform-random) execution suffix; see
+     *       {@link #pctFairBound()}.
      *   <li><code>trust</code> - Uses Trust to exhaustively enumerate all executions.
      * </ul>
      *
@@ -70,6 +74,30 @@ public @interface JmcCheckConfiguration {
     long seed() default 0;
 
     int budget() default 2;
+
+    /**
+     * The target bug depth {@code d} for the PCT strategies (<code>pct</code>, <code>fair-pct</code>).
+     *
+     * <p>PCT installs {@code d - 1} priority change points and finds a bug of depth {@code d} with
+     * probability at least {@code 1 / (n * k^(d-1))} per iteration. Must be at least 1; the default
+     * (3) targets bugs of depth up to 3. Ignored by non-PCT strategies.
+     *
+     * @return the target bug depth
+     */
+    int bugDepth() default 3;
+
+    /**
+     * The fair-suffix bound for the <code>fair-pct</code> strategy: the number of priority-controlled
+     * scheduling decisions before switching to a uniform-random ("fair") suffix.
+     *
+     * <p>A value {@code <= 0} (the default) selects automatic mode, in which the bound for each
+     * iteration is the largest number of decisions seen in any previous run — so normal-length runs
+     * stay entirely under PCT and only an abnormally long run (a spin-loop livelock) switches to the
+     * fair suffix. Ignored by strategies other than <code>fair-pct</code>.
+     *
+     * @return the fair-suffix bound, or a non-positive value for automatic mode
+     */
+    int pctFairBound() default 0;
 
     long timeout() default -1L;
 }

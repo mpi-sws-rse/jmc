@@ -5,6 +5,7 @@ package org.mpi_sws.jmc.runtime;
  */
 public class HaltExecutionException extends RuntimeException {
 
+    /** The reason this execution was halted. */
     private final Type type;
 
     /**
@@ -29,27 +30,49 @@ public class HaltExecutionException extends RuntimeException {
         return new HaltExecutionException(Type.ALL_OK, "All OK");
     }
 
+    /**
+     * Constructs a new {@link HaltExecutionException} signalling that the current iteration must be
+     * discarded and re-executed.
+     *
+     * @return the re-execution exception
+     */
     public static HaltExecutionException reexecutionNeeded() {
         return new HaltExecutionException(Type.REEXECTION_NEEDED, "Re-execution needed");
     }
 
+    /**
+     * Returns whether this exception requests re-execution of the current iteration.
+     *
+     * @return {@code true} if the type is {@link Type#REEXECTION_NEEDED}
+     */
     public boolean isReexecutionNeeded() {
         return type == Type.REEXECTION_NEEDED;
     }
 
+    /**
+     * Returns the reason this execution was halted.
+     *
+     * @return the halt {@link Type}
+     */
     public Type getType() {
         return type;
     }
 
     /**
-     * Exception type when the model checker stops the execution.
+     * The reason the model checker stopped the current execution (iteration).
      */
     public enum Type {
+        /** The program under test raised an error. */
         PROGRAM_ERROR,
+        /** A consistency (memory model) violation was detected. */
         CONSISTENCY_VIOLATION,
+        /** A deadlock was detected. */
         DEADLOCK,
+        /** A race condition was detected. */
         RACE_CONDITION,
+        /** The current iteration must be discarded and re-executed. */
         REEXECTION_NEEDED,
+        /** The execution completed without any error. */
         ALL_OK,
     }
 }

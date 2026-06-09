@@ -144,4 +144,28 @@ public class OrderedListTest {
     public void runTrust_50_50_FineListTest() {
         test_50_50_workload(3, new FineList());
     }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runPct_100_0_CoarseListTest() {
+        test_100_0_workload(3, new CoarseList());
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runPct_50_50_CoarseListTest() {
+        test_50_50_workload(3, new CoarseList());
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runPct_100_0_FineListTest() {
+        test_100_0_workload(3, new FineList());
+    }
+
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 10, strategy = "pct")
+    public void runPct_50_50_FineListTest() {
+        test_50_50_workload(3, new FineList());
+    }
 }

@@ -164,6 +164,7 @@ public class Algo {
         long id = task.getTaskId() - 1;
         if (externalValueTracker.containsValue(id)) {
             Object value = externalValueTracker.getValue(id);
+            LOGGER.debug("Updating external value {} for task: {}", value, id);
             externalValueTracker.removeValue(id);
 
             PrimitiveValue val = new  PrimitiveValue(value);
@@ -217,9 +218,11 @@ public class Algo {
 
     private void storeExternalValue(long id, Object value) {
         if (externalValueTracker.containsValue(id)) {
+            LOGGER.error("Value for id {} already exists in external tracker. This should not happen.", id);
             throw new RuntimeException("Value for id " + id + " already exists");
         }
 
+        LOGGER.debug("Storing value {} for id {}", value, id);
         externalValueTracker.setValue(id, value);
     }
 
@@ -371,6 +374,7 @@ public class Algo {
     }
 
     public void handleSymbolic(Event event) {
+        LOGGER.debug("Handling symbolic event: {}", event);
         boolean result = processNewSymEvent(event);
         storeExternalValue(event.getKey().getTaskId(), result);
     }
@@ -384,6 +388,7 @@ public class Algo {
 
         ExecutionGraphNode symb = this.executionGraph.addEvent(event);
         if (solverResult.isNegatable()) {
+            LOGGER.debug("Pushing the fWR item to explore the other outcome of symbolic event {}", event.key());
             explorationStack.push(
                     ExplorationStack.Item.symbolicForwardRevisit(
                             symb,

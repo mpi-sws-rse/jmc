@@ -14,10 +14,22 @@ import org.mpi_sws.jmc.solver.SolverResult;
  * @param <T> the type of value associated with the scheduling choice
  */
 public class SchedulingChoice<T extends SchedulingChoiceValue> {
+    /** Logger for this class. */
     private static Logger LOGGER = LogManager.getLogger(SchedulingChoice.class);
+
+    /**
+     * The ID of the task to act on, or {@code null} for an end-of-schedule or block-execution
+     * choice.
+     */
     private Long taskId;
+
+    /** Whether this choice blocks the task identified by {@link #taskId}. */
     private boolean isBlockTask;
+
+    /** Whether this choice stops the entire execution. */
     private boolean isBlockExecution;
+
+    /** Optional value delivered to the task when it is resumed (may be {@code null}). */
     private T value;
 
     /**
@@ -169,6 +181,11 @@ public class SchedulingChoice<T extends SchedulingChoiceValue> {
         return new SchedulingChoice<>(null, false, false);
     }
 
+    /**
+     * Returns a human-readable representation of this choice (task ID and the two block flags).
+     *
+     * @return a string representation of this scheduling choice
+     */
     @Override
     public String toString() {
         return "SchedulingChoice{"
