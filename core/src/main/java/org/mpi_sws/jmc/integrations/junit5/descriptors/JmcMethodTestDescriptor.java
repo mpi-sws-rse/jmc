@@ -61,7 +61,9 @@ public class JmcMethodTestDescriptor extends AbstractTestDescriptor
                 .reportPath(annotation.reportPath())
                 .strategyType(annotation.strategy())
                 .solver(annotation.solver())
-                .schedulingPolicy(annotation.schedulingPolicy());
+                .schedulingPolicy(annotation.schedulingPolicy())
+                .bugDepth(annotation.bugDepth())
+                .pctFairBound(annotation.pctFairBound());
     }
 
     /**

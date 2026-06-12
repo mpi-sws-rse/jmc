@@ -1,6 +1,7 @@
 package org.mpi_sws.jmc.api.util.concurrent;
 
 import org.mpi_sws.jmc.runtime.JmcRuntime;
+import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
 
 import java.util.Objects;
@@ -14,15 +15,17 @@ import java.util.concurrent.TimeUnit;
  */
 public class JmcReentrantLock {
 
-    private int token = 0;
+    private static final String OWNER = "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock";
+    private static final String NAME = "token";
+    private static final String DESCRIPTOR = "I";
+
+    private int token;
+    private int holdCount;
+    private Thread owner;
     private final Object lockObj;
 
-    /** The JMC task ID that currently holds this lock, or null if unheld. */
-    private Long holdingTask = null;
-
     public JmcReentrantLock() {
-        JmcRuntimeUtils.writeEventWithoutYield(
-                this, 0, "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock", "token", "I");
+        JmcRuntimeUtils.writeEventWithoutYield(this, 0, OWNER, NAME, DESCRIPTOR);
         token = 0;
         JmcRuntime.yield();
         this.lockObj = null;
@@ -39,44 +42,56 @@ public class JmcReentrantLock {
 
     /** Acquires the lock. */
     public void lock() {
-        JmcRuntimeUtils.lockAcquireEvent(
-                "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
-                "token",
-                token,
-                "I",
-                getInstance());
+        if (isInstrumentedSynchronizedBlock()) {
+            token = 1;
+            JmcRuntimeUtils.lockAcquiredEventWithoutYield(
+                    getInstance(), OWNER, NAME, token, DESCRIPTOR, 1);
+            return;
+        }
+        Thread currentThread = Thread.currentThread();
+        synchronized (this) {
+            if (owner == currentThread) {
+                holdCount++;
+                return;
+            }
+        }
 
-        token = 1;
-        holdingTask = JmcRuntime.currentTask();
-
+        JmcRuntimeUtils.lockAcquireEvent(OWNER, NAME, token, DESCRIPTOR, getInstance());
+        synchronized (this) {
+            token = 1;
+            owner = currentThread;
+            holdCount = 1;
+        }
         JmcRuntimeUtils.lockAcquiredEventWithoutYield(
-                getInstance(),
-                "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
-                "token",
-                token,
-                "I",
-                1);
+                getInstance(), OWNER, NAME, token, DESCRIPTOR, 1);
     }
 
     /** Releases the lock. */
     public void unlock() {
-        token = 0;
-        holdingTask = null;
-
-        JmcRuntimeUtils.lockReleaseEvent(
-                getInstance(),
-                "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
-                "token",
-                token,
-                "I",
-                0);
+        if (isInstrumentedSynchronizedBlock()) {
+            token = 0;
+            lockReleaseEventWithoutYield();
+            return;
+        }
+        synchronized (this) {
+            if (owner != Thread.currentThread()) {
+                throw new IllegalMonitorStateException();
+            }
+            holdCount--;
+            if (holdCount > 0) {
+                return;
+            }
+            owner = null;
+            token = 0;
+        }
+        JmcRuntimeUtils.lockReleaseEvent(getInstance(), OWNER, NAME, token, DESCRIPTOR, 0);
     }
 
     /**
      * Attempts to acquire the lock without blocking.
      *
-     * <p>If the lock is currently held by another JMC task, returns {@code false} immediately.
-     * If the lock is free (or held by the current task for reentrancy), acquires it and
+     * <p>If the lock is currently held by another thread, returns {@code false} immediately.
+     * If the lock is free (or held by the current thread for reentrancy), acquires it and
      * returns {@code true}.
      *
      * <p>This is a scheduling point — the scheduler controls which tasks run when,
@@ -84,21 +99,21 @@ public class JmcReentrantLock {
      *
      * @return {@code true} if the lock was acquired, {@code false} otherwise
      */
-    public boolean tryLock() {
-        Long currentTask = JmcRuntime.currentTask();
-
-        if (holdingTask != null && !holdingTask.equals(currentTask)) {
-            // Lock is held by another task — emit a read event (scheduling point) and return false
-            JmcRuntimeUtils.readEvent(
-                    "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
-                    "token",
-                    "I",
-                    getInstance());
+    public synchronized boolean tryLock() {
+        Thread currentThread = Thread.currentThread();
+        if (owner == currentThread) {
+            holdCount++;
+            return true;
+        }
+        if (owner != null) {
             return false;
         }
 
-        // Lock is free or held by current task (reentrant) — acquire it
-        lock();
+        token = 1;
+        owner = currentThread;
+        holdCount = 1;
+        JmcRuntimeUtils.lockAcquiredEventWithoutYield(
+                getInstance(), OWNER, NAME, token, DESCRIPTOR, 1);
         return true;
     }
 
@@ -115,25 +130,46 @@ public class JmcReentrantLock {
      * @throws InterruptedException if the current thread is interrupted
      */
     public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
+        Objects.requireNonNull(unit);
+        if (Thread.interrupted()) {
+            throw new InterruptedException();
+        }
         return tryLock();
     }
 
     /**
-     * Returns whether the lock is currently held by any task.
+     * Returns whether the lock is currently held by any thread.
      *
      * @return {@code true} if the lock is held
      */
-    public boolean isLocked() {
-        return holdingTask != null;
+    public synchronized boolean isLocked() {
+        return owner != null;
     }
 
     /**
-     * Returns whether the lock is held by the current JMC task.
+     * Returns whether the lock is held by the current thread.
      *
-     * @return {@code true} if the current task holds this lock
+     * @return {@code true} if the current thread holds this lock
      */
-    public boolean isHeldByCurrentThread() {
-        Long currentTask = JmcRuntime.currentTask();
-        return currentTask.equals(holdingTask);
+    public synchronized boolean isHeldByCurrentThread() {
+        return owner == Thread.currentThread();
+    }
+
+    private boolean isInstrumentedSynchronizedBlock() {
+        return lockObj != null;
+    }
+
+    private void lockReleaseEventWithoutYield() {
+        var event = new JmcRuntimeEvent.Builder()
+                .type(JmcRuntimeEvent.Type.LOCK_RELEASE_EVENT)
+                .taskId(JmcRuntime.currentTask())
+                .param("owner", OWNER)
+                .param("name", NAME)
+                .param("value", token)
+                .param("descriptor", DESCRIPTOR)
+                .param("newValue", 0)
+                .param("instance", getInstance())
+                .build();
+        JmcRuntime.updateEvent(event);
     }
 }

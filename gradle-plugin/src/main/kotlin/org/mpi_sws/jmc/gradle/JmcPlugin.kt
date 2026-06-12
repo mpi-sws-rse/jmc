@@ -159,7 +159,7 @@ open class JmcExtension {
     var testTask: String = ""
 
     /** Whether to enable debug mode for the JMC agent (dumps instrumented bytecode). */
-    var debug: Boolean = false
+    var debug: Boolean = true
 
     /** The path where debug information will be saved. */
     var debugPath: String = "build/generated/instrumented"
