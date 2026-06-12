@@ -234,7 +234,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
 
     @Override
     public void recordTrace() throws JmcCheckerException {
-        String filePath = Paths.get(this.reportPath, "replay.json").toString();
+        String filePath = Paths.get(this.reportPath, "replay_trace.json").toString();
         LOGGER.info("Recording trace to {}", filePath);
         algoInstance.recordTaskSchedule(filePath);
     }
@@ -242,7 +242,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
     @Override
     public void replayRecordedTrace() throws JmcCheckerException {
         recordedTrace =
-                FileUtil.readTaskSchedule(Paths.get(this.reportPath, "replay.json").toString());
+                FileUtil.readTaskSchedule(Paths.get(this.reportPath, "replay_trace.json").toString());
     }
 
     public enum SchedulingPolicy {
