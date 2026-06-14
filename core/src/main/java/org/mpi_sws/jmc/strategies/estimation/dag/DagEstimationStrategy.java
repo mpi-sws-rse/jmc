@@ -7,15 +7,13 @@ import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.strategies.RandomSchedulingStrategy;
+import org.mpi_sws.jmc.strategies.estimation.EstimationCollector;
 import org.mpi_sws.jmc.strategies.estimation.EstimationStrategy;
 import org.mpi_sws.jmc.strategies.estimation.MetaGraphEstimator;
 import org.mpi_sws.jmc.strategies.trust.Event;
 import org.mpi_sws.jmc.strategies.trust.EventFactory;
 import org.mpi_sws.jmc.strategies.trust.LocationStore;
-import org.mpi_sws.jmc.util.FileUtil;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 public class DagEstimationStrategy extends RandomSchedulingStrategy implements EstimationStrategy {
@@ -24,7 +22,7 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
 
     private final MetaGraphEstimator est;
 
-    private final StringBuilder estimatorCollector = new StringBuilder();
+    private final EstimationCollector estimationCollector = new EstimationCollector();
 
 
     /**
@@ -69,7 +67,7 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
 
     @Override
     public void recordEstimation() {
-        estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
+        estimationCollector.record(est.getExpectedValue());
     }
 
     @Override
@@ -80,14 +78,7 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
     }
 
     protected void saveResults() {
-        final Path path = Paths.get("build/test-results/jmc-report/", "pestor-result.txt");
-        FileUtil.unsafeStoreToFile(
-                path.toString(), estimatorCollector.toString());
-        LOGGER.info("The aggregation of estimation per each iteration can be found in the file: " +
-                "{}", path.toString());
-    }
-
-    public StringBuilder getEstimatorCollector() {
-        return estimatorCollector;
+        estimationCollector.save(
+                "build/test-results/jmc-report/", "pestor-result.txt", "pestor-final-result.txt");
     }
 }

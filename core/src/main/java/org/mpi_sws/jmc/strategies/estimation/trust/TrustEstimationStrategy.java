@@ -8,6 +8,7 @@ import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.strategies.estimation.EstimationCollector;
 import org.mpi_sws.jmc.strategies.estimation.EstimationStrategy;
 import org.mpi_sws.jmc.strategies.trust.TrustStrategy;
 import org.mpi_sws.jmc.util.FileUtil;
@@ -21,7 +22,7 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
 
     protected final TrustEstimator tEst;
 
-    protected final StringBuilder estimatorCollector = new StringBuilder();
+    protected final EstimationCollector estimationCollector = new EstimationCollector();
 
     protected final StringBuilder branchingCollector = new StringBuilder();
 
@@ -68,7 +69,7 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
 
     @Override
     public void recordEstimation() {
-        estimatorCollector.append(tEst.getExpectedValue()).append(System.lineSeparator());
+        estimationCollector.record(tEst.getExpectedValue());
         branchCounter++;
         branchingCollector.append("$Iteration_").append(branchCounter).append(System.lineSeparator());
         branchingCollector.append(tEst.getTreeLogger().toString()).append(System.lineSeparator());
@@ -120,11 +121,10 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     }
 
     protected void saveResults() {
-        final Path path = Paths.get("build/test-results/jmc-report/", "trust-estimation-result.txt");
-        FileUtil.unsafeStoreToFile(
-                path.toString(), estimatorCollector.toString());
-        LOGGER.info("The aggregation of estimation per each iteration can be found in the file: " +
-                "{}", path.toString());
+        estimationCollector.save(
+                "build/test-results/jmc-report/",
+                "trust-estimation-result.txt",
+                "trust-final-result.txt");
         final Path path1 = Paths.get("build/test-results/jmc-report/", "trust-branching-result.txt");
         FileUtil.unsafeStoreToFile(
                 path1.toString(), branchingCollector.toString());

@@ -8,17 +8,15 @@ import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.strategies.estimation.EstimationCollector;
 import org.mpi_sws.jmc.strategies.estimation.EstimationStrategy;
 import org.mpi_sws.jmc.strategies.trust.TrustStrategy;
-import org.mpi_sws.jmc.util.FileUtil;
-
-import java.nio.file.Paths;
 
 public class TestorStrategy extends TrustStrategy implements EstimationStrategy {
 
     private final Logger LOGGER = LogManager.getLogger(TestorStrategy.class);
     protected final Testor testor;
-    protected final StringBuilder estimatorCollector = new StringBuilder();
+    protected final EstimationCollector estimationCollector = new EstimationCollector();
 
     public TestorStrategy() {
         this(System.nanoTime(), SchedulingPolicy.FIFO, false, "build/test-results/jmc-report");
@@ -77,7 +75,7 @@ public class TestorStrategy extends TrustStrategy implements EstimationStrategy 
 
     @Override
     public void recordEstimation() {
-        estimatorCollector.append(testor.getRealExpectedValue()).append(System.lineSeparator());
+        estimationCollector.record(testor.getRealExpectedValue());
     }
 
     /**
@@ -128,7 +126,9 @@ public class TestorStrategy extends TrustStrategy implements EstimationStrategy 
     }
 
     protected void saveResults() {
-        FileUtil.unsafeStoreToFile(
-                Paths.get("build/test-results/jmc-report/", "testor-estimation-result.txt").toString(), estimatorCollector.toString());
+        estimationCollector.save(
+                "build/test-results/jmc-report/",
+                "testor-estimation-result.txt",
+                "testor-final-result.txt");
     }
 }

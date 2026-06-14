@@ -25,11 +25,10 @@ public class WgTrustEstimationStrategy extends TrustEstimationStrategy {
      */
     @Override
     protected void saveResults() {
-        final Path path = Paths.get("build/test-results/jmc-report/", "wg-trust-estimation-result.txt");
-        FileUtil.unsafeStoreToFile(
-                path.toString(), estimatorCollector.toString());
-        LOGGER.info("The aggregation of estimation per each iteration can be found in the file: " +
-                "{}", path.toString());
+        estimationCollector.save(
+                "build/test-results/jmc-report/",
+                "wg-trust-estimation-result.txt",
+                "wg-trust-final-result.txt");
         final Path path1 = Paths.get("build/test-results/jmc-report/", "wg-trust-branching-result.txt");
         FileUtil.unsafeStoreToFile(
                 path1.toString(), branchingCollector.toString());
