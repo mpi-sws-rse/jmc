@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.strategies.estimation.trust.TrustEstimationStrategy;
 import org.mpi_sws.jmc.util.FileUtil;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class WgTrustEstimationStrategy extends TrustEstimationStrategy {
@@ -24,7 +25,14 @@ public class WgTrustEstimationStrategy extends TrustEstimationStrategy {
      */
     @Override
     protected void saveResults() {
+        estimationCollector.save(
+                "build/test-results/jmc-report/",
+                "wg-trust-estimation-result.txt",
+                "wg-trust-final-result.txt");
+        final Path path1 = Paths.get("build/test-results/jmc-report/", "wg-trust-branching-result.txt");
         FileUtil.unsafeStoreToFile(
-                Paths.get("build/test-results/jmc-report/", "WgTrustEstimateResult.txt").toString(), estimatorCollector.toString());
+                path1.toString(), branchingCollector.toString());
+        LOGGER.info("The branching information per each iteration can be found in the file: " +
+                "{}", path1.toString());
     }
 }

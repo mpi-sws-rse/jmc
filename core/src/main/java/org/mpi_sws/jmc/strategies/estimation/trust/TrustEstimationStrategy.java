@@ -8,10 +8,12 @@ import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.strategies.estimation.EstimationCollector;
 import org.mpi_sws.jmc.strategies.estimation.EstimationStrategy;
 import org.mpi_sws.jmc.strategies.trust.TrustStrategy;
 import org.mpi_sws.jmc.util.FileUtil;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class TrustEstimationStrategy extends TrustStrategy implements EstimationStrategy {
@@ -20,9 +22,11 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
 
     protected final TrustEstimator tEst;
 
-    protected final StringBuilder estimatorCollector = new StringBuilder();
+    protected final EstimationCollector estimationCollector = new EstimationCollector();
 
     protected final StringBuilder branchingCollector = new StringBuilder();
+
+    private int branchCounter = 0;
 
     public TrustEstimationStrategy() {
         this(System.nanoTime(), SchedulingPolicy.FIFO, false, "build/test-results/jmc-report");
@@ -52,9 +56,7 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
             if (e.isOkay() && algoInstance.isStackEmpty()) {
                 LOGGER.debug("HaltCheckerException in initIteration: {}, clearing algoInstance", e.getMessage());
                 algoInstance.clear();
-                estimatorCollector.append(tEst.getExpectedValue()).append(System.lineSeparator());
-                branchingCollector.append(tEst.getTreeLogger().toString()).append(System.lineSeparator());
-                branchingCollector.append("$Iteration_").append(iteration).append(System.lineSeparator());
+                recordEstimation();
                 tEst.reset();
             } else {
                 LOGGER.error("HaltExecutionException in initIteration: {}", e.getMessage());
@@ -63,6 +65,14 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
         } finally {
             tEst.resetReExecutionFlag();
         }
+    }
+
+    @Override
+    public void recordEstimation() {
+        estimationCollector.record(tEst.getExpectedValue());
+        branchCounter++;
+        branchingCollector.append("$Iteration_").append(branchCounter).append(System.lineSeparator());
+        branchingCollector.append(tEst.getTreeLogger().toString()).append(System.lineSeparator());
     }
 
     /**
@@ -111,9 +121,14 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     }
 
     protected void saveResults() {
+        estimationCollector.save(
+                "build/test-results/jmc-report/",
+                "trust-estimation-result.txt",
+                "trust-final-result.txt");
+        final Path path1 = Paths.get("build/test-results/jmc-report/", "trust-branching-result.txt");
         FileUtil.unsafeStoreToFile(
-                Paths.get("build/test-results/jmc-report/", "TrustEstimateResult.txt").toString(), estimatorCollector.toString());
-        FileUtil.unsafeStoreToFile(
-                Paths.get("build/test-results/jmc-report/", "TrustBranchingResult.txt").toString(), branchingCollector.toString());
+                path1.toString(), branchingCollector.toString());
+        LOGGER.info("The branching information per each iteration can be found in the file: " +
+                "{}", path1.toString());
     }
 }
