@@ -14,6 +14,7 @@ import org.mpi_sws.jmc.strategies.trust.EventFactory;
 import org.mpi_sws.jmc.strategies.trust.LocationStore;
 import org.mpi_sws.jmc.util.FileUtil;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -62,8 +63,13 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
     public void resetIteration(int iteration) {
         super.resetIteration(iteration);
         LOGGER.debug("Finished iteration {} with expected value: {}", iteration, est.getExpectedValue());
-        estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
+        recordEstimation();
         est.reset();
+    }
+
+    @Override
+    public void recordEstimation() {
+        estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
     }
 
     @Override
@@ -74,8 +80,11 @@ public class DagEstimationStrategy extends RandomSchedulingStrategy implements E
     }
 
     protected void saveResults() {
+        final Path path = Paths.get("build/test-results/jmc-report/", "pestor-result.txt");
         FileUtil.unsafeStoreToFile(
-                Paths.get("build/test-results/jmc-report/", "DagEstimateResult.txt").toString(), estimatorCollector.toString());
+                path.toString(), estimatorCollector.toString());
+        LOGGER.info("The aggregation of estimation per each iteration can be found in the file: " +
+                "{}", path.toString());
     }
 
     public StringBuilder getEstimatorCollector() {

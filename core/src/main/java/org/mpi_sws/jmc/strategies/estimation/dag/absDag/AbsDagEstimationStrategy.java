@@ -13,6 +13,7 @@ import org.mpi_sws.jmc.strategies.estimation.MetaGraphEstimator;
 import org.mpi_sws.jmc.strategies.trust.Event;
 import org.mpi_sws.jmc.util.FileUtil;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -60,8 +61,13 @@ public class AbsDagEstimationStrategy extends RandomSchedulingStrategy implement
     public void resetIteration(int iteration) {
         super.resetIteration(iteration);
         LOGGER.debug("Finished iteration {} with expected value: {}", iteration, est.getExpectedValue());
-        estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
+        recordEstimation();
         est.reset();
+    }
+
+    @Override
+    public void recordEstimation() {
+        estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
     }
 
     @Override
@@ -74,6 +80,8 @@ public class AbsDagEstimationStrategy extends RandomSchedulingStrategy implement
     protected void saveResults() {
         FileUtil.unsafeStoreToFile(
                 Paths.get("build/test-results/jmc-report/", "AbsDagEstimateResult.txt").toString(), estimatorCollector.toString());
+        LOGGER.info("The aggregation of estimation per each iteration can be found in the file: " +
+                "{}", Paths.get("build/test-results/jmc-report/", "AbsDagEstimateResult.txt").toString());
     }
 
     public StringBuilder getEstimatorCollector() {

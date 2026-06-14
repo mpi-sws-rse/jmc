@@ -46,7 +46,7 @@ public class TestorStrategy extends TrustStrategy implements EstimationStrategy 
             super.initIteration(iteration, report);
         } catch (HaltCheckerException e) {
             if (e.isOkay() && algoInstance.isStackEmpty() && testor.isDone()) {
-                recordEstimation(iteration);
+                recordEstimation();
                 algoInstance.clear();
                 testor.reset();
             } else if (e.isOkay() && algoInstance.isStackEmpty()) {
@@ -70,12 +70,13 @@ public class TestorStrategy extends TrustStrategy implements EstimationStrategy 
                 LOGGER.debug(e.getMessage());
             }
         }
-        recordEstimation(iteration);
+        recordEstimation();
         algoInstance.clear();
         testor.reset();
     }
 
-    private void recordEstimation(int iteration) {
+    @Override
+    public void recordEstimation() {
         estimatorCollector.append(testor.getRealExpectedValue()).append(System.lineSeparator());
     }
 
@@ -128,6 +129,6 @@ public class TestorStrategy extends TrustStrategy implements EstimationStrategy 
 
     protected void saveResults() {
         FileUtil.unsafeStoreToFile(
-                Paths.get("build/test-results/jmc-report/", "TestorEstimateResult.txt").toString(), estimatorCollector.toString());
+                Paths.get("build/test-results/jmc-report/", "testor-estimation-result.txt").toString(), estimatorCollector.toString());
     }
 }

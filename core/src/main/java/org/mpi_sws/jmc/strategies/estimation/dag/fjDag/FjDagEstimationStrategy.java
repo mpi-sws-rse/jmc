@@ -13,6 +13,7 @@ import org.mpi_sws.jmc.strategies.estimation.EstimationStrategy;
 import org.mpi_sws.jmc.strategies.trust.Event;
 import org.mpi_sws.jmc.util.FileUtil;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
@@ -74,8 +75,13 @@ public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements
     public void resetIteration(int iteration) {
         super.resetIteration(iteration);
         LOGGER.debug("Finished iteration {} with expected value: {}", iteration, est.getExpectedValue());
-        estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
+        recordEstimation();
         est.reset();
+    }
+
+    @Override
+    public void recordEstimation() {
+        estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
     }
 
     @Override
@@ -86,8 +92,11 @@ public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements
     }
 
     protected void saveResults() {
+        final Path path = Paths.get("build/test-results/jmc-report/", "fj-pestor-result.txt");
         FileUtil.unsafeStoreToFile(
-                Paths.get("build/test-results/jmc-report/", "FjDagEstimateResult.txt").toString(), estimatorCollector.toString());
+                path.toString(), estimatorCollector.toString());
+        LOGGER.info("The aggregation of estimation per each iteration can be found in the file: " +
+                "{}", path.toString());
     }
 
     public StringBuilder getEstimatorCollector() {

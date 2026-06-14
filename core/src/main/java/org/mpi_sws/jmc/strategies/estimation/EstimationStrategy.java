@@ -22,4 +22,6 @@ public interface EstimationStrategy {
         }
         return events;
     }
+
+    void recordEstimation();
 }
