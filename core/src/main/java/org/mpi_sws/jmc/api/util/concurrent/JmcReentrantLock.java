@@ -3,6 +3,7 @@ package org.mpi_sws.jmc.api.util.concurrent;
 import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A reentrant lock that can be used to synchronize access to shared resources. Replacement for
@@ -69,5 +70,18 @@ public class JmcReentrantLock {
                 token,
                 "I",
                 0);
+    }
+
+    // TODO :: Fix the over-approximation
+    public boolean tryLock() {
+        lock();
+        return token == 1;
+    }
+
+    // TODO :: Fix the over-approximation
+    public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
+        tryLock();
+        // Since we are not actually blocking, we can just return the result of tryLock.
+        return token == 1;
     }
 }
