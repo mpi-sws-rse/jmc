@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class CounterTest {
 
     @JmcCheck
-    @JmcCheckConfiguration(numIterations = 10, debug = true)
+    @JmcCheckConfiguration(numIterations = 10, debug = false)
     public void testRandomCounter() {
         ParametricCounter counter = new ParametricCounter(2);
         counter.run();

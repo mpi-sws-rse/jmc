@@ -29,7 +29,7 @@ public class ExecutionGraphSimulator {
     public void updateEvent(JmcRuntimeEvent event) {
         List<Event> trustEvents = EventFactory.fromRuntimeEvent(event);
         // Update the execution graph based on the event
-        if (event.getType() == JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
+        if (event.getType() == JmcRuntimeEvent.Type.FAIR_BLOCKING_LOCK_ACQUIRE_EVENT) {
             return;
         }
         for (Event trustEvent : trustEvents) {

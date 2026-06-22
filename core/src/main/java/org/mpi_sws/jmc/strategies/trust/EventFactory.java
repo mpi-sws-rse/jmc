@@ -80,7 +80,7 @@ public class EventFactory {
             //                event.setAttribute("joined_task", joinedTask - 1);
             //                return List.of(event);
             //            }
-            case LOCK_ACQUIRE_EVENT -> {
+            case FAIR_BLOCKING_LOCK_ACQUIRE_EVENT -> {
                 Event event1 =
                         new Event(
                                 runtimeEvent.getTaskId() - 1,

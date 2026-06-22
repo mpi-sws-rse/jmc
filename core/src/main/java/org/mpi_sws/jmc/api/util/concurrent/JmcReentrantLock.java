@@ -35,7 +35,7 @@ public class JmcReentrantLock {
 
     /** Acquires the lock. */
     public void lock() {
-        JmcRuntimeUtils.lockAcquireEvent(
+        JmcRuntimeUtils.fairBlockingLockAcquireEvent(
                 "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
                 "token",
                 token,
@@ -72,16 +72,65 @@ public class JmcReentrantLock {
                 0);
     }
 
-    // TODO :: Fix the over-approximation
+
     public boolean tryLock() {
-        lock();
-        return token == 1;
+        boolean result = JmcRuntimeUtils.unfairNonblockingLockAcquireEvent(
+                        "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
+                        "token",
+                        token,
+                        "I",
+                        getInstance());
+        if (result) {
+            token = 1;
+            JmcRuntimeUtils.lockAcquiredEventWithoutYield(
+                    getInstance(),
+                    "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
+                    "token",
+                    token,
+                    "I",
+                    1);
+            return true;
+        }
+        return false;
     }
 
-    // TODO :: Fix the over-approximation
     public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
-        tryLock();
-        // Since we are not actually blocking, we can just return the result of tryLock.
-        return token == 1;
+        // We simply ignore the timeout
+        boolean res = JmcRuntimeUtils.fairNonblockingLockAcquireEvent(
+                "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
+                "token",
+                token,
+                "I",
+                getInstance());
+        if (res) {
+            token = 1;
+            JmcRuntimeUtils.lockAcquiredEventWithoutYield(
+                    getInstance(),
+                    "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
+                    "token",
+                    token,
+                    "I",
+                    1);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isLocked() {
+        return JmcRuntimeUtils.isLockedEvent(
+                "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
+                "token",
+                token,
+                "I",
+                getInstance());
+    }
+
+    public boolean isHeldByCurrentThread() {
+        return JmcRuntimeUtils.isLockOwnerEvent(
+                "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
+                "token",
+                token,
+                "I",
+                getInstance());
     }
 }

@@ -93,6 +93,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
             SchedulingChoice<?> next = recordedTrace.remove(0);
             // Update it's value based on value tracker in the algo
             if (next != null) {
+                super.updateExternalValue(next);
                 algoInstance.updateExternalValue(next);
             }
             LOGGER.debug("Returning recorded task: {}", next);
@@ -127,6 +128,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
                         " in active={}", nextTask, activeTasks);
             }
             // Update it's value based on value tracker in the algo
+            super.updateExternalValue(nextTask);
             algoInstance.updateExternalValue(nextTask);
             return nextTask;
         }
@@ -155,6 +157,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
 
         // Update it's value based on value tracker in the algo
         if (next != null) {
+            super.updateExternalValue(next);
             algoInstance.updateExternalValue(next);
         }
         return next;

@@ -3,6 +3,7 @@ package org.mpi_sws.jmc.strategies.tracker;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
+import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
 
 import java.util.Set;
 
@@ -22,4 +23,8 @@ public interface Tracker {
 
     /** Resets the tracker. */
     void reset();
+
+    default void updateExternalValue(SchedulingChoice<?> task) {
+        // By default, trackers do not track external values, so this method does nothing. Override if needed.
+    }
 }

@@ -102,7 +102,9 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
             int index = random.nextInt(activeThreads.size());
             taskToSchedule = (Long) activeThreads.toArray()[index];
         }
-        return makeSchedulingChoice(taskToSchedule);
+        SchedulingChoice<?> next =  makeSchedulingChoice(taskToSchedule);
+        super.updateExternalValue(next);
+        return next;
     }
 
     /**

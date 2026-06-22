@@ -168,6 +168,22 @@ public class JmcRuntimeUtils {
         JmcRuntime.updateEventAndYield(builder.params(var2).param("instance", instance).build());
     }
 
+    private static Object helperLockRelatedEvent(
+            String owner, String name, Object value, String descriptor,
+            Object instance, JmcRuntimeEvent.Type eventType) {
+        JmcRuntimeEvent.Builder builder = new JmcRuntimeEvent.Builder();
+        builder.type(eventType).taskId(JmcRuntime.currentTask());
+
+        HashMap<String, Object> var2 = new HashMap<>();
+        var2.put("owner", owner);
+        var2.put("name", name);
+        var2.put("value", value);
+        var2.put("descriptor", descriptor);
+        var2.put("instance", instance);
+
+        return JmcRuntime.updateEventAndYield(builder.params(var2).build());
+    }
+
     /**
      * Creates a lock acquire event for the specified owner, name, value, descriptor, and instance.
      *
@@ -179,17 +195,74 @@ public class JmcRuntimeUtils {
      * @param descriptor the descriptor of the lock
      * @param instance the instance on which the lock is acquired
      */
-    public static void lockAcquireEvent(
+    public static void fairBlockingLockAcquireEvent(
             String owner, String name, Object value, String descriptor, Object instance) {
-        JmcRuntimeEvent.Builder builder = new JmcRuntimeEvent.Builder();
-        builder.type(JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT).taskId(JmcRuntime.currentTask());
+        helperLockRelatedEvent(owner, name, value, descriptor,
+                instance, JmcRuntimeEvent.Type.FAIR_BLOCKING_LOCK_ACQUIRE_EVENT);
+    }
 
-        HashMap<String, Object> var2 = new HashMap<>();
-        var2.put("owner", owner);
-        var2.put("name", name);
-        var2.put("value", value);
-        var2.put("descriptor", descriptor);
-        JmcRuntime.updateEventAndYield(builder.params(var2).param("instance", instance).build());
+    public static boolean unfairNonblockingLockAcquireEvent(
+            String owner, String name, Object value, String descriptor, Object instance) {
+
+        Object result = helperLockRelatedEvent(owner, name, value, descriptor,
+                instance, JmcRuntimeEvent.Type.UNFAIR_NONBLOCKING_LOCK_ACQUIRE_EVENT);
+        // If result is not a PrimitiveValue, throw an exception
+        if (!(result instanceof PrimitiveValue)) {
+            throw new RuntimeException("Expected a PrimitiveValue result from unfair nonblocking" +
+                    " lock acquire event, but got: " + result);
+        }
+        PrimitiveValue pv = (PrimitiveValue) result;
+        // If the PrimitiveValue is not a boolean, an exception will be thrown when calling asBoolean(),
+        // which is the expected behavior
+        return pv.asBoolean();
+    }
+
+    public static boolean fairNonblockingLockAcquireEvent(
+            String owner, String name, Object value, String descriptor, Object instance) {
+
+        Object result = helperLockRelatedEvent(owner, name, value, descriptor,
+                instance, JmcRuntimeEvent.Type.FAIR_NONBLOCKING_LOCK_ACQUIRE_EVENT);
+        // If result is not a PrimitiveValue, throw an exception
+        if (!(result instanceof PrimitiveValue)) {
+            throw new RuntimeException("Expected a PrimitiveValue result from fair nonblocking lock" +
+                    " acquire event, but got: " + result);
+        }
+        PrimitiveValue pv = (PrimitiveValue) result;
+        // If the PrimitiveValue is not a boolean, an exception will be thrown when calling asBoolean(),
+        // which is the expected behavior
+        return pv.asBoolean();
+    }
+
+    public static boolean isLockedEvent(
+            String owner, String name, Object value, String descriptor, Object instance) {
+
+        Object result = helperLockRelatedEvent(owner, name, value, descriptor,
+                instance, JmcRuntimeEvent.Type.IS_LOCKED_EVENT);
+        // If result is not a PrimitiveValue, throw an exception
+        if (!(result instanceof PrimitiveValue)) {
+            throw new RuntimeException("Expected a PrimitiveValue result from is lock" +
+                    " acquired event, but got: " + result);
+        }
+        PrimitiveValue pv = (PrimitiveValue) result;
+        // If the PrimitiveValue is not a boolean, an exception will be thrown when calling asBoolean(),
+        // which is the expected behavior
+        return pv.asBoolean();
+    }
+
+    public static boolean isLockOwnerEvent(
+            String owner, String name, Object value, String descriptor, Object instance) {
+
+        Object result = helperLockRelatedEvent(owner, name, value, descriptor,
+                instance, JmcRuntimeEvent.Type.IS_LOCK_OWNER_EVENT);
+        // If result is not a PrimitiveValue, throw an exception
+        if (!(result instanceof PrimitiveValue)) {
+            throw new RuntimeException("Expected a PrimitiveValue result from is lock" +
+                    " acquired event, but got: " + result);
+        }
+        PrimitiveValue pv = (PrimitiveValue) result;
+        // If the PrimitiveValue is not a boolean, an exception will be thrown when calling asBoolean(),
+        // which is the expected behavior
+        return pv.asBoolean();
     }
 
     /**
