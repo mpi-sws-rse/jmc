@@ -6,8 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is used to mark a test method or class to expect a certain number of executions
- * in the JMC model checker. It can be applied to methods or classes.
+ * Asserts the number of executions a JMC test should explore.
+ *
+ * <p>Consumed by {@code JmcMethodTestDescriptor.execute} after a (non-replay) run: it compares the
+ * number of <em>completed</em> iterations ({@code totalIterations − blockedIterations}) against {@link
+ * #value()} and fails the test if they differ. Most useful with the {@code trust} strategy, whose
+ * explored-execution count is optimal. Retained at runtime; applicable to methods and types.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

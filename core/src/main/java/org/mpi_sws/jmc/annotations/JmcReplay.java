@@ -6,13 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is used to mark a test method or class to be replayed in the JMC model checker.
- * It can be applied to methods or classes.
+ * Marks a JMC test to run in <em>replay</em> mode.
  *
- * <p>When applied, it indicates that the annotated test should be executed in a replay mode,
- * allowing the JMC model checker to replay previously recorded execution.
- *
- * <p>To be used when a bug is encountered in the model checking process.
+ * <p>When present, the test reproduces a previously recorded execution instead of exploring: {@code
+ * JmcMethodTestDescriptor} sets its {@code isReplayTest} flag from this annotation and routes the run
+ * to {@code JmcModelChecker.replay} (via {@code JmcTestExecutor.executeReplay}) rather than {@code
+ * check}. Intended for temporary use after a bug is found, to replay the exact schedule that led to
+ * it. Parameterless; retained at runtime; applicable to methods and types.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

@@ -7,14 +7,15 @@ import java.lang.annotation.Target;
 import java.time.temporal.ChronoUnit;
 
 /**
- * This annotation is used to specify a timeout for a test method or class when using the JMC model
- * checker. It can be applied to methods or classes.
+ * Specifies a wall-clock timeout for a JMC test.
  *
- * <p>The timeout value is specified in the specified time unit, and if the test exceeds this
- * duration, it will be considered failed.
+ * <p>The timeout is given as a {@link #value()} in a {@link #unit()}; a run that exceeds this
+ * duration is stopped. It is consumed by {@code JmcMethodTestDescriptor.execute}, which reads it from
+ * the test method and overrides the timeout on the {@code JmcCheckerConfiguration} (as {@code
+ * Duration.of(value, unit)}), taking precedence over {@link JmcCheckConfiguration#timeout()}.
  *
- * <p>Either this or the {@link JmcCheckConfiguration#numIterations()} should be specified
- * mandatorily for each test
+ * <p>Either this or the {@link JmcCheckConfiguration#numIterations()} should be specified as the
+ * run's stopping condition. Retained at runtime; applicable to methods and types.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
