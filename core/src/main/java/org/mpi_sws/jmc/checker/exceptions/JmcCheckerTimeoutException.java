@@ -1,10 +1,13 @@
 package org.mpi_sws.jmc.checker.exceptions;
 
 /**
- * Exception class for JMC checker timeout errors.
+ * Exception representing a JMC checker timeout.
  *
- * <p>This exception is thrown when the JMC checker exceeds the configured timeout limit during
- * execution.
+ * <p>A {@link JmcCheckerException} subtype meant for when a run exceeds its configured timeout.
+ *
+ * <p><strong>Note:</strong> this type is defined but <em>not currently used</em> — {@link
+ * org.mpi_sws.jmc.checker.JmcModelChecker} signals a timeout internally with {@code
+ * HaltCheckerException.timeout()} and finalizes the report rather than throwing this exception.
  */
 public class JmcCheckerTimeoutException extends JmcCheckerException {
     /**
