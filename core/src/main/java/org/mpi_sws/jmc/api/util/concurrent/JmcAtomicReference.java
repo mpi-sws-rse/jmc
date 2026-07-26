@@ -13,8 +13,10 @@ import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
  */
 public class JmcAtomicReference<V> {
 
+    /** The held reference; every access is reported to the runtime as a read/write event. */
     private V value;
 
+    /** Internal lock making the compound {@code compareAndSet}/{@code getAndSet} atomic w.r.t. the schedule. */
     private final JmcReentrantLock lock;
 
     /**
@@ -53,7 +55,13 @@ public class JmcAtomicReference<V> {
     }
 
     /**
-     * Constructs a new JmcAtomicReference with a null initial value.
+     * Atomically sets the reference to {@code newReference} if it currently {@code ==}
+     * {@code expectedReference} (reporting the read, and the write on success, under the internal
+     * lock).
+     *
+     * @param expectedReference the expected current reference
+     * @param newReference the new reference to set if the expectation holds
+     * @return {@code true} if the reference was updated, {@code false} otherwise
      */
     public boolean compareAndSet(V expectedReference, V newReference) {
         lock.lock();
@@ -82,6 +90,11 @@ public class JmcAtomicReference<V> {
         }
     }
 
+    /**
+     * Returns the current reference (reporting a read event and yielding).
+     *
+     * @return the current reference
+     */
     public V get() {
         JmcRuntimeUtils.readEventWithoutYield(
                 this,
@@ -93,6 +106,11 @@ public class JmcAtomicReference<V> {
         return result;
     }
 
+    /**
+     * Sets the reference (reporting a write event and yielding).
+     *
+     * @param newValue the new reference
+     */
     public void set(V newValue) {
         JmcRuntimeUtils.writeEventWithoutYield(
                 this,
@@ -104,6 +122,13 @@ public class JmcAtomicReference<V> {
         JmcRuntime.yield();
     }
 
+    /**
+     * Atomically sets the reference and returns the previous one (reporting a read then a write
+     * event, under the internal lock).
+     *
+     * @param newValue the new reference
+     * @return the previous reference
+     */
     public V getAndSet(V newValue) {
         lock.lock();
         try {
@@ -130,7 +155,9 @@ public class JmcAtomicReference<V> {
     }
 
     /**
-     * @return
+     * Returns the default object string representation (the value is not read here).
+     *
+     * @return the identity-based string form
      */
     @Override
     public String toString() {

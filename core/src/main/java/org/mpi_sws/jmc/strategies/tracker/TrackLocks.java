@@ -7,7 +7,16 @@ import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Tracks the locks acquired and released events of tasks. */
+/**
+ * {@link Tracker} for lock acquire/release events: it reports as runnable every task that is not
+ * currently blocked waiting for a held lock.
+ *
+ * <p>It processes {@code LOCK_ACQUIRE_EVENT}, {@code LOCK_ACQUIRED_EVENT}, and {@code
+ * LOCK_RELEASE_EVENT} (emitted by {@code JmcReentrantLock}) to maintain, per lock, which task owns it,
+ * which are waiting on it, and which want a free lock — so a task contending for a held lock is
+ * omitted from the runnable set (and thus blocked by the owning {@link TrackActiveTasksStrategy}
+ * intersection). {@link TrackWaitNotify} extends it to add monitor {@code wait}/{@code notify}.
+ */
 public class TrackLocks implements Tracker {
 
     private static final Logger LOGGER = LogManager.getLogger(TrackLocks.class);

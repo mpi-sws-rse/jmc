@@ -18,14 +18,22 @@ import java.util.concurrent.*;
  */
 public class JmcScheduledFuture<T> implements RunnableScheduledFuture<T> {
 
+    /** Logger for scheduled-future lifecycle diagnostics. */
     private static final Logger LOGGER = LogManager.getLogger(JmcScheduledFuture.class);
 
+    /** Backing completable future holding the result; its {@code result} field is reported to the runtime. */
     private final CompletableFuture<T> future;
+    /** Runtime task id of the worker thread running this future. */
     private final Long taskId;
+    /** The JMC thread that runs the wrapped work and completes {@link #future}. */
     private final JmcThread thread;
+    /** Requested delay; stored for API compatibility but not used (JMC does not model timing). */
     private final long delay;  // Stored but not used in JMC
+    /** Unit of {@link #delay}; stored but not used. */
     private final TimeUnit unit;  // Stored but not used in JMC
+    /** Whether the future has been cancelled. */
     private volatile boolean cancelled = false;
+    /** Whether the task was scheduled as periodic (informational; periodic tasks run once in JMC). */
     private volatile boolean periodic = false;
 
     /**
@@ -178,6 +186,11 @@ public class JmcScheduledFuture<T> implements RunnableScheduledFuture<T> {
         this.thread = thread;
     }
 
+    /**
+     * Returns the runtime task id of the worker thread running this future.
+     *
+     * @return the task id
+     */
     public Long getTaskId() {
         return taskId;
     }
@@ -232,6 +245,12 @@ public class JmcScheduledFuture<T> implements RunnableScheduledFuture<T> {
         return true;
     }
 
+    /**
+     * Returns whether the future was cancelled (either via the backing future or this wrapper),
+     * reporting a read of the backing future's state and yielding.
+     *
+     * @return whether the future is cancelled
+     */
     @Override
     public boolean isCancelled() {
         JmcRuntimeUtils.readEventWithoutYield(
@@ -241,6 +260,12 @@ public class JmcScheduledFuture<T> implements RunnableScheduledFuture<T> {
         return isCancelled;
     }
 
+    /**
+     * Returns whether the future is done (reporting a read of the backing future's state and
+     * yielding).
+     *
+     * @return whether the future is complete
+     */
     @Override
     public boolean isDone() {
         JmcRuntimeUtils.readEventWithoutYield(
@@ -250,6 +275,16 @@ public class JmcScheduledFuture<T> implements RunnableScheduledFuture<T> {
         return done;
     }
 
+    /**
+     * Waits for the scheduled task to finish and returns its result.
+     *
+     * <p>Joins the worker thread (via {@code join1}), reports a read of the result, and yields before
+     * returning it.
+     *
+     * @return the computed result
+     * @throws InterruptedException if the join is interrupted
+     * @throws ExecutionException if the task completed exceptionally
+     */
     @Override
     public T get() throws InterruptedException, ExecutionException {
         LOGGER.debug("Waiting on scheduled future: {}", thread.getTaskId());
@@ -261,6 +296,17 @@ public class JmcScheduledFuture<T> implements RunnableScheduledFuture<T> {
         return result;
     }
 
+    /**
+     * Waits for the scheduled task and returns its result. The timeout is accepted for API
+     * compatibility but is currently not enforced.
+     *
+     * @param timeout the timeout magnitude (ignored)
+     * @param unit the timeout unit (ignored)
+     * @return the computed result
+     * @throws InterruptedException if the join is interrupted
+     * @throws ExecutionException if the task completed exceptionally
+     * @throws TimeoutException declared for API compatibility
+     */
     @Override
     public T get(long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
@@ -275,6 +321,11 @@ public class JmcScheduledFuture<T> implements RunnableScheduledFuture<T> {
         return result;
     }
 
+    /**
+     * Completes the backing future with the given value.
+     *
+     * @param value the result to complete with
+     */
     private void set(T value) {
         future.complete(value);
     }

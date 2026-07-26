@@ -22,16 +22,26 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class JmcExecutorService extends ThreadPoolExecutor {
 
+    /** Logger for pool lifecycle and worker diagnostics. */
     private static final Logger LOGGER = LogManager.getLogger(JmcExecutorService.class);
 
-    // Keeps track of how many current tasks are running.
-    // Updated by the worker threads.
+    /** Number of tasks currently running; incremented/decremented by the worker threads. */
     private final AtomicInteger counter;
+    /** Number of worker threads in the pool. */
     private final int capacity;
+    /** Queue of submitted futures the workers pull from. */
     private final BlockingQueue<JmcFuture> queue;
+    /** The pool's worker threads. */
     private final List<JmcExecutorWorker> workers;
+    /** Whether the pool has been shut down. */
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
+    /**
+     * Creates a pool with {@code capacity} JMC worker threads, starts them, and registers the
+     * executor with the runtime so it can be shut down between iterations.
+     *
+     * @param capacity the number of worker threads
+     */
     public JmcExecutorService(int capacity) {
 
         super(capacity,
@@ -53,6 +63,12 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         JmcRuntimeUtils.registerExecutor(this);
     }
 
+    /**
+     * Creates a pool with {@code capacity} worker threads built from the given thread factory.
+     *
+     * @param capacity the number of worker threads
+     * @param threadFactory the factory for the underlying JVM threads
+     */
     public JmcExecutorService(int capacity, ThreadFactory threadFactory) {
 
         super(capacity,
@@ -75,8 +91,16 @@ public class JmcExecutorService extends ThreadPoolExecutor {
     }
 
     /**
-     * Added this constructor for when a class extends ThreadPoolExecutor
-     **/
+     * Full {@code ThreadPoolExecutor}-shaped constructor, provided so a class that extends {@code
+     * ThreadPoolExecutor} can be redirected to this executor. The pool uses {@code maximumPoolSize}
+     * JMC worker threads regardless of the passed queue.
+     *
+     * @param corePoolSize the core pool size (passed to the superclass)
+     * @param maximumPoolSize the maximum pool size; also the number of JMC workers
+     * @param keepAliveTime the keep-alive time (passed to the superclass)
+     * @param timeUnit the keep-alive time unit
+     * @param receivedQueue the work queue (passed to the superclass)
+     */
     public JmcExecutorService(
             int corePoolSize,
             int maximumPoolSize,
@@ -104,9 +128,9 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         JmcRuntimeUtils.registerExecutor(this);
     }
 
-    /** Stops the executor service. */
     /**
-     * Stops the executor service.
+     * Shuts the executor down: signals and interrupts every worker thread, marks the pool shut down,
+     * and joins the workers.
      */
     @Override
     public void shutdown() {
@@ -126,16 +150,21 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         }
     }
 
+    /** Increments the running-task counter. */
     private void addWork() {
         counter.incrementAndGet();
     }
 
+    /** Decrements the running-task counter. */
     private void removeWork() {
         counter.decrementAndGet();
     }
 
     /**
-     * Stops the executor service. Currently not supported.
+     * Signals every worker to stop and marks the pool shut down. Pending tasks are not returned or
+     * cancelled (best-effort shutdown is not fully supported).
+     *
+     * @return an empty list (pending tasks are not returned)
      */
     @Override
     public List<Runnable> shutdownNow() {
@@ -148,7 +177,7 @@ public class JmcExecutorService extends ThreadPoolExecutor {
     }
 
     /**
-     * Returns whether the executor service is shutdown.
+     * @return whether the executor has been shut down
      */
     @Override
     public boolean isShutdown() {
@@ -156,7 +185,10 @@ public class JmcExecutorService extends ThreadPoolExecutor {
     }
 
     /**
-     * Returns whether the executor service is terminated.
+     * Reports termination; this implementation always returns {@code false} (termination is not
+     * tracked).
+     *
+     * @return {@code false}
      */
     @Override
     public boolean isTerminated() {
@@ -164,7 +196,13 @@ public class JmcExecutorService extends ThreadPoolExecutor {
     }
 
     /**
-     * Waits for the executor service to terminate.
+     * Waits for the executor to terminate by joining all worker threads. The timeout is accepted for
+     * API compatibility but is not enforced.
+     *
+     * @param l the timeout magnitude (ignored)
+     * @param timeUnit the timeout unit (ignored)
+     * @return {@code true} if all workers finished without interruption, {@code false} otherwise
+     * @throws InterruptedException if interrupted
      */
     @Override
     public boolean awaitTermination(long l, TimeUnit timeUnit) throws InterruptedException {
@@ -179,6 +217,15 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         return allShutdown;
     }
 
+    /**
+     * Enqueues a future for the workers and hands control to the runtime.
+     *
+     * <p>When a worker is free (running task count below capacity) the submitting task pauses and
+     * waits, so the task is picked up deterministically; otherwise it just yields to let one of the
+     * blocked workers proceed.
+     *
+     * @param future the future (worker task) to enqueue
+     */
     private void offer(JmcFuture future) {
         if (counter.get() < capacity) {
             // If we know that the task will be immediately picked up,
@@ -196,7 +243,11 @@ public class JmcExecutorService extends ThreadPoolExecutor {
     }
 
     /**
-     * Submits a callable task to the executor service.
+     * Submits a callable, wrapping it in a {@link JmcFuture} bound to a new task and enqueuing it via
+     * {@link #offer}.
+     *
+     * @param callable the callable to run
+     * @return a {@link JmcFuture} for the task
      */
     @Override
     public <T> JmcFuture<T> submit(Callable<T> callable) {
@@ -205,6 +256,14 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         return future;
     }
 
+    /**
+     * Submits a runnable with a fixed result. If the runnable is already a {@link JmcThread} its task
+     * id is reused; otherwise a new task is allocated. The task is enqueued via {@link #offer}.
+     *
+     * @param runnable the runnable to run
+     * @param t the result to return on completion
+     * @return a {@link JmcFuture} for the task
+     */
     @Override
     public <T> JmcFuture<T> submit(Runnable runnable, T t) {
         JmcFuture<T> future = null;
@@ -218,6 +277,14 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         return future;
     }
 
+    /**
+     * Submits a runnable (with a {@code null} result). If the runnable is already a {@link JmcThread}
+     * its task id is reused; otherwise a new task is allocated. The task is enqueued via {@link
+     * #offer}.
+     *
+     * @param runnable the runnable to run
+     * @return a {@link JmcFuture} for the task
+     */
     @Override
     public JmcFuture<?> submit(Runnable runnable) {
         JmcFuture<?> future = null;
@@ -232,6 +299,13 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         return future;
     }
 
+    /**
+     * Submits every callable in the collection (each as a new task) and returns their futures.
+     *
+     * @param collection the callables to run
+     * @return a list of futures, one per callable
+     * @throws InterruptedException if interrupted while enqueuing
+     */
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> collection)
             throws InterruptedException {
@@ -245,6 +319,16 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         return futures;
     }
 
+    /**
+     * Same as {@link #invokeAll(Collection)}; the timeout is accepted for API compatibility but is
+     * not enforced (JMC does not model timeouts).
+     *
+     * @param collection the callables to run
+     * @param l the timeout magnitude (ignored)
+     * @param timeUnit the timeout unit (ignored)
+     * @return a list of futures, one per callable
+     * @throws InterruptedException if interrupted while enqueuing
+     */
     @Override
     public <T> List<Future<T>> invokeAll(
             Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit)
@@ -252,6 +336,18 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         return invokeAll(collection);
     }
 
+    /**
+     * Submits every callable and returns the result of the first one that completes.
+     *
+     * <p>Enqueues each callable as a task, then polls the futures for one that is done and returns its
+     * result (a task whose {@code get} is interrupted is counted as completed; {@code null} is
+     * returned if all complete without yielding a usable result).
+     *
+     * @param collection the callables to run
+     * @return the result of the first completed callable, or {@code null}
+     * @throws InterruptedException if interrupted while enqueuing
+     * @throws ExecutionException if a task completes exceptionally
+     */
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> collection)
             throws InterruptedException, ExecutionException {
@@ -282,6 +378,18 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         return null;
     }
 
+    /**
+     * Same as {@link #invokeAny(Collection)}; the timeout is accepted for API compatibility but is
+     * not enforced (JMC does not model timeouts).
+     *
+     * @param collection the callables to run
+     * @param l the timeout magnitude (ignored)
+     * @param timeUnit the timeout unit (ignored)
+     * @return the result of the first completed callable, or {@code null}
+     * @throws InterruptedException if interrupted while enqueuing
+     * @throws ExecutionException if a task completes exceptionally
+     * @throws TimeoutException declared for API compatibility
+     */
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> collection, long l, TimeUnit timeUnit)
             throws InterruptedException, ExecutionException, TimeoutException {
@@ -289,6 +397,13 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         return invokeAny(collection);
     }
 
+    /**
+     * Executes a runnable on the pool without returning a future. If the runnable is already a {@link
+     * JmcThread} its task id is reused; otherwise a new task is allocated. The task is enqueued via
+     * {@link #offer}.
+     *
+     * @param runnable the runnable to run
+     */
     @Override
     public void execute(Runnable runnable) {
         if (runnable instanceof JmcThread jmcThread) {
@@ -301,15 +416,29 @@ public class JmcExecutorService extends ThreadPoolExecutor {
         }
     }
 
+    /**
+     * A pool worker thread: repeatedly takes a {@link JmcFuture} from the shared queue and runs it,
+     * joining the task when the queue drains (or terminating it otherwise), until shut down.
+     */
     private static class JmcExecutorWorker extends Thread {
 
+        /** Logger for this worker. */
         private static final Logger LOGGER = LogManager.getLogger(JmcExecutorWorker.class);
 
+        /** The shared queue of futures to run. */
         private final BlockingQueue<JmcFuture> queue;
+        /** Whether this worker has been asked to stop. */
         private final AtomicBoolean isShutdown = new AtomicBoolean(false);
+        /** Shared count of running tasks, updated around each task run. */
         private final AtomicInteger workCounter;
+        /** This worker's index in the pool. */
         private final int id;
 
+        /**
+         * @param id this worker's index
+         * @param queue the shared queue of futures to run
+         * @param workCounter the shared running-task counter
+         */
         public JmcExecutorWorker(
                 int id, BlockingQueue<JmcFuture> queue, AtomicInteger workCounter) {
             this.queue = queue;
@@ -317,14 +446,20 @@ public class JmcExecutorService extends ThreadPoolExecutor {
             this.id = id;
         }
 
+        /** Requests this worker to stop after its current task. */
         public void shutdown() {
             isShutdown.set(true);
         }
 
+        /** @return whether this worker has been asked to stop */
         public boolean isShutdown() {
             return isShutdown.get();
         }
 
+        /**
+         * Worker loop: take a future, run it, and on completion join its task (if the queue is now
+         * empty) or terminate it — until shutdown.
+         */
         @Override
         public void run() {
             while (!isShutdown.get()) {

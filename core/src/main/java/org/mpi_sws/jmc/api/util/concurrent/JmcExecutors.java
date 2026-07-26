@@ -32,9 +32,12 @@ public class JmcExecutors {
     }
 
     /**
-     * Minimal overload to match java.util.concurrent.Executors.newSingleThreadExecutor(ThreadFactory).
-     * For now we ignore the provided ThreadFactory and delegate to the existing no-arg method.
-     * (If thread factory semantics become important to model, we can incorporate it later.)
+     * Creates a fixed thread pool of the given size, wrapping the supplied {@link ThreadFactory} in a
+     * {@link JmcThreadFactory} so the pool's threads are JMC threads.
+     *
+     * @param nThreads the number of threads in the pool
+     * @param threadFactory the base factory to wrap
+     * @return a new fixed thread pool executor
      */
 //        Added for iceberg error : java.util.concurrent.ExecutionException: java.lang.NoSuchMethodError:
 //            'java.util.concurrent.ExecutorService
@@ -44,6 +47,13 @@ public class JmcExecutors {
         return new JmcExecutorService(nThreads, new JmcThreadFactory(threadFactory));
     }
 
+    /**
+     * Creates a single-threaded executor, wrapping the supplied {@link ThreadFactory} in a {@link
+     * JmcThreadFactory}.
+     *
+     * @param threadFactory the base factory to wrap
+     * @return a new single-threaded executor
+     */
     public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
         return new JmcExecutorService(1, new JmcThreadFactory(threadFactory));
     }
