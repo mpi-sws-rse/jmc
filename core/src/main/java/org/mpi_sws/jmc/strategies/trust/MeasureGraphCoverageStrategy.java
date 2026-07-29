@@ -34,18 +34,32 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
 
     private static final Logger LOGGER = LogManager.getLogger(MeasureGraphCoverageStrategy.class);
 
+    /** Rebuilds each iteration's execution graph so it can be hashed. */
     private final ExecutionGraphSimulator simulator;
 
+    /** Hash of each distinct execution graph to the number of times it was visited. */
     private final ConcurrentHashMap<String, Integer> visitedGraphs;
+    /** Hashes of the distinct coverage graphs seen so far. */
     private final Set<String> coveredGraphs;
+    /** Background sampler that snapshots coverage at a fixed frequency (null in per-iteration mode). */
     private final MeasuringThread measuringThread;
+    /** The coverage value (number of distinct graphs) sampled over time. */
     private final ArrayList<Integer> coverages;
 
+    /** The wrapped strategy that actually drives exploration. */
     private final SchedulingStrategy schedulingStrategy;
+    /** Configuration controlling recording mode, output path, and sampling frequency. */
     private final MeasureGraphCoverageStrategyConfig config;
 
+    /** Wall-clock start time of the run, for the time axis of the coverage report. */
     private long timeStart;
 
+    /**
+     * Wraps a strategy with coverage measurement.
+     *
+     * @param schedulingStrategy the underlying strategy to measure.
+     * @param config the coverage-measurement configuration.
+     */
     public MeasureGraphCoverageStrategy(
             SchedulingStrategy schedulingStrategy, MeasureGraphCoverageStrategyConfig config) {
         this.schedulingStrategy = schedulingStrategy;
@@ -63,23 +77,35 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         FileUtil.unsafeEnsurePath(config.getRecordPath());
     }
 
+    /** Appends the current number of distinct coverage graphs to the coverage-over-time series. */
     private void updateCoverage() {
         int val = this.coveredGraphs.size();
         this.coverages.add(val);
     }
 
+    /** Background thread that samples coverage every {@code measuringFrequency} until stopped. */
     private static class MeasuringThread extends Thread {
+        /** The strategy whose coverage is sampled. */
         private final MeasureGraphCoverageStrategy strategy;
+        /** How often to sample. */
         private final Duration measuringFrequency;
 
+        /** Completed to signal the sampling loop to stop. */
         private final CompletableFuture<Void> future;
 
+        /**
+         * Creates a sampler for the given strategy and frequency.
+         *
+         * @param strategy the strategy to sample.
+         * @param measuringFrequency the sampling period.
+         */
         public MeasuringThread(MeasureGraphCoverageStrategy strategy, Duration measuringFrequency) {
             this.strategy = strategy;
             this.measuringFrequency = measuringFrequency;
             this.future = new CompletableFuture<>();
         }
 
+        /** Samples coverage at the configured frequency until stopped or interrupted. */
         @Override
         public void run() {
             while (!future.isDone()) {
@@ -92,11 +118,20 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
             }
         }
 
+        /** Signals the sampling loop to stop. */
         public void stopMeasuring() {
             future.complete(null);
         }
     }
 
+    /**
+     * Starts the sampler (on iteration 0) and resets the simulator, then delegates to the wrapped
+     * strategy.
+     *
+     * @param iteration the iteration index.
+     * @param report the model-checker report.
+     * @throws HaltCheckerException if the wrapped strategy halts the checker.
+     */
     @Override
     public void initIteration(int iteration, JmcModelCheckerReport report)
             throws HaltCheckerException {
@@ -110,6 +145,14 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         this.schedulingStrategy.initIteration(iteration, report);
     }
 
+    /**
+     * Forwards the event to the wrapped strategy and to the simulator (which mirrors it into a
+     * graph).
+     *
+     * @param event the runtime event.
+     * @throws HaltTaskException if the wrapped strategy halts the task.
+     * @throws HaltExecutionException if the wrapped strategy halts the execution.
+     */
     @Override
     public void updateEvent(JmcRuntimeEvent event)
             throws HaltTaskException, HaltExecutionException {
@@ -117,11 +160,22 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         this.simulator.updateEvent(event);
     }
 
+    /**
+     * Delegates scheduling to the wrapped strategy (coverage measurement does not change scheduling).
+     *
+     * @return the wrapped strategy's next choice.
+     */
     @Override
     public SchedulingChoice<?> nextTask() {
         return this.schedulingStrategy.nextTask();
     }
 
+    /**
+     * At the end of an iteration, hashes the reconstructed execution and coverage graphs to update
+     * the distinct-graph counters (optionally dumping new graphs when debugging).
+     *
+     * @param iteration the iteration index.
+     */
     @Override
     public void resetIteration(int iteration) {
         this.schedulingStrategy.resetIteration(iteration);
@@ -161,6 +215,12 @@ public class MeasureGraphCoverageStrategy implements SchedulingStrategy {
         }
     }
 
+    /**
+     * Stops the sampler, tears down the wrapped strategy, and writes the coverage artifacts
+     * (per-graph hash counts and the coverage-over-time series) under the configured record path.
+     *
+     * @param report the model-checker report.
+     */
     @Override
     public void teardown(JmcModelCheckerReport report) {
         if (!config.isRecordPerIteration()) {

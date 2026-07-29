@@ -35,25 +35,44 @@ import java.util.*;
  */
 public class Algo {
     private static final Logger LOGGER = LogManager.getLogger(Algo.class);
-    // The sequence of tasks to be scheduled. This is kept in sync with the execution graph that we
-    // are currently visiting.
+    /**
+     * The schedule of choices that guides the program's re-execution so its run aligns with the
+     * graph currently being explored (consumed by {@link #nextTask()} during guiding); derived from
+     * {@link #executionGraph}.
+     */
     private ArrayDeque<SchedulingChoiceWrapper> guidingTaskSchedule;
+    /** The execution graph being built/explored this iteration. */
     private ExecutionGraph executionGraph;
+    /** True while replaying a guiding schedule so the program reaches a revisited graph's state. */
     private boolean isGuiding;
+    /** The recursion tree of pending forward/backward revisits. */
     private final ExplorationStack explorationStack;
+    /** Maps location hash codes across iterations so accesses alias consistently. */
     private final LocationStore locationStore;
+    /** Optional diagnostic renderer of the exploration tree ({@code null} when disabled). */
     private final TreeLogger tLogger;
+    /** Running count of blocked graphs encountered (diagnostics). */
     private long numOfBlockedGraphs = 0L;
+    /**
+     * Values to return to the program keyed by task id: stored by {@link #storeExternalValue} (the
+     * boolean outcome of a symbolic event) and attached to the task's scheduling choice by {@link
+     * #updateExternalValue}. Currently only constraint-evaluation (symbolic) events register values.
+     */
     private ValueTracker externalValueTracker;
+    /**
+     * Values kept internal to the model-checking procedure keyed by task id: used during guiding to
+     * carry a symbolic choice's {@link SolverResult} from {@link #nextTask} (via {@link
+     * #storeInternalValue}) to {@link #handleGuidedSymEvent}, which reconstructs the branch.
+     */
     private ValueTracker internalValueTracker;
     /**
-     * @property {@link #solver} is used to store the {@link org.mpi_sws.jmc.solver.SymbolicSolver} object that is used
-     * to solve symbolic operations.
+     * The incremental SMT solver used for symbolic (ConDpor) reasoning, or {@code null} when the
+     * concolic extension is disabled.
      */
     private final IncrementalSolver solver;
 
     /**
-     * Creates a new instance of the Trust algorithm.
+     * Creates a Trust algorithm instance with the concolic extension and tree logger disabled.
      */
     public Algo() {
         this.guidingTaskSchedule = null;
@@ -69,6 +88,14 @@ public class Algo {
         this.solver = null;
     }
 
+    /**
+     * Creates a Trust algorithm instance, optionally enabling the exploration-tree logger and the
+     * concolic (ConDpor) SMT solver.
+     *
+     * @param hasTreeLogger whether to record the exploration tree.
+     * @param solverType the solver name (e.g. {@code "z3"}), or {@code "off"} to disable symbolic
+     *     reasoning.
+     */
     public Algo(boolean hasTreeLogger, String solverType) {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
@@ -86,6 +113,13 @@ public class Algo {
         this.solver = initSolver(solverType);
     }
 
+    /**
+     * Creates the incremental SMT solver for the given solver name (ConDpor), or {@code null} when
+     * it is {@code "off"}. Documented in full with the ConDpor material.
+     *
+     * @param solverType the solver name.
+     * @return the incremental solver, or {@code null} if disabled.
+     */
     private IncrementalSolver initSolver(String solverType) {
         SMTSolverTypes type = getSolverType(solverType);
         if (type == SMTSolverTypes.OFF) {
@@ -94,6 +128,13 @@ public class Algo {
         return SolverUtil.createIncrementalSolver(type);
     }
 
+    /**
+     * Maps a solver name to its {@link SMTSolverTypes} constant (ConDpor), defaulting to Z3 for an
+     * unknown name and {@code OFF} for {@code null}.
+     *
+     * @param solverType the solver name.
+     * @return the matching solver type.
+     */
     private SMTSolverTypes getSolverType(String solverType) {
         if (solverType == null) {
             LOGGER.warn("No solver type specified. Thus, the solver will be turned off.");
@@ -118,7 +159,10 @@ public class Algo {
     }
 
     /**
-     * Returns the next task to be scheduled according to the execution graph set in place.
+     * Returns the next scheduling choice dictated by the guiding schedule, or {@code null} when the
+     * algorithm is not guiding (leaving the choice to {@link TrustStrategy}'s fallback policy).
+     *
+     * @return the next guiding choice, or {@code null} if not guiding.
      */
     public SchedulingChoice<?> nextTask() {
 
@@ -145,6 +189,12 @@ public class Algo {
         return out;
     }
 
+    /**
+     * Extracts the {@link SolverResult} carried by a symbolic scheduling choice (ConDpor).
+     *
+     * @param choice a symbolic scheduling choice.
+     * @return the solver result it carries.
+     */
     private SolverResult extractSolverResult(SchedulingChoice<?> choice) {
         Object value = choice.getValue();
         if (value instanceof ObjectValue objectValue
@@ -172,6 +222,13 @@ public class Algo {
         }
     }
 
+    /**
+     * Consumes the next guiding-schedule entry as the program replays an event during guiding:
+     * enforces block/end markers, re-maps the event's location onto the schedule's expected location
+     * (via {@link LocationStore} aliases), and delivers symbolic results.
+     *
+     * @param event the event just replayed by the program.
+     */
     private void handleGuidedEvent(Event event) {
         if (EventUtils.isLockAcquired(event)) {
             // Ignore lock acquired events in the guiding trace
@@ -216,6 +273,12 @@ public class Algo {
         }
     }
 
+    /**
+     * Stores a value to be handed back to the runtime (via a scheduling choice) for the given task.
+     *
+     * @param id the (0-indexed) task id.
+     * @param value the value to deliver.
+     */
     private void storeExternalValue(long id, Object value) {
         if (externalValueTracker.containsValue(id)) {
             LOGGER.error("Value for id {} already exists in external tracker. This should not happen.", id);
@@ -226,6 +289,12 @@ public class Algo {
         externalValueTracker.setValue(id, value);
     }
 
+    /**
+     * Stores a value the algorithm keeps for its own guiding decisions for the given task.
+     *
+     * @param id the (0-indexed) task id.
+     * @param value the value to store.
+     */
     private void storeInternalValue(long id, Object value) {
         if (internalValueTracker.containsValue(id)) {
             throw new RuntimeException("Value for id " + id + " already exists");
@@ -234,6 +303,17 @@ public class Algo {
         internalValueTracker.setValue(id, value);
     }
 
+    /**
+     * Replays a symbolic event during guided re-execution (ConDpor).
+     *
+     * <p>The branch outcome for this event was decided when the revisit was scheduled and stored as a
+     * {@link SolverResult} in the internal value tracker; this method reapplies it — setting the
+     * event's {@code result}/{@code isNegatable} attributes, asserting the (possibly negated)
+     * constraint on a fresh prover, and delivering the result back to the runtime — so the
+     * re-execution follows exactly the same symbolic branch.
+     *
+     * @param event the replayed symbolic event.
+     */
     private void handleGuidedSymEvent(Event event) {
         long taskId = event.getTaskId();
         if (!internalValueTracker.containsValue(taskId)) {
@@ -345,6 +425,11 @@ public class Algo {
         LOGGER.debug("Handled event: {}", event);
     }
 
+    /**
+     * Delegates to {@link ExecutionGraph#checkCoherencyEdges()} on the current graph (debugging aid).
+     *
+     * @return true if the coherence edges are well-formed.
+     */
     public boolean checkCoherencyEdges() {
         return executionGraph.checkCoherencyEdges();
     }
@@ -373,12 +458,29 @@ public class Algo {
         }
     }
 
+    /**
+     * Handles a symbolic (ConDpor) event: evaluates its branch via the solver and delivers the
+     * result to the runtime. Documented in full with the ConDpor material.
+     *
+     * @param event the symbolic event.
+     */
     public void handleSymbolic(Event event) {
         LOGGER.debug("Handling symbolic event: {}", event);
         boolean result = processNewSymEvent(event);
         storeExternalValue(event.getKey().getTaskId(), result);
     }
 
+    /**
+     * Adds a new constraint-evaluation (ConDpor) event to the graph and decides its branch.
+     *
+     * <p>The solver's {@code computeNewSymbolicOperation} returns the branch taken now (from the
+     * concrete model, no SMT call) and whether the other branch is also feasible; these are recorded
+     * on the event as {@code result}/{@code isNegatable}. If the other branch is feasible, an {@code
+     * FSYMB} item is pushed so it is explored in a later iteration.
+     *
+     * @param event the symbolic event.
+     * @return the boolean outcome of the taken branch.
+     */
     private boolean processNewSymEvent(Event event) {
         JmcBooleanFormula symbolicOperation = event.getAttribute("booleanFormula");
         SolverResult solverResult = solver.computeNewSymbolicOperation(symbolicOperation);
@@ -398,10 +500,12 @@ public class Algo {
     }
 
     /**
-     * Initializes the iteration. This method is called at the beginning of each iteration of the
-     * algorithm.
+     * Prepares an iteration. Iteration 0 runs the program freely; later iterations pop the next
+     * pending revisit and build a guiding schedule for it (via {@link #findNextExplorationChoice()}),
+     * or signal completion ({@code HaltCheckerException.ok()}) when the exploration stack is empty.
      *
      * @param iteration The iteration number.
+     * @param report The model-checker report (unused here; kept for interface symmetry).
      */
     public void initIteration(int iteration, JmcModelCheckerReport report) {
         // Check if we are guiding the execution and construct the task schedule accordingly!
@@ -436,11 +540,19 @@ public class Algo {
 
     /**
      * Checks if we are guiding the execution.
+     *
+     * @return true if a non-empty guiding schedule is being replayed.
      */
     public boolean areWeGuiding() {
         return isGuiding && guidingTaskSchedule != null && !guidingTaskSchedule.isEmpty();
     }
 
+    /**
+     * Pops exploration-stack items until one yields a consistent graph, materializes it (applying
+     * backward/forward revisits and prover changes), and turns it into the {@link
+     * #guidingTaskSchedule}. Skips revisits that produce inconsistent graphs; signals completion when
+     * the stack empties.
+     */
     private void findNextExplorationChoice() {
         if (explorationStack.isEmpty()) {
             // This must not happen. We should have handled this in the resetIteration method.
@@ -527,6 +639,10 @@ public class Algo {
         printGuidingTaskSchedule();
     }
 
+    /**
+     * Points the SMT solver at the prover context of the current exploration level and sets its
+     * fresh-prover flag (ConDpor); a no-op when no solver is configured.
+     */
     private void updateSolver() {
         if (solver != null) {
             // Update the solver with the corresponding prover
@@ -544,6 +660,12 @@ public class Algo {
         }
     }
 
+    /**
+     * Sanity-checks a graph schedule before it becomes the guiding schedule: logs it and verifies no
+     * task appears after its own thread-finish event.
+     *
+     * @param graphSchedule the topologically sorted graph to validate.
+     */
     private void checkGraphSchedule(List<ExecutionGraphNode> graphSchedule) {
         // Print
         if (graphSchedule == null || graphSchedule.isEmpty()) {
@@ -594,6 +716,12 @@ public class Algo {
         LOGGER.debug(sb.toString());
     }
 
+    /**
+     * Processes a "remove prover" item by discarding the current level's SMT prover context
+     * (ConDpor). Documented in full with the ConDpor material.
+     *
+     * @param item the remove-prover item.
+     */
     public void processRMP(ExplorationStack.Item item) {
         int id = explorationStack.getProverId();
         if ( id < 0 ) {
@@ -602,6 +730,17 @@ public class Algo {
         solver.removeProver(id);
     }
 
+    /**
+     * Materializes a backward-revisit item: on its restricted graph, pushes the write's alternative
+     * coherence placements ({@code FWW}) and finally its coherence-maximal placement ({@code FLW},
+     * carrying any deferred additional events), so the sub-exploration proceeds depth-first.
+     *
+     * <p>Under ConDpor it also opens a fresh SMT prover context for the sub-exploration
+     * ({@link #createNewProver()}) and schedules its teardown ({@link #addRemoveProverItem(int)});
+     * these are no-ops when the solver is disabled.
+     *
+     * @param item the backward-revisit item.
+     */
     public void processBWR(ExplorationStack.Item item) {
 
         int newProverId = createNewProver();
@@ -630,6 +769,12 @@ public class Algo {
         logLastChild(forwardLW);
     }
 
+    /**
+     * Opens a new SMT prover context cloned from the current one, registers it, and records it on the
+     * current exploration level (ConDpor); returns {@code -1} when no solver is configured.
+     *
+     * @return the new prover id, or {@code -1} if no solver.
+     */
     private int createNewProver() {
         // If no solver is configured, ignore.
         if (solver == null) {
@@ -648,6 +793,12 @@ public class Algo {
         return newProverId;
     }
 
+    /**
+     * Pushes a "remove prover" item so the newly created prover context is torn down when the
+     * sub-exploration finishes (ConDpor); a no-op when no solver is configured.
+     *
+     * @param proverId the prover id that will be removed.
+     */
     private void addRemoveProverItem(int proverId) {
         if (solver == null || proverId < 0) {
             return;
@@ -657,6 +808,12 @@ public class Algo {
         explorationStack.push(removeProverItem);
     }
 
+    /**
+     * Rolls the solver's stack back by the number of symbolic events removed by a restrict (ConDpor);
+     * a no-op when there were none. Documented in full with the ConDpor material.
+     *
+     * @param restrictView the restrict result carrying the removed-symbolic-event count.
+     */
     private void restrictSolverStack(GraphRestrictView restrictView) {
         // We need to check if the solver object exists, if there are any symbolic events,
         // and if the solver is not fresh.
@@ -666,6 +823,12 @@ public class Algo {
         }
     }
 
+    /**
+     * Rolls the solver's stack back by the given number of symbolic events (ConDpor). Documented in
+     * full with the ConDpor material.
+     *
+     * @param numOfSymbEvents the number of symbolic events to pop.
+     */
     public void restrictSolverStack(int numOfSymbEvents) {
         // We need to check if the solver object exists, if there are any symbolic events,
         // and if the solver is not fresh.
@@ -674,6 +837,18 @@ public class Algo {
         }
     }
 
+    /**
+     * Processes a symbolic forward-revisit ({@code FSYMB}) item — the second branch of a
+     * constraint-evaluation event (ConDpor).
+     *
+     * <p>It restricts the graph back to the symbolic node (rolling the solver stack back by the
+     * removed symbolic events), **negates** the event's recorded result, pops the old constraint and
+     * pushes the negated one on the solver, refreshes the model (`solveAndUpdateModel`), and returns
+     * the re-checked consistent schedule.
+     *
+     * @param item the symbolic forward-revisit item.
+     * @return the topological order of the resulting graph, or empty if inconsistent.
+     */
     private List<ExecutionGraphNode> processFSYMB(ExplorationStack.Item item) {
         ExecutionGraphNode node = item.getEvent1();
 
@@ -706,6 +881,15 @@ public class Algo {
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
+    /**
+     * Processes a forward read revisit ({@code FRW}): re-points the read to the alternative write,
+     * restricts the graph to that point, recomputes clocks, re-adds any deferred events, and returns
+     * the new consistent schedule. For a lock-acquire read the (intentionally inconsistent)
+     * consistency check is skipped.
+     *
+     * @param item the forward read-revisit item.
+     * @return the topological order of the resulting graph, or empty if inconsistent.
+     */
     private List<ExecutionGraphNode> processFRW(ExplorationStack.Item item) {
         // Forward revisit of w -> r
         ExecutionGraphNode read = item.getEvent1();
@@ -732,6 +916,12 @@ public class Algo {
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
+    /**
+     * Re-adds a deferred additional event after a revisit — the exclusive read/write of a lock whose
+     * pairing was temporarily broken by the revisit — by re-invoking the appropriate lock handler.
+     *
+     * @param event the deferred lock event to re-process.
+     */
     private void processAdditionalEvent(Event event) {
         switch (event.getType()) {
             case READ_EX -> {
@@ -752,6 +942,13 @@ public class Algo {
         }
     }
 
+    /**
+     * Processes a forward write-write revisit ({@code FWW}): swaps the two writes' coherence
+     * positions, restricts the graph, and returns the new consistent schedule.
+     *
+     * @param item the forward write-revisit item.
+     * @return the topological order of the resulting graph, or empty if inconsistent.
+     */
     private List<ExecutionGraphNode> processFWW(ExplorationStack.Item item) {
         // Forward revisit of w -> w (alternative coherence placing)
         ExecutionGraphNode write1 = item.getEvent1();
@@ -765,6 +962,14 @@ public class Algo {
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
+    /**
+     * Processes a coherence-maximal (lock) write placement ({@code FLW}): makes the write
+     * coherence-maximal, restricts the graph, re-adds a deferred event if present, and returns the
+     * new consistent schedule.
+     *
+     * @param item the coherence-maximal write item.
+     * @return the topological order of the resulting graph, or empty if inconsistent.
+     */
     public List<ExecutionGraphNode> processFLW(ExplorationStack.Item item) {
         // Forward revisit of w -> lw (max-co)
         ExecutionGraphNode w = item.getEvent1();
@@ -788,16 +993,25 @@ public class Algo {
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
-    // This method must not be called during the Trust model checking procedure.
-    // This will be used for cases like estimation where we are not following the DFS exploration order strictly.
+    /**
+     * Processes a "continue current" item by simply returning the current graph's schedule.
+     *
+     * <p>Must not be used during normal Trust model checking; it exists for estimation, which does
+     * not follow the DFS exploration order strictly.
+     *
+     * @param item the continue item.
+     * @return the topological order of the current graph, or empty if inconsistent.
+     */
     private List<ExecutionGraphNode> processCont(ExplorationStack.Item item) {
         // Just continue the exploration with the current graph
         return executionGraph.checkConsistencyAndTopologicallySort();
     }
 
     /**
-     * Cleans up the execution graph and the task schedule. This method is called at the end of the
-     * exploration.
+     * Cleans up the execution graph, exploration stack, and location store at the end of a run, and
+     * records the blocked-iteration count (and diagnostic logs) into the report.
+     *
+     * @param report the model-checker report to update.
      */
     public void teardown(JmcModelCheckerReport report) {
         // Clean up the execution graph and the task schedule.
@@ -811,11 +1025,22 @@ public class Algo {
         report.setBlockedIterations(Math.toIntExact(numOfBlockedGraphs));
     }
 
+    /**
+     * Returns the (0-indexed) ids of tasks whose po-maximal event is not a blocking label, i.e.
+     * where a new event may be added — the candidate set for {@link TrustStrategy}'s fallback policy.
+     *
+     * @return the schedulable task ids.
+     */
     public List<Long> getSchedulableTasks() {
         // Get from execution graph
         return this.executionGraph.getUnblockedTasks().stream().map(Long::valueOf).toList();
     }
 
+    /**
+     * Handles an error event by halting the execution with the carried message.
+     *
+     * @param event the error event.
+     */
     private void handleError(Event event) {
         // Error events, halt the current execution.
         if (event.getType() == Event.Type.ERROR) {
@@ -824,12 +1049,24 @@ public class Algo {
         }
     }
 
+    /**
+     * Handles the end-of-execution ("bottom") event by halting the execution successfully.
+     *
+     * @param event the end event.
+     */
     private void handleBot(Event event) {
         // End of the execution
         // No-op for now
         throw HaltExecutionException.ok();
     }
 
+    /**
+     * Handles a read: makes it observe the coherence-maximal write and pushes forward read-revisit
+     * items for every alternative write not porf-before it. Applies the SC shortcut when the co-max
+     * write already happens-before the read.
+     *
+     * @param event the read event.
+     */
     private void handleRead(Event event) {
         if (areWeGuiding()) {
             return;
@@ -883,6 +1120,13 @@ public class Algo {
         logUpdateGraphIdWithLastGraph();
     }
 
+    /**
+     * Handles a write: pushes forward write-write revisits for its alternative coherence placements,
+     * then backward revisits of earlier reads that pass the maximal-extension check, and finally
+     * makes the write coherence-maximal.
+     *
+     * @param event the write event.
+     */
     private void handleWrite(Event event) {
         if (areWeGuiding()) {
             return;
@@ -891,7 +1135,7 @@ public class Algo {
         // Add the write event to the execution graph
         ExecutionGraphNode write = executionGraph.addEvent(event);
 
-        /** Check for (w->w) coherent forward revisits * */
+        /* Check for (w->w) coherent forward revisits */
         List<ExecutionGraphNode> concurrentWrites = executionGraph.getCoherentPlacings(write);
 
         boolean hasForwardRevisits = false;
@@ -914,7 +1158,7 @@ public class Algo {
             LOGGER.debug("No concurrent writes to revisit");
         }
 
-        /** Check for (w->r) backward revisits * */
+        /* Check for (w->r) backward revisits */
         // Find potential reads that need to be revisited
         // TODO :: I'm not sure the way `getPotentialReads` method is ordering the reads is correct.
         List<ExecutionGraphNode> potentialReads = executionGraph.getPotentialReads(write);
@@ -970,6 +1214,18 @@ public class Algo {
         }
     }
 
+    /**
+     * Handles the write half of a (non-lock) read-modify-write: makes it coherence-maximal — there
+     * are no write-write forward revisits for exclusive writes, since they are totally ordered by
+     * happens-before — and pushes backward revisits of earlier reads, subject to RMW atomicity.
+     *
+     * <p><b>Currently unreachable.</b> The only source of exclusive writes is lock acquire, whose
+     * {@code WRITE_EX} carries the {@code lock_acquire} attribute and is dispatched to {@link
+     * #handleLockAcquireWrite(Event)} instead; there are no non-lock exclusive writes (atomics are
+     * modeled as a lock plus plain read/write), so this handler is not invoked.
+     *
+     * @param event the exclusive write event.
+     */
     private void handleWriteX(Event event) {
         if (areWeGuiding()) {
             return;
@@ -1008,6 +1264,15 @@ public class Algo {
         }
     }
 
+    /**
+     * Handles a lock-acquire read (the read half of a lock RMW). If the lock is currently held (the
+     * co-max write is another acquire's exclusive write), the task is blocked via a blocking label
+     * instead of committing the read; otherwise the read observes the co-max write and forward
+     * revisits over alternative lock writes are pushed (each carrying the paired exclusive write as a
+     * deferred additional event).
+     *
+     * @param event the lock-acquire read event.
+     */
     private void handleLockAcquireRead(Event event) {
         if (areWeGuiding()) {
             return;
@@ -1056,8 +1321,13 @@ public class Algo {
         logUpdateGraphIdWithLastGraph();
     }
 
-    // Takes a parameter ExecutionGraph only to handle the
-    // Additional event case
+    /**
+     * Handles a lock-acquire write (the write half of a lock RMW): makes it coherence-maximal and
+     * pushes backward revisits of alternative lock reads that pass the maximal-extension check and
+     * whose resulting graph is a consistent RMW. Skipped if the task is still blocked on the lock.
+     *
+     * @param event the lock-acquire write event.
+     */
     private void handleLockAcquireWrite(Event event) {
         if (areWeGuiding()) {
             return;
@@ -1102,6 +1372,12 @@ public class Algo {
         executionGraph.trackCoherency(write);
     }
 
+    /**
+     * Handles a lock release: adds the release write, unblocks all tasks waiting to acquire that
+     * lock, and makes the write coherence-maximal.
+     *
+     * @param event the lock-release write event.
+     */
     private void handleLockReleaseWrite(Event event) {
         if (areWeGuiding()) {
             return;
@@ -1112,6 +1388,13 @@ public class Algo {
         executionGraph.trackCoherency(write);
     }
 
+    /**
+     * Handles a "lock acquired" marker: if the task is still waiting for the lock, issues the
+     * acquire as a fresh exclusive read/write (RMW) pair; otherwise it already holds the lock and
+     * this is a no-op.
+     *
+     * @param event the lock-acquired event.
+     */
     public void handleLockAcquired(Event event) {
         if (areWeGuiding()) {
             return;
@@ -1130,13 +1413,17 @@ public class Algo {
         handleLockAcquireWrite(writeEvent);
     }
 
+    /**
+     * Handles an assumption by adding it to the graph; a failed assumption becomes a blocked assume
+     * that prunes the execution.
+     *
+     * @param event the assume event.
+     */
     private void handleAssume(Event event) {
         executionGraph.addEvent(event);
     }
 
-    /**
-     *
-     */
+    /** Logs the current exploration-stack contents at debug level (debugging aid). */
     public void logStackState() {
         explorationStack.logStackState();
     }
@@ -1156,18 +1443,34 @@ public class Algo {
         FileUtil.unsafeStoreToFile(filePath, executionGraphJson);
     }
 
+    /**
+     * Returns the current execution graph.
+     *
+     * @return the execution graph.
+     */
     public ExecutionGraph getExecutionGraph() {
         return executionGraph;
     }
 
+    /**
+     * Replaces the current execution graph (used by the estimator).
+     *
+     * @param executionGraph the graph to set.
+     */
     public void setExecutionGraph(ExecutionGraph executionGraph) {
         this.executionGraph = executionGraph;
     }
 
+    /**
+     * Returns the exploration stack.
+     *
+     * @return the exploration stack.
+     */
     public ExplorationStack getExplorationStack() {
         return explorationStack;
     }
 
+    /** Resets the algorithm to a fresh state with an empty graph seeded by the init event. */
     public void clear() {
         this.guidingTaskSchedule = null;
         this.isGuiding = false;
@@ -1177,10 +1480,16 @@ public class Algo {
         this.executionGraph.addEvent(Event.init());
     }
 
+    /**
+     * Returns whether the exploration stack is empty (no pending revisits).
+     *
+     * @return true if there is nothing left to explore.
+     */
     public boolean isStackEmpty() {
         return this.explorationStack.isEmpty();
     }
 
+    /** Tree-logger hook: records the start of a new branching line (no-op if logging is off). */
     private void logNewBranchs() {
         if (tLogger == null) {
             return;
@@ -1188,6 +1497,11 @@ public class Algo {
         tLogger.appendNewBranchs(executionGraph.size());
     }
 
+    /**
+     * Tree-logger hook: records a (non-last) child graph (no-op if logging is off).
+     *
+     * @param item the child's exploration item.
+     */
     private void logNewChild(ExplorationStack.Item item) {
         if (tLogger == null) {
             return;
@@ -1195,6 +1509,11 @@ public class Algo {
         tLogger.appendNewChild(item);
     }
 
+    /**
+     * Tree-logger hook: records the last child graph on a branching line (no-op if logging is off).
+     *
+     * @param item the child's exploration item.
+     */
     private void logLastChild(ExplorationStack.Item item) {
         if (tLogger == null) {
             return;
@@ -1202,6 +1521,7 @@ public class Algo {
         tLogger.appendLastChild(item);
     }
 
+    /** Tree-logger hook: records a "continue current graph" child (no-op if logging is off). */
     private void logConCurrChild() {
         if (tLogger == null) {
             return;
@@ -1209,6 +1529,7 @@ public class Algo {
         tLogger.appendContinueCurrent();
     }
 
+    /** Tree-logger hook: ends the current line of children (no-op if logging is off). */
     private void logEndofChilds() {
         if (tLogger == null) {
             return;
@@ -1216,6 +1537,12 @@ public class Algo {
         tLogger.appendNextLine();
     }
 
+    /**
+     * Tree-logger hook: advances the "current graph" to the one reserved for {@code nextItem} (no-op
+     * if logging is off).
+     *
+     * @param nextItem the item whose graph becomes current.
+     */
     private void logUpdateGraphId(ExplorationStack.Item nextItem) {
         if (tLogger == null) {
             return;
@@ -1223,6 +1550,10 @@ public class Algo {
         tLogger.updateLoggerGraphId(nextItem, executionGraph.size());
     }
 
+    /**
+     * Tree-logger hook: advances the "current graph" to the most recently created child (no-op if
+     * logging is off).
+     */
     private void logUpdateGraphIdWithLastGraph() {
         if (tLogger == null) {
             return;
@@ -1230,6 +1561,7 @@ public class Algo {
         tLogger.updateLoggerGraphIdWithLastGraph(executionGraph.size());
     }
 
+    /** Tree-logger hook: records the current graph as inconsistent (no-op if logging is off). */
     private void logInconsistentGraph() {
         if (tLogger == null) {
             return;
@@ -1237,6 +1569,7 @@ public class Algo {
         tLogger.addInconsistentGraph();
     }
 
+    /** Counts a blocked graph and, if logging is on, records it in the tree logger. */
     private void logBlockedGraph() {
         numOfBlockedGraphs++;
         if (tLogger == null) {
@@ -1245,6 +1578,7 @@ public class Algo {
         tLogger.addBlockedGraph();
     }
 
+    /** Tree-logger hook: records the size of the finished leaf graph (no-op if logging is off). */
     private void logLastGraphSize() {
         if (tLogger == null) {
             return;
@@ -1252,6 +1586,11 @@ public class Algo {
         tLogger.addLeafSize(executionGraph.size());
     }
 
+    /**
+     * Returns the assembled exploration-tree log, or {@code null} if the tree logger is disabled.
+     *
+     * @return the tree log, or {@code null}.
+     */
     public StringBuilder getTreeLog() {
         if (tLogger == null) {
             return null;
@@ -1259,6 +1598,11 @@ public class Algo {
         return tLogger.getLogger();
     }
 
+    /**
+     * Returns the inconsistent-graph log, or {@code null} if the tree logger is disabled.
+     *
+     * @return the inconsistent-graph log, or {@code null}.
+     */
     public StringBuilder getInconsistentGraphLog() {
         if (tLogger == null) {
             return null;
@@ -1266,6 +1610,11 @@ public class Algo {
         return tLogger.getInConsistentGraphLogger();
     }
 
+    /**
+     * Returns the blocked-graph log, or {@code null} if the tree logger is disabled.
+     *
+     * @return the blocked-graph log, or {@code null}.
+     */
     public StringBuilder getBlockedGraphLog() {
         if (tLogger == null) {
             return null;
@@ -1273,6 +1622,11 @@ public class Algo {
         return tLogger.getBlockedGraphLogger();
     }
 
+    /**
+     * Returns the leaf-size log, or {@code null} if the tree logger is disabled.
+     *
+     * @return the leaf-size log, or {@code null}.
+     */
     public StringBuilder getLeafSizeLog() {
         if (tLogger == null) {
             return null;
@@ -1280,6 +1634,7 @@ public class Algo {
         return tLogger.getLeafSizeLogger();
     }
 
+    /** Logs the number of inconsistent graphs encountered (no-op if the tree logger is disabled). */
     public void reportInconsistentGraphLogs() {
         if (tLogger == null) {
             return;
@@ -1287,6 +1642,7 @@ public class Algo {
         LOGGER.info("Number of Inconsistent Graph: " + tLogger.getNumOfInconsistentGraphs());
     }
 
+    /** Logs the number of blocked graphs encountered (no-op if the tree logger is disabled). */
     public void reportBlockedGraphLogs() {
         if (tLogger == null) {
             return;

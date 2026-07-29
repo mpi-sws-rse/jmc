@@ -30,18 +30,33 @@ public class TrustStrategy extends TrackActiveTasksStrategy
 
     private final Logger LOGGER = LogManager.getLogger(TrustStrategy.class);
 
+    /** The TruSt algorithm driver this strategy adapts to the scheduler contract. */
     protected final Algo algoInstance;
+    /** The fallback policy used to pick among schedulable active tasks when not guiding. */
     private final SchedulingPolicy policy;
+    /** RNG used by the {@code RANDOM} fallback policy. */
     private final Random random;
 
+    /** When true, dumps execution graphs and consistency checks each iteration for debugging. */
     private final boolean debug;
+    /** Directory where replay traces and debug artifacts are written. */
     private final String reportPath;
+    /** The schedule currently being replayed, or {@code null} when exploring normally. */
     private List<SchedulingChoice<?>> recordedTrace;
 
+    /** Creates a strategy with a time-based seed, FIFO policy, no debug, and the default report path. */
     public TrustStrategy() {
         this(System.nanoTime(), SchedulingPolicy.FIFO, false, "build/test-results/jmc-report");
     }
 
+    /**
+     * Creates a strategy with the given seed, policy, debug flag, and report path (no solver).
+     *
+     * @param randomSeed seed for the {@code RANDOM} fallback policy.
+     * @param policy the fallback scheduling policy.
+     * @param debug whether to emit debug artifacts.
+     * @param reportPath directory for replay traces and debug output.
+     */
     public TrustStrategy(
             Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath) {
         super(List.of(new TrackTasks()));
@@ -53,6 +68,16 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         this.recordedTrace = null;
     }
 
+    /**
+     * As {@link #TrustStrategy(Long, SchedulingPolicy, boolean, String)}, additionally selecting the
+     * SMT solver that enables the concolic (ConDpor) extension.
+     *
+     * @param randomSeed seed for the {@code RANDOM} fallback policy.
+     * @param policy the fallback scheduling policy.
+     * @param debug whether to emit debug artifacts.
+     * @param reportPath directory for replay traces and debug output.
+     * @param solver the solver selection ({@code "off"} disables symbolic exploration).
+     */
     public TrustStrategy(
             Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, String solver) {
         super(List.of(new TrackTasks()));
@@ -64,6 +89,17 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         this.recordedTrace = null;
     }
 
+    /**
+     * As {@link #TrustStrategy(Long, SchedulingPolicy, boolean, String, String)}, additionally
+     * enabling the exploration-tree logger.
+     *
+     * @param randomSeed seed for the {@code RANDOM} fallback policy.
+     * @param policy the fallback scheduling policy.
+     * @param debug whether to emit debug artifacts.
+     * @param reportPath directory for replay traces and debug output.
+     * @param hasTreeLogger whether to record the exploration tree.
+     * @param solver the solver selection ({@code "off"} disables symbolic exploration).
+     */
     public TrustStrategy(
             Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, boolean hasTreeLogger, String solver) {
         super(List.of(new TrackTasks()));
@@ -75,6 +111,13 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         this.recordedTrace = null;
     }
 
+    /**
+     * Prepares for an iteration: resets the active-task tracking and asks the algorithm to build the
+     * guiding schedule for the next pending revisit (a no-op on iteration 0).
+     *
+     * @param iteration the iteration index.
+     * @param report the model-checker report.
+     */
     @Override
     public void initIteration(int iteration, JmcModelCheckerReport report) {
         super.initIteration(iteration, report);
@@ -86,6 +129,14 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         }
     }
 
+    /**
+     * Returns the next scheduling choice, trying three sources in order: the recorded trace being
+     * replayed, the algorithm's guiding schedule, and finally a schedulable active task chosen by
+     * the fallback {@link #policy}. Task ids are converted from Trust's 0-indexed scheme to the
+     * runtime's 1-indexed scheme here.
+     *
+     * @return the next scheduling choice, or {@code null} if no task can be scheduled.
+     */
     @Override
     public SchedulingChoice<?> nextTask() {
         if (recordedTrace != null) {
@@ -160,6 +211,14 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         return next;
     }
 
+    /**
+     * Updates the active-task trackers and feeds the event to the algorithm (translated via {@link
+     * EventFactory}). While replaying a recorded trace, the algorithm is not updated.
+     *
+     * @param event the runtime event.
+     * @throws HaltTaskException if the current task must halt.
+     * @throws HaltExecutionException if the whole execution must halt.
+     */
     @Override
     public void updateEvent(JmcRuntimeEvent event)
             throws HaltTaskException, HaltExecutionException {
@@ -181,11 +240,22 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         }
     }
 
+    /**
+     * Resets per-iteration state, verifying consistency of the explored graph when debugging.
+     *
+     * @param iteration the iteration index.
+     */
     @Override
     public void resetIteration(int iteration) {
         resetIteration(iteration, true);
     }
 
+    /**
+     * Resets per-iteration state.
+     *
+     * @param iteration the iteration index.
+     * @param checkConsistency when true (and debug is on), asserts the explored graph is consistent.
+     */
     protected void resetIteration(int iteration, boolean checkConsistency) {
         LOGGER.debug("Resetting iteration {} with clearGraph={}", iteration, checkConsistency);
         super.resetIteration(iteration);
@@ -200,10 +270,21 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         }
     }
 
+    /**
+     * Returns the algorithm's current execution graph (used in tests and debugging).
+     *
+     * @return the current execution graph.
+     */
     public ExecutionGraph getExecutionGraph() {
         return algoInstance.getExecutionGraph();
     }
 
+    /**
+     * Tears down the strategy at the end of a run and, if the tree logger is enabled, writes the
+     * exploration-tree report.
+     *
+     * @param report the model-checker report.
+     */
     @Override
     public void teardown(JmcModelCheckerReport report) {
         super.teardown(report);
@@ -217,6 +298,15 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         }
     }
 
+    /**
+     * Appends the inconsistent-graph, blocked-graph, and leaf-size sections to the tree log and
+     * writes it to {@code trust-tree-logger.txt} under the report path.
+     *
+     * @param tLogger the main tree log.
+     * @param inConGraphLogger the inconsistent-graph log (may be {@code null}).
+     * @param blockedGraphLogger the blocked-graph log (may be {@code null}).
+     * @param leafSizeLogger the leaf-size log (may be {@code null}).
+     */
     private void recordTreeLoggger(StringBuilder tLogger, StringBuilder inConGraphLogger, StringBuilder blockedGraphLogger, StringBuilder leafSizeLogger) {
         if (inConGraphLogger != null) {
             tLogger.append(System.lineSeparator()).append("$INCONSISTENT GRAPH:").append(System.lineSeparator()).append(inConGraphLogger);
@@ -232,6 +322,12 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         FileUtil.unsafeStoreToFile(filePath, tLogger.toString());
     }
 
+    /**
+     * Serializes the current consistent execution graph's schedule to {@code replay.json}; called by
+     * the model checker when a violation is found so the interleaving can be reproduced.
+     *
+     * @throws JmcCheckerException if the schedule cannot be written.
+     */
     @Override
     public void recordTrace() throws JmcCheckerException {
         String filePath = Paths.get(this.reportPath, "replay.json").toString();
@@ -239,15 +335,24 @@ public class TrustStrategy extends TrackActiveTasksStrategy
         algoInstance.recordTaskSchedule(filePath);
     }
 
+    /**
+     * Loads {@code replay.json} into {@link #recordedTrace} so the next iteration replays it.
+     *
+     * @throws JmcCheckerException if the schedule cannot be read.
+     */
     @Override
     public void replayRecordedTrace() throws JmcCheckerException {
         recordedTrace =
                 FileUtil.readTaskSchedule(Paths.get(this.reportPath, "replay.json").toString());
     }
 
+    /** The fallback policy for choosing among schedulable active tasks when not guiding. */
     public enum SchedulingPolicy {
+        /** Pick the first (lowest-id) schedulable active task. */
         FIFO,
+        /** Pick a uniformly random schedulable active task. */
         RANDOM,
+        /** Pick the last (highest-id) schedulable active task. */
         LIFO,
         // TODO : add RR
     }

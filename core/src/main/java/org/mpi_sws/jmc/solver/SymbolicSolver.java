@@ -90,8 +90,10 @@ public abstract class SymbolicSolver {
      */
     protected Model model;
 
+    /** Whether the active prover currently holds no constraints (a fresh context). */
     private boolean freshProver = true;
 
+    /** Cumulative time (ns) spent in solver operations, for reporting. */
     private long solverTime = 0L;
 
     /**
@@ -127,10 +129,20 @@ public abstract class SymbolicSolver {
         }
     }
 
+    /**
+     * Adds the given elapsed time (ns) to the cumulative solver time.
+     *
+     * @param time the elapsed time in nanoseconds.
+     */
     protected void advanceSolverTime(long time) {
         solverTime += time;
     }
 
+    /**
+     * Returns the cumulative time (ns) spent in solver operations.
+     *
+     * @return the total solver time in nanoseconds.
+     */
     public long getSolverTime() {
         return solverTime;
     }
@@ -159,6 +171,11 @@ public abstract class SymbolicSolver {
         };
     }
 
+    /**
+     * Returns the number of constraints currently on the active prover's stack.
+     *
+     * @return the constraint-stack depth.
+     */
     public abstract int size();
 
     /**
@@ -204,38 +221,83 @@ public abstract class SymbolicSolver {
         return bmgr.not(formula.getFormula());
     }
 
+    /**
+     * Returns the JavaSMT configuration used to build the solver context.
+     *
+     * @return the configuration.
+     */
     public Configuration getConfig() {
         return config;
     }
 
+    /**
+     * Returns the JavaSMT log manager.
+     *
+     * @return the log manager.
+     */
     public LogManager getLogger() {
         return logger;
     }
 
+    /**
+     * Returns the JavaSMT shutdown manager for the solver context.
+     *
+     * @return the shutdown manager.
+     */
     public ShutdownManager getShutdown() {
         return shutdown;
     }
 
+    /**
+     * Returns the active prover's map of symbolic integer variables by name.
+     *
+     * @return the symbolic integer variable map.
+     */
     public Map<String, SymIntVariable> getSymIntVariableMap() {
         return symIntVariableMap;
     }
 
+    /**
+     * Returns the JavaSMT solver context.
+     *
+     * @return the solver context.
+     */
     public SolverContext getContext() {
         return context;
     }
 
+    /**
+     * Returns the JavaSMT formula manager.
+     *
+     * @return the formula manager.
+     */
     public FormulaManager getFmgr() {
         return fmgr;
     }
 
+    /**
+     * Returns the JavaSMT boolean formula manager.
+     *
+     * @return the boolean formula manager.
+     */
     public BooleanFormulaManager getBmgr() {
         return bmgr;
     }
 
+    /**
+     * Returns the JavaSMT integer formula manager.
+     *
+     * @return the integer formula manager.
+     */
     public IntegerFormulaManager getImgr() {
         return imgr;
     }
 
+    /**
+     * Returns the model from the last satisfiable check, or {@code null} if none.
+     *
+     * @return the current model.
+     */
     public Model getModel() {
         return model;
     }
@@ -264,6 +326,13 @@ public abstract class SymbolicSolver {
         }
     }
 
+    /**
+     * Returns the current concrete value of the named symbolic integer variable.
+     *
+     * @param name the variable name.
+     * @return the concrete value.
+     * @throws RuntimeException if no such variable exists.
+     */
     public int getSymIntVarValue(String name) {
         if (symIntVariableMap.containsKey(name)) {
             return symIntVariableMap.get(name).getValue();
@@ -296,6 +365,13 @@ public abstract class SymbolicSolver {
         }
     }
 
+    /**
+     * Returns the current concrete value of the named symbolic boolean variable.
+     *
+     * @param name the variable name.
+     * @return the concrete value.
+     * @throws RuntimeException if no such variable exists.
+     */
     public boolean getSymBoolVarValue(String name) {
         if (symBoolVariableMap.containsKey(name)) {
             return symBoolVariableMap.get(name).getValue();
@@ -304,47 +380,129 @@ public abstract class SymbolicSolver {
         }
     }
 
+    /**
+     * Returns whether the active prover currently holds no constraints.
+     *
+     * @return true if the prover is fresh.
+     */
     public boolean isFreshProver() {
         return freshProver;
     }
 
+    /**
+     * Sets the fresh-prover flag (set by the algorithm when it switches prover contexts).
+     *
+     * @param resetProver the new flag value.
+     */
     public void setFreshProverFlag(boolean resetProver) {
         this.freshProver = resetProver;
     }
 
+    /**
+     * Pushes the given constraint onto the active prover's stack.
+     *
+     * @param formula the constraint to assert.
+     */
     public void addFormula(JmcBooleanFormula formula) {
         push(formula);
     }
 
+    /**
+     * Pushes the negation of the given constraint onto the active prover's stack.
+     *
+     * @param formula the constraint whose negation to assert.
+     */
     public void addNegatedFormula(JmcBooleanFormula formula) {
         push(negateFormula(formula));
     }
 
+    /** Pops the top constraint off the active prover's stack. */
     public abstract void pop();
 
+    /** Pushes an empty backtracking level onto the active prover's stack. */
     protected abstract void push();
 
+    /**
+     * Pushes a JavaSMT boolean formula onto the active prover's stack.
+     *
+     * @param formula the formula to assert.
+     */
     protected abstract void push(BooleanFormula formula);
 
+    /**
+     * Pushes a symbolic constraint onto the active prover's stack.
+     *
+     * @param operation the constraint to assert.
+     */
     protected abstract void push(JmcBooleanFormula operation);
 
+    /**
+     * Evaluates a new constraint-evaluation event: computes the branch taken now and whether the
+     * other branch is feasible, updating the prover stack accordingly.
+     *
+     * @param symbolicOperation the constraint being evaluated.
+     * @return the {@link SolverResult} (branch outcome + negatability).
+     */
     public abstract SolverResult computeNewSymbolicOperation(JmcBooleanFormula symbolicOperation);
 
+    /**
+     * Evaluates a symbolic {@code assume}: returns whether the constraint is satisfiable and asserts
+     * it (or rolls back) accordingly.
+     *
+     * @param symbolicOperation the assumed constraint.
+     * @return true if the assumption holds.
+     */
     public abstract boolean computeNewSymAssumeOperation(JmcBooleanFormula symbolicOperation);
 
+    /**
+     * Replays a symbolic {@code assume} during guided re-execution, asserting the (already decided)
+     * constraint and refreshing the model.
+     *
+     * @param symbolicOperation the assumed constraint.
+     */
     public abstract void computeGuidedSymAssumeOperation(JmcBooleanFormula symbolicOperation);
 
+    /**
+     * Evaluates a symbolic {@code assert}: returns whether the property necessarily holds (its
+     * negation is unsatisfiable).
+     *
+     * @param symbolicOperation the asserted constraint.
+     * @return true if the assertion cannot be violated.
+     */
     public abstract boolean computeNewSymAssertOperation(JmcBooleanFormula symbolicOperation);
 
+    /** Solves the current constraint stack and refreshes the concrete model from the solution. */
     public abstract void solveAndUpdateModel();
 
+    /**
+     * Creates a new prover context (reusing a pooled one when available).
+     *
+     * @return the new prover state.
+     */
     public abstract ProverState createNewProver();
 
+    /**
+     * Makes the given prover state the active one, under the given logical id.
+     *
+     * @param proverState the prover state to activate.
+     * @param proverId the logical prover id.
+     */
     public abstract void setProver(ProverState proverState, int proverId);
 
+    /**
+     * Returns the logical id of the active prover.
+     *
+     * @return the active prover id.
+     */
     public abstract int getProverId();
 
+    /**
+     * Empties the given prover's constraint stack.
+     *
+     * @param prover the prover environment to reset.
+     */
     public abstract void resetProver(ProverEnvironment prover);
 
+    /** Empties the active prover's constraint stack. */
     public abstract void resetCurrentProver();
 }
