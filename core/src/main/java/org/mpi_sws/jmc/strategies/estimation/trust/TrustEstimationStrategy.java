@@ -16,26 +16,60 @@ import org.mpi_sws.jmc.util.FileUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * Scheduling strategy for Trust estimation ({@code trust-estimation}) — Knuth's estimator over the
+ * tree of TruSt (Algorithm T).
+ *
+ * <p>It <b>extends {@link TrustStrategy}</b>, turning TruSt's systematic DFS into a single random
+ * walk: after each event a {@link TrustEstimator} samples among the revisits TruSt generated and
+ * multiplies the branching factor into the estimate. Because a chosen revisit need not follow DFS
+ * order, the estimator sets a re-execution flag; {@link #nextTask} then returns {@code
+ * blockExecution()} so the checker re-runs the program guided by the chosen revisit's graph. One
+ * root-to-leaf walk (spanning several iterations) is one trial; the {@link EstimationCollector}'s
+ * mean over trials is the final estimate. Results save under {@code trust-*}.
+ */
 public class TrustEstimationStrategy extends TrustStrategy implements EstimationStrategy {
 
     private final Logger LOGGER = LogManager.getLogger(TrustEstimationStrategy.class);
 
+    /** The Algorithm-T estimator (or a subclass, e.g. the weighted variant). */
     protected final TrustEstimator tEst;
 
+    /** Collects each trial's point estimate and computes the final mean. */
     protected final EstimationCollector estimationCollector = new EstimationCollector();
 
+    /** Accumulates the per-trial tree logs, written out at teardown. */
     protected final StringBuilder branchingCollector = new StringBuilder();
 
+    /** Counts completed trials (used to label the tree logs). */
     private int branchCounter = 0;
 
+    /** Creates the strategy with a time-based seed, FIFO policy, no debug, and the default report path. */
     public TrustEstimationStrategy() {
         this(System.nanoTime(), SchedulingPolicy.FIFO, false, "build/test-results/jmc-report");
     }
 
+    /**
+     * Creates the strategy with a default {@link TrustEstimator}.
+     *
+     * @param randomSeed seed for the fallback scheduling policy.
+     * @param policy the TruSt fallback scheduling policy.
+     * @param debug whether to emit debug artifacts.
+     * @param reportPath directory for results.
+     */
     public TrustEstimationStrategy(Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath) {
         this(randomSeed, policy, debug, reportPath, new TrustEstimator());
     }
 
+    /**
+     * Creates the strategy with a supplied estimator (used to inject the weighted variant).
+     *
+     * @param randomSeed seed for the fallback scheduling policy.
+     * @param policy the TruSt fallback scheduling policy.
+     * @param debug whether to emit debug artifacts.
+     * @param reportPath directory for results.
+     * @param tEst the tree estimator to drive.
+     */
     public TrustEstimationStrategy(Long randomSeed, SchedulingPolicy policy, boolean debug, String reportPath, TrustEstimator tEst) {
         super(randomSeed, policy, debug, reportPath);
         if (policy == SchedulingPolicy.RANDOM) {
@@ -45,8 +79,12 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     }
 
     /**
-     * @param iteration the number of the iteration.
-     * @param report
+     * Prepares an iteration: sets up TruSt guiding for the chosen revisit; when the walk reaches a
+     * leaf (TruSt signals completion with an empty stack), records the trial's estimate and resets
+     * the estimator.
+     *
+     * @param iteration the iteration index.
+     * @param report the model-checker report.
      */
     @Override
     public void initIteration(int iteration, JmcModelCheckerReport report) {
@@ -67,6 +105,7 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
         }
     }
 
+    /** Records the completed walk's estimate and appends its tree log. */
     @Override
     public void recordEstimation() {
         estimationCollector.record(tEst.getExpectedValue());
@@ -76,7 +115,9 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     }
 
     /**
-     * @param iteration
+     * Resets per-iteration state (without a consistency check, since exploration is partial).
+     *
+     * @param iteration the iteration index.
      */
     @Override
     public void resetIteration(int iteration) {
@@ -84,9 +125,12 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     }
 
     /**
-     * @param event
-     * @throws HaltTaskException
-     * @throws HaltExecutionException
+     * Runs TruSt for this event, then (unless re-executing) samples the branching with the
+     * estimator; asserts the exploration stack does not exceed one item after sampling.
+     *
+     * @param event the runtime event.
+     * @throws HaltTaskException if the current task must halt.
+     * @throws HaltExecutionException if the whole execution must halt.
      */
     @Override
     public void updateEvent(JmcRuntimeEvent event) throws HaltTaskException, HaltExecutionException {
@@ -100,7 +144,10 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     }
 
     /**
-     * @return
+     * Returns the next scheduling choice, or {@code blockExecution()} to trigger the guided
+     * re-execution the estimator requested.
+     *
+     * @return the next scheduling choice.
      */
     @Override
     public SchedulingChoice<?> nextTask() {
@@ -112,7 +159,9 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
     }
 
     /**
+     * Saves the collected estimates and tree logs at shutdown.
      *
+     * @param report the model-checker report.
      */
     @Override
     public void teardown(JmcModelCheckerReport report) {
@@ -120,6 +169,7 @@ public class TrustEstimationStrategy extends TrustStrategy implements Estimation
         saveResults();
     }
 
+    /** Writes the per-trial estimates, final mean, and per-trial tree logs under {@code trust-*}. */
     protected void saveResults() {
         estimationCollector.save(
                 "build/test-results/jmc-report/",

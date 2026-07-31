@@ -17,14 +17,37 @@ import java.util.List;
 import java.util.Set;
 import java.util.random.RandomGeneratorFactory;
 
+/**
+ * Scheduling strategy for the fork-join PeStor estimator ({@code fj-pestor}): the fork-join
+ * specialization of Algorithm P.
+ *
+ * <p>It drives a {@link FjDagEstimator} with a fork-join-aware scheduler ({@link #nextTask}): it
+ * first forces the main task to complete all thread creation (the fork phase), then schedules only
+ * the worker threads uniformly at random (never the main task). This structure lets the estimator
+ * skip charging thread creation/join events, dramatically reducing variance on fork-join programs.
+ * Each iteration is one random-walk trial whose point estimate is recorded; results are saved under
+ * {@code fj-pestor-*}.
+ *
+ * <p><b>TODO (unseeded randomness — to revisit together in future):</b> {@link #nextTask} creates a
+ * fresh {@code Xoshiro256PlusPlus} generator on every call instead of drawing from the strategy's
+ * configured seed, so the scheduling (and hence the walk) is not reproducible from the seed. This
+ * should use a single seeded generator so runs are deterministic given a seed.
+ */
 public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements EstimationStrategy {
 
     private final Logger LOGGER = LogManager.getLogger(FjDagEstimationStrategy.class);
 
+    /** The fork-join DAG estimator. */
     private final FjDagEstimator est;
 
+    /** Collects each trial's point estimate and computes the final mean. */
     private final EstimationCollector estimationCollector = new EstimationCollector();
 
+    /**
+     * Creates the strategy with a default {@link FjDagEstimator}.
+     *
+     * @param seed the seed for the random scheduler.
+     */
     public FjDagEstimationStrategy(Long seed) {
         // TODO : Fix the hard coded path
         super(seed, "build/test-results/jmc-report");
@@ -32,6 +55,13 @@ public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements
     }
 
 
+    /**
+     * Fork-join-aware scheduling: while forking is incomplete, forces the main task to run (to spawn
+     * all workers); afterwards, schedules only the worker threads uniformly at random (never the main
+     * task). A lone active task is scheduled directly.
+     *
+     * @return the next scheduling choice, or {@code null} if no task is active.
+     */
     @Override
     public SchedulingChoice<?> nextTask() {
         Set<Long> activeThreads = getActiveTasks();
@@ -62,6 +92,13 @@ public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements
         return makeSchedulingChoice(taskToSchedule);
     }
 
+    /**
+     * Tracks the event with the random scheduler and forwards it to the fork-join estimator.
+     *
+     * @param event the runtime event.
+     * @throws HaltTaskException if the current task must halt.
+     * @throws HaltExecutionException if the whole execution must halt.
+     */
     @Override
     public void updateEvent(JmcRuntimeEvent event) throws HaltTaskException, HaltExecutionException {
         super.updateEvent(event);
@@ -69,6 +106,11 @@ public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements
         est.updateEvent(events, getActiveTasks());
     }
 
+    /**
+     * Ends the current trial: records its point estimate and resets the estimator.
+     *
+     * @param iteration the iteration index.
+     */
     @Override
     public void resetIteration(int iteration) {
         super.resetIteration(iteration);
@@ -77,11 +119,17 @@ public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements
         est.reset();
     }
 
+    /** Records the current walk's estimate into the collector. */
     @Override
     public void recordEstimation() {
         estimationCollector.record(est.getExpectedValue());
     }
 
+    /**
+     * Saves the collected estimates at shutdown.
+     *
+     * @param report the model-checker report.
+     */
     @Override
     public void teardown(JmcModelCheckerReport report) {
         super.teardown(report);
@@ -89,6 +137,7 @@ public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements
         saveResults();
     }
 
+    /** Writes the per-trial and final estimates under {@code fj-pestor-*}. */
     protected void saveResults() {
         estimationCollector.save(
                 "build/test-results/jmc-report/",
@@ -96,6 +145,11 @@ public class FjDagEstimationStrategy extends RandomSchedulingStrategy implements
                 "fj-pestor-final-result.txt");
     }
 
+    /**
+     * Returns the estimation collector (used in tests to inspect the accumulated estimates).
+     *
+     * @return the collector.
+     */
     public EstimationCollector getEstimationCollector() {
         return estimationCollector;
     }
