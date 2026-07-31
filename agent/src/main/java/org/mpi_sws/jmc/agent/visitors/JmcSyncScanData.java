@@ -1,15 +1,24 @@
 package org.mpi_sws.jmc.agent.visitors;
 
 /**
- * JmcSyncScanData is a data class that holds information about synchronization constructs in a
- * class. It tracks whether the class has synchronized methods, synchronized static methods, and
- * synchronized blocks.
+ * Mutable result of the Phase-1 synchronization pre-scan.
+ *
+ * <p>{@link JmcVisitor#transform} creates one instance and passes it to {@link JmcSyncScanVisitor},
+ * which sets the three flags below while scanning the class. The instance is then handed to {@link
+ * JmcSyncMethodVisitor}, which uses the flags to decide what synchronization instrumentation to emit
+ * (for example, it only instruments constructors when the class has synchronized instance methods).
+ * The pre-scan is required because {@code JmcSyncMethodVisitor} must know these facts before it starts
+ * rewriting method bodies.
  */
 public class JmcSyncScanData {
+    /** True if the class declares at least one synchronized instance method. */
     private boolean hasSyncMethods;
+    /** True if the class declares at least one synchronized static method. */
     private boolean hasSyncStaticMethods;
+    /** True if any method contains a synchronized block ({@code MONITORENTER}/{@code MONITOREXIT}). */
     private boolean hasSyncBlocks;
 
+    /** Creates an instance with all flags cleared; the flags are populated by {@link JmcSyncScanVisitor}. */
     public JmcSyncScanData() {
         this.hasSyncMethods = false;
         this.hasSyncStaticMethods = false;

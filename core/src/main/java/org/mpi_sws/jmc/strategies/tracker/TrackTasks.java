@@ -8,7 +8,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Tracks the tasks start finish and join request events.
+ * {@link Tracker} for task lifecycle and joins: it reports as runnable every started task that has
+ * not finished and is not blocked joining on another task.
+ *
+ * <p>It processes {@code START_EVENT} (task becomes active), {@code FINISH_EVENT} (task completes and
+ * releases any joiners), and {@code JOIN_REQUEST_EVENT} (the requester blocks until the target
+ * completes) — emitted by {@code JmcThread}. Its runnable set is intersected with the other trackers'
+ * by the owning {@link TrackActiveTasksStrategy}.
  */
 public class TrackTasks implements Tracker {
     /** Tasks that have started and not yet finished or blocked on a join. */

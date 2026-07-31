@@ -17,14 +17,16 @@ import java.util.Set;
  * <p>The lifetime of a location store is that of the algorithm.
  */
 public class LocationStore {
-    // A map of location hash codes to locations
+    /** The set of known location hash codes (see {@link Location#hashCode()}). */
     private final Set<Integer> locations;
-    // When a location is replaced, a mapping is added to aliases
+    /** Maps a new iteration's location hash code to the equivalent hash code from a prior one. */
     private final Map<Integer, Integer> aliases;
 
-    // A special Location to represent thread events. This is used to track total order between
-    // thread start events
-    // Essentially, thread starts are writes on the thread location
+    /**
+     * The reserved location used to model thread events. Thread-start events are treated as writes
+     * on this location so that a total order can be maintained between them; its value is the hash
+     * of the string {@code "thread"}.
+     */
     public static Integer ThreadLocation = "thread".hashCode();
 
     /** Constructs a new location store. */
@@ -34,38 +36,67 @@ public class LocationStore {
         aliases = new HashMap<>();
     }
 
-    /** Add a location to the store. */
+    /**
+     * Adds a location hash code to the store.
+     *
+     * @param location the location hash code to add.
+     */
     public void addLocation(Integer location) {
         locations.add(location);
     }
 
-    /** Remove all locations from the store. */
+    /** Removes all locations from the store. */
     public void clear() {
         locations.clear();
     }
 
-    /** Remove all aliases from the store. */
+    /**
+     * Removes all aliases from the store. Called by the algorithm at the start of a guiding
+     * iteration, once all locations in the graph have been mapped to the current iteration's hash
+     * codes.
+     */
     public void clearAliases() {
         aliases.clear();
     }
 
-    /** Returns if a location is contained in the store. */
+    /**
+     * Returns whether the given hash code is known as either a location or an alias.
+     *
+     * @param hashCode the hash code to look up.
+     * @return true if it is a known location or alias.
+     */
     public boolean contains(Integer hashCode) {
         return locations.contains(hashCode) || aliases.containsKey(hashCode);
     }
 
-    /** Returns if an alias is contained in the store. */
+    /**
+     * Returns whether the given hash code is registered as an alias.
+     *
+     * @param hashCode the hash code to look up.
+     * @return true if it is a known alias.
+     */
     public boolean containsAlias(Integer hashCode) {
         return aliases.containsKey(hashCode);
     }
 
-    /** Adds an alias between the two location codes. */
+    /**
+     * Records that a new iteration's location {@code newL} refers to the same variable as a prior
+     * iteration's location {@code oldL}.
+     *
+     * @param oldL the canonical (older) location hash code.
+     * @param newL the new hash code to alias onto {@code oldL}.
+     */
     public void addAlias(Integer oldL, Integer newL) {
         locations.add(oldL);
         aliases.put(newL, oldL);
     }
 
-    /** Returns the location alias for the given hash code. */
+    /**
+     * Returns the canonical location aliased by the given hash code, or {@code null} if none.
+     *
+     * @param hashCode the alias hash code.
+     * @return the canonical location hash code, or {@code null}.
+     */
     public Integer getAlias(Integer hashCode) {
         return aliases.get(hashCode);
     }

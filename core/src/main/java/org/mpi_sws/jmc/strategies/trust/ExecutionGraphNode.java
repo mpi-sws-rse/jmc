@@ -10,27 +10,40 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 /**
- * Represents a node in the execution graph.
+ * A node in an {@link ExecutionGraph}: one {@link Event} together with its incident edges and its
+ * Lamport vector clock.
+ *
+ * <p>Edges are stored as {@link Event.Key}s (not object references) grouped by {@link Relation},
+ * both forwards ({@link #edges}, successors) and backwards ({@link #backEdges}, predecessors), which
+ * keeps a node cheap to copy when the graph is cloned. The {@link #vectorClock} tracks the
+ * happens-before ("porf") order and is maintained by {@link #addBackEdge}, which merges a
+ * predecessor's clock only across causal relations — never across {@link Relation#Coherency} or
+ * {@link Relation#FR}.
  */
 public class ExecutionGraphNode {
 
+    /** Cached array of all relation kinds, iterated when walking edges. */
     private static final Relation[] allRelations = Relation.values();
-    // The event that this node represents.
+    /** The event this node represents. */
     private final Event event;
-    // The attributes of this node.
+    /** Extra per-node data (separate from the event's own attributes). */
     private Map<String, Object> attributes;
-    // Forward edges from this node. Grouped by edge relation.
+    /** Outgoing edges (successors), grouped by relation. */
     public final Map<Relation, List<Event.Key>> edges;
-    // Back edges to this node. Grouped by edge relation.
+    /** Incoming edges (predecessors), grouped by relation. */
     public final Map<Relation, List<Event.Key>> backEdges;
 
-    // The vector clock of this node (Used to track only PORF relation)
+    /** The vector clock of this node; tracks only the {@code (po ∪ rf)+} (porf) relation. */
     private LamportVectorClock vectorClock;
 
     /**
-     * Constructs a new {@link ExecutionGraphNode} with the given event.
+     * Constructs a node for the given event, deriving its vector clock.
+     *
+     * <p>The init event gets an empty clock; any other event inherits {@code vectorClock} (its
+     * program-order predecessor's clock) and increments its own task's component.
      *
      * @param event The {@link Event} that this node represents.
+     * @param vectorClock The program-order predecessor's clock to derive this node's clock from.
      */
     public ExecutionGraphNode(Event event, LamportVectorClock vectorClock) {
         this.event = event;
@@ -77,6 +90,11 @@ public class ExecutionGraphNode {
         return new ExecutionGraphNode(this);
     }
 
+    /**
+     * Returns this node's event key.
+     *
+     * @return the key of the underlying event.
+     */
     public Event.Key key() {
         return event.key();
     }
@@ -106,12 +124,14 @@ public class ExecutionGraphNode {
     }
 
     /**
-     * Adds a back edge to this node. The edge is directed from the given node to this node with the
-     * given adjacency. The vector clock of this node is updated with the vector clock of the given
-     * node (only if the relation is not CO).
+     * Adds a back edge (predecessor) to this node from {@code from}.
      *
-     * @param from      The node from which the edge is directed.
-     * @param adjacency The adjacency of the edge.
+     * <p>This node's vector clock is merged with {@code from}'s clock <em>only</em> when the
+     * relation is causal — i.e. neither {@link Relation#Coherency} nor {@link Relation#FR} — which
+     * is what keeps the clock equal to the porf order exactly.
+     *
+     * @param from      The predecessor node.
+     * @param adjacency The relation of the edge.
      */
     private void addBackEdge(ExecutionGraphNode from, Relation adjacency) {
         if (adjacency != Relation.Coherency && adjacency != Relation.FR) {
@@ -152,13 +172,13 @@ public class ExecutionGraphNode {
         backEdges.remove(relation);
     }
 
-    /*
-     * Removes all edges to the given node.
+    /**
+     * Removes all outgoing edges to the given key, across every relation.
      *
-     * <p> There might be dangling references to this node from other nodes that are not handled.
+     * <p>There might be dangling references to this node from other nodes that are not handled.
      * Additionally, the vector clock is invalidated unless the edge is CO.
      *
-     * @param to The node to which the edges are directed.
+     * @param to The key of the node the edges point to.
      */
     public void removeAllEdgesTo(Event.Key to) {
         for (Relation adjacency : edges.keySet()) {
@@ -168,6 +188,12 @@ public class ExecutionGraphNode {
         edges.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
+    /**
+     * Removes the outgoing edge with the given relation to the given key.
+     *
+     * @param to        The key of the node the edge points to.
+     * @param adjacency The relation of the edge.
+     */
     public void removeEdgeTo(Event.Key to, Relation adjacency) {
         if (!edges.containsKey(adjacency)) {
             return;
@@ -200,6 +226,11 @@ public class ExecutionGraphNode {
         removeBackEdge(from, adjacency);
     }
 
+    /**
+     * Removes the given node as a predecessor across every relation.
+     *
+     * @param from The predecessor node to remove.
+     */
     public void removePredecessor(ExecutionGraphNode from) {
         for (Relation adjacency : backEdges.keySet()) {
             backEdges.get(adjacency).removeIf(key -> key.equals(from.key()));
@@ -307,6 +338,11 @@ public class ExecutionGraphNode {
         return inDegree.get();
     }
 
+    /**
+     * Applies {@code iterator} to each non-empty group of predecessors, keyed by relation.
+     *
+     * @param iterator receives each relation and its list of predecessor keys.
+     */
     public void forEachPredecessor(BiConsumer<Relation, List<Event.Key>> iterator) {
         for (Relation rel : allRelations) {
             if (!backEdges.containsKey(rel)) {
@@ -320,6 +356,11 @@ public class ExecutionGraphNode {
         }
     }
 
+    /**
+     * Applies {@code iterator} to each non-empty group of successors, keyed by relation.
+     *
+     * @param iterator receives each relation and its list of successor keys.
+     */
     public void forEachSuccessor(BiConsumer<Relation, List<Event.Key>> iterator) {
         for (Relation rel : allRelations) {
             if (!edges.containsKey(rel)) {
@@ -385,6 +426,11 @@ public class ExecutionGraphNode {
         return event;
     }
 
+    /**
+     * Serializes this node (event, attributes, outgoing edges) to JSON for debugging.
+     *
+     * @return the JSON representation.
+     */
     public JsonElement toJson() {
         JsonObject json = new JsonObject();
         json.add("event", event.toJson());
@@ -405,6 +451,12 @@ public class ExecutionGraphNode {
         return json;
     }
 
+    /**
+     * Serializes this node without location and with edges sorted deterministically, so that graphs
+     * differing only in concrete locations hash identically (used for coverage counting).
+     *
+     * @return the location-independent JSON representation.
+     */
     public JsonElement toJsonIgnoreLocation() {
         JsonObject json = new JsonObject();
         json.add("event", event.toJsonIgnoreLocation());
@@ -465,6 +517,13 @@ public class ExecutionGraphNode {
         this.vectorClock = newClock;
     }
 
+    /**
+     * Two nodes are equal when their underlying events are equal (edges are compared separately by
+     * {@link #equalsEdges(ExecutionGraphNode)}).
+     *
+     * @param obj the object to compare with.
+     * @return true if {@code obj} is a node with an equal event.
+     */
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ExecutionGraphNode that)) {
@@ -476,6 +535,13 @@ public class ExecutionGraphNode {
         return this.event.equals(that.event);
     }
 
+    /**
+     * Returns whether this node has exactly the same outgoing edges as {@code other} (same relations
+     * and same target keys). Used by {@code ExecutionGraph.equals} to compare two graphs.
+     *
+     * @param other the node to compare edges with.
+     * @return true if the outgoing edge sets match.
+     */
     public boolean equalsEdges(ExecutionGraphNode other) {
         if (this == other) {
             return true;
@@ -520,7 +586,9 @@ public class ExecutionGraphNode {
     }
 
     /**
-     * @return
+     * Returns the string form of the underlying event.
+     *
+     * @return the event's string representation.
      */
     @Override
     public String toString() {

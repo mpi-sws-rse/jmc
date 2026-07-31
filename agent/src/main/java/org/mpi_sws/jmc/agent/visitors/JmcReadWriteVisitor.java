@@ -21,7 +21,9 @@ public class JmcReadWriteVisitor {
      */
     public static class ReadWriteClassVisitor extends ClassVisitor {
 
+        /** Whether the class being visited is an interface. */
         private boolean isInterface;
+        /** When {@code true}, method bodies are passed through without read/write instrumentation. */
         private boolean skipInstrumentation;
 
         /** Set of final field names in this class (format: "owner/name") */
@@ -36,8 +38,19 @@ public class JmcReadWriteVisitor {
             super(Opcodes.ASM9, cv);
         }
 
+        /** Internal name of the class being visited (captured in {@link #visit}). */
         private String className;
 
+        /**
+         * Captures the class name and whether it is an interface, then forwards the header.
+         *
+         * @param version the class file version
+         * @param access the class access flags
+         * @param name the internal name of the class
+         * @param signature the generic signature, or {@code null}
+         * @param superName the internal name of the superclass
+         * @param interfaces the internal names of implemented interfaces
+         */
         @Override
         public void visit(
                 int version,
@@ -55,6 +68,17 @@ public class JmcReadWriteVisitor {
             super.visit(version, access, name, signature, superName, interfaces);
         }
 
+        /**
+         * Records final fields (as {@code "owner/name"}) so read/write instrumentation can skip them —
+         * final fields cannot race — then forwards the field declaration.
+         *
+         * @param access the field access flags
+         * @param name the field name
+         * @param descriptor the field descriptor
+         * @param signature the generic signature, or {@code null}
+         * @param value the constant value, or {@code null}
+         * @return the delegate's {@link FieldVisitor}
+         */
         @Override
         public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
             // Track final fields
@@ -66,6 +90,19 @@ public class JmcReadWriteVisitor {
 
 
 
+        /**
+         * Wraps each method in a {@link ReadWriteMethodVisitor} to instrument its field accesses,
+         * except when instrumentation is disabled ({@link #skipInstrumentation}) or the method is an
+         * interface {@code <clinit>} (which is left uninstrumented).
+         *
+         * @param access the method access flags
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param signature the generic signature, or {@code null}
+         * @param exceptions the declared exceptions, or {@code null}
+         * @return a {@link MethodVisitor} that instruments field reads/writes, or the plain delegate
+         *     visitor when instrumentation is skipped
+         */
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -87,12 +124,17 @@ public class JmcReadWriteVisitor {
      */
     public static class ReadWriteMethodVisitor extends LocalVarTrackingMethodVisitor {
 
+        /** Whether the current field access was instrumented, gating the following yield and stack bump. */
         private boolean instrumented;
 
+        /** Whether the method being visited is a constructor ({@code <init>}). */
         private final boolean constructor;
+        /** For a constructor, whether {@code super(...)}/{@code this(...)} has run yet (see {@link #constructorNotInitialized}). */
         private boolean constructorInitialized = false;
 
+        /** Internal name of the class being visited. */
         private final String className;
+        /** Final field keys ({@code "owner/name"}) that must not be instrumented. */
         private final Set<String> finalFields;
 
 
@@ -116,6 +158,21 @@ public class JmcReadWriteVisitor {
             this.finalFields = finalFields;
         }
 
+        /**
+         * Inserts a read or write runtime-event call for an <em>instance</em> field access, unless the
+         * field is exempt.
+         *
+         * <p>Exemptions (no instrumentation): {@code java/lang/System} fields, the compiler-generated
+         * {@code $assertionsDisabled} field, a constructor's fields before {@code super(...)} has run
+         * (see {@link #constructorNotInitialized}), and final fields. When instrumentation is emitted,
+         * {@link #instrumented} is set so the caller inserts a following yield.
+         *
+         * @param owner the internal name of the field's owner
+         * @param isStatic whether the access is to a static field
+         * @param isWrite whether this is a write ({@code true}) or a read ({@code false})
+         * @param name the field name
+         * @param descriptor the field descriptor
+         */
         private void insertUpdateEventCall(
                 String owner, boolean isStatic, boolean isWrite, String name, String descriptor) {
             if (Objects.equals(owner, "java/lang/System")) {
@@ -142,6 +199,13 @@ public class JmcReadWriteVisitor {
             }
         }
 
+        /**
+         * Reports whether we are inside a constructor before its {@code super(...)}/{@code this(...)}
+         * call has run — the window in which field writes must not be instrumented (the object is not
+         * yet fully constructed).
+         *
+         * @return {@code true} only for a constructor whose initializer chain has not yet executed
+         */
         private boolean constructorNotInitialized() {
             // The method we are visiting is either
             // 1. not a constructor
@@ -212,7 +276,13 @@ public class JmcReadWriteVisitor {
         }
 
         /**
-         * Checks if a field should be instrumented based on various filters.
+         * Checks whether a (static) field should be instrumented, applying the same exemptions as
+         * {@link #insertUpdateEventCall}: {@code java/lang/System} fields, {@code $assertionsDisabled},
+         * pre-{@code super()} constructor fields, and final fields are all excluded.
+         *
+         * @param owner the internal name of the field's owner
+         * @param name the field name
+         * @return {@code true} if the field access should be instrumented
          */
         private boolean shouldInstrumentField(String owner, String name) {
             if (Objects.equals(owner, "java/lang/System")) {
@@ -232,7 +302,14 @@ public class JmcReadWriteVisitor {
         }
 
         /**
-         * Inserts instrumentation for static field reads after the GETSTATIC instruction.
+         * Inserts the read-event instrumentation for a static field read, emitted <em>after</em> the
+         * {@code GETSTATIC} instruction (delegating to {@link VisitorHelper#insertStaticReadAfter}).
+         * Does nothing for an exempt field (see {@link #shouldInstrumentField}); otherwise sets {@link
+         * #instrumented} so the caller inserts a following yield.
+         *
+         * @param owner the internal name of the field's owner
+         * @param name the field name
+         * @param descriptor the field descriptor
          */
         private void insertStaticReadAfterCall(String owner, String name, String descriptor) {
             if (!shouldInstrumentField(owner, name)) {
@@ -243,6 +320,18 @@ public class JmcReadWriteVisitor {
         }
 
 
+        /**
+         * Tracks constructor initialization; it does not itself instrument calls. An {@code
+         * INVOKESPECIAL <init>} marks the constructor's {@code super(...)}/{@code this(...)} as having
+         * run (setting {@link #constructorInitialized}), which re-enables field-write instrumentation
+         * for the remainder of the constructor. The call is forwarded unchanged.
+         *
+         * @param opcode the invocation opcode
+         * @param owner the internal name of the method's owner
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param isInterface whether the owner is an interface
+         */
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
@@ -257,6 +346,13 @@ public class JmcReadWriteVisitor {
             super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
         }
 
+        /**
+         * Forwards the max-stack/max-locals, reserving extra operand-stack slots when field-access
+         * instrumentation was emitted (the inserted event calls duplicate values on the stack).
+         *
+         * @param maxStack the operand-stack size computed for the method
+         * @param maxLocals the local-variable count computed for the method
+         */
         @Override
         public void visitMaxs(int maxStack, int maxLocals) {
             if (instrumented) {

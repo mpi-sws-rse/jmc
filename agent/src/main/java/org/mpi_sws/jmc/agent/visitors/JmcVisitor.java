@@ -5,16 +5,50 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
-/** The encapsulating visitor that applies all the other visitors in the correct order. */
+/**
+ * Orchestrator of the JMC instrumentation pipeline.
+ *
+ * <p>{@link org.mpi_sws.jmc.agent.PremainInstrumentor#transform} delegates the actual bytecode rewriting to this class's
+ * {@link #transform} method, which drives the class bytes through every JMC visitor in the correct
+ * order. It is the single place that defines how the individual visitors are composed.
+ *
+ * <p>The pipeline has three phases: a pre-scan that gathers information the later passes need, a set
+ * of early opt-outs that abort instrumentation for classes JMC must not rewrite, and the main chain
+ * of chained {@link org.objectweb.asm.ClassVisitor}s that performs the transformation.
+ */
 public class JmcVisitor {
 
     /**
-     * The main method that applies all the visitors in the correct order.
+     * Applies the whole JMC instrumentation pipeline to a single class.
+     *
+     * <p>Phases, in order:
+     *
+     * <ol>
+     *   <li><b>Pre-scan.</b> {@link JmcSyncScanVisitor} records into a {@link JmcSyncScanData} whether
+     *       the class has synchronized instance methods, synchronized static methods, and/or
+     *       synchronized blocks. {@link JmcSyncMethodVisitor} needs this before it starts rewriting.
+     *   <li><b>Early opt-outs.</b> If {@link JmcIgnoreEnumVisitor} reports the class is an {@code enum},
+     *       or {@link JmcIgnoreFinalizerVisitor} reports it declares a {@code protected void
+     *       finalize()}, the original {@code classFileBuffer} is returned unchanged.
+     *   <li><b>Transformation chain.</b> A single {@link org.objectweb.asm.ClassReader#accept} drives
+     *       the bytes through the chained visitors (outermost first): {@link JmcWaitNotifyVisitor} →
+     *       {@link JmcStaticMethodVisitor} → {@link JmcSyncMethodVisitor} → {@code
+     *       JmcScheduledExecutorClassVisitor} → {@code JmcFutureTaskClassVisitor} → {@code
+     *       JmcExecutorsClassVisitor} → {@link JmcAtomicVisitor} → {@link JmcReentrantLockVisitor} →
+     *       {@code ThreadClassVisitor} → {@code ThreadCallReplacerClassVisitor} → {@link
+     *       JmcNativeMethodVisitor} → {@code ReadWriteClassVisitor} → the {@link
+     *       org.objectweb.asm.ClassWriter} that emits the result.
+     * </ol>
+     *
+     * <p>A {@link JmcUnsupportedFeatureException} thrown during the chain is propagated unchanged; any
+     * other exception is wrapped in a {@link RuntimeException}.
      *
      * @param classFileBuffer the input class file as a byte array
-     * @return the transformed class file as a byte array
+     * @return the transformed class file as a byte array, or the original bytes if the class is an
+     *     enum or declares a finalizer
      */
     public static byte[] transform(byte[] classFileBuffer) {
+        // Phase 1: pre-scan for synchronized methods/blocks (consumed by JmcSyncMethodVisitor).
         ClassReader syncCr = new ClassReader(classFileBuffer);
         ClassWriter syncCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
@@ -23,6 +57,7 @@ public class JmcVisitor {
         syncCr.accept(syncScanVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
 
+        // Phase 2: early opt-outs. Enums and classes with finalizers are returned unchanged.
         ClassReader enumCr = new ClassReader(classFileBuffer);
         ClassWriter enumCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
@@ -46,6 +81,7 @@ public class JmcVisitor {
         }
 
 
+        // Phase 3: the main transformation chain (outermost visitor listed first).
         ClassReader cr = new ClassReader(classFileBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         ClassVisitor cv =

@@ -8,6 +8,7 @@ import java.util.concurrent.ThreadFactory;
  */
 public class JmcThreadFactory implements ThreadFactory {
 
+    /** Optional delegate factory whose thread is wrapped in a {@link JmcThread}; {@code null} for the default. */
     private final ThreadFactory baseFactory;
 
     /** Create a new thread factory that wraps the given base factory. */
@@ -20,6 +21,13 @@ public class JmcThreadFactory implements ThreadFactory {
         this.baseFactory = null;
     }
 
+    /**
+     * Creates a {@link JmcThread} for the given runnable: returns it directly if it is already a
+     * {@code JmcThread}, otherwise wraps it (or the {@link #baseFactory}'s thread) in a new one.
+     *
+     * @param r the runnable to run
+     * @return a {@code JmcThread} that will run {@code r}
+     */
     @Override
     public Thread newThread(Runnable r) {
         if (JmcThread.class.isAssignableFrom(r.getClass())) {

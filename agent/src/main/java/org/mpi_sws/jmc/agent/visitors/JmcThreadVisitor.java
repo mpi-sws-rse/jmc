@@ -6,17 +6,39 @@ import java.util.Arrays;
 import java.util.Set;
 
 /**
- * Represents a JMC thread visitor. Adds instrumentation to change Thread calls to JmcThread calls
+ * Rewrites {@code java.lang.Thread} usage into {@code JmcThread} usage.
+ *
+ * <p>This is a container for two chained {@link ClassVisitor}s used in the pipeline: {@link
+ * ThreadClassVisitor} performs the type replacement (superclass, fields, {@code new}/constructor
+ * calls, and renaming an overridden {@code run} to {@code run1}), and {@link
+ * ThreadCallReplacerClassVisitor} rewrites {@code Thread.join}/{@code Thread.yield} calls to route
+ * through the JMC runtime.
  */
 public class JmcThreadVisitor {
 
+    /**
+     * Retypes {@code Thread} to {@code JmcThread} across a class: its superclass, field/local
+     * descriptors, {@code new} and constructor calls, and — for classes extending {@code Thread} — the
+     * overridden {@code run()} method (renamed to {@code run1()}) and the {@code super Thread.<init>}
+     * call.
+     */
     public static class ThreadClassVisitor extends ClassVisitor {
+        /** Internal name of {@code java.lang.Thread}. */
         private static final String THREAD_PATH = "java/lang/Thread";
+        /** Internal name of the JMC replacement {@code JmcThread}. */
         private static final String JMC_THREAD_PATH =
                 "org/mpi_sws/jmc/api/util/concurrent/JmcThread";
+        /** Type descriptor of {@code Thread}. */
         private static final String THREAD_DESC = "L" + THREAD_PATH + ";";
+        /** Type descriptor of {@code JmcThread}. */
         private static final String JMC_THREAD_DESC = "L" + JMC_THREAD_PATH + ";";
 
+        /**
+         * Replaces any {@code Thread} type descriptor embedded in {@code desc} with {@code JmcThread}.
+         *
+         * @param desc the descriptor to rewrite
+         * @return the rewritten descriptor, or {@code desc} unchanged if it contains no {@code Thread}
+         */
         private static String replaceDescriptor(String desc) {
             if (desc.contains(THREAD_DESC)) {
                 return desc.replace(THREAD_DESC, JMC_THREAD_DESC);
@@ -24,6 +46,12 @@ public class JmcThreadVisitor {
             return desc;
         }
 
+        /**
+         * Maps the internal type name {@code Thread} to {@code JmcThread}, leaving other types as-is.
+         *
+         * @param type the internal type name
+         * @return {@code JmcThread}'s name if {@code type} is {@code Thread}, otherwise {@code type}
+         */
         private static String replaceType(String type) {
             if (type.equals(THREAD_PATH)) {
                 return JMC_THREAD_PATH;
@@ -31,13 +59,28 @@ public class JmcThreadVisitor {
             return type;
         }
 
-        // Flag to indicate that the class being visited extends Thread.
+        /** Whether the class currently being visited extends {@code java.lang.Thread}. */
         private boolean isExtendingThread = false;
 
+        /**
+         * @param cv the downstream {@link ClassVisitor} to delegate to
+         */
         public ThreadClassVisitor(ClassVisitor cv) {
             super(Opcodes.ASM9, cv);
         }
 
+        /**
+         * Detects whether the class extends {@code Thread} and, if so, swaps its superclass to {@code
+         * JmcThread}. Sets {@link #isExtendingThread}, which gates the constructor/{@code run}
+         * handling in {@link #visitMethod}.
+         *
+         * @param version the class file version
+         * @param access the class access flags
+         * @param name the internal name of the class
+         * @param signature the generic signature, or {@code null}
+         * @param superName the internal name of the superclass
+         * @param interfaces the internal names of implemented interfaces
+         */
         @Override
         public void visit(
                 int version,
@@ -56,6 +99,16 @@ public class JmcThreadVisitor {
             super.visit(version, access, name, signature, superName, interfaces);
         }
 
+        /**
+         * Retypes {@code Thread}-typed fields to {@code JmcThread}.
+         *
+         * @param access the field access flags
+         * @param name the field name
+         * @param descriptor the field descriptor (rewritten if it references {@code Thread})
+         * @param signature the generic signature, or {@code null}
+         * @param value the constant value, or {@code null}
+         * @return the delegate's {@link FieldVisitor}
+         */
         @Override
         public FieldVisitor visitField(
                 int access, String name, String descriptor, String signature, Object value) {
@@ -63,6 +116,24 @@ public class JmcThreadVisitor {
             return super.visitField(access, name, replaceDescriptor(descriptor), signature, value);
         }
 
+        /**
+         * Handles methods of a class, with special treatment for {@code Thread} subclasses.
+         *
+         * <p>When the class extends {@code Thread}: a constructor ({@code <init>}) is wrapped in a
+         * {@link ThreadInitMethodVisitor} (to redirect the {@code super Thread.<init>} call to {@code
+         * JmcThread.<init>}), and an overridden {@code run()V} is renamed to {@code run1()V} with an
+         * {@code @Override} annotation (the JMC runtime starts a task by calling {@code run1}). Other
+         * methods only have their {@code Thread} descriptors retyped. In all cases the result is
+         * wrapped in a {@link ThreadInstanceMethodVisitor} to retype {@code Thread} inside the body.
+         *
+         * @param access the method access flags
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param signature the generic signature, or {@code null}
+         * @param exceptions the declared exceptions, or {@code null}
+         * @return a {@link MethodVisitor} that performs the in-body {@code Thread} → {@code JmcThread}
+         *     rewriting
+         */
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -90,11 +161,26 @@ public class JmcThreadVisitor {
             return new ThreadInstanceMethodVisitor(mv);
         }
 
+        /**
+         * Per-method visitor that retypes {@code Thread} occurrences inside a method body — in {@code
+         * new}/type instructions, method calls, field accesses, local variables, and {@code
+         * invokedynamic} sites.
+         */
         private static class ThreadInstanceMethodVisitor extends MethodVisitor {
+            /**
+             * @param mv the downstream {@link MethodVisitor} to delegate to
+             */
             public ThreadInstanceMethodVisitor(MethodVisitor mv) {
                 super(Opcodes.ASM9, mv);
             }
 
+            /**
+             * Retypes {@code Thread} in type instructions (e.g. {@code new Thread} → {@code new
+             * JmcThread}).
+             *
+             * @param opcode the type-instruction opcode
+             * @param type the internal type name (rewritten to {@code JmcThread} where applicable)
+             */
             @Override
             public void visitTypeInsn(int opcode, String type) {
                 // Replace Thread with JmcThread in instance creation
@@ -105,6 +191,16 @@ public class JmcThreadVisitor {
                 }
             }
 
+            /**
+             * Retypes the owner and descriptor of a method call from {@code Thread} to {@code
+             * JmcThread}.
+             *
+             * @param opcode the invocation opcode
+             * @param owner the internal name of the method's owner
+             * @param name the method name
+             * @param descriptor the method descriptor
+             * @param isInterface whether the owner is an interface
+             */
             @Override
             public void visitMethodInsn(
                     int opcode, String owner, String name, String descriptor, boolean isInterface) {
@@ -116,11 +212,29 @@ public class JmcThreadVisitor {
                         isInterface);
             }
 
+            /**
+             * Retypes {@code Thread} in a field-access descriptor.
+             *
+             * @param opcode the field-access opcode
+             * @param owner the internal name of the field's owner
+             * @param name the field name
+             * @param descriptor the field descriptor (rewritten if it references {@code Thread})
+             */
             @Override
             public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
                 super.visitFieldInsn(opcode, owner, name, replaceDescriptor(descriptor));
             }
 
+            /**
+             * Retypes {@code Thread} in a local-variable descriptor.
+             *
+             * @param name the variable name
+             * @param descriptor the variable descriptor (rewritten if it references {@code Thread})
+             * @param signature the generic signature, or {@code null}
+             * @param start the start label of the variable's scope
+             * @param end the end label of the variable's scope
+             * @param index the local-variable slot index
+             */
             @Override
             public void visitLocalVariable(
                     String name,
@@ -133,13 +247,23 @@ public class JmcThreadVisitor {
                         name, replaceDescriptor(descriptor), signature, start, end, index);
             }
 
+            /**
+             * Retypes {@code Thread} inside an {@code invokedynamic} site — its descriptor, bootstrap
+             * method handle, and any {@code Type}/{@code Handle} bootstrap arguments — when the site
+             * references {@code Thread}; otherwise forwards it unchanged.
+             *
+             * @param name the call-site name
+             * @param descriptor the call-site descriptor
+             * @param bsm the bootstrap method handle
+             * @param bsmArgs the bootstrap method arguments
+             */
             @Override
             public void visitInvokeDynamicInsn(
                     String name, String descriptor, Handle bsm, Object... bsmArgs) {
                 boolean isThreadType = descriptor.contains(THREAD_PATH)
                         || (bsm != null && bsm.getOwner().contains(THREAD_PATH));
 
-                // Check if descriptor or bootstrap method involves Atomic types
+                // Check if descriptor or bootstrap method involves Thread types
                 if (isThreadType) {
                     Handle newBsm = bsm;
                     String newDescriptor = replaceDescriptor(descriptor);
@@ -174,12 +298,29 @@ public class JmcThreadVisitor {
             }
         }
 
-        // Nested MethodVisitor to modify constructor calls
+        /**
+         * Per-constructor visitor that redirects the {@code super Thread.<init>} call in a {@code
+         * Thread} subclass's constructor to {@code JmcThread.<init>}, so the object is initialized as a
+         * {@code JmcThread}.
+         */
         private static class ThreadInitMethodVisitor extends MethodVisitor {
+            /**
+             * @param mv the downstream {@link MethodVisitor} to delegate to
+             */
             public ThreadInitMethodVisitor(MethodVisitor mv) {
                 super(Opcodes.ASM9, mv);
             }
 
+            /**
+             * Redirects an {@code INVOKESPECIAL Thread.<init>} to {@code JmcThread.<init>}; all other
+             * calls pass through unchanged.
+             *
+             * @param opcode the invocation opcode
+             * @param owner the internal name of the method's owner
+             * @param name the method name
+             * @param descriptor the method descriptor
+             * @param isInterface whether the owner is an interface
+             */
             @Override
             public void visitMethodInsn(
                     int opcode, String owner, String name, String descriptor, boolean isInterface) {
@@ -203,8 +344,9 @@ public class JmcThreadVisitor {
     }
 
     /**
-     * ClassVisitor that replaces calls to "run" and "join" on objects that extend Thread with calls
-     * to "run1" and "join1" respectively.
+     * ClassVisitor that rewrites {@code Thread.join(...)} and {@code Thread.yield()} calls so they
+     * route through the JMC runtime. It wraps each method body in a {@link
+     * ThreadCallReplacerMethodVisitor}, which performs the actual rewriting behind a runtime guard.
      */
     public static class ThreadCallReplacerClassVisitor extends ClassVisitor {
 
@@ -217,6 +359,17 @@ public class JmcThreadVisitor {
             super(Opcodes.ASM9, cv);
         }
 
+        /**
+         * Wraps every method body in a {@link ThreadCallReplacerMethodVisitor} so its {@code join} and
+         * {@code yield} calls can be rewritten.
+         *
+         * @param access the method access flags
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param signature the generic signature, or {@code null}
+         * @param exceptions the declared exceptions, or {@code null}
+         * @return a {@link MethodVisitor} that rewrites {@code join}/{@code yield} calls
+         */
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -226,10 +379,13 @@ public class JmcThreadVisitor {
     }
 
     /**
-     * MethodVisitor that replaces calls to "run" and "join" on objects that extend Thread with
-     * calls to "run1" and "join1" respectively.
+     * MethodVisitor that rewrites {@code Thread.join(...)} and {@code Thread.yield()} calls. A guarded
+     * {@code join} is redirected to {@code JmcRuntimeUtils.join(...)} and a guarded {@code yield} to
+     * {@code JmcRuntime.yield()}, each only when the receiver is a {@code JmcThread} at runtime;
+     * otherwise the original call is kept (see {@link #visitMethodInsn}).
      */
     public static class ThreadCallReplacerMethodVisitor extends MethodVisitor {
+        /** Descriptors of the {@code Thread.join} overloads eligible for rewriting. */
         private static final Set<String> JOIN_DESCRIPTORS = Set.of("()V", "(J)V", "(JI)V", "(Ljava/time/Duration;)Z");
 
         /**
@@ -242,8 +398,21 @@ public class JmcThreadVisitor {
         }
 
         /**
-         * Visit method invocation instructions. If the instruction is a call "join" on an object
-         * whose class extends Thread, replace it with a call to "join1".
+         * Rewrites {@code Thread.join(...)} and {@code Thread.yield()} calls behind a runtime guard.
+         *
+         * <p>For a virtual {@code join} with a recognized descriptor (see {@link #JOIN_DESCRIPTORS}),
+         * or for a virtual {@code yield}, the receiver is duplicated and passed to {@code
+         * JmcRuntimeUtils.shouldInstrumentThreadCall}; the emitted branch calls {@code
+         * JmcRuntimeUtils.join(...)} (resp. {@code JmcRuntime.yield()}) when the object is a {@code
+         * JmcThread}, and otherwise falls back to the original call. The guard is required because
+         * whether the receiver is really a JMC thread is only known at runtime. All other calls are
+         * forwarded unchanged.
+         *
+         * @param opcode the invocation opcode
+         * @param owner the internal name of the method's owner
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param isInterface whether the owner is an interface
          */
         @Override
         public void visitMethodInsn(
@@ -321,6 +490,17 @@ public class JmcThreadVisitor {
             }
         }
 
+        /**
+         * Maps a {@code Thread.join} overload descriptor to the descriptor of the corresponding {@code
+         * JmcRuntimeUtils.join} static helper, which takes the target {@code Thread} as its first
+         * parameter.
+         *
+         * <p>{@code ()V} → {@code (Ljava/lang/Thread;)V}, {@code (J)V} → {@code (Ljava/lang/Thread;J)V},
+         * and any other (i.e. {@code (JI)V}) → {@code (Ljava/lang/Thread;JI)V}.
+         *
+         * @param descriptor the original {@code join} descriptor
+         * @return the descriptor of the matching {@code JmcRuntimeUtils.join} helper
+         */
         private String matchDescriptor(String descriptor) {
             if (descriptor.equals("()V")) {
                 return "(Ljava/lang/Thread;)V";

@@ -3,23 +3,53 @@ package org.mpi_sws.jmc.agent;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The AgentArgs class is used to parse the agent arguments. */
+/**
+ * Parses and holds the configuration passed to the JMC agent on the {@code -javaagent} flag.
+ *
+ * <p>The agent argument string is the text after the jar path, e.g. {@code
+ * -javaagent:agent.jar=debug=true,instrumentingPackages=com.example}. It is a comma-separated list
+ * of tokens; each token is either a {@code key=value} pair or the bare flag {@code debug}. List-valued
+ * options ({@code instrumentingPackages}, {@code excludedPackages}) use a semicolon-separated value.
+ * Unrecognized keys are ignored.
+ *
+ * <p>An {@code AgentArgs} instance is built once in {@link InstrumentationAgent#premain} and consumed
+ * by {@link PremainInstrumentor} (via {@link JmcMatcher}) to decide which classes to instrument and
+ * how to log them.
+ */
 public class AgentArgs {
+    /** Argument key for the debug flag; enables dumping instrumented classes. */
     private static final String DEBUG_FLAG = "debug";
+    /** Argument key for the directory where instrumented classes are saved in debug mode. */
     private static final String DEBUG_PATH_FLAG = "debugSavePath";
+    /** Argument key for the semicolon-separated list of package prefixes to instrument. */
     private static final String INSTRUMENTING_PKG_FLAG = "instrumentingPackages";
+    /** Argument key for the semicolon-separated list of package prefixes to exclude. */
     private static final String EXCLUDED_PKG_FLAG = "excludedPackages";
+    /** Argument key for the path to the JMC runtime jar. */
     private static final String JMC_RUNTIME_JAR_PATH_FLAG = "jmcRuntimeJarPath";
+
+    /** Whether debug mode is enabled; when {@code true}, instrumented classes are written to disk. */
     private boolean debug = false;
+    /** Directory in which instrumented {@code .class} files are saved when {@link #debug} is on. */
     private String debugSavePath = "build/generated/instrumented";
+    /** Package prefixes defining the instrumentation scope; empty means "instrument everything". */
     private List<String> instrumentingPackages = new ArrayList<>();
+    /** Package prefixes to exclude from instrumentation; a class matching any prefix is skipped. */
     private List<String> excludedPackages = new ArrayList<>();
+    /** Path to the JMC runtime jar loaded before instrumentation begins. */
     private String jmcRuntimeJarPath = "build/deps/jmc-0.1.1.jar";
 
     /**
-     * The AgentArgs constructor is used to parse the agent arguments.
+     * Parses the raw agent argument string, populating the option fields.
      *
-     * @param agentArgs the agent arguments
+     * <p>When {@code agentArgs} is non-{@code null} it is split on commas into tokens; each token is
+     * then split on {@code =}. A two-part token sets the matching option ({@code debug},
+     * {@code debugSavePath}, {@code instrumentingPackages}, {@code excludedPackages},
+     * {@code jmcRuntimeJarPath}), with the list options further split on {@code ;}. A single-part
+     * token equal to {@code debug} enables debug mode. Any option not present keeps its default.
+     *
+     * @param agentArgs the raw agent argument string (may be {@code null}, in which case all defaults
+     *     are kept)
      */
     public AgentArgs(String agentArgs) {
         if (agentArgs != null) {
@@ -92,6 +122,12 @@ public class AgentArgs {
         return jmcRuntimeJarPath;
     }
 
+    /**
+     * Returns a human-readable representation of all parsed options, used for debug logging of the
+     * agent configuration.
+     *
+     * @return a string listing every option and its current value
+     */
     public String toString() {
         return "AgentArgs{"
                 + "debug="

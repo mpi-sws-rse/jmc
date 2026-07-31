@@ -15,14 +15,21 @@ import java.security.ProtectionDomain;
 import java.util.Arrays;
 
 /**
- * The PremainInstrumentor class is responsible for transforming classes during the premain phase of
- * the Java agent lifecycle. It applies various instrumentation visitors to classes that match the
- * specified criteria.
+ * The {@link ClassFileTransformer} that JMC registers with the JVM during the premain phase.
+ *
+ * <p>The JVM calls {@link #transform} for every class as it is loaded. This class is the bridge
+ * between the agent's configuration and the instrumentation pipeline: it uses a {@link JmcMatcher}
+ * (built from {@link AgentArgs}) to decide whether a class is in scope, skips classes annotated with
+ * {@code @JmcIgnoreInstrumentation}, and otherwise delegates the actual bytecode rewriting to {@link
+ * JmcVisitor#transform}. When debug mode is enabled it also persists each instrumented class to disk.
  */
 public class PremainInstrumentor implements ClassFileTransformer {
+    /** Logger for instrumentation progress and errors. */
     private static final Logger LOGGER = LogManager.getLogger(PremainInstrumentor.class);
 
+    /** The parsed agent configuration; supplies the debug flag and save path used by {@link #record}. */
     private final AgentArgs agentArgs;
+    /** The scope filter deciding which classes are instrumented (built from {@code agentArgs}). */
     private final JmcMatcher matcher;
 
     /**
@@ -40,19 +47,23 @@ public class PremainInstrumentor implements ClassFileTransformer {
     /**
      * Transforms the class file buffer of a class being loaded or redefined.
      *
-     * <p>Specifically, if the class matches the arguments provided to the agent, it applies the
-     * following visitors in order:
+     * <p>The steps are:
      *
-     * <ul>
-     *   <li>JmcIgnoreVisitor: Checks if the class has the JmcIgnoreInstrumentation annotation.
-     *   <li>JmcSyncScanVisitor: Scans the class for synchronized methods and collects data.
-     *   <li>JmcSyncMethodVisitor: Instruments synchronized methods based on the collected data.
-     *   <li>JmcFutureVisitor: Instruments classes related to futures and executors.
-     *   <li>JmcAtomicVisitor: Instruments atomic classes.
-     *   <li>JmcReentrantLockVisitor: Instruments reentrant locks.
-     *   <li>JmcThreadVisitor: Instruments thread-related classes.
-     *   <li>JmcReadWriteVisitor: Instruments read-write calls throughout.
-     * </ul>
+     * <ol>
+     *   <li>Copy the input buffer (the JVM requires that {@code classFileBuffer} itself is not
+     *       mutated).
+     *   <li>Ask {@link #matcher} whether the class is in scope; if not, return the (unchanged) copy.
+     *   <li>Run {@link JmcIgnoreVisitor} to check for the {@code @JmcIgnoreInstrumentation} annotation;
+     *       if present, return the (unchanged) copy.
+     *   <li>Delegate the actual instrumentation to {@link JmcVisitor#transform}, which applies the full
+     *       ordered visitor pipeline (sync pre-scan, enum/finalizer opt-outs, then the chained
+     *       type-replacement and inline-instrumentation visitors).
+     *   <li>If debug mode is enabled, persist the instrumented bytes via {@link #record}.
+     * </ol>
+     *
+     * <p>A {@link JmcUnsupportedFeatureException} raised inside the pipeline is propagated unchanged;
+     * any other exception is logged and rethrown as an {@link IllegalClassFormatException} naming the
+     * offending class.
      *
      * @param loader the defining loader of the class to be transformed, may be {@code null} if the
      *     bootstrap loader
@@ -63,7 +74,12 @@ public class PremainInstrumentor implements ClassFileTransformer {
      *     redefined or retransformed; if this is a class load, {@code null}
      * @param protectionDomain the protection domain of the class being defined or redefined
      * @param classFileBuffer the input byte buffer in class file format - must not be modified
-     * @return the transformed class file buffer, or the original
+     * @return the transformed class file buffer, or the original if the class is out of scope or
+     *     annotated to be ignored
+     * @throws IllegalClassFormatException if instrumentation fails for a reason other than an
+     *     unsupported feature
+     * @throws JmcUnsupportedFeatureException if the class uses a concurrent feature JMC does not
+     *     support
      */
     public byte[] transform(
             ClassLoader loader,
@@ -111,6 +127,17 @@ public class PremainInstrumentor implements ClassFileTransformer {
         }
     }
 
+    /**
+     * Writes an instrumented class to disk for debugging.
+     *
+     * <p>Called from {@link #transform} only when debug mode is enabled ({@link AgentArgs#isDebug()}).
+     * The bytes are written to {@code <debugSavePath>/<className>.class} (see {@link
+     * AgentArgs#getDebugSavePath()}), creating parent directories as needed. I/O failures are logged
+     * and swallowed so that a debug-dump problem never aborts the run.
+     *
+     * @param className the internal (slash-separated) name of the class, used to build the output path
+     * @param classFileBuffer the instrumented class bytes to write
+     */
     public void record(String className, byte[] classFileBuffer) {
         String outputDir = this.agentArgs.getDebugSavePath();
         File outFile = new File(outputDir + "/" + className + ".class");

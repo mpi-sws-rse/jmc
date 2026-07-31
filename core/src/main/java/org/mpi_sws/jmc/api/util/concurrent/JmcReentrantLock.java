@@ -12,9 +12,15 @@ import java.util.Objects;
  */
 public class JmcReentrantLock {
 
+    /** Lock state modelled as a plain field ({@code 0} = free, {@code 1} = held) whose reads/writes are reported. */
     private int token = 0;
+    /** The monitor object this lock stands in for (for {@code synchronized} blocks), or {@code null} when it is a standalone lock. */
     private final Object lockObj;
 
+    /**
+     * Creates a standalone lock (the replacement for {@code new ReentrantLock()}). Reports the initial
+     * write of {@code token} and yields.
+     */
     public JmcReentrantLock() {
         JmcRuntimeUtils.writeEventWithoutYield(
                 this, 0, "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock", "token", "I");
@@ -23,16 +29,34 @@ public class JmcReentrantLock {
         this.lockObj = null;
     }
 
+    /**
+     * Creates a lock that stands in for an existing monitor object; used to back instrumented {@code
+     * synchronized} blocks and {@code wait}/{@code notify} on {@code lockObj}.
+     *
+     * @param lockObj the monitor object this lock represents
+     */
     public JmcReentrantLock(Object lockObj) {
         this.lockObj = lockObj;
     }
 
-    /** Returns the instance to be used for locking. */
+    /**
+     * Returns the object used as the lock identity: the wrapped monitor object if any, otherwise this
+     * lock. This is the value reported as the lock {@code instance} in lock events.
+     *
+     * @return the monitor object, or {@code this}
+     */
     public Object getInstance() {
         return Objects.requireNonNullElse(lockObj, this);
     }
 
-    /** Acquires the lock. */
+    /**
+     * Acquires the lock (replacement for {@code ReentrantLock.lock()}).
+     *
+     * <p>Reports a {@code LOCK_ACQUIRE_EVENT} (which yields, letting {@code TrackLocks} decide whether
+     * this task may proceed or must block), then marks the lock held and reports a {@code
+     * LOCK_ACQUIRED_EVENT}. No real JVM lock is taken — ownership and blocking are managed by the
+     * runtime, which is what lets the scheduler serialize contended locks.
+     */
     public void lock() {
         JmcRuntimeUtils.lockAcquireEvent(
                 "org/mpi_sws/jmc/api/util/concurrent/JmcReentrantLock",
@@ -58,7 +82,11 @@ public class JmcReentrantLock {
                 1);
     }
 
-    /** Releases the lock. */
+    /**
+     * Releases the lock (replacement for {@code ReentrantLock.unlock()}). Marks the lock free and
+     * reports a {@code LOCK_RELEASE_EVENT}, which makes {@code TrackLocks} re-activate any tasks
+     * waiting on it.
+     */
     public void unlock() {
         token = 0;
 

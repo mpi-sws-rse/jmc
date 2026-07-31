@@ -9,7 +9,9 @@ import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
  */
 public class JmcAtomicBoolean {
 
+    /** The held boolean value; every access is reported to the runtime as a read/write event. */
     private boolean value;
+    /** Internal lock making the compound {@code compareAndSet} atomic w.r.t. the schedule. */
     private final JmcReentrantLock lock;
 
     /**
@@ -108,7 +110,9 @@ public class JmcAtomicBoolean {
     }
 
     /**
-     * @return
+     * Returns the default object string representation (the value is not read here).
+     *
+     * @return the identity-based string form
      */
     @Override
     public String toString() {

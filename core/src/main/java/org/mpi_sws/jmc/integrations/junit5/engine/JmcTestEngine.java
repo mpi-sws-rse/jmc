@@ -31,13 +31,24 @@ import java.util.function.Predicate;
  */
 public class JmcTestEngine implements TestEngine {
 
+    /** Logger for discovery/execution diagnostics. */
     private static final Logger LOGGER = LogManager.getLogger(JmcTestEngine.class);
 
+    /**
+     * Predicate identifying a "JMC test container": a class annotated with {@link
+     * JmcCheckConfiguration} or {@link JmcCheck}. Used throughout discovery to decide whether a class
+     * (or a method's declaring class) is a JMC test.
+     */
     private static final Predicate<Class<?>> IS_JMC_TEST_CONTAINER =
             classCandidate ->
                     AnnotationSupport.isAnnotated(classCandidate, JmcCheckConfiguration.class)
                             || AnnotationSupport.isAnnotated(classCandidate, JmcCheck.class);
 
+    /**
+     * Returns the unique id of this engine on the JUnit Platform.
+     *
+     * @return the constant engine id {@code "jmc-test-engine"}
+     */
     @Override
     public String getId() {
         return "jmc-test-engine";
@@ -103,6 +114,18 @@ public class JmcTestEngine implements TestEngine {
         return engineDescriptor;
     }
 
+    /**
+     * Discovers JMC test classes under a classpath root and adds them as children of the engine
+     * descriptor.
+     *
+     * <p>Scans {@code uri} with {@link ReflectionSupport#findAllClassesInClasspathRoot} filtered by
+     * {@link #IS_JMC_TEST_CONTAINER}, mapping each matching class to a self-discovering {@link
+     * JmcClassTestDescriptor} (so its annotated methods become children). A checked {@link
+     * JmcCheckerException} raised while building a descriptor is wrapped in a {@link RuntimeException}.
+     *
+     * @param uri the classpath root to scan
+     * @param engineDescriptor the root descriptor to attach discovered classes to
+     */
     private void appendTestsInClasspathRoot(URI uri, TestDescriptor engineDescriptor) {
         ReflectionSupport.findAllClassesInClasspathRoot(
                         uri, IS_JMC_TEST_CONTAINER, name -> true) //
@@ -118,6 +141,16 @@ public class JmcTestEngine implements TestEngine {
                 .forEach(engineDescriptor::addChild);
     }
 
+    /**
+     * Discovers JMC test classes in a package and adds them as children of the engine descriptor.
+     *
+     * <p>Same behavior as {@link #appendTestsInClasspathRoot} but scoped to a package via {@link
+     * ReflectionSupport#findAllClassesInPackage}: each JMC-container class becomes a self-discovering
+     * {@link JmcClassTestDescriptor}.
+     *
+     * @param packageName the package to scan
+     * @param engineDescriptor the root descriptor to attach discovered classes to
+     */
     private void appendTestsInPackage(String packageName, TestDescriptor engineDescriptor) {
         LOGGER.debug("Discovering tests in package {}", packageName);
         ReflectionSupport.findAllClassesInPackage(
@@ -134,6 +167,20 @@ public class JmcTestEngine implements TestEngine {
                 .forEach(engineDescriptor::addChild);
     }
 
+    /**
+     * Discovers the JMC tests contributed by a single class and attaches them to the engine
+     * descriptor.
+     *
+     * <p>If {@code javaClass} is itself a JMC container, it is added as a self-discovering {@link
+     * JmcClassTestDescriptor} (its annotated methods become children). Otherwise the class is searched
+     * (top-down) for methods annotated with {@link JmcCheckConfiguration} or {@link JmcCheck}: if none
+     * exist nothing is added; if some exist, a non-self-discovering {@link JmcClassTestDescriptor} is
+     * added and a {@link JmcMethodTestDescriptor} child is created for each annotated method.
+     *
+     * @param javaClass the class to inspect
+     * @param engineDescriptor the root descriptor to attach discovered tests to
+     * @throws JmcCheckerException if building a {@link JmcClassTestDescriptor} fails
+     */
     private void appendTestsInClass(Class<?> javaClass, TestDescriptor engineDescriptor)
             throws JmcCheckerException {
         LOGGER.debug("Discovering tests in class {}", javaClass.getName());
@@ -189,6 +236,18 @@ public class JmcTestEngine implements TestEngine {
                 .executionFinished(root, TestExecutionResult.successful());
     }
 
+    /**
+     * Recursively executes a descriptor subtree, reporting results to the JUnit listener.
+     *
+     * <p>If the descriptor is a runnable leaf (a {@link JmcExecutableTestDescriptor}, i.e. a {@link
+     * JmcMethodTestDescriptor}), it reports {@code executionStarted}, calls {@link
+     * JmcExecutableTestDescriptor#execute()}, and reports {@code executionFinished} with a successful
+     * result — or a failed result carrying the thrown {@link Throwable}. Otherwise (a container) it
+     * recurses into the descriptor's children; containers are never themselves "executed".
+     *
+     * @param listener the JUnit execution listener to report start/finish events to
+     * @param descriptor the descriptor subtree to execute
+     */
     private void executeDescriptor(EngineExecutionListener listener, TestDescriptor descriptor) {
         if (descriptor instanceof JmcExecutableTestDescriptor exec) {
             listener.executionStarted(descriptor);
