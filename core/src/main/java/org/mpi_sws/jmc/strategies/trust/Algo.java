@@ -149,7 +149,7 @@ public class Algo {
             case "opensmt" -> SMTSolverTypes.OPENSMT;
             case "smtinterpol" -> SMTSolverTypes.SMTINTERPOL;
             case "princess" -> SMTSolverTypes.PRINCESS;
-            case "booleanor" -> SMTSolverTypes.BOOLECTOR;
+            case "boolector" -> SMTSolverTypes.BOOLECTOR;
             case "off" -> SMTSolverTypes.OFF;
             default -> {
                 LOGGER.warn("Unknown solver type: {}. Defaulting to Z3.", solverType);
