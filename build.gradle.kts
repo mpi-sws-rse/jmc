@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.4.20-RC"
     id("maven-publish")
 }
 
@@ -25,6 +25,24 @@ repositories {
 allprojects {
     group = "org.mpi-sws.jmc"
     version = "0.1.2"
+
+    // The Kotlin Gradle Plugin is held at 2.4.20-RC (see the plugins block) because
+    // that is the earliest release fixing the unsafe deserialization of Gradle
+    // build-cache metadata, which allowed code execution (affects < 2.4.20-Beta1).
+    // No stable release carries the fix yet — the latest stable, 2.4.10, is still
+    // affected.
+    //
+    // The KGP version also sets the kotlin-stdlib version recorded in the published
+    // gradle-plugin POM, so pin the core libraries to the latest stable release:
+    // consumers of the JMC Gradle plugin must not inherit a pre-release stdlib.
+    // coreLibrariesVersion is per-project, hence configuring it for every module
+    // that applies the Kotlin plugin rather than only the root. Remove this block
+    // once 2.4.20 ships as stable and the plugins block is moved onto it.
+    plugins.withId("org.jetbrains.kotlin.jvm") {
+        extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+            coreLibrariesVersion = "2.4.10"
+        }
+    }
 
     // Pin patched versions of Checkstyle's vulnerable transitive dependencies,
     // pulled in by com.puppycrawl.tools:checkstyle 12.3.1 via maven-doxia 1.12.0:
