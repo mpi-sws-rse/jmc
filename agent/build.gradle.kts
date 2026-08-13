@@ -30,7 +30,7 @@ repositories {
 }
 
 checkstyle {
-    toolVersion = "10.19.0"
+    toolVersion = "12.3.1"
 }
 
 java {
