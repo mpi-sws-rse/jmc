@@ -5,12 +5,16 @@ buildscript {
     // Shadow plugin classpath by com.gradleup.shadow:9.0.0-beta9:
     //  - plexus-utils 4.0.2: Directory Traversal in Expand.extractFile (< 4.0.3)
     //  - log4j-core 2.24.3: log injection / TLS hostname verification issues (< 2.25.4)
+    //  - log4j-api/log4j-core: improper encoding of non-finite floating-point values
+    //    during MapMessage JSON serialization, producing invalid JSON
+    //    (>= 2.13.1, < 2.25.5). log4j-api and log4j-core ship as a matched pair —
+    //    keep both on the same version.
     // Remove each once a Shadow release bundles the patched version.
     configurations.classpath {
         resolutionStrategy {
             force("org.codehaus.plexus:plexus-utils:4.0.3")
-            force("org.apache.logging.log4j:log4j-core:2.25.4")
-            force("org.apache.logging.log4j:log4j-api:2.25.4")
+            force("org.apache.logging.log4j:log4j-core:2.25.5")
+            force("org.apache.logging.log4j:log4j-api:2.25.5")
         }
     }
 }
@@ -48,9 +52,9 @@ dependencies {
     implementation("org.ow2.asm:asm:9.8")
     implementation("org.ow2.asm:asm-util:9.8")
     implementation(project(":core"))
-    implementation("org.apache.logging.log4j:log4j-api:2.25.4")
+    implementation("org.apache.logging.log4j:log4j-api:2.25.5")
     implementation("org.apache.logging.log4j:log4j-api-kotlin:1.5.0")
-    implementation("org.apache.logging.log4j:log4j-core:2.25.4")
+    implementation("org.apache.logging.log4j:log4j-core:2.25.5")
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
