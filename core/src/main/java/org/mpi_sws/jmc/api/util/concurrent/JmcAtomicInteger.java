@@ -10,7 +10,9 @@ import org.mpi_sws.jmc.runtime.JmcRuntimeUtils;
  */
 public class JmcAtomicInteger {
 
+    /** The held integer value; every access is reported to the runtime as a read/write event. */
     private int value;
+    /** Internal lock making the compound read-modify-write operations atomic w.r.t. the schedule. */
     private final JmcReentrantLock lock;
 
     /**
@@ -194,6 +196,13 @@ public class JmcAtomicInteger {
         }
     }
 
+    /**
+     * Atomically adds the given delta and returns the previous value (reporting a read then a write
+     * event, under the internal lock).
+     *
+     * @param delta the value to add
+     * @return the previous value
+     */
     public int getAndAdd(int delta) {
         lock.lock();
         try {
@@ -245,6 +254,12 @@ public class JmcAtomicInteger {
         }
     }
 
+    /**
+     * Atomically decrements the value by 1 and returns the previous value (reporting a read then a
+     * write event, under the internal lock).
+     *
+     * @return the previous value
+     */
     public int getAndDecrement() {
         lock.lock();
         try {
@@ -267,6 +282,12 @@ public class JmcAtomicInteger {
         }
     }
 
+    /**
+     * Atomically decrements the value by 1 and returns the updated value (reporting a write then a
+     * read event, under the internal lock).
+     *
+     * @return the updated value
+     */
     public int decrementAndGet() {
         lock.lock();
         try {
@@ -290,7 +311,9 @@ public class JmcAtomicInteger {
     }
 
     /**
-     * @return
+     * Returns the default object string representation (the value is not read here).
+     *
+     * @return the identity-based string form
      */
     @Override
     public String toString() {

@@ -6,6 +6,22 @@ import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Translates runtime events into the Trust algorithm's {@link Event}s.
+ *
+ * <p>This is the boundary between JMC's runtime and the Trust strategy. It maps each {@link
+ * JmcRuntimeEvent} to zero or more trust events, applying the conventions the algorithm relies on:
+ *
+ * <ul>
+ *   <li>task ids are shifted from the runtime's 1-indexed scheme to Trust's 0-indexed scheme
+ *       (subtracting 1);
+ *   <li>thread start/finish/join become {@code NOOP} events on {@link LocationStore#ThreadLocation}
+ *       (tagged with attributes read back by {@link EventUtils});
+ *   <li>a lock acquire is expanded into a {@code READ_EX}/{@code WRITE_EX} read-modify-write pair,
+ *       and a lock release into a {@code WRITE};
+ *   <li>unsupported runtime events yield an empty list.
+ * </ul>
+ */
 public class EventFactory {
     /**
      * Creates a new event mapping the runtime event to the trust event.

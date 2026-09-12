@@ -12,6 +12,16 @@ import org.mpi_sws.jmc.solver.SolverUtil;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * Evaluates a symbolic formula against the <em>concrete</em> values of its operands, with no SMT
+ * solver call.
+ *
+ * <p>Every symbolic value carries a concrete witness alongside its symbolic expression. A {@code
+ * JmcBooleanFormula} holds one of these evaluators and its operands/operator; {@link #evaluate()}
+ * interprets the operator over the operands' concrete values (recursing into arithmetic and nested
+ * formulas). This is the concolic optimization that lets ConDpor take the <em>current</em> branch
+ * for free and query the solver only for the other branch.
+ */
 public class JmcConcreteFormula {
 
     /**

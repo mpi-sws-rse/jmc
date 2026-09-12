@@ -17,9 +17,12 @@ import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
  */
 public class JmcThread extends Thread {
 
+    /** Logger for this thread; re-bound with the task id once one is assigned. */
     private static Logger LOGGER = LogManager.getLogger(JmcThread.class);
 
+    /** JMC task id identifying this thread to the runtime (may be {@code null} for a wrapper). */
     private final Long jmcThreadId;
+    /** Task id of the task that created this thread (recorded as {@code startedBy} in the start event). */
     private final Long createdBy;
 
     // TODO: extend to all constructors of Thread and handle ThreadGroups, also all join methods
@@ -39,9 +42,16 @@ public class JmcThread extends Thread {
         this(r, JmcRuntime.addNewTask());
     }
 
-    // Private constructor to handle wrapping existing threads
-    // without initializing a new JMC task in the runtime.
-    // Using any JmcThread method will break if initialize is false.
+    /**
+     * Private constructor for wrapping an existing thread/runnable.
+     *
+     * <p>When {@code initialize} is {@code true} a new runtime task is allocated and the interrupt
+     * handler installed; when {@code false} no task is created (used by {@link #currentThread()} to
+     * wrap a non-JMC thread) — in which case JMC methods must not be called on the result.
+     *
+     * @param r the runnable to wrap
+     * @param initialize whether to allocate a JMC task and install the interrupt handler
+     */
     private JmcThread(Runnable r, boolean initialize) {
         super(r);
         if (initialize) {
@@ -75,6 +85,15 @@ public class JmcThread extends Thread {
         super.setUncaughtExceptionHandler(this::handleInterrupt);
     }
 
+    /**
+     * Returns the current thread as a {@link JmcThread}.
+     *
+     * <p>If the current thread is already a {@code JmcThread} it is returned directly; otherwise it is
+     * wrapped in a non-initialized {@code JmcThread} (no runtime task is allocated — JMC methods must
+     * not be called on such a wrapper).
+     *
+     * @return the current thread as a {@code JmcThread}
+     */
     public static JmcThread currentThread() {
         Thread t = Thread.currentThread();
         if (t instanceof JmcThread) {
@@ -93,6 +112,16 @@ public class JmcThread extends Thread {
         return jmcThreadId;
     }
 
+    /**
+     * JMC harness for a started thread.
+     *
+     * <p>Reports a {@code START_EVENT} (with {@code startedBy = createdBy}), yields under this
+     * thread's task id so the runtime schedules it deterministically, runs the user body {@link
+     * #run1()}, and finally — in a {@code finally} — reports a {@code FINISH_EVENT} and joins the
+     * task. Re-execution and blocked-task signals are logged rather than propagated. This method is
+     * the entry point the JVM invokes when {@link #start()} launches the thread; user code lives in
+     * {@code run1}.
+     */
     @Override
     public void run() {
         JmcRuntimeEvent event =
@@ -178,6 +207,13 @@ public class JmcThread extends Thread {
         }
     }
 
+    /**
+     * Starts the thread under JMC's control.
+     *
+     * <p>Pauses the current (starting) task, calls {@link Thread#start()} to launch the new JVM
+     * thread, and waits — handing control to the runtime so the newly started task is scheduled
+     * deterministically rather than racing the parent.
+     */
     @Override
     public void start() {
         Long taskId = JmcRuntime.currentTask();
@@ -193,6 +229,13 @@ public class JmcThread extends Thread {
         super.run();
     }
 
+    /**
+     * Uncaught-exception handler installed on this thread: reports a {@code HALT_EVENT} for the task
+     * so the runtime records that it was interrupted, then logs the exception.
+     *
+     * @param t the thread that threw
+     * @param e the uncaught throwable
+     */
     private void handleInterrupt(Thread t, Throwable e) {
         JmcRuntimeEvent event =
                 new JmcRuntimeEvent.Builder()

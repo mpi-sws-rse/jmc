@@ -6,19 +6,58 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Makes a class's static initialization observable and re-runnable by JMC.
+ *
+ * <p>A normal {@code <clinit>} runs at most once per JVM, but the JMC runtime re-executes static
+ * initializers on every iteration after the first (see the runtime life-cycle). To support this, the
+ * visitor splits the original {@code <clinit>} body into a private {@code $staticInitBody()} and
+ * generates:
+ *
+ * <ul>
+ *   <li>{@code $staticInitExplicit()} — public, simply calls {@code $staticInitBody}; invoked by the
+ *       runtime to deterministically re-run static init each iteration;
+ *   <li>{@code $staticInitImplicit()} — brackets {@code $staticInitBody} with {@code
+ *       JmcRuntimeUtils.startStaticInitEventWithoutYield()} / {@code endStaticInitEventWithoutYield()};
+ *   <li>a recreated {@code <clinit>} that registers the class via {@code
+ *       JmcRuntimeUtils.registerStaticInitializedClass}, calls {@code $staticInitImplicit}, and
+ *       registers any static {@code ExecutorService} fields.
+ * </ul>
+ *
+ * <p>It also strips {@code final} from static-final fields (so they can be re-initialized) and handles
+ * interfaces separately (interface static fields are re-emitted through a generated body).
+ */
 public class JmcStaticMethodVisitor extends ClassVisitor {
 
+    /** Internal name of the class being visited (captured in {@link #visit}). */
     private String className;
+    /** Captured info about the original {@code <clinit>}, used to recreate it in {@link #visitEnd}. */
     private StaticMethodInfo staticMethodInfo;
 
+    /** Whether the class being visited is an interface. */
     private boolean isInterface = false;
+    /** Static fields of an interface, collected so their initial values can be re-emitted. */
     private final List<FieldInfo> interfaceFields = new ArrayList<>();
+    /** Static {@code ExecutorService}/{@code ScheduledExecutorService} fields to auto-register. */
     private final List<ExecutorFieldInfo> staticExecutorFields = new ArrayList<>();
 
+    /**
+     * @param classVisitor the downstream {@link ClassVisitor} to delegate to
+     */
     public JmcStaticMethodVisitor(ClassVisitor classVisitor) {
         super(Opcodes.ASM9, classVisitor);
     }
 
+    /**
+     * Captures the class name and whether it is an interface, then forwards the header.
+     *
+     * @param version the class file version
+     * @param access the class access flags
+     * @param name the internal name of the class
+     * @param signature the generic signature, or {@code null}
+     * @param superName the internal name of the superclass
+     * @param interfaces the internal names of implemented interfaces
+     */
     @Override
     public void visit(
             int version,
@@ -36,6 +75,22 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
+    /**
+     * Records fields of interest and strips {@code final} from static-final fields.
+     *
+     * <p>For an interface, the field is recorded as a {@link FieldInfo} (so its initial value can be
+     * re-emitted through the generated body). For a class, a static {@code ExecutorService} /
+     * {@code ScheduledExecutorService} field is recorded as an {@link ExecutorFieldInfo} for automatic
+     * registration, and any static-final field is emitted with the {@code final} modifier removed so it
+     * can be re-initialized on later iterations.
+     *
+     * @param access the field access flags
+     * @param name the field name
+     * @param desc the field descriptor
+     * @param signature the generic signature, or {@code null}
+     * @param value the constant value, or {@code null}
+     * @return the delegate's {@link FieldVisitor}
+     */
     @Override
     public FieldVisitor visitField(
             int access, String name, String desc, String signature, Object value) {
@@ -55,6 +110,22 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         return super.visitField(access, name, desc, signature, value);
     }
 
+    /**
+     * Redirects the static initializer into a helper body, and passes other methods through.
+     *
+     * <p>For an interface {@code <clinit>}, the body is wrapped in a {@link JmcStaticInitMethodVisitor}
+     * (which prepends the class registration and {@code $staticInitImplicit} call). For a class {@code
+     * <clinit>}, the original access/signature is recorded in {@link #staticMethodInfo} and the body is
+     * emitted under the private name {@code $staticInitBody} — the real {@code <clinit>} is regenerated
+     * in {@link #visitEnd}. All other methods pass through unchanged.
+     *
+     * @param access the method access flags
+     * @param name the method name
+     * @param desc the method descriptor
+     * @param signature the generic signature, or {@code null}
+     * @param exceptions the declared exceptions, or {@code null}
+     * @return the {@link MethodVisitor} for the (possibly redirected) method
+     */
     @Override
     public MethodVisitor visitMethod(
             int access, String name, String desc, String signature, String[] exceptions) {
@@ -76,6 +147,14 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         return super.visitMethod(access, name, desc, signature, exceptions);
     }
 
+    /**
+     * Emits the generated static-init helper methods once the class body has been visited.
+     *
+     * <p>For an interface with static fields, it creates the interface body helper and the {@code
+     * $staticInitExplicit} / {@code $staticInitImplicit} methods (an interface with no static fields
+     * needs nothing). For a class that had a {@code <clinit>}, it creates {@code $staticInitExplicit},
+     * {@code $staticInitImplicit}, and the regenerated {@code <clinit>}.
+     */
     //    @Override
     public void visitEnd() {
         // Handle interfaces with static fields
@@ -102,6 +181,10 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         super.visitEnd();
     }
 
+    /**
+     * Generates the private {@code $staticInitBody()} for an interface, whose body re-emits a write
+     * event for each recorded interface static field (via {@link FieldInfo#insertWriteEventCall}).
+     */
     private void createInterfaceStaticInitBody() {
         MethodVisitor mv = cv.visitMethod(
                 Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
@@ -122,6 +205,11 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     }
 
 
+    /**
+     * Generates the public {@code $staticInitExplicit()} method, which simply calls {@code
+     * $staticInitBody()}. The runtime invokes this to re-run static initialization deterministically on
+     * each iteration <em>without</em> emitting start/end static-init events.
+     */
     private void createStaticInitExplicit() {
         MethodVisitor mv = cv.visitMethod(
                 Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
@@ -144,8 +232,12 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         mv.visitEnd();
     }
 
-    // Replace the createStaticInitImplicit method in JmcStaticMethodVisitor.java:
-
+    /**
+     * Generates the public {@code $staticInitImplicit()} method, which brackets {@code
+     * $staticInitBody()} with {@code JmcRuntimeUtils.startStaticInitEventWithoutYield()} and {@code
+     * endStaticInitEventWithoutYield()} so the runtime can enforce single-threaded static init. This is
+     * the variant called from the regenerated {@code <clinit>}.
+     */
     private void createStaticInitImplicit() {
         MethodVisitor mv = cv.visitMethod(
                 Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
@@ -185,6 +277,13 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
     }
 
 
+    /**
+     * Regenerates the real {@code <clinit>} for a class (reusing the original access/signature captured
+     * in {@link #staticMethodInfo}). The generated body registers the class with {@code
+     * JmcRuntimeUtils.registerStaticInitializedClass}, calls {@code $staticInitImplicit()}, and then
+     * registers each recorded static executor field via {@code JmcRuntimeUtils.registerStaticExecutorField}
+     * (using reflection-based registration to avoid triggering field-read instrumentation).
+     */
     private void createClinit() {
         MethodVisitor mv = cv.visitMethod(
                 this.staticMethodInfo.access(),
@@ -234,10 +333,20 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
 
 
 
+    /**
+     * @param access the field access flags
+     * @return {@code true} if the field is both static and final
+     */
     private boolean isStaticFinalField(int access) {
         return (access & Opcodes.ACC_STATIC) != 0 && (access & Opcodes.ACC_FINAL) != 0;
     }
 
+    /**
+     * @param access the field access flags
+     * @param desc the field descriptor
+     * @return {@code true} if the field is a static {@code ExecutorService} or {@code
+     *     ScheduledExecutorService}
+     */
     private boolean isStaticExecutorServiceField(int access, String desc) {
         if ((access & Opcodes.ACC_STATIC) == 0) {
             return false;
@@ -247,20 +356,38 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
                 desc.equals("Ljava/util/concurrent/ScheduledExecutorService;");
     }
 
+    /**
+     * @param access the access flags
+     * @return the flags with {@code ACC_FINAL} cleared
+     */
     private int removeFinal(int access) {
         // Remove the final modifier from the access flags
         return access & ~Opcodes.ACC_FINAL;
     }
 
+    /**
+     * Per-{@code <clinit>} visitor for interfaces. It prepends, at the start of the interface's static
+     * initializer, a call registering the class ({@code registerStaticInitializedClass}) followed by a
+     * call to {@code $staticInitImplicit()} to run the instrumented initialization.
+     */
     private static class JmcStaticInitMethodVisitor extends MethodVisitor {
 
+        /** Internal name of the interface being visited, used to build the invocation targets. */
         private final String className;
 
+        /**
+         * @param methodVisitor the downstream {@link MethodVisitor} to delegate to
+         * @param className the internal name of the interface being visited
+         */
         public JmcStaticInitMethodVisitor(MethodVisitor methodVisitor, String className) {
             super(Opcodes.ASM9, methodVisitor);
             this.className = className;
         }
 
+        /**
+         * Prepends the class-registration and {@code $staticInitImplicit()} calls before the original
+         * static-initializer code runs.
+         */
         @Override
         public void visitCode() {
             super.visitCode();
@@ -284,19 +411,51 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         }
     }
 
+    /**
+     * Captured access flags and signature of the original {@code <clinit>}, used by {@link
+     * #createClinit} to regenerate it with the same shape.
+     *
+     * @param access the original {@code <clinit>} access flags
+     * @param name the method name ({@code <clinit>})
+     * @param desc the method descriptor
+     * @param signature the generic signature, or {@code null}
+     * @param exceptions the declared exceptions, or {@code null}
+     */
     private record StaticMethodInfo(
             int access, String name, String desc, String signature, String[] exceptions) {
+        /**
+         * @return the replacement static-init method name (currently unused)
+         */
         public String getStaticReplacementName() {
             return "$staticInit";
         }
 
+        /**
+         * @return the access flags for a replacement static-init method (currently unused)
+         */
         public int getStaticReplacementAccess() {
             return Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC;
         }
     }
 
+    /**
+     * Captured description of an interface static field, used to re-emit its initial-value write event
+     * in the generated interface body.
+     *
+     * @param className the internal name of the declaring interface
+     * @param name the field name
+     * @param desc the field descriptor
+     * @param value the field's constant initial value, or {@code null}
+     */
     private record FieldInfo(String className, String name, String desc, Object value) {
 
+        /**
+         * Emits bytecode that reports a write event for this field's initial value via {@code
+         * JmcRuntimeUtils.writeEvent}. A {@code null} value is pushed as {@code null}; a non-null
+         * constant is loaded and boxed via {@link VisitorHelper#addObjectConverter}.
+         *
+         * @param mv the method visitor to emit the call into
+         */
         public void insertWriteEventCall(MethodVisitor mv) {
             if (value == null) {
                 mv.visitInsn(Opcodes.ACONST_NULL);
@@ -317,12 +476,25 @@ public class JmcStaticMethodVisitor extends ClassVisitor {
         }
     }
 
+    /**
+     * Captured name and descriptor of a static {@code ExecutorService} field, used to register it with
+     * the runtime after class initialization completes.
+     *
+     * @param name the field name
+     * @param desc the field descriptor
+     */
     private record ExecutorFieldInfo(String name, String desc) {
 
         /**
          * Inserts a call to register a static ExecutorService field.
          * Generates bytecode equivalent to:
          *   JmcRuntime.registerExecutor(ClassName.fieldName, true);
+         *
+         * <p>Note: this helper is defined but not currently used; {@link #createClinit} registers
+         * executor fields via {@code JmcRuntimeUtils.registerStaticExecutorField} instead.
+         *
+         * @param mv the method visitor to emit the call into
+         * @param className the internal name of the class declaring the field
          */
         public void insertRegisterExecutorCall(MethodVisitor mv, String className) {
             // Load the static field value onto the stack

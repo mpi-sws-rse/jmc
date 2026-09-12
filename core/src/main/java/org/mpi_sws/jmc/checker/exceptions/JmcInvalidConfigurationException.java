@@ -1,10 +1,11 @@
 package org.mpi_sws.jmc.checker.exceptions;
 
 /**
- * Exception class for JMC invalid configuration errors.
+ * Exception for an invalid JMC checker configuration.
  *
- * <p>This exception is thrown when there are issues related to the configuration of the JMC
- * checker, such as missing or invalid settings.
+ * <p>A {@link JmcCheckerException} subtype thrown while assembling a configuration — for example by
+ * {@code JmcCheckerConfiguration.Builder.build()} when neither {@code numIterations} nor a timeout is
+ * set, or by {@code JmcDescriptorUtil} for a contradictory {@code @JmcMeasureGraphCoverage} setting.
  */
 public class JmcInvalidConfigurationException extends JmcCheckerException {
     /**

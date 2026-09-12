@@ -38,6 +38,22 @@ import org.gradle.api.tasks.testing.Test
  *   ./gradlew :iceberg-core:jmcTest --tests org.apache.iceberg.TestInMemoryCatalogJmc
  */
 class JmcPlugin : Plugin<Project> {
+    /**
+     * Wires JMC into the applied Gradle build.
+     *
+     * Registers the `jmc { ... }` configuration [JmcExtension], then — inside
+     * [Project.afterEvaluate], so the extension values are final — resolves the JMC agent and
+     * library JARs (non-transitively, from Maven Local/Central), builds the `-javaagent` argument
+     * via [buildAgentArgs], adds the library as a `testImplementation` dependency, and attaches the
+     * agent to the relevant test task(s).
+     *
+     * Two modes are supported. In *simple* mode (empty [JmcExtension.testTask]) the agent is
+     * attached to every [Test] task of the applied project. In *multi-project* mode
+     * ([JmcExtension.target] and/or [JmcExtension.testTask]) it configures — creating it if needed —
+     * a dedicated test task on the target subproject, leaving the regular `test` task unaffected.
+     *
+     * @param project the project this plugin is applied to.
+     */
     override fun apply(project: Project) {
         val extension = project.extensions.create("jmc", JmcExtension::class.java)
 
@@ -111,6 +127,19 @@ class JmcPlugin : Plugin<Project> {
         }
     }
 
+    /**
+     * Builds the comma-separated token list appended to `-javaagent:<agentJar>=...`.
+     *
+     * Always emits `jmcRuntimeJarPath=<libraryJar>` so the agent can load the JMC runtime before
+     * instrumentation; conditionally adds the `debug` flag with `debugSavePath`,
+     * `instrumentingPackages` (semicolon-joined), and `excludedPackages` (semicolon-joined). These
+     * keys are exactly those parsed by the agent's `AgentArgs` (see the Instrumentation docs), so
+     * this method is the build-side counterpart of the agent's argument contract.
+     *
+     * @param extension the resolved `jmc { ... }` configuration.
+     * @param libraryJarFile the resolved JMC library JAR (the runtime the agent must load).
+     * @return the ordered list of agent-argument tokens.
+     */
     private fun buildAgentArgs(extension: JmcExtension, libraryJarFile: java.io.File): List<String> {
         val args = mutableListOf<String>()
         args.add("jmcRuntimeJarPath=$libraryJarFile")

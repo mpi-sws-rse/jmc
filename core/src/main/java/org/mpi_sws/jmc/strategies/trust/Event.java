@@ -7,12 +7,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Represents an event object used by the algorithm.
+ * A single action of the program under test, as seen by the Trust algorithm.
+ *
+ * <p>Every instrumented operation the runtime reports is translated (by {@link EventFactory}) into
+ * one or more {@code Event}s and added to an {@link ExecutionGraph} as an {@link
+ * ExecutionGraphNode}. An event carries its {@link Type} (read, write, exclusive read/write, thread
+ * bookkeeping, assume, ...), the memory {@link #location} it touches (or {@code null} for
+ * non-memory events), a {@link Key} that identifies it within the graph, and an open-ended
+ * attribute map for extra data (values, the spawning task of a thread start, symbolic formulas,
+ * ...).
  */
 public class Event {
+    /** The memory location this event accesses, or {@code null} for non-memory events. */
     private Integer location;
+    /** Identifies this event within the graph (task id + program-order index). */
     private final Key key;
+    /** The kind of action this event represents. */
     private final Type type;
+    /** Open-ended per-event data (read/written values, thread-start metadata, formulas, ...). */
     private final Map<String, Object> attributes;
 
     /**
@@ -42,6 +54,12 @@ public class Event {
         return e;
     }
 
+    /**
+     * Serializes this event (key, location, type, and attributes) to JSON, used when dumping graphs
+     * for debugging.
+     *
+     * @return the JSON representation.
+     */
     public JsonElement toJson() {
         JsonObject json = new JsonObject();
         json.add("key", key.toJson());
@@ -57,6 +75,12 @@ public class Event {
         return json;
     }
 
+    /**
+     * Serializes this event without its location, so two graphs that differ only in concrete
+     * location ids hash identically (used for graph-coverage counting).
+     *
+     * @return the location-independent JSON representation.
+     */
     public JsonElement toJsonIgnoreLocation() {
         JsonObject json = new JsonObject();
         json.add("key", key.toJson());
@@ -85,6 +109,12 @@ public class Event {
         return (T) attributes.get(key);
     }
 
+    /**
+     * Two events are equal when they have the same {@link Key} and the same {@link Type}.
+     *
+     * @param obj the object to compare with.
+     * @return true if {@code obj} is an event with an equal key and type.
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -124,6 +154,11 @@ public class Event {
         return location;
     }
 
+    /**
+     * Sets the memory location of the event. Used when locations are re-mapped across iterations.
+     *
+     * @param location the location hash code.
+     */
     public void setLocation(Integer location) {
         this.location = location;
     }
@@ -212,42 +247,73 @@ public class Event {
         return e;
     }
 
+    /**
+     * Returns whether an attribute with the given key is present.
+     *
+     * @param key the attribute key.
+     * @return true if the attribute exists.
+     */
     public boolean hasAttribute(String key) {
         return attributes.containsKey(key);
     }
 
     /**
-     * Represents the type of the event according to the algorithm.
+     * The kinds of action an {@link Event} can represent.
+     *
+     * <p>Reads and writes are ordinary memory accesses; the {@code _EX} variants are the two halves
+     * of a read-modify-write (used for locks and atomics). Thread creation, start, and join are
+     * modeled as {@code NOOP} events (with attributes), and locks are expanded into exclusive
+     * read/write and release {@code WRITE}s by {@link EventFactory}.
      */
     public enum Type {
+        /** A {@code JmcAssume} assumption; a failed assumption prunes the execution. */
         ASSUME,
+        /** An ordinary read of a memory location. */
         READ,
+        /** The read half of a read-modify-write (e.g. a lock acquire). */
         READ_EX,
+        /** A blocking label parking a task at its program-order tip (e.g. waiting for a lock). */
         BLOCK,
+        /** The initial event; the single root of every graph. */
         INIT,
+        /** An ordinary write to a memory location. */
         WRITE,
+        /** The write half of a read-modify-write (e.g. completing a lock acquire). */
         WRITE_EX,
+        /** The end-of-execution marker for a task. */
         END,
+        /** A detected error (e.g. an assertion failure), carrying a message attribute. */
         ERROR,
+        /** A lock-acquire request, before it is expanded into its exclusive read/write pair. */
         LOCK_ACQUIRE,
+        /** A lock release, modeled as a {@code WRITE} on the lock's location. */
         LOCK_RELEASE,
+        /** A symbolic branch introduced by the concolic (ConDpor) extension. */
         SYMBOLIC,
+        /** A no-op used for thread-lifecycle bookkeeping (start/finish/join) and similar markers. */
         NOOP
     }
 
     /**
-     * Unique key for the event.
+     * Identifies an {@link Event} within an {@link ExecutionGraph}.
+     *
+     * <p>A key is the pair {@code (taskId, timestamp)}, where {@code timestamp} is the event's index
+     * in its task's program order; this pair is what {@link #equals(Object)} and {@link #hashCode()}
+     * use, and it is how {@code ExecutionGraph.getEventNode} locates a node. The {@link #toStamp}
+     * (position in the graph's addition order) is a cached convenience value and is <em>not</em>
+     * part of the key's identity — the authoritative addition order is the graph's {@code allEvents}
+     * list.
      */
     public static class Key {
-        // The task to which the event belongs to
+        /** The task the event belongs to. */
         private final Long taskId;
-        // The index of the event in that task. Assuming deterministic executions here.
+        /** The event's index within its task's program order (assuming deterministic executions). */
         private Integer timestamp;
-        // The index of the event in the total order
+        /** Cached position in the graph's addition order; not part of key identity. */
         private Integer toStamp;
 
         /**
-         * Creates a new key with the given task ID and timestamp.
+         * Creates a key for the given task with no timestamp yet (assigned when the event is added).
          *
          * @param taskId The task ID.
          */
@@ -257,36 +323,78 @@ public class Event {
             this.toStamp = null;
         }
 
+        /**
+         * Copy constructor.
+         *
+         * @param other the key to copy.
+         */
         public Key(Key other) {
             this.taskId = other.taskId;
             this.timestamp = other.timestamp;
             this.toStamp = other.toStamp;
         }
 
+        /**
+         * Returns a copy of this key.
+         *
+         * @return a new key with the same fields.
+         */
         public Key clone() {
             return new Key(this);
         }
 
+        /**
+         * Returns the task id.
+         *
+         * @return the task id (may be {@code null} for the init/end events).
+         */
         public Long getTaskId() {
             return taskId;
         }
 
+        /**
+         * Returns the program-order index of the event within its task.
+         *
+         * @return the timestamp.
+         */
         public Integer getTimestamp() {
             return timestamp;
         }
 
+        /**
+         * Sets the program-order index of the event within its task.
+         *
+         * @param timestamp the timestamp.
+         */
         public void setTimestamp(Integer timestamp) {
             this.timestamp = timestamp;
         }
 
+        /**
+         * Returns the cached addition-order position of the event.
+         *
+         * @return the total-order stamp.
+         */
         public Integer getToStamp() {
             return toStamp;
         }
 
+        /**
+         * Sets the cached addition-order position of the event.
+         *
+         * @param toStamp the total-order stamp.
+         */
         public void setToStamp(Integer toStamp) {
             this.toStamp = toStamp;
         }
 
+        /**
+         * Two keys are equal when they have the same task id and timestamp (the init/end key, with
+         * both {@code null}, equals only another such key).
+         *
+         * @param o the object to compare with.
+         * @return true if the keys share task id and timestamp.
+         */
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -307,6 +415,11 @@ public class Event {
             return timestamp.equals(key.timestamp);
         }
 
+        /**
+         * Hash consistent with {@link #equals(Object)} (over task id and timestamp).
+         *
+         * @return the hash code.
+         */
         @Override
         public int hashCode() {
             if (taskId == null && timestamp == null) {
@@ -317,11 +430,21 @@ public class Event {
             return result;
         }
 
+        /**
+         * Returns a compact {@code {taskId, timestamp}} rendering.
+         *
+         * @return the string form of the key.
+         */
         @Override
         public String toString() {
             return "{" + taskId + ", " + timestamp + '}';
         }
 
+        /**
+         * Serializes the key's task id and timestamp to JSON.
+         *
+         * @return the JSON representation.
+         */
         public JsonElement toJson() {
             JsonObject json = new JsonObject();
             json.addProperty("taskId", taskId);
@@ -329,6 +452,15 @@ public class Event {
             return json;
         }
 
+        /**
+         * Orders keys by task id, then by timestamp, treating a {@code null} task id/timestamp (the
+         * init/end event) as smallest. This total order is what makes the graph's topological sort
+         * deterministic.
+         *
+         * @param key the key to compare with.
+         * @return a negative, zero, or positive value as this key is less than, equal to, or greater
+         *     than {@code key}.
+         */
         public int compareTo(Key key) {
             if (taskId == null && key.taskId == null) {
                 return 0;
@@ -365,30 +497,66 @@ public class Event {
         return type == Type.INIT;
     }
 
+    /**
+     * Returns true if this is an ordinary read event.
+     *
+     * @return true if the type is {@code READ}.
+     */
     public boolean isRead() {
         return type == Type.READ;
     }
 
+    /**
+     * Returns true if this is an ordinary write event.
+     *
+     * @return true if the type is {@code WRITE}.
+     */
     public boolean isWrite() {
         return type == Type.WRITE;
     }
 
+    /**
+     * Returns true if this is the read half of a read-modify-write.
+     *
+     * @return true if the type is {@code READ_EX}.
+     */
     public boolean isReadEx() {
         return type == Type.READ_EX;
     }
 
+    /**
+     * Returns true if this is the write half of a read-modify-write.
+     *
+     * @return true if the type is {@code WRITE_EX}.
+     */
     public boolean isWriteEx() {
         return type == Type.WRITE_EX;
     }
 
+    /**
+     * Returns true if this is a symbolic (ConDpor) event.
+     *
+     * @return true if the type is {@code SYMBOLIC}.
+     */
     public boolean isSymbolic() {
         return type == Type.SYMBOLIC;
     }
+
+    /**
+     * Returns a short {@code Event(TYPE){key}} rendering.
+     *
+     * @return the string form of the event.
+     */
     @Override
     public String toString() {
         return "Event(" + type.toString() + ")" + key;
     }
 
+    /**
+     * Returns a fuller rendering that also includes the location and attributes when present.
+     *
+     * @return a verbose string form of the event.
+     */
     public String toVerboseString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Event(").append(type.toString()).append(") key: ").append(key);
@@ -415,6 +583,11 @@ public class Event {
         boolean test(Event event);
     }
 
+    /**
+     * Returns this event's key (identical to {@link #key()}).
+     *
+     * @return the event key.
+     */
     public Key getKey() {
         return key;
     }

@@ -13,19 +13,32 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Represents a restricted view of the execution graph. Some nodes are removed and some relations
- * are updated.
+ * A candidate backward revisit: re-pointing an earlier read {@code r} to a new write {@code w} and
+ * deleting the events that {@code w} does not causally depend on.
+ *
+ * <p>This class holds the read, the write, and the set of nodes that would be removed, over a
+ * <em>clone</em> of the graph so the candidate can be tested without disturbing the working graph.
+ * Its central method, {@link #isMaximalExtension()}, decides whether the revisit is admissible under
+ * TruSt's maximal-extension condition (which is what makes the algorithm generate each consistent
+ * graph exactly once); {@link #getRestrictedGraph()} then materializes the revisited graph.
  */
 public class BackwardRevisitView {
     private static final Logger LOGGER = LogManager.getLogger(BackwardRevisitView.class);
+    /** A clone of the source graph on which the revisit is evaluated/materialized. */
     private final ExecutionGraph graph;
+    /** Keys of the nodes that this revisit would delete (the "deleted set" plus, for locks, the read). */
     private final HashSet<Event.Key> removedNodes;
+    /** Symbolic subset of {@link #removedNodes}; non-null only when the ConDpor solver is enabled. */
     private final HashSet<Event.Key> removedSymNodes;
+    /** The earlier read being revisited (resolved within {@link #graph}). */
     private final ExecutionGraphNode read;
+    /** The new write that revisits {@link #read} (resolved within {@link #graph}). */
     private final ExecutionGraphNode write;
 
-    // Additional event, maintained here for revisits of a write exclusive with a read exclusive.
-    // The write exclusive of the revisited read exclusive is stored here.
+    /**
+     * For a lock revisit (write-exclusive revisiting a read-exclusive), the write-exclusive of the
+     * revisited read-exclusive, stashed here so it can be re-added after the revisit is applied.
+     */
     private Event addEvent;
 
     /**
@@ -66,25 +79,58 @@ public class BackwardRevisitView {
         }
     }
 
+    /**
+     * Returns the revisiting write.
+     *
+     * @return the write node (within the cloned graph).
+     */
     public ExecutionGraphNode getWrite() {
         return write;
     }
 
+    /**
+     * Returns the revisited read.
+     *
+     * @return the read node (within the cloned graph).
+     */
     public ExecutionGraphNode getRead() {
         return read;
     }
 
     /**
-     * Just marks the node as removed, does not update the graph
+     * Marks a node as part of the deleted set; does not modify the graph yet.
+     *
+     * @param key the key of the node to remove.
      */
     public void removeNode(Event.Key key) {
         removedNodes.add(key);
     }
 
+    /**
+     * Marks a symbolic node as deleted (ConDpor bookkeeping).
+     *
+     * @param key the key of the symbolic node to remove.
+     */
     public void removeSymNode(Event.Key key) {
         removedSymNodes.add(key);
     }
 
+    /**
+     * The ConDpor (symbolic) counterpart of {@link #isMaximalExtension()}: checks that the symbolic
+     * events in the deleted set were added maximally, so the revisit is performed from exactly one
+     * candidate sub-exploration.
+     *
+     * <p>A constraint-evaluation event is "maximally added" iff its <em>positive</em> (non-negated)
+     * branch is the canonical one. Concretely this method resets the current prover, asserts the
+     * formulas of the symbolic events that survive the revisit, then walks the deleted symbolic
+     * events in addition order and, for each, tests whether both its branch and its negation are
+     * satisfiable; if so, the event is maximal only when its taken result is the positive branch — a
+     * deleted event whose canonical branch is the negated one fails the check. The solver stack is
+     * restored before returning. Trivially returns {@code true} when no symbolic events were deleted
+     * or the solver is disabled.
+     *
+     * @return whether the revisit is maximal with respect to the deleted symbolic events.
+     */
     public boolean isMaximalSymbolicExtension() {
         IncrementalSolver solver = SolverUtil.getIncrementalSolver();
         if (solver == null || removedSymNodes == null) {
@@ -192,9 +238,18 @@ public class BackwardRevisitView {
     }
 
     /**
-     * Checks if the restricted view is a maximal extension
+     * Decides whether this candidate revisit satisfies TruSt's maximal-extension condition.
      *
-     * <p>Meta: Breaks the separation of concerns. Is part of the core logic of the Trust algorithm
+     * <p>For every node in the deleted set (and the revisited read), it checks, over the events in
+     * that node's "previous" set — those that are TO-before it or porf-before the revisiting write —
+     * that (1) no deleted write has a reader in the previous set, and (2) the node's source/own
+     * write is coherence-maximal within the previous set. If any check fails the revisit would be
+     * reachable by another exploration and is rejected, which is what guarantees each consistent
+     * graph is generated once.
+     *
+     * <p>Meta: Breaks the separation of concerns. Is part of the core logic of the Trust algorithm.
+     *
+     * @return true if the revisit is a maximal extension and may be explored.
      */
     public boolean isMaximalExtension() {
         LOGGER.debug("Checking if the restricted view is a maximal extension");
@@ -321,6 +376,12 @@ public class BackwardRevisitView {
         return restrictedGraph;
     }
 
+    /**
+     * Returns the stashed additional event (the write-exclusive to be re-added after a lock
+     * revisit), or {@code null} if this is not a lock revisit.
+     *
+     * @return the additional event, or {@code null}.
+     */
     public Event additionalEvent() {
         return addEvent;
     }

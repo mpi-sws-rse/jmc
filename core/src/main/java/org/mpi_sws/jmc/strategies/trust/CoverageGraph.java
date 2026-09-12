@@ -5,16 +5,36 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A lightweight record of the program-order, reads-from, and coherence relations of one
+ * interleaving, used only for coverage counting.
+ *
+ * <p>{@link ExecutionGraphSimulator} populates a {@code CoverageGraph} alongside its full {@link
+ * ExecutionGraph}; {@link MeasureGraphCoverageStrategy} then hashes this graph's {@link #toString()}
+ * to decide whether the current interleaving produced a not-yet-seen behavior.
+ */
 public class CoverageGraph {
 
+    /** Program order: task id to its ordered list of events. */
     private Map<Long, List<Event>> po = new HashMap<>();
+    /** Reads-from: each read to the write it observes. */
     private Map<Event, Event> rf = new HashMap<>();
+    /** For each location, the first write seen, used as the key into {@link #co}. */
     private Map<Integer, Event> coKey = new HashMap<>();
+    /** Coherence: the ordered list of writes per location (keyed by that location's first write). */
     private Map<Event, List<Event>> co = new HashMap<>();
+    /** Reserved for thread-creation order (currently unused). */
     private List<Event> tc = null;
+    /** Reserved for thread-start edges (currently unused). */
     private Map<Event, Event> ts = null;
+    /** Reserved for thread-join edges (currently unused). */
     private Map<Event, Event> tj = null;
 
+    /**
+     * Appends an event to its task's program order.
+     *
+     * @param e the event to record.
+     */
     public void addPo(Event e) {
         if (po.containsKey(e.getTaskId())) {
             po.get(e.getTaskId()).add(e);
@@ -25,6 +45,11 @@ public class CoverageGraph {
         }
     }
 
+    /**
+     * Appends a write to its location's coherence order.
+     *
+     * @param w the write to record.
+     */
     public void addCo(Event w) {
         if (coKey.containsKey(w.getLocation())) {
             Event key = coKey.get(w.getLocation());
@@ -37,11 +62,22 @@ public class CoverageGraph {
         }
     }
 
+    /**
+     * Records that the given read observes the current coherence-maximal write to its location.
+     *
+     * @param r the read to record.
+     */
     public void addRf(Event r) {
         Event w = getMaxCo(r);
         rf.put(r, w);
     }
 
+    /**
+     * Returns the coherence-maximal write to the given event's location.
+     *
+     * @param e an event with a location.
+     * @return the latest write in that location's coherence order.
+     */
     private Event getMaxCo(Event e) {
         if (!coKey.containsKey(e.getLocation())) {
             throw new RuntimeException("Reading from an empty coKey for event: " + e);
@@ -55,6 +91,7 @@ public class CoverageGraph {
         return max;
     }
 
+    /** Prints the po/rf/co relations to standard out (debugging aid). */
     public void printGraph() {
         System.out.println("PO:");
         for (Map.Entry<Long, List<Event>> entry : po.entrySet()) {
@@ -79,6 +116,12 @@ public class CoverageGraph {
         }
     }
 
+    /**
+     * Renders the graph's po/rf/co relations to a deterministic string (rf and co sorted by event
+     * key) so that equal behaviors hash identically for coverage counting.
+     *
+     * @return the canonical string form of the coverage graph.
+     */
     @Override
     public String toString() {
         final String[] graph = {""};

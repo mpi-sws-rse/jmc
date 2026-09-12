@@ -9,31 +9,48 @@ import java.util.Set;
 
 
 /**
- * Adds instrumentation to change Future calls to JmcFuture calls.
+ * Container for the executor/future rewriters used by the instrumentation pipeline.
+ *
+ * <p>It groups {@link JmcExecutorsClassVisitor} ({@code Executors}/{@code ThreadPoolExecutor} →
+ * {@code JmcExecutors}/{@code JmcExecutorService}) and {@link JmcFutureTaskClassVisitor} ({@code
+ * FutureTask} → {@code JmcFuture}), both chained into {@link JmcVisitor#transform}. It also defines
+ * {@link JmcCompletableFutureVisitor} ({@code CompletableFuture} → {@code JmcCompletableFuture}),
+ * which is <em>not</em> currently part of the active pipeline.
  */
 public class JmcFutureVisitor {
 
     /**
-     * Creates a ClassVisitor that will instrument classes to replace Executors with JmcExecutors.
+     * Rewrites {@code Executors} factory calls and {@code ThreadPoolExecutor} usage to their JMC
+     * equivalents. It retypes a {@code ThreadPoolExecutor} superclass, {@code Executors}/wrapper field
+     * and local descriptors, and constructor/factory calls to {@code JmcExecutors} / {@code
+     * JmcExecutorService}.
      */
     public static class JmcExecutorsClassVisitor extends ClassVisitor {
 
 
 
 
+        /** Whether the class currently being visited extends {@code ThreadPoolExecutor}. */
         private boolean isExtendingThreadpool = false;
 
+        /**
+         * @param classVisitor the downstream {@link ClassVisitor} to delegate to
+         */
         public JmcExecutorsClassVisitor(ClassVisitor classVisitor) {
             super(Opcodes.ASM9, classVisitor);
         }
 
         /**
-         * @param version
-         * @param access
-         * @param name
-         * @param signature
-         * @param superName
-         * @param interfaces
+         * Detects whether the class extends {@code ThreadPoolExecutor} and, if so, swaps its
+         * superclass to {@code JmcExecutorService}. Sets {@link #isExtendingThreadpool}, which gates
+         * the constructor handling in {@link #visitMethod}.
+         *
+         * @param version the class file version
+         * @param access the class access flags
+         * @param name the internal name of the class
+         * @param signature the generic signature, or {@code null}
+         * @param superName the internal name of the superclass
+         * @param interfaces the internal names of implemented interfaces
          */
         @Override
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
@@ -45,6 +62,18 @@ public class JmcFutureVisitor {
             super.visit(version, access, name, signature, superName, interfaces);
         }
 
+        /**
+         * Retypes fields whose descriptor references {@code ThreadPoolExecutor} or the internal {@code
+         * Executors$DelegatedExecutorService} / {@code Executors$FinalizableDelegatedExecutorService}
+         * wrappers to {@code JmcExecutorService}.
+         *
+         * @param access the field access flags
+         * @param name the field name
+         * @param descriptor the field descriptor (retyped where applicable)
+         * @param signature the generic signature, or {@code null}
+         * @param value the constant value, or {@code null}
+         * @return the delegate's {@link FieldVisitor}
+         */
         @Override
         public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
             String newDescriptor = descriptor;
@@ -63,6 +92,18 @@ public class JmcFutureVisitor {
             return super.visitField(access, name, newDescriptor, signature, value);
         }
 
+        /**
+         * Wraps each method in a {@link JmcExecutorsMethodVisitor} to rewrite executor calls. For the
+         * constructor of a class extending {@code ThreadPoolExecutor}, a {@link
+         * JmcThreadPoolInitMethodVisitor} is used instead so the {@code super(...)} call is redirected.
+         *
+         * @param access the method access flags
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param signature the generic signature, or {@code null}
+         * @param exceptions the declared exceptions, or {@code null}
+         * @return a {@link MethodVisitor} that rewrites executor usage
+         */
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -94,30 +135,50 @@ public class JmcFutureVisitor {
      */
     public static class JmcExecutorsMethodVisitor extends MethodVisitor {
         // Set of valid method names and descriptors that can be replaced
+        /** Internal name of {@code java.util.concurrent.Executors}. */
         private static final String EXECUTORS_PATH = "java/util/concurrent/Executors";
+        /** Internal name of the JMC replacement factory {@code JmcExecutors}. */
         private static final String JMC_EXECUTORS_PATH =
                 "org/mpi_sws/jmc/api/util/concurrent/JmcExecutors";
+        /** Type descriptor of {@code Executors}. */
         private static final String EXECUTORS_DESC = "L" + EXECUTORS_PATH + ";";
+        /** Type descriptor of {@code JmcExecutors}. */
         private static final String JMC_EXECUTORS_PATH_DESC = "L" + JMC_EXECUTORS_PATH + ";";
 
+        /** Internal name of {@code ExecutorService}. */
         protected static final String EXECUTOR_SERVICE_PATH = "java/util/concurrent/ExecutorService";
+        /** Internal name of the JMC replacement {@code JmcExecutorService}. */
         private static final String JMC_EXECUTOR_SERVICE_PATH =
                 "org/mpi_sws/jmc/api/util/concurrent/JmcExecutorService";
+        /** Type descriptor of {@code ExecutorService}. */
         protected static final String EXECUTOR_SERVICE_DESC = "L" + EXECUTOR_SERVICE_PATH + ";";
+        /** Type descriptor of {@code JmcExecutorService}. */
         private static final String JMC_EXECUTOR_SERVICE_PATH_DESC = "L" + JMC_EXECUTOR_SERVICE_PATH + ";";
 
+        /** Internal name of {@code ThreadPoolExecutor}. */
         private static final String THREADPOOL_EXECUTOR_PATH = "java/util/concurrent/ThreadPoolExecutor";
         //private static final String JMC_THREADPOOL_EXECUTOR_PATH = "org/mpi_sws/jmc/api/util/concurrent/JmcThreadPoolExecutor";
+        /** Type descriptor of {@code ThreadPoolExecutor}. */
         protected static final String THREADPOOL_EXECUTOR_DESC = "L" + THREADPOOL_EXECUTOR_PATH + ";";
         //private static final String JMC_THREADPOOL_EXECUTOR_DESC = "L" + JMC_THREADPOOL_EXECUTOR_PATH + ";";
 
+        /** Internal name of the JDK-internal {@code Executors$DelegatedExecutorService} wrapper. */
         private static final String EXECUTORS_DELEGATED_WRAPPER = "java/util/concurrent/Executors$DelegatedExecutorService";
+        /** Internal name of the JDK-internal {@code Executors$FinalizableDelegatedExecutorService} wrapper. */
         private static final String EXECUTORS_FINALIZED_WRAPPER = "java/util/concurrent/Executors$FinalizableDelegatedExecutorService";
+        /** Type descriptor that both delegated wrappers are mapped to ({@code JmcExecutorService}). */
         private static final String JMC_EXECUTOR_SERVICE_DESC_WRAPPER = JMC_EXECUTOR_SERVICE_PATH_DESC;
 
+        /** Internal name of {@code java.util.concurrent.Future}. */
         private static final String FUTURE_PATH = "java/util/concurrent/Future";
+        /** Type descriptor of {@code Future}. */
         private static final String FUTURE_DESC = "L" + FUTURE_PATH + ";";
 
+        /**
+         * Supported {@code Executors} factory methods, mapping each method name to the set of accepted
+         * descriptors. A call to an {@code Executors} method not present here (or with an unlisted
+         * descriptor) raises {@link JmcUnsupportedFeatureException} in {@link #visitMethodInsn}.
+         */
         private static final HashMap<String, Set<String>> SUPPORTED_METHODS = new HashMap<>();
 
         static {
@@ -134,10 +195,28 @@ public class JmcFutureVisitor {
         }
 
 
+        /**
+         * @param methodVisitor the downstream {@link MethodVisitor} to delegate to
+         */
         public JmcExecutorsMethodVisitor(MethodVisitor methodVisitor) {
             super(Opcodes.ASM9, methodVisitor);
         }
 
+        /**
+         * Rewrites executor calls to their JMC equivalents.
+         *
+         * <p>A call on {@code Executors} is redirected to {@code JmcExecutors} (with a retyped
+         * descriptor) — but only for a supported method/descriptor, otherwise {@link
+         * JmcUnsupportedFeatureException} is thrown. An {@code INVOKESPECIAL} constructor call on
+         * {@code ThreadPoolExecutor} is redirected to {@code JmcExecutorService}. All other calls pass
+         * through unchanged.
+         *
+         * @param opcode the invocation opcode
+         * @param owner the internal name of the method's owner
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param isInterface whether the owner is an interface
+         */
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
@@ -174,6 +253,13 @@ public class JmcFutureVisitor {
         }
 
 
+        /**
+         * Retypes {@code ThreadPoolExecutor} and the two delegated {@code Executors} wrappers to {@code
+         * JmcExecutorService} in type instructions.
+         *
+         * @param opcode the type-instruction opcode
+         * @param type the internal type name
+         */
         @Override
         public void visitTypeInsn(int opcode, String type) {
             if (THREADPOOL_EXECUTOR_PATH.equals(type)) {
@@ -192,6 +278,17 @@ public class JmcFutureVisitor {
         }
 
 
+        /**
+         * Retypes {@code ThreadPoolExecutor}, {@code Executors}, and the delegated wrappers to their
+         * JMC equivalents in a local-variable descriptor.
+         *
+         * @param name the variable name
+         * @param desc the variable descriptor (retyped where applicable)
+         * @param signature the generic signature, or {@code null}
+         * @param start the start label of the variable's scope
+         * @param end the end label of the variable's scope
+         * @param index the local-variable slot index
+         */
         @Override
         public void visitLocalVariable(
                 String name, String desc, String signature, Label start, Label end, int index
@@ -214,6 +311,17 @@ public class JmcFutureVisitor {
             super.visitLocalVariable(name, newDescriptor, signature, start, end, index);
         }
 
+        /**
+         * Retypes executor-related types inside an {@code invokedynamic} site — its descriptor,
+         * bootstrap method handle, and any {@code Type}/{@code Handle} bootstrap arguments — when the
+         * site references {@code Executors}, {@code ExecutorService}, {@code ThreadPoolExecutor}, or a
+         * delegated wrapper; otherwise forwards it unchanged.
+         *
+         * @param name the call-site name
+         * @param descriptor the call-site descriptor
+         * @param bsm the bootstrap method handle
+         * @param bsmArgs the bootstrap method arguments
+         */
         @Override
         public void visitInvokeDynamicInsn(
                 String name, String descriptor, Handle bsm, Object... bsmArgs) {
@@ -272,6 +380,13 @@ public class JmcFutureVisitor {
 
 
 
+        /**
+         * Replaces the executor-related descriptors embedded in {@code desc} — {@code Executors},
+         * {@code ThreadPoolExecutor}, and the two delegated wrappers — with their JMC equivalents.
+         *
+         * @param desc the descriptor to rewrite (may be {@code null})
+         * @return the rewritten descriptor, or {@code null} if {@code desc} was {@code null}
+         */
         private String replaceDescriptor(String desc) {
             if (desc == null) {
                 return null;
@@ -290,6 +405,14 @@ public class JmcFutureVisitor {
             return newDesc;
         }
 
+        /**
+         * Maps an executor-related internal type name to its JMC replacement: {@code Executors} →
+         * {@code JmcExecutors}, and {@code ThreadPoolExecutor} / both delegated wrappers → {@code
+         * JmcExecutorService}. Other types are returned unchanged.
+         *
+         * @param type the internal type name (may be {@code null})
+         * @return the mapped type name, or {@code null} if {@code type} was {@code null}
+         */
         private String replaceType(String type) {
             if (type == null) {
                 return null;
@@ -307,12 +430,29 @@ public class JmcFutureVisitor {
         }
     }
 
+    /**
+     * Per-constructor visitor for classes extending {@code ThreadPoolExecutor}. It redirects the
+     * {@code super ThreadPoolExecutor.<init>} call to {@code JmcExecutorService.<init>}.
+     */
     public static class JmcThreadPoolInitMethodVisitor extends MethodVisitor {
 
+        /**
+         * @param methodVisitor the downstream {@link MethodVisitor} to delegate to
+         */
         public JmcThreadPoolInitMethodVisitor(MethodVisitor methodVisitor) {
             super(Opcodes.ASM9, methodVisitor);
         }
 
+        /**
+         * Redirects an {@code INVOKESPECIAL ThreadPoolExecutor.<init>} call to {@code
+         * JmcExecutorService.<init>}; all other calls pass through unchanged.
+         *
+         * @param opcode the invocation opcode
+         * @param owner the internal name of the method's owner
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param isInterface whether the owner is an interface
+         */
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
             if (opcode == Opcodes.INVOKESPECIAL
@@ -336,10 +476,24 @@ public class JmcFutureVisitor {
      * Creates a ClassVisitor that will instrument classes to replace FutureTask with JmcFuture.
      */
     public static class JmcFutureTaskClassVisitor extends ClassVisitor {
+        /**
+         * @param classVisitor the downstream {@link ClassVisitor} to delegate to
+         */
         public JmcFutureTaskClassVisitor(ClassVisitor classVisitor) {
             super(Opcodes.ASM9, classVisitor);
         }
 
+        /**
+         * Wraps each method in a {@link JmcFutureTaskMethodVisitor} to rewrite {@code FutureTask}
+         * calls in its body.
+         *
+         * @param access the method access flags
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param signature the generic signature, or {@code null}
+         * @param exceptions the declared exceptions, or {@code null}
+         * @return a {@link MethodVisitor} that rewrites {@code FutureTask} usage
+         */
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -347,6 +501,16 @@ public class JmcFutureVisitor {
                     super.visitMethod(access, name, descriptor, signature, exceptions));
         }
 
+        /**
+         * Forwards the field declaration unchanged (fields are not retyped here).
+         *
+         * @param access the field access flags
+         * @param name the field name
+         * @param descriptor the field descriptor
+         * @param signature the generic signature, or {@code null}
+         * @param value the constant value, or {@code null}
+         * @return the delegate's {@link FieldVisitor}
+         */
         @Override
         public FieldVisitor visitField(
                 int access, String name, String descriptor, String signature, Object value) {
@@ -368,11 +532,26 @@ public class JmcFutureVisitor {
      */
     public static class JmcFutureTaskMethodVisitor extends MethodVisitor {
 
+        /**
+         * @param methodVisitor the downstream {@link MethodVisitor} to delegate to
+         */
         public JmcFutureTaskMethodVisitor(MethodVisitor methodVisitor) {
             super(Opcodes.ASM9, methodVisitor);
         }
 
 
+        /**
+         * Rewrites {@code FutureTask.get}/{@code cancel}/{@code run} calls into {@code JmcFuture}
+         * calls, inserting a {@code CHECKCAST} to {@code JmcFuture} before the redirected call. A
+         * {@code FutureTask} constructor call and all non-{@code FutureTask} calls pass through
+         * unchanged.
+         *
+         * @param opcode the invocation opcode
+         * @param owner the internal name of the method's owner
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param isInterface whether the owner is an interface
+         */
         @Override
         public void visitMethodInsn(
                 int opcode, String owner, String name, String descriptor, boolean isInterface) {
@@ -404,19 +583,34 @@ public class JmcFutureVisitor {
     }
 
     /**
-     * Creates a ClassVisitor that will instrument classes to replace CompletableFuture with
-     * JmcCompletableFuture.
+     * Rewrites {@code CompletableFuture} usage into {@code JmcCompletableFuture}.
+     *
+     * <p><strong>Note:</strong> this visitor is defined but is <em>not</em> wired into the active
+     * {@link JmcVisitor#transform} pipeline, so it does not run during normal instrumentation.
      */
     public static class JmcCompletableFutureVisitor extends ClassVisitor {
+        /**
+         * @param cv the downstream {@link ClassVisitor} to delegate to
+         */
         public JmcCompletableFutureVisitor(ClassVisitor cv) {
             super(Opcodes.ASM9, cv);
         }
 
+        /** Type descriptor of {@code CompletableFuture}. */
         private static final String COMPLETABLE_FUTURE_LOCK_DESC =
                 "Ljava/util/concurrent/CompletableFuture;";
+        /** Type descriptor of the JMC replacement {@code JmcCompletableFuture}. */
         private static final String JMC_COMPLETABLE_FUTURE_LOCK_DESC =
                 "Lorg/mpi_sws/jmc/api/util/concurrent/JmcCompletableFuture;";
 
+        /**
+         * Replaces any {@code CompletableFuture} descriptor embedded in {@code desc} with {@code
+         * JmcCompletableFuture}.
+         *
+         * @param desc the descriptor to rewrite
+         * @return the rewritten descriptor, or {@code desc} unchanged if it contains no {@code
+         *     CompletableFuture}
+         */
         private static String replaceDescriptor(String desc) {
             if (desc.contains(COMPLETABLE_FUTURE_LOCK_DESC)) {
                 return desc.replace(COMPLETABLE_FUTURE_LOCK_DESC, JMC_COMPLETABLE_FUTURE_LOCK_DESC);
@@ -424,16 +618,38 @@ public class JmcFutureVisitor {
             return desc;
         }
 
+        /**
+         * Retypes a {@code CompletableFuture}-typed field to the JMC package's {@code
+         * CompletableFuture} descriptor.
+         *
+         * @param access the field access flags
+         * @param name the field name
+         * @param descriptor the field descriptor (retyped if it is exactly {@code CompletableFuture})
+         * @param signature the generic signature, or {@code null}
+         * @param value the constant value, or {@code null}
+         * @return the delegate's {@link FieldVisitor}
+         */
         @Override
         public FieldVisitor visitField(
                 int access, String name, String descriptor, String signature, Object value) {
-            // Replace field descriptor if it's ReentrantLock
+            // Replace field descriptor if it is CompletableFuture
             if (descriptor.equals("Ljava/util/concurrent/CompletableFuture;")) {
                 descriptor = "Lorg/mpi_sws/jmc/api/util/concurrent/CompletableFuture;";
             }
             return super.visitField(access, name, descriptor, signature, value);
         }
 
+        /**
+         * Retypes {@code CompletableFuture} in the method descriptor and wraps the body in a {@link
+         * CompletableFutureReplacementMethodVisitor} to rewrite in-body references.
+         *
+         * @param access the method access flags
+         * @param name the method name
+         * @param descriptor the method descriptor (retyped)
+         * @param signature the generic signature, or {@code null}
+         * @param exceptions the declared exceptions, or {@code null}
+         * @return a {@link MethodVisitor} that rewrites {@code CompletableFuture} usage
+         */
         @Override
         public MethodVisitor visitMethod(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
@@ -444,11 +660,25 @@ public class JmcFutureVisitor {
             return new CompletableFutureReplacementMethodVisitor(mv);
         }
 
+        /**
+         * Per-method visitor that retypes {@code CompletableFuture} occurrences inside a method body —
+         * in {@code new}/type instructions, method calls, field accesses, and local variables.
+         */
         private static class CompletableFutureReplacementMethodVisitor extends MethodVisitor {
+            /**
+             * @param mv the downstream {@link MethodVisitor} to delegate to
+             */
             public CompletableFutureReplacementMethodVisitor(MethodVisitor mv) {
                 super(Opcodes.ASM9, mv);
             }
 
+            /**
+             * Retypes {@code new CompletableFuture} to {@code new JmcCompletableFuture}; other type
+             * instructions pass through unchanged.
+             *
+             * @param opcode the type-instruction opcode
+             * @param type the internal type name
+             */
             @Override
             public void visitTypeInsn(int opcode, String type) {
                 // Replace NEW CompletableFuture with JmcCompletableFuture
@@ -461,6 +691,16 @@ public class JmcFutureVisitor {
                 }
             }
 
+            /**
+             * Redirects calls whose owner is {@code CompletableFuture} to {@code JmcCompletableFuture}
+             * (retyping the descriptor); other calls only have their descriptor retyped.
+             *
+             * @param opcode the invocation opcode
+             * @param owner the internal name of the method's owner
+             * @param name the method name
+             * @param descriptor the method descriptor
+             * @param isInterface whether the owner is an interface
+             */
             @Override
             public void visitMethodInsn(
                     int opcode, String owner, String name, String descriptor, boolean isInterface) {
@@ -478,6 +718,15 @@ public class JmcFutureVisitor {
                 }
             }
 
+            /**
+             * Retypes a {@code CompletableFuture} field-access descriptor to {@code
+             * JmcCompletableFuture}.
+             *
+             * @param opcode the field-access opcode
+             * @param owner the internal name of the field's owner
+             * @param name the field name
+             * @param descriptor the field descriptor
+             */
             @Override
             public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
                 // Replace field references
@@ -492,6 +741,17 @@ public class JmcFutureVisitor {
                 }
             }
 
+            /**
+             * Retypes a {@code CompletableFuture} local-variable descriptor to {@code
+             * JmcCompletableFuture}.
+             *
+             * @param name the variable name
+             * @param descriptor the variable descriptor
+             * @param signature the generic signature, or {@code null}
+             * @param start the start label of the variable's scope
+             * @param end the end label of the variable's scope
+             * @param index the local-variable slot index
+             */
             @Override
             public void visitLocalVariable(
                     String name,

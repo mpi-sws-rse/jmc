@@ -9,9 +9,16 @@ import java.lang.annotation.Target;
 import java.time.Duration;
 
 /**
- * Configuration annotation for JMC checks.
+ * Marks and configures a JMC test.
  *
- * <p>The annotation allows users to specify parameters for the tests and is mandatory
+ * <p>Like {@link JmcCheck} it is a discovery marker, and additionally it is the <em>parameter
+ * source</em> for a run: its elements (strategy, iterations, seed, timeout, ...) are copied into a
+ * {@code JmcCheckerConfiguration} by the JUnit descriptors ({@code
+ * JmcMethodTestDescriptor.buildFromAnnotation}, and equivalently {@code
+ * JmcCheckerConfiguration.fromAnnotation}). It applies to a method or a type; a method-level
+ * annotation takes precedence over a class-level one. Retained at runtime for reflective reading. A
+ * test needs this (or {@link JmcCheck}) to be discovered, and a stopping condition — either {@link
+ * #numIterations()} or a {@link JmcTimeout}.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
@@ -34,8 +41,18 @@ public @interface JmcCheckConfiguration {
      */
     String strategy() default "random";
 
+    /**
+     * The symbolic solver to use.
+     *
+     * @return the solver selection ({@code "off"} disables symbolic execution)
+     */
     String solver() default "off";
 
+    /**
+     * The scheduling policy for the {@code trust} strategy family.
+     *
+     * @return the scheduling policy ({@code RANDOM} or {@code FIFO})
+     */
     TrustStrategy.SchedulingPolicy schedulingPolicy() default TrustStrategy.SchedulingPolicy.RANDOM;
 
     /**
@@ -73,6 +90,11 @@ public @interface JmcCheckConfiguration {
      */
     long seed() default 0;
 
+    /**
+     * The budget for the estimation strategy.
+     *
+     * @return the budget
+     */
     int budget() default 2;
 
     /**
@@ -99,5 +121,13 @@ public @interface JmcCheckConfiguration {
      */
     int pctFairBound() default 0;
 
+    /**
+     * The wall-clock timeout for the run, in milliseconds.
+     *
+     * <p>A value of {@code -1} (the default) means no timeout. For a unit-aware timeout prefer the
+     * {@link JmcTimeout} annotation, which overrides this value.
+     *
+     * @return the timeout in milliseconds, or {@code -1} for none
+     */
     long timeout() default -1L;
 }

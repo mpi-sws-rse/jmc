@@ -1,10 +1,14 @@
 package org.mpi_sws.jmc.checker.exceptions;
 
 /**
- * Exception class for JMC checker errors.
+ * Base (checked) exception for JMC checker failures.
  *
- * <p>This exception is thrown when there are issues related to the JMC checker, such as
- * configuration errors or runtime exceptions during the checking process.
+ * <p>Root of the checker's exception hierarchy — it extends {@link Exception}, so callers must handle
+ * it. {@link org.mpi_sws.jmc.checker.JmcModelChecker} throws it (often wrapping a runtime {@code
+ * HaltCheckerException} or an unexpected error) when a run fails, and the JUnit descriptors catch it
+ * to report a failed test. Subtypes narrow the cause: {@link JmcInvalidConfigurationException},
+ * {@link JmcCheckerTimeoutException}, and {@code JmcInvalidStrategyException} (in the {@code
+ * strategies} package).
  */
 public class JmcCheckerException extends Exception {
     /**

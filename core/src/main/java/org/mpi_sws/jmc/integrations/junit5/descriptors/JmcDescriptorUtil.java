@@ -41,14 +41,35 @@ public class JmcDescriptorUtil {
         }
     }
 
+    /**
+     * @param method the method to inspect
+     * @return {@code true} if the method carries {@link JmcTrustStrategy}
+     */
     private static boolean hasStrategyAnnotation(Method method) {
         return method.isAnnotationPresent(JmcTrustStrategy.class);
     }
 
+    /**
+     * @param clazz the class to inspect
+     * @return {@code true} if the class carries {@link JmcTrustStrategy}
+     */
     private static boolean hasStrategyAnnotation(Class<?> clazz) {
         return clazz.isAnnotationPresent(JmcTrustStrategy.class);
     }
 
+    /**
+     * Installs a {@code trust}-strategy constructor on the builder from a method's {@link
+     * JmcTrustStrategy}.
+     *
+     * <p>Builds the base strategy constructor via {@link #getStrategyConstructor}; if the method also
+     * carries {@link JmcMeasureGraphCoverage}, wraps it with a coverage-measuring constructor (see
+     * {@link #getCoverageStrategyConstructor}). Sets the result as the builder's strategy constructor.
+     *
+     * @param builder the configuration builder to update
+     * @param method the method carrying {@link JmcTrustStrategy}
+     * @return the updated builder
+     * @throws JmcInvalidConfigurationException if the coverage annotation is misconfigured
+     */
     private static JmcCheckerConfiguration.Builder updateBuilderFromAnnotation(
             JmcCheckerConfiguration.Builder builder, Method method)
             throws JmcInvalidConfigurationException {
@@ -67,6 +88,16 @@ public class JmcDescriptorUtil {
         }
     }
 
+    /**
+     * Class-level counterpart of {@link #updateBuilderFromAnnotation(JmcCheckerConfiguration.Builder,
+     * Method)}: installs a {@code trust}-strategy constructor from a class's {@link JmcTrustStrategy},
+     * optionally wrapped for {@link JmcMeasureGraphCoverage}.
+     *
+     * @param builder the configuration builder to update
+     * @param clazz the class carrying {@link JmcTrustStrategy}
+     * @return the updated builder
+     * @throws JmcInvalidConfigurationException if the coverage annotation is misconfigured
+     */
     private static JmcCheckerConfiguration.Builder updateBuilderFromAnnotation(
             JmcCheckerConfiguration.Builder builder, Class<?> clazz)
             throws JmcInvalidConfigurationException {
@@ -85,6 +116,21 @@ public class JmcDescriptorUtil {
         }
     }
 
+    /**
+     * Wraps a base strategy constructor with graph-coverage measurement configured from a {@link
+     * JmcMeasureGraphCoverage} annotation.
+     *
+     * <p>Returns a constructor that, given a config, builds a {@link MeasureGraphCoverageStrategy}
+     * around the base strategy — honoring the annotation's {@code debug}, {@code recordGraphs}, {@code
+     * recordPath}, and either a recording {@code frequency} or per-iteration recording. Rejects the
+     * invalid combination of both a non-zero {@code recordFrequency} and {@code recordPerIteration}.
+     *
+     * @param coverageAnnotation the coverage annotation to read settings from
+     * @param constructor the base strategy constructor to wrap
+     * @return a strategy constructor that adds coverage measurement
+     * @throws JmcInvalidConfigurationException if both {@code recordFrequency} and {@code
+     *     recordPerIteration} are set
+     */
     private static SchedulingStrategyConfiguration.SchedulingStrategyConstructor
     getCoverageStrategyConstructor(
             JmcMeasureGraphCoverage coverageAnnotation,
@@ -113,6 +159,17 @@ public class JmcDescriptorUtil {
         };
     }
 
+    /**
+     * Builds a strategy constructor that creates a {@link TrustStrategy} from a {@link
+     * JmcTrustStrategy} annotation.
+     *
+     * <p>The returned constructor uses the annotation's seed, or the checker config's seed when the
+     * annotation's seed is {@code 0}, together with the annotation's scheduling policy, debug flag,
+     * report path, logger-tree flag, and solver.
+     *
+     * @param annotation the {@link JmcTrustStrategy} annotation to read settings from
+     * @return a strategy constructor producing a {@link TrustStrategy}
+     */
     private static SchedulingStrategyConfiguration.SchedulingStrategyConstructor
     getStrategyConstructor(JmcTrustStrategy annotation) {
         return (config) -> {

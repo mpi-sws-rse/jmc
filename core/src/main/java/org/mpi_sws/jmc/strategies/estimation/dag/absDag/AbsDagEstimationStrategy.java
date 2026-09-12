@@ -7,13 +7,12 @@ import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 import org.mpi_sws.jmc.strategies.RandomSchedulingStrategy;
+import org.mpi_sws.jmc.strategies.estimation.EstimationCollector;
 import org.mpi_sws.jmc.strategies.estimation.EstimationStrategy;
 import org.mpi_sws.jmc.strategies.estimation.MetaGraphEstimator;
 
 import org.mpi_sws.jmc.strategies.trust.Event;
-import org.mpi_sws.jmc.util.FileUtil;
 
-import java.nio.file.Paths;
 import java.util.List;
 
 public class AbsDagEstimationStrategy extends RandomSchedulingStrategy implements EstimationStrategy {
@@ -22,7 +21,7 @@ public class AbsDagEstimationStrategy extends RandomSchedulingStrategy implement
 
     private final MetaGraphEstimator est;
 
-    private final StringBuilder estimatorCollector = new StringBuilder();
+    private final EstimationCollector estimationCollector = new EstimationCollector();
 
     /**
      * Constructs a new RandomSchedulingStrategy object.
@@ -60,8 +59,13 @@ public class AbsDagEstimationStrategy extends RandomSchedulingStrategy implement
     public void resetIteration(int iteration) {
         super.resetIteration(iteration);
         LOGGER.debug("Finished iteration {} with expected value: {}", iteration, est.getExpectedValue());
-        estimatorCollector.append(est.getExpectedValue()).append(System.lineSeparator());
+        recordEstimation();
         est.reset();
+    }
+
+    @Override
+    public void recordEstimation() {
+        estimationCollector.record(est.getExpectedValue());
     }
 
     @Override
@@ -72,11 +76,13 @@ public class AbsDagEstimationStrategy extends RandomSchedulingStrategy implement
     }
 
     protected void saveResults() {
-        FileUtil.unsafeStoreToFile(
-                Paths.get("build/test-results/jmc-report/", "AbsDagEstimateResult.txt").toString(), estimatorCollector.toString());
+        estimationCollector.save(
+                "build/test-results/jmc-report/",
+                "abs-pestor-result.txt",
+                "abs-pestor-final-result.txt");
     }
 
-    public StringBuilder getEstimatorCollector() {
-        return estimatorCollector;
+    public EstimationCollector getEstimationCollector() {
+        return estimationCollector;
     }
 }

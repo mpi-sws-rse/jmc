@@ -5,8 +5,13 @@ import org.mpi_sws.jmc.runtime.JmcRuntime;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 
 /**
- * The JmcAssume class provides a method to assert conditions in the JMC runtime environment. If the
- * condition is false, it throws a HaltTaskException, effectively halting the current task.
+ * Assumption statement for use in JMC tests.
+ *
+ * <p>Unlike an assertion, a failed assumption is not a bug: {@link #assume(boolean)} reports an
+ * {@code ASSUME_EVENT} and yields, and when the condition is false it throws {@code
+ * HaltTaskException.blocked(...)} to block the current task — pruning this execution from the search
+ * rather than reporting a failure. It lets a test restrict exploration to schedules that satisfy a
+ * precondition.
  */
 public class JmcAssume {
 

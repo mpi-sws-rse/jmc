@@ -24,13 +24,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class JmcScheduledExecutorService  extends ScheduledThreadPoolExecutor {
 
+    /** Logger for pool lifecycle and worker diagnostics. */
     private static final Logger LOGGER = LogManager.getLogger(JmcScheduledExecutorService.class);
 
     //Worker thread management - same pattern as JmcExecutorService
+    /** Number of tasks currently running; updated by the worker threads. */
     private final AtomicInteger counter;
+    /** Number of worker threads in the pool. */
     private final int capacity;
+    /** Queue of submitted tasks the workers pull from (holds {@code JmcFuture}/{@code JmcScheduledFuture}). */
     private final BlockingQueue<Runnable> queue;
+    /** The pool's worker threads. */
     private final List<JmcScheduledExecutorWorker> workers;
+    /** Whether the pool has been shut down. */
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
     /**
@@ -270,6 +276,7 @@ public class JmcScheduledExecutorService  extends ScheduledThreadPoolExecutor {
         return invokeAny(collection);
     }
 
+    /** Shuts the pool down: stops and joins all worker threads. */
     @Override
     public void shutdown() {
         super.shutdown();
@@ -288,6 +295,11 @@ public class JmcScheduledExecutorService  extends ScheduledThreadPoolExecutor {
         }
     }
 
+    /**
+     * Signals all workers to stop and marks the pool shut down.
+     *
+     * @return an empty list (pending tasks are not returned)
+     */
     @Override
     public List<Runnable> shutdownNow() {
         for (JmcScheduledExecutorWorker worker : workers) {
@@ -297,16 +309,26 @@ public class JmcScheduledExecutorService  extends ScheduledThreadPoolExecutor {
         return new ArrayList<>();
     }
 
+    /** @return whether the pool has been shut down */
     @Override
     public boolean isShutdown() {
         return isShutdown.get();
     }
 
+    /** @return whether the pool is shut down and no tasks are running */
     @Override
     public boolean isTerminated() {
         return isShutdown.get() && counter.get() == 0;
     }
 
+    /**
+     * Waits for the workers to finish.
+     *
+     * @param l the timeout magnitude (ignored)
+     * @param timeUnit the timeout unit (ignored)
+     * @return whether all workers finished without interruption
+     * @throws InterruptedException if interrupted
+     */
     @Override
     public boolean awaitTermination(long l, TimeUnit timeUnit) throws InterruptedException {
         boolean allShutdown = true;
@@ -327,13 +349,23 @@ public class JmcScheduledExecutorService  extends ScheduledThreadPoolExecutor {
      */
     public static class JmcScheduledExecutorWorker extends Thread {
 
+        /** Logger for this worker. */
         private static final Logger LOGGER = LogManager.getLogger(JmcScheduledExecutorWorker.class);
 
+        /** The shared queue of tasks to run. */
         private final BlockingQueue<Runnable> queue;
+        /** Whether this worker has been asked to stop. */
         private final AtomicBoolean isShutdown = new AtomicBoolean(false);
+        /** Shared count of running tasks, updated around each task run. */
         private final AtomicInteger workCounter;
+        /** This worker's index in the pool. */
         private final int id;
 
+        /**
+         * @param id this worker's index
+         * @param queue the shared queue of tasks to run
+         * @param workCounter the shared running-task counter
+         */
         public JmcScheduledExecutorWorker(int id, BlockingQueue<Runnable> queue,
                                             AtomicInteger workCounter) {
             this.queue = queue;
@@ -341,14 +373,20 @@ public class JmcScheduledExecutorService  extends ScheduledThreadPoolExecutor {
             this.id = id;
         }
 
+        /** Requests this worker to stop after its current task. */
         public void shutdown() {
             isShutdown.set(true);
         }
 
+        /** @return whether this worker has been asked to stop */
         public boolean isShutdown() {
             return isShutdown.get();
         }
 
+        /**
+         * Worker loop: take a task ({@code JmcFuture} or {@code JmcScheduledFuture}), run it, and on
+         * completion join its task (if the queue is now empty) or terminate it — until shutdown.
+         */
         @Override
         public void run() {
             while (!isShutdown.get()) {

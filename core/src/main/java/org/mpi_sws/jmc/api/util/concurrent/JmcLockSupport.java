@@ -10,10 +10,10 @@ import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
 public class JmcLockSupport {
 
     /**
-     * Park the current thread.
+     * Parks the current thread (replacement for {@code LockSupport.park()}).
      *
-     * <p>This method calls the parkOperation method of the RuntimeEnvironment class to park the
-     * current thread.
+     * <p>Reports a {@code PARK_EVENT} for the current task and yields, letting the runtime block it
+     * until a corresponding unpark.
      */
     public static void park() {
         JmcRuntimeEvent event =
@@ -25,12 +25,12 @@ public class JmcLockSupport {
     }
 
     /**
-     * Unpark the given thread.
+     * Unparks a thread (replacement for {@code LockSupport.unpark(thread)}).
      *
-     * <p>This method calls the unparkOperation method of the RuntimeEnvironment class to unpark the
-     * given thread.
+     * <p>Reports an {@code UNPARK_EVENT} and yields. (The runtime resolves the unpark from the event;
+     * the {@code thread} argument is currently not read.)
      *
-     * @param thread
+     * @param thread the thread to unpark
      */
     public static void unpark(Thread thread) {
         JmcRuntimeEvent event =

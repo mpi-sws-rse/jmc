@@ -34,21 +34,23 @@ public class ExecutionGraph {
 
     private static final Logger LOGGER = LogManager.getLogger(ExecutionGraph.class);
 
-    // Events observed in this execution graph grouped by task. This is the PO order
+    /** Events grouped by task, in program order (the PO view). */
     private final List<List<ExecutionGraphNode>> taskEvents;
 
-    // Tracking coherency order between writes to the same location. This is the CO order
+    /** Writes per location, in coherence order (the CO view); each list starts with the init event. */
     private final HashMap<Integer, List<ExecutionGraphNode>> coherencyOrder;
 
-    // All events in the execution graph. This is the TO order
+    /** All events in the order they were added (the TO / addition-order view); index 0 is init. */
     private List<ExecutionGraphNode> allEvents;
 
+    /** For each lock location, the ids of tasks currently blocked waiting to acquire it. */
     private final HashMap<Integer, List<Long>> blockedLocks;
 
+    /** Whether the last consistency check judged this graph consistent. */
     private boolean isConsistent = true;
 
     /**
-     * Initializes a new execution graph.
+     * Initializes a new, empty execution graph.
      */
     public ExecutionGraph() {
         this.allEvents = new ArrayList<>();
@@ -57,7 +59,14 @@ public class ExecutionGraph {
         this.blockedLocks = new HashMap<>();
     }
 
-    /* Copy constructor */
+    /**
+     * Copy constructor: deep-copies the PO/CO/TO views (sharing no nodes with {@code graph}).
+     *
+     * <p>Blocking labels are dropped from the copy (and their program-order edges removed), and
+     * {@link #blockedLocks} starts fresh, since backward revisits ignore lock-blocking state.
+     *
+     * @param graph the graph to copy.
+     */
     private ExecutionGraph(ExecutionGraph graph) {
         this.taskEvents = new ArrayList<>();
         for (List<ExecutionGraphNode> taskEvent : graph.taskEvents) {
@@ -113,10 +122,20 @@ public class ExecutionGraph {
         this.blockedLocks = new HashMap<>();
     }
 
+    /**
+     * Returns whether the last consistency check judged this graph consistent.
+     *
+     * @return the cached consistency flag.
+     */
     public boolean isConsistent() {
         return isConsistent;
     }
 
+    /**
+     * Sets the cached consistency flag.
+     *
+     * @param consistent the new value.
+     */
     public void setConsistent(boolean consistent) {
         isConsistent = consistent;
     }
@@ -301,6 +320,12 @@ public class ExecutionGraph {
         return taskEvents.get(taskId).get(timestamp);
     }
 
+    /**
+     * Like {@link #getEventNode(Event.Key)} but without bounds checks (assumes the node exists).
+     *
+     * @param key the key to resolve.
+     * @return the node for the key.
+     */
     private ExecutionGraphNode unsafeGetEventNode(Event.Key key) {
         if (key.getTaskId() == null || key.getTimestamp() == null) {
             // Init event
@@ -431,6 +456,12 @@ public class ExecutionGraph {
         coherencyOrder.get(LocationStore.ThreadLocation).add(node);
     }
 
+    /**
+     * Adds a {@link Relation#ThreadStart} edge from the po-maximal event of the spawning task to the
+     * given thread-start event, making the start causally depend on the spawn point.
+     *
+     * @param node the thread-start event node.
+     */
     public void trackThreadStarts(ExecutionGraphNode node) {
         if (!EventUtils.isThreadStart(node.getEvent())) {
             // Silent return if the event is not a thread start
@@ -927,6 +958,16 @@ public class ExecutionGraph {
         previousWrite.addEdge(write, Relation.Coherency);
     }
 
+    /**
+     * Deletes the given set of events from the graph: removes them from the PO, CO, and TO views,
+     * prunes any dangling edges pointing at them, and recomputes coherence edges for affected
+     * locations.
+     *
+     * <p>This is how a backward revisit's deleted set is applied. Vector clocks are left stale; the
+     * caller is expected to follow with {@link #recomputeVectorClocks()}.
+     *
+     * @param set the keys of the events to remove.
+     */
     public void restrictBySet(Set<Event.Key> set) {
         // We use the following map to track the modified locations of write events.
         // It is used to update the CO-edges.
@@ -995,6 +1036,13 @@ public class ExecutionGraph {
         // Remove blocking labels
     }
 
+    /**
+     * Rebuilds the {@link Relation#Coherency} edges for a location after its write list changed:
+     * drops the old chain of co-edges and re-links the current writes in order.
+     *
+     * @param location the location whose coherence edges to rebuild.
+     * @param oldWrites the write list as it was before the change (to remove its edges).
+     */
     private void recomputeCoEdges(Integer location, List<ExecutionGraphNode> oldWrites) {
         if (!coherencyOrder.containsKey(location)) {
             throw HaltCheckerException.error("The location is not in the coherency order");
@@ -1088,6 +1136,18 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * Truncates the graph to the prefix ending at {@code restrictingNode} in the addition order,
+     * removing every event added after it and pruning dangling edges / rebuilding coherence.
+     *
+     * <p>This is the forward-revisit rollback: because forward revisits walk down the coherence
+     * order, a revisit only ever needs to drop the events added after the revisited point. Returns a
+     * {@link GraphRestrictView} carrying the number of removed symbolic events when the ConDpor
+     * solver is active, else {@code null}.
+     *
+     * @param restrictingNode the node marking the end of the retained prefix.
+     * @return a view with the removed symbolic-event count, or {@code null} if no symbolic events.
+     */
     public GraphRestrictView restrict(ExecutionGraphNode restrictingNode) {
         // Keep the number of symbolic events among the removed events
         int numOfSymEvent = 0;
@@ -1198,6 +1258,13 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * A thorough (debug-mode) validation of the graph: SC-consistency plus structural invariants —
+     * every task ends in a finish event, coherence and reads-from edge sets are well-formed, and
+     * there are no dangling/broken edges.
+     *
+     * @return true if the graph passes every check.
+     */
     public boolean checkExtensiveConsistency() {
         try {
             checkConsistency();
@@ -1238,6 +1305,10 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Asserts every forward edge has a matching back edge on its target (no half-linked edges),
+     * throwing a checker error otherwise.
+     */
     private void checkBrokenEdges() {
         Map<Event.Key, ExecutionGraphNode> eventMap = new HashMap<>();
         for (ExecutionGraphNode node : allEvents) {
@@ -1266,6 +1337,11 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * Checks that every read (or exclusive read) has exactly one reads-from predecessor.
+     *
+     * @return true if all reads are well-formed.
+     */
     public boolean checkReadsFromEdges() {
         for (int i = 0; i < allEvents.size(); i++) {
             ExecutionGraphNode node = allEvents.get(i);
@@ -1285,6 +1361,16 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Checks sequential-consistency and, if consistent, returns a topological witness order.
+     *
+     * <p>Works on a clone: adds the derived {@code fr} edges (each read to the co-successor of its
+     * source write), enforces RMW atomicity (no two exclusive reads on a location share a source
+     * write), then topologically sorts. A cycle means {@code (po ∪ rf ∪ co ∪ fr)} is not acyclic, so
+     * the graph is inconsistent and an empty list is returned.
+     *
+     * @return a topological order of the events if consistent, or an empty list if not.
+     */
     public List<ExecutionGraphNode> checkConsistency() {
         ExecutionGraph clone = new ExecutionGraph(this);
         try {
@@ -1354,6 +1440,10 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * Asserts no forward edge points to an event that is absent from the graph, throwing a checker
+     * error on the first dangling edge found.
+     */
     public void checkDanglingEdges() {
         for (ExecutionGraphNode node : allEvents) {
             Map<Relation, List<Event.Key>> successors = node.getAllSuccessors();
@@ -1373,11 +1463,25 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * Convenience wrapper: validates there are no dangling edges, then runs {@link
+     * #checkConsistency()} and returns its witness order (empty if inconsistent).
+     *
+     * @return a topological order if consistent, or an empty list if not.
+     */
     public List<ExecutionGraphNode> checkConsistencyAndTopologicallySort() {
         checkDanglingEdges();
         return checkConsistency();
     }
 
+    /**
+     * Post-processes a topological order so each lock-acquire read is immediately followed by its
+     * matching exclusive write of the same task (the two halves of an RMW must stay adjacent in a
+     * replay schedule).
+     *
+     * @param topologicalSort the raw topological order.
+     * @return the adjusted order.
+     */
     private List<ExecutionGraphNode> fixTopologicalSort(List<ExecutionGraphNode> topologicalSort) {
         // The problem arises between ReadEx and WriteEx events of the same task ID.
         // Other events can sneak in between them. since the WriteEx first requires that the ReadEx
@@ -1434,6 +1538,11 @@ public class ExecutionGraph {
         blockedLocks.clear();
     }
 
+    /**
+     * Serializes the whole graph (all nodes and their edges) to a JSON string, for debugging.
+     *
+     * @return the JSON rendering of the graph.
+     */
     public String toJsonString() {
         JsonObject nodes = new JsonObject();
         for (ExecutionGraphNode node : allEvents) {
@@ -1444,6 +1553,13 @@ public class ExecutionGraph {
         return gson.toString();
     }
 
+    /**
+     * Serializes the graph with locations omitted and nodes/edges ordered deterministically, so two
+     * graphs that differ only in concrete locations produce the same string (used for
+     * coverage-hash counting).
+     *
+     * @return the location-independent JSON rendering of the graph.
+     */
     public String toJsonStringIgnoreLocation() {
         JsonObject nodes = new JsonObject();
         List<ExecutionGraphNode> sortedEvents = new ArrayList<>(allEvents);
@@ -1460,7 +1576,7 @@ public class ExecutionGraph {
         return gson.toString();
     }
 
-    // For debugging
+    /** Prints the coherence order of every location to standard out (debugging aid). */
     public void printCO() {
         for (Integer loc : coherencyOrder.keySet()) {
             System.out.println("[Exec Graph debug]: printCO " + loc);
@@ -1470,6 +1586,13 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * Two graphs are equal when they have the same events in the same topological order and the same
+     * edges between them.
+     *
+     * @param o the object to compare with.
+     * @return true if the graphs are structurally equal.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -1505,6 +1628,13 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Checks that each location's coherence list is a well-formed chain: consecutive writes are
+     * linked by a {@link Relation#Coherency} edge and no write has more than one coherence successor.
+     * The thread location is skipped.
+     *
+     * @return true if all coherence edges are well-formed.
+     */
     public boolean checkCoherencyEdges() {
         for (Map.Entry<Integer, List<ExecutionGraphNode>> entry : coherencyOrder.entrySet()) {
             if (Objects.equals(entry.getKey(), LocationStore.ThreadLocation)) {
@@ -1532,12 +1662,21 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Intended to track thread-join-completion edges; currently unimplemented.
+     *
+     * @param eventNode the join-completion event node.
+     */
     public void trackThreadJoinCompletion(ExecutionGraphNode eventNode) {
         // TODO: complete this
     }
 
-    // When a new task wants to acquire a lock
-    // We keep track of it and add a blocking label
+    /**
+     * Records that a task must wait to acquire a lock: appends a blocking label to the task and adds
+     * it to the lock's wait list.
+     *
+     * @param event the lock-acquire event of the waiting task.
+     */
     public void blockTaskForLock(Event event) {
         addBlockingLabel(event.getTaskId());
         if (!blockedLocks.containsKey(event.getLocation())) {
@@ -1546,10 +1685,12 @@ public class ExecutionGraph {
         blockedLocks.get(event.getLocation()).add(event.getTaskId());
     }
 
-    // When a lock is released,
-    // We unblock all the tasks that are waiting for it
-    // This is done by removing the blocking label
-    // Yet, we retain the task in the blockedLocks map
+    /**
+     * Unblocks every task waiting to acquire the given lock by removing their blocking labels (the
+     * tasks are retained in {@link #blockedLocks}). Called when the lock is released.
+     *
+     * @param location the lock location.
+     */
     public void unblockAllTasksForLock(Integer location) {
         if (!blockedLocks.containsKey(location)) {
             // Nothing to unblock
@@ -1560,11 +1701,13 @@ public class ExecutionGraph {
         }
     }
 
-    // When a task acquires a lock,
-    // We remove it from the blockedLocks map
-    // Here the assumption is that the task has already been unblocked
-    // Then for all remaining tasks that are waiting for the lock,
-    // We add a blocking label
+    /**
+     * Grants the lock to the given task: removes it from the lock's wait list and re-blocks every
+     * remaining waiter (re-adding their blocking labels). Assumes the task was already unblocked.
+     *
+     * @param location the lock location.
+     * @param taskId the task acquiring the lock.
+     */
     public void acquireLock(Integer location, Long taskId) {
         if (!blockedLocks.containsKey(location)) {
             return;
@@ -1579,6 +1722,13 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * Returns whether the given task is currently waiting to acquire the given lock.
+     *
+     * @param location the lock location.
+     * @param taskId the task id.
+     * @return true if the task is in the lock's wait list.
+     */
     public boolean waitingForLock(Integer location, Long taskId) {
         if (!blockedLocks.containsKey(location)) {
             // No tasks waiting for this.
@@ -1754,7 +1904,7 @@ public class ExecutionGraph {
         }
     }
 
-    // For debugging
+    /** Logs a human-readable dump of the PO, TO, and CO views at debug level (debugging aid). */
     public void printGraph() {
         StringBuilder sb = new StringBuilder();
         sb.append("Execution Graph:\n");
@@ -1804,6 +1954,11 @@ public class ExecutionGraph {
         LOGGER.debug("{}", sb.toString());
     }
 
+    /**
+     * Checks that every plain read has exactly one reads-from predecessor.
+     *
+     * @return true if the reads-from relation is well-formed for reads.
+     */
     public boolean isRfConsistent() {
         // For each read event, check if the read-from edge is present
         for (ExecutionGraphNode node : allEvents) {
@@ -1817,6 +1972,11 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Returns the program-order-maximal node (last event) of every non-empty task.
+     *
+     * @return the last node of each task.
+     */
     public List<ExecutionGraphNode> getAllPoMaxNode() {
         List<ExecutionGraphNode> result = new ArrayList<>();
         // loop over all the lists of the taskEvents and collect the last event of each list
@@ -1828,6 +1988,13 @@ public class ExecutionGraph {
         return result;
     }
 
+    /**
+     * Returns whether a write is coherence-maximal (has no coherence successor). Non-writes are
+     * trivially considered maximal.
+     *
+     * @param event the event to test.
+     * @return true if the write is co-maximal (or the event is not a write).
+     */
     public boolean isCoMax(Event event) {
         if (EventUtils.isWrite(event)) {
             try {
@@ -1845,6 +2012,13 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Returns whether a write is reads-from-maximal (has no reader). Non-writes are trivially
+     * considered maximal.
+     *
+     * @param event the event to test.
+     * @return true if the write has no reader (or the event is not a write).
+     */
     public boolean isRfMax(Event event) {
         if (EventUtils.isWrite(event)) {
             try {
@@ -1861,6 +2035,13 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Returns whether a read is from-read-maximal, i.e. the write it reads from is coherence-maximal.
+     * Non-reads are trivially considered maximal.
+     *
+     * @param event the event to test.
+     * @return true if the read's source write is co-maximal (or the event is not a read).
+     */
     public boolean isFrMax(Event event) {
         if (EventUtils.isRead(event)) {
             try {
@@ -1879,6 +2060,13 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Returns whether a thread-start event is thread-creation-maximal (last in the thread-creation
+     * order). Non-thread-start events are trivially considered maximal.
+     *
+     * @param event the event to test.
+     * @return true if it is thread-creation-maximal (or not a thread start).
+     */
     public boolean isTcMax(Event event) {
         if (EventUtils.isThreadStart(event)) {
             try {
@@ -1895,6 +2083,12 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Returns whether the event has no {@link Relation#ThreadStart} successor (thread-start-maximal).
+     *
+     * @param event the event to test.
+     * @return true if it has no thread-start successor.
+     */
     public boolean isStMax(Event event) {
         try {
             ExecutionGraphNode node = getEventNode(event.key());
@@ -1910,6 +2104,13 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Returns whether a thread-finish event is thread-join-maximal (has no {@link
+     * Relation#ThreadJoin} successor). Non-finish events are trivially considered maximal.
+     *
+     * @param event the event to test.
+     * @return true if it is thread-join-maximal (or not a thread finish).
+     */
     public boolean isJtMax(Event event) {
         if (EventUtils.isThreadFinish(event)) {
             try {
@@ -1927,6 +2128,13 @@ public class ExecutionGraph {
         return true;
     }
 
+    /**
+     * Returns whether a thread-start event's starter is still "maximal": the po-maximal event of the
+     * spawning task is still the cause of this start (has a {@link Relation#ThreadStart} successor).
+     *
+     * @param e the thread-start event.
+     * @return true if the starter's po-max event still causes this start.
+     */
     public boolean isStartMaxWithStarter(Event e) {
         if (e == null) {
             throw HaltCheckerException.error(
@@ -1945,6 +2153,13 @@ public class ExecutionGraph {
         }
     }
 
+    /**
+     * Returns the program-order-maximal (last) node of the given task, or {@code null} if the task
+     * has no events.
+     *
+     * @param taskId the task id.
+     * @return the task's last node, or {@code null}.
+     */
     public ExecutionGraphNode getPoMaxNode(long taskId) {
         if (taskId < 0 || taskId >= taskEvents.size()) {
             throw HaltCheckerException.error("Invalid task ID: " + taskId);
@@ -1956,6 +2171,13 @@ public class ExecutionGraph {
         return taskEventList.get(taskEventList.size() - 1);
     }
 
+    /**
+     * Returns the first (program-order-minimal) node of the given task, or {@code null} if the task
+     * has no events.
+     *
+     * @param taskId the task id.
+     * @return the task's first node, or {@code null}.
+     */
     public ExecutionGraphNode getFirstEventOfTask(long taskId) {
         if (taskId < 0 || taskId >= taskEvents.size()) {
             throw HaltCheckerException.error("Invalid task ID: " + taskId);
@@ -1967,6 +2189,13 @@ public class ExecutionGraph {
         return taskEventList.get(0);
     }
 
+    /**
+     * Returns the last node of the given task, or {@code null} if the task has no events. (Same as
+     * {@link #getPoMaxNode(long)}.)
+     *
+     * @param taskId the task id.
+     * @return the task's last node, or {@code null}.
+     */
     public ExecutionGraphNode getLastNodeOfTask(long taskId) {
         if (taskId < 0 || taskId >= taskEvents.size()) {
             throw HaltCheckerException.error("Invalid task ID: " + taskId);
@@ -1978,6 +2207,15 @@ public class ExecutionGraph {
         return taskEventList.get(taskEventList.size() - 1);
     }
 
+    /**
+     * RMW-atomicity test used when handling a lock-acquire write: looks at the exclusive read
+     * preceding {@code wrxNode} and returns whether the write that read observes has at most one
+     * reader. Used by {@code Algo.handleLockAcquireWrite} to decide when a lock backward revisit
+     * yields a consistent graph.
+     *
+     * @param wrxNode the exclusive write (lock-acquire write) node.
+     * @return whether the preceding exclusive read's source write has at most one reader.
+     */
     public boolean isRdxInconsistent(ExecutionGraphNode wrxNode) {
         int wrxNodeIndex = taskEvents.get(Math.toIntExact(wrxNode.getEvent().getTaskId())).indexOf(wrxNode);
         int rdxNodeIndex = wrxNodeIndex - 1;
@@ -2007,6 +2245,12 @@ public class ExecutionGraph {
         return rfSuccessors.size() <= 1;
     }
 
+    /**
+     * Returns whether the graph represents a blocked execution: some task ends in a blocking label,
+     * or its second-to-last event is a failed (blocked) assume.
+     *
+     * @return true if any task is blocked.
+     */
     public boolean isBlocked() {
         boolean blocked = false;
         // Iterate over taskEvents to see if any task has a blocking label as its last event, or
@@ -2030,14 +2274,29 @@ public class ExecutionGraph {
         return blocked;
     }
 
+    /**
+     * Returns the number of events in the graph (including the init event).
+     *
+     * @return the graph size.
+     */
     public int size() {
         return allEvents.size();
     }
 
+    /**
+     * Returns the events in addition order (the backing TO list).
+     *
+     * @return all events of the graph.
+     */
     public List<ExecutionGraphNode> getAllEvents() {
         return allEvents;
     }
 
+    /**
+     * Returns all symbolic (ConDpor) events in the graph.
+     *
+     * @return the symbolic events.
+     */
     public List<ExecutionGraphNode> getAllSymbolicEvents() {
         List<ExecutionGraphNode> symbolicEvents = new ArrayList<>();
         for (ExecutionGraphNode node : allEvents) {

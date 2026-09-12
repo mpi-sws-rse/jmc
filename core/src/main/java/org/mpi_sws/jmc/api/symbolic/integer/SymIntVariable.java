@@ -5,6 +5,15 @@ import org.sosy_lab.java_smt.api.NumeralFormula;
 import java.util.Random;
 
 
+/**
+ * A symbolic integer variable known to the solver: a JavaSMT integer formula paired with a concrete
+ * value.
+ *
+ * <p>These live in a prover context's variable map. The concrete value is initialized randomly and
+ * later overwritten by the solver's model (see {@code IncrementalSolver.updateModel}), giving every
+ * symbolic integer a concrete witness for concolic evaluation. Not to be confused with {@code
+ * SymbolicInteger}, the user-facing value type.
+ */
 public class SymIntVariable {
 
     /**

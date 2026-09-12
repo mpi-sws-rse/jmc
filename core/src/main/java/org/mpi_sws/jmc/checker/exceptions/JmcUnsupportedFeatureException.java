@@ -1,10 +1,12 @@
 package org.mpi_sws.jmc.checker.exceptions;
 
 /**
- * Exception class for JMC unsupported features.
+ * Exception for a concurrency feature JMC does not support.
  *
- * <p>This exception is thrown when there are any concurrency related
- * features which are currently unsupported
+ * <p>Unlike the rest of this package, it extends {@link RuntimeException} (unchecked). It is raised by
+ * the instrumentation agent's visitors when a class uses a {@code java.util.concurrent} construct JMC
+ * cannot handle (e.g. an unsupported {@code Executors} factory), and propagates out of the agent's
+ * {@code transform} unchanged.
  */
 public class JmcUnsupportedFeatureException  extends RuntimeException{
     /**

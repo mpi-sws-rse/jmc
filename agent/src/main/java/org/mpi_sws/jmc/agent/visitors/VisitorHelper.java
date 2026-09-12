@@ -8,18 +8,32 @@ import org.objectweb.asm.Type;
 import java.util.*;
 
 /**
- * Helper class for inserting instrumentation to generate RuntimeEvents for field read and write
- * operations.
+ * Shared bytecode-emission toolbox used across the JMC instrumentation visitors.
+ *
+ * <p>It gathers the low-level ASM helpers that several visitors need: inserting field read/write
+ * runtime events (with the correct operand-stack juggling), inserting {@code JmcRuntime.yield()}
+ * calls, boxing primitives, recognizing instantiation opcodes, and emitting the right return
+ * instruction for a descriptor. It also defines the small value/record types ({@link MethodInfo},
+ * {@link AnnotationInfo}, {@link AnnotationValue} and its implementations, {@link
+ * JmcAnnotationRecordVisitor}) that {@link JmcSyncMethodVisitor} uses to record a synchronized
+ * method's signature, parameters, and annotations and replay them onto the regenerated wrapper.
  */
 public class VisitorHelper {
 
     /**
-     * Inserts instrumentation to generate a RuntimeEvent for a field read operation.
+     * Inserts instrumentation to generate a runtime read event for a field access.
      *
-     * @param mv The MethodVisitor to which the instrumentation will be added.
-     * @param owner The internal name of the class containing the field.
-     * @param name The name of the field.
-     * @param descriptor The descriptor of the field.
+     * <p>For an instance field it duplicates the {@code this} reference already on the stack; for a
+     * static field it pushes {@code null} as the instance. It then pushes the field metadata and calls
+     * {@code JmcRuntimeUtils.readEventWithoutYield}. The caller is responsible for the following {@code
+     * GETFIELD}/{@code GETSTATIC} and any {@code yield}.
+     *
+     * @param mv the {@link MethodVisitor} to which the instrumentation will be added
+     * @param isStatic {@code true} for a static field ({@code GETSTATIC}), {@code false} for an
+     *     instance field ({@code GETFIELD})
+     * @param owner the internal name of the class containing the field
+     * @param name the name of the field
+     * @param descriptor the descriptor of the field
      */
     public static void insertRead(
             MethodVisitor mv, Boolean isStatic, String owner, String name, String descriptor) {
@@ -40,12 +54,21 @@ public class VisitorHelper {
     }
 
     /**
-     * Inserts instrumentation to generate a RuntimeEvent for a field write operation.
+     * Inserts instrumentation to generate a runtime write event for a field access.
      *
-     * @param mv The MethodVisitor to which the instrumentation will be added.
-     * @param owner The internal name of the class containing the field.
-     * @param name The name of the field.
-     * @param descriptor The descriptor of the field.
+     * <p>Called <em>before</em> the corresponding {@code PUTFIELD}/{@code PUTSTATIC}. It duplicates the
+     * value being written (and, for instance fields, the target reference) using the {@code DUP*}
+     * opcode appropriate to the field's category (long/double are two slots), boxes the value to an
+     * {@code Object} via {@link #addObjectConverter}, pushes the field metadata, and calls {@code
+     * JmcRuntimeUtils.writeEventWithoutYield}. The stack is left so the caller's original store
+     * instruction still finds its operands.
+     *
+     * @param mv the {@link MethodVisitor} to which the instrumentation will be added
+     * @param isStatic {@code true} for a static field ({@code PUTSTATIC}), {@code false} for an
+     *     instance field ({@code PUTFIELD})
+     * @param owner the internal name of the class containing the field
+     * @param name the name of the field
+     * @param descriptor the descriptor of the field
      */
     public static void insertWrite(
             MethodVisitor mv, Boolean isStatic, String owner, String name, String descriptor) {
@@ -318,7 +341,14 @@ public class VisitorHelper {
         }
     }
 
-    /** The MethodInfo class is used to store information about a method. */
+    /**
+     * Captured description of a synchronized method.
+     *
+     * <p>{@link JmcSyncMethodVisitor} records one of these for every synchronized method it
+     * encounters, along with the method's parameters and annotations, and then uses it to regenerate a
+     * lock/unlock wrapper carrying the method's original name and shape (see {@link
+     * JmcSyncMethodVisitor#visitEnd}).
+     */
     public static class MethodInfo {
 
         /** Access flags of the method. */
@@ -336,11 +366,21 @@ public class VisitorHelper {
         /** Exceptions of the method. */
         private final String[] exceptions;
 
+        /** Annotations recorded on the method, replayed onto the regenerated wrapper. */
         private final List<AnnotationInfo> annotations;
 
+        /** Parameter names recorded on the method, replayed onto the regenerated wrapper. */
         private final List<String> parameterNames = new ArrayList<>();
+        /** Parameter access flags recorded on the method, paired positionally with {@link #parameterNames}. */
         private final List<Integer> parameterAccesses = new ArrayList<>();
 
+        /**
+         * @param access the method access flags
+         * @param name the method name
+         * @param descriptor the method descriptor
+         * @param signature the generic signature, or {@code null}
+         * @param exceptions the declared exceptions, or {@code null}
+         */
         public MethodInfo(
                 int access, String name, String descriptor, String signature, String[] exceptions) {
             this.access = access;
@@ -351,64 +391,122 @@ public class VisitorHelper {
             this.annotations = new ArrayList<>();
         }
 
-        /** Returns true if the method is synchronized. */
+        /**
+         * Returns whether the method is static.
+         *
+         * @return {@code true} if the {@code ACC_STATIC} flag is set
+         */
         public boolean isStatic() {
             return (access & Opcodes.ACC_STATIC) != 0;
         }
 
-        /** Changes the access flags of the method to be non-synchronized. */
+        /**
+         * Returns the access flags with the {@code ACC_SYNCHRONIZED} flag cleared, used for the
+         * unsynchronized copy and the wrapper.
+         *
+         * @return the access flags without {@code ACC_SYNCHRONIZED}
+         */
         public int getNonSyncAccess() {
             return access & ~Opcodes.ACC_SYNCHRONIZED;
         }
 
-        /** Changes the name of the method to have a suffix of "$synchronized". */
+        /**
+         * Returns the method name with a {@code "$synchronized"} suffix.
+         *
+         * @return the {@code "$synchronized"}-suffixed name
+         */
         public String getSyncName() {
             return name + "$synchronized";
         }
 
+        /**
+         * @return the original method name
+         */
         public String getName() {
             return name;
         }
 
+        /**
+         * @return the method descriptor
+         */
         public String getDescriptor() {
             return descriptor;
         }
 
+        /**
+         * @return the generic signature, or {@code null}
+         */
         public String getSignature() {
             return signature;
         }
 
+        /**
+         * @return the declared exceptions, or {@code null}
+         */
         public String[] getExceptions() {
             return exceptions;
         }
 
-        /** Changes the name of the method to have a suffix of "$unsynchronized". */
+        /**
+         * Returns the name of the unsynchronized copy: the original name with a {@code
+         * "$unsynchronized"} suffix. The copy holds the original method body and is invoked by the
+         * lock/unlock wrapper.
+         *
+         * @return the {@code "$unsynchronized"}-suffixed name
+         */
         public String getUnsyncName() {
             return name + "$unsynchronized";
         }
 
+        /**
+         * Records an annotation to be replayed onto the regenerated wrapper.
+         *
+         * @param annotation the annotation info to record
+         */
         public void addAnnotation(AnnotationInfo annotation) {
             this.annotations.add(annotation);
         }
 
+        /**
+         * @return the recorded annotations, in visitation order
+         */
         public List<AnnotationInfo> getAnnotations() {
             return annotations;
         }
 
+        /**
+         * Records a parameter (name and access flags) to be replayed onto the regenerated wrapper.
+         *
+         * @param name the parameter name
+         * @param access the parameter access flags
+         */
         public void addParameter(String name, int access) {
             parameterNames.add(name);
             parameterAccesses.add(access);
         }
 
+        /**
+         * @return the recorded parameter names, in declaration order
+         */
         public List<String> getParameterNames() {
             return parameterNames;
         }
 
+        /**
+         * @return the recorded parameter access flags, paired positionally with {@link
+         *     #getParameterNames()}
+         */
         public List<Integer> getParameterAccesses() {
             return parameterAccesses;
         }
     }
 
+    /**
+     * The set of {@code java.util.concurrent} (and {@code java.lang.Thread}) members JMC claims to
+     * support, each encoded as {@code fully.qualified.Owner.memberName}. Consulted by {@link
+     * #isConcurrentFeatureSupported} / {@link #supportedFeatures()} to distinguish supported calls
+     * from unsupported ones.
+     */
     private static final Set<String> SUPPORTED_CONCURRENT_FEATURES =
             Set.of(
                     "java.util.concurrent.atomic.AtomicBoolean.<init>",
@@ -451,36 +549,72 @@ public class VisitorHelper {
                     "java.util.concurrent.ThreadFactory.newThread",
                     "java.util.concurrent.ThreadPoolExecutor.<init>");
 
+    /**
+     * Reports whether a concurrent feature is in the supported set.
+     *
+     * @param feature the feature key ({@code fully.qualified.Owner.memberName})
+     * @return {@code true} if the feature is supported
+     */
     public static boolean isConcurrentFeatureSupported(String feature) {
         return SUPPORTED_CONCURRENT_FEATURES.contains(feature);
     }
 
+    /**
+     * @return the immutable set of supported concurrent-feature keys
+     */
     public static Set<String> supportedFeatures() {
         return SUPPORTED_CONCURRENT_FEATURES;
     }
 
+    /**
+     * Captured representation of a single annotation: its type descriptor, runtime visibility, and
+     * named element values. Populated by {@link JmcAnnotationRecordVisitor} and later replayed onto a
+     * regenerated method by {@link JmcSyncMethodVisitor}.
+     */
     public static class AnnotationInfo {
+        /** The annotation's type descriptor. */
         private final String descriptor;
+        /** Whether the annotation is retained/visible at runtime. */
         private final boolean visible;
+        /** The annotation's element values, keyed by element name. */
         private final Map<String, AnnotationValue> values = new HashMap<>();
 
+        /**
+         * @param descriptor the annotation's type descriptor
+         * @param visible whether the annotation is visible at runtime
+         */
         public AnnotationInfo(String descriptor, boolean visible) {
             this.descriptor = descriptor;
             this.visible = visible;
         }
 
+        /**
+         * Records a named element value of the annotation.
+         *
+         * @param name the element name
+         * @param value the captured element value
+         */
         public void addValue(String name, AnnotationValue value) {
             values.put(name, value);
         }
 
+        /**
+         * @return the recorded element values, keyed by element name
+         */
         public Map<String, AnnotationValue> getValues() {
             return values;
         }
 
+        /**
+         * @return the annotation's type descriptor
+         */
         public String getDescriptor() {
             return descriptor;
         }
 
+        /**
+         * @return whether the annotation is visible at runtime
+         */
         public boolean getVisibility() {
             return visible;
         }
@@ -491,20 +625,36 @@ public class VisitorHelper {
         }
     }
 
+    /**
+     * A captured annotation element value. The {@link #type()} tag discriminates the concrete
+     * implementation so {@link JmcSyncMethodVisitor} can replay the value with the right {@link
+     * AnnotationVisitor} call.
+     */
     public interface AnnotationValue {
+        /** @return the kind of value this instance holds */
         Type type();
 
+        /** The kinds of annotation element values that can be captured. */
         enum Type {
+            /** A primitive or {@code String} constant. */
             Primitive,
+            /** An enum constant. */
             Enum,
+            /** An array of values. */
             Array,
+            /** A nested annotation. */
             Nested
         }
     }
 
+    /** A captured primitive or {@code String} annotation element value. */
     public static class PrimitiveValue implements AnnotationValue {
+        /** The wrapped constant value. */
         private final Object value;
 
+        /**
+         * @param value the primitive or {@code String} constant
+         */
         public PrimitiveValue(Object value) {
             this.value = value;
         }
@@ -514,15 +664,25 @@ public class VisitorHelper {
             return Type.Primitive;
         }
 
+        /**
+         * @return the wrapped constant value
+         */
         public Object getValue() {
             return value;
         }
     }
 
+    /** A captured enum-constant annotation element value. */
     public static class EnumValue implements AnnotationValue {
+        /** The enum type's descriptor. */
         private final String descriptor;
+        /** The enum constant's name. */
         private final String value;
 
+        /**
+         * @param descriptor the enum type's descriptor
+         * @param value the enum constant's name
+         */
         public EnumValue(String descriptor, String value) {
             this.descriptor = descriptor;
             this.value = value;
@@ -533,16 +693,24 @@ public class VisitorHelper {
             return Type.Enum;
         }
 
+        /**
+         * @return the enum type's descriptor
+         */
         public String getDescriptor() {
             return descriptor;
         }
 
+        /**
+         * @return the enum constant's name
+         */
         public String getValue() {
             return value;
         }
     }
 
+    /** A captured array annotation element value, holding its elements in order. */
     public static class ArrayValue implements AnnotationValue {
+        /** The array's element values, in order. */
         private final List<AnnotationValue> values = new ArrayList<>();
 
         @Override
@@ -550,18 +718,31 @@ public class VisitorHelper {
             return Type.Array;
         }
 
+        /**
+         * Appends an element to the array.
+         *
+         * @param value the element value to add
+         */
         public void addValue(AnnotationValue value) {
             values.add(value);
         }
 
+        /**
+         * @return the array's element values, in order
+         */
         public List<AnnotationValue> getValues() {
             return values;
         }
     }
 
+    /** A captured nested-annotation element value. */
     public static class NestedAnnotationValue implements AnnotationValue {
+        /** The captured nested annotation. */
         private final VisitorHelper.AnnotationInfo nested;
 
+        /**
+         * @param nested the captured nested annotation
+         */
         public NestedAnnotationValue(VisitorHelper.AnnotationInfo nested) {
             this.nested = nested;
         }
@@ -571,29 +752,64 @@ public class VisitorHelper {
             return Type.Nested;
         }
 
+        /**
+         * @return the captured nested annotation
+         */
         public VisitorHelper.AnnotationInfo getNested() {
             return nested;
         }
     }
 
+    /**
+     * An {@link AnnotationVisitor} that records an annotation's structure into an {@link
+     * AnnotationInfo} instead of writing it out.
+     *
+     * <p>{@link JmcSyncMethodVisitor} attaches one of these while visiting a synchronized method so
+     * that the method's annotations (including arrays and nested annotations, handled recursively) can
+     * be captured and later replayed onto the regenerated wrapper method.
+     */
     public static class JmcAnnotationRecordVisitor extends AnnotationVisitor {
+        /** The annotation being populated by this visitor. */
         AnnotationInfo annotationInfo;
 
+        /**
+         * @param annotationInfo the annotation info to populate
+         */
         public JmcAnnotationRecordVisitor(AnnotationInfo annotationInfo) {
             super(Opcodes.ASM9);
             this.annotationInfo = annotationInfo;
         }
 
+        /**
+         * Records a primitive or {@code String} element value.
+         *
+         * @param name the element name
+         * @param value the constant value
+         */
         @Override
         public void visit(String name, Object value) {
             annotationInfo.addValue(name, new PrimitiveValue(value));
         }
 
+        /**
+         * Records an enum-constant element value.
+         *
+         * @param name the element name
+         * @param descriptor the enum type's descriptor
+         * @param value the enum constant's name
+         */
         @Override
         public void visitEnum(String name, String descriptor, String value) {
             annotationInfo.addValue(name, new VisitorHelper.EnumValue(descriptor, value));
         }
 
+        /**
+         * Records an array element value, returning a nested visitor that appends each primitive
+         * array entry to the captured {@link ArrayValue}.
+         *
+         * @param name the element name
+         * @return an {@link AnnotationVisitor} that collects the array entries
+         */
         @Override
         public AnnotationVisitor visitArray(String name) {
             VisitorHelper.ArrayValue arr = new VisitorHelper.ArrayValue();
@@ -608,6 +824,14 @@ public class VisitorHelper {
             return av;
         }
 
+        /**
+         * Records a nested-annotation element value, returning a recursive {@link
+         * JmcAnnotationRecordVisitor} that captures the nested annotation.
+         *
+         * @param name the element name
+         * @param descriptor the nested annotation's type descriptor
+         * @return a visitor that captures the nested annotation
+         */
         @Override
         public AnnotationVisitor visitAnnotation(String name, String descriptor) {
             VisitorHelper.AnnotationInfo nested =

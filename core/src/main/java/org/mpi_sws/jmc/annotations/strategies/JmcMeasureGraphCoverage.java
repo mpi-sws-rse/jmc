@@ -7,44 +7,61 @@ import java.lang.annotation.Target;
 import java.time.temporal.ChronoUnit;
 
 /**
- * This annotation is used to configure the JMC graph coverage measurement for a test method or
- * class.
+ * Enables graph-coverage measurement for a JMC test.
+ *
+ * <p>Applied alongside a strategy, it is consumed by {@code JmcDescriptorUtil}, which wraps the chosen
+ * strategy in a {@code MeasureGraphCoverageStrategy} configured from these elements — counting how
+ * many execution graphs are covered, recorded either at a fixed frequency or per iteration. Setting
+ * both a non-zero {@link #recordFrequency()} and {@link #recordPerIteration()} is rejected with a
+ * {@code JmcInvalidConfigurationException}. Applicable to methods and types; retained at runtime.
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JmcMeasureGraphCoverage {
-    /** Enable debug mode for the graph coverage measurement. */
+    /**
+     * Enable debug mode for the graph coverage measurement.
+     *
+     * @return {@code true} to enable debug mode
+     */
     boolean debug() default false;
 
-    /** Enable recording of the execution graphs. */
+    /**
+     * Enable recording of the execution graphs.
+     *
+     * @return {@code true} to record the explored graphs
+     */
     boolean recordGraphs() default false;
 
     /**
      * The path where the execution graphs will be recorded.
      *
-     * <p>Default is "build/test-results/jmc-coverage".
+     * @return the record path (default {@code "build/test-results/jmc-report"})
      */
     String recordPath() default "build/test-results/jmc-report";
 
     /**
-     * The frequency at which the graph coverage will be measured.
+     * The time unit paired with {@link #recordFrequency()} to form the recording interval (combined as
+     * {@code Duration.of(recordFrequency, recordUnit)}).
      *
-     * <p>Default is null.
+     * @return the time unit for the recording frequency (default {@code SECONDS})
      */
     ChronoUnit recordUnit() default ChronoUnit.SECONDS;
 
     /**
-     * The frequency at which the graph coverage will be measured, in milliseconds.
+     * The recording interval magnitude, in units of {@link #recordUnit()}.
      *
-     * <p>Should be specified with the {@link JmcMeasureGraphCoverage#recordUnit} parameter
+     * <p>{@code 0} (the default) disables frequency-based recording. Mutually exclusive with {@link
+     * #recordPerIteration()}.
      *
-     * <p>Default is null.
+     * @return the recording frequency, or {@code 0} for none
      */
     long recordFrequency() default 0L;
 
     /**
-     * Record the graph coverage per iteration of the test. Should not be specified with
-     * `recordUnit` and `recordFrequency`
+     * Record the graph coverage once per test iteration. Mutually exclusive with {@link
+     * #recordUnit()}/{@link #recordFrequency()}.
+     *
+     * @return {@code true} to record per iteration
      */
     boolean recordPerIteration() default false;
 }
