@@ -7,10 +7,12 @@ import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
 import org.mpi_sws.jmc.runtime.HaltTaskException;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
+import org.mpi_sws.jmc.runtime.JmcUnsupportedEventException;
 import org.mpi_sws.jmc.runtime.scheduling.PrimitiveValue;
 import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpi_sws.jmc.strategies.tracker.TrackActiveTasksStrategy;
 import org.mpi_sws.jmc.util.FileUtil;
+import org.mpi_sws.jmc.strategies.mp.MpAwareStrategy;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -142,6 +144,17 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
     public void updateEvent(JmcRuntimeEvent event)
             throws HaltTaskException, HaltExecutionException {
         super.updateEvent(event);
+        // Message-passing events are answered only by strategies that implement MpAwareStrategy.
+        // Every other strategy in this family (random, pct, fair-pct, the DAG estimators) must
+        // fail loudly rather than let a message-passing program run silently unchecked. A send
+        // needs no answer, so without this check a send-only program would pass under pct.
+        JmcRuntimeEvent.Type type = event.getType();
+        boolean messagePassing = type == JmcRuntimeEvent.Type.MP_SEND_EVENT
+                || type == JmcRuntimeEvent.Type.MP_RECV_REQUEST_EVENT
+                || type == JmcRuntimeEvent.Type.ND_EVENT;
+        if (messagePassing && !(this instanceof MpAwareStrategy)) {
+            throw new JmcUnsupportedEventException(type, getClass().getSimpleName());
+        }
         if (event.getType() == JmcRuntimeEvent.Type.REACTIVE_EVENT_RANDOM_VALUE) {
             Long taskId = event.getTaskId();
             Integer bits = event.getParam("bits");

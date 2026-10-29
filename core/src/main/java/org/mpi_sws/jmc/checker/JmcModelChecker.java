@@ -72,13 +72,20 @@ public class JmcModelChecker {
         JmcRuntime.setup(runtimeConfig);
         int numIterations = config.getNumIterations();
         int iteration = 0;
+        // Number of iterations for which initIteration returned, i.e. that actually ran. The loop
+        // counter alone cannot give this, because a strategy may end the run from initIteration.
+        int completedIterations = 0;
         try {
             LOGGER.info("JMC checker started");
             while (true) {
                 boolean successfulIteration = true;
+                boolean started = false;
                 try {
                     LOGGER.debug("Running iteration {}", iteration);
                     JmcRuntime.initIteration(iteration, report);
+                    // From here the iteration counts as having run, whatever happens to it.
+                    // A strategy that ends the run does so from initIteration, before this line.
+                    started = true;
                     target.invoke();
                     JmcRuntimeEvent mainEndEvent =
                             new JmcRuntimeEvent.Builder()
@@ -96,6 +103,10 @@ public class JmcModelChecker {
                         // Since we are going to re-execute, do not count this iteration
                         numIterations++;
                     } else {
+                        // Not a successful iteration: without this, the finally block below
+                        // would throw HaltCheckerException.ok() on the last iteration and
+                        // discard the exception in flight, reporting a failed run as OK.
+                        successfulIteration = false;
                         report.setErrorIteration(iteration);
                         report.setErrorMessage(e.getMessage());
                         LOGGER.error(
@@ -104,9 +115,13 @@ public class JmcModelChecker {
                                 e.getMessage());
                         throw e;
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     successfulIteration = false;
-                    // Catchall for any other exceptions that may occur
+                    // Catchall for any other throwable. Throwable rather than Exception, because
+                    // an AssertionError raised by the program under test is an Error; if it were
+                    // not caught here, the finally block below would throw
+                    // HaltCheckerException.ok() on the last iteration and report the failed run
+                    // as completed.
                     report.setErrorIteration(iteration);
                     if (ExceptionUtil.isAssertionError(e)) {
                         report.setErrorMessage(
@@ -129,6 +144,9 @@ public class JmcModelChecker {
                         System.gc();
                     }
                     iteration++;
+                    if (started) {
+                        completedIterations++;
+                    }
                     if (numIterations != 0 && iteration >= numIterations && successfulIteration) {
                         throw HaltCheckerException.ok();
                     }
@@ -145,12 +163,10 @@ public class JmcModelChecker {
             }
         } catch (HaltCheckerException e) {
             if (e.isOkay()) {
-                int totalIterations = iteration - 1;
-                report.setTotalIterations(totalIterations);
-                LOGGER.info("Model checking completed covering: {} iterations", totalIterations);
+                report.setTotalIterations(completedIterations);
+                LOGGER.info("Model checking completed covering: {} iterations", completedIterations);
             } else if (e.isTimeout()) {
-                int totalIterations = iteration - 1;
-                report.setTotalIterations(totalIterations);
+                report.setTotalIterations(completedIterations);
                 LOGGER.error("Model checker timeout out: {}", e.getMessage());
             } else {
                 report.setErrorIteration(-1);

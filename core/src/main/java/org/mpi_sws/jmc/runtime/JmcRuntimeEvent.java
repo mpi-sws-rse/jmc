@@ -320,5 +320,30 @@ public class JmcRuntimeEvent {
 
         //Executor tracking event
         EXECUTOR_SHUTDOWN_EVENT,
+
+        // Events of the message-passing API (org.mpi_sws.jmc.api.mp), answered by strategies that
+        // implement org.mpi_sws.jmc.strategies.mp.MpAwareStrategy.
+        // Not to be confused with SEND_EVENT / RECV_EVENT / RECV_BLOCKING_EVENT above, which are
+        // unused constants.
+        /**
+         * A message was sent. Parameters: {@code model}, {@code dst}, {@code value}. The event is
+         * reported and the sending task then yields; the strategy returns no answer.
+         */
+        MP_SEND_EVENT,
+        /**
+         * A receive requests a message. Parameters: {@code model}, {@code guard}, {@code blocking}.
+         * The strategy answers with an {@code MpDeliveryValue} (a pending send, or "no message"
+         * for a non-blocking receive), or blocks the task. If the main task is parked after the
+         * strategy detected a fault, it answers with an {@code MpFaultValue}, which the API
+         * converts into a {@link HaltExecutionException}.
+         */
+        MP_RECV_REQUEST_EVENT,
+        /**
+         * A finite nondeterministic choice. Parameter: {@code optionCount} (at least 1). Answered
+         * with an index in [0, optionCount) as a {@code PrimitiveValue}. The options themselves are
+         * not carried in the event: their order is fixed by the caller, and index 0 denotes the
+         * first (smallest) option.
+         */
+        ND_EVENT,
     }
 }

@@ -351,16 +351,18 @@ public class TaskManager {
             LOGGER.debug("Task {} is waiting on future {}", taskId, future);
             T result = castedFuture.get();
             // A thread will reach this line only if the scheduler has completed it's corresponding future object.
-            // Thus, it is now safe to remove the future from taskFutures map
+            // Remove it only if the map still holds this same future: after a reset the id may
+            // already belong to a newer task, whose future must stay.
             synchronized (tasksLock) {
-                taskFutures.remove(taskId);
+                taskFutures.remove(taskId, future);
             }
             LOGGER.debug("Task {} is now resumed with value {} from future {}", taskId, result, future);
             return result;
         } catch (Exception e) {
-            // The future must be removed from the tasksLock even if an exception happens
+            // The future must be removed even if an exception happens; as above, only if the map
+            // still holds this same future.
             synchronized (tasksLock) {
-                taskFutures.remove(taskId);
+                taskFutures.remove(taskId, future);
             }
             Throwable cause = e.getCause();
             if (cause instanceof HaltTaskException) {
