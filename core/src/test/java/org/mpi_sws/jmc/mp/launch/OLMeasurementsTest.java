@@ -149,6 +149,12 @@ class OLMeasurementsTest {
                 "--spec", spec.toString());
     }
 
+    /** Round 05: {@link #online} in bug-finder mode ({@code --stop-at-first}). */
+    static MpLauncherTest.Out onlineStop(String impl, Path spec) throws Exception {
+        return MpLauncherTest.launch(LAUNCHER, impl, "must", "0", "1", DIR + "report-online-stop-" + slug(impl), "-",
+                "300", "--spec", spec.toString(), "--stop-at-first");
+    }
+
     static void counting0(Map<String, String> v) {
         for (String k : List.of("summarise_ms", "lookup_ms", "index_ms", "export_ms", "summaries_distinct",
                 "max_visible_events", "max_summary_bytes", "max_porf_count", "max_porf_pairs")) {
@@ -315,10 +321,11 @@ class OLMeasurementsTest {
         }
         assertEquals("0", ok.get("export_ms"), "no export file");
 
-        // ---- 6. online, violating, miss before the last graph: double-grant,2,1 (6 graphs) against spec,2,1.
+        // ---- 6. online (bug-finder mode since round 05), violating, miss before the last graph: double-grant,2,1
+        // (6 graphs) against spec,2,1.
         // J7: NotFound, uncovered summary [0,0,0,0,1,1] or [0,1,1,0,0,0]; the miss is at iteration 1, so the only
         // summary is the uncovered one: max_porf_count 1, max_porf_pairs 2, visible 6; 12 message events.
-        MpLauncherTest.Out bo = online(J4 + "A3Lock:double-grant,2,1", spec);
+        MpLauncherTest.Out bo = onlineStop(J4 + "A3Lock:double-grant,2,1", spec);
         Map<String, String> bad = block(bo, true);
         String at = J7OnlineTest.field(bo.text(), "at");
         assertTrue(at != null && at.matches("iteration [0-9]+, NotFound .*"), "at: " + at);
@@ -335,11 +342,11 @@ class OLMeasurementsTest {
         assertEquals("2", bad.get("max_porf_pairs"));
         assertEquals("12", bad.get("max_message_events"));
 
-        // ---- 7. online, miss on the last graph: fwd A2Store:early-ack,2,1 (2 graphs) against A2Store:spec,2,1.
+        // ---- 7. online (bug-finder mode since round 05), miss on the last graph: fwd A2Store:early-ack,2,1 (2 graphs) against A2Store:spec,2,1.
         // J7: NotFound at iteration 2, stack exhausted. The run stopped because of the miss: first-miss (OL-1 ruling).
         String a2spec = J4 + "A2Store:spec,2,1";
         block(export(a2spec), false);
-        MpLauncherTest.Out lo = online(J4 + "A2Store:early-ack,2,1", exportPath(a2spec));
+        MpLauncherTest.Out lo = onlineStop(J4 + "A2Store:early-ack,2,1", exportPath(a2spec));
         Map<String, String> last = block(lo, true);
         String lat = J7OnlineTest.field(lo.text(), "at");
         assertTrue(lat != null && lat.matches("iteration 2, NotFound .*"), "at: " + lat);
@@ -348,6 +355,14 @@ class OLMeasurementsTest {
         assertEquals("2", last.get("first_miss_iteration"));
         assertEquals("1", last.get("uncovered_total"));
         assertEquals("2", last.get("iterations"));
+
+        // ---- 7b (round 05). The same pair in full mode: the miss is not a stop; one graph uncovered of 2
+        // (TraceForge J3: early-ack 2-1 Violation/1 (graphs 1)): exhausted, uncovered_total 1, first miss 2.
+        Map<String, String> lastFull = block(online(J4 + "A2Store:early-ack,2,1", exportPath(a2spec)), true);
+        assertEquals("exhausted", lastFull.get("stop_reason"), "full mode: a miss never stops the run");
+        assertEquals("2", lastFull.get("first_miss_iteration"));
+        assertEquals("1", lastFull.get("uncovered_total"));
+        assertEquals("2", lastFull.get("iterations"));
 
         // ================================================================ round 03 (Codex OL0 round 01, M4)
 
@@ -439,10 +454,10 @@ class OLMeasurementsTest {
         assertEquals("2", xf.get("summaries_distinct"));
         assertEquals("4", xf.get("iterations"));
 
-        // ---- 14. first miss + export failure: double-grant,2,1 --spec spec,2,1, export to a directory.
-        // Precedence: error; the miss is still reported (iteration 1, as in case 6).
+        // ---- 14. first miss + export failure (bug-finder mode since round 05): double-grant,2,1 --spec spec,2,1,
+        // export to a directory. Precedence: error; the miss is still reported (iteration 1, as in case 6).
         MpLauncherTest.Out fx = MpLauncherTest.launch(LAUNCHER, J4 + "A3Lock:double-grant,2,1", "must", "0", "1",
-                DIR + "report-fx", dirTarget.toString(), "300", "--spec", spec.toString());
+                DIR + "report-fx", dirTarget.toString(), "300", "--spec", spec.toString(), "--stop-at-first");
         Map<String, String> fxv = block(fx, true, 1, false);
         assertEquals("error", fxv.get("stop_reason"));
         assertEquals("1", fxv.get("first_miss_iteration"));
@@ -512,6 +527,114 @@ class OLMeasurementsTest {
         } else {
             System.out.println("OL SKIPPED peak_rss_kb fallback: unshare -rmpf not permitted here");
         }
+    }
+
+    /**
+     * OL round 05 (MESSAGE-online-mode.md §1): full mode (default) and bug-finder mode ({@code --stop-at-first}).
+     * Expected values (derived before the runs): TraceForge's offline J3 table (plan/traceForge/log/dev/J3.md
+     * §6 and the graph table): A3Lock double-grant 2-2 has 70 graphs, 34 distinct summaries, and against
+     * spec 2-2 is "Violation/28 (graphs 64)": 64 uncovered graphs, 28 distinct uncovered summaries, so 6
+     * graphs covered; fifo 2-2 has 28 graphs, 6 summaries, "Conforms/0".
+     */
+    @Test
+    void onlineModes() throws Exception {
+        String spec22 = J4 + "A3Lock:spec,2,2";
+        block(export(spec22), false);
+        Path spec = exportPath(spec22);
+        String dg = J4 + "A3Lock:double-grant,2,2";
+
+        // ---- 1. full mode, violating, with an export beside it.
+        Path beside = Path.of(DIR + "dg22-full-beside.jsonl");
+        Files.deleteIfExists(beside);
+        MpLauncherTest.Out fo = MpLauncherTest.launch(LAUNCHER, dg, "must", "0", "1", DIR + "report-dg22-full",
+                beside.toString(), "300", "--spec", spec.toString());
+        Map<String, String> f = block(fo, true);
+        String t = fo.text();
+        assertEquals("reports", J7OnlineTest.field(t, "verdict"));
+        assertEquals("full", J7OnlineTest.field(t, "mode"));
+        assertEquals("64 graphs (28 distinct summaries)", J7OnlineTest.field(t, "uncovered"),
+                "TraceForge offline: Violation/28 (graphs 64)");
+        assertEquals("70 iterations", J7OnlineTest.field(t, "ran"));
+        assertEquals("70 distinct complete, 0 distinct blocked; stack exhausted", J7OnlineTest.field(t, "graphs"));
+        Matcher lk = Pattern.compile("70 \\(6 found, ([0-9]+) signature misses, ([0-9]+) not found\\)")
+                .matcher(J7OnlineTest.field(t, "lookups"));
+        assertTrue(lk.matches(), "every graph looked up, 6 covered: " + J7OnlineTest.field(t, "lookups"));
+        assertEquals(64, Integer.parseInt(lk.group(1)) + Integer.parseInt(lk.group(2)));
+        String at = J7OnlineTest.field(t, "at");
+        assertTrue(at != null && at.matches("iteration [0-9]+, (NoSig|NotFound) .*"), "at: " + at);
+        String firstIt = at.split("[ ,]")[1];
+        Matcher fm = Pattern.compile("iteration ([0-9]+), ([0-9]+) ms").matcher(J7OnlineTest.field(t, "first miss"));
+        assertTrue(fm.matches(), "first miss: " + J7OnlineTest.field(t, "first miss"));
+        assertEquals(firstIt, fm.group(1), "first miss = the witness's iteration");
+        assertTrue(J7OnlineTest.field(t, "witness") != null, "the first report is kept");
+        assertEquals("exhausted", f.get("stop_reason"), "full mode: a miss never stops the run");
+        assertEquals("64", f.get("uncovered_total"));
+        assertEquals(firstIt, f.get("first_miss_iteration"));
+        assertEquals(fm.group(2), f.get("first_miss_wall_ms"));
+        assertEquals("70", f.get("iterations"));
+        assertEquals("34", f.get("summaries_distinct"));
+        List<String> bl = Files.readAllLines(beside, StandardCharsets.UTF_8);
+        String h = bl.get(0);
+        assertEquals(35, bl.size(), "34 summaries: the full exploration is exported");
+        assertTrue(h.contains("\"enumeration\":\"complete\""), h);
+        assertTrue(h.contains(",\"first_miss_iteration\":" + firstIt + ",\"first_miss_wall_ms\":" + fm.group(2)
+                + ",\"uncovered_total\":64,\"encoding\":1}"), "the three header fields: " + h);
+
+        // ---- 2. full mode, conforming: fifo,2,2 (28 graphs): uncovered 0, no first-miss line, no witness.
+        MpLauncherTest.Out co = online(J4 + "A3Lock:fifo,2,2", spec);
+        Map<String, String> c = block(co, true);
+        String ct = co.text();
+        assertEquals("conforms", J7OnlineTest.field(ct, "verdict"));
+        assertEquals("full", J7OnlineTest.field(ct, "mode"));
+        assertEquals("0 graphs (0 distinct summaries)", J7OnlineTest.field(ct, "uncovered"));
+        assertEquals(null, J7OnlineTest.field(ct, "first miss"), "no first-miss line");
+        assertEquals(null, J7OnlineTest.field(ct, "witness"));
+        assertEquals(null, J7OnlineTest.field(ct, "at"));
+        assertEquals("28 (28 found, 0 signature misses, 0 not found)", J7OnlineTest.field(ct, "lookups"));
+        assertEquals("exhausted", c.get("stop_reason"));
+        assertEquals("0", c.get("uncovered_total"));
+        assertEquals("0", c.get("first_miss_iteration"));
+        assertEquals("0", c.get("first_miss_wall_ms"));
+        assertEquals("28", c.get("iterations"));
+
+        // ---- 3. bug-finder mode on the violating pair: stops at the first miss (the same iteration as full mode's
+        // first miss: the exploration order does not depend on the mode).
+        MpLauncherTest.Out so = onlineStop(dg, spec);
+        Map<String, String> sv = block(so, true);
+        String st = so.text();
+        assertEquals("reports", J7OnlineTest.field(st, "verdict"));
+        assertEquals("bug-finder (--stop-at-first)", J7OnlineTest.field(st, "mode"));
+        assertEquals("1 graphs (1 distinct summaries)", J7OnlineTest.field(st, "uncovered"));
+        assertEquals("first-miss", sv.get("stop_reason"));
+        assertEquals("1", sv.get("uncovered_total"));
+        assertEquals(firstIt, sv.get("first_miss_iteration"));
+        assertEquals(firstIt, sv.get("iterations"));
+        assertEquals(J7OnlineTest.field(t, "witness"), J7OnlineTest.field(st, "witness"), "the same first report");
+        assertTrue(J7OnlineTest.field(st, "graphs").endsWith("stack not exhausted"), st);
+
+        // ---- 4. --stop-at-first without --spec: a usage error (exit 2) before any exploration.
+        MpLauncherTest.Out ue = MpLauncherTest.launch(LAUNCHER, dg, "must", "0", "1", DIR + "report-usage", "-", "300",
+                "--stop-at-first");
+        assertEquals(2, ue.exit(), ue.text());
+        assertTrue(ue.text().contains("--stop-at-first needs --spec"), ue.text());
+        assertTrue(!ue.text().contains("verdict:"), ue.text());
+
+        // ---- 5. full mode, budget with a miss: 10 iterations of double-grant,2,2. The first miss is at
+        // iteration firstIt (<= 10 if it is 1): budget (work remains), reports, 1 <= uncovered_total <= 10 and
+        // equal to the human count; 10 lookups.
+        MpLauncherTest.Out bo = MpLauncherTest.launch(LAUNCHER, dg, "must", "10", "1", DIR + "report-dg22-budget", "-",
+                "300", "--spec", spec.toString());
+        Map<String, String> b = block(bo, true);
+        String btx = bo.text();
+        assertTrue(Integer.parseInt(firstIt) <= 10, "the derivation needs the miss within 10 iterations: " + firstIt);
+        assertEquals("budget", b.get("stop_reason"));
+        assertEquals("10", b.get("iterations"));
+        assertEquals("reports", J7OnlineTest.field(btx, "verdict"));
+        long u = n(b, "uncovered_total");
+        assertTrue(u >= 1 && u <= 10, "uncovered_total " + u);
+        assertTrue(J7OnlineTest.field(btx, "uncovered").startsWith(u + " graphs ("), J7OnlineTest.field(btx, "uncovered"));
+        assertTrue(J7OnlineTest.field(btx, "lookups").startsWith("10 ("), J7OnlineTest.field(btx, "lookups"));
+        assertTrue(J7OnlineTest.field(btx, "graphs").endsWith("stack not exhausted"), btx);
     }
 
     /** Runs a command (not the launcher's java wrapper) and returns exit and output. */

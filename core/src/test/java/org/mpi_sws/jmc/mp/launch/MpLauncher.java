@@ -71,16 +71,21 @@ import java.util.Map;
  * <p><b>Online mode under {@code must}</b> (J7): {@code --spec <file>}, anywhere in the argument list,
  * loads a specification file (plan/jmc-must/SUMMARY-FORMAT.md; {@code enumeration} must be
  * {@code complete} and {@code visible} must equal the program's visible roles) into a
- * {@link SetIndex}, and the {@link MustStrategy} queries it at each completed graph, stopping at the
- * first uncovered summary. The program must implement {@link MpProgram}; {@code exportFile} may still
- * be given (the implementation's summaries are written as in export mode) or be {@code -}. Printed:
+ * {@link SetIndex}, and the {@link MustStrategy} queries it at each completed graph. By default (full
+ * mode) the exploration continues past an uncovered summary, keeping the first one and counting every
+ * uncovered graph; with {@code --stop-at-first} (bug-finder mode) it stops at the first. The program
+ * must implement {@link MpProgram}; {@code exportFile} may still be given (the implementation's
+ * summaries are written as in export mode, with {@code first_miss_iteration}, {@code
+ * first_miss_wall_ms} and {@code uncovered_total} in the header) or be {@code -}. Printed:
  * {@code spec:}
  * (the file, its program, size, model and tool, lines read, distinct summaries held, duplicates; the
- * model is printed, never compared — Q-J7-3),
- * {@code lookups:}, and {@code verdict:} — {@code conforms} (stack exhausted, every summary covered),
- * {@code reports} with {@code uncovered:} (the summary as a format line) and {@code at:} (its
- * iteration and the index's answer), or {@code partial} (the run ended on its bound, a timeout or a
- * failure before anything uncovered). The verdict is a result: exit {@code 0} for all three.
+ * model is printed, never compared),
+ * {@code lookups:}, {@code verdict:} — {@code conforms} (stack exhausted, every summary covered),
+ * {@code reports} (something uncovered) or {@code partial} (the run ended on its bound, a timeout or a
+ * failure before anything uncovered) — {@code mode:}, {@code first miss: iteration I, T ms} (on a
+ * miss), {@code uncovered: U graphs (D distinct summaries)}, and on a miss {@code witness:} (the first
+ * uncovered summary as a format line) and {@code at:} (its iteration and the index's answer). The
+ * verdict is a result: exit {@code 0} for all three.
  *
  * <p>Exit status: {@code 0} when the checker completes; {@code 1} when the run fails — a
  * {@link JmcCheckerException} (an assertion the checker recorded, a strategy fault, an unsupported
@@ -168,9 +173,13 @@ public final class MpLauncher {
     private static int runBody(String[] rawArgs, Measured st) {
         // J7: the --spec option is taken out wherever it stands; the rest is positional as before.
         Path specFile = null;
+        boolean stopAtFirst = false;
         List<String> positional = new ArrayList<>();
         for (int i = 0; i < rawArgs.length; i++) {
-            if (rawArgs[i].equals("--spec")) {
+            if (rawArgs[i].equals("--stop-at-first")) {
+                // The online check's bug-finder mode; without it the check runs in full mode.
+                stopAtFirst = true;
+            } else if (rawArgs[i].equals("--spec")) {
                 if (i + 1 >= rawArgs.length) {
                     return usage("--spec needs a file");
                 }
@@ -183,6 +192,9 @@ public final class MpLauncher {
             }
         }
         String[] args = positional.toArray(new String[0]);
+        if (stopAtFirst && specFile == null) {
+            return usage("--stop-at-first needs --spec");
+        }
         if (args.length < 1 || args.length > 7) {
             return usage(
                     "expected 1 to 7 arguments: <program class[:args]> [strategy=mp-random]"
@@ -277,7 +289,7 @@ public final class MpLauncher {
             } finally {
                 st.indexNanos = System.nanoTime() - indexStartNanos;
             }
-            mustStrategy.checkAgainst(spec.index());
+            mustStrategy.checkAgainst(spec.index(), stopAtFirst);
         }
 
         System.out.println("program:    " + programClass.getName());
@@ -369,8 +381,16 @@ public final class MpLauncher {
                     + mustStrategy.signatureMisses() + " signature misses, " + mustStrategy.notFound()
                     + " not found)");
             System.out.println("verdict:    " + verdict);
+            System.out.println("mode:       "
+                    + (mustStrategy.stopsAtFirst() ? "bug-finder (--stop-at-first)" : "full"));
             if (mustStrategy.uncovered().isPresent()) {
-                System.out.println("uncovered:  " + mustStrategy.uncovered().get().toJson(1));
+                System.out.println("first miss: iteration " + mustStrategy.uncoveredIteration() + ", "
+                        + Math.max(0, mustStrategy.measurements().firstMissWallMs()) + " ms");
+            }
+            System.out.println("uncovered:  " + mustStrategy.uncoveredTotal() + " graphs ("
+                    + mustStrategy.uncoveredDistinct() + " distinct summaries)");
+            if (mustStrategy.uncovered().isPresent()) {
+                System.out.println("witness:    " + mustStrategy.uncovered().get().toJson(1));
                 SetIndex.Covers answer = mustStrategy.uncoveredAnswer().orElseThrow();
                 System.out.println("at:         iteration " + mustStrategy.uncoveredIteration() + ", "
                         + (answer instanceof SetIndex.Covers.NoSig
@@ -404,9 +424,12 @@ public final class MpLauncher {
             }
             int ran = report != null ? report.getTotalIterations() : exported + skipped;
             List<String> lines = new ArrayList<>();
+            SummaryExporter.OnlineFields online = spec == null ? null : new SummaryExporter.OnlineFields(
+                    mustStrategy.uncoveredIteration(), Math.max(0, mustStrategy.measurements().firstMissWallMs()),
+                    mustStrategy.uncoveredTotal());
             lines.add(SummaryExporter.header(
                     mpProgram.programName(), mpProgram.size(), mpProgram.visibleRoles(),
-                    mpProgram.model(), enumeration, seed, ran));
+                    mpProgram.model(), enumeration, seed, ran, online));
             for (Map.Entry<Summary, Integer> e : summaries.entrySet()) {
                 lines.add(e.getKey().toJson(e.getValue()));
             }
@@ -453,8 +476,8 @@ public final class MpLauncher {
      *   <li>{@code stop_reason}, by precedence: {@code error} (the run failed), {@code timeout}, then
      *       {@code first-miss}, {@code exhausted}, {@code budget} (the iteration limit); in detail:
      *       {@code exhausted}, {@code budget},
-     *       {@code timeout}, {@code first-miss} (stopped at the first uncovered summary, also when it
-     *       was the last graph) or
+     *       {@code timeout}, {@code first-miss} (bug-finder mode only: stopped at the first uncovered
+     *       summary, also when it was the last graph; in full mode a miss never stops the run) or
      *       {@code error} (the run failed);</li>
      *   <li>{@code peak_rss_kb}: the process's peak resident set ({@code VmHWM}), empty if unavailable;
      *       {@code max_message_events}: send and receive events of all threads in the largest graph;
@@ -483,7 +506,7 @@ public final class MpLauncher {
             stopReason = "error";
         } else if (timedOut) {
             stopReason = "timeout";
-        } else if (m.uncovered().isPresent()) {
+        } else if (m.stopsAtFirst() && m.uncovered().isPresent()) {
             // The run stopped because of the miss, even when no work was left (a miss on the last graph).
             stopReason = "first-miss";
         } else if (m.exhausted()) {
@@ -514,7 +537,7 @@ public final class MpLauncher {
         if (st.online) {
             System.out.println("first_miss_iteration: " + m.uncoveredIteration());
             System.out.println("first_miss_wall_ms: " + Math.max(0, x.firstMissWallMs()));
-            System.out.println("uncovered_total: " + (m.uncovered().isPresent() ? 1 : 0));
+            System.out.println("uncovered_total: " + m.uncoveredTotal());
         }
         System.out.println("max_graph_events: " + x.maxGraphEvents());
         System.out.printf(Locale.ROOT, "mean_graph_events: %.3f%n", x.meanGraphEvents());
@@ -548,7 +571,7 @@ public final class MpLauncher {
         System.err.println("MpLauncher: " + why);
         System.err.println(
                 "usage: MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000]"
-                        + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file>]");
+                        + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file> [--stop-at-first]]");
         return 2;
     }
 }

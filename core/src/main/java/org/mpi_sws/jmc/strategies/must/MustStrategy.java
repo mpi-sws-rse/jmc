@@ -98,10 +98,14 @@ import java.util.function.Predicate;
  * <p><b>Online mode</b>: after {@link #checkAgainst}, every summary is also queried against the
  * specification's {@link SetIndex} ({@code covers}: a held summary of the same signature with
  * counts pointwise {@code ≤} the query's, as in TraceForge's stateful engine with its Set index).
- * The first uncovered summary is kept ({@link #uncovered()}) and the exploration stops at the next
- * {@link #initIteration}, as TraceForge's {@code stop_at_first_report} does; {@link #exhausted()}
- * is then true only if the stack was already empty. Blocked graphs are queried too: they are
- * completed executions on both sides.
+ * Two modes. <em>Full</em> (the default): the first uncovered summary is kept ({@link #uncovered()},
+ * with its iteration and the wall time since the start of the exploration) and the exploration
+ * continues to exhaustion or the budget, counting every uncovered graph ({@link #uncoveredTotal()}) and
+ * every distinct uncovered summary ({@link #uncoveredDistinct()}). <em>Bug-finder</em> ({@link
+ * #checkAgainst(SetIndex, boolean)} with {@code stopAtFirst}): the exploration stops at the next
+ * {@link #initIteration} after the first uncovered summary, as TraceForge's {@code
+ * stop_at_first_report} does; {@link #exhausted()} is then true only if no work was left. Blocked
+ * graphs are queried too: they are completed executions on both sides.
  */
 public class MustStrategy extends TrackActiveTasksStrategy {
 
@@ -156,8 +160,14 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private int uncoveredIteration;
     /** The index's answer for {@link #uncovered}. */
     private SetIndex.Covers uncoveredAnswer;
-    /** Set by the first uncovered summary: the next {@link #initIteration} stops the run. */
+    /** Bug-finder mode: stop at the first uncovered summary; otherwise (full mode) continue. */
+    private boolean stopAtFirst;
+    /** Set by the first uncovered summary in bug-finder mode: the next {@link #initIteration} stops the run. */
     private boolean stopRequested;
+    /** Uncovered graphs: every summarised graph the specification does not cover. */
+    private long uncoveredTotal;
+    /** The distinct uncovered summaries. */
+    private final Set<Summary> uncoveredSummaries = new HashSet<>();
     /** Online-mode counters: queries, and their answers (no signature / found / not found). */
     private long lookups;
     private long signatureMisses;
@@ -1380,8 +1390,9 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             }
         }
         maxPorfPairs = Math.max(maxPorfPairs, nonZero);
-        if (spec != null && uncovered == null) {
-            // As TraceForge's completion sink: covered, continue; uncovered, report and stop.
+        if (spec != null) {
+            // As TraceForge's completion sink: covered, continue; uncovered, count it, keep the first
+            // report, and stop only in bug-finder mode.
             lookups++;
             long lookupStart = System.nanoTime();
             SetIndex.Covers answer;
@@ -1399,11 +1410,15 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 } else {
                     notFound++;
                 }
-                uncovered = s;
-                uncoveredIteration = iterations;
-                firstMissNanos = System.nanoTime() - exploreStartNanos;
-                uncoveredAnswer = answer;
-                stopRequested = true;
+                uncoveredTotal++;
+                uncoveredSummaries.add(s);
+                if (uncovered == null) {
+                    uncovered = s;
+                    uncoveredIteration = iterations;
+                    firstMissNanos = System.nanoTime() - exploreStartNanos;
+                    uncoveredAnswer = answer;
+                    stopRequested = stopAtFirst;
+                }
             }
         }
     }
@@ -1444,17 +1459,45 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     }
 
     /**
-     * Enables the online mode: queries {@code spec} with every summary and stops the exploration at
-     * the first one it does not cover. Needs the exporting constructor (the roles).
+     * Enables the online mode in full mode: queries {@code spec} with every summary, keeps the first
+     * uncovered one, and continues, counting every uncovered graph.
      *
      * @param spec the specification's index
      * @throws IllegalStateException if the strategy was built without roles
      */
     public void checkAgainst(SetIndex spec) {
+        checkAgainst(spec, false);
+    }
+
+    /**
+     * Enables the online mode. Needs the exporting constructor (the roles).
+     *
+     * @param spec the specification's index
+     * @param stopAtFirst {@code true} for the bug-finder mode (stop at the first uncovered summary),
+     *     {@code false} for the full mode (continue and count)
+     * @throws IllegalStateException if the strategy was built without roles
+     */
+    public void checkAgainst(SetIndex spec, boolean stopAtFirst) {
         if (rolesInSpawnOrder == null) {
             throw new IllegalStateException("the online check needs the exporting constructor (roles)");
         }
         this.spec = Objects.requireNonNull(spec);
+        this.stopAtFirst = stopAtFirst;
+    }
+
+    /** Whether the online check runs in bug-finder mode (stop at the first uncovered summary). */
+    public boolean stopsAtFirst() {
+        return stopAtFirst;
+    }
+
+    /** Uncovered graphs: summarised graphs the specification does not cover (with repetitions). */
+    public long uncoveredTotal() {
+        return uncoveredTotal;
+    }
+
+    /** Distinct uncovered summaries. */
+    public int uncoveredDistinct() {
+        return uncoveredSummaries.size();
     }
 
     /** The first uncovered summary, if the online check found one. */

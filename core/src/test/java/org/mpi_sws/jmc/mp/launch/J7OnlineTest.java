@@ -31,6 +31,14 @@ import java.util.regex.Pattern;
  * <p>Each specification file is JMC's own complete export of the specification side, made in the same
  * method by a plain {@code must} export run (J4 showed these exports equal the model's sets and
  * byte-identical to {@code plan/jmc-must/log/runs/J4}); the tests therefore do not read the plan tree.
+ *
+ * <p>OL round 05 (MESSAGE-online-mode.md §1): the online check now runs in <em>full</em> mode by default
+ * (continue past a miss, count every uncovered graph) and in <em>bug-finder</em> mode with
+ * {@code --stop-at-first}. Verdicts do not depend on the mode. Cases that assert the stop at the first miss
+ * ({@link #reports}, the stop/export/not-exhausted cases) run in bug-finder mode ({@code forwardStop},
+ * {@code reverseStop}); conforming and partial cases run in the default full mode and also assert
+ * {@code uncovered: 0 graphs (0 distinct summaries)} and no {@code first miss:} line. The first uncovered
+ * summary is now printed as {@code witness:} (was {@code uncovered:}).
  */
 class J7OnlineTest {
 
@@ -39,8 +47,9 @@ class J7OnlineTest {
     private static final String DIR = "build/test-results/j7-tester/";
     private static final String TIMEOUT = "300";
 
+    /** {@code uncovered} is the witness line (the first uncovered summary); {@code count} the uncovered-count line. */
     record Run(MpLauncherTest.Out out, String verdict, String at, String uncovered, String lookups, String ran,
-            String graphs) {}
+            String graphs, String count, String mode, String firstMiss) {}
 
     static String slug(String row) {
         return row.replace(':', '-').replace(',', '-').replace(' ', '+');
@@ -65,16 +74,24 @@ class J7OnlineTest {
 
     static Run parse(MpLauncherTest.Out o) {
         String t = o.text();
-        return new Run(o, field(t, "verdict"), field(t, "at"), field(t, "uncovered"), field(t, "lookups"),
-                field(t, "ran"), field(t, "graphs"));
+        return new Run(o, field(t, "verdict"), field(t, "at"), field(t, "witness"), field(t, "lookups"),
+                field(t, "ran"), field(t, "graphs"), field(t, "uncovered"), field(t, "mode"), field(t, "first miss"));
     }
 
     /** {@code impl} under must against {@code spec}; extra positional/option arguments replace the default tail. */
     static Run online(String impl, Path spec, String... tail) throws Exception {
+        return online(false, impl, spec, tail);
+    }
+
+    /** As {@link #online(String, Path, String...)}; {@code stopAtFirst} adds {@code --stop-at-first} to the default tail. */
+    static Run online(boolean stopAtFirst, String impl, Path spec, String... tail) throws Exception {
         List<String> args = new ArrayList<>(List.of(PKG + impl));
         if (tail.length == 0) {
             args.addAll(List.of("must", "0", "1", DIR + "report-online-" + slug(impl), "-", TIMEOUT, "--spec",
                     spec.toString()));
+            if (stopAtFirst) {
+                args.add("--stop-at-first");
+            }
         } else {
             args.addAll(Arrays.asList(tail));
         }
@@ -96,12 +113,24 @@ class J7OnlineTest {
         return online(specRow(row), export(row));
     }
 
+    /** {@link #forward} in bug-finder mode. */
+    static Run forwardStop(String row) throws Exception {
+        return online(true, row, export(specRow(row)));
+    }
+
+    /** {@link #reverse} in bug-finder mode. */
+    static Run reverseStop(String row) throws Exception {
+        return online(true, specRow(row), export(row));
+    }
+
     static void conforms(Run r, long lookups) {
         assertEquals("conforms", r.verdict(), r.out().text());
         assertEquals(lookups + " (" + lookups + " found, 0 signature misses, 0 not found)", r.lookups(),
                 r.out().text());
         assertTrue(r.graphs().endsWith("stack exhausted"), r.graphs());
-        assertEquals(null, r.uncovered());
+        assertEquals(null, r.uncovered(), "no witness");
+        assertEquals("0 graphs (0 distinct summaries)", r.count(), r.out().text());
+        assertEquals(null, r.firstMiss(), "no first-miss line");
     }
 
     /**
@@ -112,6 +141,8 @@ class J7OnlineTest {
     static void reports(Run r, int graphs, String answer, String... derivedUncovered) {
         String t = r.out().text();
         assertEquals("reports", r.verdict(), t);
+        assertEquals("bug-finder (--stop-at-first)", r.mode(), t);
+        assertEquals("1 graphs (1 distinct summaries)", r.count(), "bug-finder: the run stops at the first miss");
         assertTrue(r.at() != null && r.at().matches("iteration [0-9]+, " + answer + " .*"), "at: " + r.at());
         int at = Integer.parseInt(r.at().split("[ ,]")[1]);
         assertEquals(at + " iterations", r.ran(), t);
@@ -228,24 +259,24 @@ class J7OnlineTest {
 
     @Test
     void fwd_a3_doubleGrant_k2q1_notFound() throws Exception {
-        reports(forward("A3Lock:double-grant,2,1"), 6, "NotFound", a3Line(D2, A3W, "0,0,0,0,1,1"), a3Line(D2, A3W,
+        reports(forwardStop("A3Lock:double-grant,2,1"), 6, "NotFound", a3Line(D2, A3W, "0,0,0,0,1,1"), a3Line(D2, A3W,
                 "0,1,1,0,0,0"));
     }
 
     @Test
     void fwd_a3_wrongRound_k2q1_noSig() throws Exception {
-        reports(forward("A3Lock:wrong-round,2,1"), 4, "NoSig", a3Line(D2, A3WR, "0,0,0,0,3,3"), a3Line(D2, A3WR,
+        reports(forwardStop("A3Lock:wrong-round,2,1"), 4, "NoSig", a3Line(D2, A3WR, "0,0,0,0,3,3"), a3Line(D2, A3WR,
                 "0,3,3,0,0,0"));
     }
 
     @Test
     void fwd_a3_neverGrant_k2q1_blockedSummaryQueried() throws Exception {
-        reports(forward("A3Lock:never-grant,2,1"), 4, "NoSig", NG21);
+        reports(forwardStop("A3Lock:never-grant,2,1"), 4, "NoSig", NG21);
     }
 
     @Test
     void fwd_a3_neverGrant_k3q1_scanPathRow() throws Exception {
-        reports(forward("A3Lock:never-grant,3,1"), 28, "NoSig", NG31);
+        reports(forwardStop("A3Lock:never-grant,3,1"), 28, "NoSig", NG31);
     }
 
     @Test
@@ -265,29 +296,29 @@ class J7OnlineTest {
 
     @Test
     void fwd_a2_earlyAck_k2q1_notFound() throws Exception {
-        reports(forward("A2Store:early-ack,2,1"), 2, "NotFound", a2l21(NONE, "0,0,0,0"));
+        reports(forwardStop("A2Store:early-ack,2,1"), 2, "NotFound", a2l21(NONE, "0,0,0,0"));
     }
 
     @Test
     void fwd_a2_earlyAck_k1q2_noSig() throws Exception {
-        reports(forward("A2Store:early-ack,1,2"), 2, "NoSig", a2l12(NONE));
+        reports(forwardStop("A2Store:early-ack,1,2"), 2, "NoSig", a2l12(NONE));
     }
 
     @Test
     void fwd_a2_staleGet_k2q1_notFound() throws Exception {
-        reports(forward("A2Store:stale-get,2,1"), 2, "NotFound", a2l21(NONE, "0,0,0,1"));
+        reports(forwardStop("A2Store:stale-get,2,1"), 2, "NotFound", a2l21(NONE, "0,0,0,1"));
     }
 
     @Test
     void fwd_a2_silentPut_k1q1_blockedSummaryQueried() throws Exception {
-        Run r = forward("A2Store:silent-put,1,1");
+        Run r = forwardStop("A2Store:silent-put,1,1");
         reports(r, 1, "NoSig", SILENT_PUT_11);
         assertEquals("iteration 1", r.at().split(",")[0]);
     }
 
     @Test
     void fwd_a2_misroute_k1q2s2_noSig() throws Exception {
-        reports(forward("A2Store:misroute,1,2,2"), 1, "NoSig", a2l12(NONE));
+        reports(forwardStop("A2Store:misroute,1,2,2"), 1, "NoSig", a2l12(NONE));
     }
 
     @Test
@@ -319,7 +350,7 @@ class J7OnlineTest {
 
     @Test
     void rev_a3_wrongRound_k2q1_noSig() throws Exception {
-        reports(reverse("A3Lock:wrong-round,2,1"), 2, "NoSig", a3Line(D2, A3W, "0,0,0,0,3,3"), a3Line(D2, A3W,
+        reports(reverseStop("A3Lock:wrong-round,2,1"), 2, "NoSig", a3Line(D2, A3W, "0,0,0,0,3,3"), a3Line(D2, A3W,
                 "0,3,3,0,0,0"));
     }
 
@@ -365,17 +396,17 @@ class J7OnlineTest {
 
     @Test
     void rev_a2_staleGet_k2q1_noSig() throws Exception {
-        reports(reverse("A2Store:stale-get,2,1"), 2, "NoSig", a2l21(VAL0, "0,0,0,1"));
+        reports(reverseStop("A2Store:stale-get,2,1"), 2, "NoSig", a2l21(VAL0, "0,0,0,1"));
     }
 
     @Test
     void rev_a2_silentPut_k1q1_noSig() throws Exception {
-        reports(reverse("A2Store:silent-put,1,1"), 1, "NoSig", SPEC_A2_11);
+        reports(reverseStop("A2Store:silent-put,1,1"), 1, "NoSig", SPEC_A2_11);
     }
 
     @Test
     void rev_a2_misroute_k1q2s2_noSig() throws Exception {
-        reports(reverse("A2Store:misroute,1,2,2"), 1, "NoSig", a2l12(VAL0));
+        reports(reverseStop("A2Store:misroute,1,2,2"), 1, "NoSig", a2l12(VAL0));
     }
 
     @Test
@@ -393,7 +424,7 @@ class J7OnlineTest {
     /** Every graph of wrong-round (3,1) is uncovered: the run must stop after iteration 1 of 30. */
     @Test
     void stop_reportsAfterFirstIteration_wrongRound_k3q1() throws Exception {
-        Run r = forward("A3Lock:wrong-round,3,1");
+        Run r = forwardStop("A3Lock:wrong-round,3,1");
         assertEquals("reports", r.verdict());
         assertTrue(r.at().startsWith("iteration 1, NoSig"), r.at());
         assertEquals("1 iterations", r.ran());
@@ -417,9 +448,14 @@ class J7OnlineTest {
         assertEquals("partial", r.verdict(), r.out().text());
         assertEquals("1 (1 found, 0 signature misses, 0 not found)", r.lookups());
         assertEquals(null, r.uncovered());
+        assertEquals("0 graphs (0 distinct summaries)", r.count());
     }
 
-    /** --spec with an export file, conforms: the export is byte-identical to a plain export of the row. */
+    /**
+     * --spec with an export file, conforms: the summary lines are byte-identical to a plain export of the row;
+     * the header is the plain header with the online check's three fields (§1) before {@code encoding}:
+     * {@code "first_miss_iteration":0,"first_miss_wall_ms":0,"uncovered_total":0} (no miss).
+     */
     @Test
     void export_besideSpec_conforms_identical() throws Exception {
         Path spec = export("A3Lock:spec,3,1");
@@ -429,22 +465,27 @@ class J7OnlineTest {
         Run r = online("A3Lock:fifo,3,1", spec, "must", "0", "1", DIR + "report-exp", withSpec.toString(), TIMEOUT,
                 "--spec", spec.toString());
         assertEquals("conforms", r.verdict());
-        assertEquals(Files.readAllLines(plain, StandardCharsets.UTF_8), Files.readAllLines(withSpec,
-                StandardCharsets.UTF_8));
+        List<String> pl = Files.readAllLines(plain, StandardCharsets.UTF_8);
+        List<String> wl = Files.readAllLines(withSpec, StandardCharsets.UTF_8);
+        assertEquals(pl.subList(1, pl.size()), wl.subList(1, wl.size()), "summary lines identical");
+        assertEquals(pl.get(0).replace(",\"encoding\":1}",
+                ",\"first_miss_iteration\":0,\"first_miss_wall_ms\":0,\"uncovered_total\":0,\"encoding\":1}"), wl.get(0));
     }
 
-    /** --spec with an export file, reports: the run stopped early, so the export is not complete. */
+    /** --spec with an export file, reports, bug-finder mode: the run stopped early, so the export is not complete. */
     @Test
     void export_besideSpec_reports_notComplete() throws Exception {
         Path spec = export("A3Lock:spec,3,1");
         Path withSpec = Path.of(DIR + "wr31-with-spec.jsonl");
         Files.deleteIfExists(withSpec);
         Run r = online("A3Lock:wrong-round,3,1", spec, "must", "0", "1", DIR + "report-exp2", withSpec.toString(),
-                TIMEOUT, "--spec", spec.toString());
+                TIMEOUT, "--spec", spec.toString(), "--stop-at-first");
         assertEquals("reports", r.verdict());
         List<String> lines = Files.readAllLines(withSpec, StandardCharsets.UTF_8);
         System.out.println("J7 export header beside a report: " + lines.get(0));
         assertTrue(lines.get(0).contains("\"enumeration\":\"bounded\""), lines.get(0));
+        assertTrue(lines.get(0).contains(",\"first_miss_iteration\":1,"), lines.get(0));
+        assertTrue(lines.get(0).contains(",\"uncovered_total\":1,"), lines.get(0));
         assertEquals(2, lines.size(), "one summary line (the uncovered one)");
         assertEquals(r.uncovered(), lines.get(1));
     }
@@ -576,10 +617,10 @@ class J7OnlineTest {
         assertEquals(List.of(SILENT_PUT_11), lines.subList(1, lines.size()));
     }
 
-    /** double-grant (3,1): 90 graphs, a NotFound report long before the last; still not exhausted. */
+    /** double-grant (3,1): 90 graphs, a NotFound report long before the last; still not exhausted (bug-finder). */
     @Test
     void nit_doubleGrant31_notExhausted() throws Exception {
-        Run r = forward("A3Lock:double-grant,3,1");
+        Run r = forwardStop("A3Lock:double-grant,3,1");
         assertEquals("reports", r.verdict());
         assertTrue(r.at().matches("iteration [0-9]+, NotFound .*"), r.at());
         int at = Integer.parseInt(r.at().split("[ ,]")[1]);

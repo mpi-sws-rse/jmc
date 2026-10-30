@@ -143,6 +143,15 @@ public final class SummaryExporter {
     }
 
     /**
+     * The online check's results, written into the header of a file exported beside it.
+     *
+     * @param firstMissIteration the 1-based iteration of the first uncovered graph, 0 for none
+     * @param firstMissWallMs wall time from the start of the exploration to that graph, 0 for none
+     * @param uncoveredTotal the uncovered graphs
+     */
+    public record OnlineFields(int firstMissIteration, long firstMissWallMs, long uncoveredTotal) {}
+
+    /**
      * The file's first line.
      *
      * @param program the program name, identical in the Java and Rust files
@@ -164,6 +173,27 @@ public final class SummaryExporter {
             String enumeration,
             Long seed,
             Integer iterations) {
+        return header(program, size, visibleRoles, model, enumeration, seed, iterations, null);
+    }
+
+    /**
+     * {@link #header(String, String, Collection, CommunicationModel, String, Long, Integer)} with the
+     * online check's three fields ({@code first_miss_iteration}, {@code first_miss_wall_ms},
+     * {@code uncovered_total}) after the enumeration fields; a reader that does not know them ignores
+     * them.
+     *
+     * @param online the online check's results, or {@code null} for none
+     * @return the header line, no trailing newline
+     */
+    public static String header(
+            String program,
+            String size,
+            Collection<String> visibleRoles,
+            CommunicationModel model,
+            String enumeration,
+            Long seed,
+            Integer iterations,
+            OnlineFields online) {
         StringBuilder sb = new StringBuilder();
         sb.append("{\"format\":1,\"tool\":\"jmc\",\"program\":");
         MpValueEncoder.quote(sb, program);
@@ -189,6 +219,11 @@ public final class SummaryExporter {
             if (iterations != null) {
                 sb.append(",\"iterations\":").append(iterations);
             }
+        }
+        if (online != null) {
+            sb.append(",\"first_miss_iteration\":").append(online.firstMissIteration());
+            sb.append(",\"first_miss_wall_ms\":").append(online.firstMissWallMs());
+            sb.append(",\"uncovered_total\":").append(online.uncoveredTotal());
         }
         sb.append(",\"encoding\":1}");
         return sb.toString();
