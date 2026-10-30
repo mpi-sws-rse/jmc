@@ -30,6 +30,7 @@ import org.mpi_sws.jmc.strategies.tracker.TrackTasks;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.RecordComponent;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -245,6 +246,37 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     /** Iterations that ran. */
     private int iterations;
 
+    // ---------------------------------------------------------------- measurements
+
+    /** {@link System#nanoTime()} when the exploration started (iteration 0); 0 before. */
+    private long exploreStartNanos;
+    /** Cumulative time spent turning graphs into summaries (in {@link #export}, lookups excluded). */
+    private long summariseNanos;
+    /** Cumulative time spent in specification lookups. */
+    private long lookupNanos;
+    /** The duration of the lookup inside the current {@link #export}, subtracted from its summarise time. */
+    private long lastLookupNanos;
+    /** Graphs measured for the shape counters (every counted iteration). */
+    private long measuredGraphs;
+    /** Sum and maximum of the events per measured graph. */
+    private long sumGraphEvents;
+    private int maxGraphEvents;
+    /** Maximum send and receive events (all threads) per measured graph. */
+    private int maxMessageEvents;
+    /** Sum and maximum of the send and receive events of visible roles per summarised graph. */
+    private long sumVisibleEvents;
+    private int maxVisibleEvents;
+    /** Graphs summarised for the visible-event counters. */
+    private long summarisedGraphs;
+    /** Maximum UTF-8 size of a summary line without its multiplicity. */
+    private int maxSummaryBytes;
+    /** The largest single order-count entry of any summary. */
+    private int maxPorfCount;
+    /** The largest number of non-zero order-count entries in one summary. */
+    private int maxPorfPairs;
+    /** Wall time, since the start of the exploration, at which the first uncovered summary was found. */
+    private long firstMissNanos = -1;
+
     /**
      * The factory's constructor: explores and counts, exports nothing.
      *
@@ -307,6 +339,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         if (iteration == 0) {
             graph = new Graph();
             active = true;
+            exploreStartNanos = System.nanoTime();
             return;
         }
         while (true) {
@@ -376,6 +409,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     problem = "replay drift: " + unconsumedGuide();
                 } else {
                     GraphCanon canon = graph.toExecutionGraph().canon();
+                    measureShape();
                     if (countsAsBlocked()) {
                         blockedGraphs.add(canon);
                     } else {
@@ -1255,6 +1289,17 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      *     un-awaited process, an undeclared, missing or repeated role, a payload naming a daemon)
      */
     private void export() {
+        long summariseStart = System.nanoTime();
+        try {
+            summariseAndLookUp();
+        } finally {
+            summariseNanos += System.nanoTime() - summariseStart - lastLookupNanos;
+            lastLookupNanos = 0;
+        }
+    }
+
+    /** {@link #export}'s body; the summarise time excludes the lookup, which is timed separately. */
+    private void summariseAndLookUp() {
         Set<Long> notAwaited = new TreeSet<>(started);
         notAwaited.remove(1L);
         notAwaited.removeAll(awaited);
@@ -1313,10 +1358,39 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         Summary s = SummaryExporter.summarize(graph.toExecutionGraph(), roleOfTask, visibleRoles, encoder);
         summaries.merge(s, 1, Integer::sum);
         exportedIterations++;
+        int visibleEvents = 0;
+        for (Map.Entry<Long, List<Graph.Node>> e : graph.tasks().entrySet()) {
+            String role = roleOfTask.get(e.getKey());
+            if (role != null && visibleRoles.contains(role)) {
+                visibleEvents += messageEvents(e.getValue());
+            }
+        }
+        summarisedGraphs++;
+        sumVisibleEvents += visibleEvents;
+        maxVisibleEvents = Math.max(maxVisibleEvents, visibleEvents);
+        String line = s.toJson(0);
+        // The canonical line without the multiplicity: drop the trailing ,"n":0 before the closing brace.
+        String withoutN = line.substring(0, line.length() - ",\"n\":0}".length()) + "}";
+        maxSummaryBytes = Math.max(maxSummaryBytes, withoutN.getBytes(StandardCharsets.UTF_8).length);
+        int nonZero = 0;
+        for (int c : s.counts()) {
+            maxPorfCount = Math.max(maxPorfCount, c);
+            if (c != 0) {
+                nonZero++;
+            }
+        }
+        maxPorfPairs = Math.max(maxPorfPairs, nonZero);
         if (spec != null && uncovered == null) {
             // As TraceForge's completion sink: covered, continue; uncovered, report and stop.
             lookups++;
-            SetIndex.Covers answer = spec.covers(s);
+            long lookupStart = System.nanoTime();
+            SetIndex.Covers answer;
+            try {
+                answer = spec.covers(s);
+            } finally {
+                lastLookupNanos = System.nanoTime() - lookupStart;
+                lookupNanos += lastLookupNanos;
+            }
             if (answer instanceof SetIndex.Covers.Found) {
                 found++;
             } else {
@@ -1327,17 +1401,46 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 }
                 uncovered = s;
                 uncoveredIteration = iterations;
+                firstMissNanos = System.nanoTime() - exploreStartNanos;
                 uncoveredAnswer = answer;
                 stopRequested = true;
             }
         }
     }
 
+    /** Updates the graph-shape counters with the iteration's graph. */
+    private void measureShape() {
+        int events = graph.size();
+        measuredGraphs++;
+        sumGraphEvents += events;
+        maxGraphEvents = Math.max(maxGraphEvents, events);
+        int messages = 0;
+        for (List<Graph.Node> nodes : graph.tasks().values()) {
+            messages += messageEvents(nodes);
+        }
+        maxMessageEvents = Math.max(maxMessageEvents, messages);
+    }
+
+    /** The send and receive events among {@code nodes}. */
+    private static int messageEvents(List<Graph.Node> nodes) {
+        int n = 0;
+        for (Graph.Node node : nodes) {
+            if (node.isSend() || node.isRecv()) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     // ---------------------------------------------------------------- results
 
-    /** Whether the exploration stack ran empty: the enumeration is complete. */
+    /**
+     * Whether the enumeration is complete: the exploration stack ran empty, or the run stopped (e.g. at
+     * the iteration budget) after an iteration with no work left — the stack empty and no iteration
+     * in progress. A budget that is reached while work remains is not exhaustion.
+     */
     public boolean exhausted() {
-        return exhausted;
+        return exhausted || (iterations > 0 && !active && stack.isEmpty());
     }
 
     /**
@@ -1423,6 +1526,37 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     /** Iterations not summarised. */
     public int skippedIterations() {
         return skippedIterations;
+    }
+
+    /**
+     * The strategy's measurements: phase times and graph-shape counters over the explored graphs.
+     * Times are cumulative wall-clock on the checker's thread, in nanoseconds.
+     *
+     * @param summariseNanos time turning graphs into summaries, failed attempts included
+     * @param lookupNanos time in specification lookups
+     * @param maxGraphEvents the most events (every label) in one explored graph
+     * @param meanGraphEvents the mean events per explored graph
+     * @param maxMessageEvents the most send and receive events (all threads) in one explored graph
+     * @param maxVisibleEvents the most send and receive events of visible roles in one summarised
+     *     graph (0 without export)
+     * @param meanVisibleEvents the mean of those per summarised graph
+     * @param maxSummaryBytes the largest summary line without its multiplicity, in UTF-8 bytes (0
+     *     without export)
+     * @param maxPorfCount the largest single order-count entry of any summary (0 without export)
+     * @param maxPorfPairs the largest number of non-zero order-count entries in one summary
+     * @param firstMissWallMs wall time from the start of the exploration to the first uncovered
+     *     summary, or -1 for none
+     */
+    public record Measurements(long summariseNanos, long lookupNanos, int maxGraphEvents, double meanGraphEvents,
+                               int maxMessageEvents, int maxVisibleEvents, double meanVisibleEvents,
+                               int maxSummaryBytes, int maxPorfCount, int maxPorfPairs, long firstMissWallMs) {}
+
+    /** The measurements so far. */
+    public Measurements measurements() {
+        return new Measurements(summariseNanos, lookupNanos, maxGraphEvents,
+                measuredGraphs == 0 ? 0.0 : (double) sumGraphEvents / measuredGraphs, maxMessageEvents,
+                maxVisibleEvents, summarisedGraphs == 0 ? 0.0 : (double) sumVisibleEvents / summarisedGraphs,
+                maxSummaryBytes, maxPorfCount, maxPorfPairs, firstMissNanos < 0 ? -1 : firstMissNanos / 1_000_000);
     }
 
     /** The current graph as an {@code ExecutionGraph} — for tests. */
