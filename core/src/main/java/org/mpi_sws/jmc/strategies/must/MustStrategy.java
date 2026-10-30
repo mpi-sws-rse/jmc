@@ -44,9 +44,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.LongFunction;
 import java.util.function.Predicate;
 
 /**
@@ -106,6 +110,15 @@ import java.util.function.Predicate;
  * {@link #initIteration} after the first uncovered summary, as TraceForge's {@code
  * stop_at_first_report} does; {@link #exhausted()} is then true only if no work was left. Blocked
  * graphs are queried too: they are completed executions on both sides.
+ *
+ * <p><b>Split mode</b> ({@link #setSplitControl}): the exploration tree is cut into items for
+ * separate exploration (package {@code org.mpi_sws.jmc.strategies.must.split}). The root runs as
+ * above until, at the start of an iteration, the stack holds at least {@code K} entries; it then
+ * snapshots the stack (index 0 at the bottom), freezes the process-name table, and explores the
+ * items its {@link SplitControl} hands out, each in a fresh stack until that stack is empty, with
+ * fresh distinct-graph sets and summary map per item. All transitions happen inside {@link
+ * #initIteration}; the exploration itself is unchanged. In split mode a process name first met
+ * after the freeze, and a payload whose {@code Tid}s cannot be normalised, are faults.
  */
 public class MustStrategy extends TrackActiveTasksStrategy {
 
@@ -242,11 +255,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private final Map<Long, String> nameOfId = new HashMap<>();
     private long nextStableId = 2;
     /** Canonical forms of the distinct complete graphs seen. */
-    private final Set<GraphCanon> completeGraphs = new LinkedHashSet<>();
+    private Set<GraphCanon> completeGraphs = new LinkedHashSet<>();
     /** Canonical forms of the distinct blocked graphs seen. */
-    private final Set<GraphCanon> blockedGraphs = new LinkedHashSet<>();
+    private Set<GraphCanon> blockedGraphs = new LinkedHashSet<>();
     /** Summaries of the explored executions with their multiplicities. */
-    private final LinkedHashMap<Summary, Integer> summaries = new LinkedHashMap<>();
+    private LinkedHashMap<Summary, Integer> summaries = new LinkedHashMap<>();
     /** The declared roles, or {@code null} when nothing is exported. */
     private final List<String> rolesInSpawnOrder;
     /** The roles whose events appear in the summaries; a subset of the declared roles. */
@@ -286,6 +299,25 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private int maxPorfPairs;
     /** Wall time, since the start of the exploration, at which the first uncovered summary was found. */
     private long firstMissNanos = -1;
+
+    // ---------------------------------------------------------------- split mode
+
+    /** The split run this strategy serves, or {@code null} for a plain sequential run. */
+    private SplitControl split;
+    /** Whether the root has passed the split boundary (items are being explored). */
+    private boolean splitPassed;
+    /** The stack entries at the split boundary, index 0 at the bottom; {@code null} before it. */
+    private List<Item> snapshot;
+    /** The index of the item being explored; -1 for none (the root, or between items). */
+    private int currentItem = -1;
+    /** {@link #iterations} when the current segment began. */
+    private int segmentStartIterations;
+    /** {@link #blockedIterations} when the current segment began. */
+    private int segmentStartBlocked;
+    /** {@link #exportedIterations} when the current segment began. */
+    private int segmentStartExported;
+    /** The process names met in the current segment. */
+    private SortedSet<String> segmentNames = new TreeSet<>();
 
     /**
      * The factory's constructor: explores and counts, exports nothing.
@@ -350,11 +382,24 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             graph = new Graph();
             active = true;
             exploreStartNanos = System.nanoTime();
+            if (split != null) {
+                segmentNames.add("m");
+            }
             return;
+        }
+        if (split != null && !splitPassed && stack.size() >= split.splitThreshold()) {
+            passSplitBoundary();
         }
         while (true) {
             Item item = stack.pollFirst();
+            if (item == null && splitPassed && nextItem()) {
+                continue;
+            }
             if (item == null) {
+                if (split != null && !splitPassed) {
+                    // The root ran out of work before the boundary: the run is the sequential run.
+                    split.segmentDone(endSegment(-1));
+                }
                 exhausted = true;
                 LOGGER.debug("must: exploration stack empty after {} iterations", iterations);
                 throw HaltCheckerException.ok();
@@ -420,10 +465,18 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 } else {
                     GraphCanon canon = graph.toExecutionGraph().canon();
                     measureShape();
-                    if (countsAsBlocked()) {
+                    boolean blockedGraph = countsAsBlocked();
+                    if (blockedGraph) {
                         blockedGraphs.add(canon);
                     } else {
                         completeGraphs.add(canon);
+                    }
+                    if (split != null) {
+                        try {
+                            split.outcome(blockedGraph, canon, nameOfId::get);
+                        } catch (IllegalArgumentException e) {
+                            problem = e.getMessage();
+                        }
                     }
                     if (rolesInSpawnOrder != null) {
                         try {
@@ -443,6 +496,73 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         if (problem != null && !errorRecorded) {
             throw HaltExecutionException.error("must: " + problem);
         }
+    }
+
+    /**
+     * The split boundary: the root's segment ends, the stack is snapshotted (index 0 at the
+     * bottom) and emptied, the name table is frozen, and the control decides whether items are
+     * explored here.
+     *
+     * @throws HaltCheckerException (ok) if the control ends the run at the boundary
+     */
+    private void passSplitBoundary() throws HaltCheckerException {
+        split.segmentDone(endSegment(-1));
+        List<Item> bottomFirst = new ArrayList<>(stack);
+        Collections.reverse(bottomFirst);
+        SplitView view = splitView();
+        snapshot = Collections.unmodifiableList(bottomFirst);
+        stack.clear();
+        splitPassed = true;
+        if (!split.atBoundary(view)) {
+            LOGGER.debug("must: run ended at the split boundary after {} iterations", iterations);
+            throw HaltCheckerException.ok();
+        }
+    }
+
+    /**
+     * Ends the current item, if any, and starts the next one the control hands out by pushing its
+     * snapshot entry on the (empty) stack.
+     *
+     * @return {@code true} if an item was started, {@code false} if none is left
+     */
+    private boolean nextItem() {
+        if (currentItem >= 0) {
+            split.segmentDone(endSegment(currentItem));
+            currentItem = -1;
+        }
+        OptionalInt next = split.nextItem();
+        if (next.isEmpty()) {
+            return false;
+        }
+        int j = next.getAsInt();
+        if (j < 0 || j >= snapshot.size()) {
+            throw new IllegalStateException("item " + j + " is outside the snapshot of " + snapshot.size());
+        }
+        currentItem = j;
+        stack.push(snapshot.get(j));
+        return true;
+    }
+
+    /**
+     * Closes the current segment's accounting and opens a fresh one: new distinct-graph sets and
+     * summary map, counters measured from here.
+     *
+     * @param index the item index, -1 for the root
+     * @return the closed segment
+     */
+    private Segment endSegment(int index) {
+        Segment s = new Segment(index, iterations - segmentStartIterations, blockedIterations - segmentStartBlocked,
+                exportedIterations - segmentStartExported, rolesInSpawnOrder == null ? null : summaries,
+                Collections.unmodifiableSortedSet(segmentNames));
+        completeGraphs = new LinkedHashSet<>();
+        blockedGraphs = new LinkedHashSet<>();
+        summaries = new LinkedHashMap<>();
+        segmentStartIterations = iterations;
+        segmentStartBlocked = blockedIterations;
+        segmentStartExported = exportedIterations;
+        segmentNames = new TreeSet<>();
+        segmentNames.add("m");
+        return s;
     }
 
     private void clearIteration() {
@@ -625,6 +745,13 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         int index = childCount.merge(creator, 1, Integer::sum) - 1;
         String name = nameOfId.get(creator) + "/" + index;
         Long id = idOfName.get(name);
+        if (id == null && splitPassed) {
+            throw halt("process " + name + " was first created after the split boundary; run sequentially"
+                    + " or raise the split threshold");
+        }
+        if (split != null) {
+            segmentNames.add(name);
+        }
         if (id == null) {
             id = nextStableId++;
             idOfName.put(name, id);
@@ -710,7 +837,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      */
     private Predicate<MpMessage> onStored(Predicate<MpMessage> guard) {
         Map<Long, Long> ids = runtimeOfStable;
-        return m -> guard.test((MpMessage) mapTids(m, t -> runtimeTid(t, ids)));
+        return m -> guard.test((MpMessage) mapTids(m, t -> runtimeTid(t, ids), false));
     }
 
     /**
@@ -719,11 +846,23 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * that cannot be rebuilt is returned as is.
      */
     private Object normalize(Object v) {
-        return mapTids(v, this::stableTid);
+        if (split != null) {
+            try {
+                return mapTids(v, this::stableTid, true);
+            } catch (IllegalStateException e) {
+                throw halt(e.getMessage());
+            }
+        }
+        return mapTids(v, this::stableTid, false);
     }
 
-    /** {@code v} with {@code f} applied to every {@code Tid} in a record, list, set or optional. */
-    private static Object mapTids(Object v, java.util.function.UnaryOperator<Tid> f) {
+    /**
+     * {@code v} with {@code f} applied to every {@code Tid} in a record, list, set or optional.
+     *
+     * @param strict whether a record that cannot be rebuilt is an error ({@link
+     *     IllegalStateException}) rather than returned unconverted
+     */
+    private static Object mapTids(Object v, java.util.function.UnaryOperator<Tid> f, boolean strict) {
         if (v instanceof Tid t) {
             return f.apply(t);
         }
@@ -736,7 +875,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 for (int i = 0; i < cs.length; i++) {
                     cs[i].getAccessor().setAccessible(true);
                     Object x = cs[i].getAccessor().invoke(r);
-                    Object y = mapTids(x, f);
+                    Object y = mapTids(x, f, strict);
                     changed |= y != x;
                     args[i] = y;
                     types[i] = cs[i].getType();
@@ -748,6 +887,10 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 c.setAccessible(true);
                 return c.newInstance(args);
             } catch (ReflectiveOperationException | RuntimeException ex) {
+                if (strict) {
+                    throw new IllegalStateException("cannot normalise the thread ids in " + r.getClass().getName()
+                            + ": " + ex, ex);
+                }
                 return v;
             }
         }
@@ -755,7 +898,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             List<Object> out = new ArrayList<>(l.size());
             boolean changed = false;
             for (Object x : l) {
-                Object y = mapTids(x, f);
+                Object y = mapTids(x, f, strict);
                 changed |= y != x;
                 out.add(y);
             }
@@ -765,14 +908,14 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             Set<Object> out = new LinkedHashSet<>();
             boolean changed = false;
             for (Object x : set) {
-                Object y = mapTids(x, f);
+                Object y = mapTids(x, f, strict);
                 changed |= y != x;
                 out.add(y);
             }
             return changed ? Collections.unmodifiableSet(out) : v;
         }
         if (v instanceof Optional<?> o && o.isPresent()) {
-            Object y = mapTids(o.get(), f);
+            Object y = mapTids(o.get(), f, strict);
             return y != o.get() ? Optional.of(y) : v;
         }
         return v;
@@ -1452,9 +1595,15 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     /**
      * Whether the enumeration is complete: the exploration stack ran empty, or the run stopped (e.g. at
      * the iteration budget) after an iteration with no work left — the stack empty and no iteration
-     * in progress. A budget that is reached while work remains is not exhaustion.
+     * in progress. A budget that is reached while work remains is not exhaustion. In split mode
+     * only the first holds: the run is exhausted when the last item has been explored.
      */
     public boolean exhausted() {
+        if (split != null) {
+            // A split run empties the stack at the boundary and hands its entries to items, so an
+            // empty stack says nothing there; the flag is set when the last item is done.
+            return exhausted;
+        }
         return exhausted || (iterations > 0 && !active && stack.isEmpty());
     }
 
@@ -1605,6 +1754,168 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     /** The current graph as an {@code ExecutionGraph} — for tests. */
     public ExecutionGraph currentGraph() {
         return graph.toExecutionGraph();
+    }
+
+    // ---------------------------------------------------------------- split mode: API
+
+    /**
+     * Puts the strategy in split mode, served by {@code control}. Call before the run starts; the
+     * online check ({@link #checkAgainst}) cannot be combined with it.
+     *
+     * @param control the split run's control
+     * @throws IllegalStateException if the online check is enabled
+     */
+    public void setSplitControl(SplitControl control) {
+        if (spec != null) {
+            throw new IllegalStateException("split mode cannot be combined with the online check");
+        }
+        this.split = Objects.requireNonNull(control);
+    }
+
+    /**
+     * What a split run plugs into the strategy. The strategy calls it on the checker's thread, from
+     * {@link #initIteration} (boundary, segment ends, next item) and {@link #resetIteration}
+     * (outcomes).
+     */
+    public interface SplitControl {
+
+        /**
+         * The split threshold {@code K}: the root stops at the first iteration boundary at which
+         * the exploration stack holds at least this many entries.
+         *
+         * @return {@code K}, at least 1
+         */
+        int splitThreshold();
+
+        /**
+         * A finished iteration's graph was counted, in the order the iterations ran.
+         *
+         * @param blocked whether the graph is blocked
+         * @param canon the graph's canonical form
+         * @param names the process-name table: stable id to creation-path name
+         * @throws IllegalArgumentException if the graph holds a value split mode refuses; the
+         *     strategy makes it the iteration's fault
+         */
+        void outcome(boolean blocked, GraphCanon canon, LongFunction<String> names);
+
+        /**
+         * The root reached the split boundary; its segment has already been reported.
+         *
+         * @param view the strategy's state at the boundary
+         * @return {@code true} to explore items in this run, {@code false} to end the run here
+         */
+        boolean atBoundary(SplitView view);
+
+        /**
+         * A segment ended: the root (at the boundary, or when its stack ran empty first) or an item
+         * (when its stack ran empty).
+         *
+         * @param segment the segment's accounting
+         */
+        void segmentDone(Segment segment);
+
+        /**
+         * The next item to explore.
+         *
+         * @return its index in the snapshot (0 at the bottom of the stack), or empty when none is left
+         */
+        OptionalInt nextItem();
+    }
+
+    /**
+     * The accounting of one segment of a split run.
+     *
+     * @param index the item index, -1 for the root
+     * @param iterations iterations that ran in the segment
+     * @param blockedIterations of those, iterations whose graph is blocked
+     * @param exportedIterations of those, iterations summarised
+     * @param summaries the segment's summaries with multiplicities, in first-occurrence order;
+     *     {@code null} without export
+     * @param names the process names met in the segment, {@code "m"} included
+     */
+    public record Segment(int index, int iterations, int blockedIterations, int exportedIterations,
+                          Map<Summary, Integer> summaries, SortedSet<String> names) {}
+
+    /**
+     * The strategy's state at the split boundary, for the replay-state fingerprint.
+     *
+     * @param finishedIterations {@code R}, the iterations the root finished
+     * @param stackTopFirst the stack entries, top first
+     * @param names the process-name table, name to stable id
+     * @param nextId the id the next new name would get
+     */
+    public record SplitView(int finishedIterations, List<EntryView> stackTopFirst,
+                            SortedMap<String, Long> names, long nextId) {}
+
+    /**
+     * One exploration-stack entry, field by field as the strategy defines it. {@code variant} is
+     * {@code "Forward"} (re-issue the receive of {@code task} on {@code g} reading {@code send},
+     * {@code null} for {@code ⊥}), {@code "Nondet"} (the nondet of {@code task} on {@code g} taking
+     * {@code chosen} of {@code optionCount}) or {@code "Backward"} (the restricted graph {@code g});
+     * fields a variant does not have are {@code null} or -1. The receive guard is not part of it.
+     *
+     * @param variant the entry's kind
+     * @param g the entry's graph
+     * @param task the task (stable id), -1 for Backward
+     * @param label the receive label (Forward), else {@code null}
+     * @param send the send read (Forward), {@code null} for {@code ⊥} or another variant
+     * @param optionCount the nondet's option count (Nondet), else -1
+     * @param chosen the nondet's value (Nondet), else -1
+     * @param hbIn the spawn/join predecessors of the re-issued event, sorted; empty for Backward
+     */
+    public record EntryView(String variant, GraphView g, long task, MpLabel label, EventKey send, int optionCount,
+                            int chosen, SortedSet<EventKey> hbIn) {}
+
+    /**
+     * A graph's structure without guards and without the derived reader map.
+     *
+     * @param nodesByStamp the nodes in stamp order
+     * @param nextStamp the stamp the next added event would get
+     */
+    public record GraphView(List<NodeView> nodesByStamp, int nextStamp) {}
+
+    /**
+     * One event of a graph.
+     *
+     * @param key the event
+     * @param label its label
+     * @param stamp its insertion stamp
+     * @param rf the send it reads, or {@code null}
+     * @param bottom whether it reads {@code ⊥}
+     * @param hbIn its spawn/join predecessors, sorted
+     * @param prefix its {@code porf}-prefix, sorted
+     */
+    public record NodeView(EventKey key, MpLabel label, int stamp, EventKey rf, boolean bottom,
+                           SortedSet<EventKey> hbIn, SortedSet<EventKey> prefix) {}
+
+    /** The state at the split boundary (the stack is still in place). */
+    private SplitView splitView() {
+        List<EntryView> entries = new ArrayList<>();
+        for (Item item : stack) {
+            if (item instanceof Forward f) {
+                entries.add(new EntryView("Forward", graphView(f.g()), f.task(), f.label(), f.send(), -1, -1,
+                        new TreeSet<>(f.hbIn())));
+            } else if (item instanceof Nondet n) {
+                entries.add(new EntryView("Nondet", graphView(n.g()), n.task(), null, null, n.optionCount(),
+                        n.chosen(), new TreeSet<>(n.hbIn())));
+            } else {
+                entries.add(new EntryView("Backward", graphView(((Backward) item).g()), -1, null, null, -1, -1,
+                        new TreeSet<>()));
+            }
+        }
+        return new SplitView(iterations, Collections.unmodifiableList(entries),
+                Collections.unmodifiableSortedMap(new TreeMap<>(idOfName)), nextStableId);
+    }
+
+    /** A graph's view; the next stamp is read by appending to a throwaway copy. */
+    private static GraphView graphView(Graph g) {
+        List<NodeView> nodes = new ArrayList<>();
+        for (Graph.Node n : g.nodesByStamp()) {
+            nodes.add(new NodeView(n.key, n.label, n.stamp, n.rf, n.bottom, new TreeSet<>(n.hbIn),
+                    new TreeSet<>(n.prefix)));
+        }
+        int nextStamp = g.copy().append(Long.MAX_VALUE, new MpLabel.Block(), null).stamp;
+        return new GraphView(Collections.unmodifiableList(nodes), nextStamp);
     }
 
     /** A parameter that an event may lack entirely (events built without parameters have none). */
