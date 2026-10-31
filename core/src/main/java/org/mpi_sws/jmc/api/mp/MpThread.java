@@ -113,15 +113,35 @@ public final class MpThread extends Thread {
      * <p>Limit: a stale thread unwinds with {@link Stale}, but Java still runs the body's
      * {@code finally} code. Calls into this package from there end it again; code that touches only
      * the program's own state, blocks or loops cannot be stopped — the next process creation then
-     * fails loudly after {@link #STALE_WAIT_MILLIS} instead of hanging.
+     * fails loudly after {@link #staleWaitMillis} instead of hanging.
      */
     private static final AtomicLong EPOCH = new AtomicLong();
 
     /** Process threads started and not yet returned from {@link #run()}; guarded by itself. */
     private static final Set<MpThread> ALIVE = new HashSet<>();
 
-    /** How long a process creation waits for the threads of earlier iterations to end. */
-    private static final long STALE_WAIT_MILLIS = 30_000L;
+    /** The default of {@link #staleWaitMillis}: 30 s. */
+    public static final long DEFAULT_STALE_WAIT_MILLIS = 30_000L;
+
+    /**
+     * How long a process creation waits for the threads of earlier iterations to end; {@link
+     * #DEFAULT_STALE_WAIT_MILLIS} unless set with {@link #setStaleWaitMillis} (the split mode of the
+     * Must strategy uses 300 s).
+     */
+    private static volatile long staleWaitMillis = DEFAULT_STALE_WAIT_MILLIS;
+
+    /**
+     * Sets how long a process creation waits for the threads of earlier iterations to end.
+     *
+     * @param millis the bound in milliseconds, at least 1
+     * @throws IllegalArgumentException if {@code millis} is less than 1
+     */
+    public static void setStaleWaitMillis(long millis) {
+        if (millis < 1) {
+            throw new IllegalArgumentException("stale-thread wait must be at least 1 ms, was " + millis);
+        }
+        staleWaitMillis = millis;
+    }
 
     /** What ended the body, other than JMC control flow; rethrown to the joiner by {@link #join1()}. */
     private volatile Throwable failure;
@@ -394,10 +414,11 @@ public final class MpThread extends Thread {
      * waits for that thread's silent exit.
      *
      * @throws IllegalStateException if a thread of an earlier iteration is still alive after
-     *     {@link #STALE_WAIT_MILLIS}: a body's {@code finally} code blocked or looped
+     *     {@link #staleWaitMillis}: a body's {@code finally} code blocked or looped
      */
     private static void awaitOlderThreads(long current) {
-        long deadline = System.currentTimeMillis() + STALE_WAIT_MILLIS;
+        long wait = staleWaitMillis;
+        long deadline = System.currentTimeMillis() + wait;
         synchronized (ALIVE) {
             while (true) {
                 List<Long> older = new ArrayList<>();
@@ -412,7 +433,7 @@ public final class MpThread extends Thread {
                 long left = deadline - System.currentTimeMillis();
                 if (left <= 0) {
                     throw new IllegalStateException("process thread(s) " + older + " of an earlier iteration"
-                            + " are still running " + STALE_WAIT_MILLIS + " ms after it ended; a process"
+                            + " are still running " + wait + " ms after it ended; a process"
                             + " body's finally code must not block or loop");
                 }
                 try {
