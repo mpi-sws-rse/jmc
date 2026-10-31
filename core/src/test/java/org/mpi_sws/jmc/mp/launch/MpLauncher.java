@@ -13,6 +13,8 @@ import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.strategies.SchedulingStrategyFactory;
 import org.mpi_sws.jmc.strategies.mp.MpRecordingStrategy;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;
+import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
+import org.mpi_sws.jmc.strategies.must.split.SplitWorker;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -174,9 +176,44 @@ public final class MpLauncher {
         // J7: the --spec option is taken out wherever it stands; the rest is positional as before.
         Path specFile = null;
         boolean stopAtFirst = false;
+        Integer splitWorkers = null;
+        Integer splitK = null;
+        Path workerDir = null;
+        Integer workerId = null;
         List<String> positional = new ArrayList<>();
         for (int i = 0; i < rawArgs.length; i++) {
-            if (rawArgs[i].equals("--stop-at-first")) {
+            if (rawArgs[i].equals("--split") || rawArgs[i].equals("--k")) {
+                // J8: the split options, like --spec, may stand anywhere after the program.
+                if (i + 1 >= rawArgs.length) {
+                    return usage(rawArgs[i] + " needs a number");
+                }
+                int value;
+                try {
+                    value = Integer.parseInt(rawArgs[i + 1]);
+                } catch (NumberFormatException e) {
+                    return usage(rawArgs[i] + " needs a number, not " + rawArgs[i + 1]);
+                }
+                if (value < 1) {
+                    return usage(rawArgs[i] + " must be at least 1, was " + value);
+                }
+                if (rawArgs[i].equals("--split")) {
+                    splitWorkers = value;
+                } else {
+                    splitK = value;
+                }
+                i++;
+            } else if (rawArgs[i].equals("--worker")) {
+                if (i + 2 >= rawArgs.length) {
+                    return usage("--worker needs a run directory and a worker id");
+                }
+                workerDir = Path.of(rawArgs[i + 1]);
+                try {
+                    workerId = Integer.parseInt(rawArgs[i + 2]);
+                } catch (NumberFormatException e) {
+                    return usage("--worker needs a numeric worker id, not " + rawArgs[i + 2]);
+                }
+                i += 2;
+            } else if (rawArgs[i].equals("--stop-at-first")) {
                 // The online check's bug-finder mode; without it the check runs in full mode.
                 stopAtFirst = true;
             } else if (rawArgs[i].equals("--spec")) {
@@ -290,6 +327,30 @@ public final class MpLauncher {
                 st.indexNanos = System.nanoTime() - indexStartNanos;
             }
             mustStrategy.checkAgainst(spec.index(), stopAtFirst);
+        }
+
+        if (splitWorkers != null || splitK != null || workerDir != null) {
+            // The split run prints its own measurement block (the coordinator; a worker prints none).
+            st.must = null;
+            if (!must) {
+                return usage("--split, --k and --worker need strategy must, not " + strategy);
+            }
+            if (specFile != null) {
+                return usage("--spec cannot be combined with --split (no online check in split mode)");
+            }
+            if (iterations != 0) {
+                return usage("split mode is exhaustive: iterations must be 0, was " + iterations);
+            }
+            if (splitK != null && splitWorkers == null) {
+                return usage("--k needs --split");
+            }
+            List<String> roles = mpProgram == null ? null : mpProgram.rolesInSpawnOrder();
+            List<String> visible = mpProgram == null ? null : mpProgram.visibleRoles();
+            if (workerDir != null) {
+                return SplitWorker.run(workerDir, workerId, program, roles, visible);
+            }
+            return runSplit(st, args, rawArgs, program, programClass, mpProgram, splitWorkers,
+                    splitK == null ? 8 * splitWorkers : splitK, seed, reportPath, exportFile, timeoutSeconds);
         }
 
         System.out.println("program:    " + programClass.getName());
@@ -562,6 +623,143 @@ public final class MpLauncher {
     }
 
     /**
+     * The coordinator of a split run ({@code must --split W [--k K]}): runs the root here, starts
+     * {@code W} worker JVMs (this launcher with {@code --worker}, the same class path and JVM options),
+     * merges, and prints and exports as a sequential {@code must} run does. The run directory is
+     * {@code <reportPath>/split-<random id>}.
+     *
+     * @return {@code 0} for a complete run, {@code 1} if it aborted (incomplete; nothing is exported)
+     */
+    private static int runSplit(Measured st, String[] args, String[] rawArgs, Runnable program,
+                                Class<?> programClass,
+                                MpProgram mpProgram, int workers, int k, long seed, String reportPath,
+                                Path exportFile, long timeoutSeconds) {
+        String identity = args[0] + (mpProgram == null ? "" : "|" + mpProgram.model());
+        Path runDir = Path.of(reportPath, "split-" + java.util.UUID.randomUUID());
+        List<String> jvmOptions = java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments();
+        String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+        String classPath = System.getProperty("java.class.path");
+        System.out.println("program:    " + programClass.getName());
+        System.out.println("strategy:   must");
+        System.out.println("iterations: unbounded, timeout " + timeoutSeconds + " s");
+        System.out.println("seed:       " + seed);
+        System.out.println("reportPath: " + reportPath);
+        if (exportFile != null) {
+            System.out.println("exportFile: " + exportFile);
+        }
+        long startNanos = System.nanoTime();
+        SplitCoordinator.Result result;
+        try {
+            result = SplitCoordinator.run(new SplitCoordinator.Config(identity, program,
+                    mpProgram == null ? null : mpProgram.rolesInSpawnOrder(),
+                    mpProgram == null ? null : mpProgram.visibleRoles(), k, workers, timeoutSeconds, runDir,
+                    (dir, id) -> {
+                        List<String> cmd = new ArrayList<>();
+                        cmd.add(java);
+                        cmd.addAll(jvmOptions);
+                        cmd.add("-cp");
+                        cmd.add(classPath);
+                        cmd.add(MpLauncher.class.getName());
+                        cmd.add(args[0]);
+                        cmd.add("must");
+                        cmd.add("0");
+                        cmd.add(Long.toString(seed));
+                        cmd.add(reportPath);
+                        cmd.add(exportFile == null ? "-" : exportFile.toString());
+                        cmd.add(Long.toString(timeoutSeconds));
+                        cmd.add("--worker");
+                        cmd.add(dir.toString());
+                        cmd.add(Integer.toString(id));
+                        return cmd;
+                    }));
+        } catch (IOException e) {
+            System.out.println("FAILED:     cannot prepare " + runDir + ": " + e);
+            return 1;
+        }
+        double elapsedSeconds = (System.nanoTime() - startNanos) / 1e9;
+        System.out.println("split:      K " + k + ", W " + workers + ", R " + result.r() + ", N " + result.n()
+                + (result.split() ? "" : " (no split: the root exhausted the stack)") + "; run directory " + runDir);
+        if (result.failure() != null) {
+            System.out.printf(Locale.ROOT, "elapsed:    %.3f s%n", elapsedSeconds);
+            printSplitMeasurements(st, result, 0, false);
+            System.out.println("FAILED:     incomplete: " + result.failure());
+            return 1;
+        }
+        System.out.println("ran:        " + result.ran() + " iterations");
+        System.out.println("blocked:    " + result.blockedIterations() + " (counted by the strategy)");
+        System.out.println("completed:  " + (result.ran() - result.blockedIterations()));
+        System.out.println("items:      " + result.itemIterations() + (result.workersLost() == 0 ? ""
+                : "; " + result.workersLost() + " worker(s) lost, the run continued without them"));
+        System.out.printf(Locale.ROOT, "elapsed:    %.3f s%n", elapsedSeconds);
+        System.out.println("observed:   " + program);
+        System.out.println("graphs:     " + result.distinctComplete() + " distinct complete, "
+                + result.distinctBlocked() + " distinct blocked; stack exhausted");
+        long exportNanos = 0;
+        if (exportFile != null) {
+            List<String> lines = new ArrayList<>();
+            lines.add(SummaryExporter.header(mpProgram.programName(), mpProgram.size(), mpProgram.visibleRoles(),
+                    mpProgram.model(), "complete", seed, result.ran()));
+            lines.addAll(result.summaryLines());
+            long exportStart = System.nanoTime();
+            try {
+                if (exportFile.getParent() != null) {
+                    Files.createDirectories(exportFile.getParent());
+                }
+                Files.write(exportFile, lines, StandardCharsets.UTF_8);
+                System.out.println("exported:   " + result.ran() + " iterations as " + result.summaryLines().size()
+                        + " distinct summaries (complete, 0 not exported) to " + exportFile);
+            } catch (IOException e) {
+                printSplitMeasurements(st, result, System.nanoTime() - exportStart, true);
+                System.out.println("FAILED:     cannot write " + exportFile + ": " + e);
+                return 1;
+            }
+            exportNanos = System.nanoTime() - exportStart;
+        }
+        printSplitMeasurements(st, result, exportNanos, false);
+        return 0;
+    }
+
+    /**
+     * The measurement block of a split run, with the keys of {@link #printMeasurements} in the same
+     * order. Counts are the coordinator's merge; {@code explore_ms} is the coordinator's wall time
+     * from the root's start to the last committed item; {@code stop_reason} is {@code exhausted} or
+     * {@code error} (a split run is exhaustive; an aborted run or a failed export is an error);
+     * {@code peak_rss_kb} is the coordinator JVM's own peak, not the workers'. The per-phase times and
+     * graph-shape counters of the worker JVMs are not aggregated: those keys are printed empty
+     * (applies, not measured).
+     */
+    private static void printSplitMeasurements(Measured st, SplitCoordinator.Result r, long exportNanos,
+                                               boolean exportFailed) {
+        st.printed = true;
+        long exploreNanos = r.exploreNanos();
+        boolean merged = r.failure() == null;
+        boolean ok = merged && !exportFailed;
+        System.out.println(MEASUREMENTS_MARKER);
+        System.out.println("wall_ms: " + (System.nanoTime() - st.wallStartNanos) / 1_000_000);
+        System.out.println("explore_ms: " + exploreNanos / 1_000_000);
+        System.out.println("summarise_ms: ");
+        System.out.println("index_ms: 0");
+        System.out.println("lookup_ms: 0");
+        System.out.println("export_ms: " + exportNanos / 1_000_000);
+        System.out.println("graphs_complete: " + (merged ? r.distinctComplete() : ""));
+        System.out.println("graphs_blocked: " + (merged ? r.distinctBlocked() : ""));
+        System.out.println("summaries_distinct: "
+                + (merged && r.summaryLines() != null ? r.summaryLines().size() : 0));
+        System.out.println("iterations: " + (merged ? r.ran() : ""));
+        System.out.println("stop_reason: " + (ok ? "exhausted" : "error"));
+        long rss = peakRssKb();
+        System.out.println("peak_rss_kb: " + (rss < 0 ? "" : Long.toString(rss)));
+        System.out.println("max_message_events: ");
+        System.out.println("max_porf_pairs: ");
+        System.out.println("max_graph_events: ");
+        System.out.println("mean_graph_events: ");
+        System.out.println("max_visible_events: ");
+        System.out.println("mean_visible_events: ");
+        System.out.println("max_summary_bytes: ");
+        System.out.println("max_porf_count: ");
+    }
+
+    /**
      * Prints a usage error and returns the bad-arguments exit status.
      *
      * @param why what was wrong
@@ -571,7 +769,8 @@ public final class MpLauncher {
         System.err.println("MpLauncher: " + why);
         System.err.println(
                 "usage: MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000]"
-                        + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file> [--stop-at-first]]");
+                        + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file> [--stop-at-first]]"
+                        + " [--split W [--k K]] [--worker <run dir> <id>]");
         return 2;
     }
 }
