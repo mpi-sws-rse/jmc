@@ -38,7 +38,8 @@ import java.util.stream.Stream;
  *   <li>read: {@code run.json} (the coordinator's run description), {@code assigned/<j>.<a>.json} (item
  *       {@code j}, attempt {@code a}, naming the worker), {@code STOP};</li>
  *   <li>written: {@code item-<j>.json} (the result envelope: run id, fingerprint, item, attempt, worker,
- *       iterations, blocked iterations, the outcomes in order, the summary lines, the names met);
+ *       iterations, blocked iterations, the outcomes in order, the summary lines, the names met, this
+ *       JVM's peak RSS and its graph-shape maxima so far, so they survive the worker's death);
  *       {@code fail-<j>.<a>.json} (a semantic failure during item {@code j}); {@code
  *       worker-<id>.fail.json} (a startup failure: the replay did not reach the coordinator's state).</li>
  * </ul>
@@ -75,6 +76,7 @@ public final class SplitWorker implements MustStrategy.SplitControl {
     /** Whether the replay reached the split boundary and matched the coordinator's state. */
     private boolean verified;
     private int currentAttempt = -1;
+    private MustStrategy strategy;
 
     /**
      * Opens the run.
@@ -189,6 +191,10 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         JsonArray names = new JsonArray();
         s.names().forEach(names::add);
         env.add("names", names);
+        env.addProperty("peak_rss_kb", peakRssKb());
+        JsonObject mx = new JsonObject();
+        maxima(strategy).forEach(mx::addProperty);
+        env.add("maxima", mx);
         Path target = runDir.resolve("item-" + j + ".json");
         if (Files.exists(target)) {
             throw new IllegalStateException("item-" + j + ".json already exists; a result is never overwritten");
@@ -270,6 +276,7 @@ public final class SplitWorker implements MustStrategy.SplitControl {
                 ? new MustStrategy(1L, "build/test-results/jmc-report")
                 : new MustStrategy(1L, "build/test-results/jmc-report", roles, visibleRoles);
         strategy.setSplitControl(worker);
+        worker.strategy = strategy;
         String failure = null;
         MpThread.setStaleWaitMillis(ItemDriver.SPLIT_STALE_WAIT_MILLIS);
         try {
@@ -312,6 +319,46 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         }
         System.err.println("worker " + workerId + ": " + failure);
         return 1;
+    }
+
+    /** The keys of the graph-shape maxima that combine exactly across JVMs (as the maximum). */
+    static final List<String> MAXIMA = List.of("max_message_events", "max_porf_pairs", "max_graph_events",
+            "max_visible_events", "max_summary_bytes", "max_porf_count");
+
+    /**
+     * The graph-shape maxima of a strategy's run, keyed as {@link #MAXIMA}.
+     *
+     * @param m the strategy
+     * @return the maxima
+     */
+    static Map<String, Long> maxima(MustStrategy m) {
+        MustStrategy.Measurements x = m.measurements();
+        Map<String, Long> out = new TreeMap<>();
+        out.put("max_message_events", (long) x.maxMessageEvents());
+        out.put("max_porf_pairs", (long) x.maxPorfPairs());
+        out.put("max_graph_events", (long) x.maxGraphEvents());
+        out.put("max_visible_events", (long) x.maxVisibleEvents());
+        out.put("max_summary_bytes", (long) x.maxSummaryBytes());
+        out.put("max_porf_count", (long) x.maxPorfCount());
+        return out;
+    }
+
+    /**
+     * This JVM's peak resident set in kB ({@code VmHWM} of {@code /proc/self/status}).
+     *
+     * @return the peak, or -1 if it cannot be read
+     */
+    static long peakRssKb() {
+        try {
+            for (String line : Files.readAllLines(Path.of("/proc/self/status"))) {
+                if (line.startsWith("VmHWM:")) {
+                    return Long.parseLong(line.replaceAll("[^0-9]", ""));
+                }
+            }
+        } catch (IOException | RuntimeException e) {
+            // Not Linux, or not readable: unavailable.
+        }
+        return -1;
     }
 
     /** The fields every file this worker writes carries. */
