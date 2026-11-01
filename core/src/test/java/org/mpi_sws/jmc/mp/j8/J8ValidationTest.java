@@ -59,7 +59,7 @@ class J8ValidationTest {
         }
         csv.add(String.join(",", q(r.row()), r.mode(), "seq", "-", "-", "-", "-", q(seq.field("graphs")),
                 q(seq.field("ran")), seqMd5, bad.isEmpty() ? "PASS" : "FAIL"));
-        for (int w : k == null ? new int[] {1, 4, 16} : new int[] {4, 16}) {
+        for (int w : new int[] {1, 4, 16}) {
             J8Launch.Out o = k == null ? J8Launch.launch(r.row(), export, "--split", Integer.toString(w))
                     : J8Launch.launch(r.row(), export, "--split", Integer.toString(w), "--k", k);
             String split = o.field("split");

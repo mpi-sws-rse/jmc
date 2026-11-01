@@ -721,12 +721,13 @@ public final class MpLauncher {
 
     /**
      * The measurement block of a split run, with the keys of {@link #printMeasurements} in the same
-     * order. Counts are the coordinator's merge; {@code explore_ms} is the coordinator's wall time
-     * from the root's start to the last committed item; {@code stop_reason} is {@code exhausted} or
-     * {@code error} (a split run is exhaustive; an aborted run or a failed export is an error);
-     * {@code peak_rss_kb} is the coordinator JVM's own peak, not the workers'. The per-phase times and
-     * graph-shape counters of the worker JVMs are not aggregated: those keys are printed empty
-     * (applies, not measured).
+     * order. Only what combines exactly is combined: counts, summaries and iterations from the
+     * merge; {@code explore_ms}, the coordinator's wall time from the root's start to the last
+     * committed item; {@code stop_reason} {@code exhausted} or {@code error} (a split run is
+     * exhaustive; an aborted run or a failed export is an error); {@code peak_rss_kb}, the largest
+     * peak over the coordinator and every worker process; the graph-shape maxima, the maximum over the
+     * root and every worker process. The phase times ({@code summarise_ms}) and the two means do not
+     * combine (worker phases interleave) and are printed empty (applies, not measured).
      */
     private static void printSplitMeasurements(Measured st, SplitCoordinator.Result r, long exportNanos,
                                                boolean exportFailed) {
@@ -747,16 +748,22 @@ public final class MpLauncher {
                 + (merged && r.summaryLines() != null ? r.summaryLines().size() : 0));
         System.out.println("iterations: " + (merged ? r.ran() : ""));
         System.out.println("stop_reason: " + (ok ? "exhausted" : "error"));
-        long rss = peakRssKb();
+        long rss = Math.max(peakRssKb(), r.workerPeakRssKb());
         System.out.println("peak_rss_kb: " + (rss < 0 ? "" : Long.toString(rss)));
-        System.out.println("max_message_events: ");
-        System.out.println("max_porf_pairs: ");
-        System.out.println("max_graph_events: ");
+        System.out.println("max_message_events: " + maximum(r, "max_message_events"));
+        System.out.println("max_porf_pairs: " + maximum(r, "max_porf_pairs"));
+        System.out.println("max_graph_events: " + maximum(r, "max_graph_events"));
         System.out.println("mean_graph_events: ");
-        System.out.println("max_visible_events: ");
+        System.out.println("max_visible_events: " + maximum(r, "max_visible_events"));
         System.out.println("mean_visible_events: ");
-        System.out.println("max_summary_bytes: ");
-        System.out.println("max_porf_count: ");
+        System.out.println("max_summary_bytes: " + maximum(r, "max_summary_bytes"));
+        System.out.println("max_porf_count: " + maximum(r, "max_porf_count"));
+    }
+
+    /** A combined maximum of a split run, empty when it is not available (an aborted run). */
+    private static String maximum(SplitCoordinator.Result r, String key) {
+        Long v = r.maxima().get(key);
+        return v == null ? "" : Long.toString(v);
     }
 
     /**

@@ -138,10 +138,16 @@ public final class SplitCoordinator {
      * @param failure the abort reason, or {@code null} if the run completed
      * @param exploreNanos wall time from the root's start to the last committed result (to the root's end
      *     without a split; to the abort for an aborted run)
+     * @param workerPeakRssKb the largest worker peak RSS carried by a committed result (the worker JVM's
+     *     peak when it published it), -1 for none
+     * @param maxima the graph-shape maxima over the root and every committed result, each carrying its
+     *     worker JVM's maxima at publication (keys of {@code SplitWorker.MAXIMA}); empty for an aborted
+     *     run
      */
     public record Result(boolean split, int r, int n, int distinctComplete, int distinctBlocked, int ran,
                          int blockedIterations, List<String> summaryLines, Map<Integer, Integer> itemIterations,
-                         int workersLost, String failure, long exploreNanos) {}
+                         int workersLost, String failure, long exploreNanos, long workerPeakRssKb,
+                         Map<String, Long> maxima) {}
 
     /** One worker slot. */
     private static final class Slot {
@@ -174,7 +180,7 @@ public final class SplitCoordinator {
         Root root = runRoot(config);
         if (root.failure != null) {
             return new Result(root.split, root.rootIterations, root.entries, 0, 0, 0, 0, null, Map.of(), 0,
-                    root.failure, System.nanoTime() - startNanos);
+                    root.failure, System.nanoTime() - startNanos, -1, Map.of());
         }
         Set<String> complete = new HashSet<>();
         Set<String> blocked = new HashSet<>();
@@ -183,7 +189,8 @@ public final class SplitCoordinator {
         }
         if (!root.split) {
             return new Result(false, root.rootIterations, 0, complete.size(), blocked.size(), root.iterations,
-                    root.blocked, root.summaryLines, Map.of(), 0, null, System.nanoTime() - startNanos);
+                    root.blocked, root.summaryLines, Map.of(), 0, null, System.nanoTime() - startNanos, -1,
+                    root.maxima);
         }
         String runId = UUID.randomUUID().toString();
         JsonObject runJson = new JsonObject();
@@ -220,7 +227,7 @@ public final class SplitCoordinator {
         int lost = lostOut[0];
         if (failure != null) {
             return new Result(true, root.rootIterations, root.entries, 0, 0, 0, 0, null, Map.of(), lost, failure,
-                    System.nanoTime() - startNanos);
+                    System.nanoTime() - startNanos, -1, Map.of());
         }
         int ran = root.iterations;
         int blockedIterations = root.blocked;
@@ -253,9 +260,18 @@ public final class SplitCoordinator {
                 lines.add(e.getKey() + ",\"n\":" + e.getValue() + "}");
             }
         }
+        long workerRss = -1;
+        Map<String, Long> maxima = new TreeMap<>(root.maxima);
+        for (JsonObject env : committed.values()) {
+            workerRss = Math.max(workerRss, env.get("peak_rss_kb").getAsLong());
+            JsonObject mx = env.getAsJsonObject("maxima");
+            for (String key : SplitWorker.MAXIMA) {
+                maxima.merge(key, mx.get(key).getAsLong(), Math::max);
+            }
+        }
         return new Result(true, root.rootIterations, root.entries, complete.size(), blocked.size(), ran,
                 blockedIterations, lines,
-                sizes, lost, null, lastCommitOut[0] - startNanos);
+                sizes, lost, null, lastCommitOut[0] - startNanos, workerRss, maxima);
     }
 
     /** Adds one summary line (with its multiplicity) to the merge, keyed by the line without it. */
@@ -279,6 +295,7 @@ public final class SplitCoordinator {
         String fingerprint;
         MustStrategy.SplitView view;
         List<String> summaryLines;
+        Map<String, Long> maxima = Map.of();
         String failure;
 
         Root(Config config) {
@@ -343,6 +360,7 @@ public final class SplitCoordinator {
                     .build();
             new JmcModelChecker(checkerConfig).check(new JmcFunctionalTestTarget(config.programIdentity(),
                     () -> MpProcess.runMain(config.program())));
+            root.maxima = SplitWorker.maxima(strategy);
             if (!root.split && !strategy.exhausted()) {
                 root.failure = "the root's run ended before the exploration was complete";
             }
@@ -530,12 +548,36 @@ public final class SplitCoordinator {
                 return "process name " + e.getAsString() + " is not in the frozen table";
             }
         }
+        if (!env.has("maxima") || !env.get("maxima").isJsonObject()) {
+            return "the result carries no graph-shape maxima";
+        }
+        // -1 is the worker's "unavailable" value for the peak RSS.
+        if (!integral(env.get("peak_rss_kb"), -1)) {
+            return "the result's peak RSS is missing, not an integer, or below -1";
+        }
+        for (String key : SplitWorker.MAXIMA) {
+            if (!integral(env.getAsJsonObject("maxima").get(key), 0)) {
+                return "the result's maximum " + key + " is missing, not an integer, or negative";
+            }
+        }
         for (JsonElement e : env.getAsJsonArray("outcomes")) {
             if (!DIGEST.matcher(e.getAsJsonObject().get("digest").getAsString()).matches()) {
                 return "malformed digest " + e;
             }
         }
         return null;
+    }
+
+    /** Whether v is a JSON number that is an exact long of at least min (no fraction, no overflow). */
+    private static boolean integral(JsonElement v, long min) {
+        if (v == null || !v.isJsonPrimitive() || !v.getAsJsonPrimitive().isNumber()) {
+            return false;
+        }
+        try {
+            return v.getAsBigDecimal().longValueExact() >= min;
+        } catch (ArithmeticException | NumberFormatException e) {
+            return false;
+        }
     }
 
     private static String str(JsonObject o, String key) {
