@@ -334,18 +334,24 @@ class J8Step1Test {
         assertTrue(o2.field("split").contains("no split"), o2.text());
     }
 
+    /**
+     * Updated in J8S round 02: the owner's ruling of 2026-11-01 (J8R-PLAN §2.12) allows {@code --spec} under
+     * {@code --split} in full mode and refuses {@code --stop-at-first} with {@code --split} (exit 2). Before
+     * that ruling this test asserted that {@code --spec} itself was refused.
+     */
     @Test
-    void t7_specWithSplit_exit2() throws Exception {
+    void t7_stopAtFirstWithSplit_exit2_specAllowedInFullMode() throws Exception {
         J8Launch.Out spec = J8Launch.launch(J8Launch.J4 + "A3Lock:spec,2,1", true);
         assertEquals(0, spec.exit(), spec.text());
         J8Launch.Out o = J8Launch.launch(J8Launch.J4 + "A3Lock:fifo,2,1", false, "--spec",
-                spec.exportFile().toString(), "--split", "2");
-        System.out.println("J8R4 t7 spec+split exit " + o.exit() + "\n" + o.text());
+                spec.exportFile().toString(), "--stop-at-first", "--split", "2");
+        System.out.println("J8R4 t7 stop-at-first+split exit " + o.exit() + "\n" + o.text());
         assertEquals(2, o.exit(), o.text());
-        assertTrue(o.text().contains("--spec cannot be combined with --split"), o.text());
-        // the spec itself is accepted without --split
-        J8Launch.Out ok = J8Launch.launch(J8Launch.J4 + "A3Lock:fifo,2,1", false, "--spec", spec.exportFile().toString());
+        assertTrue(o.text().contains("--stop-at-first cannot be combined with --split"), o.text());
+        J8Launch.Out ok = J8Launch.launch(J8Launch.J4 + "A3Lock:fifo,2,1", false, "--spec", spec.exportFile().toString(),
+                "--split", "2");
         assertEquals(0, ok.exit(), ok.text());
+        assertEquals("conforms", ok.field("verdict"), ok.text());
     }
 
     @Test
