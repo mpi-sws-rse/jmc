@@ -13,6 +13,8 @@ import org.mpi_sws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.mp.graph.GraphCanon;
+import org.mpi_sws.jmc.mp.summary.SetIndex;
+import org.mpi_sws.jmc.mp.summary.SpecificationFile;
 import org.mpi_sws.jmc.mp.summary.Summary;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;
 
@@ -61,10 +63,14 @@ import java.util.regex.Pattern;
  * items; iterations and blocked iterations are summed; the summary lines are the root's, then the items'
  * in the order {@code N − 1} … {@code 0}, deduplicated on the line without its multiplicity (the first
  * occurrence kept, multiplicities summed) — the sequential run's export order.
+ *
+ * <p><b>Online check</b> (full mode; {@link Config#spec()}): {@code run.json} names the specification file
+ * and its SHA-256, which also enters the fingerprint; every segment reports its {@code online} object,
+ * validated before commit ({@code validateOnline}) and merged in the same order ({@link Online}).
  */
 public final class SplitCoordinator {
 
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().serializeNulls().create();
     private static final Pattern DIGEST = Pattern.compile("[0-9a-f]{64}");
     private static final Pattern N_SUFFIX = Pattern.compile(",\"n\":(\\d+)}$");
 
@@ -87,11 +93,22 @@ public final class SplitCoordinator {
      * @param liveness test seam: the probe that decides whether a worker process is still alive when its
      *     death is classified (default {@link Process#isAlive}); a test can delay or force the answer to
      *     reproduce an interleaving
+     * @param spec the loaded specification for the online check (full mode), or {@code null}; needs
+     *     {@code roles}
      */
     public record Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                          int k, int workers, long timeoutSeconds, Path runDir,
                          BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
-                         java.util.function.Predicate<Process> liveness) {
+                         java.util.function.Predicate<Process> liveness, SpecificationFile.Loaded spec) {
+
+        /** A configuration without an online check. */
+        public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
+                      int k, int workers, long timeoutSeconds, Path runDir,
+                      BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
+                      java.util.function.Predicate<Process> liveness) {
+            this(programIdentity, program, roles, visibleRoles, k, workers, timeoutSeconds, runDir, workerCommand,
+                    reversedAssignment, liveness, null);
+        }
 
         /** A configuration with the given assignment order and the default liveness probe. */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
@@ -119,6 +136,9 @@ public final class SplitCoordinator {
             if (k < 1 || workers < 1) {
                 throw new IllegalArgumentException("K and W must be at least 1, were " + k + " and " + workers);
             }
+            if (spec != null && roles == null) {
+                throw new IllegalArgumentException("the online check needs the roles");
+            }
         }
     }
 
@@ -143,11 +163,34 @@ public final class SplitCoordinator {
      * @param maxima the graph-shape maxima over the root and every committed result, each carrying its
      *     worker JVM's maxima at publication (keys of {@code SplitWorker.MAXIMA}); empty for an aborted
      *     run
+     * @param online the merged online check, {@code null} without one
      */
     public record Result(boolean split, int r, int n, int distinctComplete, int distinctBlocked, int ran,
                          int blockedIterations, List<String> summaryLines, Map<Integer, Integer> itemIterations,
                          int workersLost, String failure, long exploreNanos, long workerPeakRssKb,
-                         Map<String, Long> maxima) {}
+                         Map<String, Long> maxima, Online online) {}
+
+    /**
+     * The merged online check of a split run (J8R-PLAN §2.12): exact against the sequential run except
+     * {@code firstMissWallMs}.
+     *
+     * @param miss whether a committed segment (or the root) has an uncovered graph
+     * @param uncoveredTotal Σ of the segments' uncovered graphs; {@code null} for an aborted run
+     * @param uncoveredDistinct the size of the union of their uncovered lines; {@code null} for an aborted run
+     * @param firstMissIteration the first miss's position in the sequential order (the root, then items
+     *     {@code N − 1} … {@code 0}): its segment's offset plus its local position; 0 for none; -1 when an
+     *     aborted run left a segment before it uncommitted
+     * @param witness the first miss's line ({@code toJson(1)}), {@code null} for none
+     * @param answer its answer, {@code NoSig} or {@code NotFound}, {@code null} for none
+     * @param firstMissWallMs the earliest miss in wall time, from the coordinator's exploration start; -1 for none
+     * @param lookups queries over the committed segments
+     * @param found of those, covered
+     * @param notFound of those, signature held but not covered
+     * @param noSig of those, no summary with the signature
+     */
+    public record Online(boolean miss, Long uncoveredTotal, Integer uncoveredDistinct, int firstMissIteration,
+                         String witness, String answer, long firstMissWallMs, long lookups, long found,
+                         long notFound, long noSig) {}
 
     /** One worker slot. */
     private static final class Slot {
@@ -177,10 +220,25 @@ public final class SplitCoordinator {
             throw new IOException(dir + " already holds a run");
         }
         long startNanos = System.nanoTime();
-        Root root = runRoot(config);
+        long startMillis = System.currentTimeMillis();
+        String specHash = null;
+        if (config.spec() != null) {
+            SpecSnapshot snap = snapshotSpec(config.spec().path(), dir, "coordinator", config.spec().visible());
+            SpecificationFile.Loaded given = config.spec();
+            if (!snap.loaded().visible().equals(given.visible()) || snap.loaded().lines() != given.lines()
+                    || snap.loaded().duplicates() != given.duplicates()) {
+                throw new IOException("specification " + given.path() + " changed since it was loaded");
+            }
+            specHash = snap.sha256();
+            config = new Config(config.programIdentity(), config.program(), config.roles(), config.visibleRoles(),
+                    config.k(), config.workers(), config.timeoutSeconds(), config.runDir(), config.workerCommand(),
+                    config.reversedAssignment(), config.liveness(), snap.loaded());
+        }
+        Root root = runRoot(config, fingerprintProgram(config.programIdentity(), specHash));
         if (root.failure != null) {
             return new Result(root.split, root.rootIterations, root.entries, 0, 0, 0, 0, null, Map.of(), 0,
-                    root.failure, System.nanoTime() - startNanos, -1, Map.of());
+                    root.failure, System.nanoTime() - startNanos, -1, Map.of(),
+                    mergeOnline(config, root, Map.of(), false, startMillis));
         }
         Set<String> complete = new HashSet<>();
         Set<String> blocked = new HashSet<>();
@@ -190,7 +248,7 @@ public final class SplitCoordinator {
         if (!root.split) {
             return new Result(false, root.rootIterations, 0, complete.size(), blocked.size(), root.iterations,
                     root.blocked, root.summaryLines, Map.of(), 0, null, System.nanoTime() - startNanos, -1,
-                    root.maxima);
+                    root.maxima, mergeOnline(config, root, Map.of(), true, startMillis));
         }
         String runId = UUID.randomUUID().toString();
         JsonObject runJson = new JsonObject();
@@ -218,16 +276,26 @@ public final class SplitCoordinator {
             runJson.add("summaries", lines);
         }
         runJson.addProperty("timeoutSeconds", config.timeoutSeconds());
+        runJson.addProperty("summarise", config.roles() != null);
+        if (config.spec() != null) {
+            JsonObject spec = new JsonObject();
+            spec.addProperty("path", config.spec().path().toAbsolutePath().toString());
+            spec.addProperty("sha256", specHash);
+            runJson.add("spec", spec);
+        }
         writeAtomically(dir.resolve("run.json"), runJson);
 
         Map<Integer, JsonObject> committed = new TreeMap<>();
         int[] lostOut = new int[1];
         long[] lastCommitOut = {System.nanoTime()};
-        String failure = dispatch(config, dir, runId, root, committed, lostOut, lastCommitOut);
+        Checks checks = new Checks(config.spec(), startMillis);
+        String failure = dispatch(config, dir, runId, root, committed, lostOut, lastCommitOut, checks);
+        sweepSpecSnapshots(dir);
         int lost = lostOut[0];
         if (failure != null) {
             return new Result(true, root.rootIterations, root.entries, 0, 0, 0, 0, null, Map.of(), lost, failure,
-                    System.nanoTime() - startNanos, -1, Map.of());
+                    System.nanoTime() - startNanos, -1, Map.of(),
+                    mergeOnline(config, root, committed, false, startMillis));
         }
         int ran = root.iterations;
         int blockedIterations = root.blocked;
@@ -271,7 +339,260 @@ public final class SplitCoordinator {
         }
         return new Result(true, root.rootIterations, root.entries, complete.size(), blocked.size(), ran,
                 blockedIterations, lines,
-                sizes, lost, null, lastCommitOut[0] - startNanos, workerRss, maxima);
+                sizes, lost, null, lastCommitOut[0] - startNanos, workerRss, maxima,
+                mergeOnline(config, root, committed, true, startMillis));
+    }
+
+    /**
+     * The fingerprint's program identity: the program's, plus the specification's SHA-256 when the run
+     * checks online, so a worker that loaded another file cannot match.
+     *
+     * @param program the program and configuration identity
+     * @param specHash the specification file's SHA-256, or {@code null}
+     * @return the identity the fingerprint covers
+     */
+    static String fingerprintProgram(String program, String specHash) {
+        return specHash == null ? program : program + "|spec:" + specHash;
+    }
+
+    /** The hex SHA-256 of some bytes. */
+    private static String sha256(byte[] bytes) {
+        try {
+            return java.util.HexFormat.of().formatHex(
+                    java.security.MessageDigest.getInstance("SHA-256").digest(bytes));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
+    }
+
+    /**
+     * A specification loaded from one read of its bytes, with those bytes' SHA-256.
+     *
+     * @param sha256 the digest of the bytes the index was built from
+     * @param loaded the specification, its path the original file
+     */
+    record SpecSnapshot(String sha256, SpecificationFile.Loaded loaded) {}
+
+    /**
+     * Reads a specification's bytes once, hashes them, and loads that same snapshot (through a private copy
+     * in the run directory, deleted afterwards), so that the digest and the index cannot come from different
+     * file contents.
+     *
+     * @param file the specification
+     * @param runDir the run directory, for the private copy
+     * @param owner a name for the copy ({@code coordinator} or {@code worker-<id>})
+     * @param visibleRoles the program's visible roles
+     * @return the snapshot
+     * @throws IOException if the file cannot be read
+     * @throws IllegalArgumentException if the file is refused
+     */
+    static SpecSnapshot snapshotSpec(Path file, Path runDir, String owner, java.util.Collection<String> visibleRoles)
+            throws IOException {
+        byte[] bytes = Files.readAllBytes(file);
+        Path copy = runDir.resolve("spec-" + owner + "-" + UUID.randomUUID() + ".snapshot");
+        Files.write(copy, bytes, java.nio.file.StandardOpenOption.CREATE_NEW);
+        try {
+            SpecificationFile.Loaded l = SpecificationFile.load(copy, visibleRoles);
+            return new SpecSnapshot(sha256(bytes), new SpecificationFile.Loaded(file, l.program(), l.size(),
+                    l.tool(), l.model(), l.visible(), l.lines(), l.duplicates(), l.index()));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(String.valueOf(e.getMessage()).replace(copy.toString(),
+                    file.toString()), e);
+        } finally {
+            Files.deleteIfExists(copy);
+        }
+    }
+
+    /**
+     * Deletes the private specification copies left in the run directory by workers that were killed
+     * between writing and deleting them; called once every worker has ended.
+     */
+    private static void sweepSpecSnapshots(Path runDir) throws IOException {
+        try (java.util.stream.Stream<Path> files = Files.list(runDir)) {
+            for (Path f : (Iterable<Path>) files::iterator) {
+                String name = f.getFileName().toString();
+                if (name.startsWith("spec-") && name.endsWith(".snapshot")) {
+                    Files.deleteIfExists(f);
+                }
+            }
+        }
+    }
+
+    /**
+     * Merges the online check over the root and the committed results, in the sequential order (the
+     * root, then items {@code N − 1} … {@code 0}).
+     *
+     * @param complete whether every item was committed (otherwise the totals are not given)
+     * @return the merge, {@code null} without an online check
+     */
+    private static Online mergeOnline(Config config, Root root, Map<Integer, JsonObject> committed, boolean complete,
+                                      long startMillis) {
+        if (config.spec() == null) {
+            return null;
+        }
+        List<MustStrategy.Online> segments = new ArrayList<>();
+        List<Integer> sizes = new ArrayList<>();
+        if (root.online != null) {
+            segments.add(root.online);
+            sizes.add(root.iterations);
+        }
+        // A gap (a missing root segment or an uncommitted item) ends the prefix whose positions are exact.
+        int gapAt = root.online != null ? -1 : 0;
+        for (int j = root.entries - 1; j >= 0; j--) {
+            JsonObject env = committed.get(j);
+            if (env == null) {
+                if (gapAt < 0) {
+                    gapAt = segments.size();
+                }
+                continue;
+            }
+            segments.add(onlineOf(env.getAsJsonObject("online")));
+            sizes.add(env.get("iterations").getAsInt());
+        }
+        long total = 0;
+        Set<String> lines = new HashSet<>();
+        long lookups = 0;
+        long found = 0;
+        long notFound = 0;
+        long noSig = 0;
+        long earliest = Long.MAX_VALUE;
+        int firstIteration = 0;
+        String witness = null;
+        String answer = null;
+        long offset = 0;
+        for (int i = 0; i < segments.size(); i++) {
+            MustStrategy.Online o = segments.get(i);
+            total += o.uncovered();
+            lines.addAll(o.lines());
+            lookups += o.lookups();
+            found += o.found();
+            notFound += o.notFound();
+            noSig += o.noSig();
+            if (o.firstLocal() > 0) {
+                earliest = Math.min(earliest, o.firstAtMs());
+                if (witness == null) {
+                    witness = o.witness();
+                    answer = o.answer();
+                    firstIteration = gapAt >= 0 && i >= gapAt ? -1 : (int) (offset + o.firstLocal());
+                }
+            }
+            offset += sizes.get(i);
+        }
+        boolean miss = witness != null;
+        return new Online(miss, complete ? total : null, complete ? lines.size() : null, firstIteration, witness,
+                answer, miss ? Math.max(0, earliest - startMillis) : -1, lookups, found, notFound, noSig);
+    }
+
+    /** A result's {@code online} object, already validated. */
+    private static MustStrategy.Online onlineOf(JsonObject x) {
+        List<String> lines = new ArrayList<>();
+        for (JsonElement e : x.getAsJsonArray("lines")) {
+            lines.add(e.getAsString());
+        }
+        return new MustStrategy.Online(x.get("uncovered").getAsLong(), lines, x.get("first_local").getAsInt(),
+                x.get("witness").isJsonNull() ? null : x.get("witness").getAsString(),
+                x.get("answer").isJsonNull() ? null : x.get("answer").getAsString(),
+                x.get("first_at_ms").getAsLong(), x.get("lookups").getAsLong(), x.get("found").getAsLong(),
+                x.get("not_found").getAsLong(), x.get("no_sig").getAsLong());
+    }
+
+    /** What the online validation of a result needs; {@code spec} {@code null} without an online check. */
+    private record Checks(SpecificationFile.Loaded spec, long startMillis) {}
+
+    /**
+     * Validates a result's {@code online} object (J8R-PLAN §2.12): sentinels without a miss; the ranges,
+     * the witness, the timestamp and the counters with one; every line re-queried against this JVM's copy
+     * of the index. These are consistency checks; the true position of the first miss is not provable here.
+     *
+     * @return {@code null} if valid, else the reason
+     */
+    private static String validateOnline(JsonElement el, int iterations, Checks c) {
+        if (el == null || !el.isJsonObject()) {
+            return "the result carries no online object, but the run checks online";
+        }
+        JsonObject x = el.getAsJsonObject();
+        for (String key : List.of("uncovered", "first_local", "lookups", "found", "not_found", "no_sig")) {
+            if (!integral(x.get(key), 0)) {
+                return "the online field " + key + " is missing, not an integer, or negative";
+            }
+        }
+        if (!integral(x.get("first_at_ms"), -1)) {
+            return "the online field first_at_ms is missing, not an integer, or below -1";
+        }
+        JsonElement linesEl = x.get("lines");
+        if (linesEl == null || !linesEl.isJsonArray()) {
+            return "the online field lines is missing or not an array";
+        }
+        List<String> lines = new ArrayList<>();
+        for (JsonElement e : linesEl.getAsJsonArray()) {
+            if (!e.isJsonPrimitive() || !e.getAsJsonPrimitive().isString()) {
+                return "an online line is not a string";
+            }
+            lines.add(e.getAsString());
+        }
+        JsonElement w = x.get("witness");
+        JsonElement a = x.get("answer");
+        if (w == null || a == null || !(w.isJsonNull() || w.isJsonPrimitive() && w.getAsJsonPrimitive().isString())
+                || !(a.isJsonNull() || a.isJsonPrimitive() && a.getAsJsonPrimitive().isString())) {
+            return "the online fields witness and answer must be present, as strings or null";
+        }
+        long uncovered = x.get("uncovered").getAsLong();
+        long firstLocal = x.get("first_local").getAsLong();
+        long firstAt = x.get("first_at_ms").getAsLong();
+        long lookups = x.get("lookups").getAsLong();
+        long found = x.get("found").getAsLong();
+        long notFound = x.get("not_found").getAsLong();
+        long noSig = x.get("no_sig").getAsLong();
+        if (found + notFound + noSig != lookups || notFound + noSig != uncovered) {
+            return "the online counters do not add up (lookups " + lookups + ", found " + found + ", not found "
+                    + notFound + ", no signature " + noSig + ", uncovered " + uncovered + ")";
+        }
+        if (uncovered == 0) {
+            if (firstLocal != 0 || !lines.isEmpty() || !w.isJsonNull() || !a.isJsonNull() || firstAt != -1) {
+                return "the online object has no uncovered graph but a first miss, a line, a witness, an answer"
+                        + " or a timestamp";
+            }
+            return null;
+        }
+        if (firstLocal < 1 || firstLocal > iterations) {
+            return "the online first_local " + firstLocal + " is outside 1.." + iterations;
+        }
+        if (lines.isEmpty() || lines.size() > uncovered || uncovered > iterations - firstLocal + 1) {
+            return "the online counts are impossible: " + lines.size() + " lines, " + uncovered
+                    + " uncovered, first miss " + firstLocal + " of " + iterations + " iterations";
+        }
+        if (new HashSet<>(lines).size() != lines.size()) {
+            return "the online lines repeat a summary";
+        }
+        if (w.isJsonNull() || !w.getAsString().equals(lines.get(0))) {
+            return "the online witness is not the first uncovered line";
+        }
+        if (a.isJsonNull() || !(a.getAsString().equals("NoSig") || a.getAsString().equals("NotFound"))) {
+            return "the online answer is not NoSig or NotFound";
+        }
+        if (firstAt < c.startMillis() || firstAt > System.currentTimeMillis()) {
+            return "the online first_at_ms " + firstAt + " is outside the run (" + c.startMillis() + " to now)";
+        }
+        for (String line : lines) {
+            Summary sum;
+            try {
+                sum = SpecificationFile.parseLine(line, c.spec().visible());
+            } catch (RuntimeException e) {
+                return "the online line " + line + " is malformed: " + e.getMessage();
+            }
+            if (!sum.toJson(1).equals(line)) {
+                return "the online line " + line + " is not in canonical form";
+            }
+            SetIndex.Covers covers = c.spec().index().covers(sum);
+            if (covers instanceof SetIndex.Covers.Found) {
+                return "the online line " + line + " is covered by the specification";
+            }
+            if (line.equals(lines.get(0))
+                    && !a.getAsString().equals(covers instanceof SetIndex.Covers.NoSig ? "NoSig" : "NotFound")) {
+                return "the online answer " + a.getAsString() + " differs from the index's for the witness";
+            }
+        }
+        return null;
     }
 
     /** Adds one summary line (with its multiplicity) to the merge, keyed by the line without it. */
@@ -296,10 +617,13 @@ public final class SplitCoordinator {
         MustStrategy.SplitView view;
         List<String> summaryLines;
         Map<String, Long> maxima = Map.of();
+        MustStrategy.Online online;
         String failure;
+        final String fingerprintProgram;
 
-        Root(Config config) {
+        Root(Config config, String fingerprintProgram) {
             this.config = config;
+            this.fingerprintProgram = fingerprintProgram;
         }
 
         @Override
@@ -319,7 +643,7 @@ public final class SplitCoordinator {
             view = v;
             rootIterations = v.finishedIterations();
             entries = v.stackTopFirst().size();
-            fingerprint = StackFingerprint.of(config.programIdentity(), config.k(), v, outcomes);
+            fingerprint = StackFingerprint.of(fingerprintProgram, config.k(), v, outcomes);
             return false;
         }
 
@@ -327,6 +651,7 @@ public final class SplitCoordinator {
         public void segmentDone(MustStrategy.Segment s) {
             iterations = s.iterations();
             blocked = s.blockedIterations();
+            online = s.online();
             if (s.summaries() != null) {
                 summaryLines = new ArrayList<>();
                 for (Map.Entry<Summary, Integer> e : s.summaries().entrySet()) {
@@ -342,11 +667,14 @@ public final class SplitCoordinator {
     }
 
     /** Runs the root in this JVM. */
-    private static Root runRoot(Config config) {
-        Root root = new Root(config);
+    private static Root runRoot(Config config, String fingerprintProgram) {
+        Root root = new Root(config, fingerprintProgram);
         MustStrategy strategy = config.roles() == null
                 ? new MustStrategy(1L, "build/test-results/jmc-report")
                 : new MustStrategy(1L, "build/test-results/jmc-report", config.roles(), config.visibleRoles());
+        if (config.spec() != null) {
+            strategy.checkAgainst(config.spec().index(), false);
+        }
         strategy.setSplitControl(root);
         MpThread.setStaleWaitMillis(ItemDriver.SPLIT_STALE_WAIT_MILLIS);
         try {
@@ -380,7 +708,7 @@ public final class SplitCoordinator {
      * @return {@code null} when every item is committed and every worker has ended, else the abort reason
      */
     private static String dispatch(Config config, Path dir, String runId, Root root, Map<Integer, JsonObject> committed,
-                                   int[] lostOut, long[] lastCommitOut) {
+                                   int[] lostOut, long[] lastCommitOut, Checks checks) {
         List<Slot> slots = new ArrayList<>();
         try {
             for (int i = 0; i < config.workers(); i++) {
@@ -410,7 +738,7 @@ public final class SplitCoordinator {
                         continue;
                     }
                     String bad = commitIfPublished(dir, runId, root.fingerprint, s, tableNames, export, committed,
-                            lastCommitOut);
+                            lastCommitOut, checks);
                     if (bad != null) {
                         return abort(slots, bad);
                     }
@@ -422,7 +750,7 @@ public final class SplitCoordinator {
                         // The result may have been renamed into place between the check above and the exit:
                         // look again now that the process is known to be dead.
                         bad = commitIfPublished(dir, runId, root.fingerprint, s, tableNames, export, committed,
-                                lastCommitOut);
+                                lastCommitOut, checks);
                         if (bad != null) {
                             return abort(slots, bad);
                         }
@@ -503,7 +831,7 @@ public final class SplitCoordinator {
      */
     private static String commitIfPublished(Path dir, String runId, String fingerprint, Slot s, Set<String> names,
                                             boolean export, Map<Integer, JsonObject> committed,
-                                            long[] lastCommitOut) {
+                                            long[] lastCommitOut, Checks checks) {
         if (s.item < 0) {
             return null;
         }
@@ -513,6 +841,11 @@ public final class SplitCoordinator {
         }
         JsonObject env = readJson(result);
         String bad = validate(env, runId, fingerprint, s, names, export);
+        if (bad == null && checks.spec() != null) {
+            bad = validateOnline(env.get("online"), env.get("iterations").getAsInt(), checks);
+        } else if (bad == null && env.has("online")) {
+            bad = "the result carries an online object, but the run does not check online";
+        }
         if (bad != null) {
             return "item " + s.item + ": " + bad;
         }
@@ -581,7 +914,7 @@ public final class SplitCoordinator {
     }
 
     private static String str(JsonObject o, String key) {
-        return o.has(key) ? o.get(key).getAsString() : null;
+        return o.has(key) && !o.get(key).isJsonNull() ? o.get(key).getAsString() : null;
     }
 
     /** Terminates every live worker, waits for them, and returns the reason. */

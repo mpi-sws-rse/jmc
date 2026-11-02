@@ -9,6 +9,7 @@ import org.mpi_sws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.mp.graph.GraphCanon;
+import org.mpi_sws.jmc.mp.summary.SpecificationFile;
 import org.mpi_sws.jmc.mp.summary.Summary;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;
 
@@ -54,13 +55,21 @@ import java.util.stream.Stream;
  * list of {@code <kind>:<item>:<attempt>}, is read only here and is inert when unset. Kinds: {@code
  * die-before} (the JVM exits before publishing the item's result), {@code die-after} (exits right after
  * the rename), {@code wrong-item}, {@code wrong-attempt}, {@code wrong-worker} (the envelope carries a
- * wrong value), {@code fail} (a semantic failure: the fail marker is written); and {@code
- * fingerprint:-1:-1} (the replay's fingerprint is altered, a startup failure).
+ * wrong value), {@code fail} (a semantic failure: the fail marker is written), {@code delay} (the item
+ * starts {@link #DELAY_MILLIS} late, to order wall-clock events); and {@code fingerprint:-1:-1} (the
+ * replay's fingerprint is altered, a startup failure).
+ *
+ * <p>Online check (full mode only): when {@code run.json} names a specification file, the worker loads it
+ * itself, refuses to start (a startup failure) if the file's SHA-256 differs from {@code run.json}'s, and
+ * puts each item's {@code online} object ({@link MustStrategy.Online}) in its result.
  */
 public final class SplitWorker implements MustStrategy.SplitControl {
 
     /** The polling period, in milliseconds. */
     static final long POLL_MILLIS = 200L;
+
+    /** The pause of the {@code delay} fault, before the item starts, in milliseconds. */
+    static final long DELAY_MILLIS = 2000L;
 
     /** The exit status of a worker that died by fault injection. */
     static final int INJECTED_DEATH_STATUS = 3;
@@ -77,6 +86,8 @@ public final class SplitWorker implements MustStrategy.SplitControl {
     private boolean verified;
     private int currentAttempt = -1;
     private MustStrategy strategy;
+    /** The SHA-256 of the specification file this worker loaded, {@code null} without an online check. */
+    private String specHash;
 
     /**
      * Opens the run.
@@ -117,8 +128,8 @@ public final class SplitWorker implements MustStrategy.SplitControl {
     @Override
     public boolean atBoundary(MustStrategy.SplitView view) {
         // The root's segment was reported just before this call; rootOutcomes is its transcript.
-        String fingerprint =
-                StackFingerprint.of(run.get("program").getAsString(), splitThreshold(), view, rootOutcomes);
+        String fingerprint = StackFingerprint.of(SplitCoordinator.fingerprintProgram(
+                run.get("program").getAsString(), specHash), splitThreshold(), view, rootOutcomes);
         if (injected("fingerprint", -1, -1)) {
             fingerprint = "0" + fingerprint.substring(1);
         }
@@ -191,6 +202,9 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         JsonArray names = new JsonArray();
         s.names().forEach(names::add);
         env.add("names", names);
+        if (s.online() != null) {
+            env.add("online", onlineJson(s.online()));
+        }
         env.addProperty("peak_rss_kb", peakRssKb());
         JsonObject mx = new JsonObject();
         maxima(strategy).forEach(mx::addProperty);
@@ -235,6 +249,14 @@ public final class SplitWorker implements MustStrategy.SplitControl {
                         SplitCoordinator.writeAtomically(marker, a);
                         currentItem = a.get("item").getAsInt();
                         currentAttempt = a.get("attempt").getAsInt();
+                        if (injected("delay", currentItem, currentAttempt)) {
+                            try {
+                                Thread.sleep(DELAY_MILLIS);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new IllegalStateException("worker interrupted in an injected delay", e);
+                            }
+                        }
                         return OptionalInt.of(currentItem);
                     }
                 } catch (IOException e) {
@@ -272,9 +294,29 @@ public final class SplitWorker implements MustStrategy.SplitControl {
             System.err.println("worker " + workerId + ": cannot open " + runDir + ": " + e);
             return 1;
         }
-        MustStrategy strategy = roles == null
+        boolean summarise = worker.run.get("summarise").getAsBoolean();
+        if (summarise && roles == null) {
+            return startupFailure(runDir, worker, "the run summarises, but the program declares no roles");
+        }
+        MustStrategy strategy = !summarise
                 ? new MustStrategy(1L, "build/test-results/jmc-report")
                 : new MustStrategy(1L, "build/test-results/jmc-report", roles, visibleRoles);
+        if (worker.run.has("spec")) {
+            JsonObject spec = worker.run.getAsJsonObject("spec");
+            Path file = Path.of(spec.get("path").getAsString());
+            try {
+                SplitCoordinator.SpecSnapshot snap =
+                        SplitCoordinator.snapshotSpec(file, runDir, "worker-" + workerId, visibleRoles);
+                worker.specHash = snap.sha256();
+                if (!worker.specHash.equals(spec.get("sha256").getAsString())) {
+                    return startupFailure(runDir, worker, "specification " + file + " has SHA-256 " + worker.specHash
+                            + ", the run's is " + spec.get("sha256").getAsString());
+                }
+                strategy.checkAgainst(snap.loaded().index(), false);
+            } catch (IOException | RuntimeException e) {
+                return startupFailure(runDir, worker, "specification " + file + " refused: " + e);
+            }
+        }
         strategy.setSplitControl(worker);
         worker.strategy = strategy;
         String failure = null;
@@ -319,6 +361,33 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         }
         System.err.println("worker " + workerId + ": " + failure);
         return 1;
+    }
+
+    /** Writes a startup failure ({@code worker-<id>.fail.json}) and returns the failure status. */
+    private static int startupFailure(Path runDir, SplitWorker worker, String reason) {
+        JsonObject fail = worker.envelopeBase();
+        fail.addProperty("reason", reason);
+        SplitCoordinator.writeAtomically(runDir.resolve("worker-" + worker.workerId + ".fail.json"), fail);
+        System.err.println("worker " + worker.workerId + ": " + reason);
+        return 1;
+    }
+
+    /** A segment's online check as the {@code online} object of a result. */
+    static JsonObject onlineJson(MustStrategy.Online o) {
+        JsonObject x = new JsonObject();
+        x.addProperty("uncovered", o.uncovered());
+        JsonArray lines = new JsonArray();
+        o.lines().forEach(lines::add);
+        x.add("lines", lines);
+        x.addProperty("first_local", o.firstLocal());
+        x.addProperty("witness", o.witness());
+        x.addProperty("answer", o.answer());
+        x.addProperty("first_at_ms", o.firstAtMs());
+        x.addProperty("lookups", o.lookups());
+        x.addProperty("found", o.found());
+        x.addProperty("not_found", o.notFound());
+        x.addProperty("no_sig", o.noSig());
+        return x;
     }
 
     /** The keys of the graph-shape maxima that combine exactly across JVMs (as the maximum). */

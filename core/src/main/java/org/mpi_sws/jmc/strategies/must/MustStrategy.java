@@ -118,7 +118,9 @@ import java.util.function.Predicate;
  * items its {@link SplitControl} hands out, each in a fresh stack until that stack is empty, with
  * fresh distinct-graph sets and summary map per item. All transitions happen inside {@link
  * #initIteration}; the exploration itself is unchanged. In split mode a process name first met
- * after the freeze, and a payload whose {@code Tid}s cannot be normalised, are faults.
+ * after the freeze, and a payload whose {@code Tid}s cannot be normalised, are faults. The online check
+ * combines with split mode in full mode only; each segment then reports its own uncovered graphs,
+ * lines and first miss ({@link Online}).
  */
 public class MustStrategy extends TrackActiveTasksStrategy {
 
@@ -318,6 +320,21 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private int segmentStartExported;
     /** The process names met in the current segment. */
     private SortedSet<String> segmentNames = new TreeSet<>();
+    /** Online mode, the current segment: the distinct uncovered summaries ({@code toJson(1)}), first occurrence first. */
+    private LinkedHashSet<String> segmentUncoveredLines = new LinkedHashSet<>();
+    /** Online mode, the current segment: the 1-based position of its first miss, 0 for none. */
+    private int segmentFirstLocal;
+    /** Online mode, the current segment: the first miss's line and answer ({@code NoSig} or {@code NotFound}). */
+    private String segmentWitness;
+    private String segmentAnswer;
+    /** Online mode, the current segment: the host wall clock (epoch ms) at its first miss, -1 for none. */
+    private long segmentFirstAtMs = -1;
+    /** Online mode: the cumulative counters when the current segment began. */
+    private long segmentStartUncovered;
+    private long segmentStartLookups;
+    private long segmentStartFound;
+    private long segmentStartNotFound;
+    private long segmentStartNoSig;
 
     /**
      * The factory's constructor: explores and counts, exports nothing.
@@ -551,9 +568,23 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * @return the closed segment
      */
     private Segment endSegment(int index) {
+        Online online = spec == null ? null : new Online(uncoveredTotal - segmentStartUncovered,
+                List.copyOf(segmentUncoveredLines), segmentFirstLocal, segmentWitness, segmentAnswer, segmentFirstAtMs,
+                lookups - segmentStartLookups, found - segmentStartFound, notFound - segmentStartNotFound,
+                signatureMisses - segmentStartNoSig);
         Segment s = new Segment(index, iterations - segmentStartIterations, blockedIterations - segmentStartBlocked,
                 exportedIterations - segmentStartExported, rolesInSpawnOrder == null ? null : summaries,
-                Collections.unmodifiableSortedSet(segmentNames));
+                Collections.unmodifiableSortedSet(segmentNames), online);
+        segmentUncoveredLines = new LinkedHashSet<>();
+        segmentFirstLocal = 0;
+        segmentWitness = null;
+        segmentAnswer = null;
+        segmentFirstAtMs = -1;
+        segmentStartUncovered = uncoveredTotal;
+        segmentStartLookups = lookups;
+        segmentStartFound = found;
+        segmentStartNotFound = notFound;
+        segmentStartNoSig = signatureMisses;
         completeGraphs = new LinkedHashSet<>();
         blockedGraphs = new LinkedHashSet<>();
         summaries = new LinkedHashMap<>();
@@ -1562,6 +1593,17 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     uncoveredAnswer = answer;
                     stopRequested = stopAtFirst;
                 }
+                if (split != null) {
+                    // The segment's own view (§2.12 of J8R-PLAN): its distinct lines and its first miss.
+                    String uncoveredLine = s.toJson(1);
+                    segmentUncoveredLines.add(uncoveredLine);
+                    if (segmentFirstLocal == 0) {
+                        segmentFirstLocal = iterations - segmentStartIterations;
+                        segmentWitness = uncoveredLine;
+                        segmentAnswer = answer instanceof SetIndex.Covers.NoSig ? "NoSig" : "NotFound";
+                        segmentFirstAtMs = System.currentTimeMillis();
+                    }
+                }
             }
         }
     }
@@ -1629,6 +1671,9 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     public void checkAgainst(SetIndex spec, boolean stopAtFirst) {
         if (rolesInSpawnOrder == null) {
             throw new IllegalStateException("the online check needs the exporting constructor (roles)");
+        }
+        if (stopAtFirst && split != null) {
+            throw new IllegalStateException("split mode runs the online check in full mode only, not --stop-at-first");
         }
         this.spec = Objects.requireNonNull(spec);
         this.stopAtFirst = stopAtFirst;
@@ -1760,14 +1805,15 @@ public class MustStrategy extends TrackActiveTasksStrategy {
 
     /**
      * Puts the strategy in split mode, served by {@code control}. Call before the run starts; the
-     * online check ({@link #checkAgainst}) cannot be combined with it.
+     * online check ({@link #checkAgainst}) combines with it in full mode only: each segment then
+     * reports its own uncovered graphs and first miss ({@link Segment#online()}).
      *
      * @param control the split run's control
-     * @throws IllegalStateException if the online check is enabled
+     * @throws IllegalStateException if the online check runs in bug-finder mode
      */
     public void setSplitControl(SplitControl control) {
-        if (spec != null) {
-            throw new IllegalStateException("split mode cannot be combined with the online check");
+        if (spec != null && stopAtFirst) {
+            throw new IllegalStateException("split mode runs the online check in full mode only, not --stop-at-first");
         }
         this.split = Objects.requireNonNull(control);
     }
@@ -1832,9 +1878,28 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * @param summaries the segment's summaries with multiplicities, in first-occurrence order;
      *     {@code null} without export
      * @param names the process names met in the segment, {@code "m"} included
+     * @param online the segment's online check, {@code null} without one
      */
     public record Segment(int index, int iterations, int blockedIterations, int exportedIterations,
-                          Map<Summary, Integer> summaries, SortedSet<String> names) {}
+                          Map<Summary, Integer> summaries, SortedSet<String> names, Online online) {}
+
+    /**
+     * One segment's online check (full mode). Without a miss: {@code uncovered} 0, {@code lines} empty,
+     * {@code firstLocal} 0, {@code witness} and {@code answer} {@code null}, {@code firstAtMs} -1.
+     *
+     * @param uncovered the segment's graphs the specification does not cover
+     * @param lines the distinct uncovered summaries as {@code toJson(1)} lines, first occurrence first
+     * @param firstLocal the 1-based position of the first miss within the segment, 0 for none
+     * @param witness the first miss's line
+     * @param answer the index's answer for it, {@code NoSig} or {@code NotFound}
+     * @param firstAtMs the host wall clock (epoch ms) at the first miss, -1 for none
+     * @param lookups the segment's queries
+     * @param found of those, covered
+     * @param notFound of those, signature held but not covered
+     * @param noSig of those, no summary with the signature
+     */
+    public record Online(long uncovered, List<String> lines, int firstLocal, String witness, String answer,
+                         long firstAtMs, long lookups, long found, long notFound, long noSig) {}
 
     /**
      * The strategy's state at the split boundary, for the replay-state fingerprint.
