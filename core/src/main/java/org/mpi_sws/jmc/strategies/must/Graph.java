@@ -55,7 +55,17 @@ final class Graph {
      * thrown on whichever thread made the update; on the scheduler thread JMC does not end the run,
      * so a guarded run should be given a timeout.
      */
-    static final boolean CHECK = Boolean.getBoolean("jmc.must.checkPrefixes");
+    static final boolean CHECK = checkProperty();
+
+    /** The diagnostic property; a denied read (a security manager) means the check is off. */
+    private static boolean checkProperty() {
+        try {
+            return Boolean.getBoolean("jmc.must.checkPrefixes");
+        } catch (SecurityException e) {
+            return false;
+        }
+    }
+
 
     /** No prefix: the clock of a node with no porf predecessor. */
     private static final int[] NO_CLOCK = new int[0];

@@ -85,10 +85,20 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
             localActiveTasks = new HashSet<>(this.allTasks);
         }
         for (Tracker tracker : trackers) {
-            localActiveTasks.retainAll(tracker.updateEvent(event));
+            if (tracker.getClass() == TrackTasks.class) {
+                // The same update and intersection, without TrackTasks' snapshot copy
+                // (localActiveTasks is this method's own HashSet).
+                ((TrackTasks) tracker).updateAndRetainActive(event, localActiveTasks);
+            } else {
+                localActiveTasks.retainAll(tracker.updateEvent(event));
+            }
         }
 
-        LOGGER.debug("Active tasks: {}", new HashSet<>(localActiveTasks));
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Active tasks: {}", new HashSet<>(localActiveTasks));
+        }
+        // Refilled, not replaced: the set's internal history decides the iteration order that
+        // getActiveTasks() copies, and strategies that pick by that order must see it unchanged.
         synchronized (tasksLock) {
             this.activeTasks.clear();
             this.activeTasks.addAll(localActiveTasks);
