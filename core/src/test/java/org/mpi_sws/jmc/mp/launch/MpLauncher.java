@@ -494,9 +494,12 @@ public final class MpLauncher {
             lines.add(SummaryExporter.header(
                     mpProgram.programName(), mpProgram.size(), mpProgram.visibleRoles(),
                     mpProgram.model(), enumeration, seed, ran, online));
+            List<String> body = new ArrayList<>(summaries.size());
             for (Map.Entry<Summary, Integer> e : summaries.entrySet()) {
-                lines.add(e.getKey().toJson(e.getValue()));
+                body.add(e.getKey().toJson(e.getValue()));
             }
+            SummaryExporter.sortLines(body);
+            lines.addAll(body);
             try {
                 if (exportFile.getParent() != null) {
                     Files.createDirectories(exportFile.getParent());
@@ -713,7 +716,9 @@ public final class MpLauncher {
                     mpProgram.model(), "complete", seed, result.ran(), on == null ? null
                             : new SummaryExporter.OnlineFields(on.firstMissIteration(),
                                     Math.max(0, on.firstMissWallMs()), on.uncoveredTotal())));
-            lines.addAll(result.summaryLines());
+            List<String> body = new ArrayList<>(result.summaryLines());
+            SummaryExporter.sortLines(body);
+            lines.addAll(body);
             long exportStart = System.nanoTime();
             try {
                 if (exportFile.getParent() != null) {

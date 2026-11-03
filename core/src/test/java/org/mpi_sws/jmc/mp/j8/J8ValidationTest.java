@@ -52,8 +52,19 @@ class J8ValidationTest {
         String graphs = r.complete() + " distinct complete, " + r.blocked() + " distinct blocked; stack exhausted";
         J8Launch.Out seq = J8Launch.launch(r.row(), export);
         String seqMd5 = seq.exportMd5();
+        // SORTED-EXPORT round 01 (tester): the derivation's md5 is of the map-order export; the launcher now
+        // writes the body in byte order of each line without n. The in-process probe's export must still
+        // match the derivation, and the launcher's file must be that export with its body so sorted.
+        String expectedMd5 = r.md5();
+        if (export) {
+            List<String> probe = J8Step0Test.probe("seq", r.row(), r.mode()).export();
+            if (!J8Step0Test.md5(probe).equals(r.md5())) {
+                bad.add(r.row() + ": the probe's export md5 " + J8Step0Test.md5(probe) + " differs from the derivation");
+            }
+            expectedMd5 = J8Step0Test.md5(byteOrder(probe));
+        }
         if (seq.exit() != 0 || !graphs.equals(seq.field("graphs")) || !(r.ran() + " iterations").equals(seq.field("ran"))
-                || (export && !seqMd5.equals(r.md5()))) {
+                || (export && !seqMd5.equals(expectedMd5))) {
             bad.add(r.row() + ": sequential differs from the derivation: " + seq.field("graphs") + " / "
                     + seq.field("ran") + " / " + seqMd5);
         }
@@ -89,6 +100,35 @@ class J8ValidationTest {
             rb.forEach(x -> bad.add(r.row() + " W=" + w + ": " + x));
         }
         return bad;
+    }
+
+    /**
+     * SORTED-EXPORT round 01 (tester): an export with its body in byte order of each line without its
+     * {@code ,"n":<k>} member (UTF-8, unsigned, lexicographic), written here independently of
+     * {@code SummaryExporter.sortLines}; the header (the first line) stays first.
+     */
+    static List<String> byteOrder(List<String> export) {
+        java.util.regex.Pattern n = java.util.regex.Pattern.compile(",\"n\":\\d+}$");
+        List<String> body = new ArrayList<>(export.subList(1, export.size()));
+        body.sort((a, b) -> {
+            java.util.regex.Matcher ma = n.matcher(a);
+            java.util.regex.Matcher mb = n.matcher(b);
+            if (!ma.find() || !mb.find()) {
+                throw new IllegalStateException("a line without n: " + a + " / " + b);
+            }
+            byte[] x = (a.substring(0, ma.start()) + "}").getBytes(StandardCharsets.UTF_8);
+            byte[] y = (b.substring(0, mb.start()) + "}").getBytes(StandardCharsets.UTF_8);
+            for (int i = 0; i < Math.min(x.length, y.length); i++) {
+                if (x[i] != y[i]) {
+                    return (x[i] & 0xff) - (y[i] & 0xff);
+                }
+            }
+            return x.length - y.length;
+        });
+        List<String> out = new ArrayList<>();
+        out.add(export.get(0));
+        out.addAll(body);
+        return out;
     }
 
     static String q(String s) {
