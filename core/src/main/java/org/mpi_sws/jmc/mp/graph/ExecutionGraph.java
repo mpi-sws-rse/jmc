@@ -43,7 +43,8 @@ import java.util.TreeSet;
  *   <li>{@code ≤_G} — the order in which events were added.</li>
  * </ul>
  *
- * <p>{@code porf = (po ∪ rf ∪ hb)⁺} is computed once at construction and answered in O(1).
+ * <p>{@code porf = (po ∪ rf ∪ hb)⁺} is computed on the first query that needs it and then
+ * answered in O(1).
  *
  * <p>Immutable; built with a {@link Builder}. Holds no policy: which send a receive reads is the
  * backend's decision, recorded here after the fact.
@@ -82,13 +83,16 @@ public final class ExecutionGraph {
     /** Inverse of {@link #rf}: send → the receive that reads it. */
     private final Map<EventKey, EventKey> readerOf;
 
-    /** For each event, the set of events that are {@code porf}-after it (transitive closure). */
-    private final Map<EventKey, Set<EventKey>> porfSuccessors;
+    /**
+     * For each event, the set of events that are {@code porf}-after it (transitive closure);
+     * computed on first use ({@link #porfSuccessors()}), since {@link #canon()} does not need it.
+     */
+    private Map<EventKey, Set<EventKey>> porfSuccessors;
 
     /** Event → 0-based position in {@link #insertionOrder}. */
     private final Map<EventKey, Integer> insertionIndex;
 
-    /** Copies the builder's contents and computes the derived indexes and the porf closure. */
+    /** Copies the builder's contents and computes the derived indexes (the porf closure lazily). */
     private ExecutionGraph(Builder b) {
         this.threads = new TreeMap<>();
         b.threads.forEach((t, l) -> threads.put(t, List.copyOf(l)));
@@ -105,7 +109,14 @@ public final class ExecutionGraph {
         for (int i = 0; i < insertionOrder.size(); i++) {
             insertionIndex.put(insertionOrder.get(i), i);
         }
-        this.porfSuccessors = closure();
+    }
+
+    /** The porf closure, computed on the first call (a pure function of the immutable fields). */
+    private synchronized Map<EventKey, Set<EventKey>> porfSuccessors() {
+        if (porfSuccessors == null) {
+            porfSuccessors = closure();
+        }
+        return porfSuccessors;
     }
 
     // ---- queries ----
@@ -256,7 +267,7 @@ public final class ExecutionGraph {
      * @return {@code true} iff {@code a porf b}
      */
     public boolean porfBefore(EventKey a, EventKey b) {
-        Set<EventKey> s = porfSuccessors.get(a);
+        Set<EventKey> s = porfSuccessors().get(a);
         return s != null && s.contains(b);
     }
 
@@ -266,7 +277,7 @@ public final class ExecutionGraph {
      * @return {@code true} iff no event is {@code porf}-before itself
      */
     public boolean porfAcyclic() {
-        for (Map.Entry<EventKey, Set<EventKey>> e : porfSuccessors.entrySet()) {
+        for (Map.Entry<EventKey, Set<EventKey>> e : porfSuccessors().entrySet()) {
             if (e.getValue().contains(e.getKey())) {
                 return false;
             }
