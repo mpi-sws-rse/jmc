@@ -480,7 +480,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 } else if (unconsumedGuide() != null) {
                     problem = "replay drift: " + unconsumedGuide();
                 } else {
-                    GraphCanon canon = graph.toExecutionGraph().canon();
+                    ExecutionGraph finished = graph.toExecutionGraph();
+                    GraphCanon canon = finished.canon();
                     measureShape();
                     boolean blockedGraph = countsAsBlocked();
                     if (blockedGraph) {
@@ -497,7 +498,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     }
                     if (rolesInSpawnOrder != null) {
                         try {
-                            export();
+                            export(finished);
                         } catch (IllegalArgumentException e) {
                             problem = e.getMessage();
                         }
@@ -1241,7 +1242,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             if (!(r.label instanceof MpLabel.Recv rl) || r.key.tid() != sl.dst().raw() || rl.model() != sl.model()) {
                 continue;
             }
-            if (r == s || !r.guard.test(sl.value()) || s.prefix.contains(r.key)) {
+            if (r == s || !r.guard.test(sl.value()) || s.inPrefix(r.key)) {
                 continue;
             }
             candidates.add(r);
@@ -1249,7 +1250,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         for (Graph.Node r : candidates) {
             Set<EventKey> deleted = new HashSet<>();
             for (Graph.Node e : graph.nodesByStamp()) {
-                if (e.stamp > r.stamp && e != s && !s.prefix.contains(e.key)) {
+                if (e.stamp > r.stamp && e != s && !s.inPrefix(e.key)) {
                     deleted.add(e.key);
                 }
             }
@@ -1295,7 +1296,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         }
         Set<EventKey> previous = new HashSet<>();
         for (Graph.Node x : graph.nodesByStamp()) {
-            if (x.stamp <= e.stamp || s.prefix.contains(x.key)) {
+            if (x.stamp <= e.stamp || s.inPrefix(x.key)) {
                 previous.add(x.key);
             }
         }
@@ -1469,13 +1470,14 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * queries the specification. Roles come from the creation events, checked against the declared
      * roles; daemons get internal names and are never visible.
      *
+     * @param finished the iteration's graph, built once in {@link #resetIteration}
      * @throws IllegalArgumentException if the program does not fit the export format (an
      *     un-awaited process, an undeclared, missing or repeated role, a payload naming a daemon)
      */
-    private void export() {
+    private void export(ExecutionGraph finished) {
         long summariseStart = System.nanoTime();
         try {
-            summariseAndLookUp();
+            summariseAndLookUp(finished);
         } finally {
             summariseNanos += System.nanoTime() - summariseStart - lastLookupNanos;
             lastLookupNanos = 0;
@@ -1483,7 +1485,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     }
 
     /** {@link #export}'s body; the summarise time excludes the lookup, which is timed separately. */
-    private void summariseAndLookUp() {
+    private void summariseAndLookUp(ExecutionGraph finished) {
         Set<Long> notAwaited = new TreeSet<>(started);
         notAwaited.remove(1L);
         notAwaited.removeAll(awaited);
@@ -1539,7 +1541,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             }
             return r;
         });
-        Summary s = SummaryExporter.summarize(graph.toExecutionGraph(), roleOfTask, visibleRoles, encoder);
+        Summary s = SummaryExporter.summarize(finished, roleOfTask, visibleRoles, encoder);
         summaries.merge(s, 1, Integer::sum);
         exportedIterations++;
         int visibleEvents = 0;
@@ -1972,15 +1974,14 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 Collections.unmodifiableSortedMap(new TreeMap<>(idOfName)), nextStableId);
     }
 
-    /** A graph's view; the next stamp is read by appending to a throwaway copy. */
+    /** A graph's view. */
     private static GraphView graphView(Graph g) {
         List<NodeView> nodes = new ArrayList<>();
         for (Graph.Node n : g.nodesByStamp()) {
             nodes.add(new NodeView(n.key, n.label, n.stamp, n.rf, n.bottom, new TreeSet<>(n.hbIn),
-                    new TreeSet<>(n.prefix)));
+                    new TreeSet<>(n.prefix())));
         }
-        int nextStamp = g.copy().append(Long.MAX_VALUE, new MpLabel.Block(), null).stamp;
-        return new GraphView(Collections.unmodifiableList(nodes), nextStamp);
+        return new GraphView(Collections.unmodifiableList(nodes), g.nextStamp());
     }
 
     /** A parameter that an event may lack entirely (events built without parameters have none). */

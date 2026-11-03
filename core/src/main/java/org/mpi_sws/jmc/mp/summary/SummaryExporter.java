@@ -228,4 +228,25 @@ public final class SummaryExporter {
         sb.append(",\"encoding\":1}");
         return sb.toString();
     }
+
+    /**
+     * Sorts summary lines into the export order: by the UTF-8 bytes of each line's normal form
+     * ({@link MpValueEncoder#compareBytes}), the {@code n} member left out because it is not part of
+     * the identity. TraceForge's {@code conf-join --merge} reads the lines in this order and refuses
+     * a file that is not.
+     *
+     * @param lines summary lines as {@link Summary#toJson(int)} writes them (no header); sorted in place
+     */
+    public static void sortLines(List<String> lines) {
+        lines.sort((a, b) -> MpValueEncoder.compareBytes(identity(a), identity(b)));
+    }
+
+    /** A summary line without its trailing {@code ,"n":<k>} member. */
+    private static String identity(String line) {
+        int at = line.lastIndexOf(",\"n\":");
+        if (at < 0) {
+            throw new IllegalArgumentException("a summary line without its n member: " + line);
+        }
+        return line.substring(0, at);
+    }
 }

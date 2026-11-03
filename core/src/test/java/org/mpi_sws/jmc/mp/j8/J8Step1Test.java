@@ -42,8 +42,13 @@ import java.util.function.UnaryOperator;
 class J8Step1Test {
 
     static final String A3FIFO = J8Launch.J4 + "A3Lock:fifo,3,1";
-    /** Round-01 derivation: md5 of the sequential export of A3Lock:fifo,3,1 (R 1, N 5, items 2 4 3 10 10). */
-    static final String A3FIFO_MD5 = "ddc264d82b01cdb97a8860dd701394b2";
+    /**
+     * Round-01 derivation (R 1, N 5, items 2 4 3 10 10): the launcher's sequential export of A3Lock:fifo,3,1. SORTED-EXPORT round 01 (tester): the body is now in
+     * byte order of each line without its n member; derived from the round-01 export (map order, md5
+     * ddc264d82b01cdb97a8860dd701394b2, as J8Round05/06 still pin for the coordinator's merge order) by
+     * sorting its body under that order: 859e6b5b9c77d705e2f90d6d98b2556b.
+     */
+    static final String A3FIFO_MD5 = "859e6b5b9c77d705e2f90d6d98b2556b";
 
     static void complete(J8Launch.Out o, String graphs) {
         assertEquals(0, o.exit(), o.text());

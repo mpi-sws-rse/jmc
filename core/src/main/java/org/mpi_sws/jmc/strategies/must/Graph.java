@@ -22,7 +22,7 @@ import java.util.function.Predicate;
  * The Must strategy's working execution graph (an execution graph of the Must paper, together
  * with its insertion order {@code ≤_G}): per task the nodes in program order, each with its label,
  * its receive predicate, its rf (a send, ⊥, or none yet), its insertion <em>stamp</em>, and its
- * porf prefix (the events porf-before it, {@code porf = (po ∪ rf)⁺}). Mutable and small; the
+ * porf prefix (the events porf-before it, {@code porf = (po ∪ rf)⁺}) as a vector clock. Mutable and small; the
  * strategy copies it for the exploration stack and restricts it for backward revisits.
  * {@link #toExecutionGraph()} gives the immutable {@code mp.graph} form used by
  * {@code MpConsistency}, {@code GraphCanon} and the summary exporter.
@@ -33,8 +33,69 @@ import java.util.function.Predicate;
  *
  * <p>Spawn and join edges ({@link Node#hbIn}) are part of porf: a node's prefix includes them,
  * and {@link #toExecutionGraph()} emits them as {@code hb} edges.
+ *
+ * <p><b>Prefixes as vector clocks.</b> A node's prefix is po-downward-closed (each source enters
+ * with its own prefix, which holds its po predecessor), so it is stored as a clock: per thread
+ * slot ({@link Slots}), the largest po index in the prefix, −1 for none. The clock is computed
+ * once, from the stored clocks of the node's sources (po predecessor, present rf, present hbIn),
+ * when the node is appended and when its rf changes; it is never recomputed for other nodes. That
+ * is exact because a {@link #setRf}/{@link #setBottom} target never has a porf successor (it was
+ * just appended, or it is the receive of a backward revisit, whose kept later events are the
+ * revisiting send and its prefix, which excludes the receive), and because a backward revisit's
+ * restriction ({@link #restrictTo}) removes no porf ancestor of a kept event. With
+ * {@code -Djmc.must.checkPrefixes=true} (not by {@code -ea} alone), every update is checked
+ * against a from-scratch computation of all prefixes ({@link #checkPrefixes}).
  */
 final class Graph {
+
+    /**
+     * Whether every prefix update is checked against a from-scratch computation: only with
+     * {@code -Djmc.must.checkPrefixes=true} (the differential tests), never by {@code -ea} alone,
+     * since the check costs more than the old recomputation. A failed check inside a Must run is
+     * thrown on whichever thread made the update; on the scheduler thread JMC does not end the run,
+     * so a guarded run should be given a timeout.
+     */
+    static final boolean CHECK = Boolean.getBoolean("jmc.must.checkPrefixes");
+
+    /** No prefix: the clock of a node with no porf predecessor. */
+    private static final int[] NO_CLOCK = new int[0];
+
+    /**
+     * The thread slots of a graph lineage: task id → dense clock index, append-only and shared by
+     * every copy and restriction of the graph (a clock shorter than the slot count reads −1 for the
+     * slots it lacks).
+     */
+    static final class Slots {
+        private final Map<Long, Integer> slotOf = new HashMap<>();
+        private final List<Long> tidOf = new ArrayList<>();
+
+        /** The slot of a task, assigned on first use. */
+        int slot(long tid) {
+            Integer s = slotOf.get(tid);
+            if (s == null) {
+                s = tidOf.size();
+                slotOf.put(tid, s);
+                tidOf.add(tid);
+            }
+            return s;
+        }
+
+        /** The slot of a task, or −1 if it has none. */
+        int find(long tid) {
+            Integer s = slotOf.get(tid);
+            return s == null ? -1 : s;
+        }
+
+        /** The task of a slot. */
+        long tid(int slot) {
+            return tidOf.get(slot);
+        }
+
+        /** The number of slots. */
+        int count() {
+            return tidOf.size();
+        }
+    }
 
     /** One event of the graph, with its label, reads-from choice and porf prefix. */
     static final class Node {
@@ -50,27 +111,53 @@ final class Graph {
         EventKey rf;
         /** Whether this receive reads ⊥ (finds no message). */
         boolean bottom;
-        /** The events porf-before this one (excluding itself). */
-        Set<EventKey> prefix = Set.of();
+        /**
+         * The events porf-before this one (excluding itself), as a clock over {@link #slots}: per
+         * slot the largest po index in the prefix, −1 for none. Invariant: an array once stored here
+         * is never written (copies share it); every update stores a fresh array.
+         */
+        int[] clock = NO_CLOCK;
+        /** The thread slots of the graph lineage this node belongs to. */
+        final Slots slots;
         /** The events ordered before this one by a spawn or a join (immutable). */
         final Set<EventKey> hbIn;
 
         /** Creates a node with no rf yet and an empty prefix; {@code hbIn} is copied. */
-        Node(EventKey key, MpLabel label, Predicate<MpMessage> guard, int stamp, Set<EventKey> hbIn) {
+        Node(EventKey key, MpLabel label, Predicate<MpMessage> guard, int stamp, Set<EventKey> hbIn,
+                Slots slots) {
             this.key = key;
             this.label = label;
             this.guard = guard;
             this.stamp = stamp;
             this.hbIn = Set.copyOf(hbIn);
+            this.slots = slots;
         }
 
-        /** A copy with the same stamp, rf and prefix (the prefix set is immutable and shared). */
+        /** A copy with the same stamp, rf and prefix (the clock is immutable and shared). */
         Node copy() {
-            Node n = new Node(key, label, guard, stamp, hbIn);
+            Node n = new Node(key, label, guard, stamp, hbIn, slots);
             n.rf = rf;
             n.bottom = bottom;
-            n.prefix = prefix;
+            n.clock = clock;
             return n;
+        }
+
+        /** Whether {@code e} is porf-before this node. */
+        boolean inPrefix(EventKey e) {
+            int s = slots.find(e.tid());
+            return e.idx() >= 0 && s >= 0 && s < clock.length && e.idx() <= clock[s];
+        }
+
+        /** The prefix as a set, enumerated from the clock. */
+        Set<EventKey> prefix() {
+            Set<EventKey> out = new HashSet<>();
+            for (int s = 0; s < clock.length; s++) {
+                long tid = slots.tid(s);
+                for (int i = 0; i <= clock[s]; i++) {
+                    out.add(new EventKey(tid, i));
+                }
+            }
+            return out;
         }
 
         boolean isRecv() {
@@ -99,12 +186,25 @@ final class Graph {
     private final Map<EventKey, EventKey> readerOf = new HashMap<>();
     /** The stamp the next appended node gets; it never decreases along a graph's lineage. */
     private int nextStamp;
+    /** The thread slots of this graph's lineage, shared with its copies and restrictions. */
+    private final Slots slots;
 
-    Graph() {}
+    Graph() {
+        this(new Slots());
+    }
 
-    /** A deep copy (nodes are copied; prefixes are shared immutable sets). */
+    private Graph(Slots slots) {
+        this.slots = slots;
+    }
+
+    /** The stamp the next appended node will get. */
+    int nextStamp() {
+        return nextStamp;
+    }
+
+    /** A deep copy (nodes are copied; clocks are shared immutable arrays). */
     Graph copy() {
-        Graph g = new Graph();
+        Graph g = new Graph(slots);
         for (Map.Entry<Long, List<Node>> e : tasks.entrySet()) {
             List<Node> l = new ArrayList<>(e.getValue().size());
             for (Node n : e.getValue()) {
@@ -116,21 +216,30 @@ final class Graph {
         }
         g.readerOf.putAll(readerOf);
         g.nextStamp = nextStamp;
+        if (CHECK) {
+            g.checkPrefixes("copy");
+        }
         return g;
     }
 
     /**
      * The graph restricted to {@code keep} (Must's {@code G|_E}). The kept events of each task must
      * form a prefix of the task in program order, which the caller guarantees (as it does when
-     * {@code keep} is the complement of the set deleted by a backward revisit). Stamps are kept;
-     * a receive whose send was removed keeps its rf and must be re-pointed by the caller.
+     * {@code keep} is the complement of the set deleted by a backward revisit). Stamps are kept.
+     *
+     * <p>Contract (C1): the kept set must be closed under porf predecessors of its events — a
+     * backward revisit's restriction is (see the class comment) — because the kept nodes keep
+     * their clocks; an arbitrary restriction that removes a porf ancestor of a kept event would
+     * leave a stale clock, which {@link #CHECK} reports. In particular a restriction must not
+     * remove the send a kept receive reads (that send is a porf ancestor of the receive).
      *
      * @param keep the events to keep
-     * @return the restricted graph, with its porf prefixes recomputed
+     * @return the restricted graph; the kept nodes keep their prefixes (a backward revisit's
+     *     restriction removes no porf ancestor of a kept event, checked under {@link #CHECK})
      * @throws IllegalStateException if the kept events of a task are not a program-order prefix
      */
     Graph restrictTo(Set<EventKey> keep) {
-        Graph g = new Graph();
+        Graph g = new Graph(slots);
         for (Node n : byStamp.values()) {
             if (!keep.contains(n.key)) {
                 continue;
@@ -147,7 +256,9 @@ final class Graph {
             }
         }
         g.nextStamp = nextStamp;
-        g.recomputePrefixes();
+        if (CHECK) {
+            g.checkPrefixes("restrictTo");
+        }
         return g;
     }
 
@@ -174,34 +285,106 @@ final class Graph {
      */
     Node append(long task, MpLabel label, Predicate<MpMessage> guard, Set<EventKey> hbIn) {
         List<Node> l = tasks.computeIfAbsent(task, t -> new ArrayList<>());
-        Node n = new Node(new EventKey(task, l.size()), label, guard, nextStamp++, hbIn);
+        slots.slot(task);
+        Node n = new Node(new EventKey(task, l.size()), label, guard, nextStamp++, hbIn, slots);
         l.add(n);
         byStamp.put(n.stamp, n);
-        n.prefix = prefixOf(n);
+        n.clock = clockOf(n);
+        if (CHECK) {
+            checkPrefixes("append " + n.key);
+        }
         return n;
     }
 
-    /** Points a receive at a send and recomputes every prefix. */
+    /**
+     * Points a receive at a send and recomputes the receive's prefix (the receive has no porf
+     * successor, so no other prefix changes).
+     *
+     * <p>Contract (C1): {@code recv} has no porf successor (a just-appended receive, or a backward
+     * revisit's receive), and {@code send} is in the graph; otherwise a clock would go stale (a
+     * successor's, or the receive's once the send is appended), which {@link #CHECK} reports.
+     *
+     * @throws IllegalStateException if the receive is porf-before the send (a porf cycle)
+     */
     void setRf(EventKey recv, EventKey send) {
         Node r = node(recv);
+        if (CHECK) {
+            checkNoSuccessor(r);
+            if (!contains(send)) {
+                throw new IllegalStateException("prefix check: rf target " + recv + " reads the absent send " + send);
+            }
+        }
+        // Unreachable under the contract above (the receive has no successor, so the send cannot
+        // have it in its prefix); kept as the defensive form of the old DFS's cycle error.
+        if (contains(send) && node(send).inPrefix(recv)) {
+            throw new IllegalStateException("porf cycle through " + recv);
+        }
         if (r.rf != null) {
             readerOf.remove(r.rf);
         }
         r.rf = send;
         r.bottom = false;
         readerOf.put(send, recv);
-        recomputePrefixes();
+        r.clock = clockOf(r);
+        if (CHECK) {
+            checkPrefixes("setRf " + recv + " <- " + send);
+        }
     }
 
-    /** Makes a receive read ⊥ and recomputes every prefix. */
+    /**
+     * Makes a receive read ⊥ and recomputes the receive's prefix (no other prefix changes).
+     * Contract (C1): as {@link #setRf}, {@code recv} has no porf successor.
+     */
     void setBottom(EventKey recv) {
         Node r = node(recv);
+        if (CHECK) {
+            checkNoSuccessor(r);
+        }
         if (r.rf != null) {
             readerOf.remove(r.rf);
         }
         r.rf = null;
         r.bottom = true;
-        recomputePrefixes();
+        r.clock = clockOf(r);
+        if (CHECK) {
+            checkPrefixes("setBottom " + recv);
+        }
+    }
+
+    /**
+     * A node's clock from the stored clocks of its sources: its po predecessor, its rf source if
+     * present in the graph, and its present spawn/join predecessors, each joined with its own
+     * clock and its own position.
+     */
+    private int[] clockOf(Node n) {
+        int[] c = new int[slots.count()];
+        java.util.Arrays.fill(c, -1);
+        if (n.key.idx() > 0) {
+            include(c, node(new EventKey(n.key.tid(), n.key.idx() - 1)));
+        }
+        if (n.rf != null && contains(n.rf)) {
+            include(c, node(n.rf));
+        }
+        for (EventKey h : n.hbIn) {
+            if (contains(h)) {
+                include(c, node(h));
+            }
+        }
+        return c;
+    }
+
+    /** Joins a source event and its prefix into a clock under construction. */
+    private void include(int[] c, Node src) {
+        int[] sc = src.clock;
+        for (int i = 0; i < sc.length; i++) {
+            if (sc[i] > c[i]) {
+                c[i] = sc[i];
+            }
+        }
+        int s = slots.find(src.key.tid());
+        if (src.key.idx() > c[s]) {
+            c[s] = (int) src.key.idx();
+        }
     }
 
     /**
@@ -245,7 +428,7 @@ final class Graph {
 
     /** {@code a porf b}. */
     boolean porfBefore(EventKey a, EventKey b) {
-        return node(b).prefix.contains(a);
+        return node(b).inPrefix(a);
     }
 
     /**
@@ -282,22 +465,38 @@ final class Graph {
         return false;
     }
 
-    /** Recomputes every node's porf prefix (after an rf change or a restriction). */
-    void recomputePrefixes() {
+    /**
+     * Checks every node's stored prefix against a from-scratch computation ({@link #CHECK} only).
+     *
+     * @param where the update just made, for the message
+     * @throws IllegalStateException on the first node whose prefix differs, naming both sets
+     */
+    void checkPrefixes(String where) {
         Map<EventKey, Set<EventKey>> memo = new HashMap<>();
         for (Node n : byStamp.values()) {
-            n.prefix = prefix(n, memo, new HashSet<>());
+            Set<EventKey> expected = prefix(n, memo, new HashSet<>());
+            Set<EventKey> stored = n.prefix();
+            if (!stored.equals(expected)) {
+                throw new IllegalStateException("prefix check after " + where + ": node " + n.key + " has "
+                        + new java.util.TreeSet<>(stored) + ", from scratch " + new java.util.TreeSet<>(expected));
+            }
         }
     }
 
-    /** The porf prefix of a node, computed from the prefixes of its predecessors. */
-    private Set<EventKey> prefixOf(Node n) {
-        return prefix(n, new HashMap<>(), new HashSet<>());
+    /** Checks that no node has {@code r} in its prefix ({@link #CHECK} only). */
+    private void checkNoSuccessor(Node r) {
+        for (Node n : byStamp.values()) {
+            if (n != r && n.inPrefix(r.key)) {
+                throw new IllegalStateException(
+                        "prefix check: rf target " + r.key + " has the porf successor " + n.key);
+            }
+        }
     }
 
     /**
-     * The porf prefix of {@code n}: the union, over its po predecessor, its rf source and its
-     * spawn/join predecessors, of that event and its own prefix.
+     * The porf prefix of {@code n} computed from scratch ({@link #checkPrefixes}): the union, over
+     * its po predecessor, its rf source and its spawn/join predecessors, of that event and its own
+     * prefix.
      *
      * @param memo prefixes already computed in this pass
      * @param onPath the nodes being computed, to detect a porf cycle
@@ -362,7 +561,19 @@ final class Graph {
                 }
             }
         }
-        return b.build();
+        ExecutionGraph eg = b.build();
+        if (CHECK) {
+            for (Node x : byStamp.values()) {
+                for (Node y : byStamp.values()) {
+                    if (y.inPrefix(x.key) != eg.porfBefore(x.key, y.key)) {
+                        throw new IllegalStateException("prefix check: " + x.key + " porf " + y.key + " is "
+                                + y.inPrefix(x.key) + " by the clocks, " + eg.porfBefore(x.key, y.key)
+                                + " in the ExecutionGraph");
+                    }
+                }
+            }
+        }
+        return eg;
     }
 
     @Override
