@@ -46,8 +46,12 @@ import java.util.TreeSet;
  *
  * <p>{@code porf = (po ∪ rf ∪ hb)⁺} is computed on the first query and answered in O(1): for an
  * acyclic graph as one vector clock per event, in a topological order of every po, rf (each rf
- * entry, so several readers of one send each get their edge) and hb edge — O((n + m)·T) time and
- * O(n·T + m) space for n events, m edges and T threads; a graph with a cycle keeps the transitive
+ * entry, so several readers of one send each get their edge) and hb edge. With at most
+ * {@link #DENSE_THREADS} threads a clock is a dense array, O((n + m)·T) time and O(n·T + m) space
+ * for n events, m edges and T threads. With more threads a clock lists only the threads that have
+ * an event porf-before it, so the clocks together hold at most as many entries as the transitive
+ * closure would (each entry stands for at least one closure pair) and at most T pairs each: a
+ * graph with many threads and few edges stays small. A graph with a cycle keeps the transitive
  * closure (Θ(n²) sets) for every query, and {@link #porfAcyclic()} reports the cycle.
  *
  * <p>Immutable; built with a {@link Builder}. Holds no policy: which send a receive reads is the
@@ -105,6 +109,12 @@ public final class ExecutionGraph {
 
 
     /**
+     * The largest number of threads for which the porf clocks are dense arrays (n·T ints, at
+     * most 16 per event, the same order as the parent's n closure sets); above it they are sparse.
+     */
+    static final int DENSE_THREADS = 16;
+
+    /**
      * porf as vector clocks, computed on first use ({@link #porf()}), since {@link #canon()} does
      * not need it: for an acyclic graph, per event (by insertion index) and per thread (by its rank
      * in {@link #threads}), the largest po index among the events strictly {@code porf}-before it,
@@ -151,9 +161,35 @@ public final class ExecutionGraph {
 
     /**
      * porf: {@code clocks} (and {@code rank}, thread id → clock component) for an acyclic graph,
-     * otherwise {@code closure}, for each event the events strictly porf-after it.
+     * otherwise {@code closure}, for each event the events strictly porf-after it. A clock row is
+     * dense (indexed by rank, −1 for none) or, if {@code sparse}, the pairs rank, value sorted by
+     * rank, with the absent ranks meaning −1.
      */
-    private record Porf(int[][] clocks, Map<Long, Integer> rank, Map<EventKey, Set<EventKey>> closure) {}
+    private record Porf(int[][] clocks, boolean sparse, Map<Long, Integer> rank,
+                        Map<EventKey, Set<EventKey>> closure) {
+
+        /** The clock of event {@code i} (insertion index) at thread rank {@code t}, −1 for none. */
+        int clock(int i, int t) {
+            int[] c = clocks[i];
+            if (!sparse) {
+                return c[t];
+            }
+            int lo = 0;
+            int hi = c.length / 2 - 1;
+            while (lo <= hi) {
+                int mid = (lo + hi) >>> 1;
+                int r = c[2 * mid];
+                if (r < t) {
+                    lo = mid + 1;
+                } else if (r > t) {
+                    hi = mid - 1;
+                } else {
+                    return c[2 * mid + 1];
+                }
+            }
+            return -1;
+        }
+    }
 
     // ---- queries ----
 
@@ -316,7 +352,7 @@ public final class ExecutionGraph {
         if (ib == null || ta == null || !insertionIndex.containsKey(a)) {
             return false;
         }
-        return a.idx() <= p.clocks()[ib][ta];
+        return a.idx() <= p.clock(ib, ta);
     }
 
     /**
@@ -431,9 +467,12 @@ public final class ExecutionGraph {
             }
         }
         if (tail < n) {
-            return new Porf(null, null, closure());
+            return new Porf(null, false, null, closure());
         }
         int threadCount = rank.size();
+        if (threadCount > DENSE_THREADS) {
+            return new Porf(sparseClocks(order, succ, succLen, rank), true, rank, null);
+        }
         int[][] clocks = new int[n][threadCount];
         for (int[] c : clocks) {
             Arrays.fill(c, -1);
@@ -455,7 +494,62 @@ public final class ExecutionGraph {
                 }
             }
         }
-        return new Porf(clocks, rank, null);
+        return new Porf(clocks, false, rank, null);
+    }
+
+    /**
+     * The sparse clocks, in the topological {@code order}: each successor's clock becomes the
+     * pointwise maximum of its clock, its predecessor's, and the predecessor's own po index.
+     */
+    private int[][] sparseClocks(int[] order, int[][] succ, int[] succLen, Map<Long, Integer> rank) {
+        int n = order.length;
+        int[][] clocks = new int[n][];
+        int[] none = new int[0];
+        Arrays.fill(clocks, none);
+        for (int i = 0; i < n; i++) {
+            int u = order[i];
+            EventKey ku = insertionOrder.get(u);
+            int tu = rank.get(ku.tid());
+            for (int k = 0; k < succLen[u]; k++) {
+                int v = succ[u][k];
+                clocks[v] = join(clocks[v], clocks[u], tu, (int) ku.idx());
+            }
+        }
+        return clocks;
+    }
+
+    /**
+     * The pointwise maximum of the sparse clocks {@code a} and {@code b} and the single entry
+     * {@code t ↦ x}, as pairs sorted by rank.
+     */
+    private static int[] join(int[] a, int[] b, int t, int x) {
+        int[] out = new int[a.length + b.length + 2];
+        int i = 0;
+        int j = 0;
+        int o = 0;
+        boolean single = false;
+        while (i < a.length || j < b.length || !single) {
+            int ra = i < a.length ? a[i] : Integer.MAX_VALUE;
+            int rb = j < b.length ? b[j] : Integer.MAX_VALUE;
+            int rs = single ? Integer.MAX_VALUE : t;
+            int r = Math.min(ra, Math.min(rb, rs));
+            int val = -1;
+            if (ra == r) {
+                val = Math.max(val, a[i + 1]);
+                i += 2;
+            }
+            if (rb == r) {
+                val = Math.max(val, b[j + 1]);
+                j += 2;
+            }
+            if (rs == r) {
+                val = Math.max(val, x);
+                single = true;
+            }
+            out[o++] = r;
+            out[o++] = val;
+        }
+        return o == out.length ? out : Arrays.copyOf(out, o);
     }
 
     /** Adds the edge {@code from → to} (insertion indices) to the successor lists. */
@@ -492,7 +586,7 @@ public final class ExecutionGraph {
             for (EventKey b : insertionOrder) {
                 Set<EventKey> s = c.get(a);
                 boolean expected = s != null && s.contains(b);
-                boolean got = a.idx() <= p.clocks()[insertionIndex.get(b)][p.rank().get(a.tid())];
+                boolean got = a.idx() <= p.clock(insertionIndex.get(b), p.rank().get(a.tid()));
                 if (expected != got) {
                     throw new IllegalStateException("porf check: " + a + " porf " + b + " is " + expected
                             + " by the closure, " + got + " by the clocks");
