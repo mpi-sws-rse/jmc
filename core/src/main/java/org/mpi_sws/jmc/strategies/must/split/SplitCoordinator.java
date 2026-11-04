@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
 
 /**
  * The coordinator of a split run: runs the root to the split boundary in its own JVM, describes the
- * run in {@code run.json}, starts {@code W} long-lived worker JVMs ({@link SplitWorker}), hands out
+ * run in {@code run.json}, starts {@code min(W, N)} long-lived worker JVMs ({@link SplitWorker}), hands out
  * the items {@code N − 1} down to {@code 0} one at a time, and merges the results.
  *
  * <p><b>Assignment.</b> Each worker has at most one outstanding assignment, published atomically as
@@ -84,7 +84,8 @@ public final class SplitCoordinator {
      * @param roles the declared roles for export, or {@code null} to count only
      * @param visibleRoles the visible roles, or {@code null}
      * @param k the split threshold, at least 1
-     * @param workers {@code W}, at least 1
+     * @param workers {@code W}, at least 1; {@code min(W, N)} worker JVMs start at once (one without an item
+     *     would only replay the root and warm up), the other slots only to replace lost workers
      * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
      * @param runDir the run directory (created; must not hold a previous run)
      * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
@@ -703,7 +704,28 @@ public final class SplitCoordinator {
     }
 
     /**
-     * Starts the workers, assigns every item, collects and validates the results.
+     * Starts {@code min(W, N)} of the {@code W} worker slots, assigns every item, collects and validates the
+     * results. A dormant slot (no process yet) is started when losses leave fewer live workers than
+     * {@code min(W, items not yet committed)}; it then has the same restart allowance as any slot.
+     *
+     * <p>Against starting all {@code W} at once (owner's contract, S-a2 gate rounds 1–5):
+     * <ul>
+     *   <li>If no worker process exits before {@code STOP} and none publishes a fail marker, exactly
+     *       {@code min(W, N)} worker JVMs start, and a run that finishes before its deadline commits the
+     *       same items with the same merged counts, summaries, exports, online lines and fingerprint.</li>
+     *   <li>With worker crashes, each item is still retried at most once and each slot restarted at most
+     *       once, and a run that completes has the same results; but which crash sequences abort, with which
+     *       reason and how many workers lost, may differ (a crash that hit an idle worker before can now hit
+     *       an item's retry). A slot that is never started cannot fail on startup, publish a fail marker,
+     *       hang at {@code STOP} or count as lost.</li>
+     *   <li>The run's deadline starts once the {@code min(W, N)} worker starts have returned, not all
+     *       {@code W}; no bound on a worker's start time is assumed, so near the deadline one run can time
+     *       out where the other finishes. A retry on a dormant slot also waits for its activation (end of a
+     *       collection pass, after any synchronous restarts) and for its start and root replay.</li>
+     *   <li>The specification file must not change during a run: a slot started late reads it then (the
+     *       worker restart already assumes this).</li>
+     * </ul>
+     * Unchanged: a worker that exits after publishing the last result is still restarted before {@code STOP}.
      *
      * @return {@code null} when every item is committed and every worker has ended, else the abort reason
      */
@@ -711,10 +733,15 @@ public final class SplitCoordinator {
                                    int[] lostOut, long[] lastCommitOut, Checks checks) {
         List<Slot> slots = new ArrayList<>();
         try {
+            // W slots, of which min(W, N) start now; the others stay dormant (no process) and start only
+            // when losses leave fewer live workers than items to finish.
+            int started = Math.min(config.workers(), root.entries);
             for (int i = 0; i < config.workers(); i++) {
                 Slot s = new Slot(i);
                 slots.add(s);
-                s.process = start(config, dir, i);
+                if (i < started) {
+                    s.process = start(config, dir, i);
+                }
             }
             java.util.ArrayDeque<int[]> queue = new java.util.ArrayDeque<>();
             for (int i = 0; i < root.entries; i++) {
@@ -734,7 +761,7 @@ public final class SplitCoordinator {
                     return abort(slots, failMarkerReason(dir, marker));
                 }
                 for (Slot s : slots) {
-                    if (s.lost) {
+                    if (s.lost || s.process == null) {
                         continue;
                     }
                     String bad = commitIfPublished(dir, runId, root.fingerprint, s, tableNames, export, committed,
@@ -778,11 +805,22 @@ public final class SplitCoordinator {
                         }
                     }
                 }
+                long live = slots.stream().filter(s -> !s.lost && s.process != null).count();
+                int needed = Math.min(config.workers(), root.entries - committed.size());
+                for (Slot s : slots) {
+                    if (live >= needed) {
+                        break;
+                    }
+                    if (!s.lost && s.process == null) {
+                        s.process = start(config, dir, s.id);
+                        live++;
+                    }
+                }
                 if (slots.stream().allMatch(s -> s.lost)) {
                     return abort(slots, "every worker was lost");
                 }
                 for (Slot s : slots) {
-                    if (!s.lost && s.item < 0 && s.process.isAlive() && !queue.isEmpty()) {
+                    if (!s.lost && s.process != null && s.item < 0 && s.process.isAlive() && !queue.isEmpty()) {
                         int[] next = queue.poll();
                         s.item = next[0];
                         s.attempt = next[1];
@@ -798,7 +836,7 @@ public final class SplitCoordinator {
             }
             writeAtomically(dir.resolve("STOP"), new JsonObject());
             for (Slot s : slots) {
-                if (!s.lost && !s.process.waitFor(Math.max(1, deadline - System.currentTimeMillis()),
+                if (!s.lost && s.process != null && !s.process.waitFor(Math.max(1, deadline - System.currentTimeMillis()),
                         java.util.concurrent.TimeUnit.MILLISECONDS)) {
                     return abort(slots, "worker " + s.id + " did not stop");
                 }
