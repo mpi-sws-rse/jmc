@@ -889,6 +889,31 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     }
 
     /**
+     * The record components of each record class, looked up once per class instead of once per value
+     * (the per-value {@code getRecordComponents} was most of {@link #mapTids}'s cost). The components
+     * are immutable metadata; everything {@code mapTids} does with them on a value (opening and calling
+     * each accessor, finding and calling the canonical constructor) still happens at the same point
+     * of the walk as before, so access checks and their failures are unchanged. Used only without a
+     * security manager ({@link #recordComponents}).
+     */
+    private static final ClassValue<RecordComponent[]> RECORD_COMPONENTS = new ClassValue<>() {
+        @Override
+        protected RecordComponent[] computeValue(Class<?> type) {
+            return type.getRecordComponents();
+        }
+    };
+
+    /**
+     * A record class's components: from {@link #RECORD_COMPONENTS} when no security manager is
+     * installed, else looked up afresh, since {@link Class#getRecordComponents} then performs a security
+     * check on every call, which a cached result would skip.
+     */
+    @SuppressWarnings("removal")
+    private static RecordComponent[] recordComponents(Class<?> type) {
+        return System.getSecurityManager() == null ? RECORD_COMPONENTS.get(type) : type.getRecordComponents();
+    }
+
+    /**
      * {@code v} with {@code f} applied to every {@code Tid} in a record, list, set or optional.
      *
      * @param strict whether a record that cannot be rebuilt is an error ({@link
@@ -899,7 +924,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             return f.apply(t);
         }
         if (v instanceof Record r) {
-            RecordComponent[] cs = r.getClass().getRecordComponents();
+            RecordComponent[] cs = recordComponents(r.getClass());
             Object[] args = new Object[cs.length];
             Class<?>[] types = new Class<?>[cs.length];
             boolean changed = false;
@@ -1322,16 +1347,17 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      */
     @Override
     public SchedulingChoice<?> nextTask() {
-        TreeSet<Long> runnable = new TreeSet<>();
+        // The least stable id among the runnable, unparked tasks (a scan; it was the first of a
+        // TreeSet built per call).
+        Long least = null;
         for (Long rt : getActiveTasks()) {
             Long st = stableOfRuntime.get(rt);
-            if (st != null) {
-                runnable.add(st);
+            if (st != null && !parked.containsKey(st) && (least == null || st < least)) {
+                least = st;
             }
         }
-        runnable.removeAll(parked.keySet());
-        if (!runnable.isEmpty()) {
-            long t = runnable.first();
+        if (least != null) {
+            long t = least;
             SchedulingChoiceValue a = answers.remove(t);
             long rt = runtimeOfStable.get(t);
             return a != null ? SchedulingChoice.task(rt, a) : SchedulingChoice.task(rt);
