@@ -126,11 +126,12 @@ class J2TrackerTest {
     /** A monitor with a fixed hash code. */
     record Mon(int id) {}
 
-    static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r);
-        t.setDaemon(true);
-        return t;
-    });
+    /**
+     * An executor used only as an event parameter (TrackExecutors registers and shuts it down). Its
+     * thread factory creates no thread (round 05 sweep), so no task can ever run and no thread of it
+     * can outlive a test.
+     */
+    static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(r -> null);
 
     static JmcRuntimeEvent ev(JmcRuntimeEvent.Type type, long task, Object... kv) {
         Map<String, Object> p = new HashMap<>();
@@ -648,112 +649,147 @@ class J2TrackerTest {
     }
 
     /**
-     * A synchronized candidate set held by another thread that calls into the tracker: the public
-     * path holds no tracker lock during the intersection, so it cannot deadlock (timeout 20 s). The
-     * strategy is also driven from three threads at once (events, readers, resets) with a timeout.
+     * The concurrent workloads (rounds 01-05): (A) a synchronized candidate set held by another thread
+     * that calls into the tracker: the public path holds no tracker lock during the intersection, so it
+     * cannot deadlock; (B) the strategy driven from three threads at once (events, readers, resets),
+     * every step returning normally and every worker completing all of its steps; (C, NOTE only,
+     * finding F2) the package-private path deadlocks with such a set. All three run in a disposable
+     * child JVM ({@link J2DeadlockProbe}), so this JVM never hosts a thread that could block; the
+     * child is killed and reaped on every path. Derived: the child exits by itself with status 0 and
+     * prints exactly the lines {@code J2PROBE-COUNTS caller=20000 events=<non-RESET entries of
+     * random(77, 20000)> readers=20000 resets=500} and {@code J2PROBE-OK deadlocked=true}.
      */
     @Test
     void synchronizedCandidateSet_noDeadlock() throws Exception {
-        TrackTasks t = new TrackTasks();
-        for (long i = 1; i <= 50; i++) {
-            t.updateEvent(start(i));
+        int expectedEvents = (int) random(77, 20000).stream().filter(e -> e != RESET).count();
+        Set<Thread> before = Thread.getAllStackTraces().keySet();
+        ProbeRun run = runDeadlockProbe(180);
+        System.out.println(run.out);
+        assertFalse(run.aliveAtReturn, "probe JVM reaped");
+        assertFalse(run.interrupted, "not interrupted");
+        assertTrue(run.exitedByItself, "probe JVM exited by itself within the timeout\n" + run.out);
+        assertEquals(0, run.exitCode, "probe exit status\n" + run.out);
+        List<String> lines = run.out.lines().toList();
+        assertTrue(lines.stream().noneMatch(l -> l.startsWith("J2PROBE-FAIL")), "no probe failure\n" + run.out);
+        assertTrue(lines.contains("J2PROBE-COUNTS caller=20000 events=" + expectedEvents + " readers=20000 resets=500"),
+                "probe counts\n" + run.out);
+        assertTrue(lines.contains("J2PROBE-OK deadlocked=true"), "probe success marker\n" + run.out);
+        for (Thread x : Thread.getAllStackTraces().keySet()) {
+            assertFalse(!before.contains(x) && x.getName().startsWith("j2-"), "no workload thread in this JVM: " + x);
         }
-        Set<Long> sync = Collections.synchronizedSet(new HashSet<>(List.of(1L, 2L, 3L)));
-        java.util.concurrent.atomic.AtomicBoolean stop = new java.util.concurrent.atomic.AtomicBoolean();
-        java.util.concurrent.atomic.AtomicReference<Throwable> err = new java.util.concurrent.atomic.AtomicReference<>();
-        Thread holder = new Thread(() -> {
-            long k = 100;
-            while (!stop.get()) {
-                synchronized (sync) {
-                    t.updateEvent(start(k++));
-                    t.updateEvent(finish(k - 1));
-                }
+    }
+
+    /** The outcome of one {@link J2DeadlockProbe} child JVM. */
+    static final class ProbeRun {
+        boolean exitedByItself;
+        int exitCode = -1;
+        boolean aliveAtReturn;
+        boolean interrupted;
+        String out = "";
+    }
+
+    /**
+     * Runs {@link J2DeadlockProbe} in a child JVM and waits at most {@code seconds}. The cleanup is in a
+     * finally: a live child is killed ({@code destroyForcibly}) and waited for without a deadline
+     * (interrupted waits are retried; the interrupt status is restored afterwards), the log is read and
+     * deleted. The child also stops itself after 150 s (its watchdog), should this JVM die first.
+     */
+    static ProbeRun runDeadlockProbe(int seconds) throws java.io.IOException {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(System.getProperty("java.home") + java.io.File.separator + "bin" + java.io.File.separator + "java");
+        cmd.add("-cp");
+        cmd.add(testRuntimeClasspath());
+        cmd.add(J2DeadlockProbe.class.getName());
+        java.nio.file.Path log = java.nio.file.Files.createTempFile(
+                java.nio.file.Path.of(System.getProperty("java.io.tmpdir")), "j2dead-", ".txt");
+        ProbeRun run = new ProbeRun();
+        Process p = null;
+        try {
+            p = new ProcessBuilder(cmd).redirectErrorStream(true).redirectOutput(log.toFile()).start();
+            if (p.waitFor(seconds, java.util.concurrent.TimeUnit.SECONDS)) {
+                run.exitedByItself = true;
+                run.exitCode = p.exitValue();
             }
-        });
-        Thread caller = new Thread(() -> {
+        } catch (InterruptedException e) {
+            run.interrupted = true;
+        } finally {
+            if (p != null) {
+                if (p.isAlive()) {
+                    p.destroyForcibly();
+                }
+                // SIGKILL cannot be ignored: wait without a deadline, retrying interrupted waits, so
+                // this method never returns while the child is alive
+                while (true) {
+                    try {
+                        p.waitFor();
+                        break;
+                    } catch (InterruptedException e) {
+                        run.interrupted = true;
+                    }
+                }
+                run.aliveAtReturn = p.isAlive();
+            }
             try {
-                for (int i = 0; i < 20000; i++) {
-                    sync.retainAll(t.updateEvent(join(1, 2)));
-                    sync.add(1L);
-                }
-            } catch (Throwable x) {
-                err.set(x);
+                run.out = java.nio.file.Files.readString(log);
+            } catch (java.io.IOException e) {
+                run.out = "(log unreadable: " + e + ")";
             }
-        });
-        holder.setDaemon(true);
-        caller.setDaemon(true);
-        holder.start();
-        caller.start();
-        caller.join(20_000);
-        stop.set(true);
-        holder.join(20_000);
-        assertFalse(caller.isAlive(), "the public path finished: no deadlock");
-        assertFalse(holder.isAlive(), "the holder finished");
-        assertEquals(null, err.get());
-
-        NewStrategy s = new NewStrategy(List.of(new TrackTasks()));
-        Thread events = new Thread(() -> {
-            for (JmcRuntimeEvent e : random(77, 20000)) {
-                if (e != RESET) {
-                    threw(() -> {
-                        s.updateEvent(e);
-                        return null;
-                    });
-                }
+            try {
+                java.nio.file.Files.deleteIfExists(log);
+            } catch (java.io.IOException e) {
+                // left in java.io.tmpdir; nothing else to do
             }
-        });
-        Thread readers = new Thread(() -> {
-            for (int i = 0; i < 20000; i++) {
-                s.active();
-                s.isActive((long) (i % 40));
+            if (run.interrupted) {
+                Thread.currentThread().interrupt();
             }
-        });
-        Thread resets = new Thread(() -> {
-            for (int i = 0; i < 500; i++) {
-                s.resetIteration(i);
-            }
-        });
-        for (Thread x : List.of(events, readers, resets)) {
-            x.setDaemon(true);
-            x.start();
         }
-        for (Thread x : List.of(events, readers, resets)) {
-            x.join(30_000);
-            assertFalse(x.isAlive(), "strategy thread finished: no deadlock");
-        }
+        return run;
+    }
 
-        // NOTE only: the package-private path holds tasksLock while it calls the set's retainAll
-        TrackTasks d = new TrackTasks();
-        d.updateEvent(start(1));
-        Set<Long> sync2 = Collections.synchronizedSet(new HashSet<>(List.of(1L)));
-        java.util.concurrent.CountDownLatch held = new java.util.concurrent.CountDownLatch(1);
-        Thread h2 = new Thread(() -> {
-            synchronized (sync2) {
-                held.countDown();
+    /**
+     * The classpath for a child JVM that runs this package's test classes (round 04, item 4). Union, in
+     * order, of: the code-source locations of the classes the probe needs (this test, the probe, the
+     * tracker, the runtime event, log4j's API and core); the URLs of every {@link java.net.URLClassLoader}
+     * on the chain of this class's loader and of the context loader; and {@code java.class.path}. Under
+     * Gradle the test worker is started with the test runtime classpath as {@code java.class.path} (the
+     * application loader), so that part alone suffices there; the first two parts cover launchers that
+     * load tests through a separate URL-based loader. Limit: a launcher whose loader is neither the
+     * application loader nor URL-based, and whose classes have no file code source, is not covered.
+     */
+    static String testRuntimeClasspath() {
+        java.util.LinkedHashSet<String> cp = new java.util.LinkedHashSet<>();
+        for (Class<?> c : List.of(J2TrackerTest.class, J2DeadlockProbe.class, TrackTasks.class, JmcRuntimeEvent.class,
+                LogManager.class, LoggerContext.class)) {
+            java.security.CodeSource cs = c.getProtectionDomain().getCodeSource();
+            if (cs != null && cs.getLocation() != null && "file".equals(cs.getLocation().getProtocol())) {
                 try {
-                    Thread.sleep(300);
-                } catch (InterruptedException e) {
-                    return;
+                    cp.add(java.nio.file.Path.of(cs.getLocation().toURI()).toString());
+                } catch (java.net.URISyntaxException | IllegalArgumentException e) {
+                    // not a plain file location: skipped
                 }
-                d.updateEvent(start(5));
             }
-        });
-        Thread c2 = new Thread(() -> {
-            try {
-                held.await();
-            } catch (InterruptedException e) {
-                return;
+        }
+        for (ClassLoader start : new ClassLoader[] {J2TrackerTest.class.getClassLoader(),
+                Thread.currentThread().getContextClassLoader()}) {
+            for (ClassLoader l = start; l != null; l = l.getParent()) {
+                if (l instanceof java.net.URLClassLoader u) {
+                    for (java.net.URL url : u.getURLs()) {
+                        if ("file".equals(url.getProtocol())) {
+                            try {
+                                cp.add(java.nio.file.Path.of(url.toURI()).toString());
+                            } catch (java.net.URISyntaxException | IllegalArgumentException e) {
+                                // skipped
+                            }
+                        }
+                    }
+                }
             }
-            d.updateAndRetainActive(start(6), sync2);
-        });
-        h2.setDaemon(true);
-        c2.setDaemon(true);
-        h2.start();
-        c2.start();
-        c2.join(5_000);
-        h2.join(5_000);
-        System.out.println("NOTE updateAndRetainActive with a synchronized foreign set held across a tracker call: "
-                + (c2.isAlive() || h2.isAlive() ? "deadlocked (threads left alive)" : "finished")
-                + "; the strategy passes only its own HashSet");
+        }
+        for (String e : System.getProperty("java.class.path", "").split(java.io.File.pathSeparator)) {
+            if (!e.isEmpty()) {
+                cp.add(e);
+            }
+        }
+        return String.join(java.io.File.pathSeparator, cp);
     }
 }
