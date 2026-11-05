@@ -41,7 +41,8 @@ import java.util.regex.Pattern;
 /**
  * The coordinator of a split run: runs the root to the split boundary in its own JVM, describes the
  * run in {@code run.json}, starts {@code min(W, N)} long-lived worker JVMs ({@link SplitWorker}), hands out
- * the items {@code N − 1} down to {@code 0} one at a time, and merges the results.
+ * the items {@code 0} up to {@code N − 1} one at a time (bottom entry first, the earliest branch: meant to
+ * start the larger items early; sizes are not sorted), and merges the results.
  *
  * <p><b>Assignment.</b> Each worker has at most one outstanding assignment, published atomically as
  * {@code assigned/<j>.<a>.json} (item, attempt, worker, run id). A result counts only when {@code
@@ -89,8 +90,8 @@ public final class SplitCoordinator {
      * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
      * @param runDir the run directory (created; must not hold a previous run)
      * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
-     * @param reversedAssignment test seam: hand items out {@code 0 … N − 1} instead of the default
-     *     {@code N − 1 … 0} (the merge order is the same either way)
+     * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} (the order before S-a1) instead
+     *     of the default {@code 0 … N − 1} (the merge order is the same either way)
      * @param liveness test seam: the probe that decides whether a worker process is still alive when its
      *     death is classified (default {@link Process#isAlive}); a test can delay or force the answer to
      *     reproduce an interleaving
@@ -119,7 +120,7 @@ public final class SplitCoordinator {
                     reversedAssignment, Process::isAlive);
         }
 
-        /** A configuration with the default assignment order {@code N − 1 … 0}. */
+        /** A configuration with the default assignment order {@code 0 … N − 1}. */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand) {
@@ -745,7 +746,7 @@ public final class SplitCoordinator {
             }
             java.util.ArrayDeque<int[]> queue = new java.util.ArrayDeque<>();
             for (int i = 0; i < root.entries; i++) {
-                int j = config.reversedAssignment() ? i : root.entries - 1 - i;
+                int j = config.reversedAssignment() ? root.entries - 1 - i : i;
                 queue.add(new int[] {j, 0});
             }
             long deadline = System.currentTimeMillis() + config.timeoutSeconds() * 1000L;

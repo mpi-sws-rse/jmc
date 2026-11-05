@@ -35,11 +35,12 @@ import java.util.function.Predicate;
  * timeout (120 s) is recorded and fails the test.
  *
  * <p>Derived (A3Lock:fifo,3,1, K = 1: R 1, N 5, items 4..0 = 2 4 3 10 10, sequential export md5
- * {@code ddc264d8…}): attempt 0 (W = 1, {@code die-after:4:0}) — item 4 committed at attempt 0, no
- * {@code 4.1}, run complete, export as sequential. Attempt 1 (W = 2, {@code die-before:4:0},
- * {@code die-after:4:1}) — worker 0 dies on 4.0 without a result; the coordinator restarts slot 0 and,
- * in the same loop pass, assigns {@code 4.1} to it (slot 0 is the first idle slot); the recheck commits
- * 4.1 (not "lost its worker twice"); run complete, export as sequential.
+ * {@code ddc264d8…}): attempt 0 (W = 1, {@code die-after:0:0}; S-a1 tester round 02: was 4, the first
+ * assignment before S-a1) — item 0 committed at attempt 0, no {@code 0.1}, run complete, export as sequential.
+ * Attempt 1 (W = 2, {@code die-before:0:0}, {@code die-after:0:1}; S-a1 tester round 02: worker 0's first
+ * item is now 0, was 4) — worker 0 dies on 0.0 without a result; the coordinator restarts slot 0 and,
+ * in the same loop pass, assigns {@code 0.1} to it (slot 0 is the first idle slot); the recheck commits
+ * 0.1 (not "lost its worker twice"); run complete, export as sequential.
  */
 class J8Round07Test {
 
@@ -200,27 +201,30 @@ class J8Round07Test {
     void m1_resultRenamedBetweenCheckAndDeath_attempt0_committedNotRetried() throws Exception {
         Path dir = J8Round06Test.dir("r8-attempt0");
         State st = new State();
-        SplitCoordinator.Result r = run(dir, 1, "die-after:4:0", probe(dir, 4, 0, st));
+        // S-a1 tester round 02: the gate holds a worker only before its first assignment, which is now item 0
+        // (was item 4); with item 4 last the result could be published before the window (flaky)
+        SplitCoordinator.Result r = run(dir, 1, "die-after:0:0", probe(dir, 0, 0, st));
         String f = files(dir);
         System.out.println("J8R8 attempt 0: failure " + r.failure() + ", items " + r.itemIterations() + ", lost "
                 + r.workersLost() + "\n" + f);
         common(st, r, f);
-        assertFalse(Files.exists(dir.resolve("assigned/4.1.json")), "no retry");
-        assertTrue(read(dir.resolve("item-4.json")).replace(" ", "").contains("\"attempt\":0"));
+        assertFalse(Files.exists(dir.resolve("assigned/0.1.json")), "no retry");
+        assertTrue(read(dir.resolve("item-0.json")).replace(" ", "").contains("\"attempt\":0"));
     }
 
     @Test
     void m1_resultRenamedBetweenCheckAndDeath_attempt1_committedNotLostTwice() throws Exception {
         Path dir = J8Round06Test.dir("r8-attempt1");
         State st = new State();
-        SplitCoordinator.Result r = run(dir, 2, "die-before:4:0,die-after:4:1", probe(dir, 4, 1, st));
+        // S-a1 tester round 02: worker 0 now holds item 0 first (was item 4), so the faults and the window move to item 0
+        SplitCoordinator.Result r = run(dir, 2, "die-before:0:0,die-after:0:1", probe(dir, 0, 1, st));
         String f = files(dir);
         System.out.println("J8R8 attempt 1: failure " + r.failure() + ", items " + r.itemIterations() + ", lost "
                 + r.workersLost() + "\n" + f);
         common(st, r, f);
-        assertTrue(Files.exists(dir.resolve("assigned/4.1.json")), "retried once");
-        assertFalse(Files.exists(dir.resolve("assigned/4.2.json")), "not twice");
-        assertTrue(read(dir.resolve("item-4.json")).replace(" ", "").contains("\"attempt\":1"));
+        assertTrue(Files.exists(dir.resolve("assigned/0.1.json")), "retried once");
+        assertFalse(Files.exists(dir.resolve("assigned/0.2.json")), "not twice");
+        assertTrue(read(dir.resolve("item-0.json")).replace(" ", "").contains("\"attempt\":1"));
         assertTrue(r.workersLost() <= 1);
     }
 }

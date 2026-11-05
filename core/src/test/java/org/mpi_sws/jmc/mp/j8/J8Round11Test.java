@@ -25,7 +25,7 @@ import java.util.concurrent.Future;
  * value is integral although written with a fraction or an exponent (1.0, 2.0, 1e3, −0.0 = 0). A rejected
  * result aborts the run with the field's message and no worker survives; an accepted one lets the run
  * complete. Setup as round 10: H1 Actors:token_server, counting, K 1 (N 2), W 2; worker 0 is the fake
- * (it publishes item 1 with exactly one field set to the literal), worker 1 the real worker, tagged.
+ * (it publishes item 0, its first assignment since S-a1 (was item 1), with exactly one field set to the literal), worker 1 the real worker, tagged.
  */
 class J8Round11Test {
 
@@ -57,8 +57,8 @@ class J8Round11Test {
         if (expected == null) {
             return r.failure() == null ? null : mode + ": expected accepted, got " + r.failure();
         }
-        if (r.failure() == null || !r.failure().equals("item 1: " + expected)) {
-            return mode + ": expected 'item 1: " + expected + "', got " + r.failure();
+        if (r.failure() == null || !r.failure().equals("item 0: " + expected)) {
+            return mode + ": expected 'item 0: " + expected + "', got " + r.failure();
         }
         return r.maxima().isEmpty() ? null : mode + ": maxima not empty on abort";
     }

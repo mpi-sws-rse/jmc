@@ -95,8 +95,8 @@ class J8Round10Test {
 
     /**
      * Malformed envelope fields. W = 2 on H1 Actors:token_server (counting; K = 1: R 1, N 2): worker 0 is
-     * {@link J8EnvelopeFakeWorker} (it publishes item 1, the first assignment), worker 1 the real worker,
-     * tagged. Expected for every malformed mode: the run aborts on item 1 with the coordinator's
+     * {@link J8EnvelopeFakeWorker} (it publishes item 0, the first assignment since S-a1; was item 1), worker 1
+     * the real worker, tagged. Expected for every malformed mode: the run aborts on item 0 with the coordinator's
      * validation message and no tagged process is alive; the control mode {@code valid} is accepted (the
      * run completes; its fake outcome digest is merged, which only shows that the fields under test are
      * what the validation refuses).
@@ -133,8 +133,8 @@ class J8Round10Test {
                 case "negative-max" -> "the result's maximum max_graph_events is missing, not an integer, or negative";
                 default -> "the result's maximum max_porf_count is missing, not an integer, or negative";
             };
-            if (r.failure() == null || !r.failure().contains("item 1") || !r.failure().contains(expected)) {
-                bad.add(mode + ": failure " + r.failure() + ", expected item 1 and '" + expected + "'");
+            if (r.failure() == null || !r.failure().contains("item 0") || !r.failure().contains(expected)) {
+                bad.add(mode + ": failure " + r.failure() + ", expected item 0 and '" + expected + "'");
             }
             assertTrue(r.maxima().isEmpty(), mode + ": maxima empty on abort");
         }

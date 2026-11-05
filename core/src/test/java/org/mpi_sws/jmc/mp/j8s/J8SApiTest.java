@@ -114,7 +114,8 @@ class J8SApiTest {
         String tag = UUID.randomUUID().toString();
         long[] t1 = {-1};
         long before = System.currentTimeMillis();
-        SplitCoordinator.Result r = run(d, spec, 4, 1, true, (x, id) -> {
+        // S-a1 tester round 02: items 0 .. N-1 are now the default; the seam (true) would give N-1 .. 0
+        SplitCoordinator.Result r = run(d, spec, 4, 1, false, (x, id) -> {
             if (t1[0] < 0) {
                 t1[0] = System.currentTimeMillis();
             }
@@ -382,7 +383,8 @@ class J8SApiTest {
             Path file = J8SSupport.DIR.resolve("online-" + System.nanoTime() + ".json");
             Files.writeString(file, c[1].equals("MISSING") ? "MISSING" : online(c[1]));
             Path d = dir("malformed");
-            SplitCoordinator.Result r = run(d, spec, 1, 2, false, (x, id) -> id == 0
+            // S-a1 tester round 02: the fake data is made for item 2, so keep the old order N-1..0 (the seam)
+            SplitCoordinator.Result r = run(d, spec, 1, 2, true, (x, id) -> id == 0
                     ? List.of(JAVA, "-Dj8.tag=" + tag, "-cp", CP, J8OnlineFakeWorker.class.getName(), x.toString(), "0",
                             file.toString(), c[2])
                     : realWorker(x, id, J8SSupport.BANK, tag));
@@ -418,7 +420,8 @@ class J8SApiTest {
             Path file = J8SSupport.DIR.resolve("online-null-" + System.nanoTime() + ".json");
             Files.writeString(file, online(base));
             Path d = dir("null-" + field);
-            SplitCoordinator.Result r = run(d, spec, 1, 2, false, (x, id) -> id == 0
+            // S-a1 tester round 02: the fake data is made for item 2, so keep the old order N-1..0 (the seam)
+            SplitCoordinator.Result r = run(d, spec, 1, 2, true, (x, id) -> id == 0
                     ? List.of(JAVA, "-Dj8.tag=" + tag, "-cp", CP, J8OnlineFakeWorker.class.getName(), x.toString(), "0",
                             file.toString(), "1", field)
                     : realWorker(x, id, J8SSupport.BANK, tag));

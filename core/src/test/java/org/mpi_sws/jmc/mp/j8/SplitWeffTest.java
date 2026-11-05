@@ -335,16 +335,17 @@ class SplitWeffTest {
     // ---------------------------------------------------------------- item 2: failure paths
 
     @Test
-    void a3_W16_deathOnItem4_retriedOnRestartedSlot() throws Exception {
+    void a3_W16_deathOnItem0_retriedOnRestartedSlot() throws Exception {
+        // S-a1 (round 02): items go out 0 .. N - 1, so worker 0 holds item 0 (was: item 4 with N - 1 .. 0)
         H h = new H("a3-death", true);
         for (int i = 0; i < 16; i++) {
-            h.plan(i, "real:die-before:4:0");
+            h.plan(i, "real:die-before:0:0");
         }
         SplitCoordinator.Result r = h.run(16);
         completeA3(h, r);
-        assertEquals(starts(0, 2, 1, 1, 2, 1, 3, 1, 4, 1), h.starts(), "slot 0 (item 4) restarted, ids below N");
-        assertTrue(Files.exists(h.d.resolve("consumed").resolve("4.0.json")));
-        assertTrue(Files.exists(h.d.resolve("assigned").resolve("4.1.json")));
+        assertEquals(starts(0, 2, 1, 1, 2, 1, 3, 1, 4, 1), h.starts(), "slot 0 (item 0) restarted, ids below N");
+        assertTrue(Files.exists(h.d.resolve("consumed").resolve("0.0.json")));
+        assertTrue(Files.exists(h.d.resolve("assigned").resolve("0.1.json")));
         assertEquals(0, r.workersLost());
     }
 
@@ -445,9 +446,9 @@ class SplitWeffTest {
 
     /**
      * No dormant slot is started when the live slots cover every item not yet committed: A3, W 6; worker 4
-     * (item 0) is a stand-in that exits once items 4..1 are published, its restart exits at once. Derived:
-     * 0.1 goes to an idle live slot, slot 4 is lost with at most 1 item left and 4 live slots: slot 5 never
-     * starts; complete as sequential, lost 1, starts {0..3=1, 4=2}.
+     * (item 4; S-a1 hands out 0 .. N - 1) is a stand-in that exits once items 0..3 are published, its restart
+     * exits at once. Derived: 4.1 goes to an idle live slot, slot 4 is lost with at most 1 item left and 4 live
+     * slots: slot 5 never starts; complete as sequential, lost 1, starts {0..3=1, 4=2}.
      */
     @Test
     void a3_W6_slotLostWhenLiveSlotsCoverTheRest_noDormantStart() throws Exception {
@@ -455,7 +456,7 @@ class SplitWeffTest {
         h.plan(4, "wait");
         h.waitId = 4;
         h.exitTrigger = () -> {
-            for (int j = 1; j <= 4; j++) {
+            for (int j = 0; j <= 3; j++) {
                 if (!Files.exists(h.d.resolve("item-" + j + ".json"))) {
                     return false;
                 }
@@ -576,15 +577,15 @@ class SplitWeffTest {
     }
 
     /**
-     * All remaining items outstanding on live workers: A3, W 6; worker 0 runs item 4 with
-     * {@code die-after:4:0}, its restart exits at once (idle) and is lost while items 3..0 are outstanding
+     * All remaining items outstanding on live workers: A3, W 6; worker 0 runs item 0 (S-a1: 0 .. N - 1) with
+     * {@code die-after:0:0}, its restart exits at once (idle) and is lost while items 1..4 are outstanding
      * on workers 1..4 (held until then). Derived: live 4 = min(6, 4): no dormant start; complete, lost 1,
      * starts {0=2, 1..4=1} (base: slot 5 too).
      */
     @Test
     void gate2_slotLostWhileAllRemainingOutstanding_noDormantStart() throws Exception {
         H h = new H("a3-all-outstanding", true);
-        h.plan(0, "real:die-after:4:0", "now");
+        h.plan(0, "real:die-after:0:0", "now");
         h.release = () -> h.nowDeaths.get() >= 1;
         h.releaseById.put(0, () -> true);
         SplitCoordinator.Result r = h.run(6);
@@ -595,8 +596,8 @@ class SplitWeffTest {
 
     /**
      * Two slots lost with queued retries in one pass: A3; workers 3 and 4 exit at once twice (the second JVMs
-     * hold 1.0 and 0.0); real workers are held until then. Derived: W 7: live 3 &lt; min(7, 5): both
-     * dormant slots 5 and 6 start and take 0.1 and 1.1; W 6: only slot 5 starts, the other retry waits for
+     * hold 3.0 and 4.0 under S-a1's 0 .. N - 1); real workers are held until then. Derived: W 7: live 3 &lt;
+     * min(7, 5): both dormant slots 5 and 6 start and take 4.1 and 3.1 (the queue's front); W 6: only slot 5 starts, the other retry waits for
      * an idle slot. Complete as sequential, lost 2.
      */
     @Test
@@ -654,8 +655,9 @@ class SplitWeffTest {
 
     /**
      * A dormant slot that, once started, uses its own restart allowance. A3, W 6: workers 0..3 are held
-     * (items 4..1 outstanding); worker 4's two JVMs exit at once (the second holding 0.0), so slot 4 is lost
-     * and the dormant slot 5 starts and takes 0.1; with {@code die-after:0:1} it publishes 0.1 and exits:
+     * (items 0..3 outstanding); worker 4's two JVMs exit at once (the second holding 4.0; S-a1: 0 .. N - 1), so
+     * slot 4 is lost and the dormant slot 5 starts and takes 4.1; with {@code die-after:4:1} it publishes 4.1 and
+     * exits:
      * the slot holds no item and is restarted (its one restart). (a) the restart is a real worker: it stays
      * idle, the held workers are released, complete, lost 1. (b) the restart exits at once: slot 5 is lost
      * (a second death), live 4 cover the 4 items left: no further start, complete, lost 2. Both: starts
@@ -667,7 +669,7 @@ class SplitWeffTest {
     void gate5_dormantSlotUsesItsRestart_thenCompletes_or_isLost() throws Exception {
         for (boolean secondDeath : new boolean[] {false, true}) {
             H h = new H("a3-dormant-restart-" + (secondDeath ? "lost" : "ok"), true);
-            h.plan(4, "now").plan(5, "real:die-after:0:1", secondDeath ? "now" : "real");
+            h.plan(4, "now").plan(5, "real:die-after:4:1", secondDeath ? "now" : "real");
             int nowNeeded = secondDeath ? 3 : 2;
             h.release = () -> h.starts().getOrDefault(5, 0) == 2 && h.nowDeaths.get() >= nowNeeded;
             h.releaseById.put(5, () -> true);
@@ -675,7 +677,7 @@ class SplitWeffTest {
             completeA3(h, r);
             assertEquals(secondDeath ? 2 : 1, r.workersLost(), h.name);
             assertEquals(starts(0, 1, 1, 1, 2, 1, 3, 1, 4, 2, 5, 2), h.starts(), h.name);
-            assertTrue(Files.readString(h.d.resolve("assigned").resolve("0.1.json")).replace(" ", "")
+            assertTrue(Files.readString(h.d.resolve("assigned").resolve("4.1.json")).replace(" ", "")
                     .contains("\"worker\":5"), h.name);
         }
     }

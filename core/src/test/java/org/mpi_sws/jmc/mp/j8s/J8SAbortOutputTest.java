@@ -23,16 +23,18 @@ import java.util.UUID;
  * <p>Cases (derived before the run):
  * <ol>
  *   <li>Committed miss, no gap before it: spec without iteration 2 (item2, first_local 1), W 1, normal
- *       order (item2, item1, item0), {@code fail:0:0}. Committed: item2, item1. Online: miss, first 2,
+ *       order (item2, item1, item0; since S-a1 the seam), {@code fail:0:0}; launcher (no seam, order 0 .. N − 1
+ *       since S-a1): W 2, {@code delay:0:0,fail:0:0}. Committed: item2, item1. Online: miss, first 2,
  *       witness = iteration 2's line, answer as the sequential run's, totals null, lookups 1 + 2 + 3 = 6,
  *       found 5.</li>
  *   <li>Committed miss with an uncommitted segment before it: spec without iteration 9 (item0,
- *       first_local 3). API: W 1, reversed (item0, item1, item2), {@code fail:1:0}; committed: item0.
+ *       first_local 3). API: W 1, order item0, item1, item2 (the default since S-a1), {@code fail:1:0}; committed: item0.
  *       Launcher (no reversed order): W 2, {@code delay:1:0,fail:1:0}: item1 starts 2000 ms late and then
  *       fails, while the other worker commits item2 and item0 (checked from the run directory). Online:
  *       miss, first −1 (launcher: "unknown (a segment before it is missing)", block empty), witness =
  *       iteration 9's line, answer as the sequential run's, totals null; API lookups 1 + 6 = 7, found 6.</li>
- *   <li>Abort without a committed miss: spec without iteration 9, W 1, normal order, {@code fail:0:0}.
+ *   <li>Abort without a committed miss: spec without iteration 9, W 1, order 2, 1, 0 (the seam since S-a1),
+ *       {@code fail:0:0}; launcher: W 2, {@code delay:0:0,fail:0:0}.
  *       Committed: item2, item1 (no miss). Online: no miss, first 0, no witness or answer, wall −1, totals
  *       null, lookups 6, found 6; launcher verdict {@code partial}.</li>
  * </ol>
@@ -66,9 +68,11 @@ class J8SAbortOutputTest {
     @Test
     void api_committedMiss_withAndWithoutGap_andNoMiss() throws Exception {
         List<Case> cases = List.of(
-                new Case("1 no gap", 2, 1, false, "fail:0:0", 2, 6, 5, List.of(1, 2)),
-                new Case("2 gap before", 9, 1, true, "fail:1:0", -1, 7, 6, List.of(0)),
-                new Case("3 no miss", 9, 1, false, "fail:0:0", 0, 6, 6, List.of(1, 2)));
+                // S-a1 tester round 02: the default order is now 0 .. N-1 and the seam selects N-1 .. 0, so
+                // the reversed flags are swapped to keep each case's order (cases 1 and 3: N-1 .. 0; case 2: 0 .. N-1)
+                new Case("1 no gap", 2, 1, true, "fail:0:0", 2, 6, 5, List.of(1, 2)),
+                new Case("2 gap before", 9, 1, false, "fail:1:0", -1, 7, 6, List.of(0)),
+                new Case("3 no miss", 9, 1, true, "fail:0:0", 0, 6, 6, List.of(1, 2)));
         List<String> bad = new ArrayList<>();
         for (Case c : cases) {
             Path spec = J8SSupport.bankSpec("abort-drop" + c.drop(), c.drop());
@@ -128,10 +132,13 @@ class J8SAbortOutputTest {
         List<String> bad = new ArrayList<>();
         // label, drop, W, faults, expected verdict, expected first-miss text ("" none), committed items
         Object[][] cases = {
-            {"1 no gap", 2, 1, "fail:0:0", "reports", "2", List.of(1, 2)},
+            // S-a1 tester round 02: the launcher has no seam and now hands out 0 .. N-1, so cases 1 and 3 hold item 0
+            // back (W 2, item 0 starts 2000 ms late, then fails) while the other worker commits items 1 and 2
+            // (was: W 1 with the old order 2, 1, 0 and fail:0:0)
+            {"1 no gap", 2, 2, "delay:0:0,fail:0:0", "reports", "2", List.of(1, 2)},
             {"2 gap before", 9, 2, "delay:1:0,fail:1:0", "reports", "unknown (a segment before it is missing)",
                 List.of(0, 2)},
-            {"3 no miss", 9, 1, "fail:0:0", "partial", "", List.of(1, 2)},
+            {"3 no miss", 9, 2, "delay:0:0,fail:0:0", "partial", "", List.of(1, 2)},
         };
         for (Object[] c : cases) {
             String label = (String) c[0];

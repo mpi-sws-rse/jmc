@@ -108,7 +108,8 @@ class J8Round06Test {
             System.out.println("J8R6 m2 malformed " + mode + ": failure " + r.failure() + "; leftovers "
                     + leftovers(tag));
             assertNotNull(r.failure(), mode);
-            assertTrue(r.failure().contains("item 4") || r.failure().contains("item-4"), mode + ": " + r.failure());
+            // S-a1 tester round 02: worker 0 (the fake) now receives item 0 first (was item 4)
+            assertTrue(r.failure().contains("item 0") || r.failure().contains("item-0"), mode + ": " + r.failure());
             assertEquals(List.of(), leftovers(tag), mode + ": no worker left running");
         }
     }
@@ -223,11 +224,12 @@ class J8Round06Test {
                 System.out.println("J8R6 reversed " + row[1] + " W=" + w + ": assignment order " + order
                         + ", items " + r.itemIterations() + ", md5 " + exportMd5(mp, r));
                 if (w == 1) {
-                    List<Integer> asc = new ArrayList<>();
-                    for (int j = 0; j < r.n(); j++) {
-                        asc.add(j);
+                    // S-a1 tester round 02: the seam now selects the old order N-1..0 (the default is 0..N-1)
+                    List<Integer> desc = new ArrayList<>();
+                    for (int j = r.n() - 1; j >= 0; j--) {
+                        desc.add(j);
                     }
-                    assertEquals(asc, order, "W=1: items assigned 0..N-1");
+                    assertEquals(desc, order, "W=1: items assigned N-1..0 (the seam)");
                 }
             }
         }

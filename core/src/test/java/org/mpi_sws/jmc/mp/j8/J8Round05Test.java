@@ -24,14 +24,15 @@ import java.util.List;
  * assigned it item j'. No production seam delays a worker's exit, so the coordinator is driven through
  * its public API ({@link SplitCoordinator#run}) with a test-side worker command: {@link
  * J8DelayedExitWorker} wraps the real worker ({@code MpLauncher ... --worker}) and keeps the watched
- * process alive 1500 ms after an injected death ({@code die-after:4:0}).
+ * process alive 1500 ms after an injected death ({@code die-after:0:0}; S-a1 tester round 02: the default
+ * order is now 0 .. N − 1, so the first item is 0, the next 1; was die-after:4:0 with items 4, 3).
  *
  * <p>Derived (round-01 segments of A3Lock:fifo,3,1, K = 1: R 1, N 5, items 4..0 = 2 4 3 10 10;
- * sequential export md5 {@code ddc264d8…}): with W = 1 the worker explores item 4 (attempt 0), publishes
- * it and dies; within the 1500 ms the coordinator commits item 4 and assigns item 3 (attempt 0) to the
- * same, still "alive", slot; the death is then observed with 3.0 outstanding and unconsumed. Expected:
- * 3.0 is voided ({@code consumed/3.0.json}), item 3 is retried once as 3.1 on the restarted worker, which
- * does not execute 3.0; the run completes and the export equals the sequential one.
+ * sequential export md5 {@code ddc264d8…}): with W = 1 the worker explores item 0 (attempt 0), publishes
+ * it and dies; within the 1500 ms the coordinator commits item 0 and assigns item 1 (attempt 0) to the
+ * same, still "alive", slot; the death is then observed with 1.0 outstanding and unconsumed. Expected:
+ * 1.0 is voided ({@code consumed/1.0.json}), item 1 is retried once as 1.1 on the restarted worker, which
+ * does not execute 1.0; the run completes and the export equals the sequential one.
  */
 class J8Round05Test {
 
@@ -69,7 +70,7 @@ class J8Round05Test {
     @Test
     void race_publishThenDieAfterNextAssignment_nextItemRetriedOnce_runComplete() throws Exception {
         Path dir = J8Launch.DIR.resolve("race-" + System.currentTimeMillis());
-        SplitCoordinator.Result r = run(dir, 1, "die-after:4:0", 1500);
+        SplitCoordinator.Result r = run(dir, 1, "die-after:0:0", 1500);
         StringBuilder files = new StringBuilder();
         for (String sub : List.of("", "assigned", "consumed")) {
             Path p = sub.isEmpty() ? dir : dir.resolve(sub);
@@ -88,14 +89,14 @@ class J8Round05Test {
         assertEquals(30, r.ran());
         assertEquals("{0=10, 1=10, 2=3, 3=4, 4=2}", r.itemIterations().toString());
         assertEquals(MD5, exportMd5(r), "export equal to sequential");
-        // the race happened: 3.0 was assigned to the dying slot, voided, and retried as 3.1
-        assertTrue(Files.exists(dir.resolve("assigned/3.0.json")), files.toString());
-        assertTrue(Files.exists(dir.resolve("consumed/3.0.json")), files.toString());
-        assertTrue(Files.exists(dir.resolve("assigned/3.1.json")), files.toString());
-        String item3 = Files.readString(dir.resolve("item-3.json"));
-        assertTrue(item3.replace(" ", "").contains("\"attempt\":1"), item3);
-        // item 4 was not retried (died after its rename)
-        assertFalse(Files.exists(dir.resolve("assigned/4.1.json")), files.toString());
+        // the race happened: 1.0 was assigned to the dying slot, voided, and retried as 1.1
+        assertTrue(Files.exists(dir.resolve("assigned/1.0.json")), files.toString());
+        assertTrue(Files.exists(dir.resolve("consumed/1.0.json")), files.toString());
+        assertTrue(Files.exists(dir.resolve("assigned/1.1.json")), files.toString());
+        String item1 = Files.readString(dir.resolve("item-1.json"));
+        assertTrue(item1.replace(" ", "").contains("\"attempt\":1"), item1);
+        // item 0 was not retried (died after its rename)
+        assertFalse(Files.exists(dir.resolve("assigned/0.1.json")), files.toString());
         assertEquals(0, r.workersLost());
     }
 }

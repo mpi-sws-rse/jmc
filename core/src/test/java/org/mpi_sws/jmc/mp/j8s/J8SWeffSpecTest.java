@@ -23,12 +23,13 @@ import java.util.UUID;
  * SPLIT tester round 01, gate round 03 P2 (accepted exception, asserted as a documented difference): a slot
  * started late re-reads the specification file. OnlineBank:2 at K 1 (N 3: items 2, 1, 0), W 4: the base starts
  * 4 workers at once (worker 3 idle, its specification loaded at start); S-a2 starts 3, slot 3 dormant.
- * Slot 2 (item 0) is a stand-in: its first JVM exits at once, its second holds 0.0. The liveness probe, asked
- * about that second JVM, waits until items 2 and 1 are published (so workers 0 and 1 loaded the file) and 3 s
+ * Slot 2 (item 2; S-a1 hands out 0 .. N - 1) is a stand-in: its first JVM exits at once, its second holds 2.0.
+ * The liveness probe, asked about that second JVM, waits until items 0 and 1 are published (so workers 0 and 1
+ * loaded the file) and 3 s
  * more, then rewrites the specification file (one line dropped: another SHA-256) and lets the stand-in exit.
- * Derived: 0.0 is voided and requeued, slot 2 is lost; items 2 and 1 are not yet committed in that pass, so
+ * Derived: 2.0 is voided and requeued, slot 2 is lost; items 0 and 1 are not yet committed in that pass, so
  * live 2 &lt; min(4, 3) and S-a2 starts slot 3, which reads the rewritten file: startup fail marker of worker 3
- * (SHA-256 differs), abort. The base gives 0.1 to its warm worker 3: complete.
+ * (SHA-256 differs), abort. The base gives 2.1 to its warm worker 3: complete.
  */
 class J8SWeffSpecTest {
 
@@ -47,7 +48,7 @@ class J8SWeffSpecTest {
 
     /**
      * Gate round 05, gap 2: the same run with the specification unchanged. Derived: the activated worker 3
-     * loads the same file and runs 0.1; complete, lost 1, starts {0=1, 1=1, 2=2, 3=1}; the semantic online
+     * loads the same file and runs 2.1; complete, lost 1, starts {0=1, 1=1, 2=2, 3=1}; the semantic online
      * fields (all but {@code firstMissWallMs}) equal the base's, measured at 648e9c83 with the same
      * injection: miss, 1 uncovered graph, 1 distinct, first miss at iteration 3 (the dropped line), NoSig,
      * the witness of iteration 3, lookups 12 (11 found, 0 not found, 1 without signature).
@@ -149,9 +150,9 @@ class J8SWeffSpecTest {
                     return false;
                 }
                 long until = System.currentTimeMillis() + 120_000;
-                while (!(Files.exists(d.resolve("item-2.json")) && Files.exists(d.resolve("item-1.json")))) {
+                while (!(Files.exists(d.resolve("item-0.json")) && Files.exists(d.resolve("item-1.json")))) {
                     if (System.currentTimeMillis() > until) {
-                        throw new IllegalStateException("items 2 and 1 not published in 120 s");
+                        throw new IllegalStateException("items 0 and 1 not published in 120 s");
                     }
                     Thread.sleep(10);
                 }
