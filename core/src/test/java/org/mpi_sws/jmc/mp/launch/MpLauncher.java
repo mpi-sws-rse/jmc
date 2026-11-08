@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +44,7 @@ import java.util.Map;
  * <pre>
  * java -cp &lt;core main + test classes + runtime deps&gt; org.mpi_sws.jmc.mp.launch.MpLauncher \
  *      &lt;program class[:args]&gt; [strategy] [iterations] [seed] [reportPath] [exportFile] [timeoutSeconds]
- *      [--spec &lt;file&gt;]
+ *      [--spec &lt;file&gt; [--stop-at-first] [--witness &lt;file or dir/&gt;]]
  * </pre>
  *
  * <p>Defaults: strategy {@code mp-random}, {@code 1000} iterations, a seed from the clock (printed,
@@ -88,6 +89,17 @@ import java.util.Map;
  * miss), {@code uncovered: U graphs (D distinct summaries)}, and on a miss {@code witness:} (the first
  * uncovered summary as a format line) and {@code at:} (its iteration and the index's answer). The
  * verdict is a result: exit {@code 0} for all three.
+ *
+ * <p><b>Witnesses</b>: {@code --witness <path>}, anywhere in the argument list, with {@code --spec} (full or bug-finder
+ * mode) writes the uncovered executions as text (the witness format of plan/jmc-must/SUMMARY-FORMAT.md, {@link
+ * org.mpi_sws.jmc.mp.summary.WitnessWriter}). A file path is written at the first uncovered execution and never again;
+ * a directory (an existing one, or a path ending in {@code /}) gets one {@code witness-<n>.txt} per distinct uncovered
+ * summary, {@code n} in order of first occurrence. An existing file, a directory already holding witness files, and an
+ * {@code exportFile} that is the witness file or lies in the witness directory are refused; each witness file is
+ * created exclusively, and a witness that cannot be written fails the run (exit {@code 1}) without changing the online
+ * check's results. Printed: {@code witnesses: W written to <path>}. Refused with {@code --split} (a worker's iterations
+ * are not the run's): run the online check without it to write witnesses. Without {@code --witness} nothing changes;
+ * with it the writing is inside the exploration's time, so a witness run is never a measurement.
  *
  * <p>Exit status: {@code 0} when the checker completes; {@code 1} when the run fails — a
  * {@link JmcCheckerException} (an assertion the checker recorded, a strategy fault, an unsupported
@@ -175,6 +187,7 @@ public final class MpLauncher {
     private static int runBody(String[] rawArgs, Measured st) {
         // J7: the --spec option is taken out wherever it stands; the rest is positional as before.
         Path specFile = null;
+        String witnessPath = null;
         boolean stopAtFirst = false;
         Integer splitWorkers = null;
         Integer splitK = null;
@@ -224,6 +237,14 @@ public final class MpLauncher {
                     return usage("--spec given twice");
                 }
                 specFile = Path.of(rawArgs[++i]);
+            } else if (rawArgs[i].equals("--witness")) {
+                if (i + 1 >= rawArgs.length) {
+                    return usage("--witness needs a file or a directory");
+                }
+                if (witnessPath != null) {
+                    return usage("--witness given twice");
+                }
+                witnessPath = rawArgs[++i];
             } else {
                 positional.add(rawArgs[i]);
             }
@@ -231,6 +252,13 @@ public final class MpLauncher {
         String[] args = positional.toArray(new String[0]);
         if (stopAtFirst && specFile == null) {
             return usage("--stop-at-first needs --spec");
+        }
+        if (witnessPath != null && specFile == null) {
+            return usage("--witness needs --spec");
+        }
+        if (witnessPath != null && (splitWorkers != null || splitK != null || workerDir != null)) {
+            return usage("--witness cannot be combined with --split: a worker's iterations are not the run's;"
+                    + " run the online check without --split to write witnesses");
         }
         if (args.length < 1 || args.length > 7) {
             return usage(
@@ -327,6 +355,15 @@ public final class MpLauncher {
                 st.indexNanos = System.nanoTime() - indexStartNanos;
             }
             mustStrategy.checkAgainst(spec.index(), stopAtFirst);
+        }
+        WitnessFiles witnesses = null;
+        if (witnessPath != null) {
+            try {
+                witnesses = WitnessFiles.open(witnessPath, exportFile);
+            } catch (IllegalArgumentException | IOException e) {
+                return usage("--witness " + witnessPath + " refused: " + e.getMessage());
+            }
+            mustStrategy.writeWitnesses(witnesses);
         }
 
         if (splitWorkers != null || splitK != null || workerDir != null) {
@@ -517,6 +554,12 @@ public final class MpLauncher {
                 failure = (failure == null ? "" : failure + "; ") + "cannot write " + exportFile + ": " + e;
             }
         }
+        if (witnesses != null) {
+            System.out.println("witnesses:  " + witnesses.written() + " written to " + witnessPath);
+            if (witnesses.error() != null) {
+                failure = (failure == null ? "" : failure + "; ") + witnesses.error();
+            }
+        }
         if (mustStrategy != null) {
             st.failure = failure;
             printMeasurements(st);
@@ -526,6 +569,127 @@ public final class MpLauncher {
             return 1;
         }
         return 0;
+    }
+
+    /**
+     * The {@code --witness} target: a file, written at the first uncovered execution and never again, or a directory
+     * (an existing one, or a path ending in {@code /}, created), with one {@code witness-<n>.txt} per distinct
+     * uncovered summary, {@code n} from 1 in order of first occurrence. A file that exists, or a directory that already
+     * holds a {@code witness-*.txt}, is refused, so that no witness of an earlier run is taken for this one's, and so
+     * is an export file that is the witness file or lies in the witness directory, compared with symbolic links
+     * resolved. Each file is created exclusively ({@code CREATE_NEW}), so a file that appeared meanwhile is never
+     * overwritten. A write that fails, a file that exists at the write, or an execution that cannot be written is
+     * recorded, ends the writing and fails the run.
+     */
+    private static final class WitnessFiles implements MustStrategy.WitnessSink {
+        private final Path file;
+        private final Path dir;
+        private int written;
+        private String error;
+
+        private WitnessFiles(Path file, Path dir) {
+            this.file = file;
+            this.dir = dir;
+        }
+
+        static WitnessFiles open(String path, Path exportFile) throws IOException {
+            Path p = Path.of(path);
+            Path export = exportFile == null ? null : canonical(exportFile);
+            if (Files.isDirectory(p) || path.endsWith("/")) {
+                if (export != null && canonical(p).equals(export.getParent())) {
+                    throw new IllegalArgumentException(
+                            "the export file " + exportFile + " lies in the witness directory");
+                }
+                Files.createDirectories(p);
+                try (var listing = Files.newDirectoryStream(p, "witness-*.txt")) {
+                    if (listing.iterator().hasNext()) {
+                        throw new IllegalArgumentException("the directory already holds witness files");
+                    }
+                }
+                return new WitnessFiles(null, p);
+            }
+            if (Files.exists(p)) {
+                throw new IllegalArgumentException("the file exists");
+            }
+            if (export != null && canonical(p).equals(export)) {
+                throw new IllegalArgumentException("it is the export file");
+            }
+            Path parent = p.toAbsolutePath().getParent();
+            if (parent == null || !Files.isDirectory(parent)) {
+                throw new IllegalArgumentException("its directory does not exist");
+            }
+            return new WitnessFiles(p, null);
+        }
+
+        /**
+         * The path as the file system resolves it, also where it does not exist yet ({@code realpath -m}):
+         * component by component from the root, a symbolic link (dangling or not) is replaced by its
+         * target, resolved against the link's directory, and {@code ..} is applied only to the resolved
+         * prefix, so that two spellings of one file compare equal before either exists. More than 40
+         * links (a loop) is an error.
+         */
+        private static Path canonical(Path path) throws IOException {
+            return canonical(path, 0);
+        }
+
+        private static Path canonical(Path path, int links) throws IOException {
+            Path abs = path.toAbsolutePath();
+            Path current = abs.getRoot();
+            for (int i = 0; i < abs.getNameCount(); i++) {
+                String name = abs.getName(i).toString();
+                if (name.equals(".")) {
+                    continue;
+                }
+                if (name.equals("..")) {
+                    // current is resolved, so its parent is the directory ".." names.
+                    current = current.getParent() == null ? current : current.getParent();
+                    continue;
+                }
+                Path next = current.resolve(name);
+                if (Files.isSymbolicLink(next)) {
+                    if (links >= 40) {
+                        throw new IOException("too many symbolic links at " + next);
+                    }
+                    Path target = current.resolve(Files.readSymbolicLink(next));
+                    for (int j = i + 1; j < abs.getNameCount(); j++) {
+                        target = target.resolve(abs.getName(j).toString());
+                    }
+                    return canonical(target, links + 1);
+                }
+                current = next;
+            }
+            return current;
+        }
+
+        @Override
+        public void uncovered(int iteration, String summaryLine, String witness) {
+            if (error != null || (file != null && written > 0)) {
+                return;
+            }
+            Path target = file != null ? file : dir.resolve("witness-" + (written + 1) + ".txt");
+            try {
+                Files.writeString(target, witness, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW,
+                        StandardOpenOption.WRITE);
+                written++;
+            } catch (IOException e) {
+                error = "cannot write witness " + target + ": " + e;
+            }
+        }
+
+        @Override
+        public void refused(int iteration, String summaryLine, String why) {
+            if (error == null && !(file != null && written > 0)) {
+                error = "cannot write the witness of iteration " + iteration + ": " + why;
+            }
+        }
+
+        int written() {
+            return written;
+        }
+
+        String error() {
+            return error;
+        }
     }
 
     /**
@@ -836,7 +1000,8 @@ public final class MpLauncher {
         System.err.println("MpLauncher: " + why);
         System.err.println(
                 "usage: MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000]"
-                        + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file> [--stop-at-first]]"
+                        + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file> [--stop-at-first]"
+                        + " [--witness <file or dir/>]]"
                         + " [--split W [--k K]] [--worker <run dir> <id>]");
         return 2;
     }
