@@ -22,6 +22,7 @@ import org.mpi_sws.jmc.strategies.must.MustStrategy;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
@@ -151,6 +152,10 @@ class WitnessLauncherTest {
         assertEquals(0, o.exit(), o.text());
         assertEquals("15 written to " + existing, field(o.stdout(), "witnesses"));
         assertEquals(16, listing(existing).size(), "15 witnesses beside notes.txt");
+        Path notes = existing.resolve("notes.txt");
+        assertTrue(Files.isRegularFile(notes, LinkOption.NOFOLLOW_LINKS),
+                "notes.txt is still a regular file, not a link");
+        assertEquals("kept", Files.readString(notes, StandardCharsets.UTF_8), "notes.txt is left unchanged");
         Path deep = dir.resolve("a/b/c");
         Out d = online(dir, spec, "--witness", deep + "/");
         assertEquals(0, d.exit(), d.text());
