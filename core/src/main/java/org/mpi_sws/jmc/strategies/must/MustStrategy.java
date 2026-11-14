@@ -14,6 +14,7 @@ import org.mpi_sws.jmc.mp.graph.ExecutionGraph;
 import org.mpi_sws.jmc.mp.graph.GraphCanon;
 import org.mpi_sws.jmc.mp.summary.MpValueEncoder;
 import org.mpi_sws.jmc.mp.summary.SetIndex;
+import org.mpi_sws.jmc.mp.summary.WitnessWriter;
 import org.mpi_sws.jmc.mp.summary.Summary;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.runtime.HaltCheckerException;
@@ -183,6 +184,10 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private long uncoveredTotal;
     /** The distinct uncovered summaries. */
     private final Set<Summary> uncoveredSummaries = new HashSet<>();
+    /** Online mode: receives each distinct uncovered execution as a witness text; {@code null} for none. */
+    private WitnessSink witnessSink;
+    /** With a {@link #witnessSink}: the iteration's creations in order, for the witness text. */
+    private final List<WitnessWriter.Creation> creations = new ArrayList<>();
     /** Online-mode counters: queries, and their answers (no signature / found / not found). */
     private long lookups;
     private long signatureMisses;
@@ -606,6 +611,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         childCount.clear();
         pending.clear();
         roleOfStable.clear();
+        creations.clear();
         daemons.clear();
         awaitBlockedTasks.clear();
         mainDraining = false;
@@ -671,6 +677,10 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 name(created, task);
                 roleOfStable.put(stableOfRuntime.get(created),
                         optParam(event, "role") instanceof String r ? r : "");
+                if (witnessSink != null) {
+                    creations.add(new WitnessWriter.Creation(task, pos.getOrDefault(task, 0),
+                            stableOfRuntime.get(created)));
+                }
                 if (Boolean.TRUE.equals(optParam(event, "daemon"))) {
                     daemons.add(stableOfRuntime.get(created));
                 }
@@ -1613,7 +1623,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     notFound++;
                 }
                 uncoveredTotal++;
-                uncoveredSummaries.add(s);
+                boolean distinct = uncoveredSummaries.add(s);
                 if (uncovered == null) {
                     uncovered = s;
                     uncoveredIteration = iterations;
@@ -1631,6 +1641,19 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                         segmentAnswer = answer instanceof SetIndex.Covers.NoSig ? "NoSig" : "NotFound";
                         segmentFirstAtMs = System.currentTimeMillis();
                     }
+                }
+                if (distinct && witnessSink != null) {
+                    // After the check's results are latched: a witness that cannot be written loses none of them.
+                    String uncoveredLine = s.toJson(1);
+                    String text;
+                    try {
+                        text = WitnessWriter.write(iterations, uncoveredLine, finished, creations, witnessNames(),
+                                encoder);
+                    } catch (IllegalArgumentException e) {
+                        witnessSink.refused(iterations, uncoveredLine, e.getMessage());
+                        return;
+                    }
+                    witnessSink.uncovered(iterations, uncoveredLine, text);
                 }
             }
         }
@@ -1705,6 +1728,64 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         }
         this.spec = Objects.requireNonNull(spec);
         this.stopAtFirst = stopAtFirst;
+    }
+
+    /**
+     * Receives the witnesses of the online check: the text of an uncovered execution
+     * ({@link WitnessWriter}), once per distinct uncovered summary, at its first occurrence.
+     */
+    public interface WitnessSink {
+        /**
+         * One distinct uncovered summary, at its first occurrence. Called on the scheduler thread at
+         * the end of the iteration; must not throw.
+         *
+         * @param iteration the 1-based iteration whose graph gave it
+         * @param summaryLine the summary as a format line ({@code toJson(1)}, as {@link #uncovered()}
+         *     is reported)
+         * @param witness the execution as witness text
+         */
+        void uncovered(int iteration, String summaryLine, String witness);
+
+        /**
+         * A distinct uncovered summary whose execution cannot be written as a witness (a value the
+         * encoder refuses, e.g. one sent by an invisible process, which the summary never encodes).
+         * The online check's results are unaffected. Must not throw.
+         *
+         * @param iteration the 1-based iteration whose graph gave it
+         * @param summaryLine the summary as a format line
+         * @param why the reason
+         */
+        void refused(int iteration, String summaryLine, String why);
+    }
+
+    /**
+     * Hands each distinct uncovered execution of the online check to {@code sink} (the witness
+     * option). Without a sink nothing is recorded. Not for split mode: a segment's iterations are
+     * not the run's, so the launcher refuses the combination.
+     *
+     * @param sink the receiver
+     * @throws IllegalStateException if the online check is not enabled
+     */
+    public void writeWitnesses(WitnessSink sink) {
+        if (spec == null) {
+            throw new IllegalStateException("witnesses need the online check (checkAgainst)");
+        }
+        this.witnessSink = Objects.requireNonNull(sink);
+    }
+
+    /** The names a witness prints: {@code main}, else the role a process was spawned with, else its path. */
+    private Map<Long, String> witnessNames() {
+        Map<Long, String> names = new HashMap<>();
+        for (long t : started) {
+            String role = roleOfStable.getOrDefault(t, "");
+            names.put(t, t == 1L ? "main" : role.isEmpty() ? nameOfId.get(t) : role);
+        }
+        for (WitnessWriter.Creation c : creations) {
+            String role = roleOfStable.getOrDefault(c.child(), "");
+            names.putIfAbsent(c.child(), role.isEmpty() ? nameOfId.get(c.child()) : role);
+        }
+        names.put(1L, "main");
+        return names;
     }
 
     /** Whether the online check runs in bug-finder mode (stop at the first uncovered summary). */
