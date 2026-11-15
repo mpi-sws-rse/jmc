@@ -18,8 +18,17 @@ import java.util.function.Predicate;
  * joining task after/before those of the process) and additionally hands a process's failure to
  * the task that awaits it, so that an {@code AssertionError} in a process reaches the checker.
  *
- * <p>{@link #self()} is the only runtime-dependent way to obtain a {@link Tid};
- * {@code Tid} itself is a pure value in {@code org.mpi_sws.jmc.mp.events}.
+ * <p>A process's {@link Tid} comes from its handle: {@link Handle#tid()} after {@link #spawn}, or
+ * {@link Pending#tid()} after {@link #create}, which names a process before it runs, so that processes
+ * can address each other (create them all, then start each with a body that captures the others'
+ * tids). {@link #self()} gives the calling process's own. Do not compute task ids: a task id is the
+ * position of the task among all runtime task allocations of the execution (main is 1, the k-th
+ * allocation counting from 1 is task k + 1, daemons and processes created by processes included), it is
+ * reset for every execution, and a {@code Tid} is valid only within the execution that produced it
+ * (ids are reused, so a stale {@code Tid} cannot be told from a current one). {@code Tid} itself is a
+ * pure value in {@code org.mpi_sws.jmc.mp.events}.
+ *
+ * <p>{@link #assume(boolean)} blocks the calling process when its condition is false.
  */
 public final class MpProcess {
 
@@ -82,6 +91,66 @@ public final class MpProcess {
     }
 
     /**
+     * Creates a process with a role without starting it: its id is allocated and its creation is
+     * reported now (as by {@link #spawn}), so {@link Pending#tid()} can be used at once, as a send
+     * destination or inside payloads; {@link Pending#start(Runnable)} gives it its body and starts it.
+     * Only the creating task may start it; a process created and never started fails the execution at
+     * its end.
+     *
+     * @param role the role name; the empty string for none
+     * @return the not yet started process
+     */
+    public static Pending create(String role) {
+        Objects.requireNonNull(role, "role");
+        return new Pending(new MpThread(role, false), role, false);
+    }
+
+    /**
+     * Creates a daemon process without starting it, as {@link #create} does for a process; started with
+     * {@link Pending#start(Runnable)}, it behaves as one made by {@link #spawnDaemon}.
+     *
+     * @return the not yet started daemon
+     */
+    public static Pending createDaemon() {
+        return new Pending(new MpThread("", true), "", true);
+    }
+
+    /**
+     * Blocks the calling process unless {@code cond} holds: {@code assume(false)} stops the process at
+     * this point with status {@code blocked} (as an assume does in the paper and in TraceForge); the
+     * other processes continue and the execution is explored and exported as usual. {@code assume(true)}
+     * returns at once. For a process other than main it is exactly a blocking receive that nothing can
+     * match; a daemon's failed assume makes the execution blocked (an unmatched receive of a daemon does
+     * not). Statements after a failed assume never run; Java cleanup ({@code finally}) still runs while
+     * the process unwinds, and must not use this API.
+     *
+     * @param cond the condition
+     * @throws HaltExecutionException if the strategy delivers a fault detected on another task
+     */
+    public static void assume(boolean cond) {
+        if (cond) {
+            return;
+        }
+        MpThread.exitIfStale();
+        JmcRuntimeEvent request =
+                new JmcRuntimeEvent.Builder()
+                        .type(JmcRuntimeEvent.Type.MP_RECV_REQUEST_EVENT)
+                        .taskId(JmcRuntime.currentTask())
+                        .param("model", CommunicationModel.P2P)
+                        .param("guard", (Predicate<MpMessage>) m -> false)
+                        .param("blocking", true)
+                        .param("assume", true)
+                        .build();
+        // A HaltTaskException (the strategy blocked the caller) propagates, ending the process.
+        Object answer = JmcRuntime.updateEventAndYield(request);
+        MpThread.exitIfStale();
+        if (answer instanceof MpFaultValue f) {
+            throw HaltExecutionException.error(f.message());
+        }
+        throw new IllegalStateException("an assume(false) was answered");
+    }
+
+    /**
      * The identifier of the calling process.
      *
      * @return the current task's id
@@ -118,6 +187,67 @@ public final class MpProcess {
         return new Handle(Tid.of(thread.getTaskId(), role), thread);
     }
 
+    /** A process created by {@link #create} or {@link #createDaemon} and not yet started. */
+    public static final class Pending {
+        private final MpThread thread;
+        private final String role;
+        private final boolean daemon;
+        private boolean started;
+
+        private Pending(MpThread thread, String role, boolean daemon) {
+            this.thread = thread;
+            this.role = role;
+            this.daemon = daemon;
+        }
+
+        /**
+         * The process's identifier, valid from creation on and only in this execution.
+         *
+         * @return the id
+         * @throws IllegalStateException if the process belongs to an earlier execution
+         */
+        public Tid tid() {
+            requireCurrent();
+            return daemon ? Tid.of(thread.getTaskId()) : Tid.of(thread.getTaskId(), role);
+        }
+
+        /**
+         * Gives the process its body and starts it, as {@link #spawn} starts a process.
+         *
+         * @param body the process body
+         * @return a handle for joining it (not awaitable for a daemon)
+         * @throws NullPointerException if {@code body} is null (the process can still be started)
+         * @throws IllegalStateException if the process belongs to an earlier execution, the caller is not
+         *     the task that created it, or it was already started
+         */
+        public Handle start(Runnable body) {
+            Objects.requireNonNull(body, "body");
+            requireCurrent();
+            Long caller = JmcRuntime.currentTask();
+            if (!Objects.equals(caller, thread.createdBy())) {
+                throw new IllegalStateException("process " + label() + " was created by task " + thread.createdBy()
+                        + "; only its creator may start it");
+            }
+            if (started) {
+                throw new IllegalStateException("process " + label() + " was already started");
+            }
+            started = true;
+            thread.install(body);
+            thread.start();
+            return new Handle(tid(), thread);
+        }
+
+        private void requireCurrent() {
+            if (thread.epoch() != MpThread.currentEpoch()) {
+                throw new IllegalStateException("process " + label() + " belongs to an earlier execution");
+            }
+        }
+
+        private String label() {
+            return role.isEmpty() ? "task " + thread.getTaskId() : role;
+        }
+    }
+
     /** A handle to a spawned process. */
     public static final class Handle {
         private final Tid tid;
@@ -129,7 +259,7 @@ public final class MpProcess {
         }
 
         /**
-         * The process's identifier, for addressing sends to it.
+         * The process's identifier, for addressing sends to it; valid only in this execution.
          *
          * @return the id
          */
