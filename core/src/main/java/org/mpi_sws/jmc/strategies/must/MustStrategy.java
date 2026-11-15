@@ -94,7 +94,8 @@ import java.util.function.Predicate;
  * depend on it; the seed is accepted for the factory's signature and unused.
  *
  * <p><b>At the end of an iteration</b> without a recorded error, the graph's {@code GraphCanon} is
- * counted (complete and blocked separately), and — when roles were given — summarised with
+ * counted (complete and blocked separately; under a split control it is only handed to the control, which
+ * counts by outcome digest), and — when roles were given — summarised with
  * {@link SummaryExporter}: each process is given the role it was spawned with, which must be one
  * of the declared roles, and the program must have the shape described in the package
  * documentation. {@link #exhausted()} says whether the stack ran empty, i.e. the enumeration is
@@ -261,9 +262,13 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private final Map<String, Long> idOfName = new HashMap<>();
     private final Map<Long, String> nameOfId = new HashMap<>();
     private long nextStableId = 2;
-    /** Canonical forms of the distinct complete graphs seen. */
+    /**
+     * Canonical forms of the distinct complete graphs seen; not kept under a split control, where the run's
+     * counts are the coordinator's union of the outcome digests (a canon per iteration was the bulk of a split
+     * worker's heap).
+     */
     private Set<GraphCanon> completeGraphs = new LinkedHashSet<>();
-    /** Canonical forms of the distinct blocked graphs seen. */
+    /** Canonical forms of the distinct blocked graphs seen; not kept under a split control either. */
     private Set<GraphCanon> blockedGraphs = new LinkedHashSet<>();
     /** Summaries of the explored executions with their multiplicities. */
     private LinkedHashMap<Summary, Integer> summaries = new LinkedHashMap<>();
@@ -489,10 +494,12 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     GraphCanon canon = finished.canon();
                     measureShape();
                     boolean blockedGraph = countsAsBlocked();
-                    if (blockedGraph) {
-                        blockedGraphs.add(canon);
-                    } else {
-                        completeGraphs.add(canon);
+                    if (split == null) {
+                        if (blockedGraph) {
+                            blockedGraphs.add(canon);
+                        } else {
+                            completeGraphs.add(canon);
+                        }
                     }
                     if (split != null) {
                         try {
@@ -1844,14 +1851,35 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         return notFound;
     }
 
-    /** Distinct complete (non-blocked) graphs so far, by {@code GraphCanon}. */
+    /**
+     * Distinct complete (non-blocked) graphs so far, by {@code GraphCanon}.
+     *
+     * @return the count
+     * @throws IllegalStateException under a split control ({@link #setSplitControl}), from its installation on:
+     *     the graphs are not kept there, and the run's count is the coordinator's union of the outcome digests
+     */
     public int distinctCompleteGraphs() {
+        requireNoSplit();
         return completeGraphs.size();
     }
 
-    /** Distinct blocked graphs so far. */
+    /**
+     * Distinct blocked graphs so far.
+     *
+     * @return the count
+     * @throws IllegalStateException under a split control, as {@link #distinctCompleteGraphs()}
+     */
     public int distinctBlockedGraphs() {
+        requireNoSplit();
         return blockedGraphs.size();
+    }
+
+    /** Refuses a graph count under a split control, where the graphs are not kept. */
+    private void requireNoSplit() {
+        if (split != null) {
+            throw new IllegalStateException("distinct graphs are not kept under --split: the run's counts are the"
+                    + " coordinator's union of the outcome digests");
+        }
     }
 
     /** Iterations that ran (consistent alternatives explored). */

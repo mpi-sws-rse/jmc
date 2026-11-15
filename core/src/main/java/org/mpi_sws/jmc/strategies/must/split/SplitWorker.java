@@ -130,6 +130,10 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         // The root's segment was reported just before this call; rootOutcomes is its transcript.
         String fingerprint = StackFingerprint.of(SplitCoordinator.fingerprintProgram(
                 run.get("program").getAsString(), specHash), splitThreshold(), view, rootOutcomes);
+        // The replayed root transcript has served its one purpose; neither it nor run.json's copy is kept for the
+        // worker's lifetime (the file keeps it).
+        rootOutcomes = List.of();
+        run.remove("transcript");
         if (injected("fingerprint", -1, -1)) {
             fingerprint = "0" + fingerprint.substring(1);
         }

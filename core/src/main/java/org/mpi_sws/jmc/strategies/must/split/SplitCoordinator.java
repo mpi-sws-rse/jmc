@@ -19,6 +19,7 @@ import org.mpi_sws.jmc.mp.summary.Summary;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,7 +62,8 @@ import java.util.regex.Pattern;
  * coordinator writes {@code STOP} and waits for every worker to end; on abort it terminates them.
  *
  * <p><b>Merge.</b> Distinct complete and blocked graphs are the union of the outcome digests of root and
- * items; iterations and blocked iterations are summed; the summary lines are the root's, then the items'
+ * items, each item's digests added when it is committed (after its envelope, online object and every outcome
+ * decoded), after which the retained envelope no longer carries them; iterations and blocked iterations are summed; the summary lines are the root's, then the items'
  * in the order {@code N − 1} … {@code 0}, deduplicated on the line without its multiplicity (the first
  * occurrence kept, multiplicities summed) — the sequential run's export order.
  *
@@ -264,14 +266,8 @@ public final class SplitCoordinator {
         root.view.names().forEach(names::addProperty);
         runJson.add("names", names);
         runJson.addProperty("nextId", root.view.nextId());
-        JsonArray transcript = new JsonArray();
-        for (ItemResult.Outcome o : root.outcomes) {
-            JsonObject x = new JsonObject();
-            x.addProperty("blocked", o.blocked());
-            x.addProperty("digest", o.digest());
-            transcript.add(x);
-        }
-        runJson.add("transcript", transcript);
+        // Built in a helper, with no local here, so that nothing in this frame keeps it once run.json is written.
+        runJson.add("transcript", transcriptJson(root.outcomes));
         if (root.summaryLines != null) {
             JsonArray lines = new JsonArray();
             root.summaryLines.forEach(lines::add);
@@ -286,12 +282,21 @@ public final class SplitCoordinator {
             runJson.add("spec", spec);
         }
         writeAtomically(dir.resolve("run.json"), runJson);
+        // The root's transcript is in the unions and in run.json; neither in-memory copy is kept any longer.
+        List<WeakReference<Object>> released =
+                List.of(new WeakReference<>(runJson.remove("transcript")), new WeakReference<>(root.outcomes));
+        root.outcomes = List.of();
+        java.util.function.Consumer<List<WeakReference<Object>>> probe = transcriptReleaseProbe;
+        if (probe != null) {
+            probe.accept(released);
+        }
 
         Map<Integer, JsonObject> committed = new TreeMap<>();
         int[] lostOut = new int[1];
         long[] lastCommitOut = {System.nanoTime()};
         Checks checks = new Checks(config.spec(), startMillis);
-        String failure = dispatch(config, dir, runId, root, committed, lostOut, lastCommitOut, checks);
+        Unions unions = new Unions(complete, blocked);
+        String failure = dispatch(config, dir, runId, root, committed, lostOut, lastCommitOut, checks, unions);
         sweepSpecSnapshots(dir);
         int lost = lostOut[0];
         if (failure != null) {
@@ -313,10 +318,6 @@ public final class SplitCoordinator {
             ran += env.get("iterations").getAsInt();
             blockedIterations += env.get("blockedIterations").getAsInt();
             sizes.put(j, env.get("iterations").getAsInt());
-            for (JsonElement e : env.getAsJsonArray("outcomes")) {
-                JsonObject o = e.getAsJsonObject();
-                (o.get("blocked").getAsBoolean() ? blocked : complete).add(o.get("digest").getAsString());
-            }
             if (env.has("summaries")) {
                 for (JsonElement e : env.getAsJsonArray("summaries")) {
                     mergeLine(merged, e.getAsString());
@@ -731,7 +732,7 @@ public final class SplitCoordinator {
      * @return {@code null} when every item is committed and every worker has ended, else the abort reason
      */
     private static String dispatch(Config config, Path dir, String runId, Root root, Map<Integer, JsonObject> committed,
-                                   int[] lostOut, long[] lastCommitOut, Checks checks) {
+                                   int[] lostOut, long[] lastCommitOut, Checks checks, Unions unions) {
         List<Slot> slots = new ArrayList<>();
         try {
             // W slots, of which min(W, N) start now; the others stay dormant (no process) and start only
@@ -766,7 +767,7 @@ public final class SplitCoordinator {
                         continue;
                     }
                     String bad = commitIfPublished(dir, runId, root.fingerprint, s, tableNames, export, committed,
-                            lastCommitOut, checks);
+                            lastCommitOut, checks, unions);
                     if (bad != null) {
                         return abort(slots, bad);
                     }
@@ -778,7 +779,7 @@ public final class SplitCoordinator {
                         // The result may have been renamed into place between the check above and the exit:
                         // look again now that the process is known to be dead.
                         bad = commitIfPublished(dir, runId, root.fingerprint, s, tableNames, export, committed,
-                                lastCommitOut, checks);
+                                lastCommitOut, checks, unions);
                         if (bad != null) {
                             return abort(slots, bad);
                         }
@@ -870,7 +871,7 @@ public final class SplitCoordinator {
      */
     private static String commitIfPublished(Path dir, String runId, String fingerprint, Slot s, Set<String> names,
                                             boolean export, Map<Integer, JsonObject> committed,
-                                            long[] lastCommitOut, Checks checks) {
+                                            long[] lastCommitOut, Checks checks, Unions unions) {
         if (s.item < 0) {
             return null;
         }
@@ -888,12 +889,54 @@ public final class SplitCoordinator {
         if (bad != null) {
             return "item " + s.item + ": " + bad;
         }
+        // Every outcome is decoded before the unions change: a malformed one refuses the whole result, which then
+        // contributes nothing (before, it failed the final merge).
+        List<String> complete = new ArrayList<>();
+        List<String> blocked = new ArrayList<>();
+        for (JsonElement e : env.getAsJsonArray("outcomes")) {
+            try {
+                JsonObject o = e.getAsJsonObject();
+                (o.get("blocked").getAsBoolean() ? blocked : complete).add(o.get("digest").getAsString());
+            } catch (RuntimeException x) {
+                return "item " + s.item + ": malformed outcome " + e;
+            }
+        }
+        unions.complete().addAll(complete);
+        unions.blocked().addAll(blocked);
+        env.remove("outcomes");
         committed.put(s.item, env);
         lastCommitOut[0] = System.nanoTime();
         s.item = -1;
         s.attempt = -1;
         return null;
     }
+
+    /**
+     * Test seam: if set, called once just before dispatch with weak references to the root transcript's two
+     * in-memory forms (the JSON array written to {@code run.json} and the root's outcome list), neither of which
+     * is strongly reachable from the coordinator any longer.
+     */
+    static volatile java.util.function.Consumer<List<WeakReference<Object>>> transcriptReleaseProbe;
+
+    /** The root's outcomes as {@code run.json}'s transcript array. */
+    private static JsonArray transcriptJson(List<ItemResult.Outcome> outcomes) {
+        JsonArray transcript = new JsonArray();
+        for (ItemResult.Outcome o : outcomes) {
+            JsonObject x = new JsonObject();
+            x.addProperty("blocked", o.blocked());
+            x.addProperty("digest", o.digest());
+            transcript.add(x);
+        }
+        return transcript;
+    }
+
+    /**
+     * The run's digest unions, filled from the root before dispatch and from each item at its commit.
+     *
+     * @param complete digests of the distinct complete graphs
+     * @param blocked digests of the distinct blocked graphs
+     */
+    private record Unions(Set<String> complete, Set<String> blocked) {}
 
     /** The abort reason for a fail marker. */
     private static String failMarkerReason(Path dir, String marker) {
