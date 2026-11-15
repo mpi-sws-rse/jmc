@@ -794,7 +794,7 @@ public final class MpLauncher {
 
     /**
      * The coordinator of a split run ({@code must --split W [--k K]}): runs the root here, starts
-     * {@code W} worker JVMs (this launcher with {@code --worker}, the same class path and JVM options),
+     * {@code min(W, N)} worker JVMs (this launcher with {@code --worker}, the same class path and JVM options),
      * merges, and prints and exports as a sequential {@code must} run does. The run directory is
      * {@code <reportPath>/split-<random id>}.
      *
