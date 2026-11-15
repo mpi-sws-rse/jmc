@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.LongFunction;
 
 /**
@@ -34,11 +35,13 @@ import java.util.function.LongFunction;
  *   <li>{@code R} a record: its class name, then its components in declaration order, each
  *       encoded recursively;</li>
  *   <li>{@code L} a {@link List} of any implementation class: its size, then its elements;</li>
+ *   <li>{@code O} an {@link Optional}: no field when empty, its value when present;</li>
  *   <li>{@code T} a {@link Tid}: the task's creation-path name.</li>
  * </ul>
  *
- * <p>Anything else ({@code null}, other numeric wrappers, arrays, sets, optionals, non-record
- * classes) is refused with an {@link IllegalArgumentException}. Labels: {@code send(model, dst
+ * <p>Anything else ({@code null}, other numeric wrappers, arrays, sets, non-record classes) is
+ * refused with an {@link IllegalArgumentException} that names the outermost record (the message
+ * class) and the field path to the refused value, as {@code MpValueEncoder} does. Labels: {@code send(model, dst
  * name, value)}, {@code recv(model, blocking)}, {@code nondet(optionCount, chosen)}, {@code
  * block()}; an {@code Error} label is refused. An event is {@code K(name, index)}.
  *
@@ -95,8 +98,35 @@ public final class TypedGraphEncoding {
      * @throws IllegalArgumentException if the value, or a value inside it, is of a refused class
      */
     public static String value(Object v, LongFunction<String> names) {
+        return value(v, names, null, "");
+    }
+
+    /** A refusal of a value at a location ({@code message} the outermost record, or {@code null}). */
+    private static IllegalArgumentException refused(String why, String message, String path) {
+        return refused(why, message, path, null);
+    }
+
+    /** As {@link #refused(String, String, String)}, keeping the exception that caused it. */
+    private static IllegalArgumentException refused(String why, String message, String path, Throwable cause) {
+        String where = message == null
+                ? (path.isEmpty() ? "the payload" : "element " + path + " of the payload")
+                : (path.isEmpty() ? "message " + message : "field " + path + " of message " + message);
+        return new IllegalArgumentException(why + " (" + where + ")", cause);
+    }
+
+    /**
+     * {@link #value(Object, LongFunction)} at a location, for the refusals.
+     *
+     * @param v the value
+     * @param names stable task id to creation-path name
+     * @param message the outermost record's class name, or {@code null} above every record
+     * @param path the field path from that record to {@code v}
+     * @return its encoding
+     */
+    private static String value(Object v, LongFunction<String> names, String message, String path) {
         if (v == null) {
-            throw new IllegalArgumentException("split mode refuses a null payload value");
+            throw refused("split mode refuses a null payload value: null is allowed only as ⊥ (use Optional for"
+                    + " an absent value)", message, path);
         }
         if (v instanceof Integer i) {
             return composite("I", Integer.toString(i));
@@ -108,42 +138,61 @@ public final class TypedGraphEncoding {
             return composite("Z", Boolean.toString(b));
         }
         if (v instanceof String s) {
-            requireWellFormed(s);
+            try {
+                requireWellFormed(s);
+            } catch (IllegalArgumentException e) {
+                throw refused(e.getMessage(), message, path, e);
+            }
             return composite("S", s);
         }
         if (v instanceof Enum<?> e) {
             return composite("E", e.getDeclaringClass().getName(), e.name());
         }
         if (v instanceof Tid t) {
-            return composite("T", name(t.raw(), names));
+            try {
+                return composite("T", name(t.raw(), names));
+            } catch (IllegalArgumentException e) {
+                throw refused(e.getMessage(), message, path, e);
+            }
         }
         if (v instanceof Record r) {
+            // The outermost record is the message; its fields' paths start at it (a record inside a
+            // container of the payload is named with its place there).
+            String msg = message != null ? message
+                    : path.isEmpty() ? r.getClass().getName() : r.getClass().getName() + " at " + path + " of the payload";
+            String base = message == null ? "" : path;
             RecordComponent[] cs = r.getClass().getRecordComponents();
             List<String> fields = new ArrayList<>(cs.length + 1);
             fields.add(r.getClass().getName());
             for (RecordComponent c : cs) {
+                String field = base.isEmpty() ? c.getName() : base + "." + c.getName();
                 Object x;
                 try {
                     c.getAccessor().setAccessible(true);
                     x = c.getAccessor().invoke(r);
                 } catch (ReflectiveOperationException | RuntimeException e) {
-                    throw new IllegalArgumentException("cannot read component " + c.getName() + " of "
-                            + r.getClass().getName() + ": " + e, e);
+                    throw refused("cannot read component " + c.getName() + " of " + r.getClass().getName() + ": " + e,
+                            msg, field, e instanceof java.lang.reflect.InvocationTargetException ite && ite.getCause() != null
+                                    ? ite.getCause() : e);
                 }
-                fields.add(value(x, names));
+                fields.add(value(x, names, msg, field));
             }
             return composite("R", fields);
+        }
+        if (v instanceof Optional<?> o) {
+            return o.isPresent() ? composite("O", value(o.get(), names, message, path.isEmpty() ? "get()" : path + ".get()")) : composite("O");
         }
         if (v instanceof List<?> l) {
             List<String> fields = new ArrayList<>(l.size() + 1);
             fields.add(Integer.toString(l.size()));
+            int i = 0;
             for (Object x : l) {
-                fields.add(value(x, names));
+                fields.add(value(x, names, message, path + "[" + i++ + "]"));
             }
             return composite("L", fields);
         }
-        throw new IllegalArgumentException("split mode refuses a payload value of " + v.getClass().getName()
-                + " (supported: Integer, Long, Boolean, String, enum, record, List, Tid)");
+        throw refused("split mode refuses a payload value of " + v.getClass().getName()
+                + " (supported: Integer, Long, Boolean, String, enum, record, Optional, List, Tid)", message, path);
     }
 
     /**
