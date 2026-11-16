@@ -253,6 +253,17 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private boolean failureToMain;
     /** Main ended blocked on an await of a process that itself ended blocked. */
     private boolean mainBlockedOnAwait;
+    /** Main ended blocked at a failed {@code MpProcess.assume}. */
+    private boolean mainBlockedOnAssume;
+    /** Tasks blocked at a failed {@code MpProcess.assume}: their Block makes the execution blocked, daemons too. */
+    private final Set<Long> assumeTasks = new HashSet<>();
+    /** Processes made by {@code MpProcess.create} and not yet started (stable ids). */
+    private final Set<Long> pendingNotStarted = new TreeSet<>();
+    /**
+     * The first task whose Block was appended in this iteration, or {@code null}: from then on no
+     * message-passing operation may run (no stack item may snapshot a graph that holds a Block).
+     */
+    private Long firstBlocked;
 
     // across iterations
     /**
@@ -484,6 +495,14 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         String problem = fault;
         try {
             super.resetIteration(iteration);
+            if (problem == null && !pendingNotStarted.isEmpty()) {
+                long t = pendingNotStarted.iterator().next();
+                String role = roleOfStable.getOrDefault(t, "");
+                Long rt = runtimeOfStable.get(t);
+                problem = "process " + (role.isEmpty() ? "task " + rt : role) + " (task " + rt
+                        + ") was created by create() but never started";
+                fail(problem);
+            }
             if (!errorRecorded && problem == null) {
                 if (!parked.isEmpty()) {
                     problem = "iteration ended with parked tasks " + parked.keySet();
@@ -621,10 +640,14 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         creations.clear();
         daemons.clear();
         awaitBlockedTasks.clear();
+        assumeTasks.clear();
+        pendingNotStarted.clear();
+        firstBlocked = null;
         mainDraining = false;
         drainRaised = false;
         failureToMain = false;
         mainBlockedOnAwait = false;
+        mainBlockedOnAssume = false;
         guideLen.clear();
         pos.clear();
         currentValue.clear();
@@ -674,6 +697,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             return;
         }
         long task = stable;
+        if (firstBlocked != null && createsItems(event)) {
+            // A modeled operation after a Block: refused before it can snapshot a graph holding the Block
+            // (a stack item replaying it would drift).
+            throw halt(afterBlock(task, event.getType()));
+        }
         if (event.getType() == JmcRuntimeEvent.Type.TASK_CREATED_EVENT) {
             // Raised by MpThread's constructor, on the creator's thread: name the new task now, so
             // that every Tid the program can hold has its name before any event uses it.
@@ -691,8 +719,14 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 if (Boolean.TRUE.equals(optParam(event, "daemon"))) {
                     daemons.add(stableOfRuntime.get(created));
                 }
+                if (Boolean.TRUE.equals(optParam(event, "pending"))) {
+                    pendingNotStarted.add(stableOfRuntime.get(created));
+                }
             }
             return;
+        }
+        if (event.getType() == JmcRuntimeEvent.Type.START_EVENT) {
+            pendingNotStarted.remove(task);
         }
         if (event.getType() == JmcRuntimeEvent.Type.START_EVENT && runtimeTask != 1L) {
             inheritSpawnFrontier(task, event.getParam("startedBy"));
@@ -862,7 +896,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private Tid stableTid(Tid runtime) {
         Long id = stableOfRuntime.get(runtime.raw());
         if (id == null) {
-            fail("a send names task " + runtime.raw() + ", which was not created by MpThread in this iteration");
+            fail("a send names task " + runtime.raw() + ", which no process of this execution has; use the Tid of a"
+                    + " Pending or Handle (MpProcess.create/spawn)");
             return Tid.of(-runtime.raw());
         }
         return Tid.of(id);
@@ -1080,6 +1115,22 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             awaitBlockedTasks.add(task);
             parked.put(task, new Parked(model, guard, true, null, false));
             return;
+        }
+        if (Boolean.TRUE.equals(optParam(event, "assume"))) {
+            // MpProcess.assume(false): the caller blocks. Its Block makes the execution blocked even for a
+            // daemon (as TraceForge's Block(Assume)). A process other than main takes the plain receive path
+            // below (a guard that accepts nothing parks it, exactly as the unmatched-receive workaround);
+            // main, for which a receive is not allowed in export mode, is parked as at an await of a blocked
+            // process: not a message event of main.
+            assumeTasks.add(task);
+            if (task == 1L) {
+                if (replaying(task)) {
+                    throw drift(task, guideNode(task), "a failed assume of main");
+                }
+                mainBlockedOnAssume = true;
+                parked.put(task, new Parked(model, guard, true, null, false));
+                return;
+            }
         }
         if (optParam(event, "drainDaemons") != null) {
             // Main's final request after its body (MpProcess.runMain, raised only when daemons
@@ -1401,6 +1452,13 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 long t = e.getKey();
                 if (p.waitingFor() == null && !deliverable(graph, t, p.model(), p.guard(), null).isEmpty()) {
                     parked.remove(t);
+                    if (firstBlocked != null) {
+                        // A parked receive that gained options after a Block (an impure guard): refused before
+                        // issueReceive could snapshot the graph; delivered on the receiver's thread, as replay
+                        // drift below is (an exception here would end the scheduler loop).
+                        fail(afterBlock(t, JmcRuntimeEvent.Type.MP_RECV_REQUEST_EVENT));
+                        return SchedulingChoice.task(runtimeOfStable.get(t), new MpFaultValue("must: " + fault));
+                    }
                     issueReceive(t, p.model(), p.guard(), true);
                     SchedulingChoiceValue a = answers.remove(t);
                     if (a != null) {
@@ -1427,6 +1485,9 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         }
         graph.append(t, new MpLabel.Block(), null, takePending(t));
         advance(t);
+        if (firstBlocked == null) {
+            firstBlocked = t;
+        }
         if (!iterationBlocked && countsBlocking(t)) {
             iterationBlocked = true;
             blockedIterations++;
@@ -1458,6 +1519,29 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         return HaltExecutionException.error("must: " + fault);
     }
 
+    /**
+     * Whether an event may create a stack item (a send, a receive request, a nondet); the requests that
+     * only park are not: an await of a blocked process, main's drain, and a failed assume.
+     */
+    private static boolean createsItems(JmcRuntimeEvent event) {
+        JmcRuntimeEvent.Type ty = event.getType();
+        if (ty == JmcRuntimeEvent.Type.MP_SEND_EVENT || ty == JmcRuntimeEvent.Type.ND_EVENT) {
+            return true;
+        }
+        return ty == JmcRuntimeEvent.Type.MP_RECV_REQUEST_EVENT && optParam(event, "awaitOfBlocked") == null
+                && optParam(event, "drainDaemons") == null && !Boolean.TRUE.equals(optParam(event, "assume"));
+    }
+
+    /** The fault of a message-passing operation after the iteration's first Block. */
+    private String afterBlock(long task, JmcRuntimeEvent.Type type) {
+        String what = type == JmcRuntimeEvent.Type.MP_SEND_EVENT ? "a send"
+                : type == JmcRuntimeEvent.Type.ND_EVENT ? "a nondet" : "a receive";
+        return "task " + nameOfId.get(task) + " raised " + what + " after process " + nameOfId.get(firstBlocked)
+                + " was blocked; no message-passing operation may run once a process is blocked (a modeled operation"
+                + " in a finally block, a suppressed JMC control-flow exception, a thread started from a blocked"
+                + " process's cleanup, or runMain called by the program)";
+    }
+
     /** Records a fault if summaries are exported and the program breaks the required shape. */
     private void shape(String why) {
         if (rolesInSpawnOrder != null) {
@@ -1479,7 +1563,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * from the parked request, not the label ({@code MpLabel.Block} has none).
      */
     private boolean countsBlocking(long task) {
-        return !daemons.contains(task) || awaitBlockedTasks.contains(task);
+        return !daemons.contains(task) || awaitBlockedTasks.contains(task) || assumeTasks.contains(task);
     }
 
     /** Whether some Block of the graph makes it blocked ({@link #countsBlocking}). */
@@ -1533,7 +1617,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         notAwaited.remove(1L);
         notAwaited.removeAll(awaited);
         notAwaited.removeAll(daemons);
-        if (!notAwaited.isEmpty() && !mainBlockedOnAwait) {
+        if (!notAwaited.isEmpty() && !mainBlockedOnAwait && !mainBlockedOnAssume) {
             throw new IllegalArgumentException("process(es) " + notAwaited + " were never awaited by main");
         }
         Map<Long, String> roleOfTask = new HashMap<>();

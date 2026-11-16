@@ -179,6 +179,12 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
      */
     private final Set<Long> awaitBlocked = new TreeSet<>();
 
+    /** Every task created in this iteration (main included), to refuse a send to a task that does not exist. */
+    private final Set<Long> created = new TreeSet<>(Set.of(1L));
+
+    /** Processes made by {@code MpProcess.create} and not yet started, with their labels. */
+    private final Map<Long, String> pendingNotStarted = new TreeMap<>();
+
     /** Whether main is parked on its final request ({@code drainDaemons}). */
     private boolean mainDraining;
 
@@ -234,7 +240,17 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
             if (Boolean.TRUE.equals(optParam(event, "daemon")) && optParam(event, "createdTask") instanceof Long c) {
                 daemons.add(c);
             }
+            if (optParam(event, "createdTask") instanceof Long c) {
+                created.add(c);
+                if (Boolean.TRUE.equals(optParam(event, "pending"))) {
+                    String role = optParam(event, "role") instanceof String r ? r : "";
+                    pendingNotStarted.put(c, role.isEmpty() ? "task " + c : role);
+                }
+            }
         } else if (type == JmcRuntimeEvent.Type.START_EVENT) {
+            pendingNotStarted.remove(task);
+            // A started task is a valid destination even without a creation event (a JmcThread raises none).
+            created.add(task);
             Long startedBy = event.getParam("startedBy");
             if (startedBy != null) {
                 clocks = clocks.spawn(startedBy, task);
@@ -245,6 +261,9 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
         } else if (type == JmcRuntimeEvent.Type.FINISH_EVENT) {
             live.remove(task);
             if (task == 1L) {
+                if (!pendingNotStarted.isEmpty()) {
+                    fail(neverStarted(), true);
+                }
                 requireNoLiveProcess("returned");
             } else if (Boolean.TRUE.equals(optParam(event, "failed"))) {
                 // A process failure is an error of the iteration when it happens, whether or not
@@ -267,6 +286,10 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
         } else if (type == JmcRuntimeEvent.Type.MP_SEND_EVENT) {
             CommunicationModel model = event.getParam("model");
             Tid dst = event.getParam("dst");
+            if (!created.contains(dst.raw())) {
+                fail("a send names task " + dst.raw() + ", which no process of this execution has; use the Tid of a"
+                        + " Pending or Handle (MpProcess.create/spawn)", task == 1L);
+            }
             MpMessage value = event.getParam("value");
             long index = sendCount.merge(task, 1L, Long::sum) - 1;
             Envelope envelope = new Envelope(Tid.of(task), index, dst, model, value);
@@ -276,7 +299,9 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
             LOGGER.debug("Task {} emitted {}", task, envelope);
             retryParked(dst.raw());
         } else if (type == JmcRuntimeEvent.Type.MP_RECV_REQUEST_EVENT) {
-            if (optParam(event, "awaitOfBlocked") != null) {
+            if (optParam(event, "awaitOfBlocked") != null || Boolean.TRUE.equals(optParam(event, "assume"))) {
+                // An await of a blocked process, or a failed MpProcess.assume: the caller's block makes the
+                // iteration blocked even for a daemon.
                 awaitBlocked.add(task);
             }
             if (task == 1L && optParam(event, "drainDaemons") != null) {
@@ -379,6 +404,12 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
         LOGGER.error("mp-random fault: {}", message);
     }
 
+    /** The fault of a process made by {@code MpProcess.create} and never started. */
+    private String neverStarted() {
+        Map.Entry<Long, String> e = pendingNotStarted.entrySet().iterator().next();
+        return "process " + e.getValue() + " (task " + e.getKey() + ") was created by create() but never started";
+    }
+
     /** A parameter that an event may lack entirely (events built without parameters have none). */
     private static Object optParam(JmcRuntimeEvent event, String key) {
         Map<String, Object> ps = event.getParams();
@@ -456,6 +487,12 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
                 LOGGER.debug("Main parked with a latched fault; delivering the fault");
                 return SchedulingChoice.task(1L, new MpFaultValue(deliverFault().getMessage()));
             }
+            if (blocked == 1L && fault == null && !pendingNotStarted.isEmpty()) {
+                // Main is about to be blocked with a created process never started: an error, delivered to main
+                // like a latched fault (an exception here would end the scheduler loop).
+                latch(neverStarted());
+                return SchedulingChoice.task(1L, new MpFaultValue(deliverFault().getMessage()));
+            }
             if (blocked == 1L && mainDraining) {
                 // Main's final request after its body: every other task has finished or
                 // blocked, so it is answered, not blocked.
@@ -524,9 +561,17 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
                 }
             }
         }
+        if (fault == null && !pendingNotStarted.isEmpty() && !recorded) {
+            // A process made by MpProcess.create and never started, with main ending by a path that raises
+            // neither FINISH nor a parked main (a core assume(false), a HaltTaskException from elsewhere).
+            fault = HaltExecutionException.error(neverStarted());
+        }
         live.clear();
         daemons.clear();
         awaitBlocked.clear();
+        created.clear();
+        created.add(1L);
+        pendingNotStarted.clear();
         mainDraining = false;
         drained = false;
         HaltExecutionException f = fault;

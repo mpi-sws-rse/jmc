@@ -319,9 +319,9 @@ public final class MpLauncher {
             }
             mpProgram = mp;
             if (strategy.equals("mp-random")) {
-                recorder = new MpRecordingStrategy(seed, reportPath, mp.rolesInSpawnOrder(), mp.visibleRoles());
+                recorder = new MpRecordingStrategy(seed, reportPath, mp.declaredRoles(), mp.visibleRoles());
             } else if (must) {
-                mustStrategy = new MustStrategy(seed, reportPath, mp.rolesInSpawnOrder(), mp.visibleRoles());
+                mustStrategy = new MustStrategy(seed, reportPath, mp.declaredRoles(), mp.visibleRoles());
             } else {
                 return usage("export under " + strategy + " is not supported (mp-random or must)");
             }
@@ -342,7 +342,7 @@ public final class MpLauncher {
             mpProgram = mp;
             if (exportFile == null) {
                 // The online check summarises every graph: the exporting constructor, roles included.
-                mustStrategy = new MustStrategy(seed, reportPath, mp.rolesInSpawnOrder(), mp.visibleRoles());
+                mustStrategy = new MustStrategy(seed, reportPath, mp.declaredRoles(), mp.visibleRoles());
                 st.must = mustStrategy;
             }
             long indexStartNanos = System.nanoTime();
@@ -386,7 +386,7 @@ public final class MpLauncher {
                 // The worker summarises when run.json says so (an export or an online check), with the
                 // program's roles; it loads the specification named in run.json, never one of its own.
                 MpProgram wp = program instanceof MpProgram m ? m : null;
-                return SplitWorker.run(workerDir, workerId, program, wp == null ? null : wp.rolesInSpawnOrder(),
+                return SplitWorker.run(workerDir, workerId, program, wp == null ? null : wp.declaredRoles(),
                         wp == null ? null : wp.visibleRoles());
             }
             return runSplit(st, args, rawArgs, program, programClass, mpProgram, splitWorkers,
@@ -827,7 +827,7 @@ public final class MpLauncher {
         SplitCoordinator.Result result;
         try {
             result = SplitCoordinator.run(new SplitCoordinator.Config(identity, program,
-                    mpProgram == null ? null : mpProgram.rolesInSpawnOrder(),
+                    mpProgram == null ? null : mpProgram.declaredRoles(),
                     mpProgram == null ? null : mpProgram.visibleRoles(), k, workers, timeoutSeconds, runDir,
                     (dir, id) -> {
                         List<String> cmd = new ArrayList<>();

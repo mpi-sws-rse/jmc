@@ -77,7 +77,11 @@ public final class MpThread extends Thread {
     private final Long createdBy;
     /** The iteration this process belongs to: {@link #EPOCH} when it was created. */
     private final long epoch;
-    private final Runnable body;
+    /** The body; set at construction, or once before {@link #start()} for a process made by {@code MpProcess.create}. */
+    private volatile Runnable body;
+
+    /** Whether the process was made by {@code MpProcess.create}/{@code createDaemon}: reported on its creation event. */
+    private final boolean pending;
 
     /**
      * Whether this is a daemon process (as TraceForge's {@code spawn_daemon}): not awaitable, and
@@ -181,8 +185,24 @@ public final class MpThread extends Thread {
     }
 
     private MpThread(Runnable body, boolean daemon, String role) {
+        this(Objects.requireNonNull(body, "body"), daemon, role, false);
+    }
+
+    /**
+     * Creates the thread of a process whose body is given later ({@link #install}), for
+     * {@code MpProcess.create}: mints the task id and reports the creation now, marked {@code pending}.
+     *
+     * @param role the role name; the empty string for none
+     * @param daemon whether the process is a daemon
+     */
+    MpThread(String role, boolean daemon) {
+        this(null, daemon, role, true);
+    }
+
+    private MpThread(Runnable body, boolean daemon, String role, boolean pending) {
         super();
-        this.body = Objects.requireNonNull(body, "body");
+        this.body = body;
+        this.pending = pending;
         this.daemon = daemon;
         this.role = Objects.requireNonNull(role, "role");
         exitIfStale();
@@ -195,14 +215,46 @@ public final class MpThread extends Thread {
         this.createdBy = JmcRuntime.currentTask();
         // Tell the strategy now, on the creator's thread, so that it can name the task by
         // its creation path before the program uses its Tid (a send to it, a payload naming it).
-        JmcRuntime.updateEvent(
+        JmcRuntimeEvent.Builder created =
                 new JmcRuntimeEvent.Builder()
                         .type(JmcRuntimeEvent.Type.TASK_CREATED_EVENT)
                         .taskId(createdBy)
                         .param("createdTask", taskId)
                         .param("daemon", daemon)
-                        .param("role", role)
-                        .build());
+                        .param("role", role);
+        if (pending) {
+            // Only processes made by MpProcess.create carry it: every other creation event is unchanged.
+            created.param("pending", true);
+        }
+        JmcRuntime.updateEvent(created.build());
+    }
+
+    /**
+     * Sets the body of a process made by {@code MpProcess.create}, once, before {@link #start()}.
+     *
+     * @param b the body
+     * @throws IllegalStateException if the process already has a body
+     */
+    void install(Runnable b) {
+        if (body != null) {
+            throw new IllegalStateException("process " + taskId + " already has a body");
+        }
+        body = Objects.requireNonNull(b, "body");
+    }
+
+    /** The task that created this process. */
+    Long createdBy() {
+        return createdBy;
+    }
+
+    /** The iteration this process belongs to. */
+    long epoch() {
+        return epoch;
+    }
+
+    /** The current iteration counter ({@link #EPOCH}). */
+    static long currentEpoch() {
+        return EPOCH.get();
     }
 
     /**

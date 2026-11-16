@@ -119,7 +119,7 @@ public class MpRecordingStrategy extends MpRandomSchedulingStrategy {
     private boolean mainAwaited;
     /** The processes main has awaited (completed joins) in this iteration. */
     private final Set<Long> awaited = new HashSet<>();
-    /** Whether main raised an await of a process that ended blocked (such an await blocks). */
+    /** Whether main raised an await of a process that ended blocked, or a failed assume (either blocks main). */
     private boolean mainBlockedOnAwait;
     /** Daemon processes (no role, never awaited). */
     private final Set<Long> daemons = new HashSet<>();
@@ -264,10 +264,12 @@ public class MpRecordingStrategy extends MpRandomSchedulingStrategy {
                     // Main's final request (MpProcess.runMain); not a message event, no key.
                     return;
                 }
-                if (task == 1L && optParam(event, "awaitOfBlocked") != null) {
-                    // MpThread.join1 awaiting a process that ended blocked; not a message event
-                    // of main. Awaiting a blocked process blocks the caller, and the resulting
-                    // Block closes this request like any blocked receive.
+                if (task == 1L && (optParam(event, "awaitOfBlocked") != null
+                        || Boolean.TRUE.equals(optParam(event, "assume")))) {
+                    // MpThread.join1 awaiting a process that ended blocked, or main's failed
+                    // MpProcess.assume; not a message event of main. Either blocks main, and the
+                    // resulting Block closes this request like any blocked receive (main then
+                    // ends blocked, so its unawaited processes are not refused).
                     mainBlockedOnAwait = true;
                 } else if (task == 1L) {
                     inconsistent("main performs a receive; the format requires main to perform no"
