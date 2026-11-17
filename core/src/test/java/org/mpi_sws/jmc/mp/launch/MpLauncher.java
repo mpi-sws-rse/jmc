@@ -23,9 +23,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Runs one message-passing program through one {@link JmcModelChecker#check} in this JVM, with no
@@ -282,7 +285,7 @@ public final class MpLauncher {
         } catch (ReflectiveOperationException | LinkageError e) {
             // An InvocationTargetException says nothing itself; its cause is the constructor's.
             Throwable why = e.getCause() != null ? e.getCause() : e;
-            return usage("cannot load and construct " + args[0] + ": " + why);
+            return constructionFailure(args[0], why);
         }
         String strategy = args.length > 1 ? args[1] : "mp-random";
         if (!SchedulingStrategyFactory.isValidStrategy(strategy)) {
@@ -998,6 +1001,30 @@ public final class MpLauncher {
      */
     private static int usage(String why) {
         System.err.println("MpLauncher: " + why);
+        return usageLine();
+    }
+
+    /**
+     * Reports a program that cannot be loaded or constructed: the failure, each of its causes
+     * ({@code caused by: ...}, so that a cause wrapped in an {@code ExceptionInInitializerError} is
+     * shown), and the stack trace of the innermost cause, then the usage line. The status stays 2:
+     * a program that cannot be constructed has not been checked.
+     */
+    private static int constructionFailure(String program, Throwable why) {
+        System.err.println("MpLauncher: cannot load and construct " + program + ": " + why);
+        Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.add(why);
+        Throwable innermost = why;
+        for (Throwable c = why.getCause(); c != null && seen.add(c); c = c.getCause()) {
+            System.err.println("  caused by: " + c);
+            innermost = c;
+        }
+        innermost.printStackTrace(System.err);
+        return usageLine();
+    }
+
+    /** Prints the usage line and returns the usage status, 2. */
+    private static int usageLine() {
         System.err.println(
                 "usage: MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000]"
                         + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file> [--stop-at-first]"

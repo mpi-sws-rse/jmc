@@ -89,6 +89,7 @@ class RuntimeDefectLauncherTest {
     @Test
     void constructorThrows_direct_causeAndItsFrameShown() throws Exception {
         MpLauncherTest.Out o = run("ConstructorFaults:direct", "must", "0", "c-direct", false);
+        assertEquals(2, o.exit(), o.text());
         assertTrue(o.text().contains("bad size 0"), o.text());
         assertTrue(o.text().contains("at org.mpi_sws.jmc.mp.programs.faults.ConstructorFaults.<init>"), o.text());
     }
@@ -96,7 +97,9 @@ class RuntimeDefectLauncherTest {
     @Test
     void constructorThrows_nested_rootCauseShown() throws Exception {
         MpLauncherTest.Out o = run("ConstructorFaults:nested", "must", "0", "c-nested", false);
-        assertTrue(o.text().contains("static init boom"), o.text());
+        assertEquals(2, o.exit(), o.text());
+        assertTrue(o.text().contains("caused by: java.lang.IllegalStateException: static init boom"), o.text());
+        assertTrue(o.text().contains("usage: MpLauncher"), o.text());
     }
 
     // ---------------------------------------------------------------- an un-awaited failing process
@@ -115,10 +118,16 @@ class RuntimeDefectLauncherTest {
         assertTrue(o.text().contains("a's own assertion"), o.text());
     }
 
+    /**
+     * Under mp-random with seed 1, the first failing iteration is one where main returns before
+     * {@code a} reaches its assertion. The checker does not run processes after main's end, so the
+     * run fails with the live-process refusal, and {@code a}'s assertion, which never executes, is
+     * not reported.
+     */
     @Test
-    void unawaitedFailure_mpRandom_assertionTextReported() throws Exception {
+    void unawaitedFailure_mpRandom_liveProcessRefused() throws Exception {
         MpLauncherTest.Out o = run("UnawaitedFailure", "mp-random", "20", "u-random", false);
         assertEquals(1, o.exit(), o.text());
-        assertTrue(o.text().contains("a's own assertion"), o.text());
+        assertTrue(o.text().contains("main returned while process(es) [3] were still live"), o.text());
     }
 }
