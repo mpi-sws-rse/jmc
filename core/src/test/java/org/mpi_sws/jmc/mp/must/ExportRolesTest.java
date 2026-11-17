@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.mpi_sws.jmc.checker.JmcCheckerConfiguration;
 import org.mpi_sws.jmc.mp.events.CommunicationModel;
+import org.mpi_sws.jmc.mp.graph.GraphCanon;
 import org.mpi_sws.jmc.mp.launch.MpProgram;
 import org.mpi_sws.jmc.mp.must.J2cTest.Rec;
 import org.mpi_sws.jmc.mp.must.J2cTest.Run;
@@ -23,7 +24,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.LongFunction;
 
 /**
  * The export's header {@code minor} and {@code roles}, the role checks (non-empty ASCII, declared once, visible
@@ -157,6 +160,64 @@ class ExportRolesTest {
         // A graph whose summary was refused counts in no measurement.
         assertEquals(0, m.s().distinctCompleteGraphs(), "refused graph not counted as complete");
         assertEquals(0, m.s().distinctBlockedGraphs(), "refused graph not counted as blocked");
+        assertEquals(0, m.s().measurements().summarisedGraphs());
+    }
+
+    /** A split control that never splits (its threshold is never reached) and records the published outcomes. */
+    static final class Outcomes implements MustStrategy.SplitControl {
+        int outcomes;
+
+        @Override
+        public int splitThreshold() {
+            return 1_000_000;
+        }
+
+        @Override
+        public void outcome(boolean blocked, GraphCanon canon, LongFunction<String> names) {
+            outcomes++;
+        }
+
+        @Override
+        public boolean atBoundary(MustStrategy.SplitView view) {
+            return false;
+        }
+
+        @Override
+        public void segmentDone(MustStrategy.Segment segment) {}
+
+        @Override
+        public OptionalInt nextItem() {
+            return OptionalInt.empty();
+        }
+    }
+
+    static Run mustUnderSplitControl(MpProgram p, String tag, Outcomes control) {
+        String path = DIR + "split-" + tag;
+        MustStrategy s = new MustStrategy(1L, path, p.rolesInSpawnOrder(), p.visibleRoles(), p.payloadNameableRoles());
+        s.setSplitControl(control);
+        // under a split control the strategy keeps no graph sets, so the run is checked without printing them
+        Run r = J2cTest.check(tag, J2cTest.main(p), new JmcCheckerConfiguration.Builder().strategyType("must")
+                .strategyConstructor(c -> s).numIterations(10000).seed(1L).reportPath(path), null);
+        return new Run(s, r.report(), r.thrown());
+    }
+
+    /** Under a split control, a summarised graph's outcome is published to the control. */
+    @Test
+    void splitControl_acceptedGraph_outcomePublished() {
+        Outcomes control = new Outcomes();
+        Run m = mustUnderSplitControl(new ExportRolePrograms("payload_h", "declared"), "declared", control);
+        ok(m);
+        assertEquals(1, control.outcomes, "one execution, one outcome");
+        assertEquals(1, m.s().measurements().summarisedGraphs());
+    }
+
+    /** Under a split control, a graph whose summary is refused publishes no outcome and is not measured. */
+    @Test
+    void splitControl_refusedGraph_noOutcomePublished() {
+        Outcomes control = new Outcomes();
+        Run m = mustUnderSplitControl(new ExportRolePrograms("payload_h", "undeclared"), "undeclared", control);
+        J2cTest.fails(m, "payload names process h, an invisible role that is not declared payload-nameable");
+        assertEquals(0, control.outcomes, "no outcome for a refused summary");
         assertEquals(0, m.s().measurements().summarisedGraphs());
     }
 

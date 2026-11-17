@@ -95,9 +95,9 @@ class OLMeasurementsTest {
             } else {
                 assertTrue(x.matches("[0-9]*"), k + " is a non-negative integer or empty: " + x);
             }
-            // SCHEMA.md: empty = applies but unmeasured; the parser accepts it. JMC measures every key (OL0),
-            // except peak_rss_kb when VmHWM cannot be read (Codex m1), and the per-summary counters when no graph
-            // was summarised (the counting mode).
+            // An empty value means the key applies but was not measured. JMC measures every key except
+            // peak_rss_kb when VmHWM cannot be read, and the per-summary counters when no graph was summarised
+            // (the counting mode).
             boolean perSummaryEmpty = PER_SUMMARY.contains(k) && "0".equals(v.get("summaries_distinct"));
             if (!(rssEmpty && k.equals("peak_rss_kb")) && !perSummaryEmpty) {
                 assertTrue(!x.isEmpty(), "JMC measures " + k);
