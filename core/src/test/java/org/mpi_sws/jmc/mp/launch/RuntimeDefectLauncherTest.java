@@ -38,31 +38,43 @@ class RuntimeDefectLauncherTest {
     }
 
     @Test
-    void guardThrows_must_runEndsWithTheGuardsException() throws Exception {
+    void guardThrows_must_reportsTheGuardsException() throws Exception {
         MpLauncherTest.Out o = run("GuardFaults:throws", "must", "0", "g-throws", false);
         assertEquals(1, o.exit(), o.text());
         assertTrue(o.text().contains("guard boom"), o.text());
+        assertTrue(o.text().contains("the receive guard of process"), o.text());
     }
 
     @Test
-    void guardThrowsAnError_must_runEndsWithTheGuardsError() throws Exception {
+    void guardThrowsAnError_must_reportsTheGuardsError() throws Exception {
         MpLauncherTest.Out o = run("GuardFaults:error", "must", "0", "g-error", false);
         assertEquals(1, o.exit(), o.text());
         assertTrue(o.text().contains("guard assertion"), o.text());
+        assertTrue(o.text().contains("the receive guard of process"), o.text());
     }
 
     @Test
     void guardCallsSelf_must_runEndsWithAFault() throws Exception {
         MpLauncherTest.Out o = run("GuardFaults:self", "must", "0", "g-self", false);
         assertEquals(1, o.exit(), o.text());
-        assertTrue(o.text().contains("guard"), o.text());
+        assertTrue(o.text().contains("the receive guard of process"), o.text());
+        assertTrue(o.text().contains("No current task."), o.text());
     }
 
     @Test
     void guardSends_must_runEndsWithAFault() throws Exception {
         MpLauncherTest.Out o = run("GuardFaults:send", "must", "0", "g-send", false);
         assertEquals(1, o.exit(), o.text());
-        assertTrue(o.text().contains("guard"), o.text());
+        assertTrue(o.text().contains("the receive guard of process"), o.text());
+        assertTrue(o.text().contains("No current task."), o.text());
+    }
+
+    @Test
+    void guardSendsToACapturedId_must_runEndsWithAFault() throws Exception {
+        MpLauncherTest.Out o = run("GuardFaults:sendCaptured", "must", "0", "g-send-captured", false);
+        assertEquals(1, o.exit(), o.text());
+        assertTrue(o.text().contains("the receive guard of process"), o.text());
+        assertTrue(o.text().contains("No current task."), o.text());
     }
 
     @Test

@@ -4,8 +4,10 @@ import org.mpi_sws.jmc.api.mp.Channel;
 import org.mpi_sws.jmc.api.mp.MpProcess;
 import org.mpi_sws.jmc.mp.events.CommunicationModel;
 import org.mpi_sws.jmc.mp.events.MpMessage;
+import org.mpi_sws.jmc.mp.events.Tid;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 /**
@@ -19,7 +21,10 @@ import java.util.function.Predicate;
  *   <li>{@code error}: the guard throws an {@code AssertionError("guard assertion")}, an
  *       {@code Error} rather than an {@code Exception};</li>
  *   <li>{@code self}: the guard calls {@code MpProcess.self()};</li>
- *   <li>{@code send}: the guard sends {@code V(0)} to itself.</li>
+ *   <li>{@code send}: the guard sends {@code V(0)} to itself (it calls {@code MpProcess.self()}
+ *       first);</li>
+ *   <li>{@code sendCaptured}: the guard sends {@code V(0)} to {@code a}, whose id is captured
+ *       outside the guard, so the send itself is the guard's runtime call.</li>
  * </ul>
  * Argument: {@code GuardFaults:<variant>}.
  */
@@ -39,13 +44,14 @@ public final class GuardFaults implements Runnable {
      */
     public GuardFaults(String... args) {
         this.variant = args[0].trim();
-        if (!List.of("none", "throws", "error", "self", "send").contains(variant)) {
+        if (!List.of("none", "throws", "error", "self", "send", "sendCaptured").contains(variant)) {
             throw new IllegalArgumentException("unknown variant " + variant);
         }
     }
 
     @Override
     public void run() {
+        AtomicReference<Tid> aTid = new AtomicReference<>();
         Predicate<V> guard = switch (variant) {
             case "none" -> v -> true;
             case "throws" -> v -> {
@@ -59,10 +65,15 @@ public final class GuardFaults implements Runnable {
                 Channel.send(M, MpProcess.self(), new V(0));
                 return true;
             };
+            case "sendCaptured" -> v -> {
+                Channel.send(M, aTid.get(), new V(0));
+                return true;
+            };
             default -> throw new IllegalStateException(variant);
         };
         MpProcess.Handle b = MpProcess.spawn("b", () -> Channel.recv(M, V.class, guard));
         MpProcess.Handle a = MpProcess.spawn("a", () -> Channel.send(M, b.tid(), new V(1)));
+        aTid.set(a.tid());
         b.await();
         a.await();
     }
