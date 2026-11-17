@@ -175,9 +175,15 @@ public class FileUtil {
                     throw new JmcCheckerException(
                             "No adapter registered for type: " + choiceValueType);
                 }
+                // The content is stored inside the value object, next to its type.
+                JsonElement valueContent = valueJson.get("content");
+                if (valueContent == null) {
+                    throw new JmcCheckerException(
+                            "Scheduling choice of task " + taskId + " in " + filePath
+                                    + ": its value of type " + choiceValueType + " has no content");
+                }
                 SchedulingChoiceValue value =
-                        SchedulingChoiceValueFactory.create(
-                                choiceValueType, choiceJson.get("content"));
+                        SchedulingChoiceValueFactory.create(choiceValueType, valueContent);
                 out.add(SchedulingChoice.task(taskId, value));
             }
             return out;
