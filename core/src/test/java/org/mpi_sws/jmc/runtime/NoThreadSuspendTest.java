@@ -14,8 +14,9 @@ import java.util.stream.Stream;
 
 /**
  * No source of this module calls {@code Thread.suspend()} or {@code Thread.resume()}: both throw
- * {@link UnsupportedOperationException} from JDK 20 on and are removed in JDK 23, so a test that needs to
- * hold a thread inside the runtime's wait uses the runtime's wait hook instead.
+ * {@link UnsupportedOperationException} from JDK 20 on, so a test that needs to hold a thread inside
+ * the runtime's wait uses the runtime's wake hook for tests instead
+ * ({@code TaskManager.setWakeHookForTesting}).
  */
 class NoThreadSuspendTest {
 
