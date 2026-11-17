@@ -22,8 +22,14 @@ public class JmcThread extends Thread {
 
     /** JMC task id identifying this thread to the runtime (may be {@code null} for a wrapper). */
     private final Long jmcThreadId;
-    /** Task id of the task that created this thread (recorded as {@code startedBy} in the start event). */
+    /** Task id of the task that created this thread. */
     private final Long createdBy;
+    /**
+     * Task id of the task that started this thread, recorded as {@code startedBy} in the start
+     * event. It is the creator until {@link #start()} sets it to the starting task, so a thread run
+     * without {@code start()} ({@link #runWithoutJoin()}, as executors do) reports its creator.
+     */
+    private Long startedBy;
 
     // TODO: extend to all constructors of Thread and handle ThreadGroups, also all join methods
     //      Should be a drop in replacement for all possible ways to use Threads
@@ -62,6 +68,7 @@ public class JmcThread extends Thread {
             this.jmcThreadId = null;
             this.createdBy = null;
         }
+        this.startedBy = createdBy;
     }
 
     /**
@@ -71,6 +78,7 @@ public class JmcThread extends Thread {
         super();
         this.jmcThreadId = jmcThreadId;
         this.createdBy = JmcRuntime.currentTask();
+        this.startedBy = createdBy;
         super.setUncaughtExceptionHandler(this::handleInterrupt);
         LOGGER = LogManager.getLogger(JmcThread.class.getName() + " Task=" + jmcThreadId);
     }
@@ -82,6 +90,7 @@ public class JmcThread extends Thread {
         super(r);
         this.jmcThreadId = jmcThreadId;
         this.createdBy = JmcRuntime.currentTask();
+        this.startedBy = createdBy;
         super.setUncaughtExceptionHandler(this::handleInterrupt);
     }
 
@@ -115,7 +124,7 @@ public class JmcThread extends Thread {
     /**
      * JMC harness for a started thread.
      *
-     * <p>Reports a {@code START_EVENT} (with {@code startedBy = createdBy}), yields under this
+     * <p>Reports a {@code START_EVENT} (with the starting task as {@code startedBy}), yields under this
      * thread's task id so the runtime schedules it deterministically, runs the user body {@link
      * #run1()}, and finally — in a {@code finally} — reports a {@code FINISH_EVENT} and joins the
      * task. Re-execution and blocked-task signals are logged rather than propagated. This method is
@@ -128,7 +137,7 @@ public class JmcThread extends Thread {
                 new JmcRuntimeEvent.Builder()
                         .type(JmcRuntimeEvent.Type.START_EVENT)
                         .taskId(jmcThreadId)
-                        .param("startedBy", createdBy)
+                        .param("startedBy", startedBy)
                         .build();
         try {
             JmcRuntime.updateEvent(event);
@@ -172,7 +181,7 @@ public class JmcThread extends Thread {
                 new JmcRuntimeEvent.Builder()
                         .type(JmcRuntimeEvent.Type.START_EVENT)
                         .taskId(jmcThreadId)
-                        .param("startedBy", createdBy)
+                        .param("startedBy", startedBy)
                         .build();
         try {
             JmcRuntime.updateEvent(event);
@@ -217,6 +226,11 @@ public class JmcThread extends Thread {
     @Override
     public void start() {
         Long taskId = JmcRuntime.currentTask();
+        if (getState() == State.NEW) {
+            // The started task inherits the starter's causal past, which need not be the creator's.
+            // Thread.start() orders this write before run() reads it.
+            startedBy = taskId;
+        }
         JmcRuntime.pause(taskId);
         super.start();
         JmcRuntime.wait(taskId);

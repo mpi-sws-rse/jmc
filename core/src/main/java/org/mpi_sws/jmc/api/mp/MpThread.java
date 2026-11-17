@@ -26,8 +26,9 @@ import java.util.function.Predicate;
  *
  * <p>The handshake, identical to {@code JmcThread}'s so that a strategy sees the same events in the
  * same order: the task id is minted at construction ({@link JmcRuntime#addNewTask()}) and the
- * creating task recorded; {@link #start()} pauses the parent, starts the JVM thread and waits;
- * {@link #run()} reports {@code START_EVENT} with {@code startedBy}, yields under the new task id,
+ * creating task recorded; {@link #start()} records the starting task, pauses it, starts the JVM
+ * thread and waits; {@link #run()} reports {@code START_EVENT} with that starter as
+ * {@code startedBy} (it need not be the creator), yields under the new task id,
  * runs the body, and in a {@code finally} reports {@code FINISH_EVENT} and joins the task;
  * {@link #join1()} reports {@code JOIN_REQUEST_EVENT} and, after the JVM join,
  * {@code JOIN_COMPLETE_EVENT}, each through a yield.
@@ -75,6 +76,11 @@ public final class MpThread extends Thread {
 
     private final Long taskId;
     private final Long createdBy;
+    /**
+     * The task that started this process, recorded as {@code startedBy} in the start event: the
+     * creator until {@link #start()} sets it to the starting task.
+     */
+    private Long startedBy;
     /** The iteration this process belongs to: {@link #EPOCH} when it was created. */
     private final long epoch;
     /** The body; set at construction, or once before {@link #start()} for a process made by {@code MpProcess.create}. */
@@ -213,6 +219,7 @@ public final class MpThread extends Thread {
         }
         this.taskId = JmcRuntime.addNewTask();
         this.createdBy = JmcRuntime.currentTask();
+        this.startedBy = createdBy;
         // Tell the strategy now, on the creator's thread, so that it can name the task by
         // its creation path before the program uses its Tid (a send to it, a payload naming it).
         JmcRuntimeEvent.Builder created =
@@ -274,6 +281,11 @@ public final class MpThread extends Thread {
     public void start() {
         exitIfStale();
         Long current = JmcRuntime.currentTask();
+        if (getState() == State.NEW) {
+            // The started process inherits the starter's causal past, which need not be the
+            // creator's. Thread.start() orders this write before run() reads it.
+            startedBy = current;
+        }
         JmcRuntime.pause(current);
         boolean added;
         synchronized (ALIVE) {
@@ -319,7 +331,7 @@ public final class MpThread extends Thread {
                 new JmcRuntimeEvent.Builder()
                         .type(JmcRuntimeEvent.Type.START_EVENT)
                         .taskId(taskId)
-                        .param("startedBy", createdBy)
+                        .param("startedBy", startedBy)
                         .build();
         try {
             JmcRuntime.updateEvent(start);
