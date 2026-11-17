@@ -41,6 +41,9 @@ class OLMeasurementsTest {
     private static final List<String> SHAPE = List.of("max_graph_events", "mean_graph_events", "max_visible_events",
             "mean_visible_events", "max_summary_bytes", "max_porf_count");
     private static final Set<String> MEANS = Set.of("mean_graph_events", "mean_visible_events");
+    /** The counters taken per summarised graph: empty when nothing was summarised. */
+    private static final Set<String> PER_SUMMARY = Set.of("max_message_events", "max_graph_events", "mean_graph_events",
+            "max_visible_events", "mean_visible_events");
     // "error": the fifth value of R1 / Codex m2 (owner ruling pending); accepted by the parser.
     private static final Set<String> STOPS = Set.of("exhausted", "budget", "timeout", "first-miss", "error");
 
@@ -93,8 +96,10 @@ class OLMeasurementsTest {
                 assertTrue(x.matches("[0-9]*"), k + " is a non-negative integer or empty: " + x);
             }
             // SCHEMA.md: empty = applies but unmeasured; the parser accepts it. JMC measures every key (OL0),
-            // except peak_rss_kb when VmHWM cannot be read (Codex m1).
-            if (!(rssEmpty && k.equals("peak_rss_kb"))) {
+            // except peak_rss_kb when VmHWM cannot be read (Codex m1), and the per-summary counters when no graph
+            // was summarised (the counting mode).
+            boolean perSummaryEmpty = PER_SUMMARY.contains(k) && "0".equals(v.get("summaries_distinct"));
+            if (!(rssEmpty && k.equals("peak_rss_kb")) && !perSummaryEmpty) {
                 assertTrue(!x.isEmpty(), "JMC measures " + k);
             }
         }
@@ -157,10 +162,13 @@ class OLMeasurementsTest {
 
     static void counting0(Map<String, String> v) {
         for (String k : List.of("summarise_ms", "lookup_ms", "index_ms", "export_ms", "summaries_distinct",
-                "max_visible_events", "max_summary_bytes", "max_porf_count", "max_porf_pairs")) {
+                "max_summary_bytes", "max_porf_count", "max_porf_pairs")) {
             assertEquals("0", v.get(k), "counting mode: " + k);
         }
-        assertEquals("0.000", v.get("mean_visible_events"), "counting mode: mean_visible_events");
+        // The graph, message and visible event counters are taken per summarised graph: none in counting mode.
+        for (String k : PER_SUMMARY) {
+            assertEquals("", v.get(k), "counting mode: " + k + " is empty");
+        }
         assertEquals("exhausted", v.get("stop_reason"));
     }
 
@@ -223,41 +231,33 @@ class OLMeasurementsTest {
     @Test
     void measurementLines() throws Exception {
         // ---- 1. counting mode on an H1 row: Litmus:r_s_ss, TraceForge 2 complete, 1 blocked (H1CountsTest).
-        // Message events (complete graphs): rh tryRecv 1; sh1 r, s 2; sh2 r, s, s 3; main s, s 2 = 8.
-        // The blocked graph (sh2 reads V(1), assume fails) has fewer: 1 + 2 + 1 + 2 = 6.
+        // No graph is summarised in counting mode, so the per-summary counters are empty (counting0).
         Map<String, String> c = block(counting(H1 + "Litmus:r_s_ss"), false);
         assertEquals("2", c.get("graphs_complete"));
         assertEquals("1", c.get("graphs_blocked"));
         assertEquals("3", c.get("iterations"), "Must is optimal: one iteration per distinct graph");
-        assertEquals("8", c.get("max_message_events"));
         counting0(c);
 
         // ---- 2. hand count: ExecutionOrder:two_receives_two_sends (1 complete, 0 blocked).
-        // T1: r1(Tg1) r2(Tg2); T2: s1(Tg2) s2(Tg1); main has no event (spawn/join are edges): 4 events, all messages.
-        // No summary in counting mode: max_porf_count, max_porf_pairs 0 (a phase that does not apply).
+        // No summary in counting mode: max_porf_count, max_porf_pairs 0 (a phase that does not apply), the
+        // per-summary counters empty.
         Map<String, String> s = block(counting(H1 + "ExecutionOrder:two_receives_two_sends"), false);
         assertEquals("1", s.get("graphs_complete"));
         assertEquals("0", s.get("graphs_blocked"));
         assertEquals("1", s.get("iterations"));
-        assertEquals("4", s.get("max_graph_events"));
-        assertEquals("4.000", s.get("mean_graph_events"));
-        assertEquals("4", s.get("max_message_events"));
         counting0(s);
 
-        // ---- 2b. hand count with a non-message event: Litmus:r_nondet (H1: 4 complete, 0 blocked).
-        // main: Nondet (two options: an event) + one send; h: tryRecv (reads the value or ⊥). Every graph:
-        // 3 events, 2 of them messages.
+        // ---- 2b. counting mode with a non-message event: Litmus:r_nondet (H1: 4 complete, 0 blocked).
         Map<String, String> nd = block(counting(H1 + "Litmus:r_nondet"), false);
         assertEquals("4", nd.get("graphs_complete"));
         assertEquals("0", nd.get("graphs_blocked"));
         assertEquals("4", nd.get("iterations"));
-        assertEquals("3", nd.get("max_graph_events"));
-        assertEquals("3.000", nd.get("mean_graph_events"));
-        assertEquals("2", nd.get("max_message_events"), "the Nondet event is not a message event");
         counting0(nd);
 
         // ---- 3. export, hand count: A3Lock:spec,2,1. lock: recv Acq, send Grant, recv Rel, twice (6);
         // clients: Acq, Grant, Rel (3 each): 12 events, all messages, 2 graphs (which client first).
+        // Witness event lines per graph: 4 threads (main, lock, c0, c1) with BEGIN and END each (8), main's 3
+        // creations and 3 completed joins (6), and the 12 events: 26.
         // c0 first: counts (c0's events vs c1, then c1's vs c0) = [0,0,0, 0,3,3]: c1's Grant and Rel come after
         // the lock received c0's Rel, so all 3 c0 events precede them. Mirror [0,3,3, 0,0,0].
         // max_porf_count 3, max_porf_pairs 2, visible 6 per graph.
@@ -267,7 +267,8 @@ class OLMeasurementsTest {
         FileFacts sf = facts(spec);
         assertEquals("2", sp.get("iterations"));
         assertEquals("2", sp.get("summaries_distinct"));
-        assertEquals("12", sp.get("max_graph_events"));
+        assertEquals("26", sp.get("max_graph_events"));
+        assertEquals("26.000", sp.get("mean_graph_events"));
         assertEquals("12", sp.get("max_message_events"));
         assertEquals("3", sp.get("max_porf_count"));
         assertEquals("2", sp.get("max_porf_pairs"));
@@ -366,16 +367,11 @@ class OLMeasurementsTest {
 
         // ================================================================ round 03 (Codex OL0 round 01, M4)
 
-        // ---- 8. varying graph sizes (hand count): Varying below. main: Nondet(2 options) then, on true, one send
-        // to h; h: tryRecv. Graphs: false -> Nondet, h ⊥ (2 events); true -> Nondet, send, h ⊥ (3) and
-        // Nondet, send, h reads (3). 3 complete graphs; max 3, mean 8/3 = 2.667; message events max 2.
+        // ---- 8. varying graph sizes in counting mode: Varying below, 3 complete graphs; nothing summarised.
         Map<String, String> va = block(counting(Varying.class.getName()), false);
         assertEquals("3", va.get("graphs_complete"));
         assertEquals("0", va.get("graphs_blocked"));
         assertEquals("3", va.get("iterations"));
-        assertEquals("3", va.get("max_graph_events"));
-        assertEquals("2.667", va.get("mean_graph_events"), "mean != max on graphs of different sizes");
-        assertEquals("2", va.get("max_message_events"));
         counting0(va);
 
         // ---- 9. budget: Estimation:ns_nseqr,4 (H1: 24 complete) with 5 iterations: 5 distinct graphs, budget.

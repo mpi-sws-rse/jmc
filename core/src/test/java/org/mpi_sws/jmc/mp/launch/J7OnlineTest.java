@@ -2,6 +2,7 @@ package org.mpi_sws.jmc.mp.launch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -573,7 +574,8 @@ class J7OnlineTest {
         List<String> lines = Files.readAllLines(p, StandardCharsets.UTF_8);
         String h = lines.get(0);
         List<String> vis = roles(lines.get(1));
-        SpecificationFile.Loaded loaded = SpecificationFile.load(p, vis);
+        String model = h.replaceAll(".*\"model\":\"([a-z0-9]+)\".*", "$1");
+        SpecificationFile.Loaded loaded = SpecificationFile.load(p, new SpecificationFile.Expected(vis, model, vis));
         assertEquals(lines.size() - 1, loaded.index().size());
         assertEquals(0, loaded.duplicates());
         for (String line : lines.subList(1, lines.size())) {
@@ -628,21 +630,21 @@ class J7OnlineTest {
         assertTrue(r.graphs().endsWith("stack not exhausted"), r.graphs());
     }
 
-    // ---------------------------------------------------------------- Codex J7 m2 (round 03): the model is printed
+    // ---------------------------------------------------------------- the specification's model
 
-    /** A p2p program against its own export relabelled asyn: printed, not compared; coverage decides. */
+    /** A p2p program against its own export relabelled asyn: refused before exploring, naming both models. */
     @Test
-    void m2_asynModelPrintedAndAccepted() throws Exception {
+    void m2_asynModelSpec_refusedForP2pProgram() throws Exception {
         Path own = export("A3Lock:spec,2,1");
         List<String> lines = new ArrayList<>(Files.readAllLines(own, StandardCharsets.UTF_8));
         assertTrue(lines.get(0).contains("\"model\":\"p2p\""), lines.get(0));
         lines.set(0, lines.get(0).replace("\"model\":\"p2p\"", "\"model\":\"asyn\""));
         Path asyn = Path.of(DIR + "a3-spec-k2q1.asyn.jsonl");
         Files.write(asyn, lines, StandardCharsets.UTF_8);
-        Run r = online("A3Lock:spec,2,1", asyn);
-        String spec = field(r.out().text(), "spec");
-        assertTrue(spec != null && spec.contains("model asyn"), "spec: " + spec);
-        conforms(r, 2);
+        MpLauncherTest.Out o = MpLauncherTest.launch(LAUNCHER, PKG + "A3Lock:spec,2,1", "must", "0", "1",
+                DIR + "report-online-asyn", "-", TIMEOUT, "--spec", asyn.toString());
+        assertNotEquals(0, o.exit(), o.text());
+        assertTrue(o.text().contains("the two models differ: asyn and p2p"), o.text());
     }
 
     /** The unmodified p2p export prints model p2p. */

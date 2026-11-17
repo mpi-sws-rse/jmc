@@ -287,10 +287,14 @@ public final class SplitWorker implements MustStrategy.SplitControl {
      * @param program main's body
      * @param roles the declared roles for export, or {@code null} to count only
      * @param visibleRoles the visible roles, or {@code null}
+     * @param payloadRoles the invisible roles a visible payload may name, or {@code null} with
+     *     {@code roles}
+     * @param model the program's communication model as a header writes it, or {@code null} with {@code roles}
      * @return {@code 0} when the coordinator stopped it after its assignments, {@code 1} on a failure
      *     (a fail marker has been written)
      */
-    public static int run(Path runDir, int workerId, Runnable program, List<String> roles, List<String> visibleRoles) {
+    public static int run(Path runDir, int workerId, Runnable program, List<String> roles, List<String> visibleRoles,
+                          List<String> payloadRoles, String model) {
         SplitWorker worker;
         try {
             worker = new SplitWorker(runDir, workerId);
@@ -304,13 +308,15 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         }
         MustStrategy strategy = !summarise
                 ? new MustStrategy(1L, "build/test-results/jmc-report")
-                : new MustStrategy(1L, "build/test-results/jmc-report", roles, visibleRoles);
+                : new MustStrategy(1L, "build/test-results/jmc-report", roles, visibleRoles, payloadRoles);
         if (worker.run.has("spec")) {
             JsonObject spec = worker.run.getAsJsonObject("spec");
             Path file = Path.of(spec.get("path").getAsString());
             try {
                 SplitCoordinator.SpecSnapshot snap =
-                        SplitCoordinator.snapshotSpec(file, runDir, "worker-" + workerId, visibleRoles);
+                        SplitCoordinator.snapshotSpec(file, runDir, "worker-" + workerId,
+                                new SpecificationFile.Expected(visibleRoles, model,
+                                        MustStrategy.headerRoles(visibleRoles, payloadRoles)));
                 worker.specHash = snap.sha256();
                 if (!worker.specHash.equals(spec.get("sha256").getAsString())) {
                     return startupFailure(runDir, worker, "specification " + file + " has SHA-256 " + worker.specHash

@@ -10,36 +10,42 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
- * Writes an uncovered execution as text, the witness format shared with TraceForge
- * (plan/jmc-must/SUMMARY-FORMAT.md, "Witness files"):
+ * Writes an uncovered execution as text, in the witness format that TraceForge also writes. The format:
  *
  * <pre>
  * uncovered summary (iteration &lt;i&gt;): &lt;summary line&gt;
- * thread "&lt;name&gt;"[tid=&lt;t&gt;]:
- * 	(&lt;t&gt;, &lt;k&gt;): BEGIN
- * 	(&lt;t&gt;, &lt;k&gt;): TCREATE(&lt;child tid&gt;:"&lt;name&gt;")
- * 	(&lt;t&gt;, &lt;k&gt;): SEND(&lt;destination name&gt;, &lt;value&gt;)
- * 	(&lt;t&gt;, &lt;k&gt;): RECV() [(&lt;sender tid&gt;, &lt;k&gt;)]
- * 	(&lt;t&gt;, &lt;k&gt;): NONDET &lt;choice&gt;
- * 	(&lt;t&gt;, &lt;k&gt;): END
- * 	(&lt;t&gt;, &lt;k&gt;): BLK
+ * thread "&lt;name&gt;"[tid=&lt;t&gt;]:            (a daemon: [tid=&lt;t&gt;, daemon])
+ * &#9;(&lt;t&gt;, &lt;k&gt;): BEGIN
+ * &#9;(&lt;t&gt;, &lt;k&gt;): TCREATE(&lt;child tid&gt;:"&lt;name&gt;")
+ * &#9;(&lt;t&gt;, &lt;k&gt;): SEND(&lt;destination name&gt;, &lt;value&gt;)
+ * &#9;(&lt;t&gt;, &lt;k&gt;): RECV() [(&lt;sender tid&gt;, &lt;k&gt;) &lt;sender name&gt;]
+ * &#9;(&lt;t&gt;, &lt;k&gt;): RECV() [TIMEOUT]
+ * &#9;(&lt;t&gt;, &lt;k&gt;): NONDET &lt;option index&gt;
+ * &#9;(&lt;t&gt;, &lt;k&gt;): TJOIN(&lt;joined tid&gt;)
+ * &#9;(&lt;t&gt;, &lt;k&gt;): END
+ * &#9;(&lt;t&gt;, &lt;k&gt;): BLK
  * </pre>
  *
  * <ul>
  *   <li>Threads in creation order, main first; {@code t} is that position (main 0, the first process
  *       created 1, ...), as TraceForge numbers threads, not JMC's task ids. The name is the role a
- *       process was spawned with ({@code main} for main).</li>
+ *       process was spawned with ({@code main} for main); a daemon's thread line carries
+ *       {@code , daemon} after its tid.</li>
  *   <li>Per thread, one line per event in program order, each indented by one tab as TraceForge's
- *       graph printer does; {@code k} counts from 0, {@code BEGIN} first. A creation is placed after
- *       the events its creator had produced when it created the child. A send's value is encoded
- *       as in the summaries ({@link MpValueEncoder}); a receive names the send it reads, or
- *       {@code [TIMEOUT]} for ⊥ (TraceForge's printer); a nondet prints the option chosen. The
- *       last line is {@code BLK} for a thread whose last event is a block, {@code ERROR(<message>)}
- *       for one whose last event is an error, else {@code END}. Names and messages are printed
+ *       graph printer does; {@code k} counts from 0, {@code BEGIN} first. A creation and a completed
+ *       join ({@code TJOIN}) are placed after the events their thread had produced when they
+ *       happened, in the order they happened. A send's value is encoded as in the summaries
+ *       ({@link MpValueEncoder}); a receive names the send it reads, by its position in this witness
+ *       and its thread's name, or {@code [TIMEOUT]} for ⊥ (TraceForge's printer); a nondet prints the
+ *       option chosen (JMC raises no event for a one-option nondet, so none is printed). The last line
+ *       is {@code BLK} for a thread whose last event is a block, {@code ERROR(<message>)} for one whose
+ *       last event is an error, else {@code END} (main included). Names and messages are printed
  *       verbatim; one holding a control character or a line separator is refused.</li>
- *   <li>Joins are not lines: the format has no join event.</li>
+ *   <li>Positions are positions within the witness: every receive's {@code (t, k)} names a
+ *       {@code SEND} line of the same text; they are not the other tool's event indices.</li>
  * </ul>
  *
  * <p>Pure: no I/O, no runtime. The events are the graph's, the ones {@link SummaryExporter} reads,
@@ -49,6 +55,15 @@ public final class WitnessWriter {
 
     private WitnessWriter() {}
 
+    /** A line placed among a thread's graph events: a creation or a completed join. */
+    public sealed interface Inserted permits Creation, Join {
+        /** The thread the line belongs to. */
+        long thread();
+
+        /** The thread's graph events before the line. */
+        int after();
+    }
+
     /**
      * A creation: {@code parent} created {@code child} after producing {@code after} graph events.
      *
@@ -56,7 +71,75 @@ public final class WitnessWriter {
      * @param after the creator's graph events before the creation
      * @param child the created task's id
      */
-    public record Creation(long parent, int after, long child) {}
+    public record Creation(long parent, int after, long child) implements Inserted {
+        @Override
+        public long thread() {
+            return parent;
+        }
+    }
+
+    /**
+     * A completed join: {@code joiner} awaited {@code joined} after producing {@code after} graph events.
+     *
+     * @param joiner the awaiting task's id
+     * @param after the joiner's graph events before the join completed
+     * @param joined the awaited task's id
+     */
+    public record Join(long joiner, int after, long joined) implements Inserted {
+        @Override
+        public long thread() {
+            return joiner;
+        }
+    }
+
+    /** The threads in witness order: main, then created threads in creation order, then any other. */
+    private static List<Long> order(ExecutionGraph g, List<? extends Inserted> inserted) {
+        List<Long> order = new ArrayList<>();
+        order.add(1L);
+        for (Inserted i : inserted) {
+            if (i instanceof Creation c && !order.contains(c.child())) {
+                order.add(c.child());
+            }
+        }
+        for (long task : g.threads().keySet()) {
+            if (!order.contains(task)) {
+                order.add(task);
+            }
+        }
+        return order;
+    }
+
+    /** The inserted lines per thread, in the order they happened. */
+    private static Map<Long, List<Inserted>> byThread(List<? extends Inserted> inserted) {
+        Map<Long, List<Inserted>> out = new HashMap<>();
+        for (Inserted i : inserted) {
+            out.computeIfAbsent(i.thread(), t -> new ArrayList<>()).add(i);
+        }
+        return out;
+    }
+
+    /**
+     * The number of event lines (every line but the header and the thread lines) the witness of
+     * {@code g} has: per thread {@code BEGIN}, one line per graph event, one per creation and completed
+     * join, and {@code END} unless the last event is a block or an error. This is the measurement
+     * {@code max_graph_events} / {@code mean_graph_events} counts.
+     *
+     * @param g the complete graph
+     * @param inserted the iteration's creations and completed joins in the order they happened
+     * @return the event lines
+     */
+    public static int eventLines(ExecutionGraph g, List<? extends Inserted> inserted) {
+        int lines = inserted.size();
+        for (long task : order(g, inserted)) {
+            List<GraphEvent> events = g.thread(task);
+            lines += 1 + events.size();
+            MpLabel last = events.isEmpty() ? null : events.get(events.size() - 1).label();
+            if (!(last instanceof MpLabel.Block) && !(last instanceof MpLabel.Error)) {
+                lines++;
+            }
+        }
+        return lines;
+    }
 
     /**
      * The witness text of an uncovered execution.
@@ -64,8 +147,9 @@ public final class WitnessWriter {
      * @param iteration the 1-based iteration whose graph is uncovered
      * @param summaryLine the uncovered summary as the online check reports it
      * @param g the complete graph
-     * @param creations the iteration's creations in the order they happened
+     * @param inserted the iteration's creations and completed joins in the order they happened
      * @param nameOfTask task id → the name printed for it (main's included)
+     * @param daemons the iteration's daemon tasks
      * @param encoder the value encoder of the summary
      * @return the text, every line ending in a newline
      * @throws IllegalArgumentException if a receive reads neither a send nor ⊥, or a value is
@@ -75,32 +159,23 @@ public final class WitnessWriter {
             int iteration,
             String summaryLine,
             ExecutionGraph g,
-            List<Creation> creations,
+            List<? extends Inserted> inserted,
             Map<Long, String> nameOfTask,
+            Set<Long> daemons,
             MpValueEncoder encoder) {
         // Threads in creation order, main (task 1) first; t is the position in that order.
-        List<Long> order = new ArrayList<>();
-        order.add(1L);
-        Map<Long, List<Creation>> createdBy = new HashMap<>();
-        for (Creation c : creations) {
-            order.add(c.child());
-            createdBy.computeIfAbsent(c.parent(), p -> new ArrayList<>()).add(c);
-        }
-        for (long task : g.threads().keySet()) {
-            if (!order.contains(task)) {
-                order.add(task);
-            }
-        }
+        List<Long> order = order(g, inserted);
+        Map<Long, List<Inserted>> placed = byThread(inserted);
         Map<Long, Integer> tidOf = new HashMap<>();
         for (int i = 0; i < order.size(); i++) {
             tidOf.put(order.get(i), i);
             printable(nameOfTask.get(order.get(i)));
         }
 
-        // k of every graph event: BEGIN is 0, creations take their places among the events.
+        // k of every graph event: BEGIN is 0, creations and joins take their places among the events.
         Map<EventKey, Integer> kOf = new HashMap<>();
         for (long task : order) {
-            List<Creation> made = createdBy.getOrDefault(task, List.of());
+            List<Inserted> made = placed.getOrDefault(task, List.of());
             int k = 1;
             int c = 0;
             List<GraphEvent> events = g.thread(task);
@@ -117,18 +192,23 @@ public final class WitnessWriter {
         sb.append("uncovered summary (iteration ").append(iteration).append("): ").append(summaryLine).append('\n');
         for (long task : order) {
             int t = tidOf.get(task);
-            sb.append("thread \"").append(nameOfTask.get(task)).append("\"[tid=").append(t).append("]:\n");
+            sb.append("thread \"").append(nameOfTask.get(task)).append("\"[tid=").append(t)
+                    .append(daemons.contains(task) ? ", daemon" : "").append("]:\n");
             int k = 0;
             line(sb, t, k++).append("BEGIN\n");
-            List<Creation> made = createdBy.getOrDefault(task, List.of());
+            List<Inserted> made = placed.getOrDefault(task, List.of());
             List<GraphEvent> events = g.thread(task);
             int c = 0;
             MpLabel last = null;
             for (int j = 0; j <= events.size(); j++) {
                 while (c < made.size() && made.get(c).after() <= j) {
-                    long child = made.get(c++).child();
-                    line(sb, t, k++).append("TCREATE(").append(tidOf.get(child)).append(":\"")
-                            .append(nameOfTask.get(child)).append("\")\n");
+                    Inserted i = made.get(c++);
+                    if (i instanceof Creation cr) {
+                        line(sb, t, k++).append("TCREATE(").append(tidOf.get(cr.child())).append(":\"")
+                                .append(nameOfTask.get(cr.child())).append("\")\n");
+                    } else if (i instanceof Join jn) {
+                        line(sb, t, k++).append("TJOIN(").append(tidOf.get(jn.joined())).append(")\n");
+                    }
                 }
                 if (j == events.size()) {
                     break;
@@ -143,7 +223,8 @@ public final class WitnessWriter {
                     Optional<EventKey> rf = g.rf(e.key());
                     if (rf.isPresent()) {
                         sb.append("RECV() [(").append(tidOf.get(rf.get().tid())).append(", ")
-                                .append(kOf.get(rf.get())).append(")]\n");
+                                .append(kOf.get(rf.get())).append(") ").append(nameOfTask.get(rf.get().tid()))
+                                .append("]\n");
                     } else if (g.readsBottom(e.key())) {
                         sb.append("RECV() [TIMEOUT]\n");
                     } else {

@@ -28,13 +28,19 @@ import java.util.regex.Pattern;
  *
  * <p>The header must have {@code format} 1 and {@code encoding} 1, {@code enumeration}
  * {@code "complete"} (a file whose enumeration is not complete is never accepted as a
- * specification) and a {@code visible} list equal to the program's visible roles. The keys
- * {@code program}, {@code size}, {@code tool} and {@code model} are kept for printing and not
- * compared. Each further line gives {@code statuses} (exactly the visible roles, each {@code done},
+ * specification), a {@code visible} list equal to the program's visible roles, and a {@code model}
+ * equal to the program's. A header with {@code "minor":1} carries {@code roles}, which must
+ * equal the program's roles (its visible roles and the invisible roles a visible payload may name); a header
+ * without {@code minor} is minor 0, read as before, its roles not compared ({@link Loaded#rolesCompared}
+ * is false, and the caller warns). Any other {@code minor} is refused. The keys {@code program},
+ * {@code size} and {@code tool} are kept for printing and not compared. Each further line gives
+ * {@code statuses} (exactly the visible roles, each {@code done},
  * {@code blocked} or {@code err}), {@code words} (per visible role, a list of {@code {"s":V}},
  * {@code {"r":V}} or {@code {"r":null}}) and {@code counts} (non-negative integers, exactly
  * {@code Σ_t |w_t| · (T − 1)} of them, where {@code w_t} is the word of role {@code t} and
- * {@code T} the number of visible roles). Lines may come in any order; a line whose summary is
+ * {@code T} the number of visible roles). The format allows a word of up to 2^32-1 events (TraceForge's
+ * 32-bit counts); this reader holds a word in a Java list, so its practical limit is 2^31-1 observations,
+ * and it refuses a count above {@code Integer.MAX_VALUE}. Lines may come in any order; a line whose summary is
  * held already is a duplicate and is held once.
  *
  * <p>Values are re-rendered canonically from the parsed JSON so that they compare byte for byte
@@ -69,6 +75,7 @@ public final class SpecificationFile {
      * @param tool the header's {@code tool}
      * @param model the header's {@code model}
      * @param visible the header's visible roles, sorted
+     * @param roles the header's roles (minor 1), sorted; {@code null} for a minor-0 file
      * @param lines summary lines read (the header excluded)
      * @param duplicates lines whose summary was held already
      * @param index the index holding the file's distinct summaries
@@ -80,9 +87,40 @@ public final class SpecificationFile {
             String tool,
             String model,
             List<String> visible,
+            List<String> roles,
             int lines,
             int duplicates,
-            SetIndex index) {}
+            SetIndex index) {
+
+        /**
+         * Whether the header's roles were compared with the program's: {@code false} for a minor-0 file,
+         * which has none (the caller warns).
+         *
+         * @return whether {@code roles} was compared
+         */
+        public boolean rolesCompared() {
+            return roles != null;
+        }
+    }
+
+    /**
+     * What the implementation program declares, compared with the header.
+     *
+     * @param visible the program's visible roles
+     * @param model the program's communication model as the header writes it ({@code p2p}, {@code asyn},
+     *     {@code cd})
+     * @param roles the program's header roles: its visible roles and the invisible roles a visible payload
+     *     may name
+     */
+    public record Expected(Collection<String> visible, String model, Collection<String> roles) {
+
+        /** Checks the arguments. */
+        public Expected {
+            java.util.Objects.requireNonNull(visible);
+            java.util.Objects.requireNonNull(model);
+            java.util.Objects.requireNonNull(roles);
+        }
+    }
 
     private SpecificationFile() {}
 
@@ -90,13 +128,13 @@ public final class SpecificationFile {
      * Loads a file.
      *
      * @param path the file
-     * @param visibleRoles the implementation program's visible roles
+     * @param expected what the implementation program declares
      * @return the loaded specification
      * @throws IllegalArgumentException if the file is refused; the message says why and names
      *     the line
      * @throws IOException if the file cannot be read
      */
-    public static Loaded load(Path path, Collection<String> visibleRoles) throws IOException {
+    public static Loaded load(Path path, Expected expected) throws IOException {
         List<String> text = Files.readAllLines(path, StandardCharsets.UTF_8);
         if (text.isEmpty() || text.get(0).isBlank()) {
             throw new IllegalArgumentException("specification " + path + " has no header line");
@@ -104,6 +142,10 @@ public final class SpecificationFile {
         JsonObject header = object(parse(text.get(0), 1), 1, "the header");
         requireInt(header, "format", 1, 1);
         requireInt(header, "encoding", 1, 1);
+        boolean minor1 = header.has("minor");
+        if (minor1) {
+            requireInt(header, "minor", 1, 1);
+        }
         String enumeration = string(header, "enumeration", 1);
         if (!enumeration.equals("complete")) {
             throw new IllegalArgumentException("specification " + path + " has enumeration \"" + enumeration
@@ -113,15 +155,37 @@ public final class SpecificationFile {
         for (JsonElement e : array(header.get("visible"), 1, "visible")) {
             visible.add(stringValue(e, 1, "a visible role"));
         }
-        List<String> expected = MpValueEncoder.sortedRoles(visibleRoles);
-        if (!visible.equals(expected)) {
+        List<String> expectedVisible = MpValueEncoder.sortedRoles(expected.visible());
+        if (!visible.equals(expectedVisible)) {
             throw new IllegalArgumentException("specification " + path + " has visible roles " + visible
-                    + ", the program " + expected + "; both sides must declare the same visible roles");
+                    + ", the program " + expectedVisible + "; both sides must declare the same visible roles");
+        }
+        if (!header.has("model")) {
+            throw new IllegalArgumentException("specification " + path + " has no model; the program's is "
+                    + expected.model());
+        }
+        String model = string(header, "model", 1);
+        if (!model.equals(expected.model())) {
+            throw new IllegalArgumentException("specification " + path + ": the two models differ: "
+                    + model + " and " + expected.model());
+        }
+        List<String> roles = null;
+        if (minor1) {
+            roles = new ArrayList<>();
+            for (JsonElement e : array(header.get("roles"), 1, "roles")) {
+                roles.add(stringValue(e, 1, "a role"));
+            }
+            List<String> expectedRoles = MpValueEncoder.sortedRoles(expected.roles());
+            if (!roles.equals(expectedRoles)) {
+                throw new IllegalArgumentException("specification " + path + " has roles " + roles
+                        + ", the program " + expectedRoles + "; both sides must declare the same roles (the"
+                        + " visible and the payload-nameable ones)");
+            }
+            roles = List.copyOf(roles);
         }
         String program = header.has("program") ? string(header, "program", 1) : "";
         String size = header.has("size") ? string(header, "size", 1) : "";
         String tool = header.has("tool") ? string(header, "tool", 1) : "";
-        String model = header.has("model") ? string(header, "model", 1) : "";
 
         SetIndex index = new SetIndex();
         int lines = 0;
@@ -138,7 +202,7 @@ public final class SpecificationFile {
                 duplicates++;
             }
         }
-        return new Loaded(path, program, size, tool, model, visible, lines, duplicates, index);
+        return new Loaded(path, program, size, tool, model, visible, roles, lines, duplicates, index);
     }
 
     /**

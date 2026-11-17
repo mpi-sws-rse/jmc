@@ -119,8 +119,8 @@ public final class J8Step0Probe {
 
     static List<String> exportLines(MpProgram mp, int ran, Map<Summary, Integer> summaries) {
         List<String> lines = new ArrayList<>();
-        lines.add(SummaryExporter.header(mp.programName(), mp.size(), mp.visibleRoles(), mp.model(), "complete",
-                1L, ran));
+        lines.add(SummaryExporter.header(mp.programName(), mp.size(), mp.visibleRoles(), mp.headerRoles(), mp.model(),
+                "complete", 1L, ran));
         for (Map.Entry<Summary, Integer> e : summaries.entrySet()) {
             lines.add(e.getKey().toJson(e.getValue()));
         }

@@ -20,9 +20,11 @@ import java.util.function.UnaryOperator;
 /**
  * WITNESS tester tests of the witness format, each witness derived by hand from its fixture before the
  * run: a receive reading ⊥ ({@code RECV() [TIMEOUT]}), threads ending blocked ({@code BLK}, no END; a
- * daemon printed by its path name {@code m/0}; main blocked on its await of a blocked process), a
+ * daemon printed by its path name {@code m/0} with the daemon marker; main blocked on its await of a blocked
+ * process, so no join line), main's completed awaits as {@code TJOIN} lines in await order, every receive
+ * naming the sender's thread, a
  * nondet in main before its creations (TCREATE at k 2) and in a process, invisible roles printed,
- * a SEND to main and to a daemon, values with nested records, lists, sets, enums and Tids; and the
+ * a SEND to main and to a daemon, values with nested records, lists, sets, enums (unit variants) and Tids; and the
  * an ASYN fixture, a role holding a quote and a comma (printed verbatim), and the consistency oracle
  * (the summary re-derived from the text equals line 1) over every witness of several runs.
  */
@@ -57,7 +59,9 @@ class WitnessFormatTest {
                 "\t(0, 0): BEGIN",
                 "\t(0, 1): TCREATE(1:\"srv\")",
                 "\t(0, 2): TCREATE(2:\"c\")",
-                "\t(0, 3): END",
+                "\t(0, 3): TJOIN(1)",
+                "\t(0, 4): TJOIN(2)",
+                "\t(0, 5): END",
                 "thread \"srv\"[tid=1]:",
                 "\t(1, 0): BEGIN",
                 "\t(1, 1): RECV() [TIMEOUT]",
@@ -84,9 +88,9 @@ class WitnessFormatTest {
                 "\t(0, 2): TCREATE(2:\"w\")",
                 "\t(0, 3): TCREATE(3:\"c\")",
                 "\t(0, 4): BLK",
-                "thread \"m/0\"[tid=1]:",
+                "thread \"m/0\"[tid=1, daemon]:",
                 "\t(1, 0): BEGIN",
-                "\t(1, 1): RECV() [(3, 2)]",
+                "\t(1, 1): RECV() [(3, 2) c]",
                 "\t(1, 2): BLK",
                 "thread \"w\"[tid=2]:",
                 "\t(2, 0): BEGIN",
@@ -102,7 +106,8 @@ class WitnessFormatTest {
     @Test
     void values_nestedRecordsListsSetsEnumsTids_sendToMain_wholeTextDerived() throws Exception {
         // One execution (iteration 1); the spec is its own line with RED replaced by BLUE, so it is uncovered.
-        String w = "{\"t\":\"W\",\"f\":[{\"t\":\"In\",\"f\":[[3,1],[\"a\",\"b\"]]},\"srv\",true,\"RED\"]}";
+        String w = "{\"t\":\"W\",\"f\":[{\"t\":\"In\",\"f\":[[3,1],[\"a\",\"b\"]]},\"srv\",true,"
+                + "{\"t\":\"RED\",\"f\":[]}]}";
         String p = "{\"t\":\"P\",\"f\":[\"main\"]}";
         List<String> t = witnesses("values", WitnessSupport.PKG + "WitnessValues", l -> l.replace("RED", "BLUE"), 1, 1);
         assertEquals(lines(
@@ -112,10 +117,12 @@ class WitnessFormatTest {
                 "\t(0, 0): BEGIN",
                 "\t(0, 1): TCREATE(1:\"srv\")",
                 "\t(0, 2): TCREATE(2:\"c\")",
-                "\t(0, 3): END",
+                "\t(0, 3): TJOIN(1)",
+                "\t(0, 4): TJOIN(2)",
+                "\t(0, 5): END",
                 "thread \"srv\"[tid=1]:",
                 "\t(1, 0): BEGIN",
-                "\t(1, 1): RECV() [(2, 2)]",
+                "\t(1, 1): RECV() [(2, 2) c]",
                 "\t(1, 2): END",
                 "thread \"c\"[tid=2]:",
                 "\t(2, 0): BEGIN",
@@ -150,11 +157,13 @@ class WitnessFormatTest {
                 "\t(0, 0): BEGIN",
                 "\t(0, 1): TCREATE(1:\"srv\")",
                 "\t(0, 2): TCREATE(2:\"c\")",
-                "\t(0, 3): END",
+                "\t(0, 3): TJOIN(1)",
+                "\t(0, 4): TJOIN(2)",
+                "\t(0, 5): END",
                 "thread \"srv\"[tid=1]:",
                 "\t(1, 0): BEGIN",
-                "\t(1, 1): RECV() [(2, 2)]",
-                "\t(1, 2): RECV() [(2, 1)]",
+                "\t(1, 1): RECV() [(2, 2) c]",
+                "\t(1, 2): RECV() [(2, 1) c]",
                 "\t(1, 3): END",
                 "thread \"c\"[tid=2]:",
                 "\t(2, 0): BEGIN",
@@ -183,10 +192,12 @@ class WitnessFormatTest {
                 "\t(0, 0): BEGIN",
                 "\t(0, 1): TCREATE(1:\"s\"v,w\")",
                 "\t(0, 2): TCREATE(2:\"c\")",
-                "\t(0, 3): END",
+                "\t(0, 3): TJOIN(1)",
+                "\t(0, 4): TJOIN(2)",
+                "\t(0, 5): END",
                 "thread \"s\"v,w\"[tid=1]:",
                 "\t(1, 0): BEGIN",
-                "\t(1, 1): RECV() [(2, 2)]",
+                "\t(1, 1): RECV() [(2, 2) c]",
                 "\t(1, 2): END",
                 "thread \"c\"[tid=2]:",
                 "\t(2, 0): BEGIN",

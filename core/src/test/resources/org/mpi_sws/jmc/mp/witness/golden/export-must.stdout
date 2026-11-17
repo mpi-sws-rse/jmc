@@ -34,8 +34,8 @@ stop_reason: exhausted
 peak_rss_kb: RSS
 max_message_events: 10
 max_porf_pairs: 0
-max_graph_events: 12
-mean_graph_events: 12.000
+max_graph_events: 30
+mean_graph_events: 30.000
 max_visible_events: 5
 mean_visible_events: 5.000
 max_summary_bytes: 181

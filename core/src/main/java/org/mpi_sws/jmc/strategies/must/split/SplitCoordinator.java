@@ -99,11 +99,23 @@ public final class SplitCoordinator {
      *     reproduce an interleaving
      * @param spec the loaded specification for the online check (full mode), or {@code null}; needs
      *     {@code roles}
+     * @param payloadRoles the invisible roles a visible payload may name; {@code null} exactly when
+     *     {@code roles} is
      */
     public record Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                          int k, int workers, long timeoutSeconds, Path runDir,
                          BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
-                         java.util.function.Predicate<Process> liveness, SpecificationFile.Loaded spec) {
+                         java.util.function.Predicate<Process> liveness, SpecificationFile.Loaded spec,
+                         List<String> payloadRoles) {
+
+        /** A configuration whose visible payloads name no invisible role (no payload-nameable roles). */
+        public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
+                      int k, int workers, long timeoutSeconds, Path runDir,
+                      BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
+                      java.util.function.Predicate<Process> liveness, SpecificationFile.Loaded spec) {
+            this(programIdentity, program, roles, visibleRoles, k, workers, timeoutSeconds, runDir, workerCommand,
+                    reversedAssignment, liveness, spec, roles == null ? null : List.of());
+        }
 
         /** A configuration without an online check. */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
@@ -142,6 +154,9 @@ public final class SplitCoordinator {
             }
             if (spec != null && roles == null) {
                 throw new IllegalArgumentException("the online check needs the roles");
+            }
+            if ((roles == null) != (payloadRoles == null)) {
+                throw new IllegalArgumentException("roles and payload-nameable roles are given together or not at all");
             }
         }
     }
@@ -227,16 +242,20 @@ public final class SplitCoordinator {
         long startMillis = System.currentTimeMillis();
         String specHash = null;
         if (config.spec() != null) {
-            SpecSnapshot snap = snapshotSpec(config.spec().path(), dir, "coordinator", config.spec().visible());
             SpecificationFile.Loaded given = config.spec();
-            if (!snap.loaded().visible().equals(given.visible()) || snap.loaded().lines() != given.lines()
-                    || snap.loaded().duplicates() != given.duplicates()) {
+            // The snapshot is checked against what the loaded file was accepted with: its visible roles, model
+            // and (minor 1) roles; a minor-0 file has no roles to compare.
+            SpecSnapshot snap = snapshotSpec(given.path(), dir, "coordinator", new SpecificationFile.Expected(
+                    given.visible(), given.model(), given.roles() == null ? List.of() : given.roles()));
+            if (!snap.loaded().visible().equals(given.visible())
+                    || !java.util.Objects.equals(snap.loaded().roles(), given.roles())
+                    || snap.loaded().lines() != given.lines() || snap.loaded().duplicates() != given.duplicates()) {
                 throw new IOException("specification " + given.path() + " changed since it was loaded");
             }
             specHash = snap.sha256();
             config = new Config(config.programIdentity(), config.program(), config.roles(), config.visibleRoles(),
                     config.k(), config.workers(), config.timeoutSeconds(), config.runDir(), config.workerCommand(),
-                    config.reversedAssignment(), config.liveness(), snap.loaded());
+                    config.reversedAssignment(), config.liveness(), snap.loaded(), config.payloadRoles());
         }
         Root root = runRoot(config, fingerprintProgram(config.programIdentity(), specHash));
         if (root.failure != null) {
@@ -384,20 +403,20 @@ public final class SplitCoordinator {
      * @param file the specification
      * @param runDir the run directory, for the private copy
      * @param owner a name for the copy ({@code coordinator} or {@code worker-<id>})
-     * @param visibleRoles the program's visible roles
+     * @param expected what the program declares (or what the file was first accepted with)
      * @return the snapshot
      * @throws IOException if the file cannot be read
      * @throws IllegalArgumentException if the file is refused
      */
-    static SpecSnapshot snapshotSpec(Path file, Path runDir, String owner, java.util.Collection<String> visibleRoles)
+    static SpecSnapshot snapshotSpec(Path file, Path runDir, String owner, SpecificationFile.Expected expected)
             throws IOException {
         byte[] bytes = Files.readAllBytes(file);
         Path copy = runDir.resolve("spec-" + owner + "-" + UUID.randomUUID() + ".snapshot");
         Files.write(copy, bytes, java.nio.file.StandardOpenOption.CREATE_NEW);
         try {
-            SpecificationFile.Loaded l = SpecificationFile.load(copy, visibleRoles);
+            SpecificationFile.Loaded l = SpecificationFile.load(copy, expected);
             return new SpecSnapshot(sha256(bytes), new SpecificationFile.Loaded(file, l.program(), l.size(),
-                    l.tool(), l.model(), l.visible(), l.lines(), l.duplicates(), l.index()));
+                    l.tool(), l.model(), l.visible(), l.roles(), l.lines(), l.duplicates(), l.index()));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(String.valueOf(e.getMessage()).replace(copy.toString(),
                     file.toString()), e);
@@ -674,7 +693,8 @@ public final class SplitCoordinator {
         Root root = new Root(config, fingerprintProgram);
         MustStrategy strategy = config.roles() == null
                 ? new MustStrategy(1L, "build/test-results/jmc-report")
-                : new MustStrategy(1L, "build/test-results/jmc-report", config.roles(), config.visibleRoles());
+                : new MustStrategy(1L, "build/test-results/jmc-report", config.roles(), config.visibleRoles(),
+                        config.payloadRoles());
         if (config.spec() != null) {
             strategy.checkAgainst(config.spec().index(), false);
         }

@@ -60,7 +60,7 @@ class J8SSpecSnapshotTest {
     }
 
     static SpecificationFile.Loaded load(Path spec) throws Exception {
-        return SpecificationFile.load(spec, new OnlineBank("2").visibleRoles());
+        return SpecificationFile.load(spec, new OnlineBank("2").expected());
     }
 
     /**

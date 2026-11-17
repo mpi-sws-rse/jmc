@@ -99,6 +99,8 @@ public class MpRecordingStrategy extends MpRandomSchedulingStrategy {
 
     private final List<String> rolesInSpawnOrder;
     private final List<String> visibleRoles;
+    /** The invisible roles a visible payload may name. */
+    private final List<String> payloadRoles;
 
     // per iteration
     private final Map<Long, Integer> nextIdx = new HashMap<>();
@@ -146,19 +148,26 @@ public class MpRecordingStrategy extends MpRandomSchedulingStrategy {
      */
     public MpRecordingStrategy(
             Long seed, String reportPath, List<String> rolesInSpawnOrder, List<String> visibleRoles) {
+        this(seed, reportPath, rolesInSpawnOrder, visibleRoles, List.of());
+    }
+
+    /**
+     * Creates the recording strategy with the invisible roles a visible payload may name.
+     *
+     * @param seed the random seed (the base class's)
+     * @param reportPath where the base class writes its traces
+     * @param rolesInSpawnOrder the declared roles, an unordered check (see the class doc)
+     * @param visibleRoles the roles whose events are summarised; a subset of the former
+     * @param payloadRoles the invisible declared roles a visible payload may name
+     * @throws IllegalArgumentException if the roles are refused ({@link MustStrategy#checkExportRoles})
+     */
+    public MpRecordingStrategy(Long seed, String reportPath, List<String> rolesInSpawnOrder,
+                               List<String> visibleRoles, List<String> payloadRoles) {
         super(seed, reportPath);
         this.rolesInSpawnOrder = List.copyOf(rolesInSpawnOrder);
         this.visibleRoles = List.copyOf(visibleRoles);
-        if (!this.rolesInSpawnOrder.containsAll(this.visibleRoles)) {
-            throw new IllegalArgumentException(
-                    "visible roles " + visibleRoles + " are not all spawned roles " + rolesInSpawnOrder);
-        }
-        if (new HashSet<>(this.rolesInSpawnOrder).size() != this.rolesInSpawnOrder.size()) {
-            throw new IllegalArgumentException("roles are not distinct: " + rolesInSpawnOrder);
-        }
-        for (String r : this.rolesInSpawnOrder) {
-            MustStrategy.checkDeclaredRole(r);
-        }
+        this.payloadRoles = List.copyOf(payloadRoles);
+        MustStrategy.checkExportRoles(this.rolesInSpawnOrder, this.visibleRoles, this.payloadRoles);
     }
 
     @Override
@@ -201,11 +210,12 @@ public class MpRecordingStrategy extends MpRandomSchedulingStrategy {
                     }
                 }
                 Long parent = event.getParam("startedBy");
-                if (task != 1L && parent != null && parent != 1L) {
+                // A daemon may be started by any process, also after main's first await.
+                if (task != 1L && !daemons.contains(task) && parent != null && parent != 1L) {
                     inconsistent("process " + task + " was spawned by process " + parent
                             + "; the format allows spawning by main only");
                 }
-                if (task != 1L && mainAwaited) {
+                if (task != 1L && !daemons.contains(task) && mainAwaited) {
                     inconsistent("process " + task + " was spawned after main's first await; the"
                             + " format requires main to spawn every process first");
                 }
@@ -450,7 +460,7 @@ public class MpRecordingStrategy extends MpRandomSchedulingStrategy {
             if (r == null) {
                 throw new IllegalArgumentException("payload names task " + tid + ", which never started");
             }
-            return r;
+            return MustStrategy.payloadName(r, visibleRoles, payloadRoles);
         });
         Summary s = SummaryExporter.summarize(g, roleOfTask, visibleRoles, encoder);
         summaries.merge(s, 1, Integer::sum);

@@ -46,7 +46,7 @@ max_porf_pairs: 0
 first_miss_iteration: 1
 first_miss_wall_ms: X
 uncovered_total: 15
-max_graph_events: 14
+max_graph_events: 32
 mean_graph_events: 
 max_visible_events: 6
 mean_visible_events: 

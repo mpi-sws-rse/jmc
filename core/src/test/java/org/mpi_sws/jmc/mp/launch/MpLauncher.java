@@ -73,7 +73,9 @@ import java.util.Map;
  *
  * <p><b>Online mode under {@code must}</b> (J7): {@code --spec <file>}, anywhere in the argument list,
  * loads a specification file (plan/jmc-must/SUMMARY-FORMAT.md; {@code enumeration} must be
- * {@code complete} and {@code visible} must equal the program's visible roles) into a
+ * {@code complete}, {@code visible} must equal the program's visible roles and {@code model} its model;
+ * a minor-1 header's {@code roles} must equal {@link MpProgram#headerRoles()}, a minor-0 header is read
+ * with a warning on stderr that its roles were not compared) into a
  * {@link SetIndex}, and the {@link MustStrategy} queries it at each completed graph. By default (full
  * mode) the exploration continues past an uncovered summary, keeping the first one and counting every
  * uncovered graph; with {@code --stop-at-first} (bug-finder mode) it stops at the first. The program
@@ -82,7 +84,7 @@ import java.util.Map;
  * first_miss_wall_ms} and {@code uncovered_total} in the header) or be {@code -}. Printed:
  * {@code spec:}
  * (the file, its program, size, model and tool, lines read, distinct summaries held, duplicates; the
- * model is printed, never compared),
+ * model was compared at load: a differing model is refused),
  * {@code lookups:}, {@code verdict:} — {@code conforms} (stack exhausted, every summary covered),
  * {@code reports} (something uncovered) or {@code partial} (the run ended on its bound, a timeout or a
  * failure before anything uncovered) — {@code mode:}, {@code first miss: iteration I, T ms} (on a
@@ -164,6 +166,8 @@ public final class MpLauncher {
         final long wallStartNanos;
         MustStrategy must;
         boolean online;
+        /** Whether the split run summarises (the program's roles were given; the per-summary counters apply). */
+        boolean summarises;
         JmcModelCheckerReport report;
         String failure;
         long checkNanos;
@@ -319,9 +323,11 @@ public final class MpLauncher {
             }
             mpProgram = mp;
             if (strategy.equals("mp-random")) {
-                recorder = new MpRecordingStrategy(seed, reportPath, mp.declaredRoles(), mp.visibleRoles());
+                recorder = new MpRecordingStrategy(seed, reportPath, mp.declaredRoles(), mp.visibleRoles(),
+                        mp.payloadNameableRoles());
             } else if (must) {
-                mustStrategy = new MustStrategy(seed, reportPath, mp.declaredRoles(), mp.visibleRoles());
+                mustStrategy = new MustStrategy(seed, reportPath, mp.declaredRoles(), mp.visibleRoles(),
+                        mp.payloadNameableRoles());
             } else {
                 return usage("export under " + strategy + " is not supported (mp-random or must)");
             }
@@ -342,17 +348,23 @@ public final class MpLauncher {
             mpProgram = mp;
             if (exportFile == null) {
                 // The online check summarises every graph: the exporting constructor, roles included.
-                mustStrategy = new MustStrategy(seed, reportPath, mp.declaredRoles(), mp.visibleRoles());
+                mustStrategy = new MustStrategy(seed, reportPath, mp.declaredRoles(), mp.visibleRoles(),
+                        mp.payloadNameableRoles());
                 st.must = mustStrategy;
             }
             long indexStartNanos = System.nanoTime();
             try {
-                spec = SpecificationFile.load(specFile, mp.visibleRoles());
+                spec = SpecificationFile.load(specFile, mp.expected());
             } catch (IllegalArgumentException | IOException e) {
                 st.failure = "specification " + specFile + " refused: " + e.getMessage();
                 return usage(st.failure);
             } finally {
                 st.indexNanos = System.nanoTime() - indexStartNanos;
+            }
+            if (!spec.rolesCompared()) {
+                // A minor-0 specification (no roles key) is read without comparing roles, with a warning.
+                System.err.println("MpLauncher: warning: specification " + specFile + " has no roles (format"
+                        + " minor 0); its roles were not compared with the program's " + mp.headerRoles());
             }
             mustStrategy.checkAgainst(spec.index(), stopAtFirst);
         }
@@ -387,8 +399,10 @@ public final class MpLauncher {
                 // program's roles; it loads the specification named in run.json, never one of its own.
                 MpProgram wp = program instanceof MpProgram m ? m : null;
                 return SplitWorker.run(workerDir, workerId, program, wp == null ? null : wp.declaredRoles(),
-                        wp == null ? null : wp.visibleRoles());
+                        wp == null ? null : wp.visibleRoles(), wp == null ? null : wp.payloadNameableRoles(),
+                        wp == null ? null : SummaryExporter.modelName(wp.model()));
             }
+            st.summarises = mpProgram != null;
             return runSplit(st, args, rawArgs, program, programClass, mpProgram, splitWorkers,
                     splitK == null ? 8 * splitWorkers : splitK, seed, reportPath, exportFile, timeoutSeconds, spec);
         }
@@ -403,7 +417,7 @@ public final class MpLauncher {
             System.out.println("exportFile: " + exportFile);
         }
         if (spec != null) {
-            // Q-J7-3: the model is printed, never compared (a differing model is fault F1, reportable here).
+            // The model was compared at load (a differing one is refused); it is printed here.
             System.out.println("spec:       " + spec.path() + " (program " + spec.program() + ", size "
                     + spec.size() + ", model " + spec.model() + ", tool " + spec.tool() + "; " + spec.lines()
                     + " lines, " + spec.index().size() + " distinct summaries held, " + spec.duplicates()
@@ -529,7 +543,7 @@ public final class MpLauncher {
                     mustStrategy.uncoveredIteration(), Math.max(0, mustStrategy.measurements().firstMissWallMs()),
                     mustStrategy.uncoveredTotal());
             lines.add(SummaryExporter.header(
-                    mpProgram.programName(), mpProgram.size(), mpProgram.visibleRoles(),
+                    mpProgram.programName(), mpProgram.size(), mpProgram.visibleRoles(), mpProgram.headerRoles(),
                     mpProgram.model(), enumeration, seed, ran, online));
             List<String> body = new ArrayList<>(summaries.size());
             for (Map.Entry<Summary, Integer> e : summaries.entrySet()) {
@@ -711,14 +725,17 @@ public final class MpLauncher {
      *       summary, also when it was the last graph; in full mode a miss never stops the run) or
      *       {@code error} (the run failed);</li>
      *   <li>{@code peak_rss_kb}: the process's peak resident set ({@code VmHWM}), empty if unavailable;
-     *       {@code max_message_events}: send and receive events of all threads in the largest graph;
+     *       {@code max_message_events}: send and receive events of all threads in the largest summarised
+     *       graph (empty when no graph was summarised, as in the counting mode);
      *       {@code max_porf_pairs}: the most non-zero order-count entries in one summary;</li>
      *   <li>with a specification file, {@code first_miss_iteration} (1-based, 0 for none),
      *       {@code first_miss_wall_ms} (since the start of the exploration, 0 for none) and
      *       {@code uncovered_total};</li>
-     *   <li>the graph-shape counters over the explored graphs: {@code max_graph_events} (every
-     *       event), {@code mean_graph_events}, {@code max_visible_events} and {@code
-     *       mean_visible_events} (send and receive events of visible roles), {@code max_summary_bytes}
+     *   <li>the graph-shape counters over the summarised graphs (the first four empty when no
+     *       graph was summarised): {@code max_graph_events} and {@code mean_graph_events} (the event lines
+     *       of the graph's witness: BEGIN, TCREATE, SEND, RECV, NONDET, TJOIN, BLK, ERROR, END), {@code
+     *       max_visible_events} and {@code mean_visible_events} (the events of the visible words, per
+     *       summarised graph), {@code max_summary_bytes}
      *       (the summary line without its multiplicity), {@code max_porf_count} (the largest single
      *       order-count entry). Definitions as in the evaluation schema (brain-data/SCHEMA.md).</li>
      * </ul>
@@ -763,17 +780,21 @@ public final class MpLauncher {
         long rss = peakRssKb();
         // Empty when unavailable: the measurement applies but could not be read.
         System.out.println("peak_rss_kb: " + (rss < 0 ? "" : Long.toString(rss)));
-        System.out.println("max_message_events: " + x.maxMessageEvents());
+        // The graph, message and visible event counters are per summarised graph; empty when none was.
+        boolean summarised = x.summarisedGraphs() > 0;
+        System.out.println("max_message_events: " + (summarised ? Integer.toString(x.maxMessageEvents()) : ""));
         System.out.println("max_porf_pairs: " + x.maxPorfPairs());
         if (st.online) {
             System.out.println("first_miss_iteration: " + m.uncoveredIteration());
             System.out.println("first_miss_wall_ms: " + Math.max(0, x.firstMissWallMs()));
             System.out.println("uncovered_total: " + m.uncoveredTotal());
         }
-        System.out.println("max_graph_events: " + x.maxGraphEvents());
-        System.out.printf(Locale.ROOT, "mean_graph_events: %.3f%n", x.meanGraphEvents());
-        System.out.println("max_visible_events: " + x.maxVisibleEvents());
-        System.out.printf(Locale.ROOT, "mean_visible_events: %.3f%n", x.meanVisibleEvents());
+        System.out.println("max_graph_events: " + (summarised ? Integer.toString(x.maxGraphEvents()) : ""));
+        System.out.println("mean_graph_events: "
+                + (summarised ? String.format(Locale.ROOT, "%.3f", x.meanGraphEvents()) : ""));
+        System.out.println("max_visible_events: " + (summarised ? Integer.toString(x.maxVisibleEvents()) : ""));
+        System.out.println("mean_visible_events: "
+                + (summarised ? String.format(Locale.ROOT, "%.3f", x.meanVisibleEvents()) : ""));
         System.out.println("max_summary_bytes: " + x.maxSummaryBytes());
         System.out.println("max_porf_count: " + x.maxPorfCount());
     }
@@ -847,7 +868,7 @@ public final class MpLauncher {
                         cmd.add(dir.toString());
                         cmd.add(Integer.toString(id));
                         return cmd;
-                    }, false, Process::isAlive, spec));
+                    }, false, Process::isAlive, spec, mpProgram == null ? null : mpProgram.payloadNameableRoles()));
         } catch (IOException e) {
             System.out.println("FAILED:     cannot prepare " + runDir + ": " + e);
             return 1;
@@ -877,7 +898,7 @@ public final class MpLauncher {
             List<String> lines = new ArrayList<>();
             SplitCoordinator.Online on = result.online();
             lines.add(SummaryExporter.header(mpProgram.programName(), mpProgram.size(), mpProgram.visibleRoles(),
-                    mpProgram.model(), "complete", seed, result.ran(), on == null ? null
+                    mpProgram.headerRoles(), mpProgram.model(), "complete", seed, result.ran(), on == null ? null
                             : new SummaryExporter.OnlineFields(on.firstMissIteration(),
                                     Math.max(0, on.firstMissWallMs()), on.uncoveredTotal())));
             List<String> body = new ArrayList<>(result.summaryLines());
@@ -934,7 +955,9 @@ public final class MpLauncher {
         System.out.println("stop_reason: " + (ok ? "exhausted" : "error"));
         long rss = Math.max(peakRssKb(), r.workerPeakRssKb());
         System.out.println("peak_rss_kb: " + (rss < 0 ? "" : Long.toString(rss)));
-        System.out.println("max_message_events: " + maximum(r, "max_message_events"));
+        // Per summarised graph; a split run summarises only with the program's roles.
+        boolean summarised = st.summarises;
+        System.out.println("max_message_events: " + (summarised ? maximum(r, "max_message_events") : ""));
         System.out.println("max_porf_pairs: " + maximum(r, "max_porf_pairs"));
         if (r.online() != null) {
             SplitCoordinator.Online on = r.online();
@@ -942,9 +965,9 @@ public final class MpLauncher {
             System.out.println("first_miss_wall_ms: " + Math.max(0, on.firstMissWallMs()));
             System.out.println("uncovered_total: " + (on.uncoveredTotal() == null ? "" : on.uncoveredTotal()));
         }
-        System.out.println("max_graph_events: " + maximum(r, "max_graph_events"));
+        System.out.println("max_graph_events: " + (summarised ? maximum(r, "max_graph_events") : ""));
         System.out.println("mean_graph_events: ");
-        System.out.println("max_visible_events: " + maximum(r, "max_visible_events"));
+        System.out.println("max_visible_events: " + (summarised ? maximum(r, "max_visible_events") : ""));
         System.out.println("mean_visible_events: ");
         System.out.println("max_summary_bytes: " + maximum(r, "max_summary_bytes"));
         System.out.println("max_porf_count: " + maximum(r, "max_porf_count"));

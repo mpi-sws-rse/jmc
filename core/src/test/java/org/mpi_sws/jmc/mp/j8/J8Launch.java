@@ -69,13 +69,43 @@ final class J8Launch {
             return Files.readAllBytes(exportFile);
         }
 
+        /**
+         * The md5 of the export file with its header in the form without {@code minor} and {@code roles}
+         * (see {@link #withoutMinorAndRoles}), so that md5s pinned for that form still compare the bodies
+         * and the rest of the header byte for byte.
+         */
         String exportMd5() throws Exception {
-            return exportFile != null && Files.exists(exportFile) ? md5(Files.readAllBytes(exportFile)) : "-";
+            return exportFile != null && Files.exists(exportFile)
+                    ? md5(withoutMinorAndRoles(Files.readAllBytes(exportFile))) : "-";
         }
     }
 
     static String md5(byte[] b) throws Exception {
         return HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(b));
+    }
+
+    private static final Pattern MINOR_AND_ROLES = Pattern.compile(
+            "\\A\\{\"format\":1,\"minor\":1,(.*,\"visible\":(\\[[^\\]]*\\])),\"roles\":(\\[[^\\]]*\\]),(.*)\\z");
+
+    /**
+     * Removes {@code "minor":1} and {@code "roles":[..]} from a header line. Fails unless both are present
+     * and the roles equal the visible roles, which holds for every program without payload-nameable roles.
+     */
+    static String withoutMinorAndRoles(String header) {
+        Matcher m = MINOR_AND_ROLES.matcher(header);
+        if (!m.matches() || !m.group(2).equals(m.group(3))) {
+            throw new AssertionError("header without minor 1 or with roles other than the visible roles: " + header);
+        }
+        return "{\"format\":1," + m.group(1) + "," + m.group(4);
+    }
+
+    /** {@link #withoutMinorAndRoles(String)} applied to the first line of an export file. */
+    static byte[] withoutMinorAndRoles(byte[] export) {
+        String s = new String(export, StandardCharsets.UTF_8);
+        int nl = s.indexOf('\n');
+        String first = nl < 0 ? s : s.substring(0, nl);
+        String rest = nl < 0 ? "" : s.substring(nl);
+        return (withoutMinorAndRoles(first) + rest).getBytes(StandardCharsets.UTF_8);
     }
 
     /**

@@ -187,8 +187,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private final Set<Summary> uncoveredSummaries = new HashSet<>();
     /** Online mode: receives each distinct uncovered execution as a witness text; {@code null} for none. */
     private WitnessSink witnessSink;
-    /** With a {@link #witnessSink}: the iteration's creations in order, for the witness text. */
-    private final List<WitnessWriter.Creation> creations = new ArrayList<>();
+    /**
+     * When summaries are exported: the iteration's creations and completed joins in the order they happened,
+     * for the witness text and its event-line count ({@link WitnessWriter#eventLines}).
+     */
+    private final List<WitnessWriter.Inserted> inserted = new ArrayList<>();
     /** Online-mode counters: queries, and their answers (no signature / found / not found). */
     private long lookups;
     private long signatureMisses;
@@ -287,6 +290,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private final List<String> rolesInSpawnOrder;
     /** The roles whose events appear in the summaries; a subset of the declared roles. */
     private final List<String> visibleRoles;
+    /**
+     * The invisible roles a visible payload may name: declared, not visible; empty by default, and
+     * {@code null} when nothing is exported.
+     */
+    private final List<String> payloadRoles;
     private int exportedIterations;
     private int skippedIterations;
     /** Iterations that ran. */
@@ -302,12 +310,13 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private long lookupNanos;
     /** The duration of the lookup inside the current {@link #export}, subtracted from its summarise time. */
     private long lastLookupNanos;
-    /** Graphs measured for the shape counters (every counted iteration). */
-    private long measuredGraphs;
-    /** Sum and maximum of the events per measured graph. */
+    /**
+     * Sum and maximum of the event lines per summarised graph: the lines its witness would have
+     * ({@link WitnessWriter#eventLines}; counted only once the summary succeeded).
+     */
     private long sumGraphEvents;
     private int maxGraphEvents;
-    /** Maximum send and receive events (all threads) per measured graph. */
+    /** Maximum send and receive events (all threads) per summarised graph. */
     private int maxMessageEvents;
     /** Sum and maximum of the send and receive events of visible roles per summarised graph. */
     private long sumVisibleEvents;
@@ -376,29 +385,39 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      *     {@code MpProcess.spawn(role, body)}, carried on its creation event. The list is only an
      *     unordered check that each role is spawned exactly once; {@code null} for no export
      * @param visibleRoles the roles summarised; a subset of {@code rolesInSpawnOrder}
-     * @throws IllegalArgumentException if the roles are not distinct, a visible role is not
-     *     declared, or a role is reserved ({@link #checkDeclaredRole})
+     * @throws IllegalArgumentException if the roles are refused ({@link #checkExportRoles})
      */
     public MustStrategy(
             Long seed, String reportPath, List<String> rolesInSpawnOrder, List<String> visibleRoles) {
+        this(seed, reportPath, rolesInSpawnOrder, visibleRoles, rolesInSpawnOrder == null ? null : List.of());
+    }
+
+    /**
+     * The exporting constructor with the invisible roles a visible payload may name.
+     *
+     * @param seed unused
+     * @param reportPath unused
+     * @param rolesInSpawnOrder the declared roles, or {@code null} for no export
+     * @param visibleRoles the roles summarised; a subset of {@code rolesInSpawnOrder}
+     * @param payloadRoles the invisible declared roles a visible payload may name; {@code null} exactly
+     *     when {@code rolesInSpawnOrder} is
+     * @throws IllegalArgumentException if the roles are refused ({@link #checkExportRoles})
+     */
+    public MustStrategy(Long seed, String reportPath, List<String> rolesInSpawnOrder, List<String> visibleRoles,
+                        List<String> payloadRoles) {
         super(List.of(new TrackTasks()));
         idOfName.put("m", 1L);
         nameOfId.put(1L, "m");
         this.rolesInSpawnOrder = rolesInSpawnOrder == null ? null : List.copyOf(rolesInSpawnOrder);
         this.visibleRoles = visibleRoles == null ? null : List.copyOf(visibleRoles);
-        if (this.rolesInSpawnOrder != null
-                && (this.visibleRoles == null || !this.rolesInSpawnOrder.containsAll(this.visibleRoles))) {
-            throw new IllegalArgumentException("visible roles must be among the spawned roles");
-        }
-        if (this.rolesInSpawnOrder != null
-                && new HashSet<>(this.rolesInSpawnOrder).size() != this.rolesInSpawnOrder.size()) {
-            // As the recorder: an invisible role may still name a task inside a visible payload.
-            throw new IllegalArgumentException("roles are not distinct: " + rolesInSpawnOrder);
-        }
+        this.payloadRoles = payloadRoles == null ? null : List.copyOf(payloadRoles);
         if (this.rolesInSpawnOrder != null) {
-            for (String r : this.rolesInSpawnOrder) {
-                checkDeclaredRole(r);
+            if (this.visibleRoles == null || this.payloadRoles == null) {
+                throw new IllegalArgumentException("an export needs the visible and the payload-nameable roles");
             }
+            checkExportRoles(this.rolesInSpawnOrder, this.visibleRoles, this.payloadRoles);
+        } else if (this.payloadRoles != null) {
+            throw new IllegalArgumentException("payload-nameable roles without declared roles");
         }
     }
 
@@ -511,25 +530,26 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 } else {
                     ExecutionGraph finished = graph.toExecutionGraph();
                     GraphCanon canon = finished.canon();
-                    measureShape();
                     boolean blockedGraph = countsAsBlocked();
-                    if (split == null) {
+                    if (rolesInSpawnOrder != null) {
+                        // When summarising, a graph whose summary is refused counts in no measurement: the
+                        // summary comes first, the graph's outcome only after it succeeded.
+                        try {
+                            export(finished);
+                        } catch (IllegalArgumentException e) {
+                            problem = e.getMessage();
+                        }
+                    }
+                    if (problem == null && split == null) {
                         if (blockedGraph) {
                             blockedGraphs.add(canon);
                         } else {
                             completeGraphs.add(canon);
                         }
                     }
-                    if (split != null) {
+                    if (problem == null && split != null) {
                         try {
                             split.outcome(blockedGraph, canon, nameOfId::get);
-                        } catch (IllegalArgumentException e) {
-                            problem = e.getMessage();
-                        }
-                    }
-                    if (rolesInSpawnOrder != null) {
-                        try {
-                            export(finished);
                         } catch (IllegalArgumentException e) {
                             problem = e.getMessage();
                         }
@@ -637,7 +657,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         childCount.clear();
         pending.clear();
         roleOfStable.clear();
-        creations.clear();
+        inserted.clear();
         daemons.clear();
         awaitBlockedTasks.clear();
         assumeTasks.clear();
@@ -712,8 +732,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 name(created, task);
                 roleOfStable.put(stableOfRuntime.get(created),
                         optParam(event, "role") instanceof String r ? r : "");
-                if (witnessSink != null) {
-                    creations.add(new WitnessWriter.Creation(task, pos.getOrDefault(task, 0),
+                if (rolesInSpawnOrder != null) {
+                    inserted.add(new WitnessWriter.Creation(task, pos.getOrDefault(task, 0),
                             stableOfRuntime.get(created)));
                 }
                 if (Boolean.TRUE.equals(optParam(event, "daemon"))) {
@@ -736,10 +756,12 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             {
                 started.add(task);
                 Long parent = event.getParam("startedBy");
-                if (task != 1L && parent != null && parent != 1L) {
+                // A daemon may be started by any process, also after main's first await.
+                boolean daemon = daemons.contains(task);
+                if (task != 1L && !daemon && parent != null && parent != 1L) {
                     shape("process " + task + " was spawned by process " + parent);
                 }
-                if (task != 1L && mainAwaited) {
+                if (task != 1L && !daemon && mainAwaited) {
                     shape("process " + task + " was spawned after main's first await");
                 }
             }
@@ -758,6 +780,10 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     if (joined != null) {
                         awaited.add(joined);
                     }
+                }
+                if (joined != null && rolesInSpawnOrder != null) {
+                    // A completed join is a witness line (TJOIN) of the joiner.
+                    inserted.add(new WitnessWriter.Join(task, pos.getOrDefault(task, 0), joined));
                 }
                 if (joined != null) {
                     // The join edge: the joined task's last event, plus the joins (or inherited
@@ -1579,17 +1605,92 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     /**
      * A declared role may not be an internal name: {@code "main"} is main, and names starting with
      * {@code "~"} are the exporter's internal aliases for daemons, so neither can become visible
-     * or satisfy the never-spawned check.
+     * or satisfy the never-spawned check. A role is ASCII, as the summary format requires.
      *
      * @param role the declared role
-     * @throws IllegalArgumentException if the role is empty, {@code "main"}, or starts with
-     *     {@code "~"}
+     * @throws IllegalArgumentException if the role is empty, {@code "main"}, starts with {@code "~"},
+     *     or holds a character outside ASCII
      */
     public static void checkDeclaredRole(String role) {
         if (role.isEmpty() || role.equals("main") || role.startsWith("~")) {
             throw new IllegalArgumentException("role \"" + role + "\" is reserved: a declared role is"
                     + " non-empty, not \"main\", and does not start with \"~\"");
         }
+        for (int i = 0; i < role.length(); i++) {
+            if (role.charAt(i) > 0x7f) {
+                throw new IllegalArgumentException("role \"" + role + "\" is not ASCII: the summary format"
+                        + " requires ASCII role names");
+            }
+        }
+    }
+
+    /**
+     * The roles of an export: every declared role passes {@link #checkDeclaredRole} and is declared once;
+     * the visible roles are declared and listed once; the payload-nameable roles are declared,
+     * not visible, and listed once.
+     *
+     * @param declared the declared roles
+     * @param visible the visible roles
+     * @param payload the invisible roles a visible payload may name
+     * @throws IllegalArgumentException naming the first rule broken
+     */
+    public static void checkExportRoles(List<String> declared, List<String> visible, List<String> payload) {
+        if (new HashSet<>(declared).size() != declared.size()) {
+            // As the recorder: an invisible role may still name a task inside a visible payload.
+            throw new IllegalArgumentException("roles are not distinct: " + declared);
+        }
+        for (String r : declared) {
+            checkDeclaredRole(r);
+        }
+        if (!declared.containsAll(visible)) {
+            throw new IllegalArgumentException("visible roles must be among the spawned roles");
+        }
+        if (new HashSet<>(visible).size() != visible.size()) {
+            throw new IllegalArgumentException("visible roles are not distinct: " + visible);
+        }
+        if (new HashSet<>(payload).size() != payload.size()) {
+            throw new IllegalArgumentException("payload-nameable roles are not distinct: " + payload);
+        }
+        for (String r : payload) {
+            if (!declared.contains(r)) {
+                throw new IllegalArgumentException("payload-nameable role " + r + " is not declared " + declared);
+            }
+            if (visible.contains(r)) {
+                throw new IllegalArgumentException("payload-nameable role " + r + " is visible; only an invisible"
+                        + " role is declared payload-nameable (a visible role may always be named)");
+            }
+        }
+    }
+
+    /**
+     * The name a visible payload gives a process: main as {@code "main"}, a visible role, or a
+     * declared payload-nameable role; any other role is refused.
+     *
+     * @param role the process's role ({@code "main"} for main)
+     * @param visible the visible roles
+     * @param payload the payload-nameable roles
+     * @return {@code role}
+     * @throws IllegalArgumentException if {@code role} is none of these
+     */
+    public static String payloadName(String role, List<String> visible, List<String> payload) {
+        if (role.equals("main") || visible.contains(role) || payload.contains(role)) {
+            return role;
+        }
+        throw new IllegalArgumentException("payload names process " + role + ", an invisible role that is not"
+                + " declared payload-nameable (MpProgram.payloadNameableRoles)");
+    }
+
+    /**
+     * The header's {@code roles}: the visible roles and the payload-nameable roles, sorted.
+     *
+     * @param visible the visible roles
+     * @param payload the payload-nameable roles
+     * @return the sorted roles
+     */
+    public static List<String> headerRoles(List<String> visible, List<String> payload) {
+        List<String> all = new ArrayList<>(visible);
+        all.addAll(payload);
+        return MpValueEncoder.sortedRoles(all);
     }
 
     /**
@@ -1657,7 +1758,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 throw new IllegalArgumentException("declared role " + r + " was never spawned");
             }
         }
-        MpValueEncoder encoder = new MpValueEncoder(tid -> {
+        java.util.function.Function<Tid, String> identity = tid -> {
             if (daemons.contains(tid.raw())) {
                 throw new IllegalArgumentException("payload names daemon " + nameOfId.get(tid.raw())
                         + "; a thread id is encoded as a role name and a daemon has none");
@@ -1667,7 +1768,12 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 throw new IllegalArgumentException("payload names task " + tid + ", which never started");
             }
             return r;
-        });
+        };
+        // The summary encodes visible payloads only, where an invisible role must be declared payload-nameable;
+        // the witness also prints invisible threads' sends, which may name any role.
+        MpValueEncoder encoder = new MpValueEncoder(
+                tid -> payloadName(identity.apply(tid), visibleRoles, payloadRoles));
+        MpValueEncoder witnessEncoder = new MpValueEncoder(identity);
         Summary s = SummaryExporter.summarize(finished, roleOfTask, visibleRoles, encoder);
         summaries.merge(s, 1, Integer::sum);
         exportedIterations++;
@@ -1681,6 +1787,15 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         summarisedGraphs++;
         sumVisibleEvents += visibleEvents;
         maxVisibleEvents = Math.max(maxVisibleEvents, visibleEvents);
+        // The graph's event lines (as its witness has them) and its message events, per summarised graph.
+        int lines = WitnessWriter.eventLines(finished, inserted);
+        sumGraphEvents += lines;
+        maxGraphEvents = Math.max(maxGraphEvents, lines);
+        int messages = 0;
+        for (List<Graph.Node> nodes : graph.tasks().values()) {
+            messages += messageEvents(nodes);
+        }
+        maxMessageEvents = Math.max(maxMessageEvents, messages);
         String line = s.toJson(0);
         // The canonical line without the multiplicity: drop the trailing ,"n":0 before the closing brace.
         String withoutN = line.substring(0, line.length() - ",\"n\":0}".length()) + "}";
@@ -1738,8 +1853,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     String uncoveredLine = s.toJson(1);
                     String text;
                     try {
-                        text = WitnessWriter.write(iterations, uncoveredLine, finished, creations, witnessNames(),
-                                encoder);
+                        text = WitnessWriter.write(iterations, uncoveredLine, finished, inserted, witnessNames(),
+                                daemons, witnessEncoder);
                     } catch (IllegalArgumentException e) {
                         witnessSink.refused(iterations, uncoveredLine, e.getMessage());
                         return;
@@ -1748,19 +1863,6 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 }
             }
         }
-    }
-
-    /** Updates the graph-shape counters with the iteration's graph. */
-    private void measureShape() {
-        int events = graph.size();
-        measuredGraphs++;
-        sumGraphEvents += events;
-        maxGraphEvents = Math.max(maxGraphEvents, events);
-        int messages = 0;
-        for (List<Graph.Node> nodes : graph.tasks().values()) {
-            messages += messageEvents(nodes);
-        }
-        maxMessageEvents = Math.max(maxMessageEvents, messages);
     }
 
     /** The send and receive events among {@code nodes}. */
@@ -1871,9 +1973,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             String role = roleOfStable.getOrDefault(t, "");
             names.put(t, t == 1L ? "main" : role.isEmpty() ? nameOfId.get(t) : role);
         }
-        for (WitnessWriter.Creation c : creations) {
-            String role = roleOfStable.getOrDefault(c.child(), "");
-            names.putIfAbsent(c.child(), role.isEmpty() ? nameOfId.get(c.child()) : role);
+        for (WitnessWriter.Inserted i : inserted) {
+            if (i instanceof WitnessWriter.Creation c) {
+                String role = roleOfStable.getOrDefault(c.child(), "");
+                names.putIfAbsent(c.child(), role.isEmpty() ? nameOfId.get(c.child()) : role);
+            }
         }
         names.put(1L, "main");
         return names;
@@ -1987,14 +2091,17 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     }
 
     /**
-     * The strategy's measurements: phase times and graph-shape counters over the explored graphs.
-     * Times are cumulative wall-clock on the checker's thread, in nanoseconds.
+     * The strategy's measurements: phase times and graph-shape counters over the summarised graphs
+     * (a graph counts only once its summary succeeded; without export nothing is summarised and
+     * the launcher prints these counters empty). Times are cumulative wall-clock on the checker's
+     * thread, in nanoseconds.
      *
      * @param summariseNanos time turning graphs into summaries, failed attempts included
      * @param lookupNanos time in specification lookups
-     * @param maxGraphEvents the most events (every label) in one explored graph
-     * @param meanGraphEvents the mean events per explored graph
-     * @param maxMessageEvents the most send and receive events (all threads) in one explored graph
+     * @param maxGraphEvents the most event lines in one summarised graph's witness
+     *     ({@link WitnessWriter#eventLines}: BEGIN, TCREATE, SEND, RECV, NONDET, TJOIN, BLK, ERROR, END)
+     * @param meanGraphEvents the mean of those per summarised graph
+     * @param maxMessageEvents the most send and receive events (all threads) in one summarised graph
      * @param maxVisibleEvents the most send and receive events of visible roles in one summarised
      *     graph (0 without export)
      * @param meanVisibleEvents the mean of those per summarised graph
@@ -2004,17 +2111,20 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * @param maxPorfPairs the largest number of non-zero order-count entries in one summary
      * @param firstMissWallMs wall time from the start of the exploration to the first uncovered
      *     summary, or -1 for none
+     * @param summarisedGraphs the graphs whose summary succeeded
      */
     public record Measurements(long summariseNanos, long lookupNanos, int maxGraphEvents, double meanGraphEvents,
                                int maxMessageEvents, int maxVisibleEvents, double meanVisibleEvents,
-                               int maxSummaryBytes, int maxPorfCount, int maxPorfPairs, long firstMissWallMs) {}
+                               int maxSummaryBytes, int maxPorfCount, int maxPorfPairs, long firstMissWallMs,
+                               long summarisedGraphs) {}
 
     /** The measurements so far. */
     public Measurements measurements() {
         return new Measurements(summariseNanos, lookupNanos, maxGraphEvents,
-                measuredGraphs == 0 ? 0.0 : (double) sumGraphEvents / measuredGraphs, maxMessageEvents,
+                summarisedGraphs == 0 ? 0.0 : (double) sumGraphEvents / summarisedGraphs, maxMessageEvents,
                 maxVisibleEvents, summarisedGraphs == 0 ? 0.0 : (double) sumVisibleEvents / summarisedGraphs,
-                maxSummaryBytes, maxPorfCount, maxPorfPairs, firstMissNanos < 0 ? -1 : firstMissNanos / 1_000_000);
+                maxSummaryBytes, maxPorfCount, maxPorfPairs, firstMissNanos < 0 ? -1 : firstMissNanos / 1_000_000,
+                summarisedGraphs);
     }
 
     /** The current graph as an {@code ExecutionGraph} — for tests. */

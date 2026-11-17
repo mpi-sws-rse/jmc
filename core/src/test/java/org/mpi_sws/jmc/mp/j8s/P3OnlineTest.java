@@ -149,7 +149,7 @@ class P3OnlineTest {
 
     static P3Commit seeded(String name) throws Exception {
         Path spec = J8SSupport.bankSpec("multi", 3, 5, 9, 12);
-        SpecificationFile.Loaded loaded = SpecificationFile.load(spec, new OnlineBank("2").visibleRoles());
+        SpecificationFile.Loaded loaded = SpecificationFile.load(spec, new OnlineBank("2").expected());
         P3Commit c = new P3Commit(P3Commit.freshDir(name), 3, true, loaded, System.currentTimeMillis());
         c.complete.add(P3Commit.D);
         return c;

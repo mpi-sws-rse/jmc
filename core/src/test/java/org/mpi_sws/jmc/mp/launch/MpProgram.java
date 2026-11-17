@@ -69,4 +69,37 @@ public interface MpProgram extends Runnable {
     default List<String> visibleRoles() {
         return declaredRoles();
     }
+
+    /**
+     * The invisible declared roles whose process identity ({@code Tid}) may appear in a visible
+     * payload; empty by default. A visible payload may name main, a visible role or one of these;
+     * naming any other process is refused at export. The header's {@code roles} are the visible roles and
+     * these, and the online check refuses a specification whose {@code roles} differ. TraceForge's
+     * optional {@code Program} field is the same declaration on the Rust side.
+     *
+     * @return the payload-nameable roles: declared, not visible, distinct
+     */
+    default List<String> payloadNameableRoles() {
+        return List.of();
+    }
+
+    /**
+     * What the online check compares a specification header with: the visible roles, the model and the
+     * header roles.
+     *
+     * @return the expected header fields
+     */
+    default org.mpi_sws.jmc.mp.summary.SpecificationFile.Expected expected() {
+        return new org.mpi_sws.jmc.mp.summary.SpecificationFile.Expected(visibleRoles(),
+                org.mpi_sws.jmc.mp.summary.SummaryExporter.modelName(model()), headerRoles());
+    }
+
+    /**
+     * The header's {@code roles}: the visible roles and the payload-nameable roles, sorted.
+     *
+     * @return the roles
+     */
+    default List<String> headerRoles() {
+        return org.mpi_sws.jmc.strategies.must.MustStrategy.headerRoles(visibleRoles(), payloadNameableRoles());
+    }
 }
