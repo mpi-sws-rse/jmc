@@ -86,7 +86,7 @@ class J8SApiTest {
     static SplitCoordinator.Result run(Path d, Path spec, int k, int w, boolean reversed,
                                        BiFunction<Path, Integer, List<String>> cmd) throws Exception {
         OnlineBank p = new OnlineBank("2");
-        SpecificationFile.Loaded loaded = SpecificationFile.load(spec, p.visibleRoles());
+        SpecificationFile.Loaded loaded = SpecificationFile.load(spec, p.expected());
         return SplitCoordinator.run(new SplitCoordinator.Config(J8SSupport.BANK + "|p2p", p, p.rolesInSpawnOrder(),
                 p.visibleRoles(), k, w, 300, d, cmd, reversed, Process::isAlive, loaded));
     }
@@ -293,7 +293,7 @@ class J8SApiTest {
         assertEquals(2, o.exit());
         assertTrue(o.text().contains("--stop-at-first cannot be combined with --split"), o.text());
         OnlineBank p = new OnlineBank("2");
-        SpecificationFile.Loaded loaded = SpecificationFile.load(spec, p.visibleRoles());
+        SpecificationFile.Loaded loaded = SpecificationFile.load(spec, p.expected());
         MustStrategy.SplitControl ctl = new MustStrategy.SplitControl() {
             @Override public int splitThreshold() {
                 return 1;

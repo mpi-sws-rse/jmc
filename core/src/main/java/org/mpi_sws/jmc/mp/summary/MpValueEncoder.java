@@ -21,7 +21,8 @@ import java.util.function.Function;
  * <ul>
  *   <li>{@link Byte}, {@link Short}, {@link Integer}, {@link Long} as JSON integers;
  *       {@link Boolean} as {@code true}/{@code false}; {@link String} as a JSON string; an
- *       {@link Enum} constant as the JSON string of its declared name;</li>
+ *       {@link Enum} constant as a unit variant, {@code {"t":"<declared name>","f":[]}}, as the Rust side
+ *       encodes a unit variant {@code NAME};</li>
  *   <li>a {@link Tid} in a payload as the JSON string of its role name, looked up through the
  *       function given at construction (the strategy knows which task carries which role);</li>
  *   <li>a Java {@code record} as {@code {"t":"<tag>","f":[v1,v2,...]}}, the tag from its
@@ -128,11 +129,14 @@ public final class MpValueEncoder {
                 throw refused(e.getMessage(), message, path, e);
             }
         } else if (v instanceof Enum<?> e) {
+            // A unit variant, its tag the constant's declared name (Enum.name(), not toString()).
+            sb.append("{\"t\":");
             try {
                 quote(sb, e.name());
             } catch (IllegalArgumentException x) {
                 throw refused(x.getMessage(), message, path, x);
             }
+            sb.append(",\"f\":[]}");
         } else if (v instanceof Tid t) {
             String role;
             try {

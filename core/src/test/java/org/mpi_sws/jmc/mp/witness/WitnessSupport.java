@@ -190,8 +190,8 @@ final class WitnessSupport {
     /** One event line: thread position {@code t}, index {@code k}, the text after {@code ": "}. */
     record Ev(int t, int k, String body) {}
 
-    /** One thread block. */
-    record Th(String name, int t, List<Ev> events) {}
+    /** One thread block; {@code daemon} if its header carries the daemon marker. */
+    record Th(String name, int t, boolean daemon, List<Ev> events) {}
 
     /** A parsed witness. */
     record Witness(int iteration, String summaryLine, List<Th> threads) {
@@ -206,9 +206,11 @@ final class WitnessSupport {
     }
 
     private static final Pattern FIRST = Pattern.compile("^uncovered summary \\(iteration (\\d+)\\): (.*)$");
-    private static final Pattern THREAD = Pattern.compile("^thread \"(.*)\"\\[tid=(\\d+)\\]:$");
+    private static final Pattern THREAD = Pattern.compile("^thread \"(.*)\"\\[tid=(\\d+)(, daemon)?\\]:$");
     private static final Pattern EVENT = Pattern.compile("^\\t\\((\\d+), (\\d+)\\): (.*)$");
-    static final Pattern RECV = Pattern.compile("^RECV\\(\\) \\[\\((\\d+), (\\d+)\\)\\]$");
+    /** A receive that reads a send: the send's thread {@code t} and index {@code k}, then its thread's name. */
+    static final Pattern RECV = Pattern.compile("^RECV\\(\\) \\[\\((\\d+), (\\d+)\\) (.*)\\]$");
+    private static final Pattern TJOIN = Pattern.compile("^TJOIN\\((\\d+)\\)$");
     private static final Pattern TCREATE = Pattern.compile("^TCREATE\\((\\d+):\"(.*)\"\\)$");
 
     /** A SEND line's destination name and value. */
@@ -250,7 +252,7 @@ final class WitnessSupport {
         for (int i = 1; i < lines.length; i++) {
             Matcher th = THREAD.matcher(lines[i]);
             if (th.matches()) {
-                cur = new Th(th.group(1), Integer.parseInt(th.group(2)), new ArrayList<>());
+                cur = new Th(th.group(1), Integer.parseInt(th.group(2)), th.group(3) != null, new ArrayList<>());
                 assertEquals(threads.size(), cur.t(), "thread positions in order: " + lines[i]);
                 threads.add(cur);
                 continue;
@@ -262,7 +264,8 @@ final class WitnessSupport {
             assertEquals(cur.events().size(), e.k(), "k in order: " + lines[i]);
             String b = e.body();
             assertTrue(b.equals("BEGIN") || b.equals("END") || b.equals("BLK") || b.startsWith("ERROR(")
-                    || TCREATE.matcher(b).matches() || b.startsWith("SEND(") || RECV.matcher(b).matches()
+                    || TCREATE.matcher(b).matches() || TJOIN.matcher(b).matches() || b.startsWith("SEND(")
+                    || RECV.matcher(b).matches()
                     || b.equals("RECV() [TIMEOUT]") || b.matches("NONDET \\d+"), "kind: " + lines[i]);
             cur.events().add(e);
         }
@@ -295,13 +298,20 @@ final class WitnessSupport {
                 if (e.body().startsWith("SEND(")) {
                     assertTrue(send(w, e.body()) != null, "a SEND line: " + e);
                 }
+                Matcher j = TJOIN.matcher(e.body());
+                if (j.matches()) {
+                    assertTrue(Integer.parseInt(j.group(1)) < threads.size(), "joined thread exists: " + e);
+                }
             }
         }
         assertEquals(threads.size(), next, "every thread but main is created once");
         return w;
     }
 
-    /** Every {@code RECV() [(t, k)]} names an event of the witness that is a {@code SEND}; returns how many. */
+    /**
+     * Every {@code RECV() [(t, k) name]} names an event of the witness that is a {@code SEND}, and {@code name} is
+     * thread {@code t}'s; returns how many.
+     */
     static int recvsNameSends(Witness w) {
         int n = 0;
         Set<String> read = new HashSet<>();
@@ -312,6 +322,8 @@ final class WitnessSupport {
                     Ev s = w.event(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)));
                     assertTrue(s != null && s.body().startsWith("SEND("),
                             "(" + e.t() + ", " + e.k() + ") reads (" + m.group(1) + ", " + m.group(2) + "), " + s);
+                    assertEquals(w.threads().get(Integer.parseInt(m.group(1))).name(), m.group(3),
+                            "the receive names the sender's thread: " + e);
                     assertEquals(th.name(), send(w, s.body()).destination(),
                             "the send read by (" + e.t() + ", " + e.k() + ") is addressed to its thread");
                     assertTrue(read.add(m.group(1) + "," + m.group(2)), "a send read twice: " + e);
@@ -328,8 +340,8 @@ final class WitnessSupport {
      * the printed value, RECV → r with the value of the send it names, TIMEOUT → r null) and the counts
      * (for each visible event, per other visible role in order, the number of that role's visible
      * events before it in the transitive closure of program order and receive-from) — as a format
-     * line with multiplicity 1. Spawn and join edges are omitted: only main spawns and joins, and main
-     * has no message events.
+     * line with multiplicity 1. The order includes the spawn edges (a thread's {@code BEGIN} after the
+     * {@code TCREATE} that created it) and the join edges (a {@code TJOIN} after the joined thread's last line).
      */
     static String rederive(Witness w, Collection<String> visibleRoles) {
         List<String> roles = MpValueEncoder.sortedRoles(visibleRoles);
@@ -403,10 +415,25 @@ final class WitnessSupport {
         List<Ev> p = new ArrayList<>();
         if (e.k() > 0) {
             p.add(w.event(e.t(), e.k() - 1));
+        } else {
+            // A thread's BEGIN comes after the TCREATE that created it.
+            for (Th th : w.threads()) {
+                for (Ev c : th.events()) {
+                    Matcher m = TCREATE.matcher(c.body());
+                    if (m.matches() && Integer.parseInt(m.group(1)) == e.t()) {
+                        p.add(c);
+                    }
+                }
+            }
         }
         Matcher m = RECV.matcher(e.body());
         if (m.matches()) {
             p.add(w.event(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2))));
+        }
+        Matcher j = TJOIN.matcher(e.body());
+        if (j.matches()) {
+            List<Ev> joined = w.threads().get(Integer.parseInt(j.group(1))).events();
+            p.add(joined.get(joined.size() - 1));
         }
         return p;
     }

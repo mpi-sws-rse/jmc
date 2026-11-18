@@ -39,12 +39,16 @@ class OptionalPayloadLauncherTest {
     static final List<String> FROM_B = List.of(IDLE_NONE, WRAP_SOME, WRAP_NONE);
 
     static final String GRAPHS_VISIBLE = "10 distinct complete, 0 distinct blocked; stack exhausted";
-    static final String HEADER_VISIBLE = "{\"format\":1,\"tool\":\"jmc\",\"program\":\"j8-optional\",\"size\":\"visible\","
-            + "\"visible\":[\"srv\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}";
+    static final String HEADER_VISIBLE = "{\"format\":1,\"minor\":1,\"tool\":\"jmc\","
+            + "\"program\":\"j8-optional\",\"size\":\"visible\","
+            + "\"visible\":[\"srv\"],"
+            + "\"roles\":[\"srv\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}";
     static final String TF_HEADER_VISIBLE = "{\"format\":1,\"tool\":\"traceforge\",\"program\":\"j8-optional\","
             + "\"size\":\"visible\",\"visible\":[\"srv\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}";
-    static final String HEADER_INVISIBLE = "{\"format\":1,\"tool\":\"jmc\",\"program\":\"j8-optional\",\"size\":"
-            + "\"invisible\",\"visible\":[\"srv\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}";
+    static final String HEADER_INVISIBLE = "{\"format\":1,\"minor\":1,\"tool\":\"jmc\","
+            + "\"program\":\"j8-optional\",\"size\":"
+            + "\"invisible\",\"visible\":[\"srv\"],"
+            + "\"roles\":[\"srv\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}";
     static final String LINE_INVISIBLE = "{\"statuses\":{\"srv\":\"done\"},\"words\":{\"srv\":[{\"r\":{\"t\":\"V\","
             + "\"f\":[1]}}]},\"counts\":[],\"n\":2}";
     static final String NULL_AT = "(use Optional for an absent value) (field res.cas of message "

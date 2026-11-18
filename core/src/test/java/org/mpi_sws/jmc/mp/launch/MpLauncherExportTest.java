@@ -33,8 +33,10 @@ class MpLauncherExportTest {
     private static final String ST3 = "\"statuses\":{\"t1\":\"done\",\"t2\":\"done\",\"t3\":\"done\"}";
     private static final String W12 =
             "\"t1\":[{\"s\":" + M1 + "},{\"s\":" + M2 + "}],\"t2\":[{\"r\":" + M2 + "},{\"s\":" + M3 + "}]";
-    private static final String C1_HEADER = "{\"format\":1,\"tool\":\"jmc\",\"program\":\"must-1.3\",\"size\":\"\","
-            + "\"visible\":[\"t1\",\"t2\",\"t3\"],\"model\":\"p2p\",\"enumeration\":\"sampled\",\"seed\":20261026,"
+    private static final String C1_HEADER = "{\"format\":1,\"minor\":1,\"tool\":\"jmc\","
+            + "\"program\":\"must-1.3\",\"size\":\"\","
+            + "\"visible\":[\"t1\",\"t2\",\"t3\"],"
+            + "\"roles\":[\"t1\",\"t2\",\"t3\"],\"model\":\"p2p\",\"enumeration\":\"sampled\",\"seed\":20261026,"
             + "\"iterations\":2000,\"encoding\":1}";
     private static final String C1_13 = "{" + ST3 + ",\"words\":{" + W12 + ",\"t3\":[{\"r\":" + M1 + "},{\"r\":" + M3
             + "}]},\"counts\":[0,0,0,0,2,0,2,0,1,0,2,2],\"n\":1978}";
@@ -123,8 +125,10 @@ class MpLauncherExportTest {
     @Test
     void c2b_launcherExport_blockedIterationsExported() throws Exception {
         List<String> lines = export(J1 + "BlockedAfterOne", 20, 1L, "blocked.jsonl", 0);
-        assertEquals(List.of("{\"format\":1,\"tool\":\"jmc\",\"program\":\"blocked-after-one\",\"size\":\"\","
-                + "\"visible\":[\"r\",\"s\"],\"model\":\"p2p\",\"enumeration\":\"sampled\",\"seed\":1,"
+        assertEquals(List.of("{\"format\":1,\"minor\":1,\"tool\":\"jmc\","
+                + "\"program\":\"blocked-after-one\",\"size\":\"\","
+                + "\"visible\":[\"r\",\"s\"],"
+                + "\"roles\":[\"r\",\"s\"],\"model\":\"p2p\",\"enumeration\":\"sampled\",\"seed\":1,"
                 + "\"iterations\":20,\"encoding\":1}", RS_BLOCKED + "20}"), lines);
     }
 
@@ -138,8 +142,10 @@ class MpLauncherExportTest {
 
     // ------------------------------------------------------------------ C4: errored iteration not exported
 
-    static final String C4_HEADER = "{\"format\":1,\"tool\":\"jmc\",\"program\":\"asserts-at-3\",\"size\":\"\","
-            + "\"visible\":[\"r\",\"s\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}";
+    static final String C4_HEADER = "{\"format\":1,\"minor\":1,\"tool\":\"jmc\","
+            + "\"program\":\"asserts-at-3\",\"size\":\"\","
+            + "\"visible\":[\"r\",\"s\"],"
+            + "\"roles\":[\"r\",\"s\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}";
 
     static void checkC4(int iters, int expectN) throws Exception {
         List<String> lines = export(J1 + "AssertsInMainAt3", iters, 1L, "c4-" + iters + ".jsonl", 1);
@@ -281,8 +287,9 @@ class MpLauncherExportTest {
 
     static void checkF1(int iters, int expectN) throws Exception {
         List<String> lines = export(J1 + "AssertsInProcessAt3", iters, 1L, "f1-" + iters + ".jsonl", 1);
-        assertEquals("{\"format\":1,\"tool\":\"jmc\",\"program\":\"asserts-in-process-at-3\",\"size\":\"\","
-                + "\"visible\":[\"r\",\"s\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}",
+        assertEquals("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"asserts-in-process-at-3\",\"size\":\"\","
+                + "\"visible\":[\"r\",\"s\"],"
+                + "\"roles\":[\"r\",\"s\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}",
                 lines.get(0), "header");
         assertEquals(List.of(RS_DONE + expectN + "}"), lines.subList(1, lines.size()), "lines");
     }
@@ -389,16 +396,19 @@ class MpLauncherExportTest {
         assertTrue(o.text().contains("FAILED:     process 2 failed: java.lang.AssertionError: a: fails in run 3"),
                 o.text());
         List<String> lines = Files.readAllLines(Path.of(DIR + "m3c.jsonl"), StandardCharsets.UTF_8);
-        assertEquals(List.of("{\"format\":1,\"tool\":\"jmc\",\"program\":\"AwaitAllFailingAt3\",\"size\":\"\","
-                + "\"visible\":[\"a\",\"b\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}",
+        assertEquals(List.of("{\"format\":1,\"minor\":1,\"tool\":\"jmc\","
+                + "\"program\":\"AwaitAllFailingAt3\",\"size\":\"\","
+                + "\"visible\":[\"a\",\"b\"],"
+                + "\"roles\":[\"a\",\"b\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}",
                 AB_NB + "2}"), lines);
     }
 
     @Test
     void m3_awaitAllNormal_sampled() throws Exception {
         List<String> lines = export(J1 + "AwaitAllNormal", 20, 1L, "m3n.jsonl", 0);
-        assertEquals(List.of("{\"format\":1,\"tool\":\"jmc\",\"program\":\"AwaitAllNormal\",\"size\":\"\","
-                + "\"visible\":[\"a\",\"b\"],\"model\":\"p2p\",\"enumeration\":\"sampled\",\"seed\":1,"
+        assertEquals(List.of("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"AwaitAllNormal\",\"size\":\"\","
+                + "\"visible\":[\"a\",\"b\"],"
+                + "\"roles\":[\"a\",\"b\"],\"model\":\"p2p\",\"enumeration\":\"sampled\",\"seed\":1,"
                 + "\"iterations\":20,\"encoding\":1}", AB_NB + "20}"), lines);
     }
 
@@ -408,8 +418,9 @@ class MpLauncherExportTest {
     @Test
     void m3_awaitLate_accepted() throws Exception {
         List<String> lines = export(J1 + "AwaitLate", 50, 1L, "m3l.jsonl", 0);
-        assertEquals(List.of("{\"format\":1,\"tool\":\"jmc\",\"program\":\"AwaitLate\",\"size\":\"\","
-                + "\"visible\":[\"a\",\"b\"],\"model\":\"p2p\",\"enumeration\":\"sampled\",\"seed\":1,"
+        assertEquals(List.of("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"AwaitLate\",\"size\":\"\","
+                + "\"visible\":[\"a\",\"b\"],"
+                + "\"roles\":[\"a\",\"b\"],\"model\":\"p2p\",\"enumeration\":\"sampled\",\"seed\":1,"
                 + "\"iterations\":50,\"encoding\":1}", LATE + "50}"), lines);
     }
 

@@ -355,7 +355,7 @@ class J8EncodingTest {
     }
 
     @Test
-    void identity_P1_P2_P3_differ_withEqualSummaryText() {
+    void identity_P1_P2_P3_differ_P1_P3_withEqualSummaryText_P2_enumAndStringWithDifferentText() {
         O p1a = new O(new InA(1));
         O p1b = new O(new InB(1));
         F p2a = new F(Color.RED);
@@ -364,7 +364,12 @@ class J8EncodingTest {
         M2 p3b = new M2(1);
         Object[][] pairs = {{p1a, p1b, P1A, P1B}, {p2a, p2b, P2A, P2B}, {p3a, p3b, P3A, P3B}};
         for (Object[] p : pairs) {
-            assertEquals(summaryText(p[0]), summaryText(p[1]), "equal summary text");
+            // an enum constant is a unit variant {"t":"RED","f":[]} in the summary, a string is "RED"
+            if (p[0] == p2a) {
+                assertNotEquals(summaryText(p[0]), summaryText(p[1]), "enum and string differ in the summary");
+            } else {
+                assertEquals(summaryText(p[0]), summaryText(p[1]), "equal summary text");
+            }
             assertNotEquals(p[0], p[1], "unequal by equals");
             assertEquals(p[2], v(p[0]));
             assertEquals(p[3], v(p[1]));

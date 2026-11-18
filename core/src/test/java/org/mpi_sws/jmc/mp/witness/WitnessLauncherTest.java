@@ -417,27 +417,34 @@ class WitnessLauncherTest {
     }
 
     @Test
-    void roleWithLineBreak_lineFeedAndLineSeparator_refused_runFails_onlineLinesIntact() throws Exception {
-        // The sender's role holds a line break: it passes the declared-role check, the summary (srv's only)
-        // encodes, the witness is refused.
+    void roleWithLineBreak_lineFeedAndDel_refused_runFails_onlineLinesIntact() throws Exception {
+        // The sender's role holds an ASCII control character: it passes the declared-role check, the summary
+        // (srv's only) encodes, the witness is refused.
         // The reason quotes the name with the character escaped as a backslash-u and four lower-case hex digits,
         // and ends the FAILED line.
         String tail = " holds a control character or line separator, which a witness line cannot hold";
         String bs = "\\";
         unwritable("odd-nl", WitnessSupport.PKG + "WitnessOddRole:nl", "the name or message \"c" + bs + "u000ad\"" + tail,
                 false);
-        unwritable("odd-ls", WitnessSupport.PKG + "WitnessOddRole:ls", "the name or message \"c" + bs + "u2028d\"" + tail,
-                false);
         unwritable("odd-del", WitnessSupport.PKG + "WitnessOddRole:del", "the name or message \"c" + bs + "u007fd\""
                 + tail, false);
-        unwritable("odd-csi", WitnessSupport.PKG + "WitnessOddRole:csi", "the name or message \"c" + bs + "u009bd\""
-                + tail, false);
-        unwritable("odd-nel", WitnessSupport.PKG + "WitnessOddRole:nel", "the name or message \"c" + bs + "u0085d\""
-                + tail, false);
-        unwritable("odd-ps", WitnessSupport.PKG + "WitnessOddRole:ps", "the name or message \"c" + bs + "u2029d\""
-                + tail, false);
-        unwritable("odd-nlcsi", WitnessSupport.PKG + "WitnessOddRole:nlcsi", "the name or message \"c" + bs + "u000a"
-                + bs + "u009bd\"" + tail, false);
+    }
+
+    /**
+     * A role outside ASCII (a C1 control, a line or paragraph separator) is refused when the export's roles are
+     * declared, before any witness is written: the export of each such fixture fails naming the role.
+     */
+    @Test
+    void roleOutsideAscii_refusedAtDeclaration() throws Exception {
+        for (String v : List.of("ls", "csi", "nel", "ps", "nlcsi")) {
+            Path dir = WitnessSupport.fresh("odd-ascii-" + v);
+            Out o = launch(dir, WitnessSupport.PKG + "WitnessOddRole:" + v, "must", "0", "1", "rep",
+                    dir.resolve("x.jsonl").toString(), WitnessSupport.TIMEOUT);
+            assertTrue(o.exit() != 0, v + ": " + o.text());
+            assertTrue(o.text().contains("is not ASCII: the summary format requires ASCII role names"),
+                    v + ": " + o.text());
+            assertFalse(Files.exists(dir.resolve("x.jsonl")), v + ": nothing exported");
+        }
     }
 
     // ---------------------------------------------------------------- symbolic links
@@ -605,7 +612,7 @@ class WitnessLauncherTest {
         WitnessTiny program = new WitnessTiny();
         MustStrategy m = new MustStrategy(1L, dir.resolve("rep-in").toString(), program.rolesInSpawnOrder(),
                 program.visibleRoles());
-        m.checkAgainst(SpecificationFile.load(spec, program.visibleRoles()).index(), false);
+        m.checkAgainst(SpecificationFile.load(spec, program.expected()).index(), false);
         List<String[]> calls = new ArrayList<>();
         List<String> refusals = new ArrayList<>();
         m.writeWitnesses(new MustStrategy.WitnessSink() {
@@ -654,7 +661,7 @@ class WitnessLauncherTest {
         assertThrows(IllegalStateException.class, () -> m.writeWitnesses(sink));
         Path dir = WitnessSupport.fresh("api");
         Path spec = WitnessSupport.spec(dir, BANK + ":2", "spec.jsonl", UnaryOperator.identity(), 2);
-        m.checkAgainst(SpecificationFile.load(spec, p.visibleRoles()).index(), false);
+        m.checkAgainst(SpecificationFile.load(spec, p.expected()).index(), false);
         assertThrows(NullPointerException.class, () -> m.writeWitnesses(null));
         m.writeWitnesses(sink);
     }

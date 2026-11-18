@@ -152,11 +152,14 @@ public final class SummaryExporter {
     public record OnlineFields(int firstMissIteration, long firstMissWallMs, long uncoveredTotal) {}
 
     /**
-     * The file's first line.
+     * The file's first line, format 1 minor 1: {@code "minor":1} after {@code "format":1}, and
+     * {@code "roles"} after {@code "visible"}.
      *
      * @param program the program name, identical in the Java and Rust files
      * @param size the size parameters, as text
      * @param visibleRoles the visible roles (sorted here)
+     * @param roles the header's roles: the visible roles and the invisible roles a visible payload may name
+     *     (sorted here)
      * @param model the communication model of the program
      * @param enumeration {@code "complete"}, {@code "sampled"}, {@code "bounded"} or
      *     {@code "aborted"}
@@ -169,15 +172,16 @@ public final class SummaryExporter {
             String program,
             String size,
             Collection<String> visibleRoles,
+            Collection<String> roles,
             CommunicationModel model,
             String enumeration,
             Long seed,
             Integer iterations) {
-        return header(program, size, visibleRoles, model, enumeration, seed, iterations, null);
+        return header(program, size, visibleRoles, roles, model, enumeration, seed, iterations, null);
     }
 
     /**
-     * {@link #header(String, String, Collection, CommunicationModel, String, Long, Integer)} with the
+     * {@link #header(String, String, Collection, Collection, CommunicationModel, String, Long, Integer)} with the
      * online check's three fields ({@code first_miss_iteration}, {@code first_miss_wall_ms},
      * {@code uncovered_total}) after the enumeration fields; a reader that does not know them ignores
      * them.
@@ -189,13 +193,14 @@ public final class SummaryExporter {
             String program,
             String size,
             Collection<String> visibleRoles,
+            Collection<String> roles,
             CommunicationModel model,
             String enumeration,
             Long seed,
             Integer iterations,
             OnlineFields online) {
         StringBuilder sb = new StringBuilder();
-        sb.append("{\"format\":1,\"tool\":\"jmc\",\"program\":");
+        sb.append("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":");
         MpValueEncoder.quote(sb, program);
         sb.append(",\"size\":");
         MpValueEncoder.quote(sb, size);
@@ -208,8 +213,17 @@ public final class SummaryExporter {
             first = false;
             MpValueEncoder.quote(sb, r);
         }
+        sb.append("],\"roles\":[");
+        first = true;
+        for (String r : MpValueEncoder.sortedRoles(roles)) {
+            if (!first) {
+                sb.append(',');
+            }
+            first = false;
+            MpValueEncoder.quote(sb, r);
+        }
         sb.append("],\"model\":");
-        MpValueEncoder.quote(sb, model.name().toLowerCase(Locale.ROOT));
+        MpValueEncoder.quote(sb, modelName(model));
         sb.append(",\"enumeration\":");
         MpValueEncoder.quote(sb, enumeration);
         if ("sampled".equals(enumeration)) {
@@ -227,6 +241,16 @@ public final class SummaryExporter {
         }
         sb.append(",\"encoding\":1}");
         return sb.toString();
+    }
+
+    /**
+     * The header's spelling of a communication model ({@code p2p}, {@code asyn}, {@code cd}).
+     *
+     * @param model the model
+     * @return its name in lower case
+     */
+    public static String modelName(CommunicationModel model) {
+        return model.name().toLowerCase(Locale.ROOT);
     }
 
     /**

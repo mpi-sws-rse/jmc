@@ -27,6 +27,8 @@ class SpecificationFileTest {
     Path dir;
 
     static final List<String> VIS = List.of("c0", "c1");
+    /** The program the handwritten headers are read against: visible and header roles c0, c1; model p2p. */
+    static final SpecificationFile.Expected EXP = new SpecificationFile.Expected(VIS, "p2p", VIS);
     static final String HEADER = "{\"format\":1,\"tool\":\"jmc\",\"program\":\"p\",\"size\":\"s\","
             + "\"visible\":[\"c0\",\"c1\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}";
     static final String WORDS = "{\"c0\":[{\"s\":{\"t\":\"Acq\",\"f\":[0]}},{\"r\":{\"t\":\"Grant\",\"f\":[0,0]}},"
@@ -55,14 +57,14 @@ class SpecificationFileTest {
     void refused(String topic, String... lines) throws Exception {
         Path p = file(lines);
         IllegalArgumentException e =
-                assertThrows(IllegalArgumentException.class, () -> SpecificationFile.load(p, VIS), "not refused");
+                assertThrows(IllegalArgumentException.class, () -> SpecificationFile.load(p, EXP), "not refused");
         System.out.println("J7 refused (" + topic + "): " + e.getMessage());
         assertTrue(java.util.regex.Pattern.compile(topic).matcher(e.getMessage().toLowerCase(Locale.ROOT)).find(),
                 "topic '" + topic + "' in: " + e.getMessage());
     }
 
     SpecificationFile.Loaded accepted(String... lines) throws Exception {
-        SpecificationFile.Loaded l = SpecificationFile.load(file(lines), VIS);
+        SpecificationFile.Loaded l = SpecificationFile.load(file(lines), EXP);
         System.out.println("J7 accepted: lines " + l.lines() + " held " + l.index().size() + " duplicates"
                 + " " + l.duplicates());
         return l;
@@ -118,7 +120,7 @@ class SpecificationFileTest {
     @Test
     void refuse_emptyFile() throws Exception {
         Path p = Files.createTempFile(dir, "empty", ".jsonl");
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SpecificationFile.load(p, VIS));
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SpecificationFile.load(p, EXP));
         assertTrue(e.getMessage().contains("header"), e.getMessage());
     }
 
@@ -357,14 +359,21 @@ class SpecificationFileTest {
         assertEquals(1, l.index().size());
     }
 
+    /** Program, size and tool are kept for printing and not compared; the model is compared (see the next test). */
     @Test
-    void accept_programSizeToolModelNotCompared() throws Exception {
-        String h = header("\"tool\":\"jmc\"", "\"tool\":\"traceforge\"").replace("\"p2p\"", "\"asyn\"")
+    void accept_programSizeToolNotCompared() throws Exception {
+        String h = header("\"tool\":\"jmc\"", "\"tool\":\"traceforge\"")
                 .replace("\"program\":\"p\"", "\"program\":\"apps/a3/fifo/spec/k2q1\"").replace("\"size\":\"s\"",
                         "\"size\":\"k=2,q=1\"");
         SpecificationFile.Loaded l = accepted(h, LINE_A);
-        assertEquals(List.of("traceforge", "asyn", "apps/a3/fifo/spec/k2q1", "k=2,q=1"),
+        assertEquals(List.of("traceforge", "p2p", "apps/a3/fifo/spec/k2q1", "k=2,q=1"),
                 List.of(l.tool(), l.model(), l.program(), l.size()));
+    }
+
+    @Test
+    void refuse_modelDiffers() throws Exception {
+        refused("the two models differ: asyn and p2p", header("\"tool\":\"jmc\"", "\"tool\":\"traceforge\"")
+                .replace("\"p2p\"", "\"asyn\""), LINE_A);
     }
 
     @Test
@@ -494,7 +503,7 @@ class SpecificationFileTest {
         String text = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
         assertTrue(text.contains(bytes), "file lacks the intended bytes " + bytes);
         IllegalArgumentException e =
-                assertThrows(IllegalArgumentException.class, () -> SpecificationFile.load(p, VIS), "not refused");
+                assertThrows(IllegalArgumentException.class, () -> SpecificationFile.load(p, EXP), "not refused");
         System.out.println("J7 refused (" + topic + "): " + e.getMessage());
         assertTrue(java.util.regex.Pattern.compile(topic).matcher(e.getMessage().toLowerCase(Locale.ROOT)).find(),
                 "topic '" + topic + "' in: " + e.getMessage());
@@ -504,7 +513,7 @@ class SpecificationFileTest {
         Path p = file(lines);
         String text = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
         assertTrue(text.contains(bytes), "file lacks the intended bytes " + bytes);
-        SpecificationFile.Loaded l = SpecificationFile.load(p, VIS);
+        SpecificationFile.Loaded l = SpecificationFile.load(p, EXP);
         System.out.println("J7 accepted: lines " + l.lines() + " held " + l.index().size() + " duplicates "
                 + l.duplicates());
         return l;

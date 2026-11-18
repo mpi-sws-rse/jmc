@@ -60,6 +60,9 @@ class P3ByteIdentityTest {
             "stop_reason");
     static final List<String> MAXIMA = List.of("max_message_events", "max_porf_pairs", "max_graph_events",
             "max_visible_events", "max_summary_bytes", "max_porf_count");
+    /** The maxima measured on summarised graphs only: empty when the run summarises nothing. */
+    static final java.util.Set<String> PER_SUMMARY = java.util.Set.of("max_message_events", "max_graph_events",
+            "max_visible_events");
     /** The measurement block's keys without a specification, in print order (both launcher modes). */
     static final List<String> KEYS = List.of("wall_ms", "explore_ms", "summarise_ms", "index_ms", "lookup_ms",
             "export_ms", "graphs_complete", "graphs_blocked", "summaries_distinct", "iterations", "stop_reason",
@@ -135,7 +138,9 @@ class P3ByteIdentityTest {
         Map<String, String> a = block(seq);
         Map<String, String> b = block(o);
         for (String k : java.util.stream.Stream.concat(BLOCK.stream(), MAXIMA.stream()).toList()) {
-            if (a.get(k) == null || b.get(k) == null || a.get(k).isEmpty() || !a.get(k).equals(b.get(k))) {
+            // without a summary (counting mode) the per-summary counters are printed empty on both sides
+            boolean empty = !row.export() && PER_SUMMARY.contains(k);
+            if (a.get(k) == null || b.get(k) == null || a.get(k).isEmpty() != empty || !a.get(k).equals(b.get(k))) {
                 bad.add(p + "block " + k + " " + b.get(k) + " vs sequential " + a.get(k));
             }
         }

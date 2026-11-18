@@ -33,6 +33,12 @@ import java.util.regex.Pattern;
  * program calls these methods). Both sides go through the same functions, and every byte that is not
  * listed below is compared, newlines (including the final one) included.
  *
+ * <p>The goldens were later regenerated from the build that added the header's {@code minor} and {@code roles}
+ * and the per-summary measurement counters. Against the original goldens only these changed: each export's header
+ * line (those two keys), the values of {@code max_graph_events} and {@code mean_graph_events} (now the event lines
+ * of the graph's witness), the five per-summary counters, printed empty in counting mode, and on stderr the warning
+ * that a specification without {@code roles} was read without comparing them. Every summary line is unchanged.
+ *
  * <p>Masked values, and nothing else:
  * <ul>
  *   <li>wall time: the values of {@code rate:}, {@code elapsed:}, {@code wall_ms}, {@code explore_ms},
@@ -122,6 +128,16 @@ class WitnessByteIdenticalTest {
         return raw.replaceAll("\"first_miss_wall_ms\":\\d+", "\"first_miss_wall_ms\":X");
     }
 
+    /**
+     * Keeps a normalised output beside the test results ({@code build/test-results/golden-actual/<name>}), so that a
+     * mismatch with its golden can be read in full.
+     */
+    static void actual(String name, String text) throws IOException {
+        Path d = Path.of("build/test-results/golden-actual");
+        Files.createDirectories(d);
+        Files.writeString(d.resolve(name), text, StandardCharsets.UTF_8);
+    }
+
     static String resource(String name) throws IOException {
         try (InputStream in = WitnessByteIdenticalTest.class.getResourceAsStream("golden/" + name)) {
             if (in == null) {
@@ -140,13 +156,18 @@ class WitnessByteIdenticalTest {
         Out o = WitnessSupport.launch(dir, true, args);
         assertEquals(0, o.exit(), o.text());
         assertFalse(o.stdout().contains("witnesses:"), "no witness line without --witness");
-        assertEquals(resource(name + ".stdout"), stdout(o.stdout()), "stdout of " + name);
-        assertEquals(resource(name + ".stderr"), stderr(o.stderr()), "stderr of " + name);
+        String out1 = stdout(o.stdout());
+        String err1 = stderr(o.stderr());
+        actual(name + ".stdout", out1);
+        actual(name + ".stderr", err1);
+        assertEquals(resource(name + ".stdout"), out1, "stdout of " + name);
+        assertEquals(resource(name + ".stderr"), err1, "stderr of " + name);
         Path out = dir.resolve("out.jsonl");
         assertEquals(export, Files.exists(out));
         if (export) {
-            assertEquals(resource(name + ".export"), export(Files.readString(out, StandardCharsets.UTF_8)),
-                    "export of " + name);
+            String ex = export(Files.readString(out, StandardCharsets.UTF_8));
+            actual(name + ".export", ex);
+            assertEquals(resource(name + ".export"), ex, "export of " + name);
         }
     }
 

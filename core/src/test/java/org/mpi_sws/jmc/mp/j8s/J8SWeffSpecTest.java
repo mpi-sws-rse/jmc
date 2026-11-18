@@ -92,7 +92,7 @@ class J8SWeffSpecTest {
     static Outcome run(boolean change) throws Exception {
         Path spec = J8SSupport.DIR.resolve("weff-" + UUID.randomUUID() + ".jsonl");
         Files.copy(J8SSupport.bankSpec("weff-drop3", 3), spec);
-        SpecificationFile.Loaded loaded = SpecificationFile.load(spec, new OnlineBank("2").visibleRoles());
+        SpecificationFile.Loaded loaded = SpecificationFile.load(spec, new OnlineBank("2").expected());
         String tag = UUID.randomUUID().toString();
         Path d = J8SApiTest.dir("weff-spec");
         TreeMap<Integer, Integer> starts = new TreeMap<>();

@@ -55,8 +55,8 @@ class J8Round06Test {
 
     static String exportMd5(MpProgram mp, SplitCoordinator.Result r) throws Exception {
         StringBuilder b = new StringBuilder();
-        b.append(SummaryExporter.header(mp.programName(), mp.size(), mp.visibleRoles(), mp.model(), "complete", 1L,
-                r.ran())).append('\n');
+        b.append(J8Launch.withoutMinorAndRoles(SummaryExporter.header(mp.programName(), mp.size(), mp.visibleRoles(),
+                mp.headerRoles(), mp.model(), "complete", 1L, r.ran()))).append('\n');
         for (String l : r.summaryLines()) {
             b.append(l).append('\n');
         }

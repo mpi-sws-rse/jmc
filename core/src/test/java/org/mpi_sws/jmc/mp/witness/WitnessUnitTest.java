@@ -26,8 +26,9 @@ import java.util.function.UnaryOperator;
  * specification keeps the line of x = 0, c1's send read first ({@code [A(1), A(2)]}, body line 2 of
  * the sorted export), so three summaries are uncovered, each by one execution. The witness of the
  * execution x = 1, c2's send read first: main is thread 0 with BEGIN, NONDET 1 (k 1, before the
- * creations), TCREATE of srv, c1, c2 (tids 1, 2, 3 in creation order, k 2–4), END; srv's first
- * receive reads c2's send (3, 1), its second c1's (2, 1); c1 and c2 are invisible and printed. The
+ * creations), TCREATE of srv, c1, c2 (tids 1, 2, 3 in creation order, k 2–4), the joins of srv, c1, c2
+ * in the order main awaits them (TJOIN, k 5–7), END; srv's first receive reads c2's send (3, 1), its second
+ * c1's (2, 1), each naming the sender's thread; c1 and c2 are invisible and printed. The
  * iteration is the run's (the exploration order is not derived); the three iterations are checked
  * to be distinct and increasing in n.
  */
@@ -49,11 +50,14 @@ class WitnessUnitTest {
                 "\t(0, 2): TCREATE(1:\"srv\")",
                 "\t(0, 3): TCREATE(2:\"c1\")",
                 "\t(0, 4): TCREATE(3:\"c2\")",
-                "\t(0, 5): END",
+                "\t(0, 5): TJOIN(1)",
+                "\t(0, 6): TJOIN(2)",
+                "\t(0, 7): TJOIN(3)",
+                "\t(0, 8): END",
                 "thread \"srv\"[tid=1]:",
                 "\t(1, 0): BEGIN",
-                "\t(1, 1): RECV() [(3, 1)]",
-                "\t(1, 2): RECV() [(2, 1)]",
+                "\t(1, 1): RECV() [(3, 1) c2]",
+                "\t(1, 2): RECV() [(2, 1) c1]",
                 "\t(1, 3): END",
                 "thread \"c1\"[tid=2]:",
                 "\t(2, 0): BEGIN",

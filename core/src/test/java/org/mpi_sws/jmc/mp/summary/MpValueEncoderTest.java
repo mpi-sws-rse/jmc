@@ -94,8 +94,10 @@ class MpValueEncoderTest {
 
     @Test
     void enums_byDeclaredName() {
-        assertEquals("\"RED\"", e(Colour.RED));
-        assertEquals("\"GREEN\"", e(Colour.GREEN)); // constant body and toString override: still the name
+        // A unit variant tagged with the declared name.
+        assertEquals("{\"t\":\"RED\",\"f\":[]}", e(Colour.RED));
+        // a constant with a body and a toString override is still encoded by its name
+        assertEquals("{\"t\":\"GREEN\",\"f\":[]}", e(Colour.GREEN));
     }
 
     @Test

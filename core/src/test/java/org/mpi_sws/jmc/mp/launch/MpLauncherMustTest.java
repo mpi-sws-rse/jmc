@@ -35,8 +35,10 @@ class MpLauncherMustTest {
             + "}]},\"counts\":[0,0,0,0,2,0,2,0,1,0,2,2],\"n\":1}";
     private static final String L31 = "{" + ST3 + ",\"words\":{" + W12 + ",\"t3\":[{\"r\":" + M3 + "},{\"r\":" + M1
             + "}]},\"counts\":[0,0,0,0,2,0,2,0,2,2,2,2],\"n\":1}";
-    private static final String H13 = "{\"format\":1,\"tool\":\"jmc\",\"program\":\"must-1.3\",\"size\":\"\","
-            + "\"visible\":[\"t1\",\"t2\",\"t3\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}";
+    private static final String H13 = "{\"format\":1,\"minor\":1,\"tool\":\"jmc\","
+            + "\"program\":\"must-1.3\",\"size\":\"\","
+            + "\"visible\":[\"t1\",\"t2\",\"t3\"],"
+            + "\"roles\":[\"t1\",\"t2\",\"t3\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}";
 
     record Exp(MpLauncherTest.Out out, List<String> lines) {}
 
@@ -98,8 +100,9 @@ class MpLauncherMustTest {
     @Test
     void c5_bounded_nsr4_cap2() throws Exception {
         Exp e = export("org.mpi_sws.jmc.mp.programs.j2.NSR", "2", "bounded.jsonl", 0);
-        assertEquals("{\"format\":1,\"tool\":\"jmc\",\"program\":\"ns+r\",\"size\":\"N=4\","
-                + "\"visible\":[\"r\",\"s1\",\"s2\",\"s3\",\"s4\"],\"model\":\"p2p\",\"enumeration\":\"bounded\","
+        assertEquals("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"ns+r\",\"size\":\"N=4\","
+                + "\"visible\":[\"r\",\"s1\",\"s2\",\"s3\",\"s4\"],"
+                + "\"roles\":[\"r\",\"s1\",\"s2\",\"s3\",\"s4\"],\"model\":\"p2p\",\"enumeration\":\"bounded\","
                 + "\"encoding\":1}", e.lines().get(0), "header");
         assertEquals(3, e.lines().size(), "header + 2 lines");
     }
@@ -126,8 +129,9 @@ class MpLauncherMustTest {
     void c5_aborted_assertionInRun2() throws Exception {
         Exp e = export("org.mpi_sws.jmc.mp.programs.j2.MustAssertsInRun2", "0", "aborted.jsonl", 1);
         assertTrue(e.out().text().contains("FAILED:"), "FAILED line");
-        assertEquals("{\"format\":1,\"tool\":\"jmc\",\"program\":\"must-asserts-in-run-2\",\"size\":\"\","
-                + "\"visible\":[\"r\",\"s1\",\"s2\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}",
+        assertEquals("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"must-asserts-in-run-2\",\"size\":\"\","
+                + "\"visible\":[\"r\",\"s1\",\"s2\"],"
+                + "\"roles\":[\"r\",\"s1\",\"s2\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}",
                 e.lines().get(0), "header");
         // derived: the first graph explored has r read s1's V(1) (least tid among the options)
         assertEquals(List.of("{\"statuses\":{\"r\":\"done\",\"s1\":\"done\",\"s2\":\"done\"},\"words\":{\"r\":[{\"r\":" + V1
@@ -138,8 +142,9 @@ class MpLauncherMustTest {
     @Test
     void c5_blocked_exportedComplete() throws Exception {
         Exp e = export("org.mpi_sws.jmc.mp.programs.j1.BlockedAlone", "0", "blocked.jsonl", 0);
-        assertEquals(List.of("{\"format\":1,\"tool\":\"jmc\",\"program\":\"blocked-alone\",\"size\":\"\","
-                + "\"visible\":[\"r\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}",
+        assertEquals(List.of("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"blocked-alone\",\"size\":\"\","
+                + "\"visible\":[\"r\"],"
+                + "\"roles\":[\"r\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}",
                 "{\"statuses\":{\"r\":\"blocked\"},\"words\":{\"r\":[]},\"counts\":[],\"n\":1}"), e.lines());
     }
 
@@ -164,8 +169,8 @@ class MpLauncherMustTest {
     void r3_m1_earlyNondet_aborted_oneLine() throws Exception {
         Exp e = export("org.mpi_sws.jmc.mp.programs.j2.R3EarlyNondet", "0", "r3-early.jsonl", 1);
         assertTrue(e.out().text().contains("FAILED:") && e.out().text().contains("replay drift"), e.out().text());
-        assertEquals("{\"format\":1,\"tool\":\"jmc\",\"program\":\"r3-early-nondet\",\"size\":\"\","
-                + "\"visible\":[\"p\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}",
+        assertEquals("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"r3-early-nondet\",\"size\":\"\","
+                + "\"visible\":[\"p\"],\"roles\":[\"p\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}",
                 e.lines().get(0), "header");
         // derived: the first graph only (p's nondet is invisible: empty word, no counts)
         assertEquals(List.of("{\"statuses\":{\"p\":\"done\"},\"words\":{\"p\":[]},\"counts\":[],\"n\":1}"),

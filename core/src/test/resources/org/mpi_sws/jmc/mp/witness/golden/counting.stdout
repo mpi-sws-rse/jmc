@@ -30,12 +30,12 @@ summaries_distinct: 0
 iterations: 16
 stop_reason: exhausted
 peak_rss_kb: RSS
-max_message_events: 12
+max_message_events: 
 max_porf_pairs: 0
-max_graph_events: 14
-mean_graph_events: 14.000
-max_visible_events: 0
-mean_visible_events: 0.000
+max_graph_events: 
+mean_graph_events: 
+max_visible_events: 
+mean_visible_events: 
 max_summary_bytes: 0
 max_porf_count: 0
 

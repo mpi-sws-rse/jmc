@@ -168,10 +168,14 @@ class J8Step0Test {
         return new Run(result, counts, outs, iff, segs, sums, export, String.join("\n", lines));
     }
 
+    /**
+     * The md5 of an export given as lines, its header in the form without {@code minor} and {@code roles}
+     * ({@link J8Launch#withoutMinorAndRoles(String)}), the form of the derived md5s.
+     */
     static String md5(List<String> lines) throws Exception {
         StringBuilder b = new StringBuilder();
-        for (String l : lines) {
-            b.append(l).append('\n');
+        for (int i = 0; i < lines.size(); i++) {
+            b.append(i == 0 ? J8Launch.withoutMinorAndRoles(lines.get(0)) : lines.get(i)).append('\n');
         }
         return HexFormat.of().formatHex(MessageDigest.getInstance("MD5").digest(
                 b.toString().getBytes(StandardCharsets.UTF_8)));
