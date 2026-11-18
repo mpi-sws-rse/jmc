@@ -1178,7 +1178,18 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * receive explores the least option and pushes the others, or is parked if it has none.
      */
     private void issueReceive(long task, CommunicationModel model, Predicate<MpMessage> guard, boolean blocking) {
-        List<EventKey> options = deliverable(graph, task, model, guard, null);
+        issueReceive(task, model, guard, guard, blocking);
+    }
+
+    /**
+     * As {@link #issueReceive(long, CommunicationModel, Predicate, boolean)}, where the options are
+     * computed with {@code evaluated} and {@code guard} is the one stored in the graph, the stack
+     * and the parked set. The two differ only for a wrapper that tags the guard's own throw
+     * ({@link #tagged}).
+     */
+    private void issueReceive(long task, CommunicationModel model, Predicate<MpMessage> guard,
+            Predicate<MpMessage> evaluated, boolean blocking) {
+        List<EventKey> options = deliverable(graph, task, model, evaluated, null);
         MpLabel.Recv label = new MpLabel.Recv(model, blocking);
         if (!blocking) {
             Graph before = graph.copy();
@@ -1450,7 +1461,21 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             for (Map.Entry<Long, Parked> e : new ArrayList<>(parked.entrySet())) {
                 Parked p = e.getValue();
                 long t = e.getKey();
-                if (p.waitingFor() == null && !deliverable(graph, t, p.model(), p.guard(), null).isEmpty()) {
+                if (p.waitingFor() != null) {
+                    continue;
+                }
+                // This loop runs on the scheduler thread, where a throwing guard would end the
+                // scheduler and hang the check: the guard is evaluated through a wrapper that tags
+                // its own throw, which is reported on the receiver's thread instead.
+                Predicate<MpMessage> evaluated = tagged(p.guard());
+                List<EventKey> options;
+                try {
+                    options = deliverable(graph, t, p.model(), evaluated, null);
+                } catch (GuardThrew g) {
+                    parked.remove(t);
+                    return guardFault(t, g.getCause());
+                }
+                if (!options.isEmpty()) {
                     parked.remove(t);
                     if (firstBlocked != null) {
                         // A parked receive that gained options after a Block (an impure guard): refused before
@@ -1459,7 +1484,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                         fail(afterBlock(t, JmcRuntimeEvent.Type.MP_RECV_REQUEST_EVENT));
                         return SchedulingChoice.task(runtimeOfStable.get(t), new MpFaultValue("must: " + fault));
                     }
-                    issueReceive(t, p.model(), p.guard(), true);
+                    try {
+                        issueReceive(t, p.model(), p.guard(), evaluated, true);
+                    } catch (GuardThrew g) {
+                        return guardFault(t, g.getCause());
+                    }
                     SchedulingChoiceValue a = answers.remove(t);
                     if (a != null) {
                         return SchedulingChoice.task(runtimeOfStable.get(t), a);
@@ -1547,6 +1576,34 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         if (rolesInSpawnOrder != null) {
             fail(why + "; the format requires main to spawn first, await all, and perform no message-passing event");
         }
+    }
+
+    /** A throw of a receive guard, tagged by {@link #tagged} to tell it from the strategy's own throws. */
+    private static final class GuardThrew extends RuntimeException {
+        GuardThrew(Throwable cause) {
+            super(cause);
+        }
+    }
+
+    /** {@code guard}, with any throw of its evaluation (an {@code Error} too) wrapped in {@link GuardThrew}. */
+    private static Predicate<MpMessage> tagged(Predicate<MpMessage> guard) {
+        return m -> {
+            try {
+                return guard.test(m);
+            } catch (Throwable t) {
+                throw new GuardThrew(t);
+            }
+        };
+    }
+
+    /**
+     * Records the fault of a receive guard that threw while evaluated on the scheduler thread, and
+     * answers the receiver with it, so that the receiver fails on its own thread.
+     */
+    private SchedulingChoice<?> guardFault(long task, Throwable thrown) {
+        fail("the receive guard of process " + nameOfId.get(task) + " (task " + runtimeOfStable.get(task)
+                + ") threw " + thrown + "; a guard must not throw or call the JMC API");
+        return SchedulingChoice.task(runtimeOfStable.get(task), new MpFaultValue("must: " + fault));
     }
 
     /** Records a fault (the first one is kept) and logs it. */

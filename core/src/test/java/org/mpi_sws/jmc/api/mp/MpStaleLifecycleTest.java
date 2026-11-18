@@ -11,6 +11,7 @@ import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.mp.events.CommunicationModel;
 import org.mpi_sws.jmc.mp.events.MpMessage;
 import org.mpi_sws.jmc.mp.events.Tid;
+import org.mpi_sws.jmc.runtime.TaskManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Tester tests for J7a round 03 (plan/jmc-must/log/dev/CI1/round-03.prompt.md): deterministic coverage
- * of Codex's J7a round-01 majors. In {@code api.mp}'s package for {@link MpThread#daemonsCreated()}.
+ * The lifecycle of a stale process: a process thread left over from a failed run while the next run
+ * starts in the same JVM. In {@code api.mp}'s package for {@link MpThread#daemonsCreated()}.
  *
  * <p>Every test first runs a <b>holding run</b> (mp-random, one iteration) that fails while a process,
  * {@code holder}, is parked inside the runtime: main receives the holder's "ready", then awaits a
@@ -32,12 +33,14 @@ import java.util.concurrent.TimeoutException;
  * { ... }}, so after the run its thread is a stale thread whose {@code finally} the test controls with
  * latches. A second run in the same JVM then shows what the stale thread can and cannot do.
  *
- * <p>M1 (the barrier): the holder is suspended while parked in the runtime's wait, so it can only
- * remove its task's future (by id) after the test resumes it; without the barrier, the next run reuses
- * that id first. M2 (stale unwinding): the holder's {@code finally} calls into {@code api.mp} after the
- * next run started; every such call must end the thread (with {@link MpThread.Stale}) before touching
- * the runtime or the package's shared state. Derived outcomes are in the CI1 round-03 report. Every wait
- * is bounded, so a hang fails the test.
+ * <p>M1 (the creation barrier): a new run's first process creation waits until the threads of
+ * earlier runs have ended. In one test the holder is held by the runtime's wake hook for tests
+ * ({@link TaskManager#setWakeHookForTesting}) between its wake-up and the removal of its task's
+ * future, so the new run cannot get past its first creation until the test lets the holder go; in
+ * the other the holder never ends, and the creation fails after the barrier's bound. M2 (stale
+ * unwinding): the holder's {@code finally} calls into {@code api.mp} after the next run started;
+ * every such call must end the thread (with {@link MpThread.Stale}) before touching the runtime or
+ * the package's shared state. Every wait is bounded, so a hang fails the test.
  */
 class MpStaleLifecycleTest {
 
@@ -64,6 +67,8 @@ class MpStaleLifecycleTest {
         volatile Thread thread;
         final CountDownLatch inFinally = new CountDownLatch(1);
         final CountDownLatch release = new CountDownLatch(1);
+        /** Lets the holder go when it is held by the wake hook ({@link #holdWhenWoken}). */
+        final CountDownLatch letGo = new CountDownLatch(1);
         volatile Runnable action = () -> {};
         volatile boolean actionReturned;
         volatile Throwable actionThrew;
@@ -110,8 +115,13 @@ class MpStaleLifecycleTest {
         }
     }
 
-    @SuppressWarnings("removal")
-    static void suspendWhenParked(Thread t) {
+    /**
+     * Once the holder is parked in the runtime's wait, arms the wake hook so that its next wake-up
+     * holds it, before its task's future is removed, until {@link Hold#letGo} is released. Other
+     * threads pass the hook at once.
+     */
+    static void holdWhenWoken(Hold h) {
+        Thread t = h.thread;
         long deadline = System.currentTimeMillis() + 10_000L;
         while (t.getState() != Thread.State.WAITING) {
             if (System.currentTimeMillis() > deadline) {
@@ -119,11 +129,15 @@ class MpStaleLifecycleTest {
             }
             Thread.onSpinWait();
         }
-        t.suspend();
+        TaskManager.setWakeHookForTesting(id -> {
+            if (Thread.currentThread() == t) {
+                awaitQuietly(h.letGo);
+            }
+        });
     }
 
     /** The holding run's main body. */
-    static Runnable holding(Hold h, boolean suspend) {
+    static Runnable holding(Hold h, boolean hold) {
         return () -> {
             final Tid main = MpProcess.self();
             MpProcess.spawn("holder", () -> {
@@ -144,8 +158,8 @@ class MpStaleLifecycleTest {
                 }
             });
             Channel.recv(M, Ready.class);
-            if (suspend) {
-                suspendWhenParked(h.thread);
+            if (hold) {
+                holdWhenWoken(h);
             }
             MpProcess.Handle failer = MpProcess.spawn("failer", () -> {
                 throw new IllegalStateException(FAILURE);
@@ -170,8 +184,8 @@ class MpStaleLifecycleTest {
         responder.await();
     }
 
-    static void holdingRunFails(Hold h, boolean suspend) {
-        Outcome o = await(start("ci1-r3-holding", 1, 7L, holding(h, suspend)), 60);
+    static void holdingRunFails(Hold h, boolean hold) {
+        Outcome o = await(start("ci1-r3-holding", 1, 7L, holding(h, hold)), 60);
         assertTrue(o.failure() != null && o.failure().contains(FAILURE),
                 "the holding run must fail with the deliberate failure: " + o);
     }
@@ -179,21 +193,28 @@ class MpStaleLifecycleTest {
     // ------------------------------------------------------------------ M1: the barrier
 
     /**
-     * M1 (a): the holder is suspended inside the runtime's wait when the holding run ends, so its
-     * thread is alive; the next run's main reaches {@code point} only after creating {@code responder}
-     * (task 2, the holder's id). Derived with the barrier: the creation waits, {@code point} is not
-     * reached while the holder is suspended; after the resume the holder removes its own future (no
-     * task 2 exists yet), exits silently, and the run completes (1 iteration, 0 blocked). Without the
-     * barrier: {@code point} is reached at once, task 2 is parked, the resumed holder removes task 2's
-     * future, and the run fails ("Resuming a non existent task") or hangs.
+     * M1 (a): the holder is held by the wake hook when the holding run ends, between its wake-up and
+     * the removal of its task's future, so its thread is alive. The next run's main reaches
+     * {@code point} only after creating {@code responder}, and that creation waits at the barrier
+     * until the holder has ended: {@code point} is not reached while the holder is held. Once let go,
+     * the holder removes its own future, exits silently, the creation proceeds, and the run completes
+     * (1 iteration, 0 blocked).
      */
     @Test
-    @SuppressWarnings("removal")
     void m1_barrier_newRunWaitsForTheStaleThread_thenCompletes() throws Exception {
         Hold h = new Hold();
         h.release.countDown();
+        try {
+            m1a(h);
+        } finally {
+            h.letGo.countDown();
+            TaskManager.setWakeHookForTesting(null);
+        }
+    }
+
+    private static void m1a(Hold h) throws Exception {
         holdingRunFails(h, true);
-        assertTrue(h.thread.isAlive(), "the suspended holder is alive");
+        assertTrue(h.thread.isAlive(), "the held holder is alive");
         CountDownLatch point = new CountDownLatch(1);
         CountDownLatch go = new CountDownLatch(1);
         Future<JmcModelCheckerReport> run2 = start("ci1-r3-next", 1, 11L, () -> {
@@ -210,18 +231,19 @@ class MpStaleLifecycleTest {
         });
         List<String> seen = new ArrayList<>();
         boolean earlyPoint = point.await(3, TimeUnit.SECONDS);
-        seen.add("point reached while the holder was suspended: " + earlyPoint);
-        h.thread.resume();
+        seen.add("point reached while the holder was held: " + earlyPoint);
+        h.letGo.countDown();
         h.thread.join(10_000L);
-        seen.add("holder alive after resume: " + h.thread.isAlive());
-        seen.add("point reached after resume: " + point.await(10, TimeUnit.SECONDS));
+        seen.add("holder alive after it was let go: " + h.thread.isAlive());
+        seen.add("point reached after it was let go: " + point.await(10, TimeUnit.SECONDS));
         go.countDown();
         Outcome o = await(run2, 30);
         seen.add("next run: " + (o.failure() != null ? o.failure()
                 : "total " + o.report().getTotalIterations() + " blocked " + o.report().getBlockedIterations()));
         System.out.println("CI1-R3 m1a " + seen);
-        assertEquals(List.of("point reached while the holder was suspended: false", "holder alive after resume: false",
-                "point reached after resume: true", "next run: total 1 blocked 0"), seen);
+        assertEquals(List.of("point reached while the holder was held: false",
+                "holder alive after it was let go: false", "point reached after it was let go: true",
+                "next run: total 1 blocked 0"), seen);
     }
 
     /**

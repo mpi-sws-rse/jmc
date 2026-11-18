@@ -40,8 +40,10 @@ import java.util.function.Predicate;
  *
  * <p><b>A guard depends only on the message and its captured values, and never calls the
  * runtime</b> (not even {@link MpProcess#self()}; capture the id at the receive site instead).
- * Under the {@code must} strategy a guard may run on the scheduler's own thread, where a runtime
- * call is not detected: it kills the scheduler and the check hangs.
+ * Under the {@code must} strategy a guard may run on the scheduler's own thread, where there is no
+ * current task: a runtime call there throws. Must reports a guard that throws there, for whatever
+ * reason, as a fault of the receiving process, and the run fails with a diagnostic that contains the
+ * guard's exception.
  *
  * <p><b>What a receive throws is JMC control flow.</b> A {@code HaltTaskException} (this task is
  * blocked for the iteration) or a {@code HaltExecutionException} (the strategy detected a fault)

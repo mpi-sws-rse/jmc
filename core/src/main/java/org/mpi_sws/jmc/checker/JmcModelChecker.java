@@ -190,9 +190,13 @@ public class JmcModelChecker {
                 throw new JmcCheckerException(e.getMessage(), e);
             }
         } finally {
-            long endTime = System.nanoTime();
-            JmcRuntime.tearDown(report);
-            report.setTotalTimeMillis(endTime - startTime);
+            // The duration runs from startTime to the end of teardown, and is recorded even when
+            // teardown throws.
+            try {
+                JmcRuntime.tearDown(report);
+            } finally {
+                report.setTotalTimeMillis(System.currentTimeMillis() - startTime);
+            }
             int totalIterations = report.getTotalIterations();
             LOGGER.info("Model checking explored: {} completed iterations", totalIterations -
                     report.getBlockedIterations());

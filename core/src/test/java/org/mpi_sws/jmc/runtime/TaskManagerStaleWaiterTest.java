@@ -9,22 +9,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Tester test for J7a round 04 (the owner's runtime change, CI1 report section 10, item 3): a waiter on
- * an old future of task id 2 that resumes only after a reset and the creation of a newer future for the
- * same id must not remove the newer future. Driven on {@link TaskManager} directly, so the api.mp barrier
- * is out of the way. The old waiter is suspended while parked in {@code future.get} (JDK 17; it holds no
- * monitor there) so that it resumes deterministically after the new future exists. Derived: with
+ * A waiter on an old future of task id 2 that resumes only after a reset and the creation of a newer
+ * future for the same id must not remove the newer future. Driven on {@link TaskManager} directly, so
+ * the api.mp barrier is out of the way. The old waiter is held by the wake hook for tests
+ * ({@link TaskManager#setWakeHookForTesting}), after its future completed and before it removes it, so
+ * that it goes on deterministically after the new future exists. Derived: with
  * {@code taskFutures.remove(taskId, future)} the new future stays and {@code resume(2)} completes it;
  * with the former {@code remove(taskId)} the old waiter removes it and {@code resume(2)} throws
  * {@link TaskNotExists}.
  */
 class TaskManagerStaleWaiterTest {
 
-    @SuppressWarnings("removal")
-    private static void suspendWhenParked(Thread t) {
+    private static void awaitParked(Thread t) {
         long deadline = System.currentTimeMillis() + 10_000L;
         while (t.getState() != Thread.State.WAITING) {
             if (System.currentTimeMillis() > deadline) {
@@ -32,11 +33,28 @@ class TaskManagerStaleWaiterTest {
             }
             Thread.onSpinWait();
         }
-        t.suspend();
     }
 
-    @SuppressWarnings("removal")
+    private static void await(CountDownLatch l) {
+        try {
+            if (!l.await(10, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("latch not released within 10 s");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
+    }
+
     private static void scenario(boolean exceptional) throws Exception {
+        try {
+            run(exceptional);
+        } finally {
+            TaskManager.setWakeHookForTesting(null);
+        }
+    }
+
+    private static void run(boolean exceptional) throws Exception {
         TaskManager tm = new TaskManager();
         assertEquals(1L, tm.addNextTask());
         assertEquals(2L, tm.addNextTask());
@@ -50,8 +68,16 @@ class TaskManagerStaleWaiterTest {
             }
         }, "old-waiter");
         waiter.setDaemon(true);
+        CountDownLatch held = new CountDownLatch(1);
+        CountDownLatch letGo = new CountDownLatch(1);
         waiter.start();
-        suspendWhenParked(waiter);
+        awaitParked(waiter);
+        TaskManager.setWakeHookForTesting(id -> {
+            if (Thread.currentThread() == waiter) {
+                held.countDown();
+                await(letGo);
+            }
+        });
         if (exceptional) {
             tm.error(2L, new IllegalStateException("old iteration failed"));
         }
@@ -60,7 +86,8 @@ class TaskManagerStaleWaiterTest {
         assertEquals(1L, tm.addNextTask());
         assertEquals(2L, tm.addNextTask());
         CompletableFuture<Object> fresh = tm.pause(2L);
-        waiter.resume();
+        await(held);
+        letGo.countDown();
         waiter.join(10_000L);
         assertFalse(waiter.isAlive(), "the old waiter finished");
         System.out.println("CI1-R4 tm exceptional=" + exceptional + " waiter saw " + waiterSaw.get());
