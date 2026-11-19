@@ -6,6 +6,7 @@ import org.mpi_sws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpi_sws.jmc.mp.summary.RunIdentity;
 import org.mpi_sws.jmc.mp.summary.SetIndex;
 import org.mpi_sws.jmc.mp.summary.SpecificationFile;
 import org.mpi_sws.jmc.mp.summary.Summary;
@@ -24,6 +25,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -48,6 +50,7 @@ import java.util.Set;
  * java -cp &lt;core main + test classes + runtime deps&gt; org.mpi_sws.jmc.mp.launch.MpLauncher \
  *      &lt;program class[:args]&gt; [strategy] [iterations] [seed] [reportPath] [exportFile] [timeoutSeconds]
  *      [--spec &lt;file&gt; [--stop-at-first] [--witness &lt;file or dir/&gt;]]
+ *      [--graphs &lt;store&gt; [--graphs-limit N]]
  * </pre>
  *
  * <p>Defaults: strategy {@code mp-random}, {@code 1000} iterations, a seed from the clock (printed,
@@ -105,6 +108,19 @@ import java.util.Set;
  * check's results. Printed: {@code witnesses: W written to <path>}. Refused with {@code --split} (a worker's iterations
  * are not the run's): run the online check without it to write witnesses. Without {@code --witness} nothing changes;
  * with it the writing is inside the exploration's time, so a witness run is never a measurement.
+ *
+ * <p><b>Graph store</b>: {@code --graphs <store>}, anywhere in the argument list, with strategy {@code must} and an
+ * export file, writes the graph of each distinct exported summary at its first occurrence (witness format 1, JSON
+ * Lines; {@link org.mpi_sws.jmc.mp.summary.GraphJson}), at most {@code N} with {@code --graphs-limit N} ({@code 0}: the
+ * identity line only). Line 1 is {@code {"witness_store":1,"export":H,"run":R}}, then one graph line per summary,
+ * {@code {"witness":1,"line":L,"export":H,"run":R,"join":null,"nearest":null,"threads":T}}: {@code H} is the export's
+ * header without the online fields, {@code L} the summary line without {@code n}, {@code R} the run's identity
+ * ({@link org.mpi_sws.jmc.mp.summary.RunIdentity}: the JMC commit the build recorded, the program and its
+ * arguments, and the source identity copied from the {@code SOURCE.md5} manifest at the root of the program's
+ * classpath entry, or {@code "unknown"}). The graphs are kept in {@code <store>.part} until the export is written.
+ * Printed: {@code store: W graphs written, R refused, to <store>}, and the measurement keys {@code graphs_written},
+ * {@code graphs_refused}, {@code graphs_ms} after the shared ones. An existing store is refused, and so is
+ * {@code --split} for now. Without {@code --graphs} nothing changes.
  *
  * <p>Exit status: {@code 0} when the checker completes; {@code 1} when the run fails — a
  * {@link JmcCheckerException} (an assertion the checker recorded, a strategy fault, an unsupported
@@ -177,6 +193,8 @@ public final class MpLauncher {
         long indexNanos;
         long exportNanos;
         boolean printed;
+        /** The graph store ({@code --graphs}), or {@code null}: its keys follow the shared ones. */
+        GraphStore graphs;
 
         Measured(long wallStartNanos) {
             this.wallStartNanos = wallStartNanos;
@@ -195,6 +213,8 @@ public final class MpLauncher {
         // J7: the --spec option is taken out wherever it stands; the rest is positional as before.
         Path specFile = null;
         String witnessPath = null;
+        Path graphsPath = null;
+        Long graphsLimit = null;
         boolean stopAtFirst = false;
         Integer splitWorkers = null;
         Integer splitK = null;
@@ -244,6 +264,29 @@ public final class MpLauncher {
                     return usage("--spec given twice");
                 }
                 specFile = Path.of(rawArgs[++i]);
+            } else if (rawArgs[i].equals("--graphs")) {
+                if (i + 1 >= rawArgs.length) {
+                    return usage("--graphs needs a file");
+                }
+                if (graphsPath != null) {
+                    return usage("--graphs given twice");
+                }
+                graphsPath = Path.of(rawArgs[++i]);
+            } else if (rawArgs[i].equals("--graphs-limit")) {
+                if (i + 1 >= rawArgs.length) {
+                    return usage("--graphs-limit needs a number");
+                }
+                if (graphsLimit != null) {
+                    return usage("--graphs-limit given twice");
+                }
+                try {
+                    graphsLimit = Long.parseLong(rawArgs[++i]);
+                } catch (NumberFormatException e) {
+                    return usage("--graphs-limit needs a number, not " + rawArgs[i]);
+                }
+                if (graphsLimit < 0) {
+                    return usage("--graphs-limit must be at least 0, was " + graphsLimit);
+                }
             } else if (rawArgs[i].equals("--witness")) {
                 if (i + 1 >= rawArgs.length) {
                     return usage("--witness needs a file or a directory");
@@ -262,6 +305,12 @@ public final class MpLauncher {
         }
         if (witnessPath != null && specFile == null) {
             return usage("--witness needs --spec");
+        }
+        if (graphsLimit != null && graphsPath == null) {
+            return usage("--graphs-limit needs --graphs");
+        }
+        if (graphsPath != null && (splitWorkers != null || splitK != null || workerDir != null)) {
+            return usage("--graphs cannot be combined with --split yet");
         }
         if (witnessPath != null && (splitWorkers != null || splitK != null || workerDir != null)) {
             return usage("--witness cannot be combined with --split: a worker's iterations are not the run's;"
@@ -379,6 +428,27 @@ public final class MpLauncher {
                 return usage("--witness " + witnessPath + " refused: " + e.getMessage());
             }
             mustStrategy.writeWitnesses(witnesses);
+        }
+        GraphStore graphs = null;
+        if (graphsPath != null) {
+            if (exportFile == null || !must) {
+                return usage("--graphs needs strategy must and an export file");
+            }
+            List<String> warnings = new ArrayList<>();
+            int argsAt = args[0].indexOf(':');
+            RunIdentity identity = RunIdentity.of(programClass, argsAt < 0 ? null : args[0].substring(argsAt + 1),
+                    spec == null ? "export" : "online", warnings);
+            try {
+                graphs = GraphStore.open(graphsPath, exportFile, graphsLimit == null ? Long.MAX_VALUE : graphsLimit,
+                        identity);
+            } catch (IllegalArgumentException | IOException e) {
+                return usage("--graphs " + graphsPath + " refused: " + e.getMessage());
+            }
+            for (String w : warnings) {
+                System.err.println("graphs: " + w);
+            }
+            mustStrategy.writeGraphs(graphs);
+            st.graphs = graphs;
         }
 
         if (splitWorkers != null || splitK != null || workerDir != null) {
@@ -570,6 +640,19 @@ public final class MpLauncher {
             } catch (IOException e) {
                 failure = (failure == null ? "" : failure + "; ") + "cannot write " + exportFile + ": " + e;
             }
+            if (graphs != null) {
+                // The store carries the export's header without the online fields.
+                String storeHeader = SummaryExporter.header(
+                        mpProgram.programName(), mpProgram.size(), mpProgram.visibleRoles(), mpProgram.headerRoles(),
+                        mpProgram.model(), enumeration, seed, ran, null);
+                try {
+                    graphs.finish(storeHeader, body);
+                    System.out.println("store:      " + graphs.written() + " graphs written, " + graphs.refusedCount()
+                            + " refused, to " + graphsPath);
+                } catch (IOException e) {
+                    failure = (failure == null ? "" : failure + "; ") + "cannot write " + graphsPath + ": " + e;
+                }
+            }
         }
         if (witnesses != null) {
             System.out.println("witnesses:  " + witnesses.written() + " written to " + witnessPath);
@@ -586,6 +669,194 @@ public final class MpLauncher {
             return 1;
         }
         return 0;
+    }
+
+    /**
+     * The {@code --graphs} store (witness format 1): the graph of each distinct exported summary at
+     * its first occurrence, up to the limit. The graphs are kept in {@code <path>.part} while the run goes on,
+     * since every store line carries the export's header, which is known only at the end; {@link #finish}
+     * then writes the store: line 1 {@code {"witness_store":1,"export":H,"run":R}} with {@code iteration} null,
+     * then one graph line per kept summary, in first-occurrence order:
+     * {@code {"witness":1,"line":L,"export":H,"run":R,"join":null,"nearest":null,"threads":T}}. The store and
+     * its part file must not exist, and neither may be the export file. A summary whose graph cannot be
+     * written is reported on stderr with its line number in the export file
+     * ({@code graphs: refused <line>: <reason>}) and counted.
+     */
+    private static final class GraphStore implements MustStrategy.GraphSink {
+        private final Path path;
+        private final Path part;
+        private final java.io.BufferedWriter out;
+        private final long limit;
+        private final RunIdentity identity;
+        private long written;
+        private final List<String[]> refused = new ArrayList<>();
+        private IOException error;
+        private long finishNanos;
+
+        private GraphStore(Path path, Path part, java.io.BufferedWriter out, long limit, RunIdentity identity) {
+            this.path = path;
+            this.part = part;
+            this.out = out;
+            this.limit = limit;
+            this.identity = identity;
+        }
+
+        static GraphStore open(Path path, Path exportFile, long limit, RunIdentity identity) throws IOException {
+            Path part = Path.of(path + ".part");
+            Path export = resolved(exportFile);
+            for (Path reserved : List.of(path, part, Path.of(path + ".tmp"))) {
+                if (resolved(reserved).equals(export)) {
+                    throw new IllegalArgumentException("the export file " + exportFile + " is the store's file "
+                            + reserved);
+                }
+            }
+            if (Files.exists(path, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                throw new IllegalArgumentException("the store already exists");
+            }
+            if (path.getParent() != null) {
+                Files.createDirectories(path.getParent());
+            }
+            java.io.BufferedWriter out = Files.newBufferedWriter(part, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            return new GraphStore(path, part, out, limit, identity);
+        }
+
+        /**
+         * Where writing to {@code p} would land: its components resolved in the file system's order, each symbolic
+         * link (also a dangling one, and one in an ancestor) replaced by its target before any later {@code ..} is
+         * applied, and names that do not exist yet kept as they are; so two spellings of one file, now or once
+         * directories are created, compare equal.
+         */
+        private static Path resolved(Path p) throws IOException {
+            Path abs = p.toAbsolutePath();
+            java.util.Deque<String> todo = new java.util.ArrayDeque<>();
+            for (Path c : abs) {
+                todo.addLast(c.toString());
+            }
+            Path root = abs.getRoot();
+            Path cur = root;
+            int hops = 0;
+            while (!todo.isEmpty()) {
+                String c = todo.pollFirst();
+                if (c.isEmpty() || c.equals(".")) {
+                    continue;
+                }
+                if (c.equals("..")) {
+                    cur = cur.getParent() == null ? root : cur.getParent();
+                    continue;
+                }
+                Path next = cur.resolve(c);
+                if (Files.isSymbolicLink(next)) {
+                    if (++hops > 40) {
+                        throw new IOException("too many levels of symbolic links at " + p);
+                    }
+                    Path target = Files.readSymbolicLink(next);
+                    java.util.List<String> parts = new java.util.ArrayList<>();
+                    for (Path t : target) {
+                        parts.add(t.toString());
+                    }
+                    for (int k = parts.size() - 1; k >= 0; k--) {
+                        todo.addFirst(parts.get(k));
+                    }
+                    if (target.isAbsolute()) {
+                        cur = target.getRoot();
+                    }
+                    continue;
+                }
+                cur = next;
+            }
+            return cur;
+        }
+
+        @Override
+        public boolean wants() {
+            return written < limit && error == null;
+        }
+
+        @Override
+        public void graph(int iteration, String line, String threads) {
+            try {
+                // One record per line; neither field holds a raw tab (JSON escapes it in strings).
+                out.write(Integer.toString(iteration));
+                out.write('\t');
+                out.write(line);
+                out.write('\t');
+                out.write(threads);
+                out.write('\n');
+                written++;
+            } catch (IOException e) {
+                error = e;
+            }
+        }
+
+        @Override
+        public void refused(String line, String why) {
+            refused.add(new String[] {line, why});
+        }
+
+        long written() {
+            return written;
+        }
+
+        int refusedCount() {
+            return refused.size();
+        }
+
+        /**
+         * Writes the store from the part file and removes the part file.
+         *
+         * @param header the export's header without the online fields
+         * @param body the export's summary lines, in the order written (for the refusals' line numbers)
+         */
+        void finish(String header, List<String> body) throws IOException {
+            long start = System.nanoTime();
+            try {
+                assemble(header, body);
+            } finally {
+                finishNanos = System.nanoTime() - start;
+            }
+        }
+
+        /** The time {@link #finish} took, in nanoseconds. */
+        long finishNanos() {
+            return finishNanos;
+        }
+
+        private void assemble(String header, List<String> body) throws IOException {
+            out.close();
+            if (error != null) {
+                throw error;
+            }
+            Map<String, Integer> lineNo = new HashMap<>();
+            for (int i = 0; i < body.size(); i++) {
+                String l = body.get(i);
+                lineNo.put(l.substring(0, l.lastIndexOf(",\"n\":")) + "}", i + 2);
+            }
+            for (String[] r : refused) {
+                Integer n = lineNo.get(r[0]);
+                System.err.println("graphs: refused " + (n == null ? "?" : n.toString()) + ": " + r[1]);
+            }
+            Path tmp = Path.of(path + ".tmp");
+            try (java.io.BufferedReader in = Files.newBufferedReader(part, StandardCharsets.UTF_8);
+                    java.io.BufferedWriter w = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8,
+                            StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+                w.write("{\"witness_store\":1,\"export\":" + header + ",\"run\":" + identity.toJson(null) + "}\n");
+                String rec;
+                while ((rec = in.readLine()) != null) {
+                    int a = rec.indexOf('\t');
+                    int b = rec.indexOf('\t', a + 1);
+                    StringBuilder sb = new StringBuilder("{\"witness\":1,\"line\":");
+                    org.mpi_sws.jmc.mp.summary.MpValueEncoder.quote(sb, rec.substring(a + 1, b));
+                    sb.append(",\"export\":").append(header).append(",\"run\":")
+                            .append(identity.toJson(Integer.parseInt(rec.substring(0, a))))
+                            .append(",\"join\":null,\"nearest\":null,\"threads\":").append(rec.substring(b + 1))
+                            .append("}\n");
+                    w.write(sb.toString());
+                }
+            }
+            Files.move(tmp, path);
+            Files.delete(part);
+        }
     }
 
     /**
@@ -800,6 +1071,11 @@ public final class MpLauncher {
                 + (summarised ? String.format(Locale.ROOT, "%.3f", x.meanVisibleEvents()) : ""));
         System.out.println("max_summary_bytes: " + x.maxSummaryBytes());
         System.out.println("max_porf_count: " + x.maxPorfCount());
+        if (st.graphs != null) {
+            System.out.println("graphs_written: " + st.graphs.written());
+            System.out.println("graphs_refused: " + st.graphs.refusedCount());
+            System.out.println("graphs_ms: " + (m.graphNanos() + st.graphs.finishNanos()) / 1_000_000);
+        }
     }
 
     /** The process's peak resident set in kB ({@code VmHWM} of {@code /proc/self/status}), -1 if unavailable. */
@@ -1051,7 +1327,7 @@ public final class MpLauncher {
         System.err.println(
                 "usage: MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000]"
                         + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file> [--stop-at-first]"
-                        + " [--witness <file or dir/>]]"
+                        + " [--witness <file or dir/>]] [--graphs <store> [--graphs-limit N]]"
                         + " [--split W [--k K]] [--worker <run dir> <id>]");
         return 2;
     }

@@ -93,7 +93,7 @@ public final class WitnessWriter {
     }
 
     /** The threads in witness order: main, then created threads in creation order, then any other. */
-    private static List<Long> order(ExecutionGraph g, List<? extends Inserted> inserted) {
+    static List<Long> order(ExecutionGraph g, List<? extends Inserted> inserted) {
         List<Long> order = new ArrayList<>();
         order.add(1L);
         for (Inserted i : inserted) {
@@ -110,7 +110,7 @@ public final class WitnessWriter {
     }
 
     /** The inserted lines per thread, in the order they happened. */
-    private static Map<Long, List<Inserted>> byThread(List<? extends Inserted> inserted) {
+    static Map<Long, List<Inserted>> byThread(List<? extends Inserted> inserted) {
         Map<Long, List<Inserted>> out = new HashMap<>();
         for (Inserted i : inserted) {
             out.computeIfAbsent(i.thread(), t -> new ArrayList<>()).add(i);
@@ -252,7 +252,7 @@ public final class WitnessWriter {
      * A name or message printed verbatim: refused if it holds a control character (a line break would
      * split a witness line), since the format defines no escaping.
      */
-    private static String printable(String text) {
+    static String printable(String text) {
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
             if (unprintable(c)) {
