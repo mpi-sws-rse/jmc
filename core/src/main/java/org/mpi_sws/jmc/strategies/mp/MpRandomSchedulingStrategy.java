@@ -316,7 +316,7 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
             }
         } else if (type == JmcRuntimeEvent.Type.ND_EVENT) {
             Integer optionCount = event.getParam("optionCount");
-            int chosen = random.nextInt(optionCount);
+            int chosen = chooseNondet(task, optionCount);
             answers.put(task, new PrimitiveValue(chosen));
             LOGGER.debug("Task {} nondet over {} options: chose {}", task, optionCount, chosen);
         }
@@ -331,11 +331,10 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
      */
     private boolean resolve(long task, CommunicationModel model, Predicate<MpMessage> guard, boolean blocking) {
         List<Pending> candidates = evaluateGuard(task, model, guard);
-        int options = candidates.size() + (blocking ? 0 : 1);
-        if (options == 0) {
+        int k = chooseReceive(task, candidates, blocking);
+        if (k < 0) {
             return false;
         }
-        int k = options == 1 ? 0 : random.nextInt(options);
         if (k == candidates.size()) {
             answers.put(task, MpDeliveryValue.bottom());
             LOGGER.debug("Task {} non-blocking receive reads ⊥ ({} pending candidates)", task, candidates.size());
@@ -349,6 +348,44 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
         answers.put(task, MpDeliveryValue.of(e.src(), e.sendIndex(), e.value()));
         LOGGER.debug("Task {} reads {} (of {} candidates)", task, e, candidates.size());
         return true;
+    }
+
+    /**
+     * The answer to a receive: an index into {@code candidates}, {@code candidates.size()} for {@code ⊥} (non-blocking
+     * receives only), or -1 to leave a blocking receive parked. Uniform here; a subclass may decide otherwise.
+     *
+     * @param task the receiver
+     * @param candidates the deliverable messages, possibly none
+     * @param blocking whether the receive blocks
+     * @return the choice
+     */
+    protected int chooseReceive(long task, List<Pending> candidates, boolean blocking) {
+        int options = candidates.size() + (blocking ? 0 : 1);
+        if (options == 0) {
+            return -1;
+        }
+        return options == 1 ? 0 : random.nextInt(options);
+    }
+
+    /**
+     * The answer to a nondeterministic choice among {@code optionCount} options. Uniform here.
+     *
+     * @param task the choosing task
+     * @param optionCount the options, at least 2
+     * @return the chosen index
+     */
+    protected int chooseNondet(long task, int optionCount) {
+        return random.nextInt(optionCount);
+    }
+
+    /**
+     * The task to run next among the runnable ones (in ascending id). Uniform here.
+     *
+     * @param runnable the runnable tasks, at least one
+     * @return the chosen task
+     */
+    protected long chooseTask(List<Long> runnable) {
+        return runnable.size() == 1 ? runnable.get(0) : runnable.get(random.nextInt(runnable.size()));
     }
 
     /** {@link Delivery#deliverable} under the re-entrancy watch described in the class doc. */
@@ -396,7 +433,7 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
      *
      * @param message the fault
      */
-    private void latch(String message) {
+    protected void latch(String message) {
         if (fault == null) {
             fault = HaltExecutionException.error(message);
             delivered = false;
@@ -513,7 +550,7 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
             return SchedulingChoice.blockTask(blocked);
         }
         List<Long> order = new ArrayList<>(runnable);
-        long task = order.size() == 1 ? order.get(0) : order.get(random.nextInt(order.size()));
+        long task = chooseTask(order);
         SchedulingChoiceValue answer = answers.remove(task);
         if (answer != null) {
             SchedulingChoice<?> choice = SchedulingChoice.task(task, answer);

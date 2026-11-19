@@ -5,6 +5,10 @@ import org.mpi_sws.jmc.checker.JmcCheckerConfiguration;
 import org.mpi_sws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.mp.summary.RunIdentity;
 import org.mpi_sws.jmc.mp.summary.SetIndex;
@@ -12,6 +16,7 @@ import org.mpi_sws.jmc.mp.summary.SpecificationFile;
 import org.mpi_sws.jmc.mp.summary.Summary;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.strategies.SchedulingStrategyFactory;
+import org.mpi_sws.jmc.strategies.mp.GraphReplayStrategy;
 import org.mpi_sws.jmc.strategies.mp.MpRecordingStrategy;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
@@ -26,6 +31,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -218,6 +224,9 @@ public final class MpLauncher {
      * @return the exit status
      */
     private static int runBody(String[] rawArgs, Measured st) {
+        if (List.of(rawArgs).contains("--replay")) {
+            return runReplay(rawArgs, st);
+        }
         // J7: the --spec option is taken out wherever it stands; the rest is positional as before.
         Path specFile = null;
         String witnessPath = null;
@@ -1299,6 +1308,624 @@ public final class MpLauncher {
             }
         }
         org.mpi_sws.jmc.strategies.must.split.GraphPart.merge(graphs, parts, offsets);
+    }
+
+    /**
+     * {@code --replay g.json [--report r.json] [--allow-source-change] [--allow-tool-change] [<class>[:<args>]]}: one
+     * execution of the program the graph names, forced along the graph ({@link GraphReplayStrategy}). Refused (exit
+     * {@code 2}) before running: bad arguments, any other option ({@code --split} included: a replay is one
+     * execution), a graph file that is not one witness graph line of format 1 or breaks the structural rules checked
+     * here, a graph of another tool, a program or arguments that differ from the graph's ({@code side},
+     * {@code model} and {@code options} must be JMC's), a {@code tool_commit} that differs from this build's or is
+     * {@code "unknown"} on either side (unless {@code --allow-tool-change}), a source that differs from the
+     * program's {@code SOURCE.md5} manifest or is {@code "unknown"} on either side (unless
+     * {@code --allow-source-change}). The projection rule (the graph's {@code line} is its summary) is checked by the
+     * renderer's {@code --check}, not here. Printed: {@code replay: reproduced (<E> events, <T> threads)} (exit
+     * {@code 0}) or {@code replay: deviation at (<t>, <k>) thread "<name>": <kind>: expected <text>, got <text>}
+     * (exit {@code 1}); a run that fails otherwise prints {@code FAILED:} (exit {@code 1}). Then the measurement block
+     * with {@code wall_ms}, {@code peak_rss_kb} and {@code replay_events}.
+     */
+    private static int runReplay(String[] rawArgs, Measured st) {
+        String graphPath = null;
+        String reportFile = null;
+        boolean allowSource = false;
+        boolean allowTool = false;
+        String explicit = null;
+        for (int i = 0; i < rawArgs.length; i++) {
+            String a = rawArgs[i];
+            switch (a) {
+                case "--replay" -> {
+                    if (i + 1 >= rawArgs.length || graphPath != null) {
+                        return usage("--replay needs one graph file");
+                    }
+                    graphPath = rawArgs[++i];
+                }
+                case "--report" -> {
+                    if (i + 1 >= rawArgs.length || reportFile != null) {
+                        return usage("--report needs one file");
+                    }
+                    reportFile = rawArgs[++i];
+                }
+                case "--allow-source-change" -> allowSource = true;
+                case "--allow-tool-change" -> allowTool = true;
+                default -> {
+                    if (a.startsWith("--")) {
+                        return usage(a + " cannot be combined with --replay (a replay is one execution)");
+                    }
+                    if (explicit != null) {
+                        return usage("--replay takes at most one program argument, got " + explicit + " and " + a);
+                    }
+                    explicit = a;
+                }
+            }
+        }
+        JsonObject g;
+        try {
+            List<String> ls = Files.readAllLines(Path.of(graphPath), StandardCharsets.UTF_8);
+            if (ls.size() != 1) {
+                return usage("--replay " + graphPath + ": a graph file holds exactly one line, found " + ls.size());
+            }
+            g = JsonParser.parseString(ls.get(0)).getAsJsonObject();
+            String problem = graphProblem(g);
+            if (problem != null) {
+                return usage("--replay " + graphPath + " refused: " + problem);
+            }
+        } catch (IOException | RuntimeException e) {
+            return usage("--replay " + graphPath + " refused: " + e.getMessage());
+        }
+        JsonObject run = g.getAsJsonObject("run");
+        if (!run.get("tool").getAsString().equals("jmc")) {
+            return usage("--replay: the graph is " + run.get("tool").getAsString() + "'s; cross-tool replay is not supported");
+        }
+        if (!run.get("side").isJsonNull() || !run.get("model").isJsonNull()
+                || !run.getAsJsonObject("options").entrySet().isEmpty()) {
+            return usage("--replay: side, model and options of a JMC graph are null, null and {}");
+        }
+        String entry = run.get("entry").getAsString();
+        JsonArray argList = run.getAsJsonArray("args");
+        if (argList.size() > 1) {
+            return usage("--replay: a JMC graph has at most one args element");
+        }
+        String programSpec = entry + (argList.isEmpty() ? "" : ":" + argList.get(0).getAsString());
+        if (explicit != null && !explicit.equals(programSpec)) {
+            return usage("--replay: the program argument " + explicit + " differs from the graph's " + programSpec);
+        }
+        Class<?> programClass;
+        Runnable program;
+        int colon = programSpec.indexOf(':');
+        String className = colon < 0 ? programSpec : programSpec.substring(0, colon);
+        String[] programArgs = colon < 0 ? null : programSpec.substring(colon + 1).split(",", -1);
+        try {
+            programClass = Class.forName(className);
+            Object instance = programArgs == null
+                    ? programClass.getDeclaredConstructor().newInstance()
+                    : programClass.getDeclaredConstructor(String[].class).newInstance((Object) programArgs);
+            if (!(instance instanceof Runnable r)) {
+                return usage(programSpec + " is not a Runnable");
+            }
+            program = r;
+        } catch (ReflectiveOperationException | LinkageError e) {
+            Throwable why = e.getCause() != null ? e.getCause() : e;
+            return constructionFailure(programSpec, why);
+        }
+        List<String> warnings = new ArrayList<>();
+        // Identity: the graph's against this build's commit and the program's manifest.
+        String ours = RunIdentity.buildCommit();
+        String theirs = run.get("tool_commit").getAsString();
+        if (!ours.equals(theirs) || ours.equals("unknown")) {
+            String why = "tool_commit " + theirs + " (this build: " + ours + ")";
+            if (!allowTool) {
+                return usage("--replay refused: " + why + "; --allow-tool-change accepts it");
+            }
+            warnings.add("tool-change: " + why);
+        }
+        List<String> manifestWarnings = new ArrayList<>();
+        RunIdentity mine = RunIdentity.of(programClass, argList.isEmpty() ? null : argList.get(0).getAsString(),
+                "export", manifestWarnings);
+        JsonElement graphSource = run.get("source");
+        String mineSource = JsonParser.parseString(mine.toJson(null)).getAsJsonObject().get("source").toString();
+        boolean unknown = mine.sourceFiles() == null || graphSource.isJsonPrimitive();
+        if (unknown || !JsonParser.parseString(mineSource).equals(graphSource)) {
+            String why = unknown ? "source unknown" + (manifestWarnings.isEmpty() ? "" : " (" + manifestWarnings.get(0)
+                    + ")") : "source differs from the program's manifest";
+            if (!allowSource) {
+                return usage("--replay refused: " + why + "; --allow-source-change accepts it");
+            }
+            warnings.add("source-change: " + why);
+        }
+
+        JsonArray threads = g.getAsJsonArray("threads");
+        GraphReplayStrategy replay = new GraphReplayStrategy(threads, 1L, "build/test-results/jmc-replay");
+        String failure = null;
+        try {
+            JmcCheckerConfiguration config = new JmcCheckerConfiguration.Builder()
+                    .strategyType("mp-random")
+                    .numIterations(1)
+                    .seed(1L)
+                    .reportPath("build/test-results/jmc-replay")
+                    .strategyConstructor(c -> replay)
+                    .build();
+            new JmcModelChecker(config).check(new JmcFunctionalTestTarget(programClass.getName(),
+                    () -> MpProcess.runMain(program)));
+        } catch (JmcCheckerException e) {
+            failure = e.getMessage();
+        } catch (RuntimeException | Error e) {
+            failure = e.toString();
+        }
+        GraphReplayStrategy.Deviation d = replay.deviation() != null ? replay.deviation()
+                : failure == null ? replay.finish() : null;
+        warnings.addAll(replay.warnings());
+        int status;
+        if (d != null) {
+            System.out.println("replay: deviation at (" + d.thread() + ", " + d.position() + ") thread \"" + d.name()
+                    + "\": " + d.kind() + ": expected " + d.expected() + ", got " + d.actual());
+            status = 1;
+        } else if (failure != null) {
+            System.out.println("FAILED:     " + failure);
+            status = 1;
+        } else {
+            System.out.println("replay: reproduced (" + replay.events() + " events, " + threads.size() + " threads)");
+            status = 0;
+        }
+        for (String w : new java.util.LinkedHashSet<>(warnings)) {
+            System.err.println("replay: warning: " + w);
+        }
+        if (reportFile != null && (d != null || failure == null)) {
+            JsonObject r = new JsonObject();
+            r.addProperty("replay", 1);
+            r.addProperty("graph", graphPath);
+            r.addProperty("result", d == null ? "reproduced" : "deviation");
+            if (d == null) {
+                r.add("at", com.google.gson.JsonNull.INSTANCE);
+                r.add("thread", com.google.gson.JsonNull.INSTANCE);
+                r.add("kind", com.google.gson.JsonNull.INSTANCE);
+                r.add("expected", com.google.gson.JsonNull.INSTANCE);
+                r.add("actual", com.google.gson.JsonNull.INSTANCE);
+            } else {
+                JsonArray at = new JsonArray();
+                at.add(d.thread());
+                at.add(d.position());
+                r.add("at", at);
+                if (d.name() == null) {
+                    r.add("thread", com.google.gson.JsonNull.INSTANCE);
+                } else {
+                    r.addProperty("thread", d.name());
+                }
+                r.addProperty("kind", d.kind());
+                r.addProperty("expected", d.expected());
+                r.addProperty("actual", d.actual());
+            }
+            JsonArray ws = new JsonArray();
+            new java.util.LinkedHashSet<>(warnings).forEach(ws::add);
+            r.add("warnings", ws);
+            try {
+                Files.writeString(Path.of(reportFile), new com.google.gson.GsonBuilder().serializeNulls()
+                        .disableHtmlEscaping().create().toJson(r) + "\n", StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                System.out.println("FAILED:     cannot write " + reportFile + ": " + e);
+                status = 1;
+            }
+        }
+        System.out.println(MEASUREMENTS_MARKER);
+        System.out.println("wall_ms: " + (System.nanoTime() - st.wallStartNanos) / 1_000_000);
+        long rss = peakRssKb();
+        System.out.println("peak_rss_kb: " + (rss < 0 ? "" : Long.toString(rss)));
+        System.out.println("replay_events: " + replay.events());
+        return status;
+    }
+
+    /**
+     * The validity rules of a witness graph file (format 1) that do not need the projection, or {@code null} when they
+     * hold: the keys and their order at the top level, in {@code run}, in {@code source}, in each thread and in each
+     * event (no unknown key), and their types; thread 0 is a non-daemon {@code main}; each visible name occurs once; a
+     * thread's events begin with {@code BEGIN}, end with {@code END}, {@code BLK} or {@code ERROR} and have none of the
+     * three elsewhere; every thread but main is created exactly once, by another thread, and every {@code TJOIN}
+     * names a created thread that ended with {@code END}; every {@code rf} names a {@code SEND} to the receiving
+     * thread, at most once, and {@code rf = null} only for a {@code try} receive; {@code NONDET} has {@code n >= 2},
+     * {@code 0 <= i < n} and no {@code lo} (a JMC file); an opaque value never in a send a visible thread performs or
+     * reads; names without control characters or line separators; the export's model, visible and header roles;
+     * {@code order} and {@code iteration}; the order relation (program order, reads-from, creation, join) acyclic.
+     * Whether {@code line} is the graph's summary is the renderer's {@code --check}.
+     */
+    static String graphProblem(JsonObject g) {
+        try {
+            return graphProblemOrThrow(g);
+        } catch (RuntimeException e) {
+            return "malformed: " + e;
+        }
+    }
+
+    private static boolean keysAre(JsonObject o, String... keys) {
+        return new ArrayList<>(o.keySet()).equals(List.of(keys));
+    }
+
+    private static boolean printableName(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c < 0x20 || (c >= 0x7f && c <= 0x9f) || c == '\u2028' || c == '\u2029') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean nullOr(JsonElement e, java.util.function.Predicate<JsonElement> p) {
+        return e.isJsonNull() || p.test(e);
+    }
+
+    private static boolean isString(JsonElement e) {
+        return e.isJsonPrimitive() && e.getAsJsonPrimitive().isString();
+    }
+
+    /** A JSON integer that fits an {@code int}, read exactly (no rounding, no wrap-around). */
+    private static boolean isInt(JsonElement e) {
+        return integer(e, Integer.MIN_VALUE, Integer.MAX_VALUE);
+    }
+
+    /** A JSON integer within {@code [lo, hi]}, read exactly. */
+    private static boolean integer(JsonElement e, long lo, long hi) {
+        if (!e.isJsonPrimitive() || !e.getAsJsonPrimitive().isNumber()) {
+            return false;
+        }
+        String t = e.getAsString();
+        if (!t.matches("-?(0|[1-9][0-9]*)")) {
+            return false;
+        }
+        java.math.BigInteger b = new java.math.BigInteger(t);
+        return b.compareTo(java.math.BigInteger.valueOf(lo)) >= 0 && b.compareTo(java.math.BigInteger.valueOf(hi)) <= 0;
+    }
+
+    /**
+     * A value in the summary encoding: an integer within signed 64 bits, a boolean, a string, a list of values, or a
+     * record {@code {"t":<string>,"f":[values]}}; nothing else (no float, no null, no other object).
+     */
+    private static boolean encodedValue(JsonElement v) {
+        if (v.isJsonPrimitive()) {
+            if (v.getAsJsonPrimitive().isNumber()) {
+                return integer(v, Long.MIN_VALUE, Long.MAX_VALUE);
+            }
+            return true;
+        }
+        if (v.isJsonArray()) {
+            for (JsonElement x : v.getAsJsonArray()) {
+                if (!encodedValue(x)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        if (v.isJsonObject()) {
+            JsonObject o = v.getAsJsonObject();
+            return keysAre(o, "t", "f") && isString(o.get("t")) && o.get("f").isJsonArray() && encodedValue(o.get("f"));
+        }
+        return false;
+    }
+
+    /** A role list of the header: distinct strings sorted by their bytes, each a valid role name. */
+    private static String roleListProblem(JsonArray roles, String which) {
+        String prev = null;
+        for (JsonElement r : roles) {
+            if (!isString(r)) {
+                return "the export's " + which + " list holds a non-string";
+            }
+            String name = r.getAsString();
+            boolean ascii = !name.isEmpty();
+            for (int i = 0; i < name.length(); i++) {
+                char c = name.charAt(i);
+                ascii &= c >= 0x20 && c < 0x7f;
+            }
+            if (!ascii || name.equals("main") || name.startsWith("~")) {
+                return "the export's " + which + " list holds the name " + r + " (non-empty ASCII, not main, not ~...)";
+            }
+            if (prev != null && org.mpi_sws.jmc.mp.summary.MpValueEncoder.compareBytes(prev, name) >= 0) {
+                return "the export's " + which + " list is not sorted and distinct";
+            }
+            prev = name;
+        }
+        return null;
+    }
+
+    private static String graphProblemOrThrow(JsonObject g) {
+        if (!keysAre(g, "witness", "line", "export", "run", "join", "nearest", "threads")) {
+            return "the top-level keys are " + g.keySet();
+        }
+        if (!integer(g.get("witness"), 1, 1)) {
+            return "witness format " + g.get("witness") + " is not 1";
+        }
+        if (!isString(g.get("line")) || !g.get("export").isJsonObject() || !g.get("run").isJsonObject()
+                || !nullOr(g.get("join"), JsonElement::isJsonObject) || !nullOr(g.get("nearest"), JsonElement::isJsonArray)
+                || !g.get("threads").isJsonArray()) {
+            return "a top-level value has the wrong type";
+        }
+        JsonObject export = g.getAsJsonObject("export");
+        for (String k : List.of("visible", "roles")) {
+            if (!export.has(k) || !export.get(k).isJsonArray()) {
+                return "the export header has no " + k + " list";
+            }
+        }
+        if (!export.has("model") || !Set.of("p2p", "asyn", "cd").contains(export.get("model").getAsString())) {
+            return "the export model is " + export.get("model");
+        }
+        for (String k : List.of("visible", "roles")) {
+            String problem = roleListProblem(export.getAsJsonArray(k), k);
+            if (problem != null) {
+                return problem;
+            }
+        }
+        List<String> visible = new ArrayList<>();
+        export.getAsJsonArray("visible").forEach(v -> visible.add(v.getAsString()));
+        List<String> headerRoles = new ArrayList<>();
+        export.getAsJsonArray("roles").forEach(v -> headerRoles.add(v.getAsString()));
+        if (!headerRoles.containsAll(visible)) {
+            return "the export's roles " + headerRoles + " do not hold its visible roles " + visible;
+        }
+        JsonObject run = g.getAsJsonObject("run");
+        if (!keysAre(run, "tool", "tool_commit", "entry", "side", "args", "model", "options", "source", "iteration",
+                "producer", "order")) {
+            return "the run keys are " + run.keySet();
+        }
+        if (!isString(run.get("tool")) || !isString(run.get("tool_commit")) || !isString(run.get("entry"))
+                || !nullOr(run.get("side"), MpLauncher::isString)
+                || !run.get("args").isJsonArray() || !nullOr(run.get("model"), MpLauncher::isString)
+                || !run.get("options").isJsonObject()
+                || !nullOr(run.get("iteration"), x -> integer(x, 1, Integer.MAX_VALUE))
+                || !isString(run.get("producer")) || !isString(run.get("order"))) {
+            return "a run value has the wrong type";
+        }
+        for (JsonElement a : run.getAsJsonArray("args")) {
+            if (!isString(a)) {
+                return "an args element is not a string";
+            }
+        }
+        JsonElement source = run.get("source");
+        if (isString(source)) {
+            if (!source.getAsString().equals("unknown")) {
+                return "source is the string " + source + ", not \"unknown\"";
+            }
+        } else if (source.isJsonObject()) {
+            JsonObject so = source.getAsJsonObject();
+            if (!keysAre(so, "root", "files") || !isString(so.get("root")) || !so.get("files").isJsonObject()) {
+                return "source is not {\"root\",\"files\"}";
+            }
+            for (Map.Entry<String, JsonElement> f : so.getAsJsonObject("files").entrySet()) {
+                if (!isString(f.getValue())) {
+                    return "the source file " + f.getKey() + " has no md5 string";
+                }
+            }
+        } else {
+            return "source is neither an object nor \"unknown\"";
+        }
+        if (!Set.of("export", "online", "conf").contains(run.get("producer").getAsString())) {
+            return "producer " + run.get("producer") + " is not export, online or conf";
+        }
+        String order = run.get("order").getAsString();
+        if (!Set.of("first", "smallest").contains(order)) {
+            return "order " + order + " is not first or smallest";
+        }
+        if (run.get("iteration").isJsonNull() && order.equals("first")) {
+            return "iteration is null with order first";
+        }
+        JsonArray threads = g.getAsJsonArray("threads");
+        int n = threads.size();
+        if (n == 0) {
+            return "no thread";
+        }
+        // Per event: its kind, for the reference checks below.
+        List<List<String>> kinds = new ArrayList<>();
+        Map<String, Integer> nameCount = new HashMap<>();
+        for (int t = 0; t < n; t++) {
+            if (!threads.get(t).isJsonObject()) {
+                return "thread " + t + " is not an object";
+            }
+            JsonObject th = threads.get(t).getAsJsonObject();
+            if (!keysAre(th, "name", "daemon", "events") || !nullOr(th.get("name"), MpLauncher::isString)
+                    || !th.get("daemon").isJsonPrimitive() || !th.get("daemon").getAsJsonPrimitive().isBoolean()
+                    || !th.get("events").isJsonArray()) {
+                return "thread " + t + " is not {name, daemon, events}";
+            }
+            String name = th.get("name").isJsonNull() ? null : th.get("name").getAsString();
+            if (name != null) {
+                if (!printableName(name)) {
+                    return "thread " + t + "'s name holds a control character or a line separator";
+                }
+                nameCount.merge(name, 1, Integer::sum);
+            }
+            if (t == 0 && (!"main".equals(name) || th.get("daemon").getAsBoolean())) {
+                return "thread 0 is not the non-daemon main";
+            }
+            JsonArray ev = th.getAsJsonArray("events");
+            if (ev.isEmpty()) {
+                return "thread " + t + " has no event";
+            }
+            List<String> ks = new ArrayList<>();
+            for (int k = 0; k < ev.size(); k++) {
+                if (!ev.get(k).isJsonObject() || !ev.get(k).getAsJsonObject().has("e")
+                        || !isString(ev.get(k).getAsJsonObject().get("e"))) {
+                    return "(" + t + ", " + k + ") is not an event";
+                }
+                JsonObject e = ev.get(k).getAsJsonObject();
+                String kind = e.get("e").getAsString();
+                boolean shape = switch (kind) {
+                    case "BEGIN", "END", "BLK" -> keysAre(e, "e");
+                    case "TCREATE", "TJOIN" -> keysAre(e, "e", "child") && isInt(e.get("child"));
+                    case "SEND" -> keysAre(e, "e", "to", "v") && isInt(e.get("to"));
+                    case "RECV" -> keysAre(e, "e", "mode", "rf") && isString(e.get("mode"))
+                            && Set.of("block", "try").contains(e.get("mode").getAsString())
+                            && nullOr(e.get("rf"), x -> x.isJsonArray() && x.getAsJsonArray().size() == 2
+                            && isInt(x.getAsJsonArray().get(0)) && isInt(x.getAsJsonArray().get(1)));
+                    case "NONDET" -> keysAre(e, "e", "n", "i") && isInt(e.get("n")) && isInt(e.get("i"));
+                    case "ERROR" -> keysAre(e, "e", "msg") && isString(e.get("msg"));
+                    default -> false;
+                };
+                if (!shape) {
+                    return "(" + t + ", " + k + ") is not a well-formed event of format 1 (a JMC file has no lo)";
+                }
+                if (kind.equals("ERROR")) {
+                    return "(" + t + ", " + k + ") is an ERROR event, which a JMC graph never has";
+                }
+                boolean last = k == ev.size() - 1;
+                boolean terminal = kind.equals("END") || kind.equals("BLK");
+                if ((k == 0) != kind.equals("BEGIN") || last != terminal) {
+                    return "(" + t + ", " + k + ") " + kind + " is out of place";
+                }
+                if (kind.equals("NONDET")) {
+                    int on = e.get("n").getAsInt();
+                    int oi = e.get("i").getAsInt();
+                    if (on < 2 || oi < 0 || oi >= on) {
+                        return "(" + t + ", " + k + ") chooses " + oi + " of " + on;
+                    }
+                }
+                ks.add(kind);
+            }
+            kinds.add(ks);
+        }
+        for (String v : visible) {
+            if (nameCount.getOrDefault(v, 0) != 1) {
+                return "the visible role " + v + " is the name of " + nameCount.getOrDefault(v, 0) + " threads";
+            }
+        }
+        int[] creator = new int[n];
+        java.util.Arrays.fill(creator, -1);
+        Set<String> read = new HashSet<>();
+        Set<String> readByVisible = new HashSet<>();
+        for (int t = 0; t < n; t++) {
+            JsonArray ev = threads.get(t).getAsJsonObject().getAsJsonArray("events");
+            String name = threads.get(t).getAsJsonObject().get("name").isJsonNull() ? null
+                    : threads.get(t).getAsJsonObject().get("name").getAsString();
+            for (int k = 0; k < ev.size(); k++) {
+                JsonObject e = ev.get(k).getAsJsonObject();
+                switch (kinds.get(t).get(k)) {
+                    case "TCREATE" -> {
+                        int c = e.get("child").getAsInt();
+                        if (c <= 0 || c >= n || c == t || creator[c] >= 0) {
+                            return "(" + t + ", " + k + ") creates thread " + c + " again, itself or out of range";
+                        }
+                        creator[c] = t;
+                    }
+                    case "SEND" -> {
+                        int to = e.get("to").getAsInt();
+                        if (to < 0 || to >= n) {
+                            return "(" + t + ", " + k + ") sends to no thread";
+                        }
+                    }
+                    case "RECV" -> {
+                        JsonElement rf = e.get("rf");
+                        if (rf.isJsonNull()) {
+                            if (!e.get("mode").getAsString().equals("try")) {
+                                return "(" + t + ", " + k + ") reads nothing in a blocking receive";
+                            }
+                            continue;
+                        }
+                        int st = rf.getAsJsonArray().get(0).getAsInt();
+                        int sk = rf.getAsJsonArray().get(1).getAsInt();
+                        if (st < 0 || st >= n || sk < 0 || sk >= kinds.get(st).size()
+                                || !kinds.get(st).get(sk).equals("SEND")
+                                || threads.get(st).getAsJsonObject().getAsJsonArray("events").get(sk).getAsJsonObject()
+                                .get("to").getAsInt() != t) {
+                            return "(" + t + ", " + k + ") reads (" + st + ", " + sk + "), not a send to it";
+                        }
+                        if (!read.add(st + "," + sk)) {
+                            return "(" + st + ", " + sk + ") is read twice";
+                        }
+                        if (name != null && visible.contains(name)) {
+                            readByVisible.add(st + "," + sk);
+                        }
+                    }
+                    default -> {
+                        // checked above or below
+                    }
+                }
+            }
+        }
+        for (int c = 1; c < n; c++) {
+            if (creator[c] < 0) {
+                return "thread " + c + " is never created";
+            }
+        }
+        for (int t = 0; t < n; t++) {
+            JsonObject th = threads.get(t).getAsJsonObject();
+            JsonArray ev = th.getAsJsonArray("events");
+            boolean vis = !th.get("name").isJsonNull() && visible.contains(th.get("name").getAsString());
+            for (int k = 0; k < ev.size(); k++) {
+                JsonObject e = ev.get(k).getAsJsonObject();
+                String kind = kinds.get(t).get(k);
+                if (kind.equals("TJOIN")) {
+                    int c = e.get("child").getAsInt();
+                    if (c <= 0 || c >= n || c == t || !kinds.get(c).get(kinds.get(c).size() - 1).equals("END")) {
+                        return "(" + t + ", " + k + ") joins thread " + c + ", which is not a created thread that ended";
+                    }
+                }
+                if (kind.equals("SEND")) {
+                    JsonElement v = e.get("v");
+                    boolean opaque = v.isJsonObject() && v.getAsJsonObject().has("opaque");
+                    if (opaque && (!keysAre(v.getAsJsonObject(), "opaque") || !isString(v.getAsJsonObject().get("opaque")))) {
+                        return "(" + t + ", " + k + ") has a malformed opaque value";
+                    }
+                    if (opaque && (vis || readByVisible.contains(t + "," + k))) {
+                        return "(" + t + ", " + k + ") is an opaque value a visible thread sends or reads";
+                    }
+                    if (!opaque && !encodedValue(v)) {
+                        return "(" + t + ", " + k + ") holds a value outside the summary encoding";
+                    }
+                }
+            }
+        }
+        // Acyclicity of program order, reads-from, creation and join (Kahn's algorithm over all events).
+        Map<String, List<String>> succ = new HashMap<>();
+        Map<String, Integer> indeg = new HashMap<>();
+        java.util.function.BiConsumer<String, String> edge = (a, b) -> {
+            succ.computeIfAbsent(a, x -> new ArrayList<>()).add(b);
+            indeg.merge(b, 1, Integer::sum);
+        };
+        int total = 0;
+        for (int t = 0; t < n; t++) {
+            JsonArray ev = threads.get(t).getAsJsonObject().getAsJsonArray("events");
+            for (int k = 0; k < ev.size(); k++) {
+                total++;
+                String me = t + "," + k;
+                indeg.putIfAbsent(me, 0);
+                if (k > 0) {
+                    edge.accept(t + "," + (k - 1), me);
+                }
+                JsonObject e = ev.get(k).getAsJsonObject();
+                switch (kinds.get(t).get(k)) {
+                    case "RECV" -> {
+                        if (!e.get("rf").isJsonNull()) {
+                            JsonArray rf = e.getAsJsonArray("rf");
+                            edge.accept(rf.get(0).getAsInt() + "," + rf.get(1).getAsInt(), me);
+                        }
+                    }
+                    case "TCREATE" -> edge.accept(me, e.get("child").getAsInt() + ",0");
+                    case "TJOIN" -> {
+                        int c = e.get("child").getAsInt();
+                        edge.accept(c + "," + (kinds.get(c).size() - 1), me);
+                    }
+                    default -> {
+                        // no other edge
+                    }
+                }
+            }
+        }
+        java.util.ArrayDeque<String> ready = new java.util.ArrayDeque<>();
+        indeg.forEach((k, d) -> {
+            if (d == 0) {
+                ready.add(k);
+            }
+        });
+        int seen = 0;
+        while (!ready.isEmpty()) {
+            String x = ready.poll();
+            seen++;
+            for (String y : succ.getOrDefault(x, List.of())) {
+                if (indeg.merge(y, -1, Integer::sum) == 0) {
+                    ready.add(y);
+                }
+            }
+        }
+        if (seen != total) {
+            return "the order relation (program order, reads-from, creation, join) has a cycle";
+        }
+        return null;
     }
 
     /**
