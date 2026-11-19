@@ -113,8 +113,7 @@ class GraphStoreTest {
         Path store = dir.resolve("export.jsonl.graphs.jsonl");
         List<JsonObject> graphs = checkStore(store, dir.resolve("export.jsonl"));
         assertEquals(exportLines(dir.resolve("export.jsonl")).size(), graphs.size());
-        assertEquals("4 graphs written, 0 refused, to export.jsonl.graphs.jsonl",
-                WitnessSupport.field(o.stdout(), "store"));
+        assertTrue(o.stdout().matches("(?s).*\ngraph_store: written=4 refused=0 ms=\\d+\n.*"), o.stdout());
         assertEquals("4", WitnessSupport.field(o.stdout(), "graphs_written"));
         assertTrue(WitnessSupport.field(o.stdout(), "graphs_ms").matches("\\d+"), o.stdout());
         assertFalse(Files.exists(dir.resolve("export.jsonl.graphs.jsonl.part")));
@@ -222,6 +221,7 @@ class GraphStoreTest {
             if (!c[0].equals("graphs-split-none")) {
                 // A split run's walking is spread over the workers: the time is not combined.
                 assertTrue(o.stdout().contains("\ngraphs_ms: \n"), c[0] + ": " + o.stdout());
+                assertTrue(o.stdout().matches("(?s).*\ngraph_store: written=\\d+ refused=0 ms=\n.*"), o.stdout());
             }
         }
     }

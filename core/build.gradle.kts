@@ -60,6 +60,9 @@ fun jmcCommit(): String {
 
 val jmcBuildInfo by tasks.registering {
     val out = layout.buildDirectory.dir("generated/jmc-build")
+    // JMC_COMMIT is an input: a rebuild with another value never keeps the old commit (the task also reruns every
+    // build, since git's HEAD and the work tree's state are not inputs Gradle can see).
+    inputs.property("jmcCommit", providers.environmentVariable("JMC_COMMIT").orElse(""))
     outputs.dir(out)
     outputs.upToDateWhen { false }
     doLast {

@@ -118,12 +118,12 @@ import java.util.Set;
  * ({@link org.mpi_sws.jmc.mp.summary.RunIdentity}: the JMC commit the build recorded, the program and its
  * arguments, and the source identity copied from the {@code SOURCE.md5} manifest at the root of the program's
  * classpath entry, or {@code "unknown"}). The graphs are kept in {@code <store>.part} until the export is written.
- * Printed: {@code store: W graphs written, R refused, to <store>}, and the measurement keys {@code graphs_written},
+ * Printed: {@code graph_store: written=W refused=R ms=T}, and the measurement keys {@code graphs_written},
  * {@code graphs_refused}, {@code graphs_ms} after the shared ones. An existing store is refused. Under {@code --split}
  * the root and every item write their own part in the run directory and the coordinator merges them in the
  * sequential order (the root, then the items {@code N − 1} … {@code 0}), keeping the first graph per summary with
- * its sequential iteration number, so the store equals the sequential run's; {@code graphs_ms} is then empty (the
- * walking is spread over the workers). Without {@code --graphs} nothing changes.
+ * its sequential iteration number, so the store equals the sequential run's; {@code graphs_ms} and {@code ms=} are
+ * then empty (the walking is spread over the workers). Without {@code --graphs} nothing changes.
  *
  * <p>Exit status: {@code 0} when the checker completes; {@code 1} when the run fails — a
  * {@link JmcCheckerException} (an assertion the checker recorded, a strategy fault, an unsupported
@@ -658,8 +658,8 @@ public final class MpLauncher {
                         mpProgram.model(), enumeration, seed, ran, null);
                 try {
                     graphs.finish(storeHeader, body);
-                    System.out.println("store:      " + graphs.written() + " graphs written, " + graphs.refusedCount()
-                            + " refused, to " + graphsPath);
+                    System.out.println("graph_store: written=" + graphs.written() + " refused=" + graphs.refusedCount()
+                            + " ms=" + (mustStrategy.graphNanos() + graphs.finishNanos()) / 1_000_000);
                 } catch (IOException e) {
                     failure = (failure == null ? "" : failure + "; ") + "cannot write " + graphsPath + ": " + e;
                 }
@@ -1265,8 +1265,9 @@ public final class MpLauncher {
                 try {
                     mergeGraphs(graphs, runDir, result);
                     graphs.finish(storeHeader, body);
-                    System.out.println("store:      " + graphs.written() + " graphs written, " + graphs.refusedCount()
-                            + " refused, to " + graphs.path());
+                    // The walking is spread over the workers: the time is not combined (empty, not zero).
+                    System.out.println("graph_store: written=" + graphs.written() + " refused=" + graphs.refusedCount()
+                            + " ms=");
                 } catch (IOException | RuntimeException e) {
                     printSplitMeasurements(st, result, exportNanos, true);
                     System.out.println("FAILED:     cannot write the graph store " + graphs.path() + ": " + e);
