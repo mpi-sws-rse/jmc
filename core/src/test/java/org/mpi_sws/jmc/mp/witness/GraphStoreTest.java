@@ -192,6 +192,75 @@ class GraphStoreTest {
         });
     }
 
+    /**
+     * Under {@code --split} the coordinator merges the root's and the items' parts in the sequential order, so the
+     * store is the sequential run's byte for byte (iteration numbers included): with items, with a limit, and when
+     * the root never reaches the split threshold.
+     */
+    @Test
+    void split_storeEqualsTheSequentialStore() throws Exception {
+        String bank = WitnessSupport.BANK + ":3";
+        Path seq = WitnessSupport.fresh("graphs-split-seq");
+        assertEquals(0, export(seq, bank, "--graphs", "s.jsonl").exit());
+        Path seq2 = WitnessSupport.fresh("graphs-split-seq2");
+        assertEquals(0, export(seq2, bank, "--graphs", "s.jsonl", "--graphs-limit", "2").exit());
+        String[][] cases = {
+            {"graphs-split-items", "--split", "2", "--k", "1"},
+            {"graphs-split-limit", "--split", "2", "--k", "1", "--graphs-limit", "2"},
+            {"graphs-split-none", "--split", "2", "--k", "100000"},
+        };
+        for (String[] c : cases) {
+            Path d = WitnessSupport.fresh(c[0]);
+            List<String> extra = new ArrayList<>(List.of("--graphs", "s.jsonl"));
+            extra.addAll(List.of(c).subList(1, c.length));
+            Out o = export(d, bank, extra.toArray(new String[0]));
+            assertEquals(0, o.exit(), o.text());
+            Path ref = c[0].equals("graphs-split-limit") ? seq2 : seq;
+            assertEquals(Files.readString(ref.resolve("export.jsonl")), Files.readString(d.resolve("export.jsonl")),
+                    c[0]);
+            assertEquals(Files.readString(ref.resolve("s.jsonl")), Files.readString(d.resolve("s.jsonl")), c[0]);
+            if (!c[0].equals("graphs-split-none")) {
+                // A split run's walking is spread over the workers: the time is not combined.
+                assertTrue(o.stdout().contains("\ngraphs_ms: \n"), c[0] + ": " + o.stdout());
+            }
+        }
+    }
+
+    /** Values the encoder refuses on invisible traffic are written opaque; the store is still complete. */
+    @Test
+    void invisibleUnencodableValues_areOpaque() throws Exception {
+        for (String arg : List.of("untagged", "daemon")) {
+            Path dir = WitnessSupport.fresh("graphs-opaque-" + arg);
+            Out o = export(dir, WitnessSupport.PKG + "WitnessUnwritable:" + arg, "--graphs", "s.jsonl");
+            assertEquals(0, o.exit(), o.text());
+            List<JsonObject> graphs = checkStore(dir.resolve("s.jsonl"), dir.resolve("export.jsonl"));
+            assertEquals(exportLines(dir.resolve("export.jsonl")).size(), graphs.size());
+            assertTrue(Files.readString(dir.resolve("s.jsonl")).contains("\"v\":{\"opaque\":"), arg);
+        }
+    }
+
+    /** A store whose export cannot be written is given up: neither the store nor its part file stays. */
+    @Test
+    void failedExport_leavesNoStoreFiles() throws Exception {
+        Path dir = WitnessSupport.fresh("graphs-failed-export");
+        Files.createDirectories(dir.resolve("adir"));
+        Out o = WitnessSupport.launch(dir, TINY, "must", "0", "1", "rep", "adir", "300", "--graphs", "s.jsonl");
+        assertEquals(1, o.exit(), o.text());
+        assertFalse(Files.exists(dir.resolve("s.jsonl")));
+        assertFalse(Files.exists(dir.resolve("s.jsonl.part")));
+        assertFalse(Files.exists(dir.resolve("s.jsonl.tmp")));
+        // A leftover assembly file is not this run's: the store is refused and the file kept.
+        Files.writeString(dir.resolve("t.jsonl.tmp"), "someone else's\n");
+        assertEquals(2, export(dir, TINY, "--graphs", "t.jsonl").exit());
+        assertEquals("someone else's\n", Files.readString(dir.resolve("t.jsonl.tmp")));
+        assertEquals(1, WitnessSupport.launch(dir, TINY, "must", "0", "1", "rep", "adir", "300", "--graphs",
+                "u.jsonl").exit());
+        Files.writeString(dir.resolve("u.jsonl.tmp"), "kept\n");
+        assertEquals(2, WitnessSupport.launch(dir, TINY, "must", "0", "1", "rep", "adir", "300", "--graphs",
+                "u.jsonl").exit());
+        assertEquals("kept\n", Files.readString(dir.resolve("u.jsonl.tmp")));
+    }
+
     @Test
     void refusals_exit2() throws Exception {
         Path dir = WitnessSupport.fresh("graphs-refused");
@@ -204,7 +273,7 @@ class GraphStoreTest {
         assertEquals(2, export(dir, TINY, "--graphs", "g.jsonl", "--graphs-limit", "-1").exit());
         assertEquals(2, export(dir, TINY, "--graphs", "g.jsonl", "--graphs", "h.jsonl").exit());
         assertEquals(2, export(dir, TINY, "--graphs", "export.jsonl").exit());
-        assertEquals(2, export(dir, TINY, "--graphs", "g.jsonl", "--split", "2").exit());
+        assertEquals(2, export(dir, TINY, "--graphs", "g.jsonl", "--worker", "x", "0").exit());
         assertFalse(Files.exists(dir.resolve("g.jsonl")));
         // The export may not be any file the store uses: the store, its part file, its assembly file.
         for (String reserved : List.of("g.jsonl", "g.jsonl.part", "g.jsonl.tmp")) {

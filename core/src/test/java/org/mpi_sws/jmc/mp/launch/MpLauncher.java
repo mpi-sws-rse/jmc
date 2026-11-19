@@ -119,8 +119,11 @@ import java.util.Set;
  * arguments, and the source identity copied from the {@code SOURCE.md5} manifest at the root of the program's
  * classpath entry, or {@code "unknown"}). The graphs are kept in {@code <store>.part} until the export is written.
  * Printed: {@code store: W graphs written, R refused, to <store>}, and the measurement keys {@code graphs_written},
- * {@code graphs_refused}, {@code graphs_ms} after the shared ones. An existing store is refused, and so is
- * {@code --split} for now. Without {@code --graphs} nothing changes.
+ * {@code graphs_refused}, {@code graphs_ms} after the shared ones. An existing store is refused. Under {@code --split}
+ * the root and every item write their own part in the run directory and the coordinator merges them in the
+ * sequential order (the root, then the items {@code N − 1} … {@code 0}), keeping the first graph per summary with
+ * its sequential iteration number, so the store equals the sequential run's; {@code graphs_ms} is then empty (the
+ * walking is spread over the workers). Without {@code --graphs} nothing changes.
  *
  * <p>Exit status: {@code 0} when the checker completes; {@code 1} when the run fails — a
  * {@link JmcCheckerException} (an assertion the checker recorded, a strategy fault, an unsupported
@@ -173,6 +176,11 @@ public final class MpLauncher {
             System.out.println("FAILED:     " + e);
             status = 1;
         } finally {
+            if (st.graphs != null && !st.graphs.finished()) {
+                // Any end without a written store (a failed run, a failed export, a refused argument): the store's
+                // own files go, so that the same store path can be used again.
+                st.graphs.abandon();
+            }
             if (st.must != null && !st.printed) {
                 printMeasurements(st);
             }
@@ -309,8 +317,8 @@ public final class MpLauncher {
         if (graphsLimit != null && graphsPath == null) {
             return usage("--graphs-limit needs --graphs");
         }
-        if (graphsPath != null && (splitWorkers != null || splitK != null || workerDir != null)) {
-            return usage("--graphs cannot be combined with --split yet");
+        if (graphsPath != null && workerDir != null) {
+            return usage("--graphs is not a worker's option (a split run's workers write theirs as run.json says)");
         }
         if (witnessPath != null && (splitWorkers != null || splitK != null || workerDir != null)) {
             return usage("--witness cannot be combined with --split: a worker's iterations are not the run's;"
@@ -477,7 +485,8 @@ public final class MpLauncher {
             }
             st.summarises = mpProgram != null;
             return runSplit(st, args, rawArgs, program, programClass, mpProgram, splitWorkers,
-                    splitK == null ? 8 * splitWorkers : splitK, seed, reportPath, exportFile, timeoutSeconds, spec);
+                    splitK == null ? 8 * splitWorkers : splitK, seed, reportPath, exportFile, timeoutSeconds, spec,
+                    graphs);
         }
 
         System.out.println("program:    " + programClass.getName());
@@ -618,6 +627,7 @@ public final class MpLauncher {
             lines.add(SummaryExporter.header(
                     mpProgram.programName(), mpProgram.size(), mpProgram.visibleRoles(), mpProgram.headerRoles(),
                     mpProgram.model(), enumeration, seed, ran, online));
+            boolean exportWritten = false;
             List<String> body = new ArrayList<>(summaries.size());
             for (Map.Entry<Summary, Integer> e : summaries.entrySet()) {
                 body.add(e.getKey().toJson(e.getValue()));
@@ -631,6 +641,7 @@ public final class MpLauncher {
                 long exportStartNanos = System.nanoTime();
                 try {
                     Files.write(exportFile, lines, StandardCharsets.UTF_8);
+                    exportWritten = true;
                 } finally {
                     st.exportNanos = System.nanoTime() - exportStartNanos;
                 }
@@ -640,7 +651,7 @@ public final class MpLauncher {
             } catch (IOException e) {
                 failure = (failure == null ? "" : failure + "; ") + "cannot write " + exportFile + ": " + e;
             }
-            if (graphs != null) {
+            if (graphs != null && exportWritten) {
                 // The store carries the export's header without the online fields.
                 String storeHeader = SummaryExporter.header(
                         mpProgram.programName(), mpProgram.size(), mpProgram.visibleRoles(), mpProgram.headerRoles(),
@@ -692,6 +703,9 @@ public final class MpLauncher {
         private final List<String[]> refused = new ArrayList<>();
         private IOException error;
         private long finishNanos;
+        private boolean finished;
+        /** Whether this run created the assembly file (only then does {@link #abandon} remove it). */
+        private boolean tmpOwned;
 
         private GraphStore(Path path, Path part, java.io.BufferedWriter out, long limit, RunIdentity identity) {
             this.path = path;
@@ -712,6 +726,9 @@ public final class MpLauncher {
             }
             if (Files.exists(path, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
                 throw new IllegalArgumentException("the store already exists");
+            }
+            if (Files.exists(Path.of(path + ".tmp"), java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                throw new IllegalArgumentException("the store's assembly file " + path + ".tmp already exists");
             }
             if (path.getParent() != null) {
                 Files.createDirectories(path.getParent());
@@ -798,6 +815,44 @@ public final class MpLauncher {
             return written;
         }
 
+        long limit() {
+            return limit;
+        }
+
+        Path path() {
+            return path;
+        }
+
+        /** Creates the assembly file exclusively, and records that this run owns it. */
+        private java.io.BufferedWriter createdBy(Path tmp) throws IOException {
+            java.io.BufferedWriter w = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+            tmpOwned = true;
+            return w;
+        }
+
+        /** Whether {@link #finish} wrote the store. */
+        boolean finished() {
+            return finished;
+        }
+
+        /** Gives the store up: the part and assembly files are closed and removed, nothing is written. */
+        void abandon() {
+            try {
+                out.close();
+            } catch (IOException e) {
+                // Nothing was promised: the run has failed already.
+            }
+            try {
+                Files.deleteIfExists(part);
+                if (tmpOwned) {
+                    Files.deleteIfExists(Path.of(path + ".tmp"));
+                }
+            } catch (IOException e) {
+                System.err.println("graphs: cannot remove the store's part files: " + e);
+            }
+        }
+
         int refusedCount() {
             return refused.size();
         }
@@ -838,8 +893,7 @@ public final class MpLauncher {
             }
             Path tmp = Path.of(path + ".tmp");
             try (java.io.BufferedReader in = Files.newBufferedReader(part, StandardCharsets.UTF_8);
-                    java.io.BufferedWriter w = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8,
-                            StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+                    java.io.BufferedWriter w = createdBy(tmp)) {
                 w.write("{\"witness_store\":1,\"export\":" + header + ",\"run\":" + identity.toJson(null) + "}\n");
                 String rec;
                 while ((rec = in.readLine()) != null) {
@@ -856,6 +910,7 @@ public final class MpLauncher {
             }
             Files.move(tmp, path);
             Files.delete(part);
+            finished = true;
         }
     }
 
@@ -1103,7 +1158,8 @@ public final class MpLauncher {
     private static int runSplit(Measured st, String[] args, String[] rawArgs, Runnable program,
                                 Class<?> programClass,
                                 MpProgram mpProgram, int workers, int k, long seed, String reportPath,
-                                Path exportFile, long timeoutSeconds, SpecificationFile.Loaded spec) {
+                                Path exportFile, long timeoutSeconds, SpecificationFile.Loaded spec,
+                                GraphStore graphs) {
         String identity = args[0] + (mpProgram == null ? "" : "|" + mpProgram.model());
         Path runDir = Path.of(reportPath, "split-" + java.util.UUID.randomUUID());
         List<String> jvmOptions = java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments();
@@ -1147,7 +1203,8 @@ public final class MpLauncher {
                         cmd.add(dir.toString());
                         cmd.add(Integer.toString(id));
                         return cmd;
-                    }, false, Process::isAlive, spec, mpProgram == null ? null : mpProgram.payloadNameableRoles()));
+                    }, false, Process::isAlive, spec, mpProgram == null ? null : mpProgram.payloadNameableRoles(),
+                    graphs == null ? null : graphs.limit()));
         } catch (IOException e) {
             System.out.println("FAILED:     cannot prepare " + runDir + ": " + e);
             return 1;
@@ -1156,6 +1213,10 @@ public final class MpLauncher {
         System.out.println("split:      K " + k + ", W " + workers + ", R " + result.r() + ", N " + result.n()
                 + (result.split() ? "" : " (no split: the root exhausted the stack)") + "; run directory " + runDir);
         if (result.failure() != null) {
+            if (graphs != null) {
+                // No export, so no store; the run directory keeps the parts.
+                graphs.abandon();
+            }
             System.out.printf(Locale.ROOT, "elapsed:    %.3f s%n", elapsedSeconds);
             printSplitOnline(result);
             printSplitMeasurements(st, result, 0, false);
@@ -1197,9 +1258,46 @@ public final class MpLauncher {
                 return 1;
             }
             exportNanos = System.nanoTime() - exportStart;
+            if (graphs != null) {
+                String storeHeader = SummaryExporter.header(mpProgram.programName(), mpProgram.size(),
+                        mpProgram.visibleRoles(), mpProgram.headerRoles(), mpProgram.model(), "complete", seed,
+                        result.ran(), null);
+                try {
+                    mergeGraphs(graphs, runDir, result);
+                    graphs.finish(storeHeader, body);
+                    System.out.println("store:      " + graphs.written() + " graphs written, " + graphs.refusedCount()
+                            + " refused, to " + graphs.path());
+                } catch (IOException | RuntimeException e) {
+                    printSplitMeasurements(st, result, exportNanos, true);
+                    System.out.println("FAILED:     cannot write the graph store " + graphs.path() + ": " + e);
+                    return 1;
+                }
+            }
         }
         printSplitMeasurements(st, result, exportNanos, false);
         return 0;
+    }
+
+    /**
+     * Feeds the graph store from the split run's parts in the sequential order: the root's part, then the items
+     * {@code N − 1} … {@code 0}, each the part of its committed attempt, with the offsets that make their iterations
+     * sequential: 0 for the root, then {@code R} plus the iterations of the items before. Without a split the
+     * root's part is the whole run.
+     */
+    private static void mergeGraphs(GraphStore graphs, Path runDir, SplitCoordinator.Result result)
+            throws IOException {
+        List<Path> parts = new ArrayList<>(List.of(runDir.resolve(SplitCoordinator.ROOT_GRAPHS)));
+        List<Integer> offsets = new ArrayList<>(List.of(0));
+        if (result.split()) {
+            int offset = result.r();
+            for (int j = result.n() - 1; j >= 0; j--) {
+                int attempt = SplitCoordinator.readJson(runDir.resolve("item-" + j + ".json")).get("attempt").getAsInt();
+                parts.add(runDir.resolve(SplitCoordinator.itemGraphs(j, attempt)));
+                offsets.add(offset);
+                offset += result.itemIterations().get(j);
+            }
+        }
+        org.mpi_sws.jmc.strategies.must.split.GraphPart.merge(graphs, parts, offsets);
     }
 
     /**
@@ -1250,6 +1348,12 @@ public final class MpLauncher {
         System.out.println("mean_visible_events: ");
         System.out.println("max_summary_bytes: " + maximum(r, "max_summary_bytes"));
         System.out.println("max_porf_count: " + maximum(r, "max_porf_count"));
+        if (st.graphs != null) {
+            System.out.println("graphs_written: " + (ok ? Long.toString(st.graphs.written()) : ""));
+            System.out.println("graphs_refused: " + (ok ? Integer.toString(st.graphs.refusedCount()) : ""));
+            // The walking is spread over the worker processes and does not combine, as summarise_ms.
+            System.out.println("graphs_ms: ");
+        }
     }
 
     /**
