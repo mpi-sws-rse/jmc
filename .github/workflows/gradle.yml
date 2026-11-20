@@ -202,7 +202,7 @@ jobs:
             echo "Not run / cut short (3h budget):"
             for t in $NOT_RUN; do echo "  - $t"; done
           fi
-          if [ -n "$TIMED_OUT" ] || [ -n "$FAILED" ]; then
+          if [ -n "$TIMED_OUT" ] || [ -n "$FAILED" ] || [ -n "$NOT_RUN" ]; then
             exit 1
           fi
           echo "All executed tests passed within ${PER_TEST_TIMEOUT}s each (total ${SECONDS}s)."
@@ -219,9 +219,9 @@ jobs:
   # stage: deploy
   # ---------------------------------------------------------------------------
 
-  # GitLab `publish` job. rules: $CI_COMMIT_BRANCH == "main"
-  # (extended to master so it also publishes from the GitLab default branch).
-  publish:
+  # GitLab's `publish-dry-run` job: builds and checks the Maven Central bundle without uploading it. The release
+  # itself is published from GitLab (a v<version> tag), where the signing and Central credentials are kept.
+  publish-dry-run:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     needs: [ compile ]
     runs-on: ubuntu-latest
@@ -238,15 +238,14 @@ jobs:
           sudo apt-get install -y --no-install-recommends z3 libz3-dev libz3-java zip
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-      - name: Publish
-        run: bash ./scripts/publish.sh
-      - name: Upload distribution archives
+      - name: Publish (dry run)
+        run: bash ./scripts/publish.sh --dry-run
+      - name: Upload the bundle
         uses: actions/upload-artifact@v4
         with:
-          name: jmc-distributions
-          path: |
-            build/jmc-agent/jmc-agent.zip
-            build/jmc/jmc.zip
+          name: central-bundle
+          path: build/central-bundle.zip
+          retention-days: 14
 
   # Retained from the original GitHub starter workflow: generates and submits a
   # dependency graph, enabling Dependabot alerts. Runs only on the main branches.
