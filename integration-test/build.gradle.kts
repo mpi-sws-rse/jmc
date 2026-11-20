@@ -40,7 +40,7 @@ dependencies {
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(project(":core"))
-    implementation("com.google.guava:guava:32.1.2-jre")
+    implementation("com.google.guava:guava:33.7.2-jre")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     implementation("org.junit.jupiter:junit-jupiter:5.7.1")
 }
