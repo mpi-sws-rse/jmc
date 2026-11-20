@@ -27,10 +27,14 @@ Then add `mavenLocal()` to the repositories of your build and to `pluginManageme
 Annotate a JUnit test with `@JmcCheck` and a configuration ([Configuration API.md](Configuration%20API.md)):
 
 ```java
+package com.example;
+
 import org.mpi_sws.jmc.annotations.JmcCheck;
 import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
 
-class CounterTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class CounterTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "trust")
     void testCounter() throws InterruptedException {
@@ -39,12 +43,16 @@ class CounterTest {
         Thread t2 = new Thread(counter::inc);
         t1.start(); t2.start();
         t1.join(); t2.join();
-        assert counter.get() == 2;
+        assertEquals(2, counter.get());
     }
 }
 ```
 
-Run it as usual, e.g. `./gradlew test --tests org.example.CounterTest`. JMC's own integration tests are examples:
+The test class must be public, with a public no-argument constructor: JMC creates it by reflection, and a
+package-private class fails with "Error creating instance of test class". Use JUnit's assertions, not Java's
+`assert`, in a test class that the agent instruments: `assert` gives the class a static initializer, which then runs
+before JMC's runtime starts and fails with `ExceptionInInitializerError`. Run it as usual, e.g.
+`./gradlew test --tests com.example.CounterTest`. JMC's own integration tests are examples:
 `integration-test/src/test/java/org/mpi_sws/jmc/test/CounterTest.java`.
 
 ## Visualizing the execution graphs
