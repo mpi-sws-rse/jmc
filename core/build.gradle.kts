@@ -37,6 +37,45 @@ dependencies {
 
 }
 
+// The build's identity for witness graph files: the JMC commit, from JMC_COMMIT if set (node trees
+// copied without .git), else git (with -dirty for modified tracked files), else "unknown".
+fun jmcCommit(): String {
+    System.getenv("JMC_COMMIT")?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+    fun git(vararg a: String): String? = try {
+        val p = ProcessBuilder(listOf("git") + a).directory(rootDir).redirectErrorStream(false).start()
+        val out = p.inputStream.bufferedReader().readText().trim()
+        if (p.waitFor() == 0) out else null
+    } catch (e: Exception) {
+        null
+    }
+    // Only JMC's own repository (or worktree) counts: a tree copied into another checkout has no commit.
+    val top = git("rev-parse", "--show-toplevel") ?: return "unknown"
+    if (File(top).canonicalFile != rootDir.canonicalFile) {
+        return "unknown"
+    }
+    val head = git("rev-parse", "HEAD") ?: return "unknown"
+    val dirty = git("status", "--porcelain", "--untracked-files=no") ?: return "unknown"
+    return if (dirty.isEmpty()) head else "$head-dirty"
+}
+
+val jmcBuildInfo by tasks.registering {
+    val out = layout.buildDirectory.dir("generated/jmc-build")
+    // JMC_COMMIT is an input: a rebuild with another value never keeps the old commit (the task also reruns every
+    // build, since git's HEAD and the work tree's state are not inputs Gradle can see).
+    inputs.property("jmcCommit", providers.environmentVariable("JMC_COMMIT").orElse(""))
+    outputs.dir(out)
+    outputs.upToDateWhen { false }
+    doLast {
+        val f = out.get().file("org/mpi_sws/jmc/jmc-build.properties").asFile
+        f.parentFile.mkdirs()
+        f.writeText("commit=" + jmcCommit() + "\n")
+    }
+}
+
+sourceSets.main {
+    resources.srcDir(jmcBuildInfo)
+}
+
 tasks.withType<Javadoc> {
     (options as StandardJavadocDocletOptions).apply {
         addStringOption("doctitle", "JMC Model Checker API")

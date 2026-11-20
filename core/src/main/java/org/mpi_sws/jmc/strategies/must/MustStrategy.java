@@ -187,6 +187,12 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private final Set<Summary> uncoveredSummaries = new HashSet<>();
     /** Online mode: receives each distinct uncovered execution as a witness text; {@code null} for none. */
     private WitnessSink witnessSink;
+    /** Export mode: receives the graph of each distinct summary at its first occurrence; {@code null} for none. */
+    private GraphSink graphSink;
+    /** Time spent writing the current iteration's graph for {@link #graphSink}, kept out of the summarise time. */
+    private long lastGraphNanos;
+    /** Cumulative time spent walking and encoding graphs for {@link #graphSink}. */
+    private long graphNanos;
     /**
      * When summaries are exported: the iteration's creations and completed joins in the order they happened,
      * for the witness text and its event-line count ({@link WitnessWriter#eventLines}).
@@ -1764,8 +1770,9 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         try {
             summariseAndLookUp(finished);
         } finally {
-            summariseNanos += System.nanoTime() - summariseStart - lastLookupNanos;
+            summariseNanos += System.nanoTime() - summariseStart - lastLookupNanos - lastGraphNanos;
             lastLookupNanos = 0;
+            lastGraphNanos = 0;
         }
     }
 
@@ -1832,7 +1839,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 tid -> payloadName(identity.apply(tid), visibleRoles, payloadRoles));
         MpValueEncoder witnessEncoder = new MpValueEncoder(identity);
         Summary s = SummaryExporter.summarize(finished, roleOfTask, visibleRoles, encoder);
-        summaries.merge(s, 1, Integer::sum);
+        boolean firstOccurrence = summaries.merge(s, 1, Integer::sum) == 1;
         exportedIterations++;
         int visibleEvents = 0;
         for (Map.Entry<Long, List<Graph.Node>> e : graph.tasks().entrySet()) {
@@ -1857,6 +1864,32 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         // The canonical line without the multiplicity: drop the trailing ,"n":0 before the closing brace.
         String withoutN = line.substring(0, line.length() - ",\"n\":0}".length()) + "}";
         maxSummaryBytes = Math.max(maxSummaryBytes, withoutN.getBytes(StandardCharsets.UTF_8).length);
+        if (firstOccurrence && graphSink != null && graphSink.wants()) {
+            long graphStart = System.nanoTime();
+            try {
+                Set<Long> visibleTasks = new HashSet<>();
+                roleOfTask.forEach((task, role) -> {
+                    if (visibleRoles.contains(role)) {
+                        visibleTasks.add(task);
+                    }
+                });
+                String threads;
+                try {
+                    threads = org.mpi_sws.jmc.mp.summary.GraphJson.threads(finished, inserted, graphNames(), daemons,
+                            visibleTasks, witnessEncoder);
+                } catch (IllegalArgumentException e) {
+                    graphSink.refused(withoutN, e.getMessage());
+                    threads = null;
+                }
+                if (threads != null) {
+                    // The iteration within the current segment: the run's iteration outside a split run.
+                    graphSink.graph(iterations - segmentStartIterations, withoutN, threads);
+                }
+            } finally {
+                lastGraphNanos = System.nanoTime() - graphStart;
+                graphNanos += lastGraphNanos;
+            }
+        }
         int nonZero = 0;
         for (int c : s.counts()) {
             maxPorfCount = Math.max(maxPorfCount, c);
@@ -2009,6 +2042,61 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     }
 
     /**
+     * Receives the graph of each distinct summary of an export, at its first occurrence (the graph
+     * store of witness format 1). Called on the scheduler thread at the end of the iteration; the
+     * methods must not throw.
+     */
+    public interface GraphSink {
+        /**
+         * Whether a further graph is wanted (a store's limit); when not, no graph is walked.
+         *
+         * @return true to receive the next first occurrence
+         */
+        boolean wants();
+
+        /**
+         * The graph of a summary at its first occurrence.
+         *
+         * @param iteration the 1-based iteration whose graph gave it, counted within the current segment of a
+         *     split run (the run's iteration otherwise)
+         * @param line the summary line in normal form (without {@code n})
+         * @param threads the graph's {@code threads} array ({@link org.mpi_sws.jmc.mp.summary.GraphJson})
+         */
+        void graph(int iteration, String line, String threads);
+
+        /**
+         * A summary whose graph cannot be written (a name or a visible value the format cannot hold).
+         *
+         * @param line the summary line in normal form
+         * @param why the reason
+         */
+        void refused(String line, String why);
+    }
+
+    /**
+     * Hands the graph of each distinct exported summary to {@code sink}, at its first occurrence.
+     * Without a sink nothing is walked. Export mode only (the summarising constructor).
+     *
+     * @param sink the receiver
+     * @throws IllegalStateException if this strategy does not summarise
+     */
+    public void writeGraphs(GraphSink sink) {
+        if (rolesInSpawnOrder == null) {
+            throw new IllegalStateException("graphs need an exporting strategy (declared roles)");
+        }
+        this.graphSink = Objects.requireNonNull(sink);
+    }
+
+    /**
+     * Time spent walking and encoding graphs for the graph store, in nanoseconds.
+     *
+     * @return the time
+     */
+    public long graphNanos() {
+        return graphNanos;
+    }
+
+    /**
      * Hands each distinct uncovered execution of the online check to {@code sink} (the witness
      * option). Without a sink nothing is recorded. Not for split mode: a segment's iterations are
      * not the run's, so the launcher refuses the combination.
@@ -2034,6 +2122,30 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             if (i instanceof WitnessWriter.Creation c) {
                 String role = roleOfStable.getOrDefault(c.child(), "");
                 names.putIfAbsent(c.child(), role.isEmpty() ? nameOfId.get(c.child()) : role);
+            }
+        }
+        names.put(1L, "main");
+        return names;
+    }
+
+    /**
+     * The names a graph file gives its threads: {@code main}, else the role a process was spawned with; a process
+     * spawned without a role (a daemon) has none and is absent from the map.
+     */
+    private Map<Long, String> graphNames() {
+        Map<Long, String> names = new HashMap<>();
+        for (long t : started) {
+            String role = roleOfStable.getOrDefault(t, "");
+            if (!role.isEmpty()) {
+                names.put(t, role);
+            }
+        }
+        for (WitnessWriter.Inserted i : inserted) {
+            if (i instanceof WitnessWriter.Creation c) {
+                String role = roleOfStable.getOrDefault(c.child(), "");
+                if (!role.isEmpty()) {
+                    names.putIfAbsent(c.child(), role);
+                }
             }
         }
         names.put(1L, "main");

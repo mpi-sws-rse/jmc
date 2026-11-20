@@ -88,6 +88,8 @@ public final class SplitWorker implements MustStrategy.SplitControl {
     private MustStrategy strategy;
     /** The SHA-256 of the specification file this worker loaded, {@code null} without an online check. */
     private String specHash;
+    /** With a graph store: the current segment's graph part; {@code null} otherwise. */
+    private GraphPart graphs;
 
     /**
      * Opens the run.
@@ -164,12 +166,25 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         return true;
     }
 
+    /** Ends the current segment's graph part: moved to {@code target}, or dropped when it is null. */
+    private void endGraphs(Path target) {
+        try {
+            graphs.endSegment(target);
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException("cannot finish the graph part for " + target, e);
+        }
+    }
+
     @Override
     public void segmentDone(MustStrategy.Segment s) {
         List<ItemResult.Outcome> done = outcomes;
         outcomes = new ArrayList<>();
         if (s.index() < 0) {
             rootOutcomes = done;
+            if (graphs != null) {
+                // The root's graphs are the coordinator's; the replay's are dropped.
+                endGraphs(null);
+            }
             return;
         }
         int j = s.index();
@@ -216,6 +231,10 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         Path target = runDir.resolve("item-" + j + ".json");
         if (Files.exists(target)) {
             throw new IllegalStateException("item-" + j + ".json already exists; a result is never overwritten");
+        }
+        if (graphs != null) {
+            // Before the result: a committed result's graphs are always there.
+            endGraphs(runDir.resolve(SplitCoordinator.itemGraphs(j, attempt)));
         }
         SplitCoordinator.writeAtomically(target, env);
         if (injected("die-after", j, attempt)) {
@@ -326,6 +345,17 @@ public final class SplitWorker implements MustStrategy.SplitControl {
             } catch (IOException | RuntimeException e) {
                 return startupFailure(runDir, worker, "specification " + file + " refused: " + e);
             }
+        }
+        if (worker.run.has("graphs")) {
+            // The worker's own part file (a restarted worker with this id replaces a dead one's leftover).
+            Path part = runDir.resolve("graphs-w" + workerId + ".part");
+            try {
+                Files.deleteIfExists(part);
+                worker.graphs = new GraphPart(part, worker.run.get("graphs").getAsLong());
+            } catch (IOException e) {
+                return startupFailure(runDir, worker, "cannot create the graph part " + part + ": " + e);
+            }
+            strategy.writeGraphs(worker.graphs);
         }
         strategy.setSplitControl(worker);
         worker.strategy = strategy;

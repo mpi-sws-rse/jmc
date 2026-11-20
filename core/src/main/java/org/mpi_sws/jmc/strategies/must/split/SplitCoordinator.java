@@ -77,6 +77,21 @@ public final class SplitCoordinator {
     private static final Pattern DIGEST = Pattern.compile("[0-9a-f]{64}");
     private static final Pattern N_SUFFIX = Pattern.compile(",\"n\":(\\d+)}$");
 
+    /** The root's graph part in the run directory (with a graph store). */
+    public static final String ROOT_GRAPHS = "graphs-root.jsonl";
+
+    /**
+     * An item's graph part in the run directory: written by the worker before its result, for the attempt that
+     * produced it.
+     *
+     * @param item the item index
+     * @param attempt the attempt
+     * @return the file name
+     */
+    public static String itemGraphs(int item, int attempt) {
+        return "graphs-" + item + "." + attempt + ".jsonl";
+    }
+
     private SplitCoordinator() {}
 
     /**
@@ -101,12 +116,25 @@ public final class SplitCoordinator {
      *     {@code roles}
      * @param payloadRoles the invisible roles a visible payload may name; {@code null} exactly when
      *     {@code roles} is
+     * @param graphsLimit with a graph store: the most graphs kept per segment (the root writes
+     *     {@code graphs-root.jsonl} in the run directory, each item {@code graphs-<j>.<attempt>.jsonl}, see
+     *     {@link GraphPart}); {@code null} for none; needs {@code roles}
      */
     public record Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                          int k, int workers, long timeoutSeconds, Path runDir,
                          BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
                          java.util.function.Predicate<Process> liveness, SpecificationFile.Loaded spec,
-                         List<String> payloadRoles) {
+                         List<String> payloadRoles, Long graphsLimit) {
+
+        /** A configuration without a graph store. */
+        public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
+                      int k, int workers, long timeoutSeconds, Path runDir,
+                      BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
+                      java.util.function.Predicate<Process> liveness, SpecificationFile.Loaded spec,
+                      List<String> payloadRoles) {
+            this(programIdentity, program, roles, visibleRoles, k, workers, timeoutSeconds, runDir, workerCommand,
+                    reversedAssignment, liveness, spec, payloadRoles, null);
+        }
 
         /** A configuration whose visible payloads name no invisible role (no payload-nameable roles). */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
@@ -157,6 +185,9 @@ public final class SplitCoordinator {
             }
             if ((roles == null) != (payloadRoles == null)) {
                 throw new IllegalArgumentException("roles and payload-nameable roles are given together or not at all");
+            }
+            if (graphsLimit != null && (roles == null || graphsLimit < 0)) {
+                throw new IllegalArgumentException("a graph store needs the roles and a limit of at least 0");
             }
         }
     }
@@ -255,7 +286,8 @@ public final class SplitCoordinator {
             specHash = snap.sha256();
             config = new Config(config.programIdentity(), config.program(), config.roles(), config.visibleRoles(),
                     config.k(), config.workers(), config.timeoutSeconds(), config.runDir(), config.workerCommand(),
-                    config.reversedAssignment(), config.liveness(), snap.loaded(), config.payloadRoles());
+                    config.reversedAssignment(), config.liveness(), snap.loaded(), config.payloadRoles(),
+                    config.graphsLimit());
         }
         Root root = runRoot(config, fingerprintProgram(config.programIdentity(), specHash));
         if (root.failure != null) {
@@ -294,6 +326,9 @@ public final class SplitCoordinator {
         }
         runJson.addProperty("timeoutSeconds", config.timeoutSeconds());
         runJson.addProperty("summarise", config.roles() != null);
+        if (config.graphsLimit() != null) {
+            runJson.addProperty("graphs", config.graphsLimit());
+        }
         if (config.spec() != null) {
             JsonObject spec = new JsonObject();
             spec.addProperty("path", config.spec().path().toAbsolutePath().toString());
@@ -699,6 +734,16 @@ public final class SplitCoordinator {
             strategy.checkAgainst(config.spec().index(), false);
         }
         strategy.setSplitControl(root);
+        GraphPart graphs = null;
+        if (config.graphsLimit() != null) {
+            try {
+                graphs = new GraphPart(config.runDir().resolve(ROOT_GRAPHS), config.graphsLimit());
+            } catch (IOException e) {
+                root.failure = "cannot create the root's graph part: " + e;
+                return root;
+            }
+            strategy.writeGraphs(graphs);
+        }
         MpThread.setStaleWaitMillis(ItemDriver.SPLIT_STALE_WAIT_MILLIS);
         try {
             JmcCheckerConfiguration checkerConfig = new JmcCheckerConfiguration.Builder()
@@ -721,6 +766,15 @@ public final class SplitCoordinator {
             root.failure = e.toString();
         } finally {
             MpThread.setStaleWaitMillis(MpThread.DEFAULT_STALE_WAIT_MILLIS);
+            if (graphs != null) {
+                try {
+                    graphs.close();
+                } catch (IOException e) {
+                    if (root.failure == null) {
+                        root.failure = "cannot write the root's graph part: " + e;
+                    }
+                }
+            }
         }
         return root;
     }
@@ -1086,7 +1140,7 @@ public final class SplitCoordinator {
      * @return its object
      * @throws IllegalStateException if it cannot be read or is not an object
      */
-    static JsonObject readJson(Path file) {
+    public static JsonObject readJson(Path file) {
         try {
             return JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
         } catch (IOException | RuntimeException e) {
