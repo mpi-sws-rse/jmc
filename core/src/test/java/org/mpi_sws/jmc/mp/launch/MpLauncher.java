@@ -67,8 +67,9 @@ import java.util.Set;
  *
  * <p><b>Export.</b> With {@code exportFile} the summaries are written in one go at the end: the header line, then one
  * line per distinct summary with its multiplicity, sorted by bytes. The header's {@code enumeration} is
- * {@code complete} when {@code must} exhausted its stack, {@code bounded} when it stopped at a positive iteration
- * count, {@code aborted} on a failure or the timeout, and {@code sampled} under {@code mp-random}.
+ * {@code complete} when {@code must} exhausted its stack, {@code bounded} when a {@code must} run ended without
+ * failure before that (an iteration bound, or {@code --stop-at-first}), {@code aborted} on a failure or the timeout,
+ * and {@code sampled} for an {@code mp-random} run that completed.
  *
  * <p><b>Online check</b> ({@code must}). {@code --spec <file>} loads a specification file (its {@code enumeration}
  * must be {@code complete}, its visible roles, roles and model the program's) and looks every completed execution up

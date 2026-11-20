@@ -27,8 +27,8 @@ MpProcess.assume(cond);                                          // false: this 
 3. Every message is a `@Tag` record of booleans, integers, strings, enums, `Optional`, `List`, `Set`, `Tid` and
    records; no `null`, floats, maps, arrays or mutable fields.
 4. Use the same tags, field order and roles as the other program of the comparison.
-5. Never keep or compute a `Tid`'s number; address processes through `Handle.tid()` / `Pending.tid()`; never put
-   `MpProcess.self()` in a visible message.
+5. Never keep or compute a `Tid`'s number; address processes through `Handle.tid()`, `Pending.tid()` or
+   `MpProcess.self()`; a visible message may name main, visible and payload-nameable roles, never a daemon.
 6. Guards are pure: no JMC call, no shared state, no exception.
 7. Never catch JMC's exceptions (catch only your own types).
 8. Reproduce the source, wrong behaviour included; every forced difference goes in the map with `file:line`.
@@ -44,15 +44,22 @@ MpProcess.assume(cond);                                          // false: this 
 
 ## Commands
 
+From the JMC root, with the README's example (replace `example.PingPong` and the classes directory with yours):
+
 ```bash
-CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath):<your classes>
-L="java -ea -cp $CP org.mpi_sws.jmc.mp.launch.MpLauncher"
-$L my.Program must 0 1 rep-count                         # count
-$L my.Program must 0 1 rep-x impl.jsonl                  # export
-$L my.Program must 0 1 rep-o - 600 --spec spec.jsonl --witness w/   # online check, witnesses
-$L my.Program must 0 1 rep-g impl.jsonl 600 --graphs impl.jsonl.graphs.jsonl
-$L --replay w/1.graph.json                               # replay one graph
+CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
+javac -d docs/examples/build -cp "$CP" docs/examples/pingpong/PingPong.java
+L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.launch.MpLauncher"
+$L example.PingPong must 0 1 rep-count                                       # count
+$L example.PingPong must 0 1 rep-spec spec.jsonl                             # export
+$L example.PingPong must 0 1 rep-online - 600 --spec spec.jsonl --witness w/ # online check, witnesses
+$L example.PingPong must 0 1 rep-g impl.jsonl 600 --graphs impl.jsonl.graphs.jsonl
+sed -n '2p' impl.jsonl.graphs.jsonl > g1.graph.json                          # one graph of the store
+$L --replay g1.graph.json --allow-source-change                              # replay it
 ```
+
+`--allow-source-change` is needed here because the example's classes have no `SOURCE.md5` manifest. Outside a git
+clone, with `JMC_COMMIT` unset, the build identity is `unknown` too and the replay also needs `--allow-tool-change`.
 
 Use a fresh report directory per run: the launcher deletes the plain files in it. Read the verdict from the
 `verdict:` line (exit 0 for every verdict); exit 1 is a failed run, exit 2 a refused input.

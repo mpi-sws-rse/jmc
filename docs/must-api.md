@@ -17,7 +17,7 @@ Runnable example: [`examples/pingpong/PingPong.java`](examples/pingpong/PingPong
 | `MpProcess.spawnDaemon(body)`, `MpProcess.createDaemon()` | a daemon: no role, never visible, not awaitable |
 | `handle.await()` | waits for the process to end; rethrows on the awaiting thread whatever ended the process body (e.g. an `AssertionError`) |
 | `handle.tid()`, `pending.tid()` | the process's identity, valid in the current execution only |
-| `MpProcess.self()` | the caller's `Tid`, without a role (see "Identities" below) |
+| `MpProcess.self()` | the caller's `Tid` |
 | `MpProcess.assume(cond)` | `assume(false)` ends the calling process as *blocked*; the rest of the program continues |
 
 Rules the runtime enforces:
@@ -93,7 +93,8 @@ declare identically:
 | `Tid` | the role name of that process |
 
 Refused at export, with a message naming the field: `null` (use `Optional`), `float`/`double`, maps, arrays, other
-classes, and records without `@Tag`.
+classes, and records without `@Tag`. Strings must be valid Unicode, and the elements of a set must encode
+differently (a set holding both `Integer` 1 and `Long` 1 is refused).
 
 ## Programs: `MpProgram`
 
@@ -129,9 +130,9 @@ Daemons are exempt from the spawn and await rules: any process may start a daemo
 ## Identities
 
 A `Tid` is valid only in the execution that created it. Do not keep `Tid`s across executions, store their numbers,
-or compute ids: ids restart in every execution and are reused. To address a process, use its `Handle` or
-`Pending`. `MpProcess.self()` returns a `Tid` without a role, which an export cannot encode: put the process's own
-`Handle.tid()` or `Pending.tid()` in a message instead, as `PingPong` does.
+or compute ids: ids restart in every execution and are reused. To address a process, use its `Handle`, its `Pending`
+or, inside the process, `MpProcess.self()`. In an exported message a `Tid` is written as the role of its process: a
+visible message may name main, a visible role or a payload-nameable role, never a daemon.
 
 ## Failures, `finally`, assertions
 

@@ -1,5 +1,22 @@
 # Configuration for JUnit tests
 
+Runnable example, from JMC's own tests (`core/src/test/java/org/mpi_sws/jmc/checker/JmcExampleTest.java`):
+
+```java
+@JmcCheckConfiguration(numIterations = 10, strategy = "random")   // the class default
+public class JmcExampleTest {
+    @JmcCheck
+    @JmcCheckConfiguration(numIterations = 1, strategy = "random", debug = false)   // wins for this method
+    public void testRandomCorrectCounter() {
+        CorrectCounter.main(new String[0]);
+    }
+}
+```
+
+```bash
+./gradlew :core:test --tests org.mpi_sws.jmc.checker.JmcExampleTest.testRandomCorrectCounter
+```
+
 A test runs under JMC when it is annotated with `@JmcCheck` (on a method or a class). `@JmcCheckConfiguration` (method
 or class; the method's wins) sets the exploration:
 

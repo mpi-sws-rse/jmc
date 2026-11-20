@@ -49,7 +49,7 @@ MpLauncher --replay <graph.json> [--report <r.json>] [--allow-source-change] [--
 
 Options may stand anywhere after the program. `--split W [--k K]` (advanced) explores with `W` worker JVMs once the
 search stack holds `K` entries (default `8·W`); it needs `must` and iterations `0`, writes the same export as the
-sequential run, and refuses `--witness`. `--worker` is internal (the coordinator starts workers with it).
+sequential run, and refuses `--witness` and `--stop-at-first`. `--worker` is internal (the coordinator starts workers with it).
 
 ### Count, export, online check
 
@@ -66,9 +66,9 @@ says what the file allows one to conclude:
 | enumeration | When | Use |
 |---|---|---|
 | `complete` | `must` exhausted the stack | a specification, and a full verdict |
-| `bounded` | `must` stopped at a positive iteration count | a lower bound only |
-| `aborted` | a failure or the timeout | a lower bound only |
-| `sampled` | `mp-random` | a lower bound only |
+| `bounded` | a `must` run that ended without failure before the exploration was exhausted (an iteration bound, or `--stop-at-first`) | a lower bound only |
+| `aborted` | a failure, or the timeout | a lower bound only |
+| `sampled` | an `mp-random` run that completed | a lower bound only |
 
 A specification file must be `complete`, have the program's visible roles, roles and model, or it is refused.
 
@@ -95,25 +95,32 @@ on stderr (`graphs: source unknown: ...`); such graphs replay only with `--allow
 `--replay g.json` re-executes one graph: every scheduling choice, received message and choice index is taken from the
 graph, and every event is compared with it.
 
+For the README's example (a graph of its store, and the same graph with its choice flipped):
+
 ```
-replay: reproduced (41 events, 4 threads)                                         exit 0
-replay: deviation at (2, 3) thread "exec": event: expected NONDET 1, got SEND(...)   exit 1
+replay: reproduced (12 events, 3 threads)                                                   exit 0
+replay: deviation at (1, 2) thread "client": value: expected SEND(server, {"t":"Ping","f":[1]}),
+        got SEND(server, {"t":"Ping","f":[2]})                                              exit 1
 ```
 
-A replay refuses (exit 2) a graph from another tool, another program, a different JMC build or a different benchmark
-source, unless `--allow-tool-change` / `--allow-source-change` is given. The build's commit comes from the Gradle build
-(`JMC_COMMIT`, else git); the source identity is the `SOURCE.md5` manifest that the daavar build scripts write at the
+A graph from another tool, or an explicit program argument that differs from the graph's, is always refused (exit
+2). `--allow-tool-change` accepts a different or unknown JMC build identity, `--allow-source-change` a different or
+unknown benchmark source identity; without them those are refused too. The build's commit comes from the Gradle build
+(`JMC_COMMIT`, else git; `unknown` when neither is available); the source identity is the `SOURCE.md5` manifest that the daavar build scripts write at the
 root of the program's classes directory.
 
 ### Offline join (TraceForge)
 
 ```bash
 conf-join spec.jsonl impl.jsonl                     # plain join: is every impl summary covered?
-conf-join --decide spec.jsonl impl.jsonl            # also decides each uncovered word exactly
+conf-join --decide spec.jsonl impl.jsonl            # also classifies each uncovered word
 conf-join --decide --witness-dir w/ spec.jsonl impl.jsonl   # and writes w/<n>.graph.json from impl's store
 ```
 
-`conf-join` exits 0 when the implementation conforms, 1 on a violation and 2 on a refused input.
+`--decide` classifies every uncovered word as `violation`, `false-alarm` or `unresolved` (`--decide-budget N` bounds
+the states explored per word); it changes neither the join's verdict nor its exit code. `conf-join` exits 0 when the
+implementation conforms or the join gives no verdict, 1 when it reports a violation, and 2 on a refused input: read
+the `verdict:` and `decide:` lines.
 
 ### Exit codes of `MpLauncher`
 

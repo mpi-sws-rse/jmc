@@ -114,7 +114,7 @@ void testCounter() {
 
 ### Systematic Exploration
 
-The `systematic` strategy explores all the necessary and sufficient interleavings to find every existing bug. It uses dynamic partial-order reduction (DPOR) to reduce the exhaustive search space to a minimal set of interleavings, none of which is equivalent to another, and thus guarantees that all bugs are found. Expect a longer execution time than with `random`, especially for tests with a large state space.
+Systematic exploration (`trust`) explores all the necessary and sufficient interleavings: when the exploration completes, every bug of the test has been found. It uses dynamic partial-order reduction (DPOR) to reduce the exhaustive search space to a minimal set of interleavings, none of which is equivalent to another. Expect a longer execution time than with `random`, especially for tests with a large state space.
 
 #### Trust
 
