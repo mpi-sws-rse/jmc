@@ -10,11 +10,11 @@ import org.gradle.api.tasks.testing.Test
  * Simple project usage (build.gradle.kts):
  * ```
  * plugins {
- *     id("org.mpi_sws.jmc.gradle") version "0.1.2"
+ *     id("org.mpi_sws.jmc.gradle") version "0.2.0"
  * }
  *
  * jmc {
- *     version = "0.1.2"
+ *     version = "0.2.0"
  *     instrumentingPackage = listOf("com.example.myapp")
  * }
  * ```
@@ -22,11 +22,11 @@ import org.gradle.api.tasks.testing.Test
  * Multi-project usage (root build.gradle / build.gradle.kts):
  * ```
  * plugins {
- *     id("org.mpi_sws.jmc.gradle") version "0.1.2"
+ *     id("org.mpi_sws.jmc.gradle") version "0.2.0"
  * }
  *
  * jmc {
- *     version = "0.1.2"
+ *     version = "0.2.0"
  *     target = ":iceberg-core"
  *     instrumentingPackage = listOf("org.apache.iceberg")
  *     excludedPackages = listOf("org.apache.iceberg.relocated")
@@ -162,7 +162,7 @@ class JmcPlugin : Plugin<Project> {
  */
 open class JmcExtension {
     /** The version of the JMC agent and library to use. */
-    var version: String = "0.1.2"
+    var version: String = "0.2.0"
 
     /** The Maven coordinates of the JMC agent JAR. */
     var agentJar: String = "org.mpi-sws.jmc:jmc-agent"
