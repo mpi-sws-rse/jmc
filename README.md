@@ -360,7 +360,7 @@ The plugin resolves the JMC agent and library JARs, adds the library as a `testI
 ./gradlew test --tests com.example.CounterTest
 ```
 
-Version 0.1.2 is not yet published: Maven Central has the library and agent up to 0.1.1, and the plugin is not on the Gradle Plugin Portal. Build and publish all three to your local Maven repository from a clone of JMC:
+The library and the agent are on Maven Central; the plugin is not yet on the Gradle Plugin Portal. Build it and publish it to your local Maven repository from a clone of JMC (this publishes the library and the agent too):
 
 ```bash
 ./gradlew publishToMavenLocal

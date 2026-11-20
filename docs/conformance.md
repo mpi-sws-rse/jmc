@@ -88,7 +88,9 @@ a text witness; `--witness <dir>/` writes `witness-<n>.txt` for each distinct un
 `--graphs <store>` (with `must` and an export file) writes, beside the export, the full execution graph of every
 distinct summary at its first occurrence (JSON Lines; `--graphs-limit N` keeps at most `N`). TraceForge's
 `conf-join --witness-dir D` looks the uncovered words up in this store, so a join hands you the graphs of its
-violations without a re-run. The store line `graph_store: written=W refused=R ms=T` reports the work.
+violations without a re-run. The store line `graph_store: written=W refused=R ms=T` reports the work. Without a
+`SOURCE.md5` manifest beside the program's classes the store records `"source": "unknown"` and the launcher says so
+on stderr (`graphs: source unknown: ...`); such graphs replay only with `--allow-source-change`.
 
 `--replay g.json` re-executes one graph: every scheduling choice, received message and choice index is taken from the
 graph, and every event is compared with it.

@@ -9,9 +9,9 @@ JMC needs Java 17+ and Gradle 8.4+. A test runs under JMC's agent, which instrum
 plugin `org.mpi_sws.jmc.gradle` adds the library to `testImplementation` and attaches the agent to the test tasks
 (see the [README](../README.md#getting-started)).
 
-The current version, 0.1.2, is not yet published (Maven Central has `org.mpi-sws.jmc:jmc` and
-`org.mpi-sws.jmc:jmc-agent` up to 0.1.1; the plugin is not on the Gradle Plugin Portal). Build it from source and
-publish the library, the agent and the plugin to your local Maven repository:
+The library `org.mpi-sws.jmc:jmc` and the agent `org.mpi-sws.jmc:jmc-agent` (0.2.0) are on Maven Central; the plugin
+is not yet on the Gradle Plugin Portal. Build it from source and publish it (with the library and the agent) to your
+local Maven repository:
 
 ```bash
 git clone https://github.com/mpi-sws-rse/jmc.git
