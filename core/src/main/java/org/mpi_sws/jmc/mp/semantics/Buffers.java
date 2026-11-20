@@ -161,7 +161,7 @@ public final class Buffers {
      *     here rather than admit deliveries Must forbids; or if a send with the same
      *     {@code (src, sendIndex)} is already pending, which can only be a backend bug (a message
      *     emitted twice, or a send index counted twice)
-     * @implNote The checks run in the order stated: clock mode against the stamp first, then the
+     *     <p>Implementation note: the checks run in the order stated: clock mode against the stamp first, then the
      *     {@code cd}-without-clocks rule, then the duplicate check, so a stamped {@code cd} send
      *     under disabled clocks is reported as a stamp error. The duplicate check covers
      *     <em>pending</em> sends only. Whether an index may be reused after its send was delivered

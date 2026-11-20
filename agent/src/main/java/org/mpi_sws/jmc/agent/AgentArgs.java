@@ -37,7 +37,7 @@ public class AgentArgs {
     /** Package prefixes to exclude from instrumentation; a class matching any prefix is skipped. */
     private List<String> excludedPackages = new ArrayList<>();
     /** Path to the JMC runtime jar loaded before instrumentation begins. */
-    private String jmcRuntimeJarPath = "build/deps/jmc-0.1.1.jar";
+    private String jmcRuntimeJarPath = "build/deps/jmc-0.2.0.jar";
 
     /**
      * Parses the raw agent argument string, populating the option fields.

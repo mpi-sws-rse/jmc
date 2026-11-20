@@ -259,6 +259,24 @@ void testCounter() {
 
 ## Getting Started
 
+The library is on Maven Central as `org.mpi-sws.jmc:jmc`:
+
+```kotlin
+testImplementation("org.mpi-sws.jmc:jmc:0.2.0")
+```
+
+```xml
+<dependency>
+  <groupId>org.mpi-sws.jmc</groupId>
+  <artifactId>jmc</artifactId>
+  <version>0.2.0</version>
+  <scope>test</scope>
+</dependency>
+```
+
+Tests of ordinary Java code also need the instrumentation agent, `org.mpi-sws.jmc:jmc-agent:0.2.0`, passed to the
+test JVM with `-javaagent`; the Gradle plugin below adds both.
+
 ### Simple Project
 
 Add the JMC Gradle plugin to your `build.gradle.kts`:
@@ -266,11 +284,11 @@ Add the JMC Gradle plugin to your `build.gradle.kts`:
 ```kotlin
 plugins {
     java
-    id("org.mpi_sws.jmc.gradle") version "0.1.2"
+    id("org.mpi_sws.jmc.gradle") version "0.2.0"
 }
 
 jmc {
-    version = "0.1.2"
+    version = "0.2.0"
     instrumentingPackage = listOf("com.example")
 }
 ```
@@ -306,13 +324,13 @@ buildscript {
         mavenLocal()
     }
     dependencies {
-        classpath 'org.mpi_sws.jmc.gradle:org.mpi_sws.jmc.gradle.gradle.plugin:0.1.2'
+        classpath 'org.mpi_sws.jmc.gradle:org.mpi_sws.jmc.gradle.gradle.plugin:0.2.0'
     }
 }
 
 apply plugin: 'org.mpi_sws.jmc.gradle'
 jmc {
-    version = "0.1.2"
+    version = "0.2.0"
     target = ":iceberg-core"
     testTask = "jmcTest"
     instrumentingPackage = ["org.apache.iceberg"]
@@ -332,7 +350,7 @@ Regular tests still run normally with `./gradlew :iceberg-core:test`.
 
 | Property               | Type    | Description                                                                                 | Default                          |
 |------------------------|---------|---------------------------------------------------------------------------------------------|----------------------------------|
-| `version`              | String  | JMC version                                                                                 | `"0.1.2"`                        |
+| `version`              | String  | JMC version                                                                                 | `"0.2.0"`                        |
 | `instrumentingPackage` | List    | Packages to instrument                                                                      | `[]`                             |
 | `excludedPackages`     | List    | Packages to skip                                                                            | `[]`                             |
 | `target`               | String  | Subproject path (e.g. `":iceberg-core"`). Empty = current project.                          | `""`                             |

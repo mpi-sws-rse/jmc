@@ -26,6 +26,7 @@ check:
       - .gradle
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
 compile-agent:
   stage: build
@@ -160,7 +161,7 @@ test:
         echo "Not run / cut short (3h budget):"
         for t in $NOT_RUN; do echo "  - $t"; done
       fi
-      if [ -n "$TIMED_OUT" ] || [ -n "$FAILED" ]; then
+      if [ -n "$TIMED_OUT" ] || [ -n "$FAILED" ] || [ -n "$NOT_RUN" ]; then
         exit 1
       fi
       echo "All executed tests passed within ${PER_TEST_TIMEOUT}s each (total ${SECONDS}s)."
@@ -178,8 +179,11 @@ test:
       junit: integration-test/build/test-results/test/**/TEST-*.xml
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
 publish:
+  # A release: runs only on a version tag (v0.2.0, ...), after the test stage. Uploads the signed bundle to the
+  # Central Portal as a USER_MANAGED deployment; it is published from the Portal's web interface.
   stage: deploy
   script:
     - bash ./scripts/publish.sh
@@ -190,9 +194,29 @@ publish:
       - build
       - .gradle
   artifacts:
+    when: always
     paths:
-      - build/jmc-agent/jmc-agent.zip
-      - build/jmc/jmc.zip
+      - build/central-bundle.zip
   rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+      when: on_success
+
+publish-dry-run:
+  # The same Gradle tasks into the local staging repository, no upload: checks the release configuration and
+  # keeps the bundle as an artifact. Signed only where the protected signing variables are available.
+  stage: deploy
+  script:
+    - bash ./scripts/publish.sh --dry-run
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - build/staging-deploy
+      - build/central-bundle.zip
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+      allow_failure: true
     - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"
-  when: on_success
+      when: manual
+      allow_failure: true

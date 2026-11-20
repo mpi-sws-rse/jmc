@@ -18,15 +18,15 @@ import java.util.Set;
  * <pre>
  * uncovered summary (iteration &lt;i&gt;): &lt;summary line&gt;
  * thread "&lt;name&gt;"[tid=&lt;t&gt;]:            (a daemon: [tid=&lt;t&gt;, daemon])
- * &#9;(&lt;t&gt;, &lt;k&gt;): BEGIN
- * &#9;(&lt;t&gt;, &lt;k&gt;): TCREATE(&lt;child tid&gt;:"&lt;name&gt;")
- * &#9;(&lt;t&gt;, &lt;k&gt;): SEND(&lt;destination name&gt;, &lt;value&gt;)
- * &#9;(&lt;t&gt;, &lt;k&gt;): RECV() [(&lt;sender tid&gt;, &lt;k&gt;) &lt;sender name&gt;]
- * &#9;(&lt;t&gt;, &lt;k&gt;): RECV() [TIMEOUT]
- * &#9;(&lt;t&gt;, &lt;k&gt;): NONDET &lt;option index&gt;
- * &#9;(&lt;t&gt;, &lt;k&gt;): TJOIN(&lt;joined tid&gt;)
- * &#9;(&lt;t&gt;, &lt;k&gt;): END
- * &#9;(&lt;t&gt;, &lt;k&gt;): BLK
+ * &lt;tab&gt;(&lt;t&gt;, &lt;k&gt;): BEGIN
+ * &lt;tab&gt;(&lt;t&gt;, &lt;k&gt;): TCREATE(&lt;child tid&gt;:"&lt;name&gt;")
+ * &lt;tab&gt;(&lt;t&gt;, &lt;k&gt;): SEND(&lt;destination name&gt;, &lt;value&gt;)
+ * &lt;tab&gt;(&lt;t&gt;, &lt;k&gt;): RECV() [(&lt;sender tid&gt;, &lt;k&gt;) &lt;sender name&gt;]
+ * &lt;tab&gt;(&lt;t&gt;, &lt;k&gt;): RECV() [TIMEOUT]
+ * &lt;tab&gt;(&lt;t&gt;, &lt;k&gt;): NONDET &lt;option index&gt;
+ * &lt;tab&gt;(&lt;t&gt;, &lt;k&gt;): TJOIN(&lt;joined tid&gt;)
+ * &lt;tab&gt;(&lt;t&gt;, &lt;k&gt;): END
+ * &lt;tab&gt;(&lt;t&gt;, &lt;k&gt;): BLK
  * </pre>
  *
  * <ul>
