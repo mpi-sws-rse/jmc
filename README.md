@@ -4,8 +4,12 @@ JMC is a stateless model checker for Java with two uses:
 
 1. **Model checking Java programs**: JUnit tests run under JMC's agent, which instruments the code under test and
    explores its thread interleavings to find data races, atomicity violations, assertion failures and deadlocks.
-2. **Conformance checking of message-passing programs**: protocols written against JMC's message-passing API
-   (`org.mpi_sws.jmc.api.mp`) are explored exhaustively by the `must` strategy; their executions can be exported as
+2. **Model checking and conformance checking of message-passing programs**: protocols written against JMC's
+   message-passing API (`org.mpi_sws.jmc.api.mp`) are explored exhaustively by the `must` strategy. On its own, this
+   model checks the protocol: a failed assertion or a failing process in any explored execution fails the run
+   ([docs/must-api.md](docs/must-api.md#failures-finally-assertions)); blocked executions, including message-passing
+   deadlocks, do not by themselves fail it. Exploration is exhaustive only when it ends before an iteration or time
+   limit is reached. In addition, the executions can be exported as
    summaries and compared with a specification program, written in Java or in Rust with TraceForge
    ([below](#conformance-checking-with-the-must-api)).
 
