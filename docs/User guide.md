@@ -1,84 +1,60 @@
-# JMC User guide
+# JMC user guide: JUnit tests under JMC
+
+This page covers model checking ordinary Java code with JUnit 5 tests. For message-passing programs and conformance
+checking, see [must-api.md](must-api.md) and [conformance.md](conformance.md).
 
 ## Installation
 
-### Build from source
+JMC needs Java 17+ and Gradle 8.4+. A test runs under JMC's agent, which instruments the code under test; the Gradle
+plugin `org.mpi_sws.jmc.gradle` adds the library to `testImplementation` and attaches the agent to the test tasks
+(see the [README](../README.md#getting-started)).
 
-This step is needed only if you do not wish to use the central maven repository to add JMC as a dependency.
-
-1. Clone the github repository
-
-```bash
-git clone git@github.com:mpi-sws-rse/jmc.git
-```
-
-2. Publish the packages locally
+The current version, 0.1.2, is not yet published (Maven Central has `org.mpi-sws.jmc:jmc` and
+`org.mpi-sws.jmc:jmc-agent` up to 0.1.1; the plugin is not on the Gradle Plugin Portal). Build it from source and
+publish the library, the agent and the plugin to your local Maven repository:
 
 ```bash
-./gradlew clean
-./gradlew :core:publish
+git clone https://github.com/mpi-sws-rse/jmc.git
+cd jmc
+./gradlew publishToMavenLocal
 ```
 
-## Adding dependency
+Then add `mavenLocal()` to the repositories of your build and to `pluginManagement.repositories` in
+`settings.gradle.kts`. A project without a build yet: [Gradle Example Project Setup.md](Gradle%20Example%20Project%20Setup.md).
 
-This assumes that there is an existing java project to run the model checker on. If not, refer
-to [Project setup instructions](Gradle%20Example%20Project%20Setup.md)
+## Writing a test
 
-In the `app/build.gradle.kts` or `app/build.gradle` file, add the following inside `dependencies`
-
-```kotlin
-testImplementation("org.mpi_sws:jmc:0.1.1")
-```
-
-Note that if you built from source then you would need to add `mavenLocal()` inside `repositories`
-
-## Writing a program to test
-
-Here is a sample test program and a test to run the model checker on.
-
-Copy the `BuggyCounterUsingAPI.java` and `ExampleCounterTest.java` from (here)[] and add them inside
-`app/src/test/java/org/example/BuggyCounterUsingAPI.java` and `app/src/test/java/org/example/ExampleCounterTest.java`
-
-The test looks as follows.
+Annotate a JUnit test with `@JmcCheck` and a configuration ([Configuration API.md](Configuration%20API.md)):
 
 ```java
-public class ExampleCounterTest {
+import org.mpi_sws.jmc.annotations.JmcCheck;
+import org.mpi_sws.jmc.annotations.JmcCheckConfiguration;
+
+class CounterTest {
     @JmcCheck
     @JmcCheckConfiguration(numIterations = 100, strategy = "trust")
-    void testRandomBuggyCounter() throws JmcCheckerException {
-        BuggyCounterUsingAPI.main(new String[0]);
+    void testCounter() throws InterruptedException {
+        Counter counter = new Counter();
+        Thread t1 = new Thread(counter::inc);
+        Thread t2 = new Thread(counter::inc);
+        t1.start(); t2.start();
+        t1.join(); t2.join();
+        assert counter.get() == 2;
     }
 }
 ```
 
-To run the test with the model checker on the command line use the following command.
-
-```bash
-./gradlew clean
-./gradlew test --tests org.example.ExampleCounterTest.testRandomBuggyCounter
-```
+Run it as usual, e.g. `./gradlew test --tests org.example.CounterTest`. JMC's own integration tests are examples:
+`integration-test/src/test/java/org/mpi_sws/jmc/test/CounterTest.java`.
 
 ## Visualizing the execution graphs
 
-When running a test with the Trust strategy, the model checker will record the execution graphs
-if the debug flag (in the configuration) is set to true. The graphs are stored in the
-`build/test-results/jmc-report/` directory of the project.
-
-For example, if the tests in `core/src/test` are run then the execution graphs are stored in
-`core/build/test-results/jmc-report/`.
-
-Once the test is run, the execution graphs can be visualized using the following command from the root directory of the
-project.
+With the `trust` strategy and `debug = true`, JMC records the execution graphs in the report directory
+(`build/test-results/jmc-report/` by default). To view them, run from the root of the JMC repository:
 
 ```bash
-./scripts/visualize.sh <relative-path-to-graph-files>
+./scripts/visualize_graphs.sh <relative-path-to-graph-files>
 ```
 
-For example, if the test is run in `core/src/test` then the command would be
-
-```bash
-./scripts/visualize.sh core/build/test-results/jmc-report/
-```
-
-The script will spin up a local web server. Open the URL `http://localhost:8000` in a web browser to view the execution
-graphs.
+for example `./scripts/visualize_graphs.sh core/build/test-results/jmc-report/`. The script starts a local web
+server; open `http://localhost:8000`.

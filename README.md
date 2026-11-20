@@ -1,6 +1,13 @@
 # JMC — Java Model Checker
 
-A simple, easy to use, intuitive, stateless model checker for finding concurrency bugs in Java programs, including data races, atomicity violations, assertion failures, and deadlocks.
+JMC is a stateless model checker for Java with two uses:
+
+1. **Model checking Java programs**: JUnit tests run under JMC's agent, which instruments the code under test and
+   explores its thread interleavings to find data races, atomicity violations, assertion failures and deadlocks.
+2. **Conformance checking of message-passing programs**: protocols written against JMC's message-passing API
+   (`org.mpi_sws.jmc.api.mp`) are explored exhaustively by the `must` strategy; their executions can be exported as
+   summaries and compared with a specification program, written in Java or in Rust with TraceForge
+   ([below](#conformance-checking-with-the-must-api)).
 
 Consider a `Counter` class with two methods, one to `inc`rement the counter and one to `get` its value:
 
@@ -49,7 +56,7 @@ void testCounter() {
 
 When you run the test, JMC systematically explores thread interleavings to uncover concurrency bugs. If it finds one, it reports the schedule that triggers the failure so you can reproduce and fix the issue.
 
-In this example, JMC finds a bug in the `Counter` class: the final value ends up as `1` instead of `2` because of a lost-update race. JMC reports the interleaving that leads to the bug:
+In this example, JMC finds a bug in the `Counter` class: the final value ends up as `1` instead of `2` because of a lost-update race, in this interleaving:
 
 ```text
 Main               | T1                  | T2
@@ -67,7 +74,7 @@ Main               | T1                  | T2
 
 ## Exploration Strategies
 
-JMC supports four families of scheduling strategies for exploring thread interleavings: `random`, `systematic`, `estimation`, and `replay`.
+JMC's strategies come in three families: random testing (`random`, `pct`, `fair-pct`), systematic exploration (`trust`, and `must` for message-passing programs) and state-space estimation (`testor`, `pestor`, `fj-pestor`, `trust-estimation`, `wg-trust-estimation`, `abs-dag-estimation`). `mp-random` samples message-passing programs. A failing schedule can be replayed (see Replay).
 
 ### Random Testing
 
@@ -125,7 +132,7 @@ void testCounter() {
 
 #### ConDpor
 
-The `ConDpor` strategy is a state-of-the-art, optimal concolic DPOR-based model checking algorithm [2] designed to handle data non-determinism in addition to scheduling non-determinism. In concurrent programs, data non-determinism arises from sources such as user input, network delays, and random value generation. `ConDpor` combines an optimized symbolic execution engine, which resolves data non-determinism, with a DPOR-based exploration technique to find all bugs caused by both scheduling and data non-determinism.
+ConDpor (the `trust` strategy with a `solver`) is a state-of-the-art, optimal concolic DPOR-based model checking algorithm [2] designed to handle data non-determinism in addition to scheduling non-determinism. In concurrent programs, data non-determinism arises from sources such as user input, network delays, and random value generation. `ConDpor` combines an optimized symbolic execution engine, which resolves data non-determinism, with a DPOR-based exploration technique to find all bugs caused by both scheduling and data non-determinism.
 
 Returning to the counter example: if we modify the threads so that each one tosses a coin to decide whether to increment the counter, the test now exhibits data non-determinism on top of scheduling non-determinism. Using the `ConDpor` API, you can model this behavior as follows:
 
@@ -169,9 +176,7 @@ The `ConDpor` API supports the boolean and integer theories, so you can define s
 
 #### Must
 
-To specify and model check distributed protocols implemented in Java, JMC provides the `must` strategy, a DPOR-based algorithm designed to handle several communication models, including FIFO peer-to-peer, mailbox-based, and fully asynchronous [3]. The strategy is paired with an API that lets you specify your protocol's communication model, allowing JMC to explore the necessary and sufficient interleavings to find all bugs in the protocol under that model.
-
-The `must` strategy is not yet available in the current version of JMC. An early implementation lives in the `old-main` branch of the repository, and we plan to merge a refactored version into the main branch in the near future.
+For message-passing protocols, JMC provides the `must` strategy, a DPOR-based algorithm for distributed protocols [3], paired with the message-passing API `org.mpi_sws.jmc.api.mp`. It explores every distinct execution of a program under the FIFO peer-to-peer (`P2P`) or fully asynchronous (`ASYN`) model. See [Conformance checking with the Must API](#conformance-checking-with-the-must-api) and [docs/must-api.md](docs/must-api.md).
 
 ### State-Space Estimation
 
@@ -242,15 +247,71 @@ public void testCounter() {
 
 ### Replay
 
-When JMC finds a bug, it reports the schedule that triggers the failure and saves the trace under `build/test-results/jmc-report/`. You can then use this schedule to replay the execution and reproduce the bug, which is helpful for debugging and fixing the issue. To replay a schedule, annotate the test method with `@JmcReplay`:
+When JMC finds a bug, it saves the failing schedule in the report directory (`build/test-results/jmc-report/` by default: `replay_seed.txt` and `replay_trace.json` for `random`, `replay.json` for `trust`). Replay is supported by `random`, `pct`, `fair-pct`, `mp-random` and `trust`. To replay a schedule, add `@JmcReplay` to the test, keeping its configuration:
 
 ```java
 @JmcCheck
+@JmcCheckConfiguration(numIterations = 100)
 @JmcReplay
 void testCounter() {
     // ... same code as above
 }
 ```
+
+Message-passing executions are replayed from their witness graphs with the launcher's `--replay` ([docs/conformance.md](docs/conformance.md#graph-stores-and-replay)).
+
+## Conformance checking with the Must API
+
+A program is a set of processes exchanging tagged, immutable records; main spawns and awaits them. This one has a
+client that sends `Ping(n)`, with `n` chosen nondeterministically, and a server that answers `Pong(n)`
+([docs/examples/pingpong/PingPong.java](docs/examples/pingpong/PingPong.java)):
+
+```java
+public final class PingPong implements MpProgram {
+    @Tag("Ping") public record Ping(int n) implements MpMessage {}
+    @Tag("Pong") public record Pong(int n) implements MpMessage {}
+    private static final CommunicationModel M = CommunicationModel.P2P;
+
+    @Override
+    public void run() {
+        MpProcess.Pending client = MpProcess.create("client"); // its Tid exists before it runs
+        MpProcess.Handle server = MpProcess.spawn("server", () -> {
+            Ping p = Channel.recv(M, Ping.class);
+            Channel.send(M, client.tid(), new Pong(p.n()));
+        });
+        MpProcess.Handle c = client.start(() -> {
+            int n = Nondet.choose(List.of(1, 2));
+            Channel.send(M, server.tid(), new Ping(n));
+            Pong r = Channel.recv(M, Pong.class);
+            assert r.n() == n : "the answer must echo the request";
+        });
+        server.await();
+        c.await();
+    }
+
+    @Override public String programName() { return "pingpong"; }
+    @Override public String size() { return "1"; }
+    @Override public CommunicationModel model() { return M; }
+    @Override public List<String> rolesInSpawnOrder() { return List.of("server", "client"); }
+}
+```
+
+The launcher, `org.mpi_sws.jmc.mp.launch.MpLauncher`, lives in JMC's test sources for now. From the JMC root:
+
+```bash
+CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
+javac -d docs/examples/build -cp "$CP" docs/examples/pingpong/PingPong.java
+L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.launch.MpLauncher"
+$L example.PingPong must 0 1 rep-count                                # count the executions
+$L example.PingPong must 0 1 rep-export spec.jsonl                     # export the summaries
+$L example.PingPong must 0 1 rep-online - 600 --spec spec.jsonl        # check online against them
+```
+
+The first run prints `ran: 2 iterations` and `graphs: 2 distinct complete, 0 distinct blocked`; the last prints
+`verdict: conforms`. Next: [docs/must-api.md](docs/must-api.md) (the API), [docs/conformance.md](docs/conformance.md)
+(the workflow, the launcher, verdicts), [docs/modelling.md](docs/modelling.md) (porting an implementation) and
+[docs/agent-quickref.md](docs/agent-quickref.md). The full workflow, the benchmarks and case studies, and the
+specification side with TraceForge are in the daavar framework repository: <https://github.com/joulook/daavar>.
 
 ## Requirements
 
@@ -299,7 +360,13 @@ The plugin resolves the JMC agent and library JARs, adds the library as a `testI
 ./gradlew test --tests com.example.CounterTest
 ```
 
-If you are building from source, add `mavenLocal()` to both `repositories` and `pluginManagement.repositories` in your `settings.gradle.kts`:
+Version 0.1.2 is not yet published: Maven Central has the library and agent up to 0.1.1, and the plugin is not on the Gradle Plugin Portal. Build and publish all three to your local Maven repository from a clone of JMC:
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+Then add `mavenLocal()` to `pluginManagement.repositories` in your `settings.gradle.kts` and to `repositories` in your build:
 
 ```kotlin
 pluginManagement {
@@ -357,10 +424,14 @@ Regular tests still run normally with `./gradlew :iceberg-core:test`.
 | `testTask`             | String  | Task name (e.g. `"jmcTest"`). Creates the task if it doesn't exist. Empty = all Test tasks. | `""`                             |
 | `debug`                | boolean | Dump instrumented bytecode to disk                                                          | `false`                          |
 | `debugPath`            | String  | Where to dump instrumented bytecode                                                         | `"build/generated/instrumented"` |
+| `agentJar`             | String  | Maven coordinates of the agent                                                              | `"org.mpi-sws.jmc:jmc-agent"`    |
+| `libraryJar`           | String  | Maven coordinates of the library                                                            | `"org.mpi-sws.jmc:jmc"`          |
 
 ## Documentation
 
-See the [User Guide](https://jmc.mpi-sws.org/user_guide/) for a comprehensive introduction to JMC's internals, installation instructions, usage examples, and best practices.
+- [docs/must-api.md](docs/must-api.md), [docs/conformance.md](docs/conformance.md), [docs/modelling.md](docs/modelling.md), [docs/agent-quickref.md](docs/agent-quickref.md): message-passing programs and conformance checking.
+- [docs/User guide.md](docs/User%20guide.md), [docs/Configuration API.md](docs/Configuration%20API.md): JUnit tests under JMC.
+- The [User Guide](https://jmc.mpi-sws.org/user_guide/) site: installation, usage, internals.
 
 ## References
 

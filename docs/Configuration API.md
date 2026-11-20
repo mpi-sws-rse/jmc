@@ -1,16 +1,27 @@
-# Configuration for JMC
+# Configuration for JUnit tests
 
-The first step to run a test with JMC requires annotating the test with `@JmcCheck` annotation. 
-Subsequently, the configuration used to check the program can be updated using `@JmcCheckConfiguration` annotation which
-accepts the following parameters.
+A test runs under JMC when it is annotated with `@JmcCheck` (on a method or a class). `@JmcCheckConfiguration` (method
+or class; the method's wins) sets the exploration:
 
-- `strategy` which can be one of `"random"` or `"trust"` 
-- `numIterations` - an integer to specify the upper limit of the number of iterations that the model checker should explore
-- `debug` - An optional flag to store all the execution graphs and the log of the exploration
-- `reportPath` - A string to specify the path where the report should be generated. Defaults to `build/test-results/jmc-report`
-- `seed` - An optional seed to be used by the strategy. Determines the exploration to reproduce the executions.
+| Parameter | Default | Meaning |
+|---|---|---|
+| `strategy` | `"random"` | `random`, `pct`, `fair-pct`, `trust`, the estimation strategies `testor`, `pestor`, `fj-pestor`, `trust-estimation`, `wg-trust-estimation`, `abs-dag-estimation`, and `mp-random`, `must` for message-passing programs |
+| `numIterations` | `100` | the most iterations explored |
+| `timeout` | `-1` | in milliseconds; `-1` for none |
+| `seed` | `0` | `0` takes a fresh seed from the clock |
+| `solver` | `"off"` | for concolic exploration with `trust`: `z3`, `cvc5`, `cvc4`, `mathsat5`, `yices2`, `opensmt`, `smtinterpol`, `princess`, `boolector` |
+| `schedulingPolicy` | `RANDOM` | `RANDOM`, `FIFO` or `LIFO` |
+| `bugDepth` | `3` | for `pct` |
+| `pctFairBound` | `0` | for `fair-pct` |
+| `budget` | `2` | for the estimation strategies |
+| `debug` | `false` | record the execution graphs and the exploration log |
+| `reportPath` | `"build/test-results/jmc-report"` | where the report and replay files are written |
 
-An additional annotation `@JmcTimeout` can be used to specify a timeout for the exploration.
-This annotation accepts two parameters, a value of long type and a time unit.
+`@JmcTimeout(value, unit)` (unit defaults to seconds) bounds the exploration by time. A test with `@JmcCheck` but no
+`@JmcCheckConfiguration` has no iteration bound and must carry `@JmcTimeout`, or it fails with "Either numIterations
+or timeout must be set".
 
-Note that either `@JmcTimeout` or `numIterations` are mandatory for model checking. In the absence of both, the test will fail.
+Other annotations: `@JmcExpectExecutions(n)` (the expected number of completed, non-blocked executions),
+`@JmcExpectAssertionFailure`, `@JmcReplay` (replay the saved failing schedule), `@JmcIgnoreInstrumentation` (on a
+class: do not instrument it), `@JmcTrustStrategy` (trust's own options) and `@JmcMeasureGraphCoverage` (applied only
+together with `@JmcTrustStrategy`).

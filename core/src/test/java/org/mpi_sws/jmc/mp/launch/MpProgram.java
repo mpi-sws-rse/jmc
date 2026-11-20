@@ -5,8 +5,8 @@ import org.mpi_sws.jmc.mp.events.CommunicationModel;
 import java.util.List;
 
 /**
- * What a program must declare to be exported as compact summaries
- * (plan/jmc-must/SUMMARY-FORMAT.md): its name and size for the header, its communication model,
+ * What a program must declare to be exported as compact summaries (the summary format shared with
+ * TraceForge): its name and size for the header, its communication model,
  * and its roles. A process's role is the name it is spawned or created with
  * ({@code MpProcess.spawn(role, body)}, {@code MpProcess.create(role)}); it travels on the creation
  * event, and the declared roles are a check, in any order. Main must start every process before it
@@ -43,8 +43,8 @@ public interface MpProgram extends Runnable {
 
     /**
      * The declared roles: the name of every process main spawns with {@code MpProcess.spawn(role,
-     * body)} or creates with {@code MpProcess.create(role)}. Since J2c (owner's ruling Q-J2c-3) a role
-     * is the spawn's name, not its position, and this list is a check: the spawned roles must equal
+     * body)} or creates with {@code MpProcess.create(role)}. A role is the spawn's name, not its
+     * position, and this list is a check: the spawned roles must equal
      * it, each exactly once, or the export is refused. The order is irrelevant; the method's name is
      * historical (kept so that existing programs compile). Read it through {@link #declaredRoles()}.
      *
