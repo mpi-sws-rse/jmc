@@ -6,8 +6,8 @@ the source is wrong; only the concurrency machinery is abstracted.
 
 Worked example: the A2A task benchmark in the daavar repository (<https://github.com/joulook/daavar>),
 `benchmarks/a2a-task/java/bench/a2a_task/A2ATask.java`, a rewrite of the server core of a2aproject/a2a-java at commit
-`f40664f8` (one task, one stream, a cancel racing the task's completion). From the JMC root, with `DAAVAR` set to a
-daavar checkout:
+`f40664f8` (one task, one stream, a cancel racing the task's completion); line numbers below are at daavar commit
+`229afdb`. From the JMC root, with `DAAVAR` set to a daavar checkout:
 
 ```bash
 CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
@@ -42,17 +42,14 @@ counts its executions (`impl,b`: the executor reports `Working` first, then comp
 
 The map is a document beside the rewrite with one row per abstraction and one per deviation, each with `file:line` in
 the source and in the rewrite. Rows from the A2A map (source paths under a2a-java's
-`server-common/src/main/java/org/a2aproject/sdk/server/`; rewrite methods in `A2ATask.java`'s `Server`):
+`server-common/src/main/java/org/a2aproject/sdk/server/`; rewrite lines in `A2ATask.java`, class `Server`):
 
 | Source element | Where (a2a-java) | Collapsed into | Where (rewrite) | Behaviour lost |
 |---|---|---|---|---|
-| request threads | `requesthandlers/DefaultRequestHandler.java:702, 1022` | one mailbox message per request | `Server.run` (the receive loop) | none here |
-| agent-executor thread pool | `requesthandlers/DefaultRequestHandler.java:1364-1429` | `Exec` to the `exec` process | `Server.onMessageSendStream` | pool exhaustion |
-| the cancel calls the executor synchronously | `requesthandlers/DefaultRequestHandler.java:754-775` | `CancelCb` to `exec`, the step ends, `Canceled` resumes it | `Server.onCancelTask`, `Server.cancelCallbackReturned` | a throwing cancel callback |
-| per-subscriber consumer threads with timed polls | `events/EventConsumer.java:101-302` | direct delivery inside the committing step | `Server.processEvent`, `Server.consumeAtStream` | streams that close by timeout |
-
-(Method names rather than line numbers on the rewrite side, since the benchmark file evolves; a map kept beside a
-fixed revision gives lines.)
+| request threads | `requesthandlers/DefaultRequestHandler.java:702, 1022` | one mailbox message per request | `:675` `run` (the receive loop) | none here |
+| agent-executor thread pool | `requesthandlers/DefaultRequestHandler.java:1364-1429` | `Exec` to the `exec` process | `:742` `onMessageSendStream` | pool exhaustion |
+| the cancel calls the executor synchronously | `requesthandlers/DefaultRequestHandler.java:754-775` | `CancelCb` to `exec`, the step ends, `Canceled` resumes it | `:752` `onCancelTask`, `:775` `cancelCallbackReturned` | a throwing cancel callback |
+| per-subscriber consumer threads with timed polls | `events/EventConsumer.java:101-302` | direct delivery inside the committing step | `:806` `processEvent`, `:860` `consumeAtStream` | streams that close by timeout |
 
 A finding later points at its map rows: a reviewer reproduces it from the witness graph and the source lines.
 
