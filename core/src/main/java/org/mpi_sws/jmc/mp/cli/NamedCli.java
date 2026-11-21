@@ -117,7 +117,12 @@ final class NamedCli {
             }
             List<String> values = new ArrayList<>();
             for (int k = 1; k <= arity; k++) {
-                values.add(args[i + k]);
+                String v = args[i + k];
+                if (v.startsWith("--") || v.equals("-h")) {
+                    return usage(err, command, a + " needs a value before " + v
+                            + " (prefix a relative file name with ./ if it begins with -)");
+                }
+                values.add(v);
             }
             opts.put(a, values);
             i += arity;
@@ -345,7 +350,7 @@ final class NamedCli {
               --report <file>           also write the result as JSON
               --allow-source-change     accept a graph recorded from another source of the program
               --allow-tool-change       accept a graph recorded by another JMC build
-              --program <class[:args]>  the program, if it differs from the one the graph names
+              --program <class[:args]>  optional; must match the class and arguments the graph names
             """;
 
     private static final String ADVANCED_HELP = """

@@ -192,6 +192,21 @@ class NamedCliTest {
     }
 
     @Test
+    void online_reportsAnUncoveredExecution_andWritesItsWitness() throws Exception {
+        Path d = fresh("uncovered");
+        Out export = launch(d, "export", "--program", PROGRAM, "--seed", "1", "--out", "all.jsonl");
+        assertEquals(0, export.exit(), export.text());
+        List<String> all = Files.readAllLines(d.resolve("all.jsonl"), StandardCharsets.UTF_8);
+        Files.write(d.resolve("one.jsonl"), all.subList(0, 2), StandardCharsets.UTF_8);
+        Out online = launch(d, "online", "--program", PROGRAM, "--seed", "1", "--spec", "one.jsonl", "--witness",
+                "w/");
+        assertTrue(online.stdout().contains("verdict:    reports"), online.stdout());
+        assertTrue(online.stdout().contains("uncovered:  1 graphs (1 distinct summaries)"), online.stdout());
+        assertTrue(online.stdout().contains("witnesses:  1 written to w/"), online.stdout());
+        assertTrue(Files.exists(d.resolve("w/witness-1.txt")), "the witness file");
+    }
+
+    @Test
     void model_acceptsAliases_printsCanonically_andRefusesAMismatch() throws Exception {
         Path d = fresh("model");
         for (String alias : List.of("fifo", "p2p", "FIFO")) {
@@ -240,5 +255,54 @@ class NamedCliTest {
         Out iterations = launch(d, "count", "--program", PROGRAM, "--strategy", "mp-random", "--iterations", "0");
         assertEquals(2, iterations.exit(), iterations.text());
         assertTrue(iterations.stderr().contains("usage: MpLauncher count "), iterations.stderr());
+    }
+
+    private static NamedCli.Parsed parse(ByteArrayOutputStream err, String... args) {
+        return NamedCli.parse(args, new java.io.PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8),
+                new java.io.PrintStream(err, true, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void parser_refusesAnOptionWhereAValueIsExpected() {
+        String[][] cases = {
+            {"online", "--program", PROGRAM, "--spec", "s.jsonl", "--out", "--stop-at-first"},
+            {"replay", "--graph", "g.json", "--program", "--allow-source-change"},
+            {"count", "--program", "--help"},
+            {"count", "--program", PROGRAM, "--report-dir", "-h"},
+        };
+        for (String[] c : cases) {
+            ByteArrayOutputStream err = new ByteArrayOutputStream();
+            NamedCli.Parsed p = parse(err, c);
+            assertEquals(new NamedCli.Exit(2), p, String.join(" ", c));
+            assertTrue(err.toString(StandardCharsets.UTF_8).contains(" needs a value before "), err.toString());
+        }
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        NamedCli.Parsed negative = parse(err, "count", "--program", PROGRAM, "--seed", "-5");
+        assertTrue(negative instanceof NamedCli.Run, "a negative number is a value: " + err);
+    }
+
+    @Test
+    void parser_translatesDefaultsAndOptionsToThePositionalForm() {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        NamedCli.Run r = (NamedCli.Run) parse(err, "count", "--program", PROGRAM, "--strategy", "mp-random",
+                "--seed", "7", "--model", "bag");
+        assertEquals(List.of(PROGRAM, "mp-random", "1000", "7", "build/mp-launch/Choice", "-", "600"),
+                List.of(r.args()));
+        assertEquals(CommunicationModel.ASYN, r.model());
+        r = (NamedCli.Run) parse(err, "export", "--program", PROGRAM, "--seed", "1", "--out", "o.jsonl", "--graphs",
+                "s.jsonl", "--graphs-limit", "3", "--split", "4", "--k", "9", "--timeout", "30", "--model", "causal",
+                "--strategy", "mp-random", "--report-dir", "r");
+        assertEquals(List.of(PROGRAM, "mp-random", "1000", "1", "r", "o.jsonl", "30", "--graphs", "s.jsonl",
+                "--graphs-limit", "3", "--split", "4", "--k", "9"), List.of(r.args()));
+        assertEquals(CommunicationModel.CD, r.model());
+        r = (NamedCli.Run) parse(err, "online", "--program", PROGRAM, "--seed", "1", "--spec", "s.jsonl",
+                "--stop-at-first", "--witness", "w/");
+        assertEquals(List.of(PROGRAM, "must", "0", "1", "build/mp-launch/Choice", "-", "600", "--spec", "s.jsonl",
+                "--witness", "w/", "--stop-at-first"), List.of(r.args()));
+        r = (NamedCli.Run) parse(err, "replay", "--graph", "g.json", "--report", "r.json", "--allow-tool-change",
+                "--program", PROGRAM);
+        assertEquals(List.of("--replay", "g.json", "--report", "r.json", "--allow-tool-change", PROGRAM),
+                List.of(r.args()));
+        assertEquals("", err.toString(StandardCharsets.UTF_8));
     }
 }
