@@ -9,8 +9,8 @@ import org.mpi_sws.jmc.mp.fixtures.export.J1Fixture;
 import java.util.List;
 
 /**
- * Fixture: {@link AssumePair}'s {@code recv} and {@code none} variants written with the API of
- * f3a5de93 only (the workaround: construct every {@code MpThread} with its role, then start
+ * Fixture: {@link AssumePair}'s {@code recv} and {@code none} variants written with the API from before
+ * process creation and assume only (the workaround: construct every {@code MpThread} with its role, then start
  * all, then await all), so that it compiles and runs on the baseline. Its event sequence is the one
  * {@code AssumePair} raises with {@code create}/{@code start} (create-all-then-start-all is the workaround's
  * sequence), and its program name and size are {@code AssumePair}'s, so its export md5 on the baseline is the

@@ -7,8 +7,8 @@ import org.mpi_sws.jmc.runtime.JmcRuntime;
 import java.util.Objects;
 
 /**
- * Reference: a private copy of {@code MpProcess} as it was at commit
- * {@code b8701c28}, spawning over {@link JmcThread} directly. Used only to compare the event
+ * Reference: a private copy of an earlier {@code MpProcess}, which spawned over {@link JmcThread}
+ * directly. Used only to compare the event
  * sequence a strategy sees with the one {@code MpProcess} over {@code MpThread} produces.
  */
 public final class JmcThreadProcess {
@@ -16,7 +16,7 @@ public final class JmcThreadProcess {
     private JmcThreadProcess() {}
 
     /**
-     * Spawns a process over {@link JmcThread}, exactly as {@code b8701c28}'s {@code MpProcess.spawn}.
+     * Spawns a process over {@link JmcThread}, exactly as that earlier {@code MpProcess.spawn}.
      *
      * @param role the role
      * @param body the body
@@ -31,7 +31,7 @@ public final class JmcThreadProcess {
     }
 
     /**
-     * The current task, as {@code b8701c28}'s {@code MpProcess.self}.
+     * The current task, as that earlier {@code MpProcess.self}.
      *
      * @return the tid
      */
@@ -58,7 +58,7 @@ public final class JmcThreadProcess {
             return tid;
         }
 
-        /** Joins, as {@code b8701c28}'s {@code Handle.await}. */
+        /** Joins, as that earlier {@code Handle.await}. */
         public void await() {
             try {
                 thread.join1();

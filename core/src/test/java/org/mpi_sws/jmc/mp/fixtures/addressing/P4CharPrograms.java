@@ -10,7 +10,8 @@ import org.mpi_sws.jmc.mp.events.MpMessage;
 import org.mpi_sws.jmc.mp.events.Tid;
 
 /**
- * Fixtures that use only the API of f3a5de93, so that they compile on the baseline: the characterisation programs
+ * Fixtures that use only the API from before process creation and assume (spawn, await and constructed
+ * {@code MpThread}s), so that they compile on that baseline: the characterisation programs
  * (core {@code JmcAssume.assume(false)} case
  * by case; the five counterexamples in their receive-workaround form; a send to {@code Tid.of(99)}) and
  * the old-API halves of the guard comparisons. Run as {@code MpProcess.runMain(new P4CharPrograms(name))}.

@@ -17,7 +17,8 @@ import java.util.List;
 /**
  * Fixtures for the new API:
  * {@code MpProcess.create}/{@code createDaemon}, {@code Pending.tid}/{@code start}, {@code MpProcess.assume}.
- * They do not compile on f3a5de93. Run as {@code MpProcess.runMain(new P4Programs(name))}. Programs marked
+ * They need these API calls, which the baseline API (spawn and await only) lacks. Run as
+ * {@code MpProcess.runMain(new P4Programs(name))}. Programs marked
  * <em>counting-only</em> are invalid export shapes (main sends, a process creates a process, a start after main's
  * first await) and are run under Must's counting constructor or mp-random only. Refusals a program catches are
  * recorded in {@link #refusals} for the test to read.
