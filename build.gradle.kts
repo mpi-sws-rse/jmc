@@ -24,7 +24,7 @@ repositories {
 
 allprojects {
     group = "org.mpi-sws.jmc"
-    version = "0.2.0"
+    version = "0.3.0"
 
     // The Kotlin Gradle Plugin is held at 2.4.20-RC (see the plugins block) because
     // that is the earliest release fixing the unsafe deserialization of Gradle
