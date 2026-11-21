@@ -7,7 +7,7 @@ executions are summarised per visible role: the sequence of sends and receives w
 can produce is covered by a specification summary. JMC writes and reads the summary format shared with TraceForge,
 specified in the daavar repository (<https://github.com/joulook/daavar>, `format/SUMMARY-FORMAT.md`).
 
-Runnable example: the `PingPong` program of the [README](../README.md#conformance-checking-with-the-must-api), checked
+Runnable example: the `PingPong` program of the [README](../README.md#conformance-checking), checked
 against itself below.
 
 ## The workflow

@@ -2,16 +2,14 @@
 
 JMC is a stateless model checker for Java with two uses:
 
-1. **Model checking Java programs**: JUnit tests run under JMC's agent, which instruments the code under test and
-   explores its thread interleavings to find data races, atomicity violations, assertion failures and deadlocks.
-2. **Model checking and conformance checking of message-passing programs**: protocols written against JMC's
-   message-passing API (`org.mpi_sws.jmc.api.mp`) are explored exhaustively by the `must` strategy. On its own, this
-   model checks the protocol: a failed assertion or a failing process in any explored execution fails the run
-   ([docs/must-api.md](docs/must-api.md#failures-finally-assertions)); blocked executions, including message-passing
-   deadlocks, do not by themselves fail it. Exploration is exhaustive only when it ends before an iteration or time
-   limit is reached. In addition, the executions can be exported as
-   summaries and compared with a specification program, written in Java or in Rust with TraceForge
-   ([below](#conformance-checking-with-the-must-api)).
+1. **Model checking concurrent and distributed Java programs.** Shared-memory programs are JUnit tests that run under
+   JMC's agent, which instruments the code under test and explores its thread interleavings to find data races,
+   atomicity violations, assertion failures and deadlocks. Distributed programs are written against JMC's
+   message-passing API (`org.mpi_sws.jmc.api.mp`): processes exchanging messages, whose executions the `must` strategy
+   explores ([Must](#must)).
+2. **Conformance checking of distributed implementations.** The executions of a message-passing implementation are
+   exported as summaries and compared with a specification program, written in Java or in Rust with TraceForge
+   ([Conformance checking](#conformance-checking)).
 
 Consider a `Counter` class with two methods, one to `inc`rement the counter and one to `get` its value:
 
@@ -118,7 +116,7 @@ void testCounter() {
 
 ### Systematic Exploration
 
-Systematic exploration (`trust`) explores all the necessary and sufficient interleavings: when the exploration completes, every bug of the test has been found. It uses dynamic partial-order reduction (DPOR) to reduce the exhaustive search space to a minimal set of interleavings, none of which is equivalent to another. Expect a longer execution time than with `random`, especially for tests with a large state space.
+Systematic exploration (`trust`, and `must` for message-passing programs) explores all the necessary and sufficient interleavings: when the exploration completes, every bug of the test has been found. It uses dynamic partial-order reduction (DPOR) to reduce the exhaustive search space to a minimal set of interleavings, none of which is equivalent to another. Expect a longer execution time than with `random`, especially for tests with a large state space.
 
 #### Trust
 
@@ -180,7 +178,106 @@ The `ConDpor` API supports the boolean and integer theories, so you can define s
 
 #### Must
 
-For message-passing protocols, JMC provides the `must` strategy, a DPOR-based algorithm for distributed protocols [3], paired with the message-passing API `org.mpi_sws.jmc.api.mp`. It explores every distinct execution of a program under the FIFO peer-to-peer (`P2P`) or fully asynchronous (`ASYN`) model. See [Conformance checking with the Must API](#conformance-checking-with-the-must-api) and [docs/must-api.md](docs/must-api.md).
+For distributed programs, JMC provides the `must` strategy, a DPOR-based algorithm for message-passing protocols [3].
+The program is written against the message-passing API `org.mpi_sws.jmc.api.mp`: it spawns processes
+(`MpProcess.spawn`), which exchange immutable messages (records implementing `MpMessage`) with `Channel.send` and
+`Channel.recv` under a communication model, the FIFO peer-to-peer model (`P2P`) or the fully asynchronous one
+(`ASYN`). `must` explores every distinct execution under that model: two executions are distinct when some receive
+takes a different message.
+
+As an example, main is a bank account that starts at 0, and two client processes send it a deposit and a withdrawal of
+10. The two messages race, so main can receive them in either order:
+
+```java
+record Deposit(int amount) implements MpMessage {}
+record Withdraw(int amount) implements MpMessage {}
+
+@JmcCheck
+@JmcCheckConfiguration(strategy = "must", numIterations = 100)
+void testAccount() {
+    CommunicationModel m = CommunicationModel.P2P;
+    Tid account = MpProcess.self();
+    MpProcess.Handle a = MpProcess.spawn("depositor", () -> Channel.send(m, account, new Deposit(10)));
+    MpProcess.Handle b = MpProcess.spawn("withdrawer", () -> Channel.send(m, account, new Withdraw(10)));
+
+    int balance = 0;
+    for (int i = 0; i < 2; i++) {
+        MpMessage msg = Channel.recv(m);
+        balance += msg instanceof Deposit d ? d.amount() : -((Withdraw) msg).amount();
+        assertTrue(balance >= 0, "the balance went negative");
+    }
+    a.await();
+    b.await();
+}
+```
+
+`must` explores exactly two executions, one per arrival order, and stops there, before the 100 iterations; in the one
+where the withdrawal arrives first, the assertion fails. A failed assertion or an exception in main or in any spawned
+process fails the test ([docs/must-api.md](docs/must-api.md#failures-finally-assertions)); a blocked execution, such
+as a message-passing deadlock, does not by itself. The exploration is exhaustive only when it ends before the iteration
+or time limit. The API, its rules and the communication models are described in
+[docs/must-api.md](docs/must-api.md); [MpMustCheckTest](integration-test/src/test/java/org/mpi_sws/jmc/test/mp/MpMustCheckTest.java)
+runs this example.
+
+##### Conformance checking
+
+`must` can also check a distributed implementation against a specification: the explored executions of the
+implementation are exported as summaries, the observable behaviour of each execution, and compared with the summaries
+of a specification program. The specification is a second program, in Java with this API or in Rust with TraceForge.
+
+For this, the program implements `MpProgram`: its `run()` is main's body, and the other methods name the program and
+its communication model and give the roles of its processes, which the exported summaries record. This one has a
+client that sends `Ping(n)`, with `n` chosen nondeterministically, and a server that answers `Pong(n)`
+([docs/examples/pingpong/PingPong.java](docs/examples/pingpong/PingPong.java)):
+
+```java
+public final class PingPong implements MpProgram {
+    @Tag("Ping") public record Ping(int n) implements MpMessage {}
+    @Tag("Pong") public record Pong(int n) implements MpMessage {}
+    private static final CommunicationModel M = CommunicationModel.P2P;
+
+    @Override
+    public void run() {
+        MpProcess.Pending client = MpProcess.create("client"); // its Tid exists before it runs
+        MpProcess.Handle server = MpProcess.spawn("server", () -> {
+            Ping p = Channel.recv(M, Ping.class);
+            Channel.send(M, client.tid(), new Pong(p.n()));
+        });
+        MpProcess.Handle c = client.start(() -> {
+            int n = Nondet.choose(List.of(1, 2));
+            Channel.send(M, server.tid(), new Ping(n));
+            Pong r = Channel.recv(M, Pong.class);
+            assert r.n() == n : "the answer must echo the request";
+        });
+        server.await();
+        c.await();
+    }
+
+    @Override public String programName() { return "pingpong"; }
+    @Override public String size() { return "1"; }
+    @Override public CommunicationModel model() { return M; }
+    @Override public List<String> rolesInSpawnOrder() { return List.of("server", "client"); }
+}
+```
+
+The launcher, `org.mpi_sws.jmc.mp.cli.MpLauncher`, is part of the `jmc` jar from release 0.3.0 on (and of `jmc-agent`,
+which bundles JMC's dependencies). Its former name, `org.mpi_sws.jmc.mp.launch.MpLauncher`, still works for one
+release and is deprecated; so is `org.mpi_sws.jmc.mp.launch.MpProgram`. From the JMC root:
+
+```bash
+CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
+javac -d docs/examples/build -cp "$CP" docs/examples/pingpong/PingPong.java
+L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.cli.MpLauncher"
+$L example.PingPong must 0 1 rep-count                                # count the executions
+$L example.PingPong must 0 1 rep-export spec.jsonl                     # export the summaries
+$L example.PingPong must 0 1 rep-online - 600 --spec spec.jsonl        # check online against them
+```
+
+The first run prints `ran: 2 iterations` and `graphs: 2 distinct complete, 0 distinct blocked`; the last prints
+`verdict: conforms`. Next: [docs/must-api.md](docs/must-api.md) (the API), [docs/conformance.md](docs/conformance.md)
+(the workflow, the launcher, verdicts), [docs/modelling.md](docs/modelling.md) (porting an implementation) and
+[docs/agent-quickref.md](docs/agent-quickref.md). The full workflow, the benchmarks and case studies, and the
+specification side with TraceForge are in the daavar framework repository: <https://github.com/joulook/daavar>.
 
 ### State-Space Estimation
 
@@ -263,61 +360,6 @@ void testCounter() {
 ```
 
 Message-passing executions are replayed from their witness graphs with the launcher's `--replay` ([docs/conformance.md](docs/conformance.md#graph-stores-and-replay)).
-
-## Conformance checking with the Must API
-
-A program is a set of processes exchanging tagged, immutable records; main spawns and awaits them. This one has a
-client that sends `Ping(n)`, with `n` chosen nondeterministically, and a server that answers `Pong(n)`
-([docs/examples/pingpong/PingPong.java](docs/examples/pingpong/PingPong.java)):
-
-```java
-public final class PingPong implements MpProgram {
-    @Tag("Ping") public record Ping(int n) implements MpMessage {}
-    @Tag("Pong") public record Pong(int n) implements MpMessage {}
-    private static final CommunicationModel M = CommunicationModel.P2P;
-
-    @Override
-    public void run() {
-        MpProcess.Pending client = MpProcess.create("client"); // its Tid exists before it runs
-        MpProcess.Handle server = MpProcess.spawn("server", () -> {
-            Ping p = Channel.recv(M, Ping.class);
-            Channel.send(M, client.tid(), new Pong(p.n()));
-        });
-        MpProcess.Handle c = client.start(() -> {
-            int n = Nondet.choose(List.of(1, 2));
-            Channel.send(M, server.tid(), new Ping(n));
-            Pong r = Channel.recv(M, Pong.class);
-            assert r.n() == n : "the answer must echo the request";
-        });
-        server.await();
-        c.await();
-    }
-
-    @Override public String programName() { return "pingpong"; }
-    @Override public String size() { return "1"; }
-    @Override public CommunicationModel model() { return M; }
-    @Override public List<String> rolesInSpawnOrder() { return List.of("server", "client"); }
-}
-```
-
-The launcher, `org.mpi_sws.jmc.mp.cli.MpLauncher`, is part of the `jmc` jar from release 0.3.0 on (and of `jmc-agent`,
-which bundles JMC's dependencies). Its former name, `org.mpi_sws.jmc.mp.launch.MpLauncher`, still works for one
-release and is deprecated; so is `org.mpi_sws.jmc.mp.launch.MpProgram`. From the JMC root:
-
-```bash
-CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
-javac -d docs/examples/build -cp "$CP" docs/examples/pingpong/PingPong.java
-L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.cli.MpLauncher"
-$L example.PingPong must 0 1 rep-count                                # count the executions
-$L example.PingPong must 0 1 rep-export spec.jsonl                     # export the summaries
-$L example.PingPong must 0 1 rep-online - 600 --spec spec.jsonl        # check online against them
-```
-
-The first run prints `ran: 2 iterations` and `graphs: 2 distinct complete, 0 distinct blocked`; the last prints
-`verdict: conforms`. Next: [docs/must-api.md](docs/must-api.md) (the API), [docs/conformance.md](docs/conformance.md)
-(the workflow, the launcher, verdicts), [docs/modelling.md](docs/modelling.md) (porting an implementation) and
-[docs/agent-quickref.md](docs/agent-quickref.md). The full workflow, the benchmarks and case studies, and the
-specification side with TraceForge are in the daavar framework repository: <https://github.com/joulook/daavar>.
 
 ## Requirements
 

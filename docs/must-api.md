@@ -6,7 +6,7 @@ nondeterministic choices. The `must` strategy explores every distinct execution 
 `mp-random` strategy samples executions.
 
 Runnable example: [`examples/pingpong/PingPong.java`](examples/pingpong/PingPong.java); how to run it is in the
-[README](../README.md#conformance-checking-with-the-must-api).
+[README](../README.md#conformance-checking).
 
 ## Processes: `MpProcess`
 
