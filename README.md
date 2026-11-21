@@ -293,7 +293,22 @@ $L online --program example.PingPong --spec spec.jsonl     # check online agains
 ```
 
 The first run prints `ran: 2 iterations` and `graphs: 2 distinct complete, 0 distinct blocked`; the last prints
-`verdict: conforms`. `$L --help` lists the commands and their options. Next: [docs/must-api.md](docs/must-api.md) (the API), [docs/conformance.md](docs/conformance.md)
+`verdict: conforms`. `$L --help` lists the commands and their options.
+
+Without a checkout, the `jmc-agent` jar alone is enough: it bundles JMC and its dependencies, and the launcher needs
+no `-javaagent`. The thin `jmc` jar alone is not: it needs its runtime dependencies (Gson, Log4j, ...) on the class
+path, as a Maven or Gradle dependency on `org.mpi-sws.jmc:jmc:0.3.0` brings them. With your program in `PingPong.java`:
+
+```bash
+curl -fLO https://repo1.maven.org/maven2/org/mpi-sws/jmc/jmc-agent/0.3.0/jmc-agent-0.3.0.jar
+javac -d classes -cp "jmc-agent-0.3.0.jar" PingPong.java
+L="java -ea -cp jmc-agent-0.3.0.jar:classes org.mpi_sws.jmc.mp.cli.MpLauncher"
+$L --help
+$L export --program example.PingPong --out spec.jsonl
+$L online --program example.PingPong --spec spec.jsonl
+```
+
+Next: [docs/must-api.md](docs/must-api.md) (the API), [docs/conformance.md](docs/conformance.md)
 (the workflow, the launcher, verdicts), [docs/modelling.md](docs/modelling.md) (porting an implementation) and
 [docs/agent-quickref.md](docs/agent-quickref.md). The full workflow, the benchmarks and case studies, and the
 specification side with TraceForge are in the daavar framework repository: <https://github.com/joulook/daavar>.
