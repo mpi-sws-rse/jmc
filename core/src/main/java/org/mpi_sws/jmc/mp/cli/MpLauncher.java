@@ -18,6 +18,8 @@ import org.mpi_sws.jmc.mp.summary.Summary;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.strategies.SchedulingStrategyFactory;
 import org.mpi_sws.jmc.strategies.mp.GraphReplayStrategy;
+import org.mpi_sws.jmc.strategies.mp.MpFailureKind;
+import org.mpi_sws.jmc.strategies.mp.MpRandomSchedulingStrategy;
 import org.mpi_sws.jmc.strategies.mp.MpRecordingStrategy;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
@@ -123,14 +125,24 @@ import java.util.Set;
  * {@code stop_reason}, {@code peak_rss_kb}, the graph-shape maxima and means, and with {@code --graphs}
  * {@code graphs_written}, {@code graphs_refused}, {@code graphs_ms}. A key whose value cannot be measured is empty.
  *
- * <p><b>Exit status.</b> {@code 0}: the run completed, including every online verdict ({@code conforms},
- * {@code reports}, {@code partial}: read the {@code verdict:} line), a timeout, a stop at the first miss, and
- * {@code replay: reproduced}. {@code 1}: the run failed, after a {@code FAILED:} line: a failed assertion or an
- * exception in any process or in main (also in the last iteration), a fault of the strategy (a model {@code must}
- * does not support, an export shape rule broken), an export, store or witness file that cannot be written, a split
- * run that did not finish; and {@code replay: deviation}. {@code 2}: bad arguments or a refused input: a wrong
- * argument count, an unknown option or strategy, a class that cannot be loaded or constructed, a non-numeric or
- * out-of-range number, a refused specification file, store or witness target, a refused replay.
+ * <p><b>Exit status, named form.</b> {@code 0}: conforms, or nothing to report (the exploration was exhausted,
+ * {@code verdict: conforms}, {@code replay: reproduced}). {@code 1}: a violation ({@code verdict: reports}, also
+ * after a {@code --stop-at-first} stop; a failed assertion or an exception in any process or in main, in any
+ * iteration including the last; a receive guard that threw; {@code replay: deviation}). {@code 2}: refused (a usage
+ * error, a strategy that is not a message-passing one, a model or value the strategy does not support, a broken
+ * rule of the API or of the export format, a refused specification file, store, witness target or replay, an
+ * output that cannot be written). {@code 3}: partial or incomplete (a timeout, an iteration bound reached before
+ * the exploration was exhausted, {@code mp-random}, {@code verdict: partial}, a split run that did not finish).
+ *
+ * <p><b>Exit status, positional form.</b> {@code 0}: the run completed, including every online verdict
+ * ({@code conforms}, {@code reports}, {@code partial}: read the {@code verdict:} line), a timeout, a stop at the
+ * first miss, and {@code replay: reproduced}. {@code 1}: the run failed, after a {@code FAILED:} line: a failed
+ * assertion or an exception in any process or in main (also in the last iteration), a fault of the strategy (a
+ * model {@code must} does not support, an export shape rule broken), an export, store or witness file that cannot
+ * be written, a split run that did not finish; and {@code replay: deviation}. {@code 2}: bad arguments or a
+ * refused input: a wrong argument count, an unknown option or strategy, a class that cannot be loaded or
+ * constructed, a non-numeric or out-of-range number, a refused specification file, store or witness target, a
+ * refused replay.
  */
 public final class MpLauncher {
 
@@ -172,7 +184,7 @@ public final class MpLauncher {
         int status;
         try {
             status = runBody(args, st);
-            if (status != 0 && st.failure == null) {
+            if (status != 0 && st.failure == null && (namedCommand == null || status == EXIT_REFUSED)) {
                 // An unsuccessful return the body did not describe (a rejected argument after the
                 // strategy existed): a failed invocation, never an ordinary stop.
                 st.failure = "launcher exit status " + status;
@@ -181,7 +193,7 @@ public final class MpLauncher {
             // A failure outside the checker (e.g. while writing the output): still one measurement block.
             st.failure = (st.failure == null ? "" : st.failure + "; ") + e;
             System.out.println("FAILED:     " + e);
-            status = 1;
+            status = namedCommand == null ? 1 : EXIT_REFUSED;
         } finally {
             if (st.graphs != null && !st.graphs.finished()) {
                 // Any end without a written store (a failed run, a failed export, a refused argument): the store's
@@ -194,6 +206,15 @@ public final class MpLauncher {
         }
         return status;
     }
+
+    /** Named form: the program conforms, or there is nothing to report. */
+    static final int EXIT_OK = 0;
+    /** Named form: a violation (an uncovered summary, a failed assertion or a throwable in any process). */
+    static final int EXIT_VIOLATION = 1;
+    /** Named form: refused (a usage error, a broken rule, an unsupported model or value, an unwritable output). */
+    static final int EXIT_REFUSED = 2;
+    /** Named form: partial or incomplete (a timeout, an iteration bound, a sampled strategy, an unfinished split). */
+    static final int EXIT_INCOMPLETE = 3;
 
     /** The subcommand of a named invocation, or {@code null} for the positional form. */
     private static String namedCommand;
@@ -406,6 +427,7 @@ public final class MpLauncher {
         // "-" (or no sixth argument) means no export: under must, the counting mode.
         Path exportFile = args.length > 5 && !args[5].equals("-") ? Path.of(args[5]) : null;
         MpRecordingStrategy recorder = null;
+        MpRandomSchedulingStrategy sampler = null;
         MustStrategy mustStrategy = null;
         MpProgram mpProgram = null;
         if (exportFile != null) {
@@ -425,6 +447,9 @@ public final class MpLauncher {
         } else if (must) {
             // Counting mode: any Runnable, no roles, no shape rules; prints the graph counts.
             mustStrategy = new MustStrategy(seed, reportPath);
+        } else if (namedCommand != null && strategy.equals("mp-random")) {
+            // The factory's strategy, built here so that the named form can read its failure kind.
+            sampler = new MpRandomSchedulingStrategy(seed, reportPath);
         }
         SpecificationFile.Loaded spec = null;
         st.must = mustStrategy;
@@ -551,6 +576,10 @@ public final class MpLauncher {
                 MpRecordingStrategy r = recorder;
                 builder.strategyConstructor(c -> r);
             }
+            if (sampler != null) {
+                MpRandomSchedulingStrategy r = sampler;
+                builder.strategyConstructor(c -> r);
+            }
             if (mustStrategy != null) {
                 MustStrategy m = mustStrategy;
                 builder.strategyConstructor(c -> m);
@@ -574,6 +603,8 @@ public final class MpLauncher {
         st.checkNanos = System.nanoTime() - startNanos;
         st.report = report;
         st.failure = failure;
+        String checkFailure = failure;
+        String verdict = null;
 
         if (report != null) {
             int total = report.getTotalIterations();
@@ -597,7 +628,6 @@ public final class MpLauncher {
                     + (mustStrategy.exhausted() ? "exhausted" : "not exhausted"));
         }
         if (spec != null) {
-            String verdict;
             if (mustStrategy.uncovered().isPresent()) {
                 verdict = "reports";
             } else if (failure == null && mustStrategy.exhausted()) {
@@ -708,9 +738,66 @@ public final class MpLauncher {
         }
         if (failure != null) {
             System.out.println("FAILED:     " + failure);
-            return 1;
+            if (namedCommand == null) {
+                return 1;
+            }
+            MpFailureKind kind = mustStrategy != null ? mustStrategy.failureKind()
+                    : recorder != null ? recorder.failureKind() : sampler != null ? sampler.failureKind() : null;
+            return failedStatus(checkFailure, kind);
         }
-        return 0;
+        if (namedCommand == null) {
+            return 0;
+        }
+        if (verdict != null) {
+            return verdictStatus(verdict);
+        }
+        boolean timedOut = report != null && report.getErrorMessage() != null
+                && report.getErrorMessage().contains("due to timeout");
+        return mustStrategy != null && mustStrategy.exhausted() && !timedOut ? EXIT_OK : EXIT_INCOMPLETE;
+    }
+
+    /**
+     * The named form's status of a run that failed: {@code 2} when the run itself completed and only the
+     * launcher's output could not be written, or when the first fault broke a rule; {@code 1} when a process failed
+     * or main's own body failed (a failed assertion or an exception, in any iteration, the last one included).
+     *
+     * @param checkFailure the checker's failure, or {@code null} if the check completed
+     * @param kind the strategy's kind of the run's first fault, or {@code null}
+     * @return {@code 1} or {@code 2}
+     */
+    static int failedStatus(String checkFailure, MpFailureKind kind) {
+        if (checkFailure == null || kind == MpFailureKind.RULE) {
+            return EXIT_REFUSED;
+        }
+        if (kind == MpFailureKind.PROCESS) {
+            return EXIT_VIOLATION;
+        }
+        // No fault of the strategy: main failed, unless the recording strategy refused a summary.
+        return checkFailure.startsWith("mp-recording: ") ? EXIT_REFUSED : EXIT_VIOLATION;
+    }
+
+    /** The named form's status of an online verdict: conforms 0, reports 1, partial 3. */
+    private static int verdictStatus(String verdict) {
+        return switch (verdict) {
+            case "conforms" -> EXIT_OK;
+            case "reports" -> EXIT_VIOLATION;
+            default -> EXIT_INCOMPLETE;
+        };
+    }
+
+    /**
+     * The named form's status of a split run that did not finish: {@code 1} when a process failed, {@code 2} when
+     * a rule was broken, {@code 3} otherwise (the run is incomplete: a timeout, lost workers, an unfinished root).
+     * The split run reports its failure as text: a process failure reads {@code must: process ... failed: ...},
+     * a broken rule another {@code must: ...}, a failure of main the throwable itself.
+     */
+    static int splitFailureStatus(String failure) {
+        int at = failure.indexOf("must: ");
+        if (at >= 0) {
+            String fault = failure.substring(at + "must: ".length());
+            return fault.startsWith("process ") && fault.contains(") failed: ") ? EXIT_VIOLATION : EXIT_REFUSED;
+        }
+        return failure.startsWith("java.lang.AssertionError") ? EXIT_VIOLATION : EXIT_INCOMPLETE;
     }
 
     /**
@@ -1238,7 +1325,7 @@ public final class MpLauncher {
                     graphs == null ? null : graphs.limit()));
         } catch (IOException e) {
             System.out.println("FAILED:     cannot prepare " + runDir + ": " + e);
-            return 1;
+            return namedCommand == null ? 1 : EXIT_REFUSED;
         }
         double elapsedSeconds = (System.nanoTime() - startNanos) / 1e9;
         System.out.println("split:      K " + k + ", W " + workers + ", R " + result.r() + ", N " + result.n()
@@ -1252,7 +1339,10 @@ public final class MpLauncher {
             printSplitOnline(result);
             printSplitMeasurements(st, result, 0, false);
             System.out.println("FAILED:     incomplete: " + result.failure());
-            return 1;
+            if (namedCommand != null && result.online() != null && result.online().miss()) {
+                return EXIT_VIOLATION;
+            }
+            return namedCommand == null ? 1 : splitFailureStatus(result.failure());
         }
         System.out.println("ran:        " + result.ran() + " iterations");
         System.out.println("blocked:    " + result.blockedIterations() + " (counted by the strategy)");
@@ -1286,7 +1376,7 @@ public final class MpLauncher {
             } catch (IOException e) {
                 printSplitMeasurements(st, result, System.nanoTime() - exportStart, true);
                 System.out.println("FAILED:     cannot write " + exportFile + ": " + e);
-                return 1;
+                return namedCommand == null ? 1 : EXIT_REFUSED;
             }
             exportNanos = System.nanoTime() - exportStart;
             if (graphs != null) {
@@ -1302,11 +1392,14 @@ public final class MpLauncher {
                 } catch (IOException | RuntimeException e) {
                     printSplitMeasurements(st, result, exportNanos, true);
                     System.out.println("FAILED:     cannot write the graph store " + graphs.path() + ": " + e);
-                    return 1;
+                    return namedCommand == null ? 1 : EXIT_REFUSED;
                 }
             }
         }
         printSplitMeasurements(st, result, exportNanos, false);
+        if (namedCommand != null && result.online() != null && result.online().miss()) {
+            return EXIT_VIOLATION;
+        }
         return 0;
     }
 

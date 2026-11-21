@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.strategies.must;
 
+import org.mpi_sws.jmc.strategies.mp.MpFailureKind;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.api.mp.MpThread;
@@ -230,6 +231,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private boolean active;
     /** The first fault (error message) detected in this iteration, or {@code null}. */
     private String fault;
+    /** The kind of the run's first fault, or {@code null} while there is none; never reset. */
+    private MpFailureKind failureKind;
     /** The checker's report, given at {@link #initIteration}. */
     private JmcModelCheckerReport report;
     /** Iterations that ended with a blocked graph. */
@@ -569,6 +572,9 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             clearIteration();
         }
         if (problem != null && !errorRecorded) {
+            if (failureKind == null) {
+                failureKind = MpFailureKind.RULE;
+            }
             throw HaltExecutionException.error("must: " + problem);
         }
     }
@@ -820,7 +826,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     // here, on the failing thread; handed to main next.
                     boolean first = fault == null;
                     fail("process " + nameOfId.get(task) + " (task " + runtimeTask + ") failed: "
-                            + optParam(event, "failure"));
+                            + optParam(event, "failure"), MpFailureKind.PROCESS);
                     failureToMain |= first;
                 }
                 if (replaying(task)) {
@@ -1634,16 +1640,36 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      */
     private SchedulingChoice<?> guardFault(long task, Throwable thrown) {
         fail("the receive guard of process " + nameOfId.get(task) + " (task " + runtimeOfStable.get(task)
-                + ") threw " + thrown + "; a guard must not throw or call the JMC API");
+                + ") threw " + thrown + "; a guard must not throw or call the JMC API", MpFailureKind.PROCESS);
         return SchedulingChoice.task(runtimeOfStable.get(task), new MpFaultValue("must: " + fault));
     }
 
-    /** Records a fault (the first one is kept) and logs it. */
+    /** Records a fault of kind {@link MpFailureKind#RULE} (the first one is kept) and logs it. */
     private void fail(String why) {
+        fail(why, MpFailureKind.RULE);
+    }
+
+    /** Records a fault (the first one of the iteration is kept, and the first kind of the run) and logs it. */
+    private void fail(String why, MpFailureKind kind) {
         if (fault == null) {
             fault = why;
+            if (failureKind == null) {
+                failureKind = kind;
+            }
         }
         LOGGER.error("must: {}", why);
+    }
+
+    /**
+     * The kind of the run's first fault: {@link MpFailureKind#PROCESS} when a process failed or its receive guard
+     * threw, {@link MpFailureKind#RULE} when the program broke a rule (an unsupported model, an export shape rule,
+     * a value that cannot be summarised, another misuse of the API). A failure of main itself, a failed assertion
+     * or an exception in main's body, is no fault of this strategy and leaves it {@code null}.
+     *
+     * @return the kind, or {@code null} if no fault was recorded
+     */
+    public MpFailureKind failureKind() {
+        return failureKind;
     }
 
     /**

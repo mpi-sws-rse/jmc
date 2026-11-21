@@ -160,6 +160,8 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
 
     /** A fault detected this iteration, held until the checker records it (see class doc). */
     private HaltExecutionException fault;
+    /** The kind of the run's first fault, or {@code null} while there is none; never reset. */
+    private MpFailureKind failureKind;
 
     /**
      * Whether {@link #fault} has been handed to main once, either by throwing it on main's next
@@ -269,7 +271,7 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
                 // A process failure is an error of the iteration when it happens, whether or not
                 // the process is awaited: latched on the failing thread, delivered to main like
                 // any latched fault.
-                latch("process " + task + " failed: " + optParam(event, "failure"));
+                latch("process " + task + " failed: " + optParam(event, "failure"), MpFailureKind.PROCESS);
             }
         } else if (type == JmcRuntimeEvent.Type.ASSUME_EVENT) {
             // assume(false) halts the task with a HaltTaskException after this event; for main
@@ -421,6 +423,9 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
         HaltExecutionException f = HaltExecutionException.error(message);
         if (fault == null) {
             fault = f;
+            if (failureKind == null) {
+                failureKind = MpFailureKind.RULE;
+            }
             delivered = onMain;
         }
         LOGGER.error("mp-random fault: {}", message);
@@ -434,11 +439,29 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
      * @param message the fault
      */
     protected void latch(String message) {
+        latch(message, MpFailureKind.RULE);
+    }
+
+    private void latch(String message, MpFailureKind kind) {
         if (fault == null) {
             fault = HaltExecutionException.error(message);
             delivered = false;
+            if (failureKind == null) {
+                failureKind = kind;
+            }
         }
         LOGGER.error("mp-random fault: {}", message);
+    }
+
+    /**
+     * The kind of the run's first fault: {@link MpFailureKind#PROCESS} when a process failed, {@link
+     * MpFailureKind#RULE} when the program broke a rule of the API. A failure of main itself leaves it {@code null},
+     * and so does a summary that the recording subclass refuses.
+     *
+     * @return the kind, or {@code null} if no fault was recorded
+     */
+    public MpFailureKind failureKind() {
+        return failureKind;
     }
 
     /** The fault of a process made by {@code MpProcess.create} and never started. */

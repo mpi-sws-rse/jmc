@@ -229,7 +229,7 @@ class MpLauncherTest {
     }
 
     @Test
-    // F1 enabled in J1 round 04: MpProcess spawns over MpThread, which rethrows a process failure to the joiner.
+    // A failure in a spawned process reaches main: MpProcess spawns over MpThread, which hands it to the joiner.
     void exit1_assertionInProcess() throws Exception {
         Out o = launch(LAUNCHER, MUTANTS + "AssertsInProcess", "mp-random", "5", "1", REPORT);
         expectExit(1, o);
@@ -244,7 +244,7 @@ class MpLauncherTest {
     }
 
     @Test
-    // F2 enabled in J1 round 01: the agreed fix (JmcModelChecker catches Throwable) is applied.
+    // A failure of main on the last iteration fails the run: JmcModelChecker catches every Throwable.
     void exit1_assertionInMain_onLastIteration() throws Exception {
         // One iteration: the failing iteration is also the last one.
         Out o = launch(LAUNCHER, MUTANTS + "AssertsInMain", "mp-random", "1", "1", REPORT);

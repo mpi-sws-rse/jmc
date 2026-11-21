@@ -121,6 +121,16 @@ class NamedCliTest {
         return new Out(p.exitValue(), out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
     }
 
+    /** The launcher with {@code args}, in working directory {@code cwd}, assertions enabled. */
+    static Out launchIn(Path cwd, String... args) throws Exception {
+        return launch(cwd, args);
+    }
+
+    /** A fresh empty working directory under this class's results directory. */
+    static Path freshDir(String name) throws IOException {
+        return fresh(name);
+    }
+
     private static Thread pump(InputStream in, ByteArrayOutputStream to) {
         Thread t = new Thread(() -> {
             try (in) {

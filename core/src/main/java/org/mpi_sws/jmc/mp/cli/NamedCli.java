@@ -361,10 +361,26 @@ final class NamedCli {
               --worker <dir> <id>       internal: how the coordinator starts its workers
             """;
 
+    private static final String EXIT_HELP = """
+
+            Exit status:
+              0  conforms, or nothing to report: the exploration was exhausted (count, export), the online
+                 verdict is conforms, replay reproduced the execution
+              1  a violation: an online summary the specification does not cover (also a stop at the first
+                 one), a failed assertion or an exception in any process or in main, in any iteration
+                 including the last, a receive guard that threw; replay deviated
+              2  refused: a usage error, a strategy that is not a message-passing one, a model or value the
+                 strategy does not support, a broken rule of the API or of the export format, a refused
+                 specification, store, witness target or graph, an output that cannot be written
+              3  partial or incomplete: a timeout, an iteration bound reached before the exploration was
+                 exhausted, a sampled strategy (mp-random), an online verdict partial, an unfinished split run
+            """;
+
     private static final String POSITIONAL_HELP = """
 
             The positional form, MpLauncher <program class[:args]> [strategy] [iterations] [seed]
-            [reportPath] [exportFile] [timeoutSeconds] [options], is still accepted and is deprecated.
+            [reportPath] [exportFile] [timeoutSeconds] [options], is still accepted and is deprecated; it
+            keeps its own exit statuses: 0 the run completed (whatever the verdict), 1 it failed, 2 refused.
             """;
 
     /**
@@ -398,6 +414,6 @@ final class NamedCli {
         if (run) {
             b.append(ADVANCED_HELP);
         }
-        return b.append(POSITIONAL_HELP).toString();
+        return b.append(EXIT_HELP).append(POSITIONAL_HELP).toString();
     }
 }

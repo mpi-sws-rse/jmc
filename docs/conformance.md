@@ -132,13 +132,19 @@ the `verdict:` and `decide:` lines.
 
 ### Exit codes of `MpLauncher`
 
+The named form (`MpLauncher count|export|online|replay`, also listed by `--help`):
+
 | Exit | When |
 |---|---|
-| 0 | the run completed; every online verdict (`conforms`, `reports`, `partial`), a timeout, a bug-finder stop; `replay: reproduced` |
-| 1 | the run failed: a failed assertion or exception in any process, a shape or model fault, an export or store write failure, a split run that did not finish; `replay: deviation` |
-| 2 | bad arguments or a refused input: unknown option or strategy, a class that cannot be loaded, a refused specification file, a refused replay |
+| 0 | conforms, or nothing to report: the exploration was exhausted (`count`, `export`), `verdict: conforms`, `replay: reproduced` |
+| 1 | a violation: `verdict: reports` (also after a `--stop-at-first` stop), a failed assertion or an exception in any process or in main, in any iteration including the last, a receive guard that threw; `replay: deviation` |
+| 2 | refused: a usage error, a strategy that is not a message-passing one, a model or value the strategy does not support, a broken rule of the API or of the export format, a refused specification file, store, witness target or replay, an output that cannot be written |
+| 3 | partial or incomplete: a timeout, an iteration bound reached before the exploration was exhausted, `mp-random` (sampled), `verdict: partial`, a split run that did not finish |
 
-An online verdict is read from the `verdict:` line, not from the exit code.
+The deprecated positional form keeps its statuses: 0 the run completed, whatever the online verdict (read the
+`verdict:` line), including a timeout and a bug-finder stop, and `replay: reproduced`; 1 the run failed (a failed
+assertion or exception in any process, a shape or model fault, an export or store write failure, a split run that
+did not finish) and `replay: deviation`; 2 bad arguments or a refused input.
 
 ## The four classes of an uncovered word
 
