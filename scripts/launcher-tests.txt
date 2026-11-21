@@ -4,3 +4,4 @@ org.mpi_sws.jmc.mp.launch.DeprecatedNamesTest
 org.mpi_sws.jmc.mp.cli.NamedCliTest
 org.mpi_sws.jmc.mp.cli.NamedExitCodesTest
 org.mpi_sws.jmc.strategies.must.split.SplitOutcomeTest
+org.mpi_sws.jmc.strategies.must.CapabilityMatrixTest

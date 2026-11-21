@@ -15,6 +15,23 @@
  * {@code JmcUnsupportedEventException} when the configured strategy did not answer. There is no
  * fallback path.
  *
+ * <p><b>Which strategy supports what.</b>
+ * <table>
+ *   <caption>Message-passing support by strategy</caption>
+ *   <tr><th></th><th>{@code must}</th><th>{@code mp-random}</th><th>other strategies</th></tr>
+ *   <tr><td>{@code P2P}, {@code ASYN}</td><td>explored exhaustively</td><td>sampled</td><td>refused</td></tr>
+ *   <tr><td>{@code CD}, {@code MBOX}</td><td>refused</td><td>sampled</td><td>refused</td></tr>
+ *   <tr><td>{@link org.mpi_sws.jmc.api.mp.Monitors} (notify under {@code CD})</td><td>refused</td>
+ *       <td>sampled</td><td>refused</td></tr>
+ *   <tr><td>send, blocking and non-blocking receive with guards, {@code Nondet}, spawn, create and start,
+ *       daemons, await, assume</td><td>yes</td><td>yes</td><td>refused</td></tr>
+ *   <tr><td>summary export</td><td>yes</td><td>yes (sampled)</td><td>no</td></tr>
+ *   <tr><td>online check, graph store, split runs</td><td>yes</td><td>no</td><td>no</td></tr>
+ * </table>
+ * {@code must} refuses an unsupported model with a fault that names it ("... uses model CD, which must does
+ * not support (p2p and asyn only)"); a strategy that is not a message-passing one refuses every event of this
+ * package with a {@code JmcUnsupportedEventException}.
+ *
  * <p>The value types — {@code Tid}, {@code MpMessage}, {@code CommunicationModel} — live in
  * {@code org.mpi_sws.jmc.mp.events}; the only runtime-dependent way to ask
  * "who am I" is {@link org.mpi_sws.jmc.api.mp.MpProcess#self()}.

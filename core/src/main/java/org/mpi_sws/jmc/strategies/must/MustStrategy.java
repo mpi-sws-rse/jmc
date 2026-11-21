@@ -3,6 +3,7 @@ package org.mpi_sws.jmc.strategies.must;
 import org.mpi_sws.jmc.strategies.mp.MpFailureKind;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.api.mp.Monitors;
 import org.mpi_sws.jmc.api.mp.MpThread;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.mp.consistency.MpConsistency;
@@ -1075,8 +1076,24 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * @throws HaltExecutionException if the model is unsupported
      */
     private void refuseUnsupported(long task, CommunicationModel model) throws HaltExecutionException {
+        refuseUnsupported(task, model, null);
+    }
+
+    /**
+     * As {@link #refuseUnsupported(long, CommunicationModel)}; a send of a {@link Monitors.Notification} is named
+     * as one, since the wrappers of {@link Monitors} always notify under causal delivery.
+     *
+     * @param value the message sent, or {@code null} for a receive
+     * @throws HaltExecutionException if the model is unsupported
+     */
+    private void refuseUnsupported(long task, CommunicationModel model, MpMessage value)
+            throws HaltExecutionException {
         if (model != CommunicationModel.P2P && model != CommunicationModel.ASYN) {
-            throw halt("task " + task + " uses model " + model + ", which must does not support (p2p and asyn only)");
+            String what = value instanceof Monitors.Notification
+                    ? "sends a Monitors notification, which Monitors always sends under model " + model
+                    : "uses model " + model;
+            String monitors = model == CommunicationModel.CD ? "; the Monitors wrappers notify under CD" : "";
+            throw halt("task " + task + " " + what + ", which must does not support (p2p and asyn only)" + monitors);
         }
     }
 
@@ -1107,7 +1124,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         if (task == 1L) {
             shape("main performs a send");
         }
-        refuseUnsupported(task, model);
+        refuseUnsupported(task, model, value);
         Tid dstStable = stableTid(dst);
         MpMessage stored = (MpMessage) normalize(value);
         if (replaying(task)) {

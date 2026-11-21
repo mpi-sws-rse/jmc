@@ -220,6 +220,20 @@ at a failure or at the iteration or time limit. The API, its rules and the commu
 [docs/must-api.md](docs/must-api.md); [MpMustCheckTest](integration-test/src/test/java/org/mpi_sws/jmc/test/mp/MpMustCheckTest.java)
 runs this example.
 
+Which strategy supports which model and operation:
+
+| | `must` | `mp-random` | other strategies |
+|---|---|---|---|
+| `P2P`, `ASYN` | explored exhaustively | sampled | refused |
+| `CD`, `MBOX` | refused | sampled | refused |
+| `Monitors` (notify under `CD`) | refused | sampled | refused |
+| send, blocking and non-blocking receive with guards, `Nondet`, spawn, create and start, daemons, await, assume | yes | yes | refused |
+| summary export | yes | yes (sampled) | no |
+| online check, graph store, split runs | yes | no | no |
+
+`must` refuses an unsupported model with a fault that names it (`... uses model CD, which must does not support (p2p
+and asyn only)`); the launcher exits 2 on it.
+
 ##### Conformance checking
 
 `must` can also check a distributed implementation against a specification: the explored executions of the
