@@ -114,7 +114,13 @@ public final class SpecificationFile {
      */
     public record Expected(Collection<String> visible, String model, Collection<String> roles) {
 
-        /** Checks the arguments. */
+        /**
+         * Checks the arguments.
+         *
+         * @param visible the program's visible roles
+         * @param model the program's communication model as the header writes it
+         * @param roles the program's header roles
+         */
         public Expected {
             java.util.Objects.requireNonNull(visible);
             java.util.Objects.requireNonNull(model);

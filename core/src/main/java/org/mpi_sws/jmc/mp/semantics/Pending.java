@@ -27,7 +27,12 @@ public record Pending(Envelope envelope, VectorClock clock) {
     public static final Comparator<Pending> CANONICAL =
             Comparator.comparing(Pending::envelope, Envelope.CANONICAL);
 
-    /** Validates that the envelope is present. */
+    /**
+     * Validates that the envelope is present.
+     *
+     * @param envelope the message and the identity of its send
+     * @param clock the sender's clock at emission, or {@code null} when clocks are disabled
+     */
     public Pending {
         Objects.requireNonNull(envelope, "envelope");
     }

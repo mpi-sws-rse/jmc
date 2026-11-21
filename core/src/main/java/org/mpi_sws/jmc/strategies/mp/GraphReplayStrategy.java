@@ -103,17 +103,29 @@ public final class GraphReplayStrategy extends MpRandomSchedulingStrategy {
         return r;
     }
 
-    /** The first deviation, or {@code null}. */
+    /**
+     * The first deviation, or {@code null}.
+     *
+     * @return the first recorded deviation, or {@code null} if none was recorded
+     */
     public Deviation deviation() {
         return deviation;
     }
 
-    /** The warnings of the replay. */
+    /**
+     * The warnings of the replay.
+     *
+     * @return a copy of the warnings recorded so far
+     */
     public List<String> warnings() {
         return List.copyOf(warnings);
     }
 
-    /** The events checked against the graph. */
+    /**
+     * The events checked against the graph.
+     *
+     * @return the number of recorded events the replay has advanced past
+     */
     public long events() {
         return events;
     }

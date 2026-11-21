@@ -237,7 +237,7 @@ final class Graph {
      * form a prefix of the task in program order, which the caller guarantees (as it does when
      * {@code keep} is the complement of the set deleted by a backward revisit). Stamps are kept.
      *
-     * <p>Contract (C1): the kept set must be closed under porf predecessors of its events — a
+     * <p>Contract: the kept set must be closed under porf predecessors of its events — a
      * backward revisit's restriction is (see the class comment) — because the kept nodes keep
      * their clocks; an arbitrary restriction that removes a porf ancestor of a kept event would
      * leave a stale clock, which {@link #CHECK} reports. In particular a restriction must not
@@ -310,7 +310,7 @@ final class Graph {
      * Points a receive at a send and recomputes the receive's prefix (the receive has no porf
      * successor, so no other prefix changes).
      *
-     * <p>Contract (C1): {@code recv} has no porf successor (a just-appended receive, or a backward
+     * <p>Contract: {@code recv} has no porf successor (a just-appended receive, or a backward
      * revisit's receive), and {@code send} is in the graph; otherwise a clock would go stale (a
      * successor's, or the receive's once the send is appended), which {@link #CHECK} reports.
      *
@@ -343,7 +343,7 @@ final class Graph {
 
     /**
      * Makes a receive read ⊥ and recomputes the receive's prefix (no other prefix changes).
-     * Contract (C1): as {@link #setRf}, {@code recv} has no porf successor.
+     * Contract: as {@link #setRf}, {@code recv} has no porf successor.
      */
     void setBottom(EventKey recv) {
         Node r = node(recv);

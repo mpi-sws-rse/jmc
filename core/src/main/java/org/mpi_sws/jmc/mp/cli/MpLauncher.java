@@ -1138,7 +1138,8 @@ public final class MpLauncher {
 
     /**
      * Prints the run's measurements as machine-readable {@code key: value} lines, one per key, in a
-     * fixed order, after the marker line {@value #MEASUREMENTS_MARKER}. Times are wall-clock milliseconds; a phase that does not apply prints 0.
+     * fixed order, after the marker line {@value #MEASUREMENTS_MARKER}. Times are wall-clock milliseconds; a phase
+     * that does not apply prints 0.
      *
      * <ul>
      *   <li>{@code wall_ms}: from the launcher's start to these lines;</li>
@@ -1399,7 +1400,8 @@ public final class MpLauncher {
         if (result.split()) {
             int offset = result.r();
             for (int j = result.n() - 1; j >= 0; j--) {
-                int attempt = SplitCoordinator.readJson(runDir.resolve("item-" + j + ".json")).get("attempt").getAsInt();
+                int attempt = SplitCoordinator.readJson(runDir.resolve("item-" + j + ".json")).get("attempt")
+                        .getAsInt();
                 parts.add(runDir.resolve(SplitCoordinator.itemGraphs(j, attempt)));
                 offsets.add(offset);
                 offset += result.itemIterations().get(j);
@@ -1473,7 +1475,8 @@ public final class MpLauncher {
         }
         JsonObject run = g.getAsJsonObject("run");
         if (!run.get("tool").getAsString().equals("jmc")) {
-            return usage("--replay: the graph is " + run.get("tool").getAsString() + "'s; cross-tool replay is not supported");
+            return usage("--replay: the graph is " + run.get("tool").getAsString()
+                    + "'s; cross-tool replay is not supported");
         }
         if (!run.get("side").isJsonNull() || !run.get("model").isJsonNull()
                 || !run.getAsJsonObject("options").entrySet().isEmpty()) {
@@ -1731,7 +1734,8 @@ public final class MpLauncher {
             return "witness format " + g.get("witness") + " is not 1";
         }
         if (!isString(g.get("line")) || !g.get("export").isJsonObject() || !g.get("run").isJsonObject()
-                || !nullOr(g.get("join"), JsonElement::isJsonObject) || !nullOr(g.get("nearest"), JsonElement::isJsonArray)
+                || !nullOr(g.get("join"), JsonElement::isJsonObject)
+                || !nullOr(g.get("nearest"), JsonElement::isJsonArray)
                 || !g.get("threads").isJsonArray()) {
             return "a top-level value has the wrong type";
         }
@@ -1950,13 +1954,15 @@ public final class MpLauncher {
                 if (kind.equals("TJOIN")) {
                     int c = e.get("child").getAsInt();
                     if (c <= 0 || c >= n || c == t || !kinds.get(c).get(kinds.get(c).size() - 1).equals("END")) {
-                        return "(" + t + ", " + k + ") joins thread " + c + ", which is not a created thread that ended";
+                        return "(" + t + ", " + k + ") joins thread " + c
+                                + ", which is not a created thread that ended";
                     }
                 }
                 if (kind.equals("SEND")) {
                     JsonElement v = e.get("v");
                     boolean opaque = v.isJsonObject() && v.getAsJsonObject().has("opaque");
-                    if (opaque && (!keysAre(v.getAsJsonObject(), "opaque") || !isString(v.getAsJsonObject().get("opaque")))) {
+                    if (opaque && (!keysAre(v.getAsJsonObject(), "opaque")
+                            || !isString(v.getAsJsonObject().get("opaque")))) {
                         return "(" + t + ", " + k + ") has a malformed opaque value";
                     }
                     if (opaque && (vis || readByVisible.contains(t + "," + k))) {

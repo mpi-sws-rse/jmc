@@ -1971,7 +1971,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     stopRequested = stopAtFirst;
                 }
                 if (split != null) {
-                    // The segment's own view (§2.12 of J8R-PLAN): its distinct lines and its first miss.
+                    // The segment's own view: its distinct lines and its first miss.
                     String uncoveredLine = s.toJson(1);
                     segmentUncoveredLines.add(uncoveredLine);
                     if (segmentFirstLocal == 0) {
@@ -2016,6 +2016,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * the iteration budget) after an iteration with no work left — the stack empty and no iteration
      * in progress. A budget that is reached while work remains is not exhaustion. In split mode
      * only the first holds: the run is exhausted when the last item has been explored.
+     *
+     * @return whether the enumeration is complete
      */
     public boolean exhausted() {
         if (split != null) {
@@ -2195,37 +2197,65 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         return names;
     }
 
-    /** Whether the online check runs in bug-finder mode (stop at the first uncovered summary). */
+    /**
+     * Whether the online check runs in bug-finder mode (stop at the first uncovered summary).
+     *
+     * @return whether the online check stops at the first uncovered summary
+     */
     public boolean stopsAtFirst() {
         return stopAtFirst;
     }
 
-    /** Uncovered graphs: summarised graphs the specification does not cover (with repetitions). */
+    /**
+     * Uncovered graphs: summarised graphs the specification does not cover (with repetitions).
+     *
+     * @return the number of uncovered graphs so far
+     */
     public long uncoveredTotal() {
         return uncoveredTotal;
     }
 
-    /** Distinct uncovered summaries. */
+    /**
+     * Distinct uncovered summaries.
+     *
+     * @return the number of distinct uncovered summaries so far
+     */
     public int uncoveredDistinct() {
         return uncoveredSummaries.size();
     }
 
-    /** The first uncovered summary, if the online check found one. */
+    /**
+     * The first uncovered summary, if the online check found one.
+     *
+     * @return the first uncovered summary, or empty if none was found
+     */
     public Optional<Summary> uncovered() {
         return Optional.ofNullable(uncovered);
     }
 
-    /** The (1-based) iteration whose graph gave {@link #uncovered()}; 0 for none. */
+    /**
+     * The (1-based) iteration whose graph gave {@link #uncovered()}; 0 for none.
+     *
+     * @return the 1-based iteration of the first uncovered summary, or 0 for none
+     */
     public int uncoveredIteration() {
         return uncoveredIteration;
     }
 
-    /** The index's answer for {@link #uncovered()} ({@code NoSig} or {@code NotFound}). */
+    /**
+     * The index's answer for {@link #uncovered()} ({@code NoSig} or {@code NotFound}).
+     *
+     * @return the answer for the first uncovered summary, or empty if none was found
+     */
     public Optional<SetIndex.Covers> uncoveredAnswer() {
         return Optional.ofNullable(uncoveredAnswer);
     }
 
-    /** Queries made against the specification (TraceForge's {@code lookups}). */
+    /**
+     * Queries made against the specification (TraceForge's {@code lookups}).
+     *
+     * @return the number of queries so far
+     */
     public long lookups() {
         return lookups;
     }
@@ -2233,12 +2263,18 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     /**
      * Queries answered {@code NoSig}: no held summary has the signature (TraceForge's
      * {@code lookups_signature_miss}).
+     *
+     * @return the number of {@code NoSig} answers so far
      */
     public long signatureMisses() {
         return signatureMisses;
     }
 
-    /** Queries answered {@code Found} ({@code lookups_succeeded}). */
+    /**
+     * Queries answered {@code Found} ({@code lookups_succeeded}).
+     *
+     * @return the number of {@code Found} answers so far
+     */
     public long found() {
         return found;
     }
@@ -2246,6 +2282,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     /**
      * Queries answered {@code NotFound}: the signature exists but no held summary is covered
      * (TraceForge's {@code lookups_failed_after_tests}).
+     *
+     * @return the number of {@code NotFound} answers so far
      */
     public long notFound() {
         return notFound;
@@ -2282,22 +2320,38 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         }
     }
 
-    /** Iterations that ran (consistent alternatives explored). */
+    /**
+     * Iterations that ran (consistent alternatives explored).
+     *
+     * @return the number of iterations so far
+     */
     public int iterations() {
         return iterations;
     }
 
-    /** Summaries with multiplicities (exporting constructor only). */
+    /**
+     * Summaries with multiplicities (exporting constructor only).
+     *
+     * @return an unmodifiable view of the summaries, each mapped to its multiplicity
+     */
     public Map<Summary, Integer> summaries() {
         return Collections.unmodifiableMap(summaries);
     }
 
-    /** Iterations summarised. */
+    /**
+     * Iterations summarised.
+     *
+     * @return the number of iterations whose graph was summarised
+     */
     public int exportedIterations() {
         return exportedIterations;
     }
 
-    /** Iterations not summarised. */
+    /**
+     * Iterations not summarised.
+     *
+     * @return the number of iterations whose graph was not summarised
+     */
     public int skippedIterations() {
         return skippedIterations;
     }
@@ -2330,7 +2384,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                                int maxSummaryBytes, int maxPorfCount, int maxPorfPairs, long firstMissWallMs,
                                long summarisedGraphs) {}
 
-    /** The measurements so far. */
+    /**
+     * The measurements so far.
+     *
+     * @return a snapshot of the current measurements
+     */
     public Measurements measurements() {
         return new Measurements(summariseNanos, lookupNanos, maxGraphEvents,
                 summarisedGraphs == 0 ? 0.0 : (double) sumGraphEvents / summarisedGraphs, maxMessageEvents,
@@ -2339,7 +2397,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 summarisedGraphs);
     }
 
-    /** The current graph as an {@code ExecutionGraph} — for tests. */
+    /**
+     * The current graph as an {@code ExecutionGraph} — for tests.
+     *
+     * @return the current graph converted to an {@code ExecutionGraph}
+     */
     public ExecutionGraph currentGraph() {
         return graph.toExecutionGraph();
     }

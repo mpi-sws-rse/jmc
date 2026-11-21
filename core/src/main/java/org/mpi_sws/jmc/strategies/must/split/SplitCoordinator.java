@@ -109,7 +109,7 @@ public final class SplitCoordinator {
      * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
      * @param runDir the run directory (created; must not hold a previous run)
      * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
-     * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} (the order before S-a1) instead
+     * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} (an earlier assignment order) instead
      *     of the default {@code 0 … N − 1} (the merge order is the same either way)
      * @param liveness test seam: the probe that decides whether a worker process is still alive when its
      *     death is classified (default {@link Process#isAlive}); a test can delay or force the answer to
@@ -128,7 +128,24 @@ public final class SplitCoordinator {
                          java.util.function.Predicate<Process> liveness, SpecificationFile.Loaded spec,
                          List<String> payloadRoles, Long graphsLimit) {
 
-        /** A configuration without a graph store. */
+        /**
+         * A configuration without a graph store.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         * @param liveness test seam: the probe that decides whether a worker process is still alive
+         * @param spec the loaded specification for the online check, or {@code null}; needs {@code roles}
+         * @param payloadRoles the invisible roles a visible payload may name; {@code null} exactly when
+         *     {@code roles} is
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
@@ -138,7 +155,22 @@ public final class SplitCoordinator {
                     reversedAssignment, liveness, spec, payloadRoles, null);
         }
 
-        /** A configuration whose visible payloads name no invisible role (no payload-nameable roles). */
+        /**
+         * A configuration whose visible payloads name no invisible role (no payload-nameable roles).
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         * @param liveness test seam: the probe that decides whether a worker process is still alive
+         * @param spec the loaded specification for the online check, or {@code null}; needs {@code roles}
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
@@ -147,7 +179,21 @@ public final class SplitCoordinator {
                     reversedAssignment, liveness, spec, roles == null ? null : List.of());
         }
 
-        /** A configuration without an online check. */
+        /**
+         * A configuration without an online check.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         * @param liveness test seam: the probe that decides whether a worker process is still alive
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
@@ -156,7 +202,20 @@ public final class SplitCoordinator {
                     reversedAssignment, liveness, null);
         }
 
-        /** A configuration with the given assignment order and the default liveness probe. */
+        /**
+         * A configuration with the given assignment order and the default liveness probe.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment) {
@@ -164,7 +223,19 @@ public final class SplitCoordinator {
                     reversedAssignment, Process::isAlive);
         }
 
-        /** A configuration with the default assignment order {@code 0 … N − 1}. */
+        /**
+         * A configuration with the default assignment order {@code 0 … N − 1}.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand) {
@@ -172,7 +243,25 @@ public final class SplitCoordinator {
                     false);
         }
 
-        /** Checks the arguments. */
+        /**
+         * Checks the arguments.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         * @param liveness test seam: the probe that decides whether a worker process is still alive
+         * @param spec the loaded specification for the online check, or {@code null}; needs {@code roles}
+         * @param payloadRoles the invisible roles a visible payload may name; {@code null} exactly when
+         *     {@code roles} is
+         * @param graphsLimit the most graphs kept per segment with a graph store, or {@code null} for none
+         */
         public Config {
             Objects.requireNonNull(programIdentity);
             Objects.requireNonNull(program);
@@ -225,7 +314,7 @@ public final class SplitCoordinator {
                          Map<String, Long> maxima, Online online, MpOutcome outcome) {}
 
     /**
-     * The merged online check of a split run (J8R-PLAN §2.12): exact against the sequential run except
+     * The merged online check of a split run: exact against the sequential run except
      * {@code firstMissWallMs}.
      *
      * @param miss whether a committed segment (or the root) has an uncovered graph
@@ -563,7 +652,7 @@ public final class SplitCoordinator {
     private record Checks(SpecificationFile.Loaded spec, long startMillis) {}
 
     /**
-     * Validates a result's {@code online} object (J8R-PLAN §2.12): sentinels without a miss; the ranges,
+     * Validates a result's {@code online} object: sentinels without a miss; the ranges,
      * the witness, the timestamp and the counters with one; every line re-queried against this JVM's copy
      * of the index. These are consistency checks; the true position of the first miss is not provable here.
      *
@@ -796,7 +885,7 @@ public final class SplitCoordinator {
      * results. A dormant slot (no process yet) is started when losses leave fewer live workers than
      * {@code min(W, items not yet committed)}; it then has the same restart allowance as any slot.
      *
-     * <p>Against starting all {@code W} at once (owner's contract, S-a2 gate rounds 1–5):
+     * <p>Compared with starting all {@code W} at once:
      * <ul>
      *   <li>If no worker process exits before {@code STOP} and none publishes a fail marker, exactly
      *       {@code min(W, N)} worker JVMs start, and a run that finishes before its deadline commits the

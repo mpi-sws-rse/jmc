@@ -186,6 +186,14 @@ public final class SummaryExporter {
      * {@code uncovered_total}) after the enumeration fields; a reader that does not know them ignores
      * them.
      *
+     * @param program the program name, identical in the Java and Rust files
+     * @param size the size parameters, as text
+     * @param visibleRoles the visible roles (sorted here)
+     * @param roles the header's roles: the visible roles and the invisible roles a visible payload may name
+     * @param model the communication model of the program
+     * @param enumeration {@code "complete"}, {@code "sampled"}, {@code "bounded"} or {@code "aborted"}
+     * @param seed the seed; written only when {@code enumeration} is {@code "sampled"}
+     * @param iterations the iterations run; written only for {@code "sampled"}
      * @param online the online check's results, or {@code null} for none
      * @return the header line, no trailing newline
      */

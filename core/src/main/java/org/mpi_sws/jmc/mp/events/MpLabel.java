@@ -45,7 +45,12 @@ public sealed interface MpLabel {
      * @param chosen the index of the value taken
      */
     record Nondet(int optionCount, int chosen) implements MpLabel {
-        /** Validates {@code 0 <= chosen < optionCount}. */
+        /**
+         * Validates {@code 0 <= chosen < optionCount}.
+         *
+         * @param optionCount the size of {@code S}, at least 1
+         * @param chosen the index of the value taken
+         */
         public Nondet {
             if (optionCount < 1 || chosen < 0 || chosen >= optionCount) {
                 throw new IllegalArgumentException(

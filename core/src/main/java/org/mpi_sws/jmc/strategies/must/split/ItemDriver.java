@@ -65,7 +65,18 @@ public final class ItemDriver {
     public record Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                          int k, Order order, OptionalInt onlyItem, long timeoutSeconds) {
 
-        /** Checks the arguments. */
+        /**
+         * Checks the arguments.
+         *
+         * @param programIdentity the program and configuration identity for the fingerprint
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles for export, or {@code null} to count only
+         * @param k the split threshold, at least 1
+         * @param order the item order
+         * @param onlyItem if present, only this item is explored
+         * @param timeoutSeconds the checker's timeout
+         */
         public Config {
             Objects.requireNonNull(programIdentity);
             Objects.requireNonNull(program);
