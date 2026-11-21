@@ -145,7 +145,7 @@ class J8Round10Test {
     /** The real worker in counting mode (export file "-"), tagged. */
     static List<String> realCounting(Path d, int id, String program, String tag) {
         return new ArrayList<>(List.of(J8Round06Test.JAVA, "-Dj8.tag=" + tag, "-Xss4m", "-cp", J8Round06Test.CP,
-                "org.mpi_sws.jmc.mp.launch.MpLauncher", program, "must", "0", "1", d.resolve("worker-report").toString(),
+                "org.mpi_sws.jmc.mp.cli.MpLauncher", program, "must", "0", "1", d.resolve("worker-report").toString(),
                 "-", "300", "--worker", d.toString(), Integer.toString(id)));
     }
 }

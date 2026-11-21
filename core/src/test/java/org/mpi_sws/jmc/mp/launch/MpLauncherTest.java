@@ -1,6 +1,7 @@
 package org.mpi_sws.jmc.mp.launch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -28,10 +29,10 @@ import java.util.regex.Pattern;
  */
 class MpLauncherTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String MUT_LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncherMutCompleted";
-    private static final String PROGRAM = "org.mpi_sws.jmc.mp.programs.MustSection13";
-    private static final String MUTANTS = "org.mpi_sws.jmc.mp.programs.mutants.";
+    private static final String PROGRAM = "org.mpi_sws.jmc.mp.fixtures.MustSection13";
+    private static final String MUTANTS = "org.mpi_sws.jmc.mp.fixtures.mutants.";
     private static final String REPORT = "build/test-results/j0-tester/launch";
 
     record Out(int exit, String text) {}
@@ -126,6 +127,8 @@ class MpLauncherTest {
                 throw new RuntimeException(x);
             }
         });
+        // A mutant is caught by the numbers of a run that succeeded, never by a run that did not start.
+        assertFalse(err.getMessage().startsWith("exit status"), "the mutant run itself failed: " + err.getMessage());
         System.out.println("MUTANT VERDICT (C3): " + err.getMessage().split("\n")[0]);
     }
 
@@ -226,7 +229,7 @@ class MpLauncherTest {
     }
 
     @Test
-    // F1 enabled in J1 round 04: MpProcess spawns over MpThread, which rethrows a process failure to the joiner.
+    // A failure in a spawned process reaches main: MpProcess spawns over MpThread, which hands it to the joiner.
     void exit1_assertionInProcess() throws Exception {
         Out o = launch(LAUNCHER, MUTANTS + "AssertsInProcess", "mp-random", "5", "1", REPORT);
         expectExit(1, o);
@@ -241,7 +244,7 @@ class MpLauncherTest {
     }
 
     @Test
-    // F2 enabled in J1 round 01: the agreed fix (JmcModelChecker catches Throwable) is applied.
+    // A failure of main on the last iteration fails the run: JmcModelChecker catches every Throwable.
     void exit1_assertionInMain_onLastIteration() throws Exception {
         // One iteration: the failing iteration is also the last one.
         Out o = launch(LAUNCHER, MUTANTS + "AssertsInMain", "mp-random", "1", "1", REPORT);

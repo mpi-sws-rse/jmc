@@ -6,6 +6,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.mpi_sws.jmc.strategies.mp.MainWatch;
+import org.mpi_sws.jmc.strategies.mp.MpOutcome;
 import org.mpi_sws.jmc.api.mp.MpProcess;
 import org.mpi_sws.jmc.api.mp.MpThread;
 import org.mpi_sws.jmc.checker.JmcCheckerConfiguration;
@@ -107,7 +109,7 @@ public final class SplitCoordinator {
      * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
      * @param runDir the run directory (created; must not hold a previous run)
      * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
-     * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} (the order before S-a1) instead
+     * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} (an earlier assignment order) instead
      *     of the default {@code 0 … N − 1} (the merge order is the same either way)
      * @param liveness test seam: the probe that decides whether a worker process is still alive when its
      *     death is classified (default {@link Process#isAlive}); a test can delay or force the answer to
@@ -126,7 +128,24 @@ public final class SplitCoordinator {
                          java.util.function.Predicate<Process> liveness, SpecificationFile.Loaded spec,
                          List<String> payloadRoles, Long graphsLimit) {
 
-        /** A configuration without a graph store. */
+        /**
+         * A configuration without a graph store.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         * @param liveness test seam: the probe that decides whether a worker process is still alive
+         * @param spec the loaded specification for the online check, or {@code null}; needs {@code roles}
+         * @param payloadRoles the invisible roles a visible payload may name; {@code null} exactly when
+         *     {@code roles} is
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
@@ -136,7 +155,22 @@ public final class SplitCoordinator {
                     reversedAssignment, liveness, spec, payloadRoles, null);
         }
 
-        /** A configuration whose visible payloads name no invisible role (no payload-nameable roles). */
+        /**
+         * A configuration whose visible payloads name no invisible role (no payload-nameable roles).
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         * @param liveness test seam: the probe that decides whether a worker process is still alive
+         * @param spec the loaded specification for the online check, or {@code null}; needs {@code roles}
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
@@ -145,7 +179,21 @@ public final class SplitCoordinator {
                     reversedAssignment, liveness, spec, roles == null ? null : List.of());
         }
 
-        /** A configuration without an online check. */
+        /**
+         * A configuration without an online check.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         * @param liveness test seam: the probe that decides whether a worker process is still alive
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment,
@@ -154,7 +202,20 @@ public final class SplitCoordinator {
                     reversedAssignment, liveness, null);
         }
 
-        /** A configuration with the given assignment order and the default liveness probe. */
+        /**
+         * A configuration with the given assignment order and the default liveness probe.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand, boolean reversedAssignment) {
@@ -162,7 +223,19 @@ public final class SplitCoordinator {
                     reversedAssignment, Process::isAlive);
         }
 
-        /** A configuration with the default assignment order {@code 0 … N − 1}. */
+        /**
+         * A configuration with the default assignment order {@code 0 … N − 1}.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         */
         public Config(String programIdentity, Runnable program, List<String> roles, List<String> visibleRoles,
                       int k, int workers, long timeoutSeconds, Path runDir,
                       BiFunction<Path, Integer, List<String>> workerCommand) {
@@ -170,7 +243,25 @@ public final class SplitCoordinator {
                     false);
         }
 
-        /** Checks the arguments. */
+        /**
+         * Checks the arguments.
+         *
+         * @param programIdentity the program and configuration identity (class, arguments, model)
+         * @param program main's body
+         * @param roles the declared roles for export, or {@code null} to count only
+         * @param visibleRoles the visible roles, or {@code null}
+         * @param k the split threshold, at least 1
+         * @param workers {@code W}, the number of worker slots, at least 1
+         * @param timeoutSeconds the bound for the root's run, for each worker's run, and for the whole run
+         * @param runDir the run directory
+         * @param workerCommand the command line that starts worker {@code id} on {@code runDir}
+         * @param reversedAssignment test seam: hand items out {@code N − 1 … 0} instead of {@code 0 … N − 1}
+         * @param liveness test seam: the probe that decides whether a worker process is still alive
+         * @param spec the loaded specification for the online check, or {@code null}; needs {@code roles}
+         * @param payloadRoles the invisible roles a visible payload may name; {@code null} exactly when
+         *     {@code roles} is
+         * @param graphsLimit the most graphs kept per segment with a graph store, or {@code null} for none
+         */
         public Config {
             Objects.requireNonNull(programIdentity);
             Objects.requireNonNull(program);
@@ -214,14 +305,16 @@ public final class SplitCoordinator {
      *     worker JVM's maxima at publication (keys of {@code SplitWorker.MAXIMA}); empty for an aborted
      *     run
      * @param online the merged online check, {@code null} without one
+     * @param outcome how an aborted run ended (a program failure, a refusal, or incomplete); {@code null} if
+     *     the run completed
      */
     public record Result(boolean split, int r, int n, int distinctComplete, int distinctBlocked, int ran,
                          int blockedIterations, List<String> summaryLines, Map<Integer, Integer> itemIterations,
                          int workersLost, String failure, long exploreNanos, long workerPeakRssKb,
-                         Map<String, Long> maxima, Online online) {}
+                         Map<String, Long> maxima, Online online, MpOutcome outcome) {}
 
     /**
-     * The merged online check of a split run (J8R-PLAN §2.12): exact against the sequential run except
+     * The merged online check of a split run: exact against the sequential run except
      * {@code firstMissWallMs}.
      *
      * @param miss whether a committed segment (or the root) has an uncovered graph
@@ -293,7 +386,7 @@ public final class SplitCoordinator {
         if (root.failure != null) {
             return new Result(root.split, root.rootIterations, root.entries, 0, 0, 0, 0, null, Map.of(), 0,
                     root.failure, System.nanoTime() - startNanos, -1, Map.of(),
-                    mergeOnline(config, root, Map.of(), false, startMillis));
+                    mergeOnline(config, root, Map.of(), false, startMillis), root.outcome);
         }
         Set<String> complete = new HashSet<>();
         Set<String> blocked = new HashSet<>();
@@ -303,7 +396,7 @@ public final class SplitCoordinator {
         if (!root.split) {
             return new Result(false, root.rootIterations, 0, complete.size(), blocked.size(), root.iterations,
                     root.blocked, root.summaryLines, Map.of(), 0, null, System.nanoTime() - startNanos, -1,
-                    root.maxima, mergeOnline(config, root, Map.of(), true, startMillis));
+                    root.maxima, mergeOnline(config, root, Map.of(), true, startMillis), null);
         }
         String runId = UUID.randomUUID().toString();
         JsonObject runJson = new JsonObject();
@@ -350,13 +443,15 @@ public final class SplitCoordinator {
         long[] lastCommitOut = {System.nanoTime()};
         Checks checks = new Checks(config.spec(), startMillis);
         Unions unions = new Unions(complete, blocked);
-        String failure = dispatch(config, dir, runId, root, committed, lostOut, lastCommitOut, checks, unions);
+        MpOutcome[] outcome = {MpOutcome.INCOMPLETE};
+        String failure = dispatch(config, dir, runId, root, committed, lostOut, lastCommitOut, checks, unions,
+                outcome);
         sweepSpecSnapshots(dir);
         int lost = lostOut[0];
         if (failure != null) {
             return new Result(true, root.rootIterations, root.entries, 0, 0, 0, 0, null, Map.of(), lost, failure,
                     System.nanoTime() - startNanos, -1, Map.of(),
-                    mergeOnline(config, root, committed, false, startMillis));
+                    mergeOnline(config, root, committed, false, startMillis), outcome[0]);
         }
         int ran = root.iterations;
         int blockedIterations = root.blocked;
@@ -397,7 +492,7 @@ public final class SplitCoordinator {
         return new Result(true, root.rootIterations, root.entries, complete.size(), blocked.size(), ran,
                 blockedIterations, lines,
                 sizes, lost, null, lastCommitOut[0] - startNanos, workerRss, maxima,
-                mergeOnline(config, root, committed, true, startMillis));
+                mergeOnline(config, root, committed, true, startMillis), null);
     }
 
     /**
@@ -557,7 +652,7 @@ public final class SplitCoordinator {
     private record Checks(SpecificationFile.Loaded spec, long startMillis) {}
 
     /**
-     * Validates a result's {@code online} object (J8R-PLAN §2.12): sentinels without a miss; the ranges,
+     * Validates a result's {@code online} object: sentinels without a miss; the ranges,
      * the witness, the timestamp and the counters with one; every line re-queried against this JVM's copy
      * of the index. These are consistency checks; the true position of the first miss is not provable here.
      *
@@ -666,6 +761,8 @@ public final class SplitCoordinator {
         final Config config;
         List<ItemResult.Outcome> outcomes = new ArrayList<>();
         boolean split;
+        /** How the root's run ended when {@code failure} is set. */
+        MpOutcome outcome = MpOutcome.INCOMPLETE;
         int rootIterations;
         int entries;
         int iterations;
@@ -740,6 +837,7 @@ public final class SplitCoordinator {
                 graphs = new GraphPart(config.runDir().resolve(ROOT_GRAPHS), config.graphsLimit());
             } catch (IOException e) {
                 root.failure = "cannot create the root's graph part: " + e;
+                root.outcome = MpOutcome.REFUSED;
                 return root;
             }
             strategy.writeGraphs(graphs);
@@ -761,9 +859,11 @@ public final class SplitCoordinator {
                 root.failure = "the root's run ended before the exploration was complete";
             }
         } catch (JmcCheckerException e) {
-            root.failure = e.getMessage();
+            root.failure = e.getMessage() != null ? e.getMessage() : e.toString();
+            root.outcome = MpOutcome.ofFailure(strategy.failureKind(), MainWatch.seenBy(config.program()));
         } catch (RuntimeException | Error e) {
             root.failure = e.toString();
+            root.outcome = MpOutcome.ofFailure(strategy.failureKind(), MainWatch.seenBy(config.program()));
         } finally {
             MpThread.setStaleWaitMillis(MpThread.DEFAULT_STALE_WAIT_MILLIS);
             if (graphs != null) {
@@ -772,6 +872,7 @@ public final class SplitCoordinator {
                 } catch (IOException e) {
                     if (root.failure == null) {
                         root.failure = "cannot write the root's graph part: " + e;
+                        root.outcome = MpOutcome.REFUSED;
                     }
                 }
             }
@@ -784,7 +885,7 @@ public final class SplitCoordinator {
      * results. A dormant slot (no process yet) is started when losses leave fewer live workers than
      * {@code min(W, items not yet committed)}; it then has the same restart allowance as any slot.
      *
-     * <p>Against starting all {@code W} at once (owner's contract, S-a2 gate rounds 1–5):
+     * <p>Compared with starting all {@code W} at once:
      * <ul>
      *   <li>If no worker process exits before {@code STOP} and none publishes a fail marker, exactly
      *       {@code min(W, N)} worker JVMs start, and a run that finishes before its deadline commits the
@@ -806,7 +907,8 @@ public final class SplitCoordinator {
      * @return {@code null} when every item is committed and every worker has ended, else the abort reason
      */
     private static String dispatch(Config config, Path dir, String runId, Root root, Map<Integer, JsonObject> committed,
-                                   int[] lostOut, long[] lastCommitOut, Checks checks, Unions unions) {
+                                   int[] lostOut, long[] lastCommitOut, Checks checks, Unions unions,
+                                   MpOutcome[] outcome) {
         List<Slot> slots = new ArrayList<>();
         try {
             // W slots, of which min(W, N) start now; the others stay dormant (no process) and start only
@@ -834,6 +936,7 @@ public final class SplitCoordinator {
                 }
                 String marker = firstFailMarker(dir);
                 if (marker != null) {
+                    outcome[0] = failMarkerOutcome(dir, marker);
                     return abort(slots, failMarkerReason(dir, marker));
                 }
                 for (Slot s : slots) {
@@ -848,6 +951,7 @@ public final class SplitCoordinator {
                     if (!config.liveness().test(s.process)) {
                         marker = firstFailMarker(dir);
                         if (marker != null) {
+                            outcome[0] = failMarkerOutcome(dir, marker);
                             return abort(slots, failMarkerReason(dir, marker));
                         }
                         // The result may have been renamed into place between the check above and the exit:
@@ -919,6 +1023,7 @@ public final class SplitCoordinator {
             }
             String marker = firstFailMarker(dir);
             if (marker != null) {
+                outcome[0] = failMarkerOutcome(dir, marker);
                 return abort(slots, failMarkerReason(dir, marker));
             }
             return null;
@@ -927,7 +1032,9 @@ public final class SplitCoordinator {
             return abort(slots, "coordinator interrupted");
         } catch (IOException | RuntimeException e) {
             // Any operational failure (a worker that cannot be started, a file that cannot be written or
-            // parsed) ends the run as incomplete, after every started worker has been stopped and joined.
+            // parsed) ends the run, after every started worker has been stopped and joined: a file that cannot
+            // be read or written refuses it, anything else leaves it incomplete.
+            outcome[0] = abortOutcome(e);
             return abort(slots, "coordinator failure: " + e);
         } catch (Error e) {
             // Not recovered from, but no started worker may outlive the coordinator: stop and join them,
@@ -1011,6 +1118,39 @@ public final class SplitCoordinator {
      * @param blocked digests of the distinct blocked graphs
      */
     private record Unions(Set<String> complete, Set<String> blocked) {}
+
+    /**
+     * The outcome of an operational failure of the coordinator: {@link MpOutcome#REFUSED} when a file could not
+     * be read or written (an {@link IOException}, also wrapped, as {@link #writeAtomically} and {@link #readJson}
+     * wrap it), {@link MpOutcome#INCOMPLETE} otherwise, a malformed file included.
+     *
+     * @param e the failure
+     * @return its outcome
+     */
+    static MpOutcome abortOutcome(Throwable e) {
+        java.util.Set<Throwable> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Throwable c = e; c != null && seen.add(c); c = c.getCause()) {
+            if (c instanceof com.google.gson.JsonParseException) {
+                // A malformed or truncated file (Gson reports truncation as an EOFException beneath).
+                return MpOutcome.INCOMPLETE;
+            }
+            if (c instanceof IOException && !(c instanceof com.google.gson.stream.MalformedJsonException)) {
+                // Gson reports malformed JSON as an IOException too; that is a bad file, not one unreadable.
+                return MpOutcome.REFUSED;
+            }
+        }
+        return MpOutcome.INCOMPLETE;
+    }
+
+    /** The outcome a fail marker records; {@link MpOutcome#INCOMPLETE} if it records none. */
+    static MpOutcome failMarkerOutcome(Path dir, String marker) {
+        JsonElement o = readJson(dir.resolve(marker)).get("outcome");
+        try {
+            return o == null || !o.isJsonPrimitive() ? MpOutcome.INCOMPLETE : MpOutcome.valueOf(o.getAsString());
+        } catch (IllegalArgumentException e) {
+            return MpOutcome.INCOMPLETE;
+        }
+    }
 
     /** The abort reason for a fail marker. */
     private static String failMarkerReason(Path dir, String marker) {

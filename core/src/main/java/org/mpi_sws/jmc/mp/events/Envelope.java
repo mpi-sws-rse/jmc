@@ -35,7 +35,15 @@ public record Envelope(Tid src, long sendIndex, Tid dst, CommunicationModel mode
     public static final Comparator<Envelope> CANONICAL =
             Comparator.comparing(Envelope::src).thenComparingLong(Envelope::sendIndex);
 
-    /** Validates the components; {@code sendIndex} must be non-negative. */
+    /**
+     * Validates the components; {@code sendIndex} must be non-negative.
+     *
+     * @param src the sending process
+     * @param sendIndex the 0-based index of this send among {@code src}'s sends in this iteration
+     * @param dst the destination process
+     * @param model the communication model of this send
+     * @param value the message
+     */
     public Envelope {
         Objects.requireNonNull(src, "src");
         Objects.requireNonNull(dst, "dst");

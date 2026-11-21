@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  */
 class MpLauncherMustTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String DIR = "build/test-results/j2-tester/export/";
 
     private static final String M1 = "{\"t\":\"Msg\",\"f\":[1]}";
@@ -75,7 +75,7 @@ class MpLauncherMustTest {
     }
 
     static void checkC13(String header, Set<String> lines) throws Exception {
-        Exp e = export("org.mpi_sws.jmc.mp.programs.MustSection13", "0", "c13.jsonl", 0);
+        Exp e = export("org.mpi_sws.jmc.mp.fixtures.MustSection13", "0", "c13.jsonl", 0);
         assertEquals(header, e.lines().get(0), "header");
         assertEquals(new TreeSet<>(lines), new TreeSet<>(e.lines().subList(1, e.lines().size())), "lines");
         String g = field(e.out().text(), "graphs");
@@ -99,7 +99,7 @@ class MpLauncherMustTest {
 
     @Test
     void c5_bounded_nsr4_cap2() throws Exception {
-        Exp e = export("org.mpi_sws.jmc.mp.programs.j2.NSR", "2", "bounded.jsonl", 0);
+        Exp e = export("org.mpi_sws.jmc.mp.fixtures.counts.NSR", "2", "bounded.jsonl", 0);
         assertEquals("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"ns+r\",\"size\":\"N=4\","
                 + "\"visible\":[\"r\",\"s1\",\"s2\",\"s3\",\"s4\"],"
                 + "\"roles\":[\"r\",\"s1\",\"s2\",\"s3\",\"s4\"],\"model\":\"p2p\",\"enumeration\":\"bounded\","
@@ -109,7 +109,7 @@ class MpLauncherMustTest {
 
     @Test
     void c5_complete_nsr4_uncapped_4lines() throws Exception {
-        Exp e = export("org.mpi_sws.jmc.mp.programs.j2.NSR", "0", "nsr4.jsonl", 0);
+        Exp e = export("org.mpi_sws.jmc.mp.fixtures.counts.NSR", "0", "nsr4.jsonl", 0);
         assertTrue(e.lines().get(0).contains("\"enumeration\":\"complete\""), e.lines().get(0));
         assertEquals(5, e.lines().size(), "header + 4 lines");
     }
@@ -117,7 +117,7 @@ class MpLauncherMustTest {
     @Test
     void c5_detects_bounded_expectedComplete() {
         mutant("C5 bounded", () -> {
-            Exp e = export("org.mpi_sws.jmc.mp.programs.j2.NSR", "2", "bounded.jsonl", 0);
+            Exp e = export("org.mpi_sws.jmc.mp.fixtures.counts.NSR", "2", "bounded.jsonl", 0);
             assertTrue(e.lines().get(0).contains("\"enumeration\":\"complete\""), e.lines().get(0));
         });
     }
@@ -127,7 +127,7 @@ class MpLauncherMustTest {
 
     @Test
     void c5_aborted_assertionInRun2() throws Exception {
-        Exp e = export("org.mpi_sws.jmc.mp.programs.j2.MustAssertsInRun2", "0", "aborted.jsonl", 1);
+        Exp e = export("org.mpi_sws.jmc.mp.fixtures.counts.MustAssertsInRun2", "0", "aborted.jsonl", 1);
         assertTrue(e.out().text().contains("FAILED:"), "FAILED line");
         assertEquals("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"must-asserts-in-run-2\",\"size\":\"\","
                 + "\"visible\":[\"r\",\"s1\",\"s2\"],"
@@ -141,7 +141,7 @@ class MpLauncherMustTest {
 
     @Test
     void c5_blocked_exportedComplete() throws Exception {
-        Exp e = export("org.mpi_sws.jmc.mp.programs.j1.BlockedAlone", "0", "blocked.jsonl", 0);
+        Exp e = export("org.mpi_sws.jmc.mp.fixtures.export.BlockedAlone", "0", "blocked.jsonl", 0);
         assertEquals(List.of("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"blocked-alone\",\"size\":\"\","
                 + "\"visible\":[\"r\"],"
                 + "\"roles\":[\"r\"],\"model\":\"p2p\",\"enumeration\":\"complete\",\"encoding\":1}",
@@ -151,14 +151,14 @@ class MpLauncherMustTest {
     @Test
     void c5_detects_blocked_doneStatus() {
         mutant("C5 blocked status", () -> {
-            Exp e = export("org.mpi_sws.jmc.mp.programs.j1.BlockedAlone", "0", "blocked.jsonl", 0);
+            Exp e = export("org.mpi_sws.jmc.mp.fixtures.export.BlockedAlone", "0", "blocked.jsonl", 0);
             assertEquals("{\"statuses\":{\"r\":\"done\"},\"words\":{\"r\":[]},\"counts\":[],\"n\":1}", e.lines().get(1));
         });
     }
 
     @Test
     void c5_mpRandomStillRejectsZeroIterations() throws Exception {
-        MpLauncherTest.Out o = MpLauncherTest.launch(LAUNCHER, "org.mpi_sws.jmc.mp.programs.MustSection13",
+        MpLauncherTest.Out o = MpLauncherTest.launch(LAUNCHER, "org.mpi_sws.jmc.mp.fixtures.MustSection13",
                 "mp-random", "0", "1", DIR + "report-zero");
         assertEquals(2, o.exit(), "iterations 0 is allowed for must only\n" + o.text());
     }
@@ -167,7 +167,7 @@ class MpLauncherMustTest {
 
     @Test
     void r3_m1_earlyNondet_aborted_oneLine() throws Exception {
-        Exp e = export("org.mpi_sws.jmc.mp.programs.j2.R3EarlyNondet", "0", "r3-early.jsonl", 1);
+        Exp e = export("org.mpi_sws.jmc.mp.fixtures.counts.R3EarlyNondet", "0", "r3-early.jsonl", 1);
         assertTrue(e.out().text().contains("FAILED:") && e.out().text().contains("replay drift"), e.out().text());
         assertEquals("{\"format\":1,\"minor\":1,\"tool\":\"jmc\",\"program\":\"r3-early-nondet\",\"size\":\"\","
                 + "\"visible\":[\"p\"],\"roles\":[\"p\"],\"model\":\"p2p\",\"enumeration\":\"aborted\",\"encoding\":1}",
@@ -179,7 +179,7 @@ class MpLauncherMustTest {
 
     @Test
     void r3_m3_cdSend_aborted_headerOnly() throws Exception {
-        Exp e = export("org.mpi_sws.jmc.mp.programs.j2.R3Model", "0", "r3-cd.jsonl", 1);
+        Exp e = export("org.mpi_sws.jmc.mp.fixtures.counts.R3Model", "0", "r3-cd.jsonl", 1);
         assertTrue(e.out().text().contains("FAILED:") && e.out().text().contains("which must does not support"),
                 e.out().text());
         assertTrue(e.lines().get(0).contains("\"enumeration\":\"aborted\""), e.lines().get(0));
@@ -190,7 +190,7 @@ class MpLauncherMustTest {
     void r3_m4_duplicateRoles_refusedByLauncher() throws Exception {
         Path p = Path.of(DIR + "r3-dup.jsonl");
         Files.deleteIfExists(p);
-        MpLauncherTest.Out o = MpLauncherTest.launch(LAUNCHER, "org.mpi_sws.jmc.mp.programs.j2.R3DupRoles", "must",
+        MpLauncherTest.Out o = MpLauncherTest.launch(LAUNCHER, "org.mpi_sws.jmc.mp.fixtures.counts.R3DupRoles", "must",
                 "0", "1", DIR + "report-r3-dup", p.toString(), "60");
         System.out.println("R3 M4 launcher exit " + o.exit() + "\n" + o.text());
         assertTrue(o.exit() != 0, "non-zero exit\n" + o.text());

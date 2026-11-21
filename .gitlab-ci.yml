@@ -181,6 +181,30 @@ test:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
+launcher-test:
+  # The message-passing launcher's own tests (core test sources), one class per invocation. The integration-test
+  # sweep above does not reach them.
+  stage: test
+  script:
+    - |
+      set -eu
+      FAILED=""
+      for CLASS in $(grep -v '^#' scripts/launcher-tests.txt); do
+        echo ">>> running $CLASS"
+        timeout -k 30s 600s ./gradlew --no-daemon :core:test --tests "$CLASS" || FAILED="${FAILED}${FAILED:+ }$CLASS"
+      done
+      if [ -n "$FAILED" ]; then
+        echo "Failed:"; for t in $FAILED; do echo "  - $t"; done
+        exit 1
+      fi
+  artifacts:
+    when: always
+    reports:
+      junit: core/build/test-results/test/**/TEST-*.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+
 publish:
   # A release: runs only on a version tag (v0.2.0, ...), after the test stage. Uploads the signed bundle to the
   # Central Portal as a USER_MANAGED deployment; it is published from the Portal's web interface.

@@ -279,7 +279,7 @@ class WitnessLauncherTest {
     // ---------------------------------------------------------------- the sink (MpLauncher.WitnessFiles)
 
     static Object openSink(String path) throws Exception {
-        Class<?> c = Class.forName("org.mpi_sws.jmc.mp.launch.MpLauncher$WitnessFiles");
+        Class<?> c = Class.forName("org.mpi_sws.jmc.mp.cli.MpLauncher$WitnessFiles");
         Method open = c.getDeclaredMethod("open", String.class, Path.class);
         open.setAccessible(true);
         return open.invoke(null, path, null);

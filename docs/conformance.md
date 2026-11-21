@@ -7,7 +7,7 @@ executions are summarised per visible role: the sequence of sends and receives w
 can produce is covered by a specification summary. JMC writes and reads the summary format shared with TraceForge,
 specified in the daavar repository (<https://github.com/joulook/daavar>, `format/SUMMARY-FORMAT.md`).
 
-Runnable example: the `PingPong` program of the [README](../README.md#conformance-checking-with-the-must-api), checked
+Runnable example: the `PingPong` program of the [README](../README.md#conformance-checking), checked
 against itself below.
 
 ## The workflow
@@ -25,38 +25,46 @@ All commands below run from the JMC root with `CP` set as in the README:
 
 ```bash
 CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath):docs/examples/build
-L="java -ea -cp $CP org.mpi_sws.jmc.mp.launch.MpLauncher"
+L="java -ea -cp $CP org.mpi_sws.jmc.mp.cli.MpLauncher"
 ```
 
 ## The launcher: `MpLauncher`
 
 ```
-MpLauncher <program class[:args]> [strategy] [iterations] [seed] [reportPath] [exportFile] [timeoutSeconds]
-           [--spec <file> [--stop-at-first] [--witness <file or dir/>]] [--graphs <store> [--graphs-limit N]]
-           [--split W [--k K]]
-MpLauncher --replay <graph.json> [--report <r.json>] [--allow-source-change] [--allow-tool-change] [<class[:args]>]
+MpLauncher count  --program <class[:args]> [run options]
+MpLauncher export --program <class[:args]> [run options] --out <file> [--graphs <store> [--graphs-limit N]]
+MpLauncher online --program <class[:args]> [run options] --spec <file> [--stop-at-first] [--witness <file or dir/>]
+                  [--out <file> [--graphs <store> [--graphs-limit N]]]
+MpLauncher replay --graph <graph.json> [--report <r.json>] [--allow-source-change] [--allow-tool-change]
+                  [--program <class[:args]>]
+MpLauncher --help | <command> --help
 ```
 
-| Positional | Default | Meaning |
+| Run option | Default | Meaning |
 |---|---|---|
-| program | | a `Runnable`; `Class:a,b` passes `"a","b"` to its `String...` constructor |
-| strategy | `mp-random` | `must` (exhaustive) or `mp-random` (sampled) for message-passing programs |
-| iterations | `1000` | `0` with `must`: unbounded, until the stack is exhausted or the timeout |
-| seed | the clock | printed; used by `mp-random` |
-| reportPath | `build/mp-launch/<class>` | **the launcher deletes the plain files in this directory**; use a fresh one |
-| exportFile | none | the summary file; `-` or absent: no export (under `must`, counting mode) |
-| timeoutSeconds | `600` | applies to `must` |
+| `--program <class[:args]>` | | a `Runnable`; `Class:a,b` passes `"a","b"` to its `String...` constructor; `export` and `online` need an `MpProgram` |
+| `--strategy <s>` | `must` | `must` (exhaustive; `p2p` and `asyn` only) or `mp-random` (sampled; any model); any other strategy is refused |
+| `--model <m>` | the program's | `p2p` (alias `fifo`), `asyn` (`bag`), `cd` (`causal`) or `mbox`; refused if it differs from the model an `MpProgram` declares, and `cd`/`mbox` under `must`; printed canonically on the `model:` line |
+| `--iterations N` | `0` for `must`, `1000` for `mp-random` | `0` (`must` only): unbounded, until the stack is exhausted or the timeout |
+| `--seed N` | the clock | printed; used by `mp-random` |
+| `--report-dir <dir>` | `build/mp-launch/<class>` | **the launcher deletes the plain files in this directory**; use a fresh one |
+| `--timeout S` | `600` | seconds; applies to `must` |
 
-Options may stand anywhere after the program. `--split W [--k K]` (advanced) explores with `W` worker JVMs once the
-search stack holds `K` entries (default `8·W`); it needs `must` and iterations `0`, writes the same export as the
-sequential run, and refuses `--witness` and `--stop-at-first`. `--worker` is internal (the coordinator starts workers with it).
+Each option is given at most once; an option a command does not take, or a missing required one, is a usage error
+(exit 2). Advanced: `--split W [--k K]` explores with `W` worker JVMs once the search stack holds `K` entries (default
+`8·W`); it needs `must` and iterations `0`, writes the same export as the sequential run, and refuses `--witness` and
+`--stop-at-first`. `--worker` is internal (the coordinator starts workers with it).
+
+The positional form, `MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000] [seed] [reportPath]
+[exportFile] [timeoutSeconds] [options]` and `MpLauncher --replay <graph.json> [...] [<class[:args]>]`, is still
+accepted and is deprecated; it prints no `model:` line.
 
 ### Count, export, online check
 
 ```bash
-$L example.PingPong must 0 1 rep-count                    # count: ran:, graphs:
-$L example.PingPong must 0 1 rep-spec spec.jsonl          # export
-$L example.PingPong must 0 1 rep-impl - 600 --spec spec.jsonl   # online check against spec.jsonl
+$L count  --program example.PingPong                       # count: ran:, graphs:
+$L export --program example.PingPong --out spec.jsonl      # export
+$L online --program example.PingPong --spec spec.jsonl     # online check against spec.jsonl
 ```
 
 The export's first line is the header (`format`, `tool`, `program`, `size`, `visible`, `roles`, `model`,
@@ -85,14 +93,14 @@ a text witness; `--witness <dir>/` writes `witness-<n>.txt` for each distinct un
 
 ### Graph stores and replay
 
-`--graphs <store>` (with `must` and an export file) writes, beside the export, the full execution graph of every
+`--graphs <store>` (with `must` and `--out`) writes, beside the export, the full execution graph of every
 distinct summary at its first occurrence (JSON Lines; `--graphs-limit N` keeps at most `N`). TraceForge's
 `conf-join --witness-dir D` looks the uncovered words up in this store, so a join hands you the graphs of its
 violations without a re-run. The store line `graph_store: written=W refused=R ms=T` reports the work. Without a
 `SOURCE.md5` manifest beside the program's classes the store records `"source": "unknown"` and the launcher says so
 on stderr (`graphs: source unknown: ...`); such graphs replay only with `--allow-source-change`.
 
-`--replay g.json` re-executes one graph: every scheduling choice, received message and choice index is taken from the
+`replay --graph g.json` re-executes one graph: every scheduling choice, received message and choice index is taken from the
 graph, and every event is compared with it.
 
 For the README's example (a graph of its store, and the same graph with its choice flipped):
@@ -124,13 +132,19 @@ the `verdict:` and `decide:` lines.
 
 ### Exit codes of `MpLauncher`
 
+The named form (`MpLauncher count|export|online|replay`, also listed by `--help`):
+
 | Exit | When |
 |---|---|
-| 0 | the run completed; every online verdict (`conforms`, `reports`, `partial`), a timeout, a bug-finder stop; `replay: reproduced` |
-| 1 | the run failed: a failed assertion or exception in any process, a shape or model fault, an export or store write failure, a split run that did not finish; `replay: deviation` |
-| 2 | bad arguments or a refused input: unknown option or strategy, a class that cannot be loaded, a refused specification file, a refused replay |
+| 0 | conforms, or nothing to report: the exploration was exhausted (`count`, `export`), `verdict: conforms`, `replay: reproduced` |
+| 1 | a violation: `verdict: reports` (also after a `--stop-at-first` stop), a failed assertion or an exception in any process or in main, in any iteration including the last, a receive guard that threw; `replay: deviation` |
+| 2 | refused: a usage error, a strategy that is not a message-passing one, a model or value the strategy does not support, a broken rule of the API or of the export format, a refused specification file, store, witness target or replay, an output that cannot be written |
+| 3 | partial or incomplete: a timeout, an iteration bound reached before the exploration was exhausted, `mp-random` (sampled), `verdict: partial`, a split run that did not finish |
 
-An online verdict is read from the `verdict:` line, not from the exit code.
+The deprecated positional form keeps its statuses: 0 the run completed, whatever the online verdict (read the
+`verdict:` line), including a timeout and a bug-finder stop, and `replay: reproduced`; 1 the run failed (a failed
+assertion or exception in any process, a shape or model fault, an export or store write failure, a split run that
+did not finish) and `replay: deviation`; 2 bad arguments or a refused input.
 
 ## The four classes of an uncovered word
 

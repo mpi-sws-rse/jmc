@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.mp.launch;
 
+import org.mpi_sws.jmc.mp.cli.MpLauncher;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,8 +21,8 @@ import java.util.Map;
  */
 class ExportRolesLauncherTest {
 
-    static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
-    static final String PROGRAMS = "org.mpi_sws.jmc.mp.programs.roles.ExportRolePrograms:";
+    static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
+    static final String PROGRAMS = "org.mpi_sws.jmc.mp.fixtures.roles.ExportRolePrograms:";
     static final String DIR = "build/test-results/export-roles-launch/";
 
     static MpLauncherTest.Out export(String program, Path out) throws Exception {

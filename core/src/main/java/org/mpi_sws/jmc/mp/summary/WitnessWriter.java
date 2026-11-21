@@ -57,10 +57,18 @@ public final class WitnessWriter {
 
     /** A line placed among a thread's graph events: a creation or a completed join. */
     public sealed interface Inserted permits Creation, Join {
-        /** The thread the line belongs to. */
+        /**
+         * The thread the line belongs to.
+         *
+         * @return its thread id
+         */
         long thread();
 
-        /** The thread's graph events before the line. */
+        /**
+         * The thread's graph events before the line.
+         *
+         * @return how many of the thread's graph events precede it
+         */
         int after();
     }
 

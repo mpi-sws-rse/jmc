@@ -43,8 +43,8 @@ import java.util.regex.Pattern;
  */
 class J7OnlineTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
-    private static final String PKG = "org.mpi_sws.jmc.mp.programs.j4.";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
+    private static final String PKG = "org.mpi_sws.jmc.mp.fixtures.apps.";
     private static final String DIR = "build/test-results/j7-tester/";
     private static final String TIMEOUT = "300";
 
@@ -539,7 +539,7 @@ class J7OnlineTest {
     @Test
     void usage_specWithNonMpProgram() throws Exception {
         Path spec = export("A3Lock:spec,2,1");
-        exit2("MpProgram", "org.mpi_sws.jmc.mp.programs.mutants.T2NoRecv", "must", "0", "1", DIR + "r", "-", TIMEOUT,
+        exit2("MpProgram", "org.mpi_sws.jmc.mp.fixtures.mutants.T2NoRecv", "must", "0", "1", DIR + "r", "-", TIMEOUT,
                 "--spec", spec.toString());
     }
 

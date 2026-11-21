@@ -9,7 +9,7 @@ import static org.mpi_sws.jmc.mp.witness.WitnessSupport.lines;
 
 import org.junit.jupiter.api.Test;
 import org.mpi_sws.jmc.mp.j8s.OnlineBank;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.witness.WitnessSupport.Out;
 import org.mpi_sws.jmc.mp.witness.WitnessSupport.Witness;
 
@@ -237,12 +237,12 @@ class WitnessFormatTest {
                 WitnessSupport.spec(dir, WitnessSupport.PKG + "WitnessTiny", "tiny.jsonl", UnaryOperator.identity(), 2)));
         // J4's A3Lock (two visible clients, non-trivial counts): the double-grant implementation against the
         // complete export of the specification.
-        String a3 = "org.mpi_sws.jmc.mp.programs.j4.A3Lock:";
+        String a3 = "org.mpi_sws.jmc.mp.fixtures.apps.A3Lock:";
         Path a3spec = dir.resolve("a3-spec.jsonl");
         Out e = launch(dir, a3 + "spec,2,1", "must", "0", "1", "rep-a3", a3spec.toString(), TIMEOUT);
         assertEquals(0, e.exit(), e.text());
         int n = oracle("a3", a3 + "double-grant,2,1",
-                new org.mpi_sws.jmc.mp.programs.j4.A3Lock("double-grant", "2", "1"), dir, a3spec);
+                new org.mpi_sws.jmc.mp.fixtures.apps.A3Lock("double-grant", "2", "1"), dir, a3spec);
         org.junit.jupiter.api.Assertions.assertTrue(n >= 2, "A3Lock double-grant has uncovered summaries: " + n);
     }
 }

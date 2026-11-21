@@ -23,7 +23,7 @@ import java.util.Locale;
  * observed across iterations.
  *
  * <pre>
- * java -cp &lt;core main + test classes + runtime deps&gt; org.mpi_sws.jmc.mp.launch.MpLauncher \
+ * java -cp &lt;core main + test classes + runtime deps&gt; org.mpi_sws.jmc.mp.cli.MpLauncher \
  *      &lt;program class&gt; [strategy] [iterations] [seed] [reportPath]
  * </pre>
  *

@@ -16,7 +16,8 @@ import java.util.function.Function;
 
 /**
  * The canonical JSON encoding of values in a summary file ("Values" in the summary format
- * specification), compared by bytes against the encoding produced by the Rust (TraceForge) side:
+ * specification), compared by bytes against the encoding produced by the Rust (TraceForge) side.
+ * It encodes:
  *
  * <ul>
  *   <li>{@link Byte}, {@link Short}, {@link Integer}, {@link Long} as JSON integers;

@@ -6,7 +6,7 @@ nondeterministic choices. The `must` strategy explores every distinct execution 
 `mp-random` strategy samples executions.
 
 Runnable example: [`examples/pingpong/PingPong.java`](examples/pingpong/PingPong.java); how to run it is in the
-[README](../README.md#conformance-checking-with-the-must-api).
+[README](../README.md#conformance-checking).
 
 ## Processes: `MpProcess`
 
@@ -43,7 +43,8 @@ Optional<MpMessage> r = Channel.tryRecv(M);           // non-blocking
   received, like UDP), `CD` (causal delivery) and `MBOX` (one send order per destination). TraceForge calls the
   first three `fifo`, `bag` and `causal`; the summary header writes `p2p`, `asyn`, `cd`. The `must` strategy
   supports **P2P and ASYN only**; a send or receive under another model fails the run with
-  `must: task N uses model M, which must does not support (p2p and asyn only)`. `mp-random` supports all four.
+  `must: task N uses model M, which must does not support (p2p and asyn only)` (for `CD` it adds that the `Monitors`
+  wrappers notify under `CD`, so `must` refuses monitors too). `mp-random` supports all four, and monitors.
 - **`tryRecv`** returns `Optional.empty()` for "nothing received", and the strategy may choose that outcome *even when
   a message is pending*: an empty `tryRecv` is a behaviour, not a failure. Must explores the empty outcome first.
 - **Guards** must be pure and deterministic, read only their argument and captured locals or final fields, never call
@@ -98,7 +99,8 @@ differently (a set holding both `Integer` 1 and `Long` 1 is refused).
 
 ## Programs: `MpProgram`
 
-A program to export implements `MpProgram` (in JMC's test sources, package `org.mpi_sws.jmc.mp.launch`):
+A program to export implements `MpProgram` (package `org.mpi_sws.jmc.mp.cli`; the former
+`org.mpi_sws.jmc.mp.launch.MpProgram` is a deprecated alias for one release):
 
 | Method | Meaning |
 |---|---|

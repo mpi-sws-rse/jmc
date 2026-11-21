@@ -11,11 +11,11 @@ import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.mp.consistency.MpConsistency;
 import org.mpi_sws.jmc.mp.events.EventKey;
 import org.mpi_sws.jmc.mp.graph.ExecutionGraph;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
-import org.mpi_sws.jmc.mp.programs.j2b.HiddenFailure;
-import org.mpi_sws.jmc.mp.programs.j2b.J2bPrograms;
-import org.mpi_sws.jmc.mp.programs.j2b.SpawnAfterAwait;
-import org.mpi_sws.jmc.mp.programs.j2b.StartOrderRoles;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
+import org.mpi_sws.jmc.mp.fixtures.threads.HiddenFailure;
+import org.mpi_sws.jmc.mp.fixtures.threads.J2bPrograms;
+import org.mpi_sws.jmc.mp.fixtures.threads.SpawnAfterAwait;
+import org.mpi_sws.jmc.mp.fixtures.threads.StartOrderRoles;
 import org.mpi_sws.jmc.strategies.mp.MpRecordingStrategy;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;
 

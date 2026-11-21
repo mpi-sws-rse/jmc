@@ -34,7 +34,7 @@ import java.util.stream.Stream;
  */
 final class WitnessSupport {
 
-    static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     static final String PKG = "org.mpi_sws.jmc.mp.witness.";
     static final String BANK = "org.mpi_sws.jmc.mp.j8s.OnlineBank";
     static final String TIMEOUT = "300";

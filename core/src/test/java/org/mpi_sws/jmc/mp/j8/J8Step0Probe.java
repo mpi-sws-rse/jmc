@@ -6,7 +6,7 @@ import org.mpi_sws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.mp.graph.GraphCanon;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.summary.Summary;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;

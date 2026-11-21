@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.mp.launch;
 
+import org.mpi_sws.jmc.mp.cli.MpLauncher;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,9 +29,9 @@ import java.util.regex.Pattern;
  */
 class OLMeasurementsTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String H1 = "org.mpi_sws.jmc.mp.h1.";
-    private static final String J4 = "org.mpi_sws.jmc.mp.programs.j4.";
+    private static final String J4 = "org.mpi_sws.jmc.mp.fixtures.apps.";
     private static final String DIR = "build/test-results/ol-tester/";
 
     /** §0's keys in the message's order; the three first-miss keys only with a spec file. */
@@ -437,7 +438,7 @@ class OLMeasurementsTest {
         assertEquals("error", te.get("stop_reason"), "a failed run is an error even when it also timed out");
 
         // ---- 12. runtime error: a process throws (mutants.AssertsInProcess), counting must: exit 1, error.
-        MpLauncherTest.Out re = MpLauncherTest.launch(LAUNCHER, "org.mpi_sws.jmc.mp.programs.mutants.AssertsInProcess",
+        MpLauncherTest.Out re = MpLauncherTest.launch(LAUNCHER, "org.mpi_sws.jmc.mp.fixtures.mutants.AssertsInProcess",
                 "must", "0", "1", DIR + "report-rt", "-", "60");
         Map<String, String> rev = block(re, false, 1, false);
         assertEquals("error", rev.get("stop_reason"));

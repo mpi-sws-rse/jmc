@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
-import org.mpi_sws.jmc.mp.programs.j4.A3Lock;
+import org.mpi_sws.jmc.mp.fixtures.apps.A3Lock;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
 
 import java.nio.file.Files;
@@ -196,7 +196,7 @@ class SplitOrderTest {
                         r = SplitCoordinator.run(new SplitCoordinator.Config(row[0], prog, null, null,
                                 Integer.parseInt(row[1]), w, 300, d, (x, id) -> List.of(J8Round06Test.JAVA,
                                         "-Dj8.tag=" + tag, "-Xss4m", "-cp", J8Round06Test.CP,
-                                        "org.mpi_sws.jmc.mp.launch.MpLauncher", row[0], "must", "0", "1",
+                                        "org.mpi_sws.jmc.mp.cli.MpLauncher", row[0], "must", "0", "1",
                                         x.resolve("worker-report").toString(), "-", "300", "--worker", x.toString(),
                                         Integer.toString(id)), rev));
                     } finally {

@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.mpi_sws.jmc.mp.h1.Litmus;
-import org.mpi_sws.jmc.mp.programs.j4.A3Lock;
+import org.mpi_sws.jmc.mp.fixtures.apps.A3Lock;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
 
 import java.nio.file.Files;
@@ -41,12 +41,14 @@ class SplitWeffTest {
     static final String ITEMS = "{0=10, 1=10, 2=3, 3=4, 4=2}";
 
     /**
-     * The merged results of every complete run ({@link #merged}), measured on the base 648e9c83 with the same
-     * cases (every complete A3 or r_ss K 1 run of the base gave exactly these): every complete S-a2 run must
-     * equal them (gate round 05, gap 1).
+     * The merged results of every complete run ({@link #merged}), measured on an earlier base with the same
+     * cases (every complete A3 or r_ss K 1 run of the base gave exactly these): every complete run must equal
+     * them. The A3 fingerprint and items digest cover the program identity and typed graph encodings, which
+     * carry the fixture's class name; they were re-derived when the fixtures moved to {@code mp.fixtures}, with
+     * the summaries digest unchanged.
      */
     static final String BASE_A3 = "dc=30 db=0 ran=30 bi=0 summaries=05feb1587d2cd50a247113b6fda67c7d"
-            + " fingerprint=556f1db1282457a5 itemsDigest=4c5906e5a880b59242418d2b9bd15762";
+            + " fingerprint=9bed5e60c2ab4b39 itemsDigest=6771a4ac3dd6aa9089f0053284f68f0a";
     static final String BASE_RSS = "dc=3 db=0 ran=3 bi=0 summaries=- fingerprint=ea3394eba0690e5d"
             + " itemsDigest=f10f902a04f31e5df039c5f272186c48";
 
@@ -118,7 +120,7 @@ class SplitWeffTest {
                             Integer.toString(id), kind);
                 default:
                     List<String> real = new ArrayList<>(List.of(j, "-Dj8.tag=" + tag, "-Xss4m", "-cp", cp,
-                            "org.mpi_sws.jmc.mp.launch.MpLauncher", program(), "must", "0", "1",
+                            "org.mpi_sws.jmc.mp.cli.MpLauncher", program(), "must", "0", "1",
                             x.resolve("worker-report").toString(),
                             a3 ? x.resolve("worker-export.jsonl").toString() : "-", "300", "--worker", x.toString(),
                             Integer.toString(id)));

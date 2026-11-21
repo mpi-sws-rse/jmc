@@ -3,7 +3,7 @@ package org.mpi_sws.jmc.mp.j8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.mpi_sws.jmc.mp.programs.j4.A3Lock;
+import org.mpi_sws.jmc.mp.fixtures.apps.A3Lock;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
 
 import java.nio.file.Path;

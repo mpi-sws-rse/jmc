@@ -1,7 +1,9 @@
 package org.mpi_sws.jmc.strategies.must;
 
+import org.mpi_sws.jmc.strategies.mp.MpFailureKind;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mpi_sws.jmc.api.mp.Monitors;
 import org.mpi_sws.jmc.api.mp.MpThread;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.mp.consistency.MpConsistency;
@@ -230,6 +232,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private boolean active;
     /** The first fault (error message) detected in this iteration, or {@code null}. */
     private String fault;
+    /** The kind of the run's first fault, or {@code null} while there is none; never reset. */
+    private MpFailureKind failureKind;
     /** The checker's report, given at {@link #initIteration}. */
     private JmcModelCheckerReport report;
     /** Iterations that ended with a blocked graph. */
@@ -569,6 +573,9 @@ public class MustStrategy extends TrackActiveTasksStrategy {
             clearIteration();
         }
         if (problem != null && !errorRecorded) {
+            if (failureKind == null) {
+                failureKind = MpFailureKind.RULE;
+            }
             throw HaltExecutionException.error("must: " + problem);
         }
     }
@@ -820,7 +827,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     // here, on the failing thread; handed to main next.
                     boolean first = fault == null;
                     fail("process " + nameOfId.get(task) + " (task " + runtimeTask + ") failed: "
-                            + optParam(event, "failure"));
+                            + optParam(event, "failure"), MpFailureKind.PROCESS);
                     failureToMain |= first;
                 }
                 if (replaying(task)) {
@@ -1069,8 +1076,24 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * @throws HaltExecutionException if the model is unsupported
      */
     private void refuseUnsupported(long task, CommunicationModel model) throws HaltExecutionException {
+        refuseUnsupported(task, model, null);
+    }
+
+    /**
+     * As {@link #refuseUnsupported(long, CommunicationModel)}; a send of a {@link Monitors.Notification} is named
+     * as one, since the wrappers of {@link Monitors} always notify under causal delivery.
+     *
+     * @param value the message sent, or {@code null} for a receive
+     * @throws HaltExecutionException if the model is unsupported
+     */
+    private void refuseUnsupported(long task, CommunicationModel model, MpMessage value)
+            throws HaltExecutionException {
         if (model != CommunicationModel.P2P && model != CommunicationModel.ASYN) {
-            throw halt("task " + task + " uses model " + model + ", which must does not support (p2p and asyn only)");
+            String why = value instanceof Monitors.Notification
+                    ? "; this send is a Monitors notification, which the Monitors wrappers always send under CD"
+                    : model == CommunicationModel.CD ? "; the Monitors wrappers notify under CD" : "";
+            throw halt("task " + task + " uses model " + model + ", which must does not support (p2p and asyn only)"
+                    + why);
         }
     }
 
@@ -1101,7 +1124,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         if (task == 1L) {
             shape("main performs a send");
         }
-        refuseUnsupported(task, model);
+        refuseUnsupported(task, model, value);
         Tid dstStable = stableTid(dst);
         MpMessage stored = (MpMessage) normalize(value);
         if (replaying(task)) {
@@ -1634,16 +1657,36 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      */
     private SchedulingChoice<?> guardFault(long task, Throwable thrown) {
         fail("the receive guard of process " + nameOfId.get(task) + " (task " + runtimeOfStable.get(task)
-                + ") threw " + thrown + "; a guard must not throw or call the JMC API");
+                + ") threw " + thrown + "; a guard must not throw or call the JMC API", MpFailureKind.PROCESS);
         return SchedulingChoice.task(runtimeOfStable.get(task), new MpFaultValue("must: " + fault));
     }
 
-    /** Records a fault (the first one is kept) and logs it. */
+    /** Records a fault of kind {@link MpFailureKind#RULE} (the first one is kept) and logs it. */
     private void fail(String why) {
+        fail(why, MpFailureKind.RULE);
+    }
+
+    /** Records a fault (the first one of the iteration is kept, and the first kind of the run) and logs it. */
+    private void fail(String why, MpFailureKind kind) {
         if (fault == null) {
             fault = why;
+            if (failureKind == null) {
+                failureKind = kind;
+            }
         }
         LOGGER.error("must: {}", why);
+    }
+
+    /**
+     * The kind of the run's first fault: {@link MpFailureKind#PROCESS} when a process failed or its receive guard
+     * threw, {@link MpFailureKind#RULE} when the program broke a rule (an unsupported model, an export shape rule,
+     * a value that cannot be summarised, another misuse of the API). A failure of main itself, a failed assertion
+     * or an exception in main's body, is no fault of this strategy and leaves it {@code null}.
+     *
+     * @return the kind, or {@code null} if no fault was recorded
+     */
+    public MpFailureKind failureKind() {
+        return failureKind;
     }
 
     /**
@@ -1928,7 +1971,7 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                     stopRequested = stopAtFirst;
                 }
                 if (split != null) {
-                    // The segment's own view (§2.12 of J8R-PLAN): its distinct lines and its first miss.
+                    // The segment's own view: its distinct lines and its first miss.
                     String uncoveredLine = s.toJson(1);
                     segmentUncoveredLines.add(uncoveredLine);
                     if (segmentFirstLocal == 0) {
@@ -1973,6 +2016,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
      * the iteration budget) after an iteration with no work left — the stack empty and no iteration
      * in progress. A budget that is reached while work remains is not exhaustion. In split mode
      * only the first holds: the run is exhausted when the last item has been explored.
+     *
+     * @return whether the enumeration is complete
      */
     public boolean exhausted() {
         if (split != null) {
@@ -2152,37 +2197,65 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         return names;
     }
 
-    /** Whether the online check runs in bug-finder mode (stop at the first uncovered summary). */
+    /**
+     * Whether the online check runs in bug-finder mode (stop at the first uncovered summary).
+     *
+     * @return whether the online check stops at the first uncovered summary
+     */
     public boolean stopsAtFirst() {
         return stopAtFirst;
     }
 
-    /** Uncovered graphs: summarised graphs the specification does not cover (with repetitions). */
+    /**
+     * Uncovered graphs: summarised graphs the specification does not cover (with repetitions).
+     *
+     * @return the number of uncovered graphs so far
+     */
     public long uncoveredTotal() {
         return uncoveredTotal;
     }
 
-    /** Distinct uncovered summaries. */
+    /**
+     * Distinct uncovered summaries.
+     *
+     * @return the number of distinct uncovered summaries so far
+     */
     public int uncoveredDistinct() {
         return uncoveredSummaries.size();
     }
 
-    /** The first uncovered summary, if the online check found one. */
+    /**
+     * The first uncovered summary, if the online check found one.
+     *
+     * @return the first uncovered summary, or empty if none was found
+     */
     public Optional<Summary> uncovered() {
         return Optional.ofNullable(uncovered);
     }
 
-    /** The (1-based) iteration whose graph gave {@link #uncovered()}; 0 for none. */
+    /**
+     * The (1-based) iteration whose graph gave {@link #uncovered()}; 0 for none.
+     *
+     * @return the 1-based iteration of the first uncovered summary, or 0 for none
+     */
     public int uncoveredIteration() {
         return uncoveredIteration;
     }
 
-    /** The index's answer for {@link #uncovered()} ({@code NoSig} or {@code NotFound}). */
+    /**
+     * The index's answer for {@link #uncovered()} ({@code NoSig} or {@code NotFound}).
+     *
+     * @return the answer for the first uncovered summary, or empty if none was found
+     */
     public Optional<SetIndex.Covers> uncoveredAnswer() {
         return Optional.ofNullable(uncoveredAnswer);
     }
 
-    /** Queries made against the specification (TraceForge's {@code lookups}). */
+    /**
+     * Queries made against the specification (TraceForge's {@code lookups}).
+     *
+     * @return the number of queries so far
+     */
     public long lookups() {
         return lookups;
     }
@@ -2190,12 +2263,18 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     /**
      * Queries answered {@code NoSig}: no held summary has the signature (TraceForge's
      * {@code lookups_signature_miss}).
+     *
+     * @return the number of {@code NoSig} answers so far
      */
     public long signatureMisses() {
         return signatureMisses;
     }
 
-    /** Queries answered {@code Found} ({@code lookups_succeeded}). */
+    /**
+     * Queries answered {@code Found} ({@code lookups_succeeded}).
+     *
+     * @return the number of {@code Found} answers so far
+     */
     public long found() {
         return found;
     }
@@ -2203,6 +2282,8 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     /**
      * Queries answered {@code NotFound}: the signature exists but no held summary is covered
      * (TraceForge's {@code lookups_failed_after_tests}).
+     *
+     * @return the number of {@code NotFound} answers so far
      */
     public long notFound() {
         return notFound;
@@ -2239,22 +2320,38 @@ public class MustStrategy extends TrackActiveTasksStrategy {
         }
     }
 
-    /** Iterations that ran (consistent alternatives explored). */
+    /**
+     * Iterations that ran (consistent alternatives explored).
+     *
+     * @return the number of iterations so far
+     */
     public int iterations() {
         return iterations;
     }
 
-    /** Summaries with multiplicities (exporting constructor only). */
+    /**
+     * Summaries with multiplicities (exporting constructor only).
+     *
+     * @return an unmodifiable view of the summaries, each mapped to its multiplicity
+     */
     public Map<Summary, Integer> summaries() {
         return Collections.unmodifiableMap(summaries);
     }
 
-    /** Iterations summarised. */
+    /**
+     * Iterations summarised.
+     *
+     * @return the number of iterations whose graph was summarised
+     */
     public int exportedIterations() {
         return exportedIterations;
     }
 
-    /** Iterations not summarised. */
+    /**
+     * Iterations not summarised.
+     *
+     * @return the number of iterations whose graph was not summarised
+     */
     public int skippedIterations() {
         return skippedIterations;
     }
@@ -2287,7 +2384,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                                int maxSummaryBytes, int maxPorfCount, int maxPorfPairs, long firstMissWallMs,
                                long summarisedGraphs) {}
 
-    /** The measurements so far. */
+    /**
+     * The measurements so far.
+     *
+     * @return a snapshot of the current measurements
+     */
     public Measurements measurements() {
         return new Measurements(summariseNanos, lookupNanos, maxGraphEvents,
                 summarisedGraphs == 0 ? 0.0 : (double) sumGraphEvents / summarisedGraphs, maxMessageEvents,
@@ -2296,7 +2397,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
                 summarisedGraphs);
     }
 
-    /** The current graph as an {@code ExecutionGraph} — for tests. */
+    /**
+     * The current graph as an {@code ExecutionGraph} — for tests.
+     *
+     * @return the current graph converted to an {@code ExecutionGraph}
+     */
     public ExecutionGraph currentGraph() {
         return graph.toExecutionGraph();
     }

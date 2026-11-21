@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 final class J8SSupport {
 
     static final String BANK = "org.mpi_sws.jmc.mp.j8s.OnlineBank:2";
-    static final String J4 = "org.mpi_sws.jmc.mp.programs.j4.";
+    static final String J4 = "org.mpi_sws.jmc.mp.fixtures.apps.";
     static final Path DIR = Path.of("build/test-results/j8s-tester");
 
     private J8SSupport() {}

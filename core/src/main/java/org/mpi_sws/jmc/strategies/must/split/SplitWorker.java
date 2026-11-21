@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.strategies.must.split;
 
+import org.mpi_sws.jmc.strategies.mp.MainWatch;
+import org.mpi_sws.jmc.strategies.mp.MpOutcome;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.mpi_sws.jmc.api.mp.MpProcess;
@@ -157,9 +159,9 @@ public final class SplitWorker implements MustStrategy.SplitControl {
             problems.add("name table " + view.names() + " (next " + view.nextId() + ") differs from " + names);
         }
         if (!problems.isEmpty()) {
-            JsonObject fail = envelopeBase();
-            fail.addProperty("reason", "replay did not reach the coordinator's state: " + String.join("; ", problems));
-            SplitCoordinator.writeAtomically(runDir.resolve("worker-" + workerId + ".fail.json"), fail);
+            writeFailMarker(runDir.resolve("worker-" + workerId + ".fail.json"), envelopeBase(),
+                    "replay did not reach the coordinator's state: " + String.join("; ", problems),
+                    MpOutcome.INCOMPLETE);
             throw new IllegalStateException("worker " + workerId + ": " + String.join("; ", problems));
         }
         verified = true;
@@ -360,6 +362,7 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         strategy.setSplitControl(worker);
         worker.strategy = strategy;
         String failure = null;
+        MpOutcome outcome = MpOutcome.INCOMPLETE;
         MpThread.setStaleWaitMillis(ItemDriver.SPLIT_STALE_WAIT_MILLIS);
         try {
             JmcCheckerConfiguration config = new JmcCheckerConfiguration.Builder()
@@ -380,9 +383,11 @@ public final class SplitWorker implements MustStrategy.SplitControl {
                 failure = "the worker's run ended before it was stopped";
             }
         } catch (JmcCheckerException e) {
-            failure = e.getMessage();
+            failure = e.getMessage() != null ? e.getMessage() : e.toString();
+            outcome = MpOutcome.ofFailure(strategy.failureKind(), MainWatch.seenBy(program));
         } catch (RuntimeException | Error e) {
             failure = e.toString();
+            outcome = MpOutcome.ofFailure(strategy.failureKind(), MainWatch.seenBy(program));
         }
         if (failure == null) {
             return 0;
@@ -391,23 +396,38 @@ public final class SplitWorker implements MustStrategy.SplitControl {
             JsonObject fail = worker.envelopeBase();
             fail.addProperty("item", worker.currentItem);
             fail.addProperty("attempt", worker.currentAttempt);
-            fail.addProperty("reason", failure);
-            SplitCoordinator.writeAtomically(
-                    runDir.resolve("fail-" + worker.currentItem + "." + worker.currentAttempt + ".json"), fail);
+            writeFailMarker(runDir.resolve("fail-" + worker.currentItem + "." + worker.currentAttempt + ".json"),
+                    fail, failure, outcome);
         } else if (!Files.exists(runDir.resolve("worker-" + workerId + ".fail.json"))) {
-            JsonObject fail = worker.envelopeBase();
-            fail.addProperty("reason", failure);
-            SplitCoordinator.writeAtomically(runDir.resolve("worker-" + workerId + ".fail.json"), fail);
+            writeFailMarker(runDir.resolve("worker-" + workerId + ".fail.json"), worker.envelopeBase(), failure,
+                    outcome);
         }
         System.err.println("worker " + workerId + ": " + failure);
         return 1;
     }
 
-    /** Writes a startup failure ({@code worker-<id>.fail.json}) and returns the failure status. */
+    /**
+     * Writes a fail marker: {@code base} with the failure's {@code reason} and {@code outcome}, which the
+     * coordinator reports.
+     *
+     * @param file the marker
+     * @param base the envelope (and item and attempt, for an item's failure)
+     * @param reason the failure
+     * @param outcome how it ended the run
+     */
+    static void writeFailMarker(Path file, JsonObject base, String reason, MpOutcome outcome) {
+        base.addProperty("reason", reason);
+        base.addProperty("outcome", outcome.name());
+        SplitCoordinator.writeAtomically(file, base);
+    }
+
+    /**
+     * Writes a startup failure ({@code worker-<id>.fail.json}) and returns the failure status. Every startup
+     * failure is a refusal: roles missing, a specification refused or changed, a graph part that cannot be created.
+     */
     private static int startupFailure(Path runDir, SplitWorker worker, String reason) {
-        JsonObject fail = worker.envelopeBase();
-        fail.addProperty("reason", reason);
-        SplitCoordinator.writeAtomically(runDir.resolve("worker-" + worker.workerId + ".fail.json"), fail);
+        writeFailMarker(runDir.resolve("worker-" + worker.workerId + ".fail.json"), worker.envelopeBase(), reason,
+                MpOutcome.REFUSED);
         System.err.println("worker " + worker.workerId + ": " + reason);
         return 1;
     }

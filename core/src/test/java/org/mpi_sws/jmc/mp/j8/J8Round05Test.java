@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
-import org.mpi_sws.jmc.mp.programs.j4.A3Lock;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
+import org.mpi_sws.jmc.mp.fixtures.apps.A3Lock;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
 
@@ -41,13 +41,13 @@ class J8Round05Test {
     static SplitCoordinator.Result run(Path dir, int workers, String fault, long delayMillis) throws Exception {
         String java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
         String cp = System.getProperty("java.class.path");
-        String program = "org.mpi_sws.jmc.mp.programs.j4.A3Lock:fifo,3,1";
+        String program = "org.mpi_sws.jmc.mp.fixtures.apps.A3Lock:fifo,3,1";
         A3Lock a3 = new A3Lock("fifo", "3", "1");
         return SplitCoordinator.run(new SplitCoordinator.Config(program + "|p2p", a3, a3.rolesInSpawnOrder(),
                 a3.visibleRoles(), 1, workers, 300, dir, (d, id) -> {
                     List<String> cmd = new ArrayList<>(List.of(java, "-cp", cp, J8DelayedExitWorker.class.getName(),
                             Long.toString(delayMillis), java, "-Djmc.split.fault=" + fault, "-Xss4m", "-cp", cp,
-                            "org.mpi_sws.jmc.mp.launch.MpLauncher", program, "must", "0", "1",
+                            "org.mpi_sws.jmc.mp.cli.MpLauncher", program, "must", "0", "1",
                             d.resolve("worker-report").toString(),
                             // an export path, as the launcher passes: the worker then summarises (roles)
                             d.resolve("worker-export.jsonl").toString(), "300", "--worker", d.toString(),

@@ -12,11 +12,11 @@ import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.mp.events.EventKey;
 import org.mpi_sws.jmc.mp.graph.ExecutionGraph;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
-import org.mpi_sws.jmc.mp.programs.j2c.DaemonRoles;
-import org.mpi_sws.jmc.mp.programs.j2c.J2cPrograms;
-import org.mpi_sws.jmc.mp.programs.seq.EventLogStrategy;
-import org.mpi_sws.jmc.mp.programs.seq.SeqMpOk;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
+import org.mpi_sws.jmc.mp.fixtures.daemons.DaemonRoles;
+import org.mpi_sws.jmc.mp.fixtures.daemons.J2cPrograms;
+import org.mpi_sws.jmc.mp.fixtures.seq.EventLogStrategy;
+import org.mpi_sws.jmc.mp.fixtures.seq.SeqMpOk;
 import org.mpi_sws.jmc.mp.summary.Summary;
 import org.mpi_sws.jmc.strategies.mp.MpRecordingStrategy;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;
@@ -352,8 +352,8 @@ class J2cTest {
     void owner_swappedOrder_sameExportBothStrategies() {
         // StartOrderRoles creates cli, then srv, and starts srv first; roles come from the names, so
         // must and the recorder export the same summary: cli receives, srv sends
-        Run m = mustExport(new org.mpi_sws.jmc.mp.programs.j2b.StartOrderRoles(), "start-order");
-        Rec r = recorder(new org.mpi_sws.jmc.mp.programs.j2b.StartOrderRoles(), "start-order", 10);
+        Run m = mustExport(new org.mpi_sws.jmc.mp.fixtures.threads.StartOrderRoles(), "start-order");
+        Rec r = recorder(new org.mpi_sws.jmc.mp.fixtures.threads.StartOrderRoles(), "start-order", 10);
         System.out.println("J2C start-order must " + lines(m.s().summaries()) + " recorder "
                 + lines(r.rec().summaries()) + " recorder failure " + r.run().failure());
         assertEquals(null, m.thrown(), m.failure());
@@ -367,10 +367,10 @@ class J2cTest {
 
     @Test
     void roles_spawnOrderDiffers_sameSummaries() {
-        Run mab = mustExport(new org.mpi_sws.jmc.mp.programs.j2c.NamedRoles("ab"), "named-ab");
-        Run mba = mustExport(new org.mpi_sws.jmc.mp.programs.j2c.NamedRoles("ba"), "named-ba");
-        Rec rab = recorder(new org.mpi_sws.jmc.mp.programs.j2c.NamedRoles("ab"), "named-ab", 10);
-        Rec rba = recorder(new org.mpi_sws.jmc.mp.programs.j2c.NamedRoles("ba"), "named-ba", 10);
+        Run mab = mustExport(new org.mpi_sws.jmc.mp.fixtures.daemons.NamedRoles("ab"), "named-ab");
+        Run mba = mustExport(new org.mpi_sws.jmc.mp.fixtures.daemons.NamedRoles("ba"), "named-ba");
+        Rec rab = recorder(new org.mpi_sws.jmc.mp.fixtures.daemons.NamedRoles("ab"), "named-ab", 10);
+        Rec rba = recorder(new org.mpi_sws.jmc.mp.fixtures.daemons.NamedRoles("ba"), "named-ba", 10);
         System.out.println("J2C named must " + lines(mab.s().summaries()) + " / " + lines(mba.s().summaries())
                 + " recorder " + lines(rab.rec().summaries()) + " / " + lines(rba.rec().summaries()));
         for (Run x : List.of(mab, mba, rab.run(), rba.run())) {
@@ -383,10 +383,10 @@ class J2cTest {
     }
 
     static void refused(String variant, String mustNeedle, String recNeedle) {
-        Run m = mustExport(new org.mpi_sws.jmc.mp.programs.j2c.NamedRoles(variant), "refuse-" + variant);
+        Run m = mustExport(new org.mpi_sws.jmc.mp.fixtures.daemons.NamedRoles(variant), "refuse-" + variant);
         fails(m, mustNeedle);
         assertEquals(0, m.s().summaries().size(), "must exports nothing");
-        Rec r = recorder(new org.mpi_sws.jmc.mp.programs.j2c.NamedRoles(variant), "refuse-" + variant, 3);
+        Rec r = recorder(new org.mpi_sws.jmc.mp.fixtures.daemons.NamedRoles(variant), "refuse-" + variant, 3);
         fails(r.run(), recNeedle);
         assertEquals(0, r.rec().summaries().size(), "the recorder exports nothing");
     }
@@ -472,8 +472,8 @@ class J2cTest {
     @Test
     void m1_export_mainAwaitsBlocked_withDaemon() {
         for (String v : List.of("await_blocked_finished", "await_blocked_recv")) {
-            Run m = mustExport(new org.mpi_sws.jmc.mp.programs.j2c.M2Roles(v), "m1-" + v);
-            Rec r = recorder(new org.mpi_sws.jmc.mp.programs.j2c.M2Roles(v), "m1-" + v, 5);
+            Run m = mustExport(new org.mpi_sws.jmc.mp.fixtures.daemons.M2Roles(v), "m1-" + v);
+            Rec r = recorder(new org.mpi_sws.jmc.mp.fixtures.daemons.M2Roles(v), "m1-" + v, 5);
             System.out.println("J2C m1 export " + v + " must " + lines(m.s().summaries()) + " recorder "
                     + lines(r.rec().summaries()));
             assertEquals(null, m.thrown(), v + ": " + m.failure());
@@ -501,17 +501,17 @@ class J2cTest {
 
     @Test
     void m2_processNamedMain_refusedAsUndeclared() {
-        Run m = mustExport(new org.mpi_sws.jmc.mp.programs.j2c.M2Roles("named_main"), "named-main");
+        Run m = mustExport(new org.mpi_sws.jmc.mp.fixtures.daemons.M2Roles("named_main"), "named-main");
         fails(m, "has role main, which is not declared [a]");
-        Rec r = recorder(new org.mpi_sws.jmc.mp.programs.j2c.M2Roles("named_main"), "named-main", 3);
+        Rec r = recorder(new org.mpi_sws.jmc.mp.fixtures.daemons.M2Roles("named_main"), "named-main", 3);
         fails(r.run(), "has role main, which is not declared [a]");
     }
 
     @Test
     void m2_processNamedTilde_refusedAsUndeclared() {
-        Run m = mustExport(new org.mpi_sws.jmc.mp.programs.j2c.M2Roles("named_tilde"), "named-tilde");
+        Run m = mustExport(new org.mpi_sws.jmc.mp.fixtures.daemons.M2Roles("named_tilde"), "named-tilde");
         fails(m, "has role ~x, which is not declared [a]");
-        Rec r = recorder(new org.mpi_sws.jmc.mp.programs.j2c.M2Roles("named_tilde"), "named-tilde", 3);
+        Rec r = recorder(new org.mpi_sws.jmc.mp.fixtures.daemons.M2Roles("named_tilde"), "named-tilde", 3);
         fails(r.run(), "has role ~x, which is not declared [a]");
     }
 
@@ -555,8 +555,8 @@ class J2cTest {
     @Test
     void roles_creationOrderDiffers_sameSummaries() {
         // Codex's note: NamedRoles "createAB" creates a before b (the others create b first)
-        Run m = mustExport(new org.mpi_sws.jmc.mp.programs.j2c.NamedRoles("createAB"), "named-createAB");
-        Rec r = recorder(new org.mpi_sws.jmc.mp.programs.j2c.NamedRoles("createAB"), "named-createAB", 10);
+        Run m = mustExport(new org.mpi_sws.jmc.mp.fixtures.daemons.NamedRoles("createAB"), "named-createAB");
+        Rec r = recorder(new org.mpi_sws.jmc.mp.fixtures.daemons.NamedRoles("createAB"), "named-createAB", 10);
         assertEquals(null, m.thrown(), m.failure());
         assertEquals(null, r.run().thrown(), r.run().failure());
         assertEquals(Set.of(NAMED_AB), lines(m.s().summaries()), "must");

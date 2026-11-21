@@ -112,7 +112,11 @@ public final class GraphPart implements MustStrategy.GraphSink {
      * @param payload the threads array, or the refusal's reason
      */
     public record Record(int iteration, String line, String payload) {
-        /** Whether the record is a refusal. */
+        /**
+         * Whether the record is a refusal.
+         *
+         * @return {@code true} iff the iteration is negative
+         */
         public boolean refused() {
             return iteration < 0;
         }

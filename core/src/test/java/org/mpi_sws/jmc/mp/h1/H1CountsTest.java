@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  */
 class H1CountsTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String PKG = "org.mpi_sws.jmc.mp.h1.";
 
     /** Runs the row and asserts TraceForge's counts and an exhausted stack. */
