@@ -22,7 +22,7 @@ import java.util.Map;
 class ExportRolesLauncherTest {
 
     static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
-    static final String PROGRAMS = "org.mpi_sws.jmc.mp.programs.roles.ExportRolePrograms:";
+    static final String PROGRAMS = "org.mpi_sws.jmc.mp.fixtures.roles.ExportRolePrograms:";
     static final String DIR = "build/test-results/export-roles-launch/";
 
     static MpLauncherTest.Out export(String program, Path out) throws Exception {

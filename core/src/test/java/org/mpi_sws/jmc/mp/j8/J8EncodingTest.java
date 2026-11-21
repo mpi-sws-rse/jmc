@@ -17,7 +17,7 @@ import org.mpi_sws.jmc.mp.graph.GraphCanon;
 import org.mpi_sws.jmc.mp.graph.GraphEvent;
 import org.mpi_sws.jmc.mp.summary.MpValueEncoder;
 import org.mpi_sws.jmc.mp.summary.Tag;
-import org.mpi_sws.jmc.mp.programs.j4.A2Store;
+import org.mpi_sws.jmc.mp.fixtures.apps.A2Store;
 import org.mpi_sws.jmc.strategies.must.split.TypedGraphEncoding;
 
 import java.lang.reflect.Constructor;
@@ -63,7 +63,7 @@ class J8EncodingTest {
     static final String L_EMPTY = "1:L1:11:0";
     static final String L_TIDS = "1:L1:31:211:1:T1:13:m/111:1:T1:13:m/2";
     static final String CMD = "1:R1:436:org.mpi_sws.jmc.mp.j8.EnumNested$Cmd49:1:E1:235:org.mpi_sws.jmc.mp.j8.EnumNested$Op3:PUT67:1:R1:336:org.mpi_sws.jmc.mp.j8.EnumNested$Key9:1:S1:11:x9:1:I1:11:131:1:L1:31:29:1:I1:11:19:1:I1:11:2";
-    static final String FWD = "1:R1:242:org.mpi_sws.jmc.mp.programs.j4.A2Store$Fwd84:1:R1:442:org.mpi_sws.jmc.mp.programs.j4.A2Store$Put9:1:I1:11:09:1:I1:11:19:1:I1:11:7";
+    static final String FWD = "1:R1:242:org.mpi_sws.jmc.mp.fixtures.apps.A2Store$Fwd84:1:R1:442:org.mpi_sws.jmc.mp.fixtures.apps.A2Store$Put9:1:I1:11:09:1:I1:11:19:1:I1:11:7";
     static final String P1A = "1:R1:238:org.mpi_sws.jmc.mp.j8.J8EncodingTest$O60:1:R1:240:org.mpi_sws.jmc.mp.j8.J8EncodingTest$InA9:1:I1:11:1";
     static final String P1B = "1:R1:238:org.mpi_sws.jmc.mp.j8.J8EncodingTest$O60:1:R1:240:org.mpi_sws.jmc.mp.j8.J8EncodingTest$InB9:1:I1:11:1";
     static final String P2A = "1:R1:238:org.mpi_sws.jmc.mp.j8.J8EncodingTest$F56:1:E1:242:org.mpi_sws.jmc.mp.j8.J8EncodingTest$Color3:RED";

@@ -17,7 +17,7 @@ import java.nio.file.Path;
 class RuntimeDefectLauncherTest {
 
     private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
-    private static final String FAULTS = "org.mpi_sws.jmc.mp.programs.faults.";
+    private static final String FAULTS = "org.mpi_sws.jmc.mp.fixtures.faults.";
     private static final String DIR = "build/runtime-defects/";
 
     private static MpLauncherTest.Out run(String program, String strategy, String iterations, String tag,
@@ -91,7 +91,7 @@ class RuntimeDefectLauncherTest {
         MpLauncherTest.Out o = run("ConstructorFaults:direct", "must", "0", "c-direct", false);
         assertEquals(2, o.exit(), o.text());
         assertTrue(o.text().contains("bad size 0"), o.text());
-        assertTrue(o.text().contains("at org.mpi_sws.jmc.mp.programs.faults.ConstructorFaults.<init>"), o.text());
+        assertTrue(o.text().contains("at org.mpi_sws.jmc.mp.fixtures.faults.ConstructorFaults.<init>"), o.text());
     }
 
     @Test

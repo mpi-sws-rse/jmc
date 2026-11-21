@@ -31,8 +31,8 @@ class MpLauncherTest {
 
     private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String MUT_LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncherMutCompleted";
-    private static final String PROGRAM = "org.mpi_sws.jmc.mp.programs.MustSection13";
-    private static final String MUTANTS = "org.mpi_sws.jmc.mp.programs.mutants.";
+    private static final String PROGRAM = "org.mpi_sws.jmc.mp.fixtures.MustSection13";
+    private static final String MUTANTS = "org.mpi_sws.jmc.mp.fixtures.mutants.";
     private static final String REPORT = "build/test-results/j0-tester/launch";
 
     record Out(int exit, String text) {}

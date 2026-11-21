@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
-import org.mpi_sws.jmc.mp.programs.j4.A3Lock;
+import org.mpi_sws.jmc.mp.fixtures.apps.A3Lock;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
 
 import java.io.IOException;

@@ -410,7 +410,7 @@ class J8Step0Test {
     }
 
     private static final String H1 = "org.mpi_sws.jmc.mp.h1.";
-    private static final String J4 = "org.mpi_sws.jmc.mp.programs.j4.";
+    private static final String J4 = "org.mpi_sws.jmc.mp.fixtures.apps.";
 
     @Test void test1_actorChannels() throws Exception { checkGroup(H1 + "ActorChannels:"); }
     @Test void test1_actors() throws Exception { checkGroup(H1 + "Actors:"); }

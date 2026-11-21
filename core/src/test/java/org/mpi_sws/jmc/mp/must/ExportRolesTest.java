@@ -12,7 +12,7 @@ import org.mpi_sws.jmc.mp.graph.GraphCanon;
 import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.must.J2cTest.Rec;
 import org.mpi_sws.jmc.mp.must.J2cTest.Run;
-import org.mpi_sws.jmc.mp.programs.roles.ExportRolePrograms;
+import org.mpi_sws.jmc.mp.fixtures.roles.ExportRolePrograms;
 import org.mpi_sws.jmc.mp.summary.MpValueEncoder;
 import org.mpi_sws.jmc.mp.summary.SpecificationFile;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;

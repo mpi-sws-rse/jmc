@@ -17,7 +17,7 @@ import java.util.List;
 class J2bLauncherTest {
 
     private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
-    private static final String PROGRAMS = "org.mpi_sws.jmc.mp.programs.j2b.J2bPrograms";
+    private static final String PROGRAMS = "org.mpi_sws.jmc.mp.fixtures.threads.J2bPrograms";
     private static final String DIR = "build/test-results/j2b-tester/launch/";
 
     @Test
@@ -55,7 +55,7 @@ class J2bLauncherTest {
     static List<String> exportFails(String strategy, String iterations) throws Exception {
         Path p = Path.of(DIR + "hidden-" + strategy + ".jsonl");
         Files.deleteIfExists(p);
-        MpLauncherTest.Out o = MpLauncherTest.launch(LAUNCHER, "org.mpi_sws.jmc.mp.programs.j2b.HiddenFailure",
+        MpLauncherTest.Out o = MpLauncherTest.launch(LAUNCHER, "org.mpi_sws.jmc.mp.fixtures.threads.HiddenFailure",
                 strategy, iterations, "1", DIR + "rep-hidden-" + strategy, p.toString(), "60");
         System.out.println(o.text());
         assertEquals(1, o.exit(), o.text());
@@ -115,7 +115,7 @@ class J2bLauncherTest {
     @org.junit.jupiter.api.Timeout(180)
     void f4b_nonMpThread_counting_failsNoHang() throws Exception {
         // SeqJtOk spawns JmcThreads: the first START (task 2) is refused, the run ends with exit 1
-        MpLauncherTest.Out o = launchBounded(90, "org.mpi_sws.jmc.mp.programs.seq.SeqJtOk", "must", "0", "1",
+        MpLauncherTest.Out o = launchBounded(90, "org.mpi_sws.jmc.mp.fixtures.seq.SeqJtOk", "must", "0", "1",
                 DIR + "rep-f4b-count", "-", "30");
         assertEquals(1, o.exit(), o.text());
         assertTrue(o.text().contains("FAILED:     " + NOT_MPTHREAD), o.text());
@@ -126,7 +126,7 @@ class J2bLauncherTest {
     void f4b_nonMpThread_export_failsNoHang() throws Exception {
         Path p = Path.of(DIR + "f4b-export.jsonl");
         Files.deleteIfExists(p);
-        MpLauncherTest.Out o = launchBounded(90, "org.mpi_sws.jmc.mp.programs.j2b.JtExport", "must", "0", "1",
+        MpLauncherTest.Out o = launchBounded(90, "org.mpi_sws.jmc.mp.fixtures.threads.JtExport", "must", "0", "1",
                 DIR + "rep-f4b-export", p.toString(), "30");
         assertEquals(1, o.exit(), o.text());
         assertTrue(o.text().contains("FAILED:     " + NOT_MPTHREAD), o.text());

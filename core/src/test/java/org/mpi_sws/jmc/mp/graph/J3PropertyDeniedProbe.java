@@ -64,9 +64,9 @@ public final class J3PropertyDeniedProbe {
             System.out.println("FAIL graphs: " + t);
         }
         System.out.println("GRAPHS checked " + graphs);
-        for (String p : new String[] {"org.mpi_sws.jmc.mp.programs.MustSection13",
-            "org.mpi_sws.jmc.mp.programs.j1.SendsTid", "org.mpi_sws.jmc.strategies.must.C1SpawnJoinBackward",
-            "org.mpi_sws.jmc.mp.programs.j1.NondetSend", "org.mpi_sws.jmc.mp.programs.j1.SRnb"}) {
+        for (String p : new String[] {"org.mpi_sws.jmc.mp.fixtures.MustSection13",
+            "org.mpi_sws.jmc.mp.fixtures.export.SendsTid", "org.mpi_sws.jmc.strategies.must.C1SpawnJoinBackward",
+            "org.mpi_sws.jmc.mp.fixtures.export.NondetSend", "org.mpi_sws.jmc.mp.fixtures.export.SRnb"}) {
             try {
                 Runnable prog = (Runnable) Class.forName(p).getConstructor().newInstance();
                 MustStrategy s = new MustStrategy(1L, "build/test-results/speed2-m4");

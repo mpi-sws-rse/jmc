@@ -17,7 +17,7 @@ import java.util.List;
 class J8Step0FixturesTest {
 
     private static final String H1 = "org.mpi_sws.jmc.mp.h1.";
-    private static final String J4 = "org.mpi_sws.jmc.mp.programs.j4.";
+    private static final String J4 = "org.mpi_sws.jmc.mp.fixtures.apps.";
     private static final String J8 = "org.mpi_sws.jmc.mp.j8.";
 
     static J8Step0Test.Run split(String row, String mode, int k) throws Exception {

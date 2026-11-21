@@ -29,21 +29,21 @@ import java.util.regex.Pattern;
 class SortedExportTest {
 
     static final String BANK = "org.mpi_sws.jmc.mp.j8s.OnlineBank:2";
-    static final String A3 = "org.mpi_sws.jmc.mp.programs.j4.A3Lock:double-grant,3,1";
+    static final String A3 = "org.mpi_sws.jmc.mp.fixtures.apps.A3Lock:double-grant,3,1";
     static final String UNI = SortedUnicode.class.getName();
 
     /** The J1 golden fixtures with an export (J1GoldenTest, J1GoldenExtraTest's accepted list). */
     static final List<String> GOLDEN = List.of(
-            "org.mpi_sws.jmc.mp.programs.MustSection13",
-            "org.mpi_sws.jmc.mp.programs.j1.MustSection13SendsSwapped",
-            "org.mpi_sws.jmc.mp.programs.j1.SRnb",
-            "org.mpi_sws.jmc.mp.programs.j1.BlockedAfterOne",
-            "org.mpi_sws.jmc.mp.programs.j1.BlockedAlone",
-            "org.mpi_sws.jmc.mp.programs.j1.NondetSend",
-            "org.mpi_sws.jmc.mp.programs.j1.SendsTid",
-            "org.mpi_sws.jmc.mp.programs.j1.ProcessRelay",
-            "org.mpi_sws.jmc.mp.programs.j1.SpawnBeforeJoin",
-            "org.mpi_sws.jmc.mp.programs.j1.AssertsInMainAt3",
+            "org.mpi_sws.jmc.mp.fixtures.MustSection13",
+            "org.mpi_sws.jmc.mp.fixtures.export.MustSection13SendsSwapped",
+            "org.mpi_sws.jmc.mp.fixtures.export.SRnb",
+            "org.mpi_sws.jmc.mp.fixtures.export.BlockedAfterOne",
+            "org.mpi_sws.jmc.mp.fixtures.export.BlockedAlone",
+            "org.mpi_sws.jmc.mp.fixtures.export.NondetSend",
+            "org.mpi_sws.jmc.mp.fixtures.export.SendsTid",
+            "org.mpi_sws.jmc.mp.fixtures.export.ProcessRelay",
+            "org.mpi_sws.jmc.mp.fixtures.export.SpawnBeforeJoin",
+            "org.mpi_sws.jmc.mp.fixtures.export.AssertsInMainAt3",
             BANK, A3, UNI);
 
     record Out(int exit, String text, Path exportFile) {

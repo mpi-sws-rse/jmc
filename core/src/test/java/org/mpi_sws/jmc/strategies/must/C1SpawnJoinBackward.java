@@ -4,7 +4,7 @@ import org.mpi_sws.jmc.api.mp.Channel;
 import org.mpi_sws.jmc.api.mp.MpProcess;
 import org.mpi_sws.jmc.mp.events.CommunicationModel;
 import org.mpi_sws.jmc.mp.events.Tid;
-import org.mpi_sws.jmc.mp.programs.j1.J1Fixture;
+import org.mpi_sws.jmc.mp.fixtures.export.J1Fixture;
 
 import java.util.List;
 

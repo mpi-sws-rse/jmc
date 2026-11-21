@@ -22,7 +22,7 @@ import java.util.TreeSet;
 class J4LauncherTest {
 
     private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
-    private static final String PKG = "org.mpi_sws.jmc.mp.programs.j4.";
+    private static final String PKG = "org.mpi_sws.jmc.mp.fixtures.apps.";
     private static final String DIR = "build/test-results/j4-tester/";
 
     record Exp(MpLauncherTest.Out out, List<String> lines) {}
@@ -151,7 +151,7 @@ class J4LauncherTest {
 
     @Test
     void arg_noStringConstructor_exit2() throws Exception {
-        assertTrue(bad("org.mpi_sws.jmc.mp.programs.MustSection13:1").text().contains("cannot load and construct"));
+        assertTrue(bad("org.mpi_sws.jmc.mp.fixtures.MustSection13:1").text().contains("cannot load and construct"));
     }
 
     @Test

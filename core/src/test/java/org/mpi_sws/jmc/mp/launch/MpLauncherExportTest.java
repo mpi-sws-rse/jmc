@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 class MpLauncherExportTest {
 
     private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
-    private static final String J1 = "org.mpi_sws.jmc.mp.programs.j1.";
+    private static final String J1 = "org.mpi_sws.jmc.mp.fixtures.export.";
     private static final String DIR = "build/test-results/j1-tester/export/";
 
     private static final String M1 = "{\"t\":\"Msg\",\"f\":[1]}";
@@ -93,7 +93,7 @@ class MpLauncherExportTest {
     // ------------------------------------------------------------------ C1
 
     static void checkC1(String header, String l13, String l31) throws Exception {
-        List<String> lines = export("org.mpi_sws.jmc.mp.programs.MustSection13", 2000, 20261026L, "c1.jsonl", 0);
+        List<String> lines = export("org.mpi_sws.jmc.mp.fixtures.MustSection13", 2000, 20261026L, "c1.jsonl", 0);
         assertEquals(3, lines.size(), "header + two lines");
         assertEquals(header, lines.get(0), "header");
         assertEquals(new TreeSet<>(List.of(l13, l31)), new TreeSet<>(lines.subList(1, 3)), "summary lines");
@@ -212,7 +212,7 @@ class MpLauncherExportTest {
 
     @Test
     void c6_detects_wellFormedProgram() {
-        mutant("C6 control", () -> checkRefused("org.mpi_sws.jmc.mp.programs.MustSection13", "mp-recording"));
+        mutant("C6 control", () -> checkRefused("org.mpi_sws.jmc.mp.fixtures.MustSection13", "mp-recording"));
     }
 
     // ------------------------------------------------------------------ round 04: shape refusals

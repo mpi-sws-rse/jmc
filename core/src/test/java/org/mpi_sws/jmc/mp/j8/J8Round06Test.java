@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.mpi_sws.jmc.mp.cli.MpProgram;
-import org.mpi_sws.jmc.mp.programs.j4.A3Lock;
+import org.mpi_sws.jmc.mp.fixtures.apps.A3Lock;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
 
@@ -37,7 +37,7 @@ class J8Round06Test {
 
     static final String JAVA = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
     static final String CP = System.getProperty("java.class.path");
-    static final String A3 = "org.mpi_sws.jmc.mp.programs.j4.A3Lock:fifo,3,1";
+    static final String A3 = "org.mpi_sws.jmc.mp.fixtures.apps.A3Lock:fifo,3,1";
     static final String MD5 = "ddc264d82b01cdb97a8860dd701394b2";
 
     /** The real worker's command line, as MpLauncher builds it, with a tag to find leftover processes. */
@@ -120,7 +120,7 @@ class J8Round06Test {
     void m3_replayExhaustsBeforeTheBoundary_startupFailure_noRetry() throws Exception {
         // The worker replays A2Store:spec,1,2, whose first graph leaves the stack empty (round 01: S1 = 0),
         // so its replay ends below K = 1 without reaching the coordinator's boundary (R 1, N 5).
-        String other = "org.mpi_sws.jmc.mp.programs.j4.A2Store:spec,1,2";
+        String other = "org.mpi_sws.jmc.mp.fixtures.apps.A2Store:spec,1,2";
         String tag = UUID.randomUUID().toString();
         Path d = dir("m3");
         SplitCoordinator.Result r = run(d, A3, a3(), 1, false, (x, id) -> realWorker(x, id, other, tag));
@@ -198,9 +198,9 @@ class J8Round06Test {
     void m2_reversedAssignment_exportIdenticalToSequential() throws Exception {
         String[][] rows = {
             {A3, "fifo", "3", "1", MD5},
-            {"org.mpi_sws.jmc.mp.programs.j4.A3Lock:double-grant,3,1", "double-grant", "3", "1",
+            {"org.mpi_sws.jmc.mp.fixtures.apps.A3Lock:double-grant,3,1", "double-grant", "3", "1",
                 "45dc7076677f571c6885284aff1697ac"},
-            {"org.mpi_sws.jmc.mp.programs.j4.A3Lock:never-grant,3,1", "never-grant", "3", "1",
+            {"org.mpi_sws.jmc.mp.fixtures.apps.A3Lock:never-grant,3,1", "never-grant", "3", "1",
                 "09c394ff3f21d16459ea20e9fc094d29"},
         };
         for (String[] row : rows) {

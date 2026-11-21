@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.mpi_sws.jmc.mp.cli.MpProgram;
-import org.mpi_sws.jmc.mp.programs.j4.A3Lock;
+import org.mpi_sws.jmc.mp.fixtures.apps.A3Lock;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
 
@@ -41,7 +41,7 @@ class J8Round05Test {
     static SplitCoordinator.Result run(Path dir, int workers, String fault, long delayMillis) throws Exception {
         String java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
         String cp = System.getProperty("java.class.path");
-        String program = "org.mpi_sws.jmc.mp.programs.j4.A3Lock:fifo,3,1";
+        String program = "org.mpi_sws.jmc.mp.fixtures.apps.A3Lock:fifo,3,1";
         A3Lock a3 = new A3Lock("fifo", "3", "1");
         return SplitCoordinator.run(new SplitCoordinator.Config(program + "|p2p", a3, a3.rolesInSpawnOrder(),
                 a3.visibleRoles(), 1, workers, 300, dir, (d, id) -> {

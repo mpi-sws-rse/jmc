@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.mpi_sws.jmc.checker.JmcCheckerConfiguration;
 import org.mpi_sws.jmc.mp.must.J2cTest.Run;
-import org.mpi_sws.jmc.mp.programs.p4.P4CharPrograms;
-import org.mpi_sws.jmc.mp.programs.seq.EventLogStrategy;
+import org.mpi_sws.jmc.mp.fixtures.addressing.P4CharPrograms;
+import org.mpi_sws.jmc.mp.fixtures.seq.EventLogStrategy;
 import org.mpi_sws.jmc.strategies.must.P4Must;
 
 import java.util.List;
