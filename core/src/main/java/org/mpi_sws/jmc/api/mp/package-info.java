@@ -25,8 +25,10 @@
  *       <td>sampled</td><td>refused</td></tr>
  *   <tr><td>send, blocking and non-blocking receive with guards, {@code Nondet} over several options</td>
  *       <td>yes</td><td>yes</td><td>refused</td></tr>
- *   <tr><td>spawn, create and start, daemons, await, assume</td><td>yes</td><td>yes</td>
- *       <td>ordinary thread events</td></tr>
+ *   <tr><td>spawn, create and start, await of a process that finished, {@code assume(true)}</td><td>yes</td>
+ *       <td>yes</td><td>ordinary thread events</td></tr>
+ *   <tr><td>{@code assume(false)}, await of a blocked process, daemons (main's final drain)</td><td>yes</td>
+ *       <td>yes</td><td>refused</td></tr>
  *   <tr><td>models mixed in one program</td><td>{@code P2P} and {@code ASYN}</td><td>any</td><td></td></tr>
  *   <tr><td>summary export (one declared model, {@code MpProgram.model()})</td><td>yes</td><td>yes (sampled)</td>
  *       <td>no</td></tr>

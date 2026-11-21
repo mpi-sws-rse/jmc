@@ -228,7 +228,8 @@ Which strategy supports which model and operation:
 | `CD`, `MBOX` | refused | sampled | refused |
 | `Monitors` (notify under `CD`) | refused | sampled | refused |
 | send, blocking and non-blocking receive with guards, `Nondet` over several options | yes | yes | refused |
-| spawn, create and start, daemons, await, assume | yes | yes | ordinary thread events |
+| spawn, create and start, await of a process that finished, `assume(true)` | yes | yes | ordinary thread events |
+| `assume(false)`, await of a blocked process, daemons (main's final drain) | yes | yes | refused |
 | models mixed in one program | `P2P` and `ASYN` | any | – |
 | summary export (one declared model, `MpProgram.model()`) | yes | yes (sampled) | no |
 | online check, graph store, split runs | yes | no | no |
