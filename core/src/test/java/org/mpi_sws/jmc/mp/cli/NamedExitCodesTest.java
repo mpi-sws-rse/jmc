@@ -33,7 +33,9 @@ class NamedExitCodesTest {
      * not choose 2; {@code main} main asserts it did not receive 2; {@code boom}, {@code nomsg} and {@code recording}
      * main throws, on receiving 2, a {@code RuntimeException} with the message "boom", with no message, and with a
      * message that starts as the recording strategy's do; {@code guard} main's receive guard throws on 2;
-     * {@code always} main fails in every execution, {@code processalways} the client does. {@code must} explores
+     * {@code iae} main throws its own {@code IllegalArgumentException} on 2, {@code apimisuse} main calls
+     * {@code Nondet.choose} with no options on 2, which the API refuses; {@code always} main fails in every
+     * execution, {@code processalways} the client does. {@code must} explores
      * the choice 1 first, so the failing execution is the second, and with two iterations the last one.
      */
     public static final class FailsSecond implements Runnable {
@@ -75,6 +77,8 @@ class NamedExitCodesTest {
                     case "boom" -> throw new RuntimeException("boom");
                     case "nomsg" -> throw new RuntimeException();
                     case "recording" -> throw new RuntimeException("mp-recording: ordinary program failure");
+                    case "iae" -> throw new IllegalArgumentException("the program's own argument check");
+                    case "apimisuse" -> Nondet.choose(List.of());
                     default -> { }
                 }
             }
@@ -361,7 +365,7 @@ class NamedExitCodesTest {
     @Test
     void exit1_programFailuresOfEveryKind_sequentialAndSplit() throws Exception {
         Path d = NamedCliTest.freshDir("exit1-kinds");
-        for (String where : List.of("main", "process", "boom", "nomsg", "recording", "guard")) {
+        for (String where : List.of("main", "process", "boom", "nomsg", "recording", "guard", "iae")) {
             NamedCliTest.Out seq = launch(d, "count", "--program", FAILS + ":" + where, "--seed", "1",
                     "--report-dir", "rep-" + where);
             expect(1, seq, where + ", sequential");
@@ -404,5 +408,18 @@ class NamedExitCodesTest {
             expect(2, o, "a value the format refuses, under " + strategy);
             assertTrue(o.stdout().contains("floating-point values are refused"), o.stdout());
         }
+    }
+
+    @Test
+    void exit2_mainMisusesTheApi_sequentialAndSplit() throws Exception {
+        Path d = NamedCliTest.freshDir("exit2-api");
+        NamedCliTest.Out seq = launch(d, "count", "--program", FAILS + ":apimisuse", "--seed", "1", "--report-dir",
+                "rep-seq");
+        expect(2, seq, "Nondet.choose over no options, refused by the API");
+        assertTrue(seq.stdout().contains("empty set of options"), seq.stdout());
+        NamedCliTest.Out split = launch(d, "count", "--program", FAILS + ":apimisuse", "--seed", "1",
+                "--report-dir", "rep-split", "--split", "2", "--k", "1");
+        expect(2, split, "the same misuse in a worker's item");
+        assertTrue(split.stdout().contains("FAILED:     incomplete: fail marker "), split.stdout());
     }
 }

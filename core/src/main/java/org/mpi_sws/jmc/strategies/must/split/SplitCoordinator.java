@@ -945,9 +945,7 @@ public final class SplitCoordinator {
             // Any operational failure (a worker that cannot be started, a file that cannot be written or
             // parsed) ends the run, after every started worker has been stopped and joined: a file that cannot
             // be read or written refuses it, anything else leaves it incomplete.
-            if (e instanceof IOException) {
-                outcome[0] = MpOutcome.REFUSED;
-            }
+            outcome[0] = abortOutcome(e);
             return abort(slots, "coordinator failure: " + e);
         } catch (Error e) {
             // Not recovered from, but no started worker may outlive the coordinator: stop and join them,
@@ -1032,8 +1030,27 @@ public final class SplitCoordinator {
      */
     private record Unions(Set<String> complete, Set<String> blocked) {}
 
+    /**
+     * The outcome of an operational failure of the coordinator: {@link MpOutcome#REFUSED} when a file could not
+     * be read or written (an {@link IOException}, also wrapped, as {@link #writeAtomically} and {@link #readJson}
+     * wrap it), {@link MpOutcome#INCOMPLETE} otherwise, a malformed file included.
+     *
+     * @param e the failure
+     * @return its outcome
+     */
+    static MpOutcome abortOutcome(Throwable e) {
+        java.util.Set<Throwable> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Throwable c = e; c != null && seen.add(c); c = c.getCause()) {
+            if (c instanceof IOException && !(c instanceof com.google.gson.stream.MalformedJsonException)) {
+                // Gson reports malformed JSON as an IOException too; that is a bad file, not one unreadable.
+                return MpOutcome.REFUSED;
+            }
+        }
+        return MpOutcome.INCOMPLETE;
+    }
+
     /** The outcome a fail marker records; {@link MpOutcome#INCOMPLETE} if it records none. */
-    private static MpOutcome failMarkerOutcome(Path dir, String marker) {
+    static MpOutcome failMarkerOutcome(Path dir, String marker) {
         JsonElement o = readJson(dir.resolve(marker)).get("outcome");
         try {
             return o == null || !o.isJsonPrimitive() ? MpOutcome.INCOMPLETE : MpOutcome.valueOf(o.getAsString());
