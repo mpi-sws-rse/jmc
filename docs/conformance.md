@@ -31,32 +31,40 @@ L="java -ea -cp $CP org.mpi_sws.jmc.mp.cli.MpLauncher"
 ## The launcher: `MpLauncher`
 
 ```
-MpLauncher <program class[:args]> [strategy] [iterations] [seed] [reportPath] [exportFile] [timeoutSeconds]
-           [--spec <file> [--stop-at-first] [--witness <file or dir/>]] [--graphs <store> [--graphs-limit N]]
-           [--split W [--k K]]
-MpLauncher --replay <graph.json> [--report <r.json>] [--allow-source-change] [--allow-tool-change] [<class[:args]>]
+MpLauncher count  --program <class[:args]> [run options]
+MpLauncher export --program <class[:args]> [run options] --out <file> [--graphs <store> [--graphs-limit N]]
+MpLauncher online --program <class[:args]> [run options] --spec <file> [--stop-at-first] [--witness <file or dir/>]
+                  [--out <file> [--graphs <store> [--graphs-limit N]]]
+MpLauncher replay --graph <graph.json> [--report <r.json>] [--allow-source-change] [--allow-tool-change]
+                  [--program <class[:args]>]
+MpLauncher --help | <command> --help
 ```
 
-| Positional | Default | Meaning |
+| Run option | Default | Meaning |
 |---|---|---|
-| program | | a `Runnable`; `Class:a,b` passes `"a","b"` to its `String...` constructor |
-| strategy | `mp-random` | `must` (exhaustive) or `mp-random` (sampled) for message-passing programs |
-| iterations | `1000` | `0` with `must`: unbounded, until the stack is exhausted or the timeout |
-| seed | the clock | printed; used by `mp-random` |
-| reportPath | `build/mp-launch/<class>` | **the launcher deletes the plain files in this directory**; use a fresh one |
-| exportFile | none | the summary file; `-` or absent: no export (under `must`, counting mode) |
-| timeoutSeconds | `600` | applies to `must` |
+| `--program <class[:args]>` | | a `Runnable`; `Class:a,b` passes `"a","b"` to its `String...` constructor; `export` and `online` need an `MpProgram` |
+| `--strategy <s>` | `must` | `must` (exhaustive; `p2p` and `asyn` only) or `mp-random` (sampled; any model); any other strategy is refused |
+| `--model <m>` | the program's | `p2p` (alias `fifo`), `asyn` (`bag`), `cd` (`causal`) or `mbox`; refused if it differs from the model an `MpProgram` declares, and `cd`/`mbox` under `must`; printed canonically on the `model:` line |
+| `--iterations N` | `0` for `must`, `1000` for `mp-random` | `0` (`must` only): unbounded, until the stack is exhausted or the timeout |
+| `--seed N` | the clock | printed; used by `mp-random` |
+| `--report-dir <dir>` | `build/mp-launch/<class>` | **the launcher deletes the plain files in this directory**; use a fresh one |
+| `--timeout S` | `600` | seconds; applies to `must` |
 
-Options may stand anywhere after the program. `--split W [--k K]` (advanced) explores with `W` worker JVMs once the
-search stack holds `K` entries (default `8·W`); it needs `must` and iterations `0`, writes the same export as the
-sequential run, and refuses `--witness` and `--stop-at-first`. `--worker` is internal (the coordinator starts workers with it).
+Each option is given at most once; an option a command does not take, or a missing required one, is a usage error
+(exit 2). Advanced: `--split W [--k K]` explores with `W` worker JVMs once the search stack holds `K` entries (default
+`8·W`); it needs `must` and iterations `0`, writes the same export as the sequential run, and refuses `--witness` and
+`--stop-at-first`. `--worker` is internal (the coordinator starts workers with it).
+
+The positional form, `MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000] [seed] [reportPath]
+[exportFile] [timeoutSeconds] [options]` and `MpLauncher --replay <graph.json> [...] [<class[:args]>]`, is still
+accepted and is deprecated; it prints no `model:` line.
 
 ### Count, export, online check
 
 ```bash
-$L example.PingPong must 0 1 rep-count                    # count: ran:, graphs:
-$L example.PingPong must 0 1 rep-spec spec.jsonl          # export
-$L example.PingPong must 0 1 rep-impl - 600 --spec spec.jsonl   # online check against spec.jsonl
+$L count  --program example.PingPong                       # count: ran:, graphs:
+$L export --program example.PingPong --out spec.jsonl      # export
+$L online --program example.PingPong --spec spec.jsonl     # online check against spec.jsonl
 ```
 
 The export's first line is the header (`format`, `tool`, `program`, `size`, `visible`, `roles`, `model`,
@@ -85,14 +93,14 @@ a text witness; `--witness <dir>/` writes `witness-<n>.txt` for each distinct un
 
 ### Graph stores and replay
 
-`--graphs <store>` (with `must` and an export file) writes, beside the export, the full execution graph of every
+`--graphs <store>` (with `must` and `--out`) writes, beside the export, the full execution graph of every
 distinct summary at its first occurrence (JSON Lines; `--graphs-limit N` keeps at most `N`). TraceForge's
 `conf-join --witness-dir D` looks the uncovered words up in this store, so a join hands you the graphs of its
 violations without a re-run. The store line `graph_store: written=W refused=R ms=T` reports the work. Without a
 `SOURCE.md5` manifest beside the program's classes the store records `"source": "unknown"` and the launcher says so
 on stderr (`graphs: source unknown: ...`); such graphs replay only with `--allow-source-change`.
 
-`--replay g.json` re-executes one graph: every scheduling choice, received message and choice index is taken from the
+`replay --graph g.json` re-executes one graph: every scheduling choice, received message and choice index is taken from the
 graph, and every event is compared with it.
 
 For the README's example (a graph of its store, and the same graph with its choice flipped):

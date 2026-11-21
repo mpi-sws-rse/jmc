@@ -10,6 +10,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
+import org.mpi_sws.jmc.mp.events.CommunicationModel;
 import org.mpi_sws.jmc.mp.summary.RunIdentity;
 import org.mpi_sws.jmc.mp.summary.SetIndex;
 import org.mpi_sws.jmc.mp.summary.SpecificationFile;
@@ -45,10 +46,23 @@ import java.util.Set;
  * replays one graph.
  *
  * <pre>
- * java [-ea] -cp &lt;core main and test classes, resources, dependencies&gt; org.mpi_sws.jmc.mp.launch.MpLauncher \
- *      &lt;program class[:args]&gt; [strategy] [iterations] [seed] [reportPath] [exportFile] [timeoutSeconds]
- *      [--spec &lt;file&gt; [--stop-at-first] [--witness &lt;file or dir/&gt;]] [--graphs &lt;store&gt; [--graphs-limit N]]
- *      [--split W [--k K]]
+ * java [-ea] -cp &lt;jmc jar and its dependencies, the program's classes&gt; org.mpi_sws.jmc.mp.cli.MpLauncher \
+ *      count|export|online|replay [options]
+ * java ... MpLauncher --help | &lt;command&gt; --help
+ * </pre>
+ *
+ * <p><b>Named form.</b> {@code count}, {@code export} ({@code --out}), {@code online} ({@code --spec}) and
+ * {@code replay} ({@code --graph}) with named options; {@code --help} lists them and their defaults
+ * ({@code NamedCli}). A named invocation is translated into the positional arguments below and runs the same code;
+ * it also states the communication model ({@code --model}, with the aliases {@code fifo}, {@code bag} and
+ * {@code causal}) on a {@code model:} line.
+ *
+ * <p><b>Positional form (deprecated).</b> Still accepted, with the same output as before:
+ *
+ * <pre>
+ * java ... MpLauncher &lt;program class[:args]&gt; [strategy] [iterations] [seed] [reportPath] [exportFile]
+ *      [timeoutSeconds] [--spec &lt;file&gt; [--stop-at-first] [--witness &lt;file or dir/&gt;]]
+ *      [--graphs &lt;store&gt; [--graphs-limit N]] [--split W [--k K]]
  * java ... MpLauncher --replay &lt;graph.json&gt; [--report &lt;r.json&gt;] [--allow-source-change]
  *      [--allow-tool-change] [&lt;program class[:args]&gt;]
  * </pre>
@@ -142,9 +156,22 @@ public final class MpLauncher {
      */
     private static int run(String[] rawArgs) {
         Measured st = new Measured(System.nanoTime());
+        namedCommand = null;
+        namedModel = null;
+        String[] args = rawArgs;
+        if (NamedCli.isNamed(rawArgs)) {
+            NamedCli.Parsed parsed = NamedCli.parse(rawArgs, System.out, System.err);
+            if (parsed instanceof NamedCli.Exit exit) {
+                return exit.status();
+            }
+            NamedCli.Run named = (NamedCli.Run) parsed;
+            namedCommand = named.command();
+            namedModel = named.model();
+            args = named.args();
+        }
         int status;
         try {
-            status = runBody(rawArgs, st);
+            status = runBody(args, st);
             if (status != 0 && st.failure == null) {
                 // An unsuccessful return the body did not describe (a rejected argument after the
                 // strategy existed): a failed invocation, never an ordinary stop.
@@ -167,6 +194,12 @@ public final class MpLauncher {
         }
         return status;
     }
+
+    /** The subcommand of a named invocation, or {@code null} for the positional form. */
+    private static String namedCommand;
+
+    /** The model given with {@code --model} in a named invocation, or {@code null}. */
+    private static CommunicationModel namedModel;
 
     /** What the measurement block of a must run is computed from; filled as the run proceeds. */
     private static final class Measured {
@@ -334,6 +367,21 @@ public final class MpLauncher {
         String strategy = args.length > 1 ? args[1] : "mp-random";
         if (!SchedulingStrategyFactory.isValidStrategy(strategy)) {
             return usage("unknown strategy " + strategy);
+        }
+        if (namedCommand != null) {
+            // The named form states the model: the one given, else the one an MpProgram declares.
+            CommunicationModel declared = program instanceof MpProgram mp ? mp.model() : null;
+            if (namedModel != null && declared != null && declared != namedModel) {
+                return usage("--model " + NamedCli.canonical(namedModel) + " differs from the model "
+                        + NamedCli.canonical(declared) + " that " + className + " declares");
+            }
+            CommunicationModel model = namedModel != null ? namedModel : declared;
+            if (strategy.equals("must") && (model == CommunicationModel.CD || model == CommunicationModel.MBOX)) {
+                return usage("must supports the p2p and asyn models only, not " + NamedCli.canonical(model)
+                        + "; mp-random samples every model");
+            }
+            System.out.println("model:      " + (model == null
+                    ? "not declared (each send and receive names its own)" : NamedCli.canonical(model)));
         }
         int iterations;
         long seed;
@@ -2030,6 +2078,10 @@ public final class MpLauncher {
 
     /** Prints the usage line and returns the usage status, 2. */
     private static int usageLine() {
+        if (namedCommand != null) {
+            System.err.println(NamedCli.usageLine(namedCommand));
+            return 2;
+        }
         System.err.println(
                 "usage: MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000]"
                         + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file> [--stop-at-first]"

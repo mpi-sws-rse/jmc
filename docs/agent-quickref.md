@@ -50,12 +50,12 @@ From the JMC root, with the README's example (replace `example.PingPong` and the
 CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
 javac -d docs/examples/build -cp "$CP" docs/examples/pingpong/PingPong.java
 L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.cli.MpLauncher"
-$L example.PingPong must 0 1 rep-count                                       # count
-$L example.PingPong must 0 1 rep-spec spec.jsonl                             # export
-$L example.PingPong must 0 1 rep-online - 600 --spec spec.jsonl --witness w/ # online check, witnesses
-$L example.PingPong must 0 1 rep-g impl.jsonl 600 --graphs impl.jsonl.graphs.jsonl
+$L count  --program example.PingPong                                         # count
+$L export --program example.PingPong --out spec.jsonl                        # export
+$L online --program example.PingPong --spec spec.jsonl --witness w/          # online check, witnesses
+$L export --program example.PingPong --out impl.jsonl --graphs impl.jsonl.graphs.jsonl
 sed -n '2p' impl.jsonl.graphs.jsonl > g1.graph.json                          # one graph of the store
-$L --replay g1.graph.json --allow-source-change                              # replay it
+$L replay --graph g1.graph.json --allow-source-change                        # replay it
 ```
 
 `--allow-source-change` is needed here because the example's classes have no `SOURCE.md5` manifest. Outside a git

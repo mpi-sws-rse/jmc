@@ -269,13 +269,13 @@ release and is deprecated; so is `org.mpi_sws.jmc.mp.launch.MpProgram`. From the
 CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
 javac -d docs/examples/build -cp "$CP" docs/examples/pingpong/PingPong.java
 L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.cli.MpLauncher"
-$L example.PingPong must 0 1 rep-count                                # count the executions
-$L example.PingPong must 0 1 rep-export spec.jsonl                     # export the summaries
-$L example.PingPong must 0 1 rep-online - 600 --spec spec.jsonl        # check online against them
+$L count  --program example.PingPong                       # count the executions
+$L export --program example.PingPong --out spec.jsonl      # export the summaries
+$L online --program example.PingPong --spec spec.jsonl     # check online against them
 ```
 
 The first run prints `ran: 2 iterations` and `graphs: 2 distinct complete, 0 distinct blocked`; the last prints
-`verdict: conforms`. Next: [docs/must-api.md](docs/must-api.md) (the API), [docs/conformance.md](docs/conformance.md)
+`verdict: conforms`. `$L --help` lists the commands and their options. Next: [docs/must-api.md](docs/must-api.md) (the API), [docs/conformance.md](docs/conformance.md)
 (the workflow, the launcher, verdicts), [docs/modelling.md](docs/modelling.md) (porting an implementation) and
 [docs/agent-quickref.md](docs/agent-quickref.md). The full workflow, the benchmarks and case studies, and the
 specification side with TraceForge are in the daavar framework repository: <https://github.com/joulook/daavar>.
@@ -360,7 +360,7 @@ void testCounter() {
 }
 ```
 
-Message-passing executions are replayed from their witness graphs with the launcher's `--replay` ([docs/conformance.md](docs/conformance.md#graph-stores-and-replay)).
+Message-passing executions are replayed from their witness graphs with the launcher's `replay` command ([docs/conformance.md](docs/conformance.md#graph-stores-and-replay)).
 
 ## Requirements
 
