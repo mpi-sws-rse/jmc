@@ -1089,11 +1089,11 @@ public class MustStrategy extends TrackActiveTasksStrategy {
     private void refuseUnsupported(long task, CommunicationModel model, MpMessage value)
             throws HaltExecutionException {
         if (model != CommunicationModel.P2P && model != CommunicationModel.ASYN) {
-            String what = value instanceof Monitors.Notification
-                    ? "sends a Monitors notification, which Monitors always sends under model " + model
-                    : "uses model " + model;
-            String monitors = model == CommunicationModel.CD ? "; the Monitors wrappers notify under CD" : "";
-            throw halt("task " + task + " " + what + ", which must does not support (p2p and asyn only)" + monitors);
+            String why = value instanceof Monitors.Notification
+                    ? "; this send is a Monitors notification, which the Monitors wrappers always send under CD"
+                    : model == CommunicationModel.CD ? "; the Monitors wrappers notify under CD" : "";
+            throw halt("task " + task + " uses model " + model + ", which must does not support (p2p and asyn only)"
+                    + why);
         }
     }
 

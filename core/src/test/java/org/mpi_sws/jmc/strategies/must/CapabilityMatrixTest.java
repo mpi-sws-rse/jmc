@@ -26,8 +26,8 @@ import java.util.List;
  * Which message-passing strategy supports which communication model and operation: {@code must} explores
  * {@code P2P} and {@code ASYN} and refuses {@code CD}, {@code MBOX} and the {@link Monitors} wrappers (which always
  * notify under {@code CD}) with a message naming the rule; {@code mp-random} samples all four models and monitors.
- * The strategies that are not message-passing ones refuse every message-passing event; {@code
- * MpApiStrategySupportTest} (integration tests) shows that.
+ * The strategies that are not message-passing ones refuse sends, receives and choices among several options;
+ * {@code MpApiStrategySupportTest} (integration tests) shows that.
  */
 class CapabilityMatrixTest {
 
@@ -62,6 +62,23 @@ class CapabilityMatrixTest {
             });
             MpProcess.Handle server = MpProcess.spawn("server",
                     () -> Monitors.recvNotified(m, v -> true, monitor.tid()));
+            MpProcess.Handle client = MpProcess.spawn("client",
+                    () -> Monitors.sendNotified(m, server.tid(), new Ping(1), monitor.tid()));
+            server.await();
+            client.await();
+            monitor.await();
+        });
+    }
+
+    /**
+     * A client notifies a monitor before its send; the monitor never receives, so the first {@code CD} event is
+     * the notification send itself.
+     */
+    private static JmcFunctionalTestTarget.Target notificationSend() {
+        return () -> MpProcess.runMain(() -> {
+            CommunicationModel m = CommunicationModel.P2P;
+            MpProcess.Handle monitor = MpProcess.spawn("monitor", () -> { });
+            MpProcess.Handle server = MpProcess.spawn("server", () -> Channel.recv(m));
             MpProcess.Handle client = MpProcess.spawn("client",
                     () -> Monitors.sendNotified(m, server.tid(), new Ping(1), monitor.tid()));
             server.await();
@@ -113,8 +130,15 @@ class CapabilityMatrixTest {
         JmcCheckerException e = assertThrows(JmcCheckerException.class, () -> mustRun(s, "must-monitors",
                 monitored()));
         // The monitor's own receive under CD, or a notification sent under CD, whichever comes first.
-        assertTrue(e.getMessage().contains(RULE + "; the Monitors wrappers notify under CD"), e.getMessage());
+        assertTrue(e.getMessage().contains("uses model CD, " + RULE + "; the Monitors wrappers notify under CD"),
+                e.getMessage());
         assertEquals(MpFailureKind.RULE, s.failureKind());
+        MustStrategy n = new MustStrategy(1L, REPORT);
+        JmcCheckerException sent = assertThrows(JmcCheckerException.class, () -> mustRun(n, "must-notification",
+                notificationSend()));
+        assertTrue(sent.getMessage().contains("uses model CD, " + RULE
+                + "; this send is a Monitors notification"), sent.getMessage());
+        assertEquals(MpFailureKind.RULE, n.failureKind());
     }
 
     @Test

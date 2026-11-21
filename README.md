@@ -227,12 +227,15 @@ Which strategy supports which model and operation:
 | `P2P`, `ASYN` | explored exhaustively | sampled | refused |
 | `CD`, `MBOX` | refused | sampled | refused |
 | `Monitors` (notify under `CD`) | refused | sampled | refused |
-| send, blocking and non-blocking receive with guards, `Nondet`, spawn, create and start, daemons, await, assume | yes | yes | refused |
-| summary export | yes | yes (sampled) | no |
+| send, blocking and non-blocking receive with guards, `Nondet` over several options | yes | yes | refused |
+| spawn, create and start, daemons, await, assume | yes | yes | ordinary thread events |
+| models mixed in one program | `P2P` and `ASYN` | any | – |
+| summary export (one declared model, `MpProgram.model()`) | yes | yes (sampled) | no |
 | online check, graph store, split runs | yes | no | no |
 
 `must` refuses an unsupported model with a fault that names it (`... uses model CD, which must does not support (p2p
-and asyn only)`); the launcher exits 2 on it.
+and asyn only)`); the named launcher exits 2 on it. An export also needs the program's declared roles, its shape and
+encodable values ([docs/must-api.md](docs/must-api.md)).
 
 ##### Conformance checking
 
