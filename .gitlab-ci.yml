@@ -206,7 +206,7 @@ launcher-test:
     - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
 publish:
-  # A release: runs only on a version tag (v0.2.0, ...), after the test stage. Uploads the signed bundle to the
+  # A release: runs only on a version tag (v0.3.0, ...), after the test stage. Uploads the signed bundle to the
   # Central Portal as a USER_MANAGED deployment; it is published from the Portal's web interface.
   stage: deploy
   script:
