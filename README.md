@@ -116,7 +116,7 @@ void testCounter() {
 
 ### Systematic Exploration
 
-Systematic exploration (`trust`, and `must` for message-passing programs) explores all the necessary and sufficient interleavings: when the exploration completes, every bug of the test has been found. It uses dynamic partial-order reduction (DPOR) to reduce the exhaustive search space to a minimal set of interleavings, none of which is equivalent to another. Expect a longer execution time than with `random`, especially for tests with a large state space.
+Systematic exploration (`trust`, and `must` for message-passing programs) uses dynamic partial-order reduction (DPOR) to explore each class of equivalent interleavings once. The exploration is exhaustive when the strategy exhausts its search; a failure or an iteration or time limit can stop it earlier. Expect a longer execution time than with `random`, especially for tests with a large state space.
 
 #### Trust
 
@@ -182,8 +182,8 @@ For distributed programs, JMC provides the `must` strategy, a DPOR-based algorit
 The program is written against the message-passing API `org.mpi_sws.jmc.api.mp`: it spawns processes
 (`MpProcess.spawn`), which exchange immutable messages (records implementing `MpMessage`) with `Channel.send` and
 `Channel.recv` under a communication model, the FIFO peer-to-peer model (`P2P`) or the fully asynchronous one
-(`ASYN`). `must` explores every distinct execution under that model: two executions are distinct when some receive
-takes a different message.
+(`ASYN`). `must` systematically explores the distinct executions under that model: they differ in which send a receive reads
+from, in whether a nonblocking receive finds nothing, or in the outcome of a nondeterministic choice (`Nondet`).
 
 As an example, main is a bank account that starts at 0, and two client processes send it a deposit and a withdrawal of
 10. The two messages race, so main can receive them in either order:
@@ -211,11 +211,12 @@ void testAccount() {
 }
 ```
 
-`must` explores exactly two executions, one per arrival order, and stops there, before the 100 iterations; in the one
-where the withdrawal arrives first, the assertion fails. A failed assertion or an exception in main or in any spawned
-process fails the test ([docs/must-api.md](docs/must-api.md#failures-finally-assertions)); a blocked execution, such
-as a message-passing deadlock, does not by itself. The exploration is exhaustive only when it ends before the iteration
-or time limit. The API, its rules and the communication models are described in
+Without the assertion, `must` explores exactly two executions, one per arrival order, and exhausts its search before
+the 100 iterations. With the assertion, it finds the execution in which the withdrawal arrives first, and the
+failure stops the test. A failed assertion or an uncaught exception in main or in any spawned process fails the test
+([docs/must-api.md](docs/must-api.md#failures-finally-assertions)); a blocked execution, such as a message-passing
+deadlock, does not by itself. The exploration is exhaustive only when `must` exhausts its search, not when it stops
+at a failure or at the iteration or time limit. The API, its rules and the communication models are described in
 [docs/must-api.md](docs/must-api.md); [MpMustCheckTest](integration-test/src/test/java/org/mpi_sws/jmc/test/mp/MpMustCheckTest.java)
 runs this example.
 
