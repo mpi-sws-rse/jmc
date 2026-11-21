@@ -1,0 +1,14 @@
+// Prints the classpath that runs the message-passing launcher (org.mpi_sws.jmc.mp.cli.MpLauncher):
+// core's main classes and resources and their dependencies. Usage, from the JMC root:
+//   ./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath
+// This script needs no change to the build.
+allprojects {
+    afterEvaluate { p ->
+        if (p.path == ':core') {
+            p.tasks.register('printMpClasspath') {
+                dependsOn 'classes'
+                doLast { println p.sourceSets.main.runtimeClasspath.asPath }
+            }
+        }
+    }
+}

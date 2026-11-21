@@ -1,0 +1,758 @@
+package org.mpi_sws.jmc.mp.graph;
+
+import org.mpi_sws.jmc.mp.events.EventKey;
+import org.mpi_sws.jmc.mp.events.MpLabel;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+/**
+ * An execution graph {@code G = ⟨E, po, rf⟩} (Definition 3.2 of the Must paper) plus the
+ * insertion order {@code ≤_G} (Section 4 of the paper) and JMC's extra causal edges.
+ *
+ * <ul>
+ *   <li>{@code E} — the events, grouped per thread; {@code po} is the index order within a
+ *       thread ({@link EventKey#idx()}), so it is never stored;</li>
+ *   <li>{@code rf} — for each receive, the send it reads, or {@code ⊥} (recorded separately; only
+ *       a non-blocking receive may read {@code ⊥}, Definition 3.3);</li>
+ *   <li>{@code hb} — the spawn and join edges of JMC's process model, which are part of
+ *       {@code porf} and of nothing else. Must's graphs have no spawn or join labels, so a
+ *       backend must choose the endpoints among existing events and must do so
+ *       <b>schedule-independently</b>, because {@code hb} is part of {@link GraphCanon}. The
+ *       rule a backend must satisfy: a spawn edge runs from an event of the parent that is
+ *       {@code porf}-after everything in the parent's causal past at the spawn — if the parent
+ *       has no event of its own yet, from the {@code po}-maximal events of that causal past
+ *       (possibly in other threads, possibly several edges) — to the child's first event; a
+ *       join edge runs from the joined thread's last event to the joiner's next event. A
+ *       backend with a static set of nodes needs no hb edges. A backend that does use them
+ *       should be tested for producing the same {@link GraphCanon} under different schedules.
+ *       Explicit {@code Spawn}/{@code Join} labels, so that the edges name real events, would
+ *       be a cleaner design but do not exist;</li>
+ *   <li>{@code ≤_G} — the order in which events were added.</li>
+ * </ul>
+ *
+ * <p>{@code porf = (po ∪ rf ∪ hb)⁺} is computed on the first query and answered in O(1): for an
+ * acyclic graph as one vector clock per event, in a topological order of every po, rf (each rf
+ * entry, so several readers of one send each get their edge) and hb edge. With at most
+ * {@link #DENSE_THREADS} threads a clock is a dense array, O((n + m)·T) time and O(n·T + m) space
+ * for n events, m edges and T threads. With more threads a clock lists only the threads that have
+ * an event porf-before it, so the clocks together hold at most as many entries as the transitive
+ * closure would (each entry stands for at least one closure pair) and at most T pairs each: a
+ * graph with many threads and few edges stays small. A graph with a cycle keeps the transitive
+ * closure (Θ(n²) sets) for every query, and {@link #porfAcyclic()} reports the cycle.
+ *
+ * <p>Immutable; built with a {@link Builder}. Holds no policy: which send a receive reads is the
+ * backend's decision, recorded here after the fact.
+ */
+public final class ExecutionGraph {
+
+    /**
+     * A causal edge that is neither {@code po} nor {@code rf}: spawn or join.
+     *
+     * @param from the causally earlier event
+     * @param to the causally later event
+     */
+    public record Edge(EventKey from, EventKey to) implements Comparable<Edge> {
+        @Override
+        public int compareTo(Edge o) {
+            int c = from.compareTo(o.from);
+            return c != 0 ? c : to.compareTo(o.to);
+        }
+    }
+
+    /** Events per thread id, in program order. */
+    private final TreeMap<Long, List<GraphEvent>> threads;
+
+    /** Event keys in the order the events were added ({@code ≤_G}). */
+    private final List<EventKey> insertionOrder;
+
+    /** Reads-from: receive → the send it reads; receives reading {@code ⊥} are absent. */
+    private final Map<EventKey, EventKey> rf;
+
+    /** The receives that read {@code ⊥}. */
+    private final Set<EventKey> bottoms;
+
+    /** The spawn and join edges. */
+    private final TreeSet<Edge> hb;
+
+    /** Inverse of {@link #rf}: send → the receive that reads it. */
+    private final Map<EventKey, EventKey> readerOf;
+
+    /**
+     * Whether every porf answer is checked against the transitive closure: only with
+     * {@code -Djmc.must.checkPrefixes=true} (the same switch as the Must strategy's prefix check),
+     * never by {@code -ea} alone.
+     */
+    static final boolean CHECK = checkProperty();
+
+    /** The diagnostic property; a denied read (a security manager) means the check is off. */
+    private static boolean checkProperty() {
+        try {
+            return Boolean.getBoolean("jmc.must.checkPrefixes");
+        } catch (SecurityException e) {
+            return false;
+        }
+    }
+
+
+    /**
+     * The largest number of threads for which the porf clocks are dense arrays (n·T ints, at
+     * most 16 per event, the same order as the parent's n closure sets); above it they are sparse.
+     */
+    static final int DENSE_THREADS = 16;
+
+    /**
+     * porf as vector clocks, computed on first use ({@link #porf()}), since {@link #canon()} does
+     * not need it: for an acyclic graph, per event (by insertion index) and per thread (by its rank
+     * in {@link #threads}), the largest po index among the events strictly {@code porf}-before it,
+     * −1 for none — exact, because those events are po-downward-closed in every thread. A graph
+     * with a causal cycle has no clocks and answers from the transitive closure instead.
+     */
+    private Porf porf;
+
+    /** Event → 0-based position in {@link #insertionOrder}. */
+    private final Map<EventKey, Integer> insertionIndex;
+
+    /** Copies the builder's contents and computes the derived indexes (the porf closure lazily). */
+    private ExecutionGraph(Builder b) {
+        this.threads = new TreeMap<>();
+        b.threads.forEach((t, l) -> threads.put(t, List.copyOf(l)));
+        this.insertionOrder = List.copyOf(b.insertionOrder);
+        this.rf = Collections.unmodifiableSortedMap(new TreeMap<>(b.rf));
+        this.bottoms = Collections.unmodifiableSortedSet(new TreeSet<>(b.bottoms));
+        this.hb = new TreeSet<>(b.hb);
+        this.readerOf = new TreeMap<>();
+        // Uniqueness of a send's reader is a well-formedness question (Definition 3.3), not ours;
+        // on an ill-formed graph the LAST reader in key order wins, deterministically. rf is a
+        // sorted map precisely so that no query here depends on hash iteration order.
+        rf.forEach((r, s) -> readerOf.put(s, r));
+        this.insertionIndex = new HashMap<>();
+        for (int i = 0; i < insertionOrder.size(); i++) {
+            insertionIndex.put(insertionOrder.get(i), i);
+        }
+    }
+
+    /**
+     * porf, computed on the first call (a pure function of the immutable fields): clocks in a
+     * topological order of {@code po ∪ rf ∪ hb} when one exists, else the transitive closure.
+     */
+    private synchronized Porf porf() {
+        if (porf == null) {
+            porf = computePorf();
+            if (CHECK) {
+                checkPorf(porf);
+            }
+        }
+        return porf;
+    }
+
+    /**
+     * porf: {@code clocks} (and {@code rank}, thread id → clock component) for an acyclic graph,
+     * otherwise {@code closure}, for each event the events strictly porf-after it. A clock row is
+     * dense (indexed by rank, −1 for none) or, if {@code sparse}, the pairs rank, value sorted by
+     * rank, with the absent ranks meaning −1.
+     */
+    private record Porf(int[][] clocks, boolean sparse, Map<Long, Integer> rank,
+                        Map<EventKey, Set<EventKey>> closure) {
+
+        /** The clock of event {@code i} (insertion index) at thread rank {@code t}, −1 for none. */
+        int clock(int i, int t) {
+            int[] c = clocks[i];
+            if (!sparse) {
+                return c[t];
+            }
+            int lo = 0;
+            int hi = c.length / 2 - 1;
+            while (lo <= hi) {
+                int mid = (lo + hi) >>> 1;
+                int r = c[2 * mid];
+                if (r < t) {
+                    lo = mid + 1;
+                } else if (r > t) {
+                    hi = mid - 1;
+                } else {
+                    return c[2 * mid + 1];
+                }
+            }
+            return -1;
+        }
+    }
+
+    // ---- queries ----
+
+    /**
+     * Returns an event by key.
+     *
+     * @param key the key
+     * @return the event
+     * @throws IllegalArgumentException if absent
+     */
+    public GraphEvent event(EventKey key) {
+        List<GraphEvent> l = threads.get(key.tid());
+        if (l == null || key.idx() < 0 || key.idx() >= l.size()) {
+            throw new IllegalArgumentException("no event " + key);
+        }
+        return l.get((int) key.idx());
+    }
+
+    /**
+     * Whether the key names an event of this graph.
+     *
+     * @param key the key
+     * @return {@code true} iff present
+     */
+    public boolean contains(EventKey key) {
+        List<GraphEvent> l = threads.get(key.tid());
+        return l != null && key.idx() >= 0 && key.idx() < l.size();
+    }
+
+    /**
+     * Returns the events of a thread in program order.
+     *
+     * @param tid the thread
+     * @return an unmodifiable list, empty if the thread has no events
+     */
+    public List<GraphEvent> thread(long tid) {
+        return threads.getOrDefault(tid, List.of());
+    }
+
+    /**
+     * Returns every thread's events.
+     *
+     * @return thread id → events in program order, ascending by id
+     */
+    public SortedMap<Long, List<GraphEvent>> threads() {
+        return Collections.unmodifiableSortedMap(threads);
+    }
+
+    /**
+     * Returns every event.
+     *
+     * @return the events in insertion order {@code ≤_G}
+     */
+    public List<GraphEvent> eventsInInsertionOrder() {
+        List<GraphEvent> out = new ArrayList<>(insertionOrder.size());
+        for (EventKey k : insertionOrder) {
+            out.add(event(k));
+        }
+        return out;
+    }
+
+    /**
+     * Returns the send events.
+     *
+     * @return the sends in insertion order
+     */
+    public List<GraphEvent> sends() {
+        List<GraphEvent> out = new ArrayList<>();
+        for (GraphEvent e : eventsInInsertionOrder()) {
+            if (e.isSend()) {
+                out.add(e);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Returns the receive events.
+     *
+     * @return the receives in insertion order
+     */
+    public List<GraphEvent> receives() {
+        List<GraphEvent> out = new ArrayList<>();
+        for (GraphEvent e : eventsInInsertionOrder()) {
+            if (e.isRecv()) {
+                out.add(e);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * The send a receive reads, if it reads a send.
+     *
+     * @param recv the receive
+     * @return the send, or empty if the receive reads {@code ⊥} or has no rf recorded
+     */
+    public Optional<EventKey> rf(EventKey recv) {
+        return Optional.ofNullable(rf.get(recv));
+    }
+
+    /**
+     * Whether a receive reads {@code ⊥}.
+     *
+     * @param recv the receive
+     * @return {@code true} iff recorded as reading {@code ⊥}
+     */
+    public boolean readsBottom(EventKey recv) {
+        return bottoms.contains(recv);
+    }
+
+    /**
+     * The receive that reads a send, if any.
+     *
+     * @param send the send
+     * @return its reader, or empty if unread
+     */
+    public Optional<EventKey> readerOf(EventKey send) {
+        return Optional.ofNullable(readerOf.get(send));
+    }
+
+    /**
+     * Returns the extra causal edges.
+     *
+     * @return the spawn/join edges
+     */
+    public Set<Edge> hb() {
+        return Collections.unmodifiableSet(hb);
+    }
+
+    /**
+     * Program order: same thread, earlier index.
+     *
+     * @param a an event
+     * @param b an event
+     * @return {@code true} iff {@code a po b}
+     */
+    public boolean poBefore(EventKey a, EventKey b) {
+        return a.tid() == b.tid() && a.idx() < b.idx();
+    }
+
+    /**
+     * Causal order {@code porf = (po ∪ rf ∪ hb)⁺}.
+     *
+     * @param a an event
+     * @param b an event
+     * @return {@code true} iff {@code a porf b}
+     */
+    public boolean porfBefore(EventKey a, EventKey b) {
+        Porf p = porf();
+        if (p.clocks() == null) {
+            Set<EventKey> s = p.closure().get(a);
+            return s != null && s.contains(b);
+        }
+        if (a == null || b == null) {
+            return false;
+        }
+        Integer ib = insertionIndex.get(b);
+        Integer ta = p.rank().get(a.tid());
+        if (ib == null || ta == null || !insertionIndex.containsKey(a)) {
+            return false;
+        }
+        return a.idx() <= p.clock(ib, ta);
+    }
+
+    /**
+     * Whether {@code porf} is irreflexive (no causal cycle) — Definition 3.3's last clause.
+     *
+     * @return {@code true} iff no event is {@code porf}-before itself
+     */
+    public boolean porfAcyclic() {
+        Porf p = porf();
+        if (p.clocks() != null) {
+            return true;
+        }
+        for (Map.Entry<EventKey, Set<EventKey>> e : p.closure().entrySet()) {
+            if (e.getValue().contains(e.getKey())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Position in the insertion order {@code ≤_G}.
+     *
+     * @param key the event
+     * @return its 0-based insertion index
+     * @throws IllegalArgumentException if absent
+     */
+    public int insertionIndex(EventKey key) {
+        Integer i = insertionIndex.get(key);
+        if (i == null) {
+            throw new IllegalArgumentException("no event " + key);
+        }
+        return i;
+    }
+
+    /**
+     * Counts the events.
+     *
+     * @return the number of events
+     */
+    public int size() {
+        return insertionOrder.size();
+    }
+
+    /**
+     * The canonical form: what two runs must agree on to have produced the same graph.
+     *
+     * @return the canonical value
+     */
+    public GraphCanon canon() {
+        TreeMap<Long, List<MpLabel>> labels = new TreeMap<>();
+        threads.forEach((t, l) -> {
+            List<MpLabel> ls = new ArrayList<>(l.size());
+            for (GraphEvent e : l) {
+                ls.add(e.label());
+            }
+            labels.put(t, Collections.unmodifiableList(ls));
+        });
+        return new GraphCanon(
+                Collections.unmodifiableSortedMap(labels),
+                Collections.unmodifiableSortedMap(new TreeMap<>(rf)),
+                Collections.unmodifiableSortedSet(new TreeSet<>(bottoms)),
+                Collections.unmodifiableSortedSet(hb));
+    }
+
+    // ---- porf ----
+
+    /**
+     * Sorts the events topologically over {@code po ∪ rf ∪ hb} (Kahn) and, if every event is
+     * sorted, computes each event's clock from its predecessors' clocks in that order. If some
+     * event is never sorted, the edges have a cycle, and the transitive closure is returned
+     * instead, from which {@link #porfAcyclic()} reports it.
+     */
+    private Porf computePorf() {
+        int n = insertionOrder.size();
+        Map<Long, Integer> rank = new HashMap<>();
+        for (Long t : threads.keySet()) {
+            rank.put(t, rank.size());
+        }
+        int[][] succ = new int[n][];
+        int[] succLen = new int[n];
+        int[] indegree = new int[n];
+        for (int i = 0; i < n; i++) {
+            succ[i] = new int[2];
+        }
+        for (List<GraphEvent> l : threads.values()) {
+            for (int i = 0; i + 1 < l.size(); i++) {
+                edge(succ, succLen, indegree, insertionIndex.get(l.get(i).key()), insertionIndex.get(l.get(i + 1).key()));
+            }
+        }
+        for (Map.Entry<EventKey, EventKey> e : rf.entrySet()) {
+            edge(succ, succLen, indegree, insertionIndex.get(e.getValue()), insertionIndex.get(e.getKey()));
+        }
+        for (Edge e : hb) {
+            edge(succ, succLen, indegree, insertionIndex.get(e.from()), insertionIndex.get(e.to()));
+        }
+        int[] order = new int[n];
+        int head = 0;
+        int tail = 0;
+        for (int i = 0; i < n; i++) {
+            if (indegree[i] == 0) {
+                order[tail++] = i;
+            }
+        }
+        while (head < tail) {
+            int u = order[head++];
+            for (int k = 0; k < succLen[u]; k++) {
+                int v = succ[u][k];
+                if (--indegree[v] == 0) {
+                    order[tail++] = v;
+                }
+            }
+        }
+        if (tail < n) {
+            return new Porf(null, false, null, closure());
+        }
+        int threadCount = rank.size();
+        if (threadCount > DENSE_THREADS) {
+            return new Porf(sparseClocks(order, succ, succLen, rank), true, rank, null);
+        }
+        int[][] clocks = new int[n][threadCount];
+        for (int[] c : clocks) {
+            Arrays.fill(c, -1);
+        }
+        for (int i = 0; i < n; i++) {
+            int u = order[i];
+            EventKey ku = insertionOrder.get(u);
+            int tu = rank.get(ku.tid());
+            int[] cu = clocks[u];
+            for (int k = 0; k < succLen[u]; k++) {
+                int[] cv = clocks[succ[u][k]];
+                for (int t = 0; t < threadCount; t++) {
+                    if (cu[t] > cv[t]) {
+                        cv[t] = cu[t];
+                    }
+                }
+                if (ku.idx() > cv[tu]) {
+                    cv[tu] = (int) ku.idx();
+                }
+            }
+        }
+        return new Porf(clocks, false, rank, null);
+    }
+
+    /**
+     * The sparse clocks, in the topological {@code order}: each successor's clock becomes the
+     * pointwise maximum of its clock, its predecessor's, and the predecessor's own po index.
+     */
+    private int[][] sparseClocks(int[] order, int[][] succ, int[] succLen, Map<Long, Integer> rank) {
+        int n = order.length;
+        int[][] clocks = new int[n][];
+        int[] none = new int[0];
+        Arrays.fill(clocks, none);
+        for (int i = 0; i < n; i++) {
+            int u = order[i];
+            EventKey ku = insertionOrder.get(u);
+            int tu = rank.get(ku.tid());
+            for (int k = 0; k < succLen[u]; k++) {
+                int v = succ[u][k];
+                clocks[v] = join(clocks[v], clocks[u], tu, (int) ku.idx());
+            }
+        }
+        return clocks;
+    }
+
+    /**
+     * The pointwise maximum of the sparse clocks {@code a} and {@code b} and the single entry
+     * {@code t ↦ x}, as pairs sorted by rank.
+     */
+    private static int[] join(int[] a, int[] b, int t, int x) {
+        int[] out = new int[a.length + b.length + 2];
+        int i = 0;
+        int j = 0;
+        int o = 0;
+        boolean single = false;
+        while (i < a.length || j < b.length || !single) {
+            int ra = i < a.length ? a[i] : Integer.MAX_VALUE;
+            int rb = j < b.length ? b[j] : Integer.MAX_VALUE;
+            int rs = single ? Integer.MAX_VALUE : t;
+            int r = Math.min(ra, Math.min(rb, rs));
+            int val = -1;
+            if (ra == r) {
+                val = Math.max(val, a[i + 1]);
+                i += 2;
+            }
+            if (rb == r) {
+                val = Math.max(val, b[j + 1]);
+                j += 2;
+            }
+            if (rs == r) {
+                val = Math.max(val, x);
+                single = true;
+            }
+            out[o++] = r;
+            out[o++] = val;
+        }
+        return o == out.length ? out : Arrays.copyOf(out, o);
+    }
+
+    /** Adds the edge {@code from → to} (insertion indices) to the successor lists. */
+    private static void edge(int[][] succ, int[] succLen, int[] indegree, int from, int to) {
+        if (succLen[from] == succ[from].length) {
+            succ[from] = Arrays.copyOf(succ[from], 2 * succ[from].length);
+        }
+        succ[from][succLen[from]++] = to;
+        indegree[to]++;
+    }
+
+    /**
+     * Checks the clock answers against the transitive closure on every pair of events, and the
+     * acyclicity verdict ({@link #CHECK} only).
+     *
+     * @throws IllegalStateException on the first disagreement
+     */
+    private void checkPorf(Porf p) {
+        Map<EventKey, Set<EventKey>> c = closure();
+        boolean acyclic = true;
+        for (Map.Entry<EventKey, Set<EventKey>> e : c.entrySet()) {
+            if (e.getValue().contains(e.getKey())) {
+                acyclic = false;
+            }
+        }
+        if (acyclic != (p.clocks() != null)) {
+            throw new IllegalStateException("porf check: the topological sort says "
+                    + (p.clocks() != null ? "acyclic" : "cyclic") + ", the closure the opposite");
+        }
+        if (p.clocks() == null) {
+            return;
+        }
+        for (EventKey a : insertionOrder) {
+            for (EventKey b : insertionOrder) {
+                Set<EventKey> s = c.get(a);
+                boolean expected = s != null && s.contains(b);
+                boolean got = a.idx() <= p.clock(insertionIndex.get(b), p.rank().get(a.tid()));
+                if (expected != got) {
+                    throw new IllegalStateException("porf check: " + a + " porf " + b + " is " + expected
+                            + " by the closure, " + got + " by the clocks");
+                }
+            }
+        }
+    }
+
+    /**
+     * Computes the transitive closure of {@code po ∪ rf ∪ hb}: from every event, a depth-first
+     * search over the successor edges (next event of the thread, the reader of a send, hb
+     * targets).
+     *
+     * @return for each event, the set of events strictly {@code porf}-after it; an event is in
+     *     its own set exactly when it lies on a causal cycle
+     */
+    private Map<EventKey, Set<EventKey>> closure() {
+        Map<EventKey, List<EventKey>> succ = new HashMap<>();
+        for (List<GraphEvent> l : threads.values()) {
+            for (int i = 0; i + 1 < l.size(); i++) {
+                succ.computeIfAbsent(l.get(i).key(), k -> new ArrayList<>()).add(l.get(i + 1).key());
+            }
+        }
+        rf.forEach((r, s) -> succ.computeIfAbsent(s, k -> new ArrayList<>()).add(r));
+        for (Edge e : hb) {
+            succ.computeIfAbsent(e.from(), k -> new ArrayList<>()).add(e.to());
+        }
+        Map<EventKey, Set<EventKey>> out = new HashMap<>();
+        for (EventKey start : insertionOrder) {
+            Set<EventKey> seen = new HashSet<>();
+            Deque<EventKey> stack = new ArrayDeque<>(succ.getOrDefault(start, List.of()));
+            while (!stack.isEmpty()) {
+                EventKey k = stack.pop();
+                if (seen.add(k)) {
+                    stack.addAll(succ.getOrDefault(k, List.of()));
+                }
+            }
+            out.put(start, seen);
+        }
+        return out;
+    }
+
+    @Override
+    public String toString() {
+        return "ExecutionGraph" + canon();
+    }
+
+    // ---- builder ----
+
+    /**
+     * Builds an {@link ExecutionGraph} event by event. Events of a thread must be added in
+     * program order; reads-from and {@code ⊥} reads are recorded per receive; spawn/join edges per
+     * pair. Nothing here checks consistency — that is
+     * {@code org.mpi_sws.jmc.mp.consistency.MpConsistency}'s job — but structural nonsense is
+     * rejected at once: an event out of program order, an rf or a {@code ⊥} read on a
+     * non-receive, an rf from a non-send, an hb endpoint that is not an event. An hb self-loop is
+     * accepted here and surfaces as a Definition 3.3 causal cycle.
+     */
+    public static final class Builder {
+        private final TreeMap<Long, List<GraphEvent>> threads = new TreeMap<>();
+        private final List<EventKey> insertionOrder = new ArrayList<>();
+        private final Map<EventKey, EventKey> rf = new HashMap<>();
+        private final Set<EventKey> bottoms = new HashSet<>();
+        private final Set<Edge> hb = new HashSet<>();
+
+        /** Creates an empty builder. */
+        public Builder() {}
+
+        /**
+         * Creates a builder pre-loaded with a graph's contents — the way a backend extends a
+         * prefix.
+         *
+         * @param g the graph to start from
+         */
+        public Builder(ExecutionGraph g) {
+            g.threads.forEach((t, l) -> threads.put(t, new ArrayList<>(l)));
+            insertionOrder.addAll(g.insertionOrder);
+            rf.putAll(g.rf);
+            bottoms.addAll(g.bottoms);
+            hb.addAll(g.hb);
+        }
+
+        /**
+         * Appends an event as the next event of its thread.
+         *
+         * @param e the event; its key's index must equal the thread's current length
+         * @return this
+         * @throws IllegalArgumentException if the index is not the next in program order
+         */
+        public Builder add(GraphEvent e) {
+            Objects.requireNonNull(e, "event");
+            List<GraphEvent> l = threads.computeIfAbsent(e.key().tid(), t -> new ArrayList<>());
+            if (e.key().idx() != l.size()) {
+                throw new IllegalArgumentException(
+                        "event " + e.key() + " is not next in thread " + e.key().tid()
+                                + " (expected idx " + l.size() + ")");
+            }
+            l.add(e);
+            insertionOrder.add(e.key());
+            return this;
+        }
+
+        /**
+         * Records that a receive reads a send.
+         *
+         * @param recv the receive (must be present and a receive)
+         * @param send the send (must be present and a send)
+         * @return this
+         */
+        public Builder readsFrom(EventKey recv, EventKey send) {
+            requireLabel(recv, MpLabel.Recv.class, "receive");
+            requireLabel(send, MpLabel.Send.class, "send");
+            bottoms.remove(recv);
+            rf.put(recv, send);
+            return this;
+        }
+
+        /**
+         * Records that a receive reads {@code ⊥}.
+         *
+         * @param recv the receive (must be present and a receive)
+         * @return this
+         */
+        public Builder readsBottom(EventKey recv) {
+            requireLabel(recv, MpLabel.Recv.class, "receive");
+            rf.remove(recv);
+            bottoms.add(recv);
+            return this;
+        }
+
+        /**
+         * Adds a spawn or join edge.
+         *
+         * @param from the causally earlier event
+         * @param to the causally later event
+         * @return this
+         */
+        public Builder hb(EventKey from, EventKey to) {
+            require(from);
+            require(to);
+            hb.add(new Edge(from, to));
+            return this;
+        }
+
+        /**
+         * Builds the graph.
+         *
+         * @return the immutable graph
+         */
+        public ExecutionGraph build() {
+            return new ExecutionGraph(this);
+        }
+
+        private void require(EventKey k) {
+            List<GraphEvent> l = threads.get(k.tid());
+            if (l == null || k.idx() < 0 || k.idx() >= l.size()) {
+                throw new IllegalArgumentException("no event " + k);
+            }
+        }
+
+        private void requireLabel(EventKey k, Class<? extends MpLabel> cls, String what) {
+            require(k);
+            MpLabel label = threads.get(k.tid()).get((int) k.idx()).label();
+            if (!cls.isInstance(label)) {
+                throw new IllegalArgumentException(k + " is not a " + what + ": " + label);
+            }
+        }
+    }
+}

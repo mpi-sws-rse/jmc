@@ -1,9 +1,11 @@
+import java.util.Base64
+
 plugins {
     id("java")
     id("checkstyle")
     id("maven-publish")
     id("java-library")
-//    signing
+    signing
 }
 
 repositories {
@@ -35,6 +37,50 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
 
+    // java-smt 6.0.0 brings Guava 33.4.8-jre: unbounded allocation when deserializing
+    // CompactHashMap/CompactHashSet/MapMakerInternalMap (<= 33.7.1). Declared directly so the
+    // patched version is also a runtime dependency in the published POM, which Maven consumers
+    // resolve ahead of java-smt's. Remove once java-smt brings a patched version.
+    implementation("com.google.guava:guava:33.7.2-jre")
+}
+
+// The build's identity for witness graph files: the JMC commit, from JMC_COMMIT if set (node trees
+// copied without .git), else git (with -dirty for modified tracked files), else "unknown".
+fun jmcCommit(): String {
+    System.getenv("JMC_COMMIT")?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+    fun git(vararg a: String): String? = try {
+        val p = ProcessBuilder(listOf("git") + a).directory(rootDir).redirectErrorStream(false).start()
+        val out = p.inputStream.bufferedReader().readText().trim()
+        if (p.waitFor() == 0) out else null
+    } catch (e: Exception) {
+        null
+    }
+    // Only JMC's own repository (or worktree) counts: a tree copied into another checkout has no commit.
+    val top = git("rev-parse", "--show-toplevel") ?: return "unknown"
+    if (File(top).canonicalFile != rootDir.canonicalFile) {
+        return "unknown"
+    }
+    val head = git("rev-parse", "HEAD") ?: return "unknown"
+    val dirty = git("status", "--porcelain", "--untracked-files=no") ?: return "unknown"
+    return if (dirty.isEmpty()) head else "$head-dirty"
+}
+
+val jmcBuildInfo by tasks.registering {
+    val out = layout.buildDirectory.dir("generated/jmc-build")
+    // JMC_COMMIT is an input: a rebuild with another value never keeps the old commit (the task also reruns every
+    // build, since git's HEAD and the work tree's state are not inputs Gradle can see).
+    inputs.property("jmcCommit", providers.environmentVariable("JMC_COMMIT").orElse(""))
+    outputs.dir(out)
+    outputs.upToDateWhen { false }
+    doLast {
+        val f = out.get().file("org/mpi_sws/jmc/jmc-build.properties").asFile
+        f.parentFile.mkdirs()
+        f.writeText("commit=" + jmcCommit() + "\n")
+    }
+}
+
+sourceSets.main {
+    resources.srcDir(jmcBuildInfo)
 }
 
 tasks.withType<Javadoc> {
@@ -53,7 +99,7 @@ publishing {
             pom {
                 name = "JMC Model Checker"
                 description = "A generic model checker for Java programs"
-                url = "jmc.mpi-sws.org"
+                url = "https://jmc.mpi-sws.org"
                 licenses {
                     license {
                         name.set("Apache License, Version 2.0")
@@ -80,12 +126,21 @@ publishing {
 
     repositories {
         mavenLocal()
-//        maven {
-//            setUrl(layout.buildDirectory.dir("staging-deploy"))
-//        }
+        // The release bundle: scripts/publish.sh zips this directory and uploads it to the Central Portal.
+        maven {
+            name = "staging"
+            setUrl(rootProject.layout.buildDirectory.dir("staging-deploy"))
+        }
     }
 }
 
-//signing {
-//    sign(publishing.publications["maven"])
-//}
+// Signing for Maven Central: the CI provides the armored private key base64-encoded in one line (SIGNING_KEY) and
+// its passphrase (SIGNING_PASSWORD). Without SIGNING_KEY nothing is signed (a local or dry run).
+signing {
+    val encodedKey = System.getenv("SIGNING_KEY")
+    if (!encodedKey.isNullOrBlank()) {
+        val key = String(Base64.getDecoder().decode(encodedKey.trim()), Charsets.UTF_8)
+        useInMemoryPgpKeys(key, System.getenv("SIGNING_PASSWORD") ?: "")
+        sign(publishing.publications["maven"])
+    }
+}

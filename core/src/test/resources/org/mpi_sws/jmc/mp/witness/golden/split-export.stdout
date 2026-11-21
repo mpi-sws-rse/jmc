@@ -1,0 +1,49 @@
+== thread main: report and log4j lines, in order
+program:    org.mpi_sws.jmc.mp.j8s.OnlineBank
+strategy:   must
+iterations: unbounded, timeout 300 s
+seed:       1
+reportPath: rep
+exportFile: out.jsonl
+TS [main]  INFO o.m.j.c.JmcCheckerConfiguration - Using seed: 1
+TS [main]  INFO o.m.j.c.JmcModelChecker - JMC checker started
+TS [main]  INFO o.m.j.c.JmcModelChecker - Completed 0 iterations
+TS [main]  INFO o.m.j.c.JmcModelChecker - Model checking completed covering: 1 iterations
+TS [main]  INFO o.m.j.c.JmcModelChecker - Model checking explored: 1 completed iterations
+TS [main]  INFO o.m.j.c.JmcModelChecker - Model checking explored: 0 blocked iterations
+split:      K 2, W 2, R 1, N 3; run directory rep/split-UUID
+ran:        16 iterations
+blocked:    0 (counted by the strategy)
+completed:  16
+items:      {0=8, 1=4, 2=3}
+elapsed:    X
+observed:   org.mpi_sws.jmc.mp.j8s.OnlineBank@HASH
+graphs:     16 distinct complete, 0 distinct blocked; stack exhausted
+exported:   16 iterations as 16 distinct summaries (complete, 0 not exported) to out.jsonl
+--- measurements
+wall_ms: X
+explore_ms: X
+summarise_ms: X
+index_ms: X
+lookup_ms: X
+export_ms: X
+graphs_complete: 16
+graphs_blocked: 0
+summaries_distinct: 16
+iterations: 16
+stop_reason: exhausted
+peak_rss_kb: RSS
+max_message_events: 12
+max_porf_pairs: 0
+max_graph_events: 32
+mean_graph_events: 
+max_visible_events: 6
+mean_visible_events: 
+max_summary_bytes: 205
+max_porf_count: 0
+
+== thread Thread-0: log4j lines, in order
+TS [Thread-0]  INFO o.m.j.r.s.Scheduler$SchedulerThread - Scheduler thread started.
+TS [Thread-0]  INFO o.m.j.r.s.Scheduler$SchedulerThread - Shutting down scheduler thread.
+TS [Thread-0]  INFO o.m.j.r.s.Scheduler$SchedulerThread - Scheduler thread finished.
+== end

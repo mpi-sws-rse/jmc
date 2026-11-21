@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.LongConsumer;
 
 /**
  * Owns all per-task state used by the runtime (except the scheduler thread itself).
@@ -73,6 +74,32 @@ public class TaskManager {
     private Long nextTaskId() {
         synchronized (idCounterLock) {
             return idCounter++;
+        }
+    }
+
+    /**
+     * Internal testing support, not part of JMC's user API: called by {@link #wait(Long)} with the
+     * task id after the task's future has completed, normally or exceptionally, and before the
+     * future is removed. {@code null}, the default, does nothing. It lets JMC's own tests hold a
+     * woken task between its wake-up and its cleanup.
+     */
+    private static volatile LongConsumer wakeHookForTesting;
+
+    /**
+     * Internal testing support, not part of JMC's user API: sets the hook that {@link #wait(Long)}
+     * calls after a task's future has completed and before the future is removed.
+     *
+     * @param hook the hook, or {@code null} to clear it
+     */
+    public static void setWakeHookForTesting(LongConsumer hook) {
+        wakeHookForTesting = hook;
+    }
+
+    /** Calls the testing hook, if one is set. */
+    private static void wakeHook(Long taskId) {
+        LongConsumer hook = wakeHookForTesting;
+        if (hook != null) {
+            hook.accept(taskId);
         }
     }
 
@@ -350,17 +377,21 @@ public class TaskManager {
             CompletableFuture<T> castedFuture = (CompletableFuture<T>) future;
             LOGGER.debug("Task {} is waiting on future {}", taskId, future);
             T result = castedFuture.get();
+            wakeHook(taskId);
             // A thread will reach this line only if the scheduler has completed it's corresponding future object.
-            // Thus, it is now safe to remove the future from taskFutures map
+            // Remove it only if the map still holds this same future: after a reset the id may
+            // already belong to a newer task, whose future must stay.
             synchronized (tasksLock) {
-                taskFutures.remove(taskId);
+                taskFutures.remove(taskId, future);
             }
             LOGGER.debug("Task {} is now resumed with value {} from future {}", taskId, result, future);
             return result;
         } catch (Exception e) {
-            // The future must be removed from the tasksLock even if an exception happens
+            wakeHook(taskId);
+            // The future must be removed even if an exception happens; as above, only if the map
+            // still holds this same future.
             synchronized (tasksLock) {
-                taskFutures.remove(taskId);
+                taskFutures.remove(taskId, future);
             }
             Throwable cause = e.getCause();
             if (cause instanceof HaltTaskException) {

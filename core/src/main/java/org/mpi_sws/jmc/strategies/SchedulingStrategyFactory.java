@@ -23,6 +23,8 @@ public class SchedulingStrategyFactory {
 
     static {
         validStrategies.add("random");
+        validStrategies.add("mp-random");
+        validStrategies.add("must");
         validStrategies.add("pct");
         validStrategies.add("fair-pct");
         validStrategies.add("trust");
@@ -50,6 +52,12 @@ public class SchedulingStrategyFactory {
         }
         if (name.equals("random")) {
             return new RandomSchedulingStrategy(config.getSeed(), config.getReportPath());
+        } else if (name.equals("mp-random")) {
+            return new org.mpi_sws.jmc.strategies.mp.MpRandomSchedulingStrategy(
+                    config.getSeed(), config.getReportPath());
+        } else if (name.equals("must")) {
+            return new org.mpi_sws.jmc.strategies.must.MustStrategy(
+                    config.getSeed(), config.getReportPath());
         } else if (name.equals("pct")) {
             return new PCTSchedulingStrategy(
                     config.getSeed(), config.getReportPath(), config.getBugDepth());

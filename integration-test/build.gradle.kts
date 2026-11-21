@@ -40,7 +40,7 @@ dependencies {
     implementation("org.junit.platform:junit-platform-engine:1.11.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation(project(":core"))
-    implementation("com.google.guava:guava:32.1.2-jre")
+    implementation("com.google.guava:guava:33.7.2-jre")
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     implementation("org.junit.jupiter:junit-jupiter:5.7.1")
 }
@@ -50,7 +50,7 @@ tasks.test {
     dependsOn(":agent:agentJar")
 
     val agentJar = project(":agent").projectDir.resolve("build/libs").resolve("agent.jar").absolutePath
-    val jmcRuntimeJar = project(":core").projectDir.resolve("build/libs/core-0.1.2.jar").absolutePath
+    val jmcRuntimeJar = project(":core").projectDir.resolve("build/libs/core-${project(":core").version}.jar").absolutePath
 
     val agentArg =
         "-javaagent:$agentJar=debug,instrumentingPackages=org.mpi_sws.jmc.test,jmcRuntimeJarPath=$jmcRuntimeJar"

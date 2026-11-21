@@ -17,10 +17,37 @@ public class HaltExecutionException extends RuntimeException {
     }
 
     /**
+     * Constructs a new {@link HaltExecutionException} with the given type, message and cause.
+     *
+     * @param type the reason
+     * @param message the message
+     * @param cause the exception that led to the halt, preserved so callers can recover its type
+     */
+    public HaltExecutionException(Type type, String message, Throwable cause) {
+        super(message, cause);
+        this.type = type;
+    }
+
+    /**
      * Constructs a new {@link HaltExecutionException} of type error with the given message.
      */
     public static HaltExecutionException error(String message) {
         return new HaltExecutionException(Type.PROGRAM_ERROR, message);
+    }
+
+    /**
+     * Constructs a new {@link HaltExecutionException} of type error that preserves its cause.
+     *
+     * <p>Used so that an exception a strategy throws from {@code updateEvent} (for example
+     * {@link JmcUnsupportedEventException}) reaches the checker's caller with its type intact
+     * rather than as message text only.
+     *
+     * @param message the message
+     * @param cause the underlying exception
+     * @return the exception
+     */
+    public static HaltExecutionException error(String message, Throwable cause) {
+        return new HaltExecutionException(Type.PROGRAM_ERROR, message, cause);
     }
 
     /**

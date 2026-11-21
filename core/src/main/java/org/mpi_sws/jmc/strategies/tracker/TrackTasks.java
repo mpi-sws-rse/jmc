@@ -49,6 +49,12 @@ public class TrackTasks implements Tracker {
      */
     @Override
     public Set<Long> updateEvent(JmcRuntimeEvent event) {
+        updateEvent0(event);
+        return getActiveTasks();
+    }
+
+    /** {@link #updateEvent}'s state change, shared with {@link #updateAndRetainActive}. */
+    private void updateEvent0(JmcRuntimeEvent event) {
         if (event.getType() == JmcRuntimeEvent.Type.START_EVENT) {
             synchronized (tasksLock) {
                 activeTasks.add(event.getTaskId());
@@ -82,7 +88,20 @@ public class TrackTasks implements Tracker {
                 // scheduler can continue picking the current task
             }
         }
-        return getActiveTasks();
+    }
+
+    /**
+     * {@link #updateEvent}'s state change, then {@code candidates.retainAll} of the active set, without
+     * the snapshot copy. Only for {@link TrackActiveTasksStrategy}, and only on an instance of exactly
+     * this class (a subclass's {@code updateEvent} override must run instead), with a plain
+     * {@code HashSet} it owns: the intersection runs under {@link #tasksLock}, which is safe only
+     * because that set calls no outside code.
+     */
+    void updateAndRetainActive(JmcRuntimeEvent event, Set<Long> candidates) {
+        updateEvent0(event);
+        synchronized (tasksLock) {
+            candidates.retainAll(activeTasks);
+        }
     }
 
     /**

@@ -1,0 +1,46 @@
+== thread main: report and log4j lines, in order
+program:    org.mpi_sws.jmc.mp.j8s.OnlineBank
+strategy:   must
+iterations: unbounded, timeout 300 s
+seed:       1
+reportPath: rep
+TS [main]  INFO o.m.j.c.JmcCheckerConfiguration - Using seed: 1
+TS [main]  INFO o.m.j.c.JmcModelChecker - JMC checker started
+TS [main]  INFO o.m.j.c.JmcModelChecker - Completed 0 iterations
+TS [main]  INFO o.m.j.c.JmcModelChecker - Model checking completed covering: 16 iterations
+TS [main]  INFO o.m.j.c.JmcModelChecker - Model checking explored: 16 completed iterations
+TS [main]  INFO o.m.j.c.JmcModelChecker - Model checking explored: 0 blocked iterations
+ran:        16 iterations
+blocked:    0 (counted by the strategy)
+completed:  16
+rate:       X
+elapsed:    X
+observed:   org.mpi_sws.jmc.mp.j8s.OnlineBank@HASH
+graphs:     16 distinct complete, 0 distinct blocked; stack exhausted
+--- measurements
+wall_ms: X
+explore_ms: X
+summarise_ms: X
+index_ms: X
+lookup_ms: X
+export_ms: X
+graphs_complete: 16
+graphs_blocked: 0
+summaries_distinct: 0
+iterations: 16
+stop_reason: exhausted
+peak_rss_kb: RSS
+max_message_events: 
+max_porf_pairs: 0
+max_graph_events: 
+mean_graph_events: 
+max_visible_events: 
+mean_visible_events: 
+max_summary_bytes: 0
+max_porf_count: 0
+
+== thread Thread-0: log4j lines, in order
+TS [Thread-0]  INFO o.m.j.r.s.Scheduler$SchedulerThread - Scheduler thread started.
+TS [Thread-0]  INFO o.m.j.r.s.Scheduler$SchedulerThread - Shutting down scheduler thread.
+TS [Thread-0]  INFO o.m.j.r.s.Scheduler$SchedulerThread - Scheduler thread finished.
+== end

@@ -24,6 +24,7 @@ public class SchedulingChoiceValueFactory {
         registerAdapter("string", new PrimitiveValueAdapter());
         registerAdapter("boolean", new PrimitiveValueAdapter());
         registerAdapter("object", new ObjectValueAdapter());
+        registerAdapter(MpDeliveryValue.TYPE, new MpDeliveryValueAdapter());
     }
     /**
      * Registers an adapter for a specific type of {@link SchedulingChoiceValue}.

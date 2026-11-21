@@ -345,7 +345,7 @@ public class JmcRuntime {
             throw e;
         } catch (Exception e) {
             LOGGER.error("Failed to update event: {}", event, e);
-            throw HaltExecutionException.error(e.getMessage());
+            throw HaltExecutionException.error(e.getMessage(), e);
         }
     }
 

@@ -6,6 +6,7 @@ import org.mpi_sws.jmc.checker.*;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.checker.*;
 import org.mpi_sws.jmc.runtime.HaltExecutionException;
+import org.mpi_sws.jmc.runtime.HaltTaskException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -53,11 +54,17 @@ public class JmcTestExecutor {
                                 testMethod.invoke(instance);
                             } catch (IllegalAccessException | InvocationTargetException e) {
                                 Throwable cause = e.getCause();
-                                if (cause instanceof HaltExecutionException && ((HaltExecutionException) cause).isReexecutionNeeded()) {
-                                    throw HaltExecutionException.reexecutionNeeded();
-                                } else {
-                                    throw new RuntimeException(e);
+                                if (cause instanceof HaltTaskException || cause instanceof HaltExecutionException) {
+                                    // JMC control flow raised inside the test body: a halted or
+                                    // blocked main task, a re-execution request, or a strategy
+                                    // error. Rethrow it unwrapped so that JmcModelChecker.check
+                                    // handles it in the branch written for it; wrapped in a
+                                    // RuntimeException it would reach the catch-all and fail the
+                                    // run (e.g. a main task blocked by JmcAssume.assume(false)
+                                    // would otherwise fail the test).
+                                    throw (RuntimeException) cause;
                                 }
+                                throw new RuntimeException(e);
                             }
                         });
         return checker.check(target);

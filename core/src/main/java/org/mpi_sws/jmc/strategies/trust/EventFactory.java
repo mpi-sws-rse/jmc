@@ -135,6 +135,12 @@ public class EventFactory {
                 event.setAttribute("result", result);
                 return List.of(event);
             }
+            // The trust family does not model the message-passing API. An explicit case is
+            // required so that these events are not silently dropped by the empty-list fallthrough
+            // below; a strategy that cannot answer them must fail loudly.
+            case MP_SEND_EVENT, MP_RECV_REQUEST_EVENT, ND_EVENT -> throw
+                    new org.mpi_sws.jmc.runtime.JmcUnsupportedEventException(
+                            runtimeEvent.getType(), "trust");
             case SYMBOLIC_EVENT -> {
                 Event event =
                         new Event(

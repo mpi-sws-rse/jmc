@@ -24,7 +24,7 @@ repositories {
 
 allprojects {
     group = "org.mpi-sws.jmc"
-    version = "0.1.2"
+    version = "0.3.0"
 
     // The Kotlin Gradle Plugin is held at 2.4.20-RC (see the plugins block) because
     // that is the earliest release fixing the unsafe deserialization of Gradle
@@ -60,7 +60,25 @@ allprojects {
             resolutionStrategy {
                 force("org.codehaus.plexus:plexus-utils:3.6.1")
                 force("org.apache.commons:commons-lang3:3.18.0")
+                // Guava: unbounded allocation when deserializing CompactHashMap/CompactHashSet/
+                // MapMakerInternalMap (<= 33.7.1).
+                force("com.google.guava:guava:33.7.2-jre")
             }
+        }
+    }
+
+    // Pin a patched Bouncy Castle in the Kotlin Gradle Plugin's internal configuration
+    // (used only by its publishing-validation tasks; KGP 2.4.20-RC brings 1.84):
+    //  - bcprov 1.84: Name Constraints bypass via a trailing dot in rfc822Name and URI,
+    //    and lazy ASN.1 sequence forcing resetting the nesting-depth guard (< 1.85).
+    // The Bouncy Castle modules ship as a matched set — keep all four on the same version.
+    // Remove once a KGP release brings 1.85 or later.
+    configurations.matching { it.name == "kotlinBouncyCastleConfiguration" }.configureEach {
+        resolutionStrategy {
+            force("org.bouncycastle:bcprov-jdk18on:1.85")
+            force("org.bouncycastle:bcpkix-jdk18on:1.85")
+            force("org.bouncycastle:bcutil-jdk18on:1.85")
+            force("org.bouncycastle:bcpg-jdk18on:1.85")
         }
     }
 }

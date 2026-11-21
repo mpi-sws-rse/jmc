@@ -1,3 +1,5 @@
+import java.util.Base64
+
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 buildscript {
@@ -25,7 +27,7 @@ plugins {
     id("maven-publish")
     id("com.gradleup.shadow") version "9.0.0-beta9"
     id("java-library")
-//    signing
+    signing
 }
 
 repositories {
@@ -107,7 +109,7 @@ publishing {
             pom {
                 name = "JMC Agent"
                 description = "A Java agent for instrumenting Java programs"
-                url = "github.com/mpi-sws-rse/jmc"
+                url = "https://github.com/mpi-sws-rse/jmc"
                 licenses {
                     license {
                         name.set("Apache License, Version 2.0")
@@ -135,12 +137,21 @@ publishing {
     }
     repositories {
         mavenLocal()
-//        maven {
-//            setUrl(layout.buildDirectory.dir("staging-deploy"))
-//        }
+        // The release bundle: scripts/publish.sh zips this directory and uploads it to the Central Portal.
+        maven {
+            name = "staging"
+            setUrl(rootProject.layout.buildDirectory.dir("staging-deploy"))
+        }
     }
 }
 
-//signing {
-//    sign(publishing.publications["maven"])
-//}
+// Signing for Maven Central: the CI provides the armored private key base64-encoded in one line (SIGNING_KEY) and
+// its passphrase (SIGNING_PASSWORD). Without SIGNING_KEY nothing is signed (a local or dry run).
+signing {
+    val encodedKey = System.getenv("SIGNING_KEY")
+    if (!encodedKey.isNullOrBlank()) {
+        val key = String(Base64.getDecoder().decode(encodedKey.trim()), Charsets.UTF_8)
+        useInMemoryPgpKeys(key, System.getenv("SIGNING_PASSWORD") ?: "")
+        sign(publishing.publications["maven"])
+    }
+}
