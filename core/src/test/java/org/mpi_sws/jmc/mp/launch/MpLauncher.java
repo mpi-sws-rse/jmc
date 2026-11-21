@@ -39,110 +39,84 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Runs one message-passing program through one {@link JmcModelChecker#check} in this JVM, with no
- * instrumentation agent (plan/jmc-must/AGENT-BRIEF.md, rule 3), and prints the run's numbers.
- *
- * <p>The program is a {@link Runnable} that uses only {@code org.mpi_sws.jmc.api.mp}; the API raises
- * every event, so nothing needs rewriting. {@code <program class>} is a class name, constructed
- * with its public no-argument constructor, or {@code <class>:<a>,<b>,...}, constructed with its
- * public {@code (String...)} constructor from the comma-separated arguments (J4: the fixtures take
- * their kind and size this way, so that a run of record states them on the command line). The
- * checker's own report is printed after the run: iterations that ran, iterations the strategy
- * counted as blocked (Must's {@code B}), the wall time measured here, and iterations per second over
- * that time. The program's {@code toString()} is printed last, so a program may report what it
- * observed across iterations.
+ * Runs one message-passing program (written against {@code org.mpi_sws.jmc.api.mp}) through one
+ * {@link JmcModelChecker#check} in this JVM, without the instrumentation agent, and prints the run's numbers. It counts
+ * executions, exports their summaries, checks them online against a specification file, writes witness graphs, and
+ * replays one graph.
  *
  * <pre>
- * java -cp &lt;core main + test classes + runtime deps&gt; org.mpi_sws.jmc.mp.launch.MpLauncher \
+ * java [-ea] -cp &lt;core main and test classes, resources, dependencies&gt; org.mpi_sws.jmc.mp.launch.MpLauncher \
  *      &lt;program class[:args]&gt; [strategy] [iterations] [seed] [reportPath] [exportFile] [timeoutSeconds]
- *      [--spec &lt;file&gt; [--stop-at-first] [--witness &lt;file or dir/&gt;]]
- *      [--graphs &lt;store&gt; [--graphs-limit N]]
+ *      [--spec &lt;file&gt; [--stop-at-first] [--witness &lt;file or dir/&gt;]] [--graphs &lt;store&gt; [--graphs-limit N]]
+ *      [--split W [--k K]]
+ * java ... MpLauncher --replay &lt;graph.json&gt; [--report &lt;r.json&gt;] [--allow-source-change]
+ *      [--allow-tool-change] [&lt;program class[:args]&gt;]
  * </pre>
  *
- * <p>Defaults: strategy {@code mp-random}, {@code 1000} iterations, a seed from the clock (printed,
- * so a run can be repeated), report path {@code build/mp-launch/&lt;program simple name&gt;} under
- * the working directory.
+ * <p><b>Program.</b> A {@link Runnable}; {@code Class} uses its public no-argument constructor, {@code Class:a,b,...}
+ * its public {@code (String...)} constructor with the comma-separated arguments. Export, the online check, the graph
+ * store and replay need an {@link MpProgram}. The program's {@code toString()} is printed after the run.
  *
- * <p><b>Export mode</b> (J1): with {@code exportFile}, the program must implement {@link MpProgram}
- * and the strategy must be {@code mp-random}; the run is driven by an {@link MpRecordingStrategy}
- * built here through {@code strategyConstructor} with the program's roles, and when the run ends
- * the compact summaries (plan/jmc-must/SUMMARY-FORMAT.md) are written to {@code exportFile} in one
- * go, header first: {@code enumeration:"sampled"} when the checker completed, {@code "aborted"}
- * when it failed (the lines written are those of the iterations that completed without error).
+ * <p><b>Positional arguments.</b> {@code strategy}: {@code mp-random} (default, samples) or {@code must} (explores
+ * every distinct execution; {@code P2P} and {@code ASYN} only). {@code iterations}: default {@code 1000}; {@code 0}
+ * with {@code must} means unbounded, until the exploration ends or the timeout. {@code seed}: default from the clock,
+ * printed. {@code reportPath}: default {@code build/mp-launch/<program simple name>}; the checker deletes the plain
+ * files in it at the start of the run, so give each run its own directory. {@code exportFile}: the summary file;
+ * {@code -} or absent for none (under {@code must}: counting mode, any {@code Runnable}). {@code timeoutSeconds}:
+ * default 600, applied to {@code must}. Named options may stand anywhere after the program.
  *
- * <p><b>Counting under {@code must}</b> (J2b): without {@code exportFile} (or with {@code -}), a
- * {@code must} run uses the strategy's counting constructor — any {@link Runnable}, no roles, none
- * of the format's shape rules — and prints {@code graphs:} (distinct complete and blocked graphs, and
- * whether the exploration stack ran empty).
+ * <p><b>Export.</b> With {@code exportFile} the summaries are written in one go at the end: the header line, then one
+ * line per distinct summary with its multiplicity, sorted by bytes. The header's {@code enumeration} is
+ * {@code complete} when {@code must} exhausted its stack, {@code bounded} when a {@code must} run ended without
+ * failure before that (an iteration bound, or {@code --stop-at-first}), {@code aborted} on a failure or the timeout,
+ * and {@code sampled} for an {@code mp-random} run that completed.
  *
- * <p><b>Export under {@code must}</b> (J2; J0 report §4 as amended): the run is driven by a
- * {@link MustStrategy} with the program's roles; the iteration count is {@code 0} (unbounded) and
- * the stopping condition is the {@code timeoutSeconds} argument (default 600), so that a complete
- * enumeration is the normal end. {@code enumeration} is {@code "complete"} only when the strategy
- * reports its exploration stack exhausted; {@code "bounded"} when a positive iteration count was
- * given and the run stopped on it with work remaining; {@code "aborted"} on a timeout or a failure.
- * {@code iterations} and {@code seed} are written for {@code sampled} files only (the format).
+ * <p><b>Online check</b> ({@code must}). {@code --spec <file>} loads a specification file (its {@code enumeration}
+ * must be {@code complete}, its visible roles, roles and model the program's) and looks every completed execution up
+ * in it. Printed: {@code spec:}, {@code lookups:}, {@code verdict:} ({@code conforms}: the exploration ended and
+ * every summary is covered; {@code reports}: something is uncovered; {@code partial}: nothing uncovered, but the run
+ * ended on its bound or the timeout), {@code mode:}, {@code first miss:}, {@code uncovered:}, and on a miss
+ * {@code witness:} (the first uncovered summary) and {@code at:}. {@code --stop-at-first} stops at the first
+ * uncovered execution. {@code --witness <file>} writes the first uncovered execution as a text witness,
+ * {@code --witness <dir>/} one {@code witness-<n>.txt} per distinct uncovered summary; existing witness files are
+ * never overwritten.
  *
- * <p><b>Online mode under {@code must}</b> (J7): {@code --spec <file>}, anywhere in the argument list,
- * loads a specification file (plan/jmc-must/SUMMARY-FORMAT.md; {@code enumeration} must be
- * {@code complete}, {@code visible} must equal the program's visible roles and {@code model} its model;
- * a minor-1 header's {@code roles} must equal {@link MpProgram#headerRoles()}, a minor-0 header is read
- * with a warning on stderr that its roles were not compared) into a
- * {@link SetIndex}, and the {@link MustStrategy} queries it at each completed graph. By default (full
- * mode) the exploration continues past an uncovered summary, keeping the first one and counting every
- * uncovered graph; with {@code --stop-at-first} (bug-finder mode) it stops at the first. The program
- * must implement {@link MpProgram}; {@code exportFile} may still be given (the implementation's
- * summaries are written as in export mode, with {@code first_miss_iteration}, {@code
- * first_miss_wall_ms} and {@code uncovered_total} in the header) or be {@code -}. Printed:
- * {@code spec:}
- * (the file, its program, size, model and tool, lines read, distinct summaries held, duplicates; the
- * model was compared at load: a differing model is refused),
- * {@code lookups:}, {@code verdict:} — {@code conforms} (stack exhausted, every summary covered),
- * {@code reports} (something uncovered) or {@code partial} (the run ended on its bound, a timeout or a
- * failure before anything uncovered) — {@code mode:}, {@code first miss: iteration I, T ms} (on a
- * miss), {@code uncovered: U graphs (D distinct summaries)}, and on a miss {@code witness:} (the first
- * uncovered summary as a format line) and {@code at:} (its iteration and the index's answer). The
- * verdict is a result: exit {@code 0} for all three.
+ * <p><b>Graph store</b> ({@code must} with an export file). {@code --graphs <store>} writes the graph of each distinct
+ * exported summary at its first occurrence (JSON Lines; at most {@code N} with {@code --graphs-limit N}): line 1
+ * {@code {"witness_store":1,"export":H,"run":R}}, then {@code {"witness":1,"line":L,"export":H,"run":R,"join":null,
+ * "nearest":null,"threads":T}}, where {@code H} is the export's header without the online fields, {@code L} the
+ * summary line without its multiplicity, {@code R} the run's identity ({@link org.mpi_sws.jmc.mp.summary.RunIdentity}:
+ * the JMC commit the build recorded, the program and its arguments, the source identity copied from the
+ * {@code SOURCE.md5} manifest at the root of the program's classpath entry, or {@code "unknown"}) and {@code T} the
+ * graph ({@link org.mpi_sws.jmc.mp.summary.GraphJson}). Printed: {@code graph_store: written=W refused=R ms=T}. An
+ * existing store is refused.
  *
- * <p><b>Witnesses</b>: {@code --witness <path>}, anywhere in the argument list, with {@code --spec} (full or bug-finder
- * mode) writes the uncovered executions as text (the witness format of plan/jmc-must/SUMMARY-FORMAT.md, {@link
- * org.mpi_sws.jmc.mp.summary.WitnessWriter}). A file path is written at the first uncovered execution and never again;
- * a directory (an existing one, or a path ending in {@code /}) gets one {@code witness-<n>.txt} per distinct uncovered
- * summary, {@code n} in order of first occurrence. An existing file, a directory already holding witness files, and an
- * {@code exportFile} that is the witness file or lies in the witness directory are refused; each witness file is
- * created exclusively, and a witness that cannot be written fails the run (exit {@code 1}) without changing the online
- * check's results. Printed: {@code witnesses: W written to <path>}. Refused with {@code --split} (a worker's iterations
- * are not the run's): run the online check without it to write witnesses. Without {@code --witness} nothing changes;
- * with it the writing is inside the exploration's time, so a witness run is never a measurement.
+ * <p><b>Replay.</b> {@code --replay <graph.json>} runs one execution forced along the graph (scheduling, received
+ * messages, choices) and compares every event with it ({@link org.mpi_sws.jmc.strategies.mp.GraphReplayStrategy}).
+ * Printed: {@code replay: reproduced (<E> events, <T> threads)} or {@code replay: deviation at (<t>, <k>) thread
+ * "<name>": <kind>: expected <event>, got <event>}; {@code --report} writes the result as JSON. A graph of another
+ * tool or program is refused, and so is one from another JMC build or benchmark source unless
+ * {@code --allow-tool-change} or {@code --allow-source-change} is given.
  *
- * <p><b>Graph store</b>: {@code --graphs <store>}, anywhere in the argument list, with strategy {@code must} and an
- * export file, writes the graph of each distinct exported summary at its first occurrence (witness format 1, JSON
- * Lines; {@link org.mpi_sws.jmc.mp.summary.GraphJson}), at most {@code N} with {@code --graphs-limit N} ({@code 0}: the
- * identity line only). Line 1 is {@code {"witness_store":1,"export":H,"run":R}}, then one graph line per summary,
- * {@code {"witness":1,"line":L,"export":H,"run":R,"join":null,"nearest":null,"threads":T}}: {@code H} is the export's
- * header without the online fields, {@code L} the summary line without {@code n}, {@code R} the run's identity
- * ({@link org.mpi_sws.jmc.mp.summary.RunIdentity}: the JMC commit the build recorded, the program and its
- * arguments, and the source identity copied from the {@code SOURCE.md5} manifest at the root of the program's
- * classpath entry, or {@code "unknown"}). The graphs are kept in {@code <store>.part} until the export is written.
- * Printed: {@code graph_store: written=W refused=R ms=T}, and the measurement keys {@code graphs_written},
- * {@code graphs_refused}, {@code graphs_ms} after the shared ones. An existing store is refused. Under {@code --split}
- * the root and every item write their own part in the run directory and the coordinator merges them in the
- * sequential order (the root, then the items {@code N − 1} … {@code 0}), keeping the first graph per summary with
- * its sequential iteration number, so the store equals the sequential run's; {@code graphs_ms} and {@code ms=} are
- * then empty (the walking is spread over the workers). Without {@code --graphs} nothing changes.
+ * <p><b>Split runs</b> (advanced). {@code --split W [--k K]} explores with {@code W} worker JVMs once the search
+ * stack holds {@code K} entries (default {@code 8·W}); {@code must}, iterations {@code 0}; the export and the graph
+ * store equal the sequential run's; {@code --witness} and {@code --stop-at-first} are refused. {@code --worker} is
+ * internal: the coordinator starts its workers with it.
  *
- * <p>Exit status: {@code 0} when the checker completes; {@code 1} when the run fails — a
- * {@link JmcCheckerException} (an assertion the checker recorded, a strategy fault, an unsupported
- * event) or any other throwable escaping the checker, such as an {@code AssertionError} the checker
- * lets through unwrapped — in both cases after a {@code FAILED:} line; {@code 2} on bad arguments:
- * a refused specification file, wrong count, a class that cannot be loaded or constructed or is not a
- * {@code Runnable}, a non-numeric or non-positive iteration count, a non-numeric seed, or a strategy
- * name {@link SchedulingStrategyFactory} does not know.
+ * <p><b>Measurements.</b> A {@code must} run ends with a block opened by {@code --- measurements}: {@code wall_ms},
+ * {@code explore_ms}, {@code summarise_ms}, {@code index_ms}, {@code lookup_ms}, {@code export_ms},
+ * {@code graphs_complete}, {@code graphs_blocked}, {@code summaries_distinct}, {@code iterations},
+ * {@code stop_reason}, {@code peak_rss_kb}, the graph-shape maxima and means, and with {@code --graphs}
+ * {@code graphs_written}, {@code graphs_refused}, {@code graphs_ms}. A key whose value cannot be measured is empty.
  *
- * <p>Known limits of the checker this launcher cannot paper over (J0 report, tester findings F1
- * and F2): an {@code AssertionError} in a <em>spawned</em> process is logged by {@code JmcThread}
- * and never reaches the checker, and an {@code AssertionError} in main on the <em>last</em>
- * iteration is reported as a completed run; both exit {@code 0} here.
+ * <p><b>Exit status.</b> {@code 0}: the run completed, including every online verdict ({@code conforms},
+ * {@code reports}, {@code partial}: read the {@code verdict:} line), a timeout, a stop at the first miss, and
+ * {@code replay: reproduced}. {@code 1}: the run failed, after a {@code FAILED:} line: a failed assertion or an
+ * exception in any process or in main (also in the last iteration), a fault of the strategy (a model {@code must}
+ * does not support, an export shape rule broken), an export, store or witness file that cannot be written, a split
+ * run that did not finish; and {@code replay: deviation}. {@code 2}: bad arguments or a refused input: a wrong
+ * argument count, an unknown option or strategy, a class that cannot be loaded or constructed, a non-numeric or
+ * out-of-range number, a refused specification file, store or witness target, a refused replay.
  */
 public final class MpLauncher {
 
@@ -227,7 +201,7 @@ public final class MpLauncher {
         if (List.of(rawArgs).contains("--replay")) {
             return runReplay(rawArgs, st);
         }
-        // J7: the --spec option is taken out wherever it stands; the rest is positional as before.
+        // The named options are taken out wherever they stand; the rest is positional.
         Path specFile = null;
         String witnessPath = null;
         Path graphsPath = null;
@@ -240,7 +214,7 @@ public final class MpLauncher {
         List<String> positional = new ArrayList<>();
         for (int i = 0; i < rawArgs.length; i++) {
             if (rawArgs[i].equals("--split") || rawArgs[i].equals("--k")) {
-                // J8: the split options, like --spec, may stand anywhere after the program.
+                // The split options, like --spec, may stand anywhere after the program.
                 if (i + 1 >= rawArgs.length) {
                     return usage(rawArgs[i] + " needs a number");
                 }
@@ -381,7 +355,7 @@ public final class MpLauncher {
         }
         String reportPath =
                 args.length > 4 ? args[4] : "build/mp-launch/" + programClass.getSimpleName();
-        // "-" (or no sixth argument) means no export: under must, the counting mode (J2b, ruling 3).
+        // "-" (or no sixth argument) means no export: under must, the counting mode.
         Path exportFile = args.length > 5 && !args[5].equals("-") ? Path.of(args[5]) : null;
         MpRecordingStrategy recorder = null;
         MustStrategy mustStrategy = null;
@@ -540,7 +514,7 @@ public final class MpLauncher {
             report =
                     new JmcModelChecker(config)
                             .check(new JmcFunctionalTestTarget(programClass.getName(),
-                                    // J2c: daemons run on after main's body (raises nothing without them)
+                                    // daemons run on after main's body (raises nothing without them)
                                     () -> MpProcess.runMain(program)));
         } catch (JmcCheckerException e) {
             failure = e.getMessage();
@@ -1986,7 +1960,7 @@ public final class MpLauncher {
 
     /**
      * The online check's lines of a split run, as a sequential run prints them; the first miss is the
-     * sequential-order one, its time the earliest miss in wall time (both by ruling). After an abort the
+     * sequential-order one, its time the earliest miss in wall time. After an abort the
      * totals are not printed, and the first miss's iteration only if every segment before it was committed.
      */
     private static void printSplitOnline(SplitCoordinator.Result result) {
