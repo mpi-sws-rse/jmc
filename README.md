@@ -300,12 +300,14 @@ public final class PingPong implements MpProgram {
 }
 ```
 
-The launcher, `org.mpi_sws.jmc.mp.launch.MpLauncher`, lives in JMC's test sources for now. From the JMC root:
+The launcher, `org.mpi_sws.jmc.mp.cli.MpLauncher`, is part of the `jmc` jar from release 0.3.0 on (and of `jmc-agent`,
+which bundles JMC's dependencies). Its former name, `org.mpi_sws.jmc.mp.launch.MpLauncher`, still works for one
+release and is deprecated; so is `org.mpi_sws.jmc.mp.launch.MpProgram`. From the JMC root:
 
 ```bash
 CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
 javac -d docs/examples/build -cp "$CP" docs/examples/pingpong/PingPong.java
-L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.launch.MpLauncher"
+L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.cli.MpLauncher"
 $L example.PingPong must 0 1 rep-count                                # count the executions
 $L example.PingPong must 0 1 rep-export spec.jsonl                     # export the summaries
 $L example.PingPong must 0 1 rep-online - 600 --spec spec.jsonl        # check online against them

@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.programs.j4.A3Lock;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.strategies.must.split.SplitCoordinator;
@@ -43,7 +43,7 @@ class J8Round06Test {
     /** The real worker's command line, as MpLauncher builds it, with a tag to find leftover processes. */
     static List<String> realWorker(Path d, int id, String program, String tag) {
         return new ArrayList<>(List.of(JAVA, "-Dj8.tag=" + tag, "-Xss4m", "-cp", CP,
-                "org.mpi_sws.jmc.mp.launch.MpLauncher", program, "must", "0", "1", d.resolve("worker-report").toString(),
+                "org.mpi_sws.jmc.mp.cli.MpLauncher", program, "must", "0", "1", d.resolve("worker-report").toString(),
                 d.resolve("worker-export.jsonl").toString(), "300", "--worker", d.toString(), Integer.toString(id)));
     }
 
@@ -142,7 +142,7 @@ class J8Round06Test {
         Path blocker = J8Launch.DIR.resolve("r6-not-a-directory-" + System.currentTimeMillis());
         Files.writeString(blocker, "a file, so the export's parent cannot be created");
         Path exportFile = blocker.resolve("x.jsonl");
-        List<String> cmd = new ArrayList<>(List.of(JAVA, "-Xss4m", "-cp", CP, "org.mpi_sws.jmc.mp.launch.MpLauncher",
+        List<String> cmd = new ArrayList<>(List.of(JAVA, "-Xss4m", "-cp", CP, "org.mpi_sws.jmc.mp.cli.MpLauncher",
                 A3, "must", "0", "1", J8Launch.DIR.resolve("r6-rep-" + System.currentTimeMillis()).toString(),
                 exportFile.toString(), "300", "--split", "2", "--k", "1"));
         Path log = J8Launch.DIR.resolve("r6-exportfail-" + System.currentTimeMillis() + ".txt");

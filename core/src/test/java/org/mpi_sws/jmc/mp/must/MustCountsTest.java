@@ -9,7 +9,7 @@ import org.mpi_sws.jmc.checker.JmcCheckerConfiguration;
 import org.mpi_sws.jmc.checker.JmcFunctionalTestTarget;
 import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.programs.MustSection13;
 import org.mpi_sws.jmc.mp.programs.j1.BlockedAlone;
 import org.mpi_sws.jmc.mp.programs.j1.SRnb;

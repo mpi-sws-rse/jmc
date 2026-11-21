@@ -12,7 +12,7 @@ import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.mp.events.EventKey;
 import org.mpi_sws.jmc.mp.graph.ExecutionGraph;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.programs.j2c.DaemonRoles;
 import org.mpi_sws.jmc.mp.programs.j2c.J2cPrograms;
 import org.mpi_sws.jmc.mp.programs.seq.EventLogStrategy;

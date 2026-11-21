@@ -42,7 +42,7 @@ class J8SApiTest {
     static List<String> realWorker(Path d, int id, String program, String tag, List<String> jvm) {
         List<String> c = new ArrayList<>(List.of(JAVA, "-Dj8.tag=" + tag, "-Xss4m"));
         c.addAll(jvm);
-        c.addAll(List.of("-cp", CP, "org.mpi_sws.jmc.mp.launch.MpLauncher",
+        c.addAll(List.of("-cp", CP, "org.mpi_sws.jmc.mp.cli.MpLauncher",
                 program, "must", "0", "1", d.resolve("worker-report").toString(), "-", "300", "--worker", d.toString(),
                 Integer.toString(id)));
         return c;

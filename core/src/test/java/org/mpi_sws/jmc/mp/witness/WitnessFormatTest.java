@@ -9,7 +9,7 @@ import static org.mpi_sws.jmc.mp.witness.WitnessSupport.lines;
 
 import org.junit.jupiter.api.Test;
 import org.mpi_sws.jmc.mp.j8s.OnlineBank;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.witness.WitnessSupport.Out;
 import org.mpi_sws.jmc.mp.witness.WitnessSupport.Witness;
 

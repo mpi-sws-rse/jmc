@@ -215,6 +215,45 @@ jobs:
           path: integration-test/build/test-results/test/**/TEST-*.xml
           if-no-files-found: warn
 
+  # GitLab `launcher-test` job: the message-passing launcher's own tests (core test sources), one class per
+  # invocation, from scripts/launcher-tests.txt. rules: merge_request_event only -> pull_request only.
+  launcher-test:
+    if: github.event_name == 'pull_request'
+    needs: [ compile ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Install Z3 native libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends z3 libz3-dev libz3-java zip
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Run the launcher tests (one class per invocation)
+        run: |
+          set -eu
+          FAILED=""
+          for CLASS in $(grep -v '^#' scripts/launcher-tests.txt); do
+            echo ">>> running $CLASS"
+            timeout -k 30s 600s ./gradlew --no-daemon :core:test --tests "$CLASS" || FAILED="${FAILED}${FAILED:+ }$CLASS"
+          done
+          if [ -n "$FAILED" ]; then
+            echo "Failed:"; for t in $FAILED; do echo "  - $t"; done
+            exit 1
+          fi
+      - name: Upload JUnit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launcher-test-results
+          path: core/build/test-results/test/**/TEST-*.xml
+          if-no-files-found: warn
+
   # ---------------------------------------------------------------------------
   # stage: deploy
   # ---------------------------------------------------------------------------

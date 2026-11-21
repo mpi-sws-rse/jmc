@@ -1,0 +1,3 @@
+# The launcher's tests that CI runs (core test sources), one class per line; see .gitlab-ci.yml and
+# .github/workflows/gradle.yml (job launcher-test).
+org.mpi_sws.jmc.mp.launch.DeprecatedNamesTest

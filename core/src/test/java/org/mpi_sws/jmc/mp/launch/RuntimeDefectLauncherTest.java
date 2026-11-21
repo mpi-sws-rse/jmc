@@ -16,7 +16,7 @@ import java.nio.file.Path;
  */
 class RuntimeDefectLauncherTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String FAULTS = "org.mpi_sws.jmc.mp.programs.faults.";
     private static final String DIR = "build/runtime-defects/";
 

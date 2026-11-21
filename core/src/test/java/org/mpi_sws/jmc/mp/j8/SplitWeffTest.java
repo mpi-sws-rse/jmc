@@ -118,7 +118,7 @@ class SplitWeffTest {
                             Integer.toString(id), kind);
                 default:
                     List<String> real = new ArrayList<>(List.of(j, "-Dj8.tag=" + tag, "-Xss4m", "-cp", cp,
-                            "org.mpi_sws.jmc.mp.launch.MpLauncher", program(), "must", "0", "1",
+                            "org.mpi_sws.jmc.mp.cli.MpLauncher", program(), "must", "0", "1",
                             x.resolve("worker-report").toString(),
                             a3 ? x.resolve("worker-export.jsonl").toString() : "-", "300", "--worker", x.toString(),
                             Integer.toString(id)));

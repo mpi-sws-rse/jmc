@@ -11,7 +11,7 @@ import org.mpi_sws.jmc.checker.JmcModelChecker;
 import org.mpi_sws.jmc.mp.events.EventKey;
 import org.mpi_sws.jmc.mp.events.MpLabel;
 import org.mpi_sws.jmc.mp.graph.ExecutionGraph;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.programs.MustSection13;
 import org.mpi_sws.jmc.mp.programs.j1.AssertsInMainAt3;
 import org.mpi_sws.jmc.mp.programs.j1.BlockedAfterOne;

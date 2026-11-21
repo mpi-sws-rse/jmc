@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.mp.launch;
+package org.mpi_sws.jmc.mp.cli;
 
 import org.mpi_sws.jmc.api.mp.MpProcess;
 import org.mpi_sws.jmc.checker.JmcCheckerConfiguration;
@@ -121,7 +121,7 @@ import java.util.Set;
 public final class MpLauncher {
 
     /** The line that opens the block of measurement lines ({@link #printMeasurements}). */
-    static final String MEASUREMENTS_MARKER = "--- measurements";
+    public static final String MEASUREMENTS_MARKER = "--- measurements";
 
     private MpLauncher() {}
 

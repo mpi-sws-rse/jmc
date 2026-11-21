@@ -49,7 +49,7 @@ From the JMC root, with the README's example (replace `example.PingPong` and the
 ```bash
 CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
 javac -d docs/examples/build -cp "$CP" docs/examples/pingpong/PingPong.java
-L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.launch.MpLauncher"
+L="java -ea -cp $CP:docs/examples/build org.mpi_sws.jmc.mp.cli.MpLauncher"
 $L example.PingPong must 0 1 rep-count                                       # count
 $L example.PingPong must 0 1 rep-spec spec.jsonl                             # export
 $L example.PingPong must 0 1 rep-online - 600 --spec spec.jsonl --witness w/ # online check, witnesses

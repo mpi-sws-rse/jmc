@@ -16,7 +16,7 @@ import java.util.List;
  */
 class J2bLauncherTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String PROGRAMS = "org.mpi_sws.jmc.mp.programs.j2b.J2bPrograms";
     private static final String DIR = "build/test-results/j2b-tester/launch/";
 

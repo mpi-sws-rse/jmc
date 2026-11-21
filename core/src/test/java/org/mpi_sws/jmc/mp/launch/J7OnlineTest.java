@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
  */
 class J7OnlineTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String PKG = "org.mpi_sws.jmc.mp.programs.j4.";
     private static final String DIR = "build/test-results/j7-tester/";
     private static final String TIMEOUT = "300";

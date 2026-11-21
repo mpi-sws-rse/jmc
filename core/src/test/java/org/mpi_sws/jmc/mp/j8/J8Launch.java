@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  */
 final class J8Launch {
 
-    static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     static final String H1 = "org.mpi_sws.jmc.mp.h1.";
     static final String J4 = "org.mpi_sws.jmc.mp.programs.j4.";
     static final String J8 = "org.mpi_sws.jmc.mp.j8.";

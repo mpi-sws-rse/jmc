@@ -12,7 +12,7 @@ Worked example: the A2A task benchmark in the daavar repository (<https://github
 ```bash
 CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath)
 javac -d a2a-classes -cp "$CP" "$DAAVAR/benchmarks/a2a-task/java/bench/a2a_task/A2ATask.java"
-java -cp "$CP:a2a-classes" org.mpi_sws.jmc.mp.launch.MpLauncher bench.a2a_task.A2ATask:impl,b must 0 1 rep-a2a
+java -cp "$CP:a2a-classes" org.mpi_sws.jmc.mp.cli.MpLauncher bench.a2a_task.A2ATask:impl,b must 0 1 rep-a2a
 ```
 
 counts its executions (`impl,b`: the executor reports `Working` first, then completes or keeps working).

@@ -45,7 +45,7 @@ import java.util.stream.Stream;
 @Tag("p4-node")
 class P4LaunchTest {
 
-    static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     static final String PKG = "org.mpi_sws.jmc.mp.programs.p4.";
     static final Path ROOT = Path.of("build/test-results/p4-tester/launch").toAbsolutePath();
     static final String TIMEOUT = "600";

@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  */
 class MpLauncherExportTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String J1 = "org.mpi_sws.jmc.mp.programs.j1.";
     private static final String DIR = "build/test-results/j1-tester/export/";
 

@@ -25,7 +25,7 @@ All commands below run from the JMC root with `CP` set as in the README:
 
 ```bash
 CP=$(./gradlew -q -I docs/tools/mp-classpath.gradle :core:printMpClasspath):docs/examples/build
-L="java -ea -cp $CP org.mpi_sws.jmc.mp.launch.MpLauncher"
+L="java -ea -cp $CP org.mpi_sws.jmc.mp.cli.MpLauncher"
 ```
 
 ## The launcher: `MpLauncher`

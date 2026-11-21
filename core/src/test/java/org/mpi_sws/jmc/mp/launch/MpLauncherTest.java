@@ -1,6 +1,7 @@
 package org.mpi_sws.jmc.mp.launch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
  */
 class MpLauncherTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String MUT_LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncherMutCompleted";
     private static final String PROGRAM = "org.mpi_sws.jmc.mp.programs.MustSection13";
     private static final String MUTANTS = "org.mpi_sws.jmc.mp.programs.mutants.";
@@ -126,6 +127,8 @@ class MpLauncherTest {
                 throw new RuntimeException(x);
             }
         });
+        // A mutant is caught by the numbers of a run that succeeded, never by a run that did not start.
+        assertFalse(err.getMessage().startsWith("exit status"), "the mutant run itself failed: " + err.getMessage());
         System.out.println("MUTANT VERDICT (C3): " + err.getMessage().split("\n")[0]);
     }
 

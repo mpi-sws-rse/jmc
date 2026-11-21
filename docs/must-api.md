@@ -98,7 +98,8 @@ differently (a set holding both `Integer` 1 and `Long` 1 is refused).
 
 ## Programs: `MpProgram`
 
-A program to export implements `MpProgram` (in JMC's test sources, package `org.mpi_sws.jmc.mp.launch`):
+A program to export implements `MpProgram` (package `org.mpi_sws.jmc.mp.cli`; the former
+`org.mpi_sws.jmc.mp.launch.MpProgram` is a deprecated alias for one release):
 
 | Method | Meaning |
 |---|---|

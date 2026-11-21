@@ -5,7 +5,7 @@ import org.mpi_sws.jmc.api.mp.MpThread;
 import org.mpi_sws.jmc.mp.events.CommunicationModel;
 import org.mpi_sws.jmc.mp.events.MpMessage;
 import org.mpi_sws.jmc.mp.events.Tid;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.summary.Tag;
 
 import java.util.ArrayDeque;

@@ -1,4 +1,4 @@
-package org.mpi_sws.jmc.mp.launch;
+package org.mpi_sws.jmc.mp.cli;
 
 import org.mpi_sws.jmc.mp.events.CommunicationModel;
 

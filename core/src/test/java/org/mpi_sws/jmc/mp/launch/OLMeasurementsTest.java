@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.mp.launch;
 
+import org.mpi_sws.jmc.mp.cli.MpLauncher;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
  */
 class OLMeasurementsTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String H1 = "org.mpi_sws.jmc.mp.h1.";
     private static final String J4 = "org.mpi_sws.jmc.mp.programs.j4.";
     private static final String DIR = "build/test-results/ol-tester/";

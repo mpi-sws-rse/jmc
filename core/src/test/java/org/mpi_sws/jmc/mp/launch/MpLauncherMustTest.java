@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  */
 class MpLauncherMustTest {
 
-    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.launch.MpLauncher";
+    private static final String LAUNCHER = "org.mpi_sws.jmc.mp.cli.MpLauncher";
     private static final String DIR = "build/test-results/j2-tester/export/";
 
     private static final String M1 = "{\"t\":\"Msg\",\"f\":[1]}";

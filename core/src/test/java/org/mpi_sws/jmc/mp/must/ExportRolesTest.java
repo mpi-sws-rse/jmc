@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mpi_sws.jmc.checker.JmcCheckerConfiguration;
 import org.mpi_sws.jmc.mp.events.CommunicationModel;
 import org.mpi_sws.jmc.mp.graph.GraphCanon;
-import org.mpi_sws.jmc.mp.launch.MpProgram;
+import org.mpi_sws.jmc.mp.cli.MpProgram;
 import org.mpi_sws.jmc.mp.must.J2cTest.Rec;
 import org.mpi_sws.jmc.mp.must.J2cTest.Run;
 import org.mpi_sws.jmc.mp.programs.roles.ExportRolePrograms;
