@@ -18,7 +18,9 @@ import org.mpi_sws.jmc.mp.summary.Summary;
 import org.mpi_sws.jmc.mp.summary.SummaryExporter;
 import org.mpi_sws.jmc.strategies.SchedulingStrategyFactory;
 import org.mpi_sws.jmc.strategies.mp.GraphReplayStrategy;
+import org.mpi_sws.jmc.strategies.mp.MainWatch;
 import org.mpi_sws.jmc.strategies.mp.MpFailureKind;
+import org.mpi_sws.jmc.strategies.mp.MpOutcome;
 import org.mpi_sws.jmc.strategies.mp.MpRandomSchedulingStrategy;
 import org.mpi_sws.jmc.strategies.mp.MpRecordingStrategy;
 import org.mpi_sws.jmc.strategies.must.MustStrategy;
@@ -385,6 +387,8 @@ public final class MpLauncher {
             Throwable why = e.getCause() != null ? e.getCause() : e;
             return constructionFailure(args[0], why);
         }
+        // Main's body, watched: tells a failure of the program's main from a failure of the checker.
+        MainWatch watched = new MainWatch(program);
         String strategy = args.length > 1 ? args[1] : "mp-random";
         if (!SchedulingStrategyFactory.isValidStrategy(strategy)) {
             return usage("unknown strategy " + strategy);
@@ -535,12 +539,12 @@ public final class MpLauncher {
                 // The worker summarises when run.json says so (an export or an online check), with the
                 // program's roles; it loads the specification named in run.json, never one of its own.
                 MpProgram wp = program instanceof MpProgram m ? m : null;
-                return SplitWorker.run(workerDir, workerId, program, wp == null ? null : wp.declaredRoles(),
+                return SplitWorker.run(workerDir, workerId, watched, wp == null ? null : wp.declaredRoles(),
                         wp == null ? null : wp.visibleRoles(), wp == null ? null : wp.payloadNameableRoles(),
                         wp == null ? null : SummaryExporter.modelName(wp.model()));
             }
             st.summarises = mpProgram != null;
-            return runSplit(st, args, rawArgs, program, programClass, mpProgram, splitWorkers,
+            return runSplit(st, args, rawArgs, watched, programClass, mpProgram, splitWorkers,
                     splitK == null ? 8 * splitWorkers : splitK, seed, reportPath, exportFile, timeoutSeconds, spec,
                     graphs);
         }
@@ -592,9 +596,9 @@ public final class MpLauncher {
                     new JmcModelChecker(config)
                             .check(new JmcFunctionalTestTarget(programClass.getName(),
                                     // daemons run on after main's body (raises nothing without them)
-                                    () -> MpProcess.runMain(program)));
+                                    () -> MpProcess.runMain(watched)));
         } catch (JmcCheckerException e) {
-            failure = e.getMessage();
+            failure = e.getMessage() != null ? e.getMessage() : e.toString();
         } catch (RuntimeException | Error e) {
             // The checker lets an Error (an AssertionError raised by main) out unwrapped.
             failure = e.toString();
@@ -741,9 +745,13 @@ public final class MpLauncher {
             if (namedCommand == null) {
                 return 1;
             }
+            if (checkFailure == null) {
+                // The check completed; only the launcher's output could not be written.
+                return EXIT_REFUSED;
+            }
             MpFailureKind kind = mustStrategy != null ? mustStrategy.failureKind()
                     : recorder != null ? recorder.failureKind() : sampler != null ? sampler.failureKind() : null;
-            return failedStatus(checkFailure, kind);
+            return status(MpOutcome.ofFailure(kind, watched.seen()));
         }
         if (namedCommand == null) {
             return 0;
@@ -756,24 +764,13 @@ public final class MpLauncher {
         return mustStrategy != null && mustStrategy.exhausted() && !timedOut ? EXIT_OK : EXIT_INCOMPLETE;
     }
 
-    /**
-     * The named form's status of a run that failed: {@code 2} when the run itself completed and only the
-     * launcher's output could not be written, or when the first fault broke a rule; {@code 1} when a process failed
-     * or main's own body failed (a failed assertion or an exception, in any iteration, the last one included).
-     *
-     * @param checkFailure the checker's failure, or {@code null} if the check completed
-     * @param kind the strategy's kind of the run's first fault, or {@code null}
-     * @return {@code 1} or {@code 2}
-     */
-    static int failedStatus(String checkFailure, MpFailureKind kind) {
-        if (checkFailure == null || kind == MpFailureKind.RULE) {
-            return EXIT_REFUSED;
-        }
-        if (kind == MpFailureKind.PROCESS) {
-            return EXIT_VIOLATION;
-        }
-        // No fault of the strategy: main failed, unless the recording strategy refused a summary.
-        return checkFailure.startsWith("mp-recording: ") ? EXIT_REFUSED : EXIT_VIOLATION;
+    /** The named form's status of a run that did not end normally. */
+    private static int status(MpOutcome outcome) {
+        return switch (outcome) {
+            case VIOLATION -> EXIT_VIOLATION;
+            case REFUSED -> EXIT_REFUSED;
+            case INCOMPLETE -> EXIT_INCOMPLETE;
+        };
     }
 
     /** The named form's status of an online verdict: conforms 0, reports 1, partial 3. */
@@ -785,20 +782,6 @@ public final class MpLauncher {
         };
     }
 
-    /**
-     * The named form's status of a split run that did not finish: {@code 1} when a process failed, {@code 2} when
-     * a rule was broken, {@code 3} otherwise (the run is incomplete: a timeout, lost workers, an unfinished root).
-     * The split run reports its failure as text: a process failure reads {@code must: process ... failed: ...},
-     * a broken rule another {@code must: ...}, a failure of main the throwable itself.
-     */
-    static int splitFailureStatus(String failure) {
-        int at = failure.indexOf("must: ");
-        if (at >= 0) {
-            String fault = failure.substring(at + "must: ".length());
-            return fault.startsWith("process ") && fault.contains(") failed: ") ? EXIT_VIOLATION : EXIT_REFUSED;
-        }
-        return failure.startsWith("java.lang.AssertionError") ? EXIT_VIOLATION : EXIT_INCOMPLETE;
-    }
 
     /**
      * The {@code --graphs} store (witness format 1): the graph of each distinct exported summary at
@@ -1342,7 +1325,7 @@ public final class MpLauncher {
             if (namedCommand != null && result.online() != null && result.online().miss()) {
                 return EXIT_VIOLATION;
             }
-            return namedCommand == null ? 1 : splitFailureStatus(result.failure());
+            return namedCommand == null ? 1 : status(result.outcome());
         }
         System.out.println("ran:        " + result.ran() + " iterations");
         System.out.println("blocked:    " + result.blockedIterations() + " (counted by the strategy)");
@@ -1350,7 +1333,7 @@ public final class MpLauncher {
         System.out.println("items:      " + result.itemIterations() + (result.workersLost() == 0 ? ""
                 : "; " + result.workersLost() + " worker(s) lost, the run continued without them"));
         System.out.printf(Locale.ROOT, "elapsed:    %.3f s%n", elapsedSeconds);
-        System.out.println("observed:   " + program);
+        System.out.println("observed:   " + (program instanceof MainWatch w ? w.body() : program));
         System.out.println("graphs:     " + result.distinctComplete() + " distinct complete, "
                 + result.distinctBlocked() + " distinct blocked; stack exhausted");
         printSplitOnline(result);
@@ -1563,7 +1546,7 @@ public final class MpLauncher {
             new JmcModelChecker(config).check(new JmcFunctionalTestTarget(programClass.getName(),
                     () -> MpProcess.runMain(program)));
         } catch (JmcCheckerException e) {
-            failure = e.getMessage();
+            failure = e.getMessage() != null ? e.getMessage() : e.toString();
         } catch (RuntimeException | Error e) {
             failure = e.toString();
         }

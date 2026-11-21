@@ -1,5 +1,7 @@
 package org.mpi_sws.jmc.strategies.must.split;
 
+import org.mpi_sws.jmc.strategies.mp.MainWatch;
+import org.mpi_sws.jmc.strategies.mp.MpOutcome;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.mpi_sws.jmc.api.mp.MpProcess;
@@ -360,6 +362,7 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         strategy.setSplitControl(worker);
         worker.strategy = strategy;
         String failure = null;
+        MpOutcome outcome = MpOutcome.INCOMPLETE;
         MpThread.setStaleWaitMillis(ItemDriver.SPLIT_STALE_WAIT_MILLIS);
         try {
             JmcCheckerConfiguration config = new JmcCheckerConfiguration.Builder()
@@ -380,9 +383,11 @@ public final class SplitWorker implements MustStrategy.SplitControl {
                 failure = "the worker's run ended before it was stopped";
             }
         } catch (JmcCheckerException e) {
-            failure = e.getMessage();
+            failure = e.getMessage() != null ? e.getMessage() : e.toString();
+            outcome = MpOutcome.ofFailure(strategy.failureKind(), MainWatch.seenBy(program));
         } catch (RuntimeException | Error e) {
             failure = e.toString();
+            outcome = MpOutcome.ofFailure(strategy.failureKind(), MainWatch.seenBy(program));
         }
         if (failure == null) {
             return 0;
@@ -392,11 +397,13 @@ public final class SplitWorker implements MustStrategy.SplitControl {
             fail.addProperty("item", worker.currentItem);
             fail.addProperty("attempt", worker.currentAttempt);
             fail.addProperty("reason", failure);
+            fail.addProperty("outcome", outcome.name());
             SplitCoordinator.writeAtomically(
                     runDir.resolve("fail-" + worker.currentItem + "." + worker.currentAttempt + ".json"), fail);
         } else if (!Files.exists(runDir.resolve("worker-" + workerId + ".fail.json"))) {
             JsonObject fail = worker.envelopeBase();
             fail.addProperty("reason", failure);
+            fail.addProperty("outcome", outcome.name());
             SplitCoordinator.writeAtomically(runDir.resolve("worker-" + workerId + ".fail.json"), fail);
         }
         System.err.println("worker " + workerId + ": " + failure);

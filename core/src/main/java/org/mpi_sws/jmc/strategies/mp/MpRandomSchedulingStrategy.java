@@ -454,9 +454,20 @@ public class MpRandomSchedulingStrategy extends RandomSchedulingStrategy
     }
 
     /**
+     * Records {@code kind} as the run's failure kind unless one is recorded already.
+     *
+     * @param kind the kind of a fault about to be raised
+     */
+    protected void noteFailure(MpFailureKind kind) {
+        if (failureKind == null) {
+            failureKind = kind;
+        }
+    }
+
+    /**
      * The kind of the run's first fault: {@link MpFailureKind#PROCESS} when a process failed, {@link
-     * MpFailureKind#RULE} when the program broke a rule of the API. A failure of main itself leaves it {@code null},
-     * and so does a summary that the recording subclass refuses.
+     * MpFailureKind#RULE} when the program broke a rule of the API or a summary was refused. A failure of main
+     * itself leaves it {@code null}.
      *
      * @return the kind, or {@code null} if no fault was recorded
      */

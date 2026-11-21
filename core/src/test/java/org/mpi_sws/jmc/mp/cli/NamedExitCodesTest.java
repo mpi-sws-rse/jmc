@@ -29,10 +29,12 @@ class NamedExitCodesTest {
     private static final String FAILS = FailsSecond.class.getName();
 
     /**
-     * A client chooses 1 or 2 and sends it to main; with {@code process}, the client asserts it did not choose 2,
-     * with {@code main} main asserts it did not receive 2, with {@code always} main fails in every execution.
-     * {@code must} explores the choice 1 first, so the failing execution is the second, and with two iterations
-     * the last one.
+     * A client chooses 1 or 2 and sends it to main. Where the failure is: {@code process} the client asserts it did
+     * not choose 2; {@code main} main asserts it did not receive 2; {@code boom}, {@code nomsg} and {@code recording}
+     * main throws, on receiving 2, a {@code RuntimeException} with the message "boom", with no message, and with a
+     * message that starts as the recording strategy's do; {@code guard} main's receive guard throws on 2;
+     * {@code always} main fails in every execution, {@code processalways} the client does. {@code must} explores
+     * the choice 1 first, so the failing execution is the second, and with two iterations the last one.
      */
     public static final class FailsSecond implements Runnable {
         private final String where;
@@ -55,11 +57,27 @@ class NamedExitCodesTest {
                 int n = Nondet.choose(List.of(1, 2));
                 Channel.send(m, main, new Value(n));
                 assert !w.equals("process") || n != 2 : "the client chose 2";
+                assert !w.equals("processalways") : "the client always fails";
             });
-            int got = Channel.recv(m, Value.class).n();
+            int got = w.equals("guard")
+                    ? ((Value) Channel.recv(m, v -> {
+                        if (((Value) v).n() == 2) {
+                            throw new IllegalArgumentException("the guard threw on 2");
+                        }
+                        return true;
+                    })).n()
+                    : Channel.recv(m, Value.class).n();
             client.await();
             assert !w.equals("main") || got != 2 : "main received 2";
             assert !w.equals("always") : "main always fails";
+            if (got == 2) {
+                switch (w) {
+                    case "boom" -> throw new RuntimeException("boom");
+                    case "nomsg" -> throw new RuntimeException();
+                    case "recording" -> throw new RuntimeException("mp-recording: ordinary program failure");
+                    default -> { }
+                }
+            }
         }
     }
 
@@ -116,6 +134,114 @@ class NamedExitCodesTest {
         @Override
         public List<String> rolesInSpawnOrder() {
             return List.of("server");
+        }
+    }
+
+    /** A client sends a floating-point value, which the summary format refuses. */
+    public static final class BadValue implements MpProgram {
+        /**
+         * A message with a floating-point field.
+         *
+         * @param d the value
+         */
+        @Tag("D")
+        public record D(double d) implements MpMessage {}
+
+        /** Creates the program. */
+        public BadValue() {}
+
+        @Override
+        public void run() {
+            MpProcess.Handle server = MpProcess.spawn("server", () -> Channel.recv(CommunicationModel.P2P));
+            MpProcess.Handle client = MpProcess.spawn("client",
+                    () -> Channel.send(CommunicationModel.P2P, server.tid(), new D(0.5)));
+            server.await();
+            client.await();
+        }
+
+        @Override
+        public String programName() {
+            return "bad-value";
+        }
+
+        @Override
+        public String size() {
+            return "1";
+        }
+
+        @Override
+        public CommunicationModel model() {
+            return CommunicationModel.P2P;
+        }
+
+        @Override
+        public List<String> rolesInSpawnOrder() {
+            return List.of("server", "client");
+        }
+    }
+
+    /** A server waits for a message nobody sends: every execution is blocked. */
+    public static final class BlockedOnly implements Runnable {
+        /** Creates the program. */
+        public BlockedOnly() {}
+
+        @Override
+        public void run() {
+            MpProcess.Handle server = MpProcess.spawn("server", () -> Channel.recv(CommunicationModel.P2P));
+            server.await();
+        }
+    }
+
+    /**
+     * {@link NamedCliTest.Choice} with a third role that makes {@code k} choices among ten values and sends
+     * nothing: its summaries are {@code Choice}'s two whatever {@code k}, its executions {@code 2 * 10^k}.
+     */
+    public static final class Wide implements MpProgram {
+        private final int k;
+
+        /**
+         * Creates the program.
+         *
+         * @param args the number of choices of the third role
+         */
+        public Wide(String... args) {
+            this.k = Integer.parseInt(args[0]);
+        }
+
+        @Override
+        public void run() {
+            int choices = k;
+            MpProcess.Handle server = MpProcess.spawn("server", () -> Channel.recv(CommunicationModel.P2P));
+            MpProcess.Handle client = MpProcess.spawn("client", () -> Channel.send(CommunicationModel.P2P,
+                    server.tid(), new NamedCliTest.Choice.Ping(Nondet.choose(List.of(1, 2)))));
+            MpProcess.Handle noise = MpProcess.spawn("noise", () -> {
+                for (int i = 0; i < choices; i++) {
+                    Nondet.choose(List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+                }
+            });
+            server.await();
+            client.await();
+            noise.await();
+        }
+
+        @Override
+        public String programName() {
+            return "wide";
+        }
+
+        @Override
+        public String size() {
+            return "1";
+        }
+
+        @Override
+        public CommunicationModel model() {
+            return CommunicationModel.P2P;
+        }
+
+        @Override
+        public List<String> rolesInSpawnOrder() {
+            return List.of("server", "client", "noise");
         }
     }
 
@@ -225,9 +351,58 @@ class NamedExitCodesTest {
         NamedCliTest.Out timeout = launch(d, "count", "--program", Many.class.getName(), "--seed", "1", "--timeout",
                 "1");
         expect(3, timeout, "count, timed out");
+        assertTrue(timeout.stdout().contains("due to timeout"), timeout.stdout());
         expect(3, launch(d, "count", "--program", CHOICE, "--strategy", "mp-random", "--seed", "1", "--iterations",
                 "20"), "mp-random samples");
         expect(3, launch(d, "export", "--program", CHOICE, "--strategy", "mp-random", "--seed", "1", "--iterations",
                 "20", "--out", "sampled.jsonl"), "mp-random export, sampled");
+    }
+
+    @Test
+    void exit1_programFailuresOfEveryKind_sequentialAndSplit() throws Exception {
+        Path d = NamedCliTest.freshDir("exit1-kinds");
+        for (String where : List.of("main", "process", "boom", "nomsg", "recording", "guard")) {
+            NamedCliTest.Out seq = launch(d, "count", "--program", FAILS + ":" + where, "--seed", "1",
+                    "--report-dir", "rep-" + where);
+            expect(1, seq, where + ", sequential");
+            NamedCliTest.Out split = launch(d, "count", "--program", FAILS + ":" + where, "--seed", "1",
+                    "--report-dir", "rep-split-" + where, "--split", "2", "--k", "1");
+            expect(1, split, where + ", split");
+            assertTrue(split.stdout().contains("FAILED:     incomplete: "), split.stdout());
+        }
+        expect(1, launch(d, "count", "--program", FAILS + ":processalways", "--strategy", "mp-random", "--seed",
+                "1", "--iterations", "1"), "mp-random, a spawned process");
+    }
+
+    @Test
+    void exit1_timeoutAfterAnOnlineMiss() throws Exception {
+        Path d = NamedCliTest.freshDir("exit1-timeout");
+        String wide = Wide.class.getName();
+        expect(0, launch(d, "export", "--program", wide + ":0", "--seed", "1", "--out", "all.jsonl"), "export");
+        List<String> all = Files.readAllLines(d.resolve("all.jsonl"), StandardCharsets.UTF_8);
+        List<String> spec = new ArrayList<>(List.of(all.get(0)));
+        all.subList(1, all.size()).stream().filter(l -> !l.contains("\"f\":[1]")).forEach(spec::add);
+        assertEquals(2, spec.size(), "the specification keeps the summary of the choice 2 only: " + all);
+        Files.write(d.resolve("spec.jsonl"), spec, StandardCharsets.UTF_8);
+        NamedCliTest.Out o = launch(d, "online", "--program", wide + ":7", "--seed", "1", "--spec", "spec.jsonl",
+                "--timeout", "2");
+        expect(1, o, "an uncovered summary, then the timeout");
+        assertTrue(o.stdout().contains("verdict:    reports") && o.stdout().contains("due to timeout"), o.stdout());
+    }
+
+    @Test
+    void exit0_exhaustedBlockedOnly_and_exit2_valueRefusedUnderBothStrategies() throws Exception {
+        Path d = NamedCliTest.freshDir("exit-blocked-value");
+        NamedCliTest.Out blocked = launch(d, "count", "--program", BlockedOnly.class.getName(), "--seed", "1");
+        expect(0, blocked, "every execution blocked, the exploration exhausted");
+        assertTrue(blocked.stdout().contains("0 distinct complete, 1 distinct blocked; stack exhausted"),
+                blocked.stdout());
+        for (String strategy : List.of("must", "mp-random")) {
+            NamedCliTest.Out o = launch(d, "export", "--program", BadValue.class.getName(), "--strategy", strategy,
+                    "--seed", "1", "--iterations", "1", "--out", strategy + ".jsonl",
+                    "--report-dir", "rep-" + strategy);
+            expect(2, o, "a value the format refuses, under " + strategy);
+            assertTrue(o.stdout().contains("floating-point values are refused"), o.stdout());
+        }
     }
 }

@@ -412,6 +412,7 @@ public class MpRecordingStrategy extends MpRandomSchedulingStrategy {
             throw fromBase;
         }
         if (problem != null && !errorRecorded) {
+            noteFailure(MpFailureKind.RULE);
             throw HaltExecutionException.error("mp-recording: " + problem);
         }
     }
