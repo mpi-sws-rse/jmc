@@ -500,7 +500,7 @@ public final class GraphReplayStrategy extends MpRandomSchedulingStrategy {
         };
     }
 
-    /** A JSON value in the compact byte form (P5 normal form for an encoded value). */
+    /** A JSON value in the compact byte form for an encoded value. */
     private static String compact(JsonElement v) {
         StringBuilder sb = new StringBuilder();
         write(sb, v);
