@@ -37,6 +37,11 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
 
+    // java-smt 6.0.0 brings Guava 33.4.8-jre: unbounded allocation when deserializing
+    // CompactHashMap/CompactHashSet/MapMakerInternalMap (<= 33.7.1). Declared directly so the
+    // patched version is also a runtime dependency in the published POM, which Maven consumers
+    // resolve ahead of java-smt's. Remove once java-smt brings a patched version.
+    implementation("com.google.guava:guava:33.7.2-jre")
 }
 
 // The build's identity for witness graph files: the JMC commit, from JMC_COMMIT if set (node trees
