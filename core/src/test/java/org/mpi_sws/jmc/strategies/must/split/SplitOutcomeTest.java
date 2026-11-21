@@ -42,6 +42,10 @@ class SplitOutcomeTest {
         IllegalStateException parse = assertThrows(IllegalStateException.class,
                 () -> SplitCoordinator.readJson(d.resolve("bad.json")));
         assertEquals(MpOutcome.INCOMPLETE, SplitCoordinator.abortOutcome(parse));
+        Files.writeString(d.resolve("truncated.json"), "{\"a\":", StandardCharsets.UTF_8);
+        IllegalStateException truncated = assertThrows(IllegalStateException.class,
+                () -> SplitCoordinator.readJson(d.resolve("truncated.json")));
+        assertEquals(MpOutcome.INCOMPLETE, SplitCoordinator.abortOutcome(truncated));
         assertEquals(MpOutcome.INCOMPLETE, SplitCoordinator.abortOutcome(new IllegalStateException("other")));
     }
 

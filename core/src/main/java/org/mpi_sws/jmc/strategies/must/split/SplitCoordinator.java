@@ -1041,6 +1041,10 @@ public final class SplitCoordinator {
     static MpOutcome abortOutcome(Throwable e) {
         java.util.Set<Throwable> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (Throwable c = e; c != null && seen.add(c); c = c.getCause()) {
+            if (c instanceof com.google.gson.JsonParseException) {
+                // A malformed or truncated file (Gson reports truncation as an EOFException beneath).
+                return MpOutcome.INCOMPLETE;
+            }
             if (c instanceof IOException && !(c instanceof com.google.gson.stream.MalformedJsonException)) {
                 // Gson reports malformed JSON as an IOException too; that is a bad file, not one unreadable.
                 return MpOutcome.REFUSED;
