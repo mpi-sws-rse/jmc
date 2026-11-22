@@ -11,7 +11,6 @@ import com.google.gson.stream.MalformedJsonException;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.nio.ByteBuffer;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -154,7 +153,7 @@ public final class SpecificationFile {
      * @throws IOException if the file cannot be read
      */
     public static Loaded load(Path path, Expected expected) throws IOException {
-        List<String> text = lines(Files.readAllBytes(path));
+        List<String> text = lines(path);
         if (text.isEmpty() || text.get(0).isBlank()) {
             throw new IllegalArgumentException("specification " + path + " has no header line");
         }
@@ -246,20 +245,31 @@ public final class SpecificationFile {
      * last line. A bare {@code \r} is not a line end, so it stays inside its line (and fails that line's form).
      * The bytes must be UTF-8.
      */
-    static List<String> lines(byte[] bytes) throws IOException {
-        String all = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
+    static List<String> lines(Path path) throws IOException {
+        java.nio.charset.CharsetDecoder utf8 = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
         List<String> out = new ArrayList<>();
-        int start = 0;
-        while (start < all.length()) {
-            int end = all.indexOf('\n', start);
-            if (end < 0) {
-                out.add(all.substring(start));
-                break;
+        StringBuilder line = new StringBuilder();
+        char[] buf = new char[1 << 16];
+        try (java.io.Reader in = new java.io.InputStreamReader(Files.newInputStream(path), utf8)) {
+            for (int n = in.read(buf); n >= 0; n = in.read(buf)) {
+                for (int i = 0; i < n; i++) {
+                    char c = buf[i];
+                    if (c != '\n') {
+                        line.append(c);
+                        continue;
+                    }
+                    int len = line.length();
+                    if (len > 0 && line.charAt(len - 1) == '\r') {
+                        line.setLength(len - 1);
+                    }
+                    out.add(line.toString());
+                    line.setLength(0);
+                }
             }
-            int stop = end > start && all.charAt(end - 1) == '\r' ? end - 1 : end;
-            out.add(all.substring(start, stop));
-            start = end + 1;
+        }
+        if (line.length() > 0) {
+            out.add(line.toString());
         }
         return out;
     }

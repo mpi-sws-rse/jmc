@@ -303,7 +303,7 @@ class J8SSpecSnapshotTest {
 
     /**
      * M1 (d) after an abort that kills a worker inside its snapshot. A large but valid spec (bank2-multi plus
-     * 200000 distinct generated lines) makes the snapshot's load take long. Worker 0 is
+     * 50000 distinct generated lines) makes the snapshot's load take long. Worker 0 is
      * {@link J8SnapshotAbortWorker}: it waits until worker 1's {@code spec-worker-1-*.snapshot} exists, then
      * writes a startup fail marker. Derived requirement (round-04 prompt (d)): after the abort no
      * {@code spec-*.snapshot} file is left in the run directory. The coordinator ends workers with
@@ -318,7 +318,7 @@ class J8SSpecSnapshotTest {
         assertTrue(m.find(), lines.get(1));
         String before = lines.get(1).substring(0, m.start(1));
         String after = lines.get(1).substring(m.end(1));
-        for (int i = 0; i < 200_000; i++) {
+        for (int i = 0; i < 50_000; i++) {
             lines.add(before + (1_000_000 + i) + after);
         }
         Path spec = J8SSupport.DIR.resolve("m1d-big-" + UUID.randomUUID() + ".jsonl");

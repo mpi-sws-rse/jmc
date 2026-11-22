@@ -479,6 +479,8 @@ public final class MpLauncher {
                         mp.payloadNameableRoles());
                 st.must = mustStrategy;
             }
+            // The index time covers the pairing check and the load, a refused file's included.
+            long indexStartNanos = System.nanoTime();
             if (pairingCheck) {
                 // The pairing check, before the file is read for the comparison: failures refuse the run,
                 // warnings go to stderr, in the wording TraceForge's conf-join uses.
@@ -486,10 +488,12 @@ public final class MpLauncher {
                 try {
                     pairing = PairingCheck.check(specFile, mp.expected(), PairingCheck.programTags(mp.getClass()));
                 } catch (IOException e) {
+                    st.indexNanos = System.nanoTime() - indexStartNanos;
                     st.failure = "specification " + specFile + " refused: " + e.getMessage();
                     return usage(st.failure);
                 }
                 if (!pairing.passed()) {
+                    st.indexNanos = System.nanoTime() - indexStartNanos;
                     for (PairingCheck.Item f : pairing.failures()) {
                         System.err.println("MpLauncher: pairing: " + f.row() + ": " + f.what());
                     }
@@ -501,7 +505,6 @@ public final class MpLauncher {
                     System.err.println("MpLauncher: pairing: warning: " + w.row() + ": " + w.what());
                 }
             }
-            long indexStartNanos = System.nanoTime();
             try {
                 spec = SpecificationFile.load(specFile, mp.expected());
             } catch (IllegalArgumentException | IOException e) {

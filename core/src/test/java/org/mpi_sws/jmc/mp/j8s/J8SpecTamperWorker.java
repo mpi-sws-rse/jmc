@@ -23,11 +23,14 @@ public final class J8SpecTamperWorker {
         if (b.length == 0 || b[b.length - 1] != '\n') {
             throw new IllegalStateException(spec + " does not end with a line end");
         }
-        // The last line end becomes CRLF: still a valid file, with another SHA-256.
-        byte[] t = Arrays.copyOf(b, b.length + 1);
-        t[b.length - 1] = '\r';
-        t[b.length] = '\n';
-        Files.write(spec, t);
+        // The last line end becomes CRLF: still a valid file, with another SHA-256. Every worker runs this
+        // wrapper; once a CRLF is there the file differs already.
+        if (b.length < 2 || b[b.length - 2] != '\r') {
+            byte[] t = Arrays.copyOf(b, b.length + 1);
+            t[b.length - 1] = '\r';
+            t[b.length] = '\n';
+            Files.write(spec, t);
+        }
         List<String> cmd = Arrays.asList(args).subList(1, args.length);
         Process child = new ProcessBuilder(cmd).inheritIO().start();
         Runtime.getRuntime().addShutdownHook(new Thread(child::destroyForcibly));

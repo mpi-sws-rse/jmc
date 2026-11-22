@@ -120,7 +120,7 @@ public final class PairingCheck {
                                Map<String, SortedSet<Integer>> programTags) throws IOException {
         List<Item> failures = new ArrayList<>();
         List<Item> warnings = new ArrayList<>();
-        List<String> text = SpecificationFile.lines(Files.readAllBytes(spec));
+        List<String> text = SpecificationFile.lines(spec);
         if (text.isEmpty()) {
             throw new IOException(spec + ": the file is empty");
         }
