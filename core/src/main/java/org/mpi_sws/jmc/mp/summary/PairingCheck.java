@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.security.CodeSource;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -49,7 +48,7 @@ import java.util.stream.Stream;
  *   <li><b>C3</b>: the two models are equal and in the supported set {@code p2p}, {@code asyn}.</li>
  *   <li><b>C4</b>: the specification's {@code enumeration} is {@code complete}.</li>
  *   <li><b>C6</b>: the specification's lines are distinct (by their normal form when the line is readable, else
- *       by its text).</li>
+ *       by its text); a repeat names the earlier line, in the wording of {@code conf-join --merge}.</li>
  *   <li><b>C10</b>: every count is at most 2^31−1 and every word has at most 2^31−1 events.</li>
  *   <li><b>C13</b>: a tag used on both sides is used by the specification only with field arities the program
  *       declares for it (TraceForge, comparing two files, requires the same arities on both; a program may
@@ -67,7 +66,8 @@ import java.util.stream.Stream;
  *
  * <p>The program's tags ({@link #programTags}) are those of the records and enums in the program class's package
  * (the same classpath entry) that implement {@link MpMessage}, and of every record, enum and sealed interface
- * reachable from their components, through {@link List}, {@link Set} and {@link Optional} too: a record's tag is
+ * reachable from their components, through {@link List}, {@link Set}, {@link Optional} and the type arguments of
+ * a generic record too: a record's tag is
  * its {@link Tag} with its number of components, an enum constant's its name with none, {@code Optional} gives
  * {@code None} and {@code Some}. A message type outside that package is not seen, which can only add one-sided
  * warnings.
@@ -169,7 +169,7 @@ public final class PairingCheck {
 
         Map<String, SortedSet<Integer>> specTags = new TreeMap<>(MpValueEncoder::compareBytes);
         List<String> sorted = MpValueEncoder.sortedRoles(visible == null ? List.of() : visible);
-        Set<String> seen = new HashSet<>();
+        Map<String, Integer> seen = new java.util.HashMap<>();
         for (int i = 1; i < text.size(); i++) {
             int number = i + 1;
             String line = text.get(i);
@@ -211,8 +211,9 @@ public final class PairingCheck {
             } catch (IllegalArgumentException e) {
                 // Refused by the reader: no tags; C6 by the line's text.
             }
-            if (!seen.add(key)) {
-                failures.add(new Item("C6", at + "line " + number + " repeats an earlier line"));
+            Integer first = seen.putIfAbsent(key, number);
+            if (first != null) {
+                failures.add(new Item("C6", at + "line " + number + " repeats line " + first));
             }
         }
 
@@ -257,11 +258,16 @@ public final class PairingCheck {
                 if (p.getRawType() == Optional.class) {
                     tags.computeIfAbsent("None", k -> new TreeSet<>()).add(0);
                     tags.computeIfAbsent("Some", k -> new TreeSet<>()).add(1);
+                } else {
+                    // A generic record or sealed type: its own tag; its type-variable components are reached
+                    // through the arguments.
+                    todo.add(p.getRawType());
                 }
-                if (p.getRawType() == Optional.class || p.getRawType() instanceof Class<?> r
-                        && Collection.class.isAssignableFrom(r)) {
-                    todo.addAll(List.of(p.getActualTypeArguments()));
-                }
+                todo.addAll(List.of(p.getActualTypeArguments()));
+                continue;
+            }
+            if (t instanceof java.lang.reflect.WildcardType w) {
+                todo.addAll(List.of(w.getUpperBounds()));
                 continue;
             }
             if (!(t instanceof Class<?> c)) {
@@ -414,7 +420,15 @@ public final class PairingCheck {
                     case '\n' -> sb.append("\\n");
                     case '\r' -> sb.append("\\r");
                     case '\t' -> sb.append("\\t");
-                    default -> sb.append(ch);
+                    case '\0' -> sb.append("\\0");
+                    default -> {
+                        if (ch < 0x20 || ch == 0x7f) {
+                            // Rust's escape_debug for the other ASCII controls: backslash, u, the hex code in braces.
+                            sb.append("\\u{").append(Integer.toHexString(ch)).append('}');
+                        } else {
+                            sb.append(ch);
+                        }
+                    }
                 }
             }
             sb.append('"');

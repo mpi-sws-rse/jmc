@@ -384,6 +384,16 @@ class SpecificationFileTest {
                 + "\"uncovered_total\":0,\"encoding\":1"), LINE_A).index().size());
     }
 
+    /** An unpaired surrogate escape is refused with its line wherever it stands: in n, in a key, in the header. */
+    @Test
+    void refuse_unpairedSurrogateAnywhere_namingTheLine() throws Exception {
+        String u = "line 2: a string is not valid unicode";
+        refused(u, HEADER, LINE_A.replace(",\"n\":1}", ",\"n\":\"" + BS + "ud800\"}"));
+        refused(u, HEADER, LINE_A.replace(",\"n\":1}", ",\"n\":{\"" + BS + "udc00\":1}}"));
+        refused("line 1: a string is not valid unicode", header("\"program\":\"p\"", "\"program\":\"" + BS + "ud800\""),
+                LINE_A);
+    }
+
     /** The header in another key order, with whitespace, or with an escape where the encoder writes the character. */
     @Test
     void refuse_headerNotInTheWritersForm() throws Exception {

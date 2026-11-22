@@ -45,8 +45,9 @@ import java.util.regex.Pattern;
  * and it refuses a count above {@code Integer.MAX_VALUE}. Lines may come in any order; a line whose summary is
  * held already is refused, naming both lines.
  *
- * <p>The reader accepts a file only in the form both writers (JMC's and TraceForge's) emit, so that a file one
- * tool's reader accepts the other's accepts too. Lines end at {@code \n} or {@code \r\n}; an empty line is refused.
+ * <p>The reader accepts a file only in the form both writers (JMC's and TraceForge's) emit, so that within the
+ * common domain (integers in signed 64 bits, no duplicate key anywhere, {@code n} included) a file one tool's
+ * reader accepts the other's accepts too. Lines end at {@code \n} or {@code \r\n}; an empty line is refused.
  * The header holds only the known keys, each once, compact, in the writers' order ({@code format}, {@code minor},
  * {@code tool}, {@code program}, {@code size}, {@code visible}, {@code roles}, {@code model}, {@code enumeration},
  * {@code seed}, {@code iterations}, the online fields, {@code encoding}); {@code roles} occurs exactly when
@@ -338,7 +339,8 @@ public final class SpecificationFile {
     /**
      * Parses a summary line and refuses it unless it is in the form both writers emit: its normal form
      * ({@link Summary#normalForm()}), optionally followed by {@code n} as the last member, compact. The value of
-     * {@code n} is not checked beyond strict JSON: it is information only.
+     * {@code n} is information only; it is checked only as every value of the file is (strict JSON, integers in
+     * signed 64 bits, no duplicate key, valid Unicode).
      */
     static Summary writerFormLine(String line, List<String> visible, int no) {
         JsonObject o = object(parse(line, no), no, "a summary line");
@@ -371,7 +373,8 @@ public final class SpecificationFile {
     /**
      * The header's lists when the reader would accept the header on its own, without comparing it with a program:
      * the writers' form, {@code format} and {@code encoding} 1, {@code minor} absent or 1, the string fields
-     * present, {@code visible} distinct names, and with {@code minor} a {@code roles} list of valid names
+     * present, {@code enumeration} one of {@code complete}, {@code sampled}, {@code bounded}, {@code aborted},
+     * {@code visible} distinct names, and with {@code minor} a {@code roles} list of valid names
      * (non-empty ASCII, not {@code main}, not starting with {@code ~}), byte-sorted and distinct, holding every
      * visible name. {@code null} when the header would be refused.
      *
@@ -390,6 +393,9 @@ public final class SpecificationFile {
             }
             for (String k : List.of("enumeration", "model", "program", "size", "tool")) {
                 string(h, k, 1);
+            }
+            if (!List.of("complete", "sampled", "bounded", "aborted").contains(string(h, "enumeration", 1))) {
+                return null;
             }
             List<String> visible = new ArrayList<>();
             for (JsonElement e : array(h.get("visible"), 1, "visible")) {
@@ -792,7 +798,7 @@ public final class SpecificationFile {
             JsonObject o = new JsonObject();
             reader.beginObject();
             while (reader.hasNext()) {
-                String key = reader.nextName();
+                String key = unicode(reader.nextName(), no);
                 if (o.has(key)) {
                     throw refuse(no, "duplicate key \"" + key + "\" in an object");
                 }
@@ -802,7 +808,7 @@ public final class SpecificationFile {
             return o;
         }
         if (t == JsonToken.STRING) {
-            return new JsonPrimitive(reader.nextString());
+            return new JsonPrimitive(unicode(reader.nextString(), no));
         }
         if (t == JsonToken.NUMBER) {
             String lit = reader.nextString();
@@ -827,6 +833,22 @@ public final class SpecificationFile {
             return JsonNull.INSTANCE;
         }
         throw refuse(no, "unexpected token " + t);
+    }
+
+    /**
+     * Refuses a string that is not valid Unicode (an unpaired surrogate, which a JSON escape can spell and no Rust
+     * string can hold), in a value or a key, {@code n} and the header included.
+     */
+    private static String unicode(String s, int no) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (Character.isHighSurrogate(c) && i + 1 < s.length() && Character.isLowSurrogate(s.charAt(i + 1))) {
+                i++;
+            } else if (Character.isSurrogate(c)) {
+                throw refuse(no, "a string is not valid Unicode (an unpaired surrogate at " + i + ")");
+            }
+        }
+        return s;
     }
 
     private static JsonObject object(JsonElement e, int no, String what) {

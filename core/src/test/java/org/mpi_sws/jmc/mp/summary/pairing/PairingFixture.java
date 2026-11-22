@@ -8,8 +8,8 @@ import java.util.Optional;
 
 /**
  * Message types for {@code PairingCheckTest}'s collection of a program's tags: a record message, a sealed message
- * interface with two records, an enum message, and a record and an enum reached only through components (an
- * {@link Optional} and a {@link List}). Not a program: only its package is scanned.
+ * interface with two records, an enum message, a record and an enum reached only through components (an
+ * {@link Optional} and a {@link List}), and a generic record reached through a parameterized component. Not a program: only its package is scanned.
  */
 public final class PairingFixture {
 
@@ -56,6 +56,23 @@ public final class PairingFixture {
 
     /** An enum message. */
     public enum Signal implements MpMessage { STOP }
+
+    /**
+     * A generic payload record, reached only through {@link Boxed}'s parameterized component.
+     *
+     * @param value the value
+     * @param <T> the value's type
+     */
+    @Tag("Box")
+    public record Box<T>(T value) {}
+
+    /**
+     * A message with a generic payload record.
+     *
+     * @param box the payload
+     */
+    @Tag("Boxed")
+    public record Boxed(Box<Integer> box) implements MpMessage {}
 
     /**
      * A second {@code Ping} with another arity, as two Rust enums may each have a variant of one name.

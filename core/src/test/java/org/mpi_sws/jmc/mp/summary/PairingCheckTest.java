@@ -85,6 +85,22 @@ class PairingCheckTest {
                 rendered(check(q).failures()));
     }
 
+    /** Names are printed as Rust's Debug prints them: NUL as backslash-0, other controls as backslash-u{hex}. */
+    @Test
+    void c2_namesRenderedAsRustDebug() throws Exception {
+        Path p = file(HEADER.replace("\"roles\":[\"c0\",\"c1\"]",
+                "\"roles\":[\"c0\",\"c1\",\"x\\u0001\",\"y\\u0000\"]"), PING);
+        assertEquals(List.of("C2: the two `roles` lists differ: [\"c0\", \"c1\", \"x\\u{1}\", \"y\\0\"] and"
+                + " [\"c0\", \"c1\"]"), rendered(check(p).failures()));
+    }
+
+    /** An enumeration TraceForge's header reader does not know leaves the header to the reader: no C2-C4 rows. */
+    @Test
+    void unknownEnumeration_headerLeftToTheReader() throws Exception {
+        Path p = file(HEADER.replace("\"complete\"", "\"bogus\"").replace("\"p2p\"", "\"asyn\""), PING);
+        assertTrue(check(p).passed(), rendered(check(p).failures()).toString());
+    }
+
     @Test
     void c3_modelsDiffer_orAreUnsupported() throws Exception {
         assertEquals(List.of("C3: the two models differ: asyn and p2p"),
@@ -105,9 +121,9 @@ class PairingCheckTest {
     @Test
     void c6_repeatedLine_byNormalForm_andByText() throws Exception {
         Path p = file(HEADER, PING, ACK, PING.replace("\"n\":1", "\"n\":5"));
-        assertEquals(List.of("C6: " + p + ": line 4 repeats an earlier line"), rendered(check(p).failures()));
+        assertEquals(List.of("C6: " + p + ": line 4 repeats line 2"), rendered(check(p).failures()));
         Path q = file(HEADER, "{\"x\":1}", "{\"x\":1}");
-        assertEquals(List.of("C6: " + q + ": line 3 repeats an earlier line"), rendered(check(q).failures()));
+        assertEquals(List.of("C6: " + q + ": line 3 repeats line 2"), rendered(check(q).failures()));
     }
 
     @Test
@@ -165,7 +181,7 @@ class PairingCheckTest {
         Map<String, SortedSet<Integer>> expected = tags("Ping", new Integer[] {1, 2}, "Put", new Integer[] {2},
                 "Get", new Integer[] {1}, "Val", new Integer[] {1}, "RED", new Integer[] {0},
                 "GREEN", new Integer[] {0}, "STOP", new Integer[] {0}, "None", new Integer[] {0},
-                "Some", new Integer[] {1});
+                "Some", new Integer[] {1}, "Boxed", new Integer[] {1}, "Box", new Integer[] {1});
         assertEquals(expected, new TreeMap<>(PairingCheck.programTags(PairingFixture.class)));
     }
 }
