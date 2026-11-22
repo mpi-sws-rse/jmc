@@ -246,7 +246,7 @@ public final class SpecificationFile {
      * last line. A bare {@code \r} is not a line end, so it stays inside its line (and fails that line's form).
      * The bytes must be UTF-8.
      */
-    private static List<String> lines(byte[] bytes) throws IOException {
+    static List<String> lines(byte[] bytes) throws IOException {
         String all = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString();
         List<String> out = new ArrayList<>();
@@ -330,7 +330,7 @@ public final class SpecificationFile {
      * ({@link Summary#normalForm()}), optionally followed by {@code n} as the last member, compact. The value of
      * {@code n} is not checked beyond strict JSON: it is information only.
      */
-    private static Summary writerFormLine(String line, List<String> visible, int no) {
+    static Summary writerFormLine(String line, List<String> visible, int no) {
         JsonObject o = object(parse(line, no), no, "a summary line");
         for (String k : o.keySet()) {
             if (!LINE_KEYS.contains(k)) {
@@ -357,6 +357,69 @@ public final class SpecificationFile {
         }
         return s;
     }
+
+    /**
+     * The header's lists when the reader would accept the header on its own, without comparing it with a program:
+     * the writers' form, {@code format} and {@code encoding} 1, {@code minor} absent or 1, the string fields
+     * present, {@code visible} distinct names, and with {@code minor} a {@code roles} list of valid names
+     * (non-empty ASCII, not {@code main}, not starting with {@code ~}), byte-sorted and distinct, holding every
+     * visible name. {@code null} when the header would be refused.
+     *
+     * @param text the header line
+     * @return the header's {@code visible} list (as written) and {@code roles} list ({@code null} for minor 0),
+     *     or {@code null}
+     */
+    static HeaderLists readableHeader(String text) {
+        try {
+            JsonObject h = object(parse(text, 1), 1, "the header");
+            headerForm(text, h);
+            requireInt(h, "format", 1, 1);
+            requireInt(h, "encoding", 1, 1);
+            if (h.has("minor")) {
+                requireInt(h, "minor", 1, 1);
+            }
+            for (String k : List.of("enumeration", "model", "program", "size", "tool")) {
+                string(h, k, 1);
+            }
+            List<String> visible = new ArrayList<>();
+            for (JsonElement e : array(h.get("visible"), 1, "visible")) {
+                visible.add(stringValue(e, 1, "a visible role"));
+            }
+            if (new java.util.HashSet<>(visible).size() != visible.size()) {
+                return null;
+            }
+            List<String> roles = null;
+            if (h.has("minor")) {
+                roles = new ArrayList<>();
+                for (JsonElement e : array(h.get("roles"), 1, "roles")) {
+                    String r = stringValue(e, 1, "a role");
+                    if (r.isEmpty() || r.equals("main") || r.startsWith("~") || !r.chars().allMatch(c -> c < 0x80)) {
+                        return null;
+                    }
+                    roles.add(r);
+                }
+                for (int i = 1; i < roles.size(); i++) {
+                    if (MpValueEncoder.compareBytes(roles.get(i - 1), roles.get(i)) >= 0) {
+                        return null;
+                    }
+                }
+                if (!roles.containsAll(visible)) {
+                    return null;
+                }
+            }
+            return new HeaderLists(visible, roles);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /**
+     * A readable header's lists.
+     *
+     * @param visible the {@code visible} list as written
+     * @param roles the {@code roles} list, or {@code null} for a minor-0 header
+     */
+    record HeaderLists(List<String> visible, List<String> roles) {}
 
     /** The first UTF-8 byte offset at which {@code text} and {@code expected} differ, or -1 if they are equal. */
     private static int differsAt(String text, String expected) {
