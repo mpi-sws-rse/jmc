@@ -331,8 +331,8 @@ class SpecificationFileTest {
 
     @Test
     void refuse_repeatedLine_namingBothLines_evenWithDifferentN() throws Exception {
-        refused("line 3: repeats line 2", HEADER, LINE_A, LINE_A.replace(",\"n\":1}", ",\"n\":7}"), LINE_P);
-        refused("line 4: repeats line 2", HEADER, LINE_A, LINE_P, LINE_A);
+        refused("line 3 repeats line 2", HEADER, LINE_A, LINE_A.replace(",\"n\":1}", ",\"n\":7}"), LINE_P);
+        refused("line 4 repeats line 2", HEADER, LINE_A, LINE_P, LINE_A);
     }
 
     @Test

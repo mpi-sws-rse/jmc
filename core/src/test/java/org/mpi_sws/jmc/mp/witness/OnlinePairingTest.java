@@ -51,11 +51,13 @@ class OnlinePairingTest {
                 o.stderr());
         assertTrue(o.stderr().contains("MpLauncher: refused: the pairing check failed (1 checks;"
                 + " --no-pairing-check skips it)"), o.stderr());
+        assertFalse(o.stderr().contains("usage:"), o.stderr());
 
         Out named = WitnessSupport.launch(dir, "online", "--program", BANK + ":3", "--spec", bad.toString(),
                 "--report-dir", "rep-named");
         assertEquals(2, named.exit(), named.text());
         assertTrue(named.stderr().contains("MpLauncher: pairing: C13: the tag \"" + tag + "\""), named.stderr());
+        assertFalse(named.stderr().contains("usage:"), named.stderr());
 
         Out skipped = WitnessLauncherTest.online(dir, bad, "--no-pairing-check");
         assertNotEquals(2, skipped.exit(), skipped.text());
@@ -64,5 +66,43 @@ class OnlinePairingTest {
         Out passed = WitnessLauncherTest.online(dir, good);
         assertNotEquals(2, passed.exit(), passed.text());
         assertFalse(passed.stderr().contains("MpLauncher: pairing: C"), passed.stderr());
+    }
+
+    /**
+     * A refused header prints the reader's refusal alone: no one-sided C13 warning before it and no usage line. A
+     * repeated line is named in the same words by the pairing check and, with {@code --no-pairing-check}, by the
+     * reader.
+     */
+    @Test
+    void refusedHeader_aloneWithoutUsage_repeatSameWordsInBoth() throws Exception {
+        Path dir = WitnessSupport.fresh("pairing-refusals");
+        Path good = WitnessSupport.spec(dir, BANK + ":3", "good.jsonl", UnaryOperator.identity(), 2);
+        java.util.List<String> lines = java.nio.file.Files.readAllLines(good);
+
+        Path header = dir.resolve("header.jsonl");
+        String h = lines.get(0);
+        java.nio.file.Files.write(header, java.util.List.of(h.substring(0, h.length() - 1) + ",\"x\":1}",
+                lines.get(1)));
+        for (Out o : new Out[] {WitnessLauncherTest.online(dir, header), WitnessSupport.launch(dir, "online",
+                "--program", BANK + ":3", "--spec", header.toString(), "--report-dir", "rep-header")}) {
+            assertEquals(2, o.exit(), o.text());
+            assertFalse(o.stderr().contains("pairing:"), o.stderr());
+            assertFalse(o.stderr().contains("usage:"), o.stderr());
+            assertEquals(1, o.stderr().lines().filter(l -> l.contains("refused: line 1: unknown header key")).count(),
+                    o.stderr());
+        }
+
+        Path repeat = dir.resolve("repeat.jsonl");
+        java.nio.file.Files.write(repeat, java.util.List.of(lines.get(0), lines.get(1), lines.get(1)));
+        Out paired = WitnessLauncherTest.online(dir, repeat);
+        assertEquals(2, paired.exit(), paired.text());
+        assertTrue(paired.stderr().contains("MpLauncher: pairing: C6: " + repeat + ": line 3 repeats line 2"),
+                paired.stderr());
+        assertFalse(paired.stderr().contains("usage:"), paired.stderr());
+        Out read = WitnessLauncherTest.online(dir, repeat, "--no-pairing-check");
+        assertEquals(2, read.exit(), read.text());
+        assertTrue(read.stderr().contains("MpLauncher: specification " + repeat + " refused: line 3 repeats line 2"),
+                read.stderr());
+        assertFalse(read.stderr().contains("usage:"), read.stderr());
     }
 }

@@ -223,7 +223,8 @@ public final class SpecificationFile {
                 while (!writerFormLine(text.get(first - 1), visible, first).normalForm().equals(key)) {
                     first++;
                 }
-                throw refuse(no, "repeats line " + first + " (the same summary); a file holds each summary once");
+                // The pairing check's C6 wording, the same in both.
+                throw refuse(0, "line " + no + " repeats line " + first);
             }
         }
         return new Loaded(path, program, size, tool, model, visible, roles, lines, 0, index);

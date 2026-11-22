@@ -146,6 +146,10 @@ import java.util.Set;
  * refused input: a wrong argument count, an unknown option or strategy, a class that cannot be loaded or
  * constructed, a non-numeric or out-of-range number, a refused specification file, store or witness target, a
  * refused replay.
+ *
+ * <p>In both forms a refused specification file, a failed pairing check and a refused replay graph print the
+ * refusal only; every other exit 2 (a usage error, a program that cannot be constructed, a refused store or
+ * witness target) is followed by the usage line.
  */
 public final class MpLauncher {
 
@@ -490,7 +494,7 @@ public final class MpLauncher {
                 } catch (IOException e) {
                     st.indexNanos = System.nanoTime() - indexStartNanos;
                     st.failure = "specification " + specFile + " refused: " + e.getMessage();
-                    return usage(st.failure);
+                    return refused(st.failure);
                 }
                 if (!pairing.passed()) {
                     st.indexNanos = System.nanoTime() - indexStartNanos;
@@ -499,7 +503,7 @@ public final class MpLauncher {
                     }
                     st.failure = "refused: the pairing check failed (" + pairing.failures().size()
                             + " checks; --no-pairing-check skips it)";
-                    return usage(st.failure);
+                    return refused(st.failure);
                 }
                 for (PairingCheck.Item w : pairing.warnings()) {
                     System.err.println("MpLauncher: pairing: warning: " + w.row() + ": " + w.what());
@@ -509,7 +513,7 @@ public final class MpLauncher {
                 spec = SpecificationFile.load(specFile, mp.expected());
             } catch (IllegalArgumentException | IOException e) {
                 st.failure = "specification " + specFile + " refused: " + e.getMessage();
-                return usage(st.failure);
+                return refused(st.failure);
             } finally {
                 st.indexNanos = System.nanoTime() - indexStartNanos;
             }
@@ -1495,29 +1499,29 @@ public final class MpLauncher {
         try {
             List<String> ls = Files.readAllLines(Path.of(graphPath), StandardCharsets.UTF_8);
             if (ls.size() != 1) {
-                return usage("--replay " + graphPath + ": a graph file holds exactly one line, found " + ls.size());
+                return refused("--replay " + graphPath + ": a graph file holds exactly one line, found " + ls.size());
             }
             g = JsonParser.parseString(ls.get(0)).getAsJsonObject();
             String problem = graphProblem(g);
             if (problem != null) {
-                return usage("--replay " + graphPath + " refused: " + problem);
+                return refused("--replay " + graphPath + " refused: " + problem);
             }
         } catch (IOException | RuntimeException e) {
-            return usage("--replay " + graphPath + " refused: " + e.getMessage());
+            return refused("--replay " + graphPath + " refused: " + e.getMessage());
         }
         JsonObject run = g.getAsJsonObject("run");
         if (!run.get("tool").getAsString().equals("jmc")) {
-            return usage("--replay: the graph is " + run.get("tool").getAsString()
+            return refused("--replay: the graph is " + run.get("tool").getAsString()
                     + "'s; cross-tool replay is not supported");
         }
         if (!run.get("side").isJsonNull() || !run.get("model").isJsonNull()
                 || !run.getAsJsonObject("options").entrySet().isEmpty()) {
-            return usage("--replay: side, model and options of a JMC graph are null, null and {}");
+            return refused("--replay: side, model and options of a JMC graph are null, null and {}");
         }
         String entry = run.get("entry").getAsString();
         JsonArray argList = run.getAsJsonArray("args");
         if (argList.size() > 1) {
-            return usage("--replay: a JMC graph has at most one args element");
+            return refused("--replay: a JMC graph has at most one args element");
         }
         String programSpec = entry + (argList.isEmpty() ? "" : ":" + argList.get(0).getAsString());
         if (explicit != null && !explicit.equals(programSpec)) {
@@ -1548,7 +1552,7 @@ public final class MpLauncher {
         if (!ours.equals(theirs) || ours.equals("unknown")) {
             String why = "tool_commit " + theirs + " (this build: " + ours + ")";
             if (!allowTool) {
-                return usage("--replay refused: " + why + "; --allow-tool-change accepts it");
+                return refused("--replay refused: " + why + "; --allow-tool-change accepts it");
             }
             warnings.add("tool-change: " + why);
         }
@@ -1564,7 +1568,7 @@ public final class MpLauncher {
             String why = unknown ? "source unknown" + (manifestWarnings.isEmpty() ? "" : " (" + manifestWarnings.get(0)
                     + ")") : "source files differ from the program's manifest";
             if (!allowSource) {
-                return usage("--replay refused: " + why + "; --allow-source-change accepts it");
+                return refused("--replay refused: " + why + "; --allow-source-change accepts it");
             }
             warnings.add("source-change: " + why);
         }
@@ -2171,6 +2175,19 @@ public final class MpLauncher {
     private static int usage(String why) {
         System.err.println("MpLauncher: " + why);
         return usageLine();
+    }
+
+    /**
+     * Prints a refusal of an input the arguments named correctly (a specification file, a failed pairing check, a
+     * replay graph) and returns the refused exit status; no usage line follows, since the arguments were not at
+     * fault.
+     *
+     * @param why what was refused and why
+     * @return {@code 2}
+     */
+    private static int refused(String why) {
+        System.err.println("MpLauncher: " + why);
+        return 2;
     }
 
     /**
