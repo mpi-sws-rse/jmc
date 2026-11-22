@@ -48,7 +48,8 @@ import java.util.stream.Stream;
  *   <li><b>C3</b>: the two models are equal and in the supported set {@code p2p}, {@code asyn}.</li>
  *   <li><b>C4</b>: the specification's {@code enumeration} is {@code complete}.</li>
  *   <li><b>C6</b>: the specification's lines are distinct (by their normal form when the line is readable, else
- *       by its text); a repeat names the earlier line, in the wording of {@code conf-join --merge}.</li>
+ *       by its text); a repeat names the earlier line ({@code line N repeats line M}), the wording the reader's
+ *       refusal uses too.</li>
  *   <li><b>C10</b>: every count is at most 2^31−1 and every word has at most 2^31−1 events.</li>
  *   <li><b>C13</b>: a tag used on both sides is used by the specification only with field arities the program
  *       declares for it (TraceForge, comparing two files, requires the same arities on both; a program may
@@ -59,10 +60,11 @@ import java.util.stream.Stream;
  *       is a warning that it may be a raw identity instead of a role name.</li>
  * </ul>
  *
- * <p>A header the reader refuses contributes nothing to C2, C3 and C4, and a line it refuses nothing to C13 and
- * C18 (it still counts for C6, by its text, and for C10): those are the reader's refusals, reported by
- * {@link SpecificationFile#load} with its own message. A line that is not JSON is skipped here for the same
- * reason.
+ * <p>A header the reader refuses stops the check: nothing else is checked and the report is empty, so the
+ * reader's refusal ({@link SpecificationFile#load}) is printed once and no warning precedes it (no line can be read
+ * without the header, so every program tag would otherwise be reported one-sided), as in TraceForge. A line the
+ * reader refuses contributes nothing to C13 and C18 (it still counts for C6, by its text, and for C10): that is the
+ * reader's refusal, with its own message. A line that is not JSON is skipped here for the same reason.
  *
  * <p>The program's tags ({@link #programTags}) are those of the records and enums in the program class's package
  * (the same classpath entry) that implement {@link MpMessage}, and of every record, enum and sealed interface
@@ -126,9 +128,13 @@ public final class PairingCheck {
         }
         String at = spec + ": ";
         SpecificationFile.HeaderLists lists = SpecificationFile.readableHeader(text.get(0));
-        JsonObject header = lists == null ? null : object(text.get(0));
-        List<String> visible = lists == null ? null : lists.visible();
-        List<String> roles = lists == null ? null : lists.roles();
+        if (lists == null) {
+            // A header the reader refuses stops the check (see the class comment): the reader's refusal comes alone.
+            return new Report(failures, warnings);
+        }
+        JsonObject header = object(text.get(0));
+        List<String> visible = lists.visible();
+        List<String> roles = lists.roles();
         for (Map.Entry<String, List<String>> e : listsOf(visible, roles).entrySet()) {
             List<String> l = e.getValue();
             for (int i = 1; i < l.size(); i++) {

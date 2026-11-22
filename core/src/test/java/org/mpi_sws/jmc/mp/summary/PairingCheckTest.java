@@ -166,12 +166,20 @@ class PairingCheckTest {
                 rendered(r.warnings()).toString());
     }
 
-    /** A header or line the reader refuses is the reader's refusal, not a pairing failure. */
+    /**
+     * A header or line the reader refuses is the reader's refusal, not a pairing failure; a refused header stops
+     * the check.
+     */
     @Test
     void refusedHeaderOrLine_leftToTheReader() throws Exception {
         Path p = file(HEADER.replace("\"encoding\":1}", "\"encoding\":1,\"x\":1}").replace("\"p2p\"", "\"asyn\""),
                 PING);
         assertTrue(check(p).passed(), rendered(check(p).failures()).toString());
+        // A refused header stops the check: no one-sided C13 warning, not even a repeated line's C6.
+        assertEquals(List.of(), rendered(check(p).warnings()));
+        Path r = file(HEADER.replace("\"encoding\":1}", "\"encoding\":1,\"x\":1}"), PING, PING);
+        assertTrue(check(r).passed(), rendered(check(r).failures()).toString());
+        assertEquals(List.of(), rendered(check(r).warnings()));
         Path q = file(HEADER, line("{\"t\":\"Ping\",\"f\":[1,2]}").replace("{\"s\":1}", "{\"s\": 1}"));
         assertTrue(check(q).passed(), rendered(check(q).failures()).toString());
     }
