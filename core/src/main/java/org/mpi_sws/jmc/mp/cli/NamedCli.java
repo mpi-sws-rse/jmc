@@ -289,8 +289,8 @@ final class NamedCli {
         return switch (command) {
             case "count" -> "count " + run;
             case "export" -> "export " + run + " --out <file> [--graphs <store> [--graphs-limit N]]";
-            case "online" -> "online " + run + " --spec <file> [--stop-at-first] [--no-pairing-check] [--witness <file or dir/>]"
-                    + " [--out <file> [--graphs <store> [--graphs-limit N]]]";
+            case "online" -> "online " + run + " --spec <file> [--stop-at-first] [--no-pairing-check]"
+                    + " [--witness <file or dir/>] [--out <file> [--graphs <store> [--graphs-limit N]]]";
             case "replay" -> "replay --graph <graph.json> [--report <file>] [--allow-source-change]"
                     + " [--allow-tool-change] [--program <class[:args]>]";
             default -> throw new IllegalArgumentException(command);

@@ -358,7 +358,8 @@ class SpecificationFileTest {
         assertEquals(2, SpecificationFile.load(open, EXP).index().size());
         Path cr = dir.resolve("cr.jsonl");
         Files.writeString(cr, HEADER + "\r" + LINE_A + "\r" + LINE_P + "\r", StandardCharsets.UTF_8);
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SpecificationFile.load(cr, EXP));
+        IllegalArgumentException e =
+                assertThrows(IllegalArgumentException.class, () -> SpecificationFile.load(cr, EXP));
         assertTrue(e.getMessage().startsWith("line 1: "), e.getMessage());
     }
 

@@ -1448,8 +1448,8 @@ public final class MpLauncher {
      * {@code model} and {@code options} must be JMC's), a {@code tool_commit} that differs from this build's or is
      * {@code "unknown"} on either side (unless {@code --allow-tool-change}), a source whose {@code files} map differs
      * from the program's {@code SOURCE.md5} manifest (its {@code root} is not compared) or that is {@code "unknown"}
-     * on either side (unless {@code --allow-source-change}). The projection rule (the graph's {@code line} is its summary) is checked by the
-     * renderer's {@code --check}, not here. Printed: {@code replay: reproduced (<E> events, <T> threads)} (exit
+     * on either side (unless {@code --allow-source-change}). The projection rule (the graph's {@code line} is its
+     * summary) is checked by the renderer's {@code --check}, not here. Printed: {@code replay: reproduced (<E> events, <T> threads)} (exit
      * {@code 0}) or {@code replay: deviation at (<t>, <k>) thread "<name>": <kind>: expected <text>, got <text>}
      * (exit {@code 1}); a run that fails otherwise prints {@code FAILED:} (exit {@code 1}). Then the measurement block
      * with {@code wall_ms}, {@code peak_rss_kb} and {@code replay_events}.
