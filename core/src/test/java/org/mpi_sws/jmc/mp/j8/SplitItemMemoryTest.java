@@ -19,7 +19,7 @@ import java.util.List;
  * <ul>
  *   <li>Each committed item's outcomes are in {@code outcomes-<j>.<a>.jsonl}, one line per iteration, as many as
  *       the result's {@code outcomes_count} and {@code iterations}; the result itself carries none.</li>
- *   <li>{@code oom:3:0}: the worker's fail marker is retryable; the item is retried once on a fresh JVM
+ *   <li>{@code oom:3:0}: the worker's fail marker is retryable; the item is retried once on another JVM
  *       ({@code assigned/3.1.json}), the marker set aside as {@code retried-fail-3.0.json}; the run completes with
  *       the sequential export.</li>
  *   <li>{@code oom:3:0,oom:3:1}: the run aborts; the reason names item 3, attempt 1, its worker, the first

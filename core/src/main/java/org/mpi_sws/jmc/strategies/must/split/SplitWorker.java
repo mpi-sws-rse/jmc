@@ -437,7 +437,7 @@ public final class SplitWorker implements MustStrategy.SplitControl {
             fail.addProperty("item", worker.currentItem);
             fail.addProperty("attempt", worker.currentAttempt);
             if (outOfMemory) {
-                // This JVM ran out of memory in the item: the coordinator retries the item once on a fresh one.
+                // This JVM ran out of memory in the item: the coordinator retries the item once on another one.
                 fail.addProperty("retryable", true);
             }
             writeFailMarker(runDir.resolve("fail-" + worker.currentItem + "." + worker.currentAttempt + ".json"),

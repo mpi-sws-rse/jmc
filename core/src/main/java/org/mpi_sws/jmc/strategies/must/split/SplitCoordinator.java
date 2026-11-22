@@ -1177,8 +1177,8 @@ public final class SplitCoordinator {
     /**
      * The first fail marker that ends the run. A retryable item marker (a worker out of memory) of attempt 0 whose
      * assignment is outstanding does not: it is renamed {@link #RETRIED}{@code <name>}, its reason kept in
-     * {@code retried}, and the worker's exit is then handled as a process death, which retries the item once on a
-     * fresh JVM.
+     * {@code retried}, and the worker's exit is then handled as a process death, which retries the item once, on the
+     * restarted worker or another live one (not the JVM that ran out of memory).
      */
     private static String abortingFailMarker(Path dir, List<Slot> slots, Map<Integer, String> retried)
             throws IOException {
