@@ -106,7 +106,8 @@ public final class J8P3FakeWorker {
                         env.addProperty("attempt", a.get("attempt").getAsInt());
                         env.addProperty("iterations", outs.size());
                         env.addProperty("blockedIterations", blocked);
-                        env.add("outcomes", outs);
+                        env.addProperty("outcomes_count", org.mpi_sws.jmc.mp.j8.OutcomeFiles.write(dir,
+                                a.get("item").getAsInt(), a.get("attempt").getAsInt(), outs));
                         if (run.get("summarise").getAsBoolean()) {
                             env.add("summaries", new JsonArray());
                         }

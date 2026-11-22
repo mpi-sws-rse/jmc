@@ -67,7 +67,8 @@ public final class J8OnlineFakeWorker {
                             o.addProperty("digest", String.format("%064x", i + 1));
                             outs.add(o);
                         }
-                        env.add("outcomes", outs);
+                        env.addProperty("outcomes_count", org.mpi_sws.jmc.mp.j8.OutcomeFiles.write(dir,
+                                a.get("item").getAsInt(), a.get("attempt").getAsInt(), outs));
                         env.add("summaries", new JsonArray());
                         JsonArray names = new JsonArray();
                         names.add("m");

@@ -40,11 +40,14 @@ import java.util.stream.Stream;
  * <ul>
  *   <li>read: {@code run.json} (the coordinator's run description), {@code assigned/<j>.<a>.json} (item
  *       {@code j}, attempt {@code a}, naming the worker), {@code STOP};</li>
- *   <li>written: {@code item-<j>.json} (the result envelope: run id, fingerprint, item, attempt, worker,
- *       iterations, blocked iterations, the outcomes in order, the summary lines, the names met, this
+ *   <li>written: {@code outcomes-<j>.<a>.jsonl} (the item's outcomes in order, one line each, streamed to
+ *       {@code outcomes-w<id>.part} while the item runs and renamed when it ends, before the result);
+ *       {@code item-<j>.json} (the result envelope: run id, fingerprint, item, attempt, worker,
+ *       iterations, blocked iterations, the number of outcomes, the summary lines, the names met, this
  *       JVM's peak RSS and its graph-shape maxima so far, so they survive the worker's death);
- *       {@code fail-<j>.<a>.json} (a semantic failure during item {@code j}); {@code
- *       worker-<id>.fail.json} (a startup failure: the replay did not reach the coordinator's state).</li>
+ *       {@code fail-<j>.<a>.json} (a semantic failure during item {@code j}, marked {@code retryable} when this
+ *       JVM ran out of memory); {@code worker-<id>.fail.json} (a startup failure: the replay did not reach the
+ *       coordinator's state).</li>
  * </ul>
  *
  * <p>An assignment is consumed by its (run, item, attempt) triple, so a persisted assignment file never
@@ -57,7 +60,8 @@ import java.util.stream.Stream;
  * list of {@code <kind>:<item>:<attempt>}, is read only here and is inert when unset. Kinds: {@code
  * die-before} (the JVM exits before publishing the item's result), {@code die-after} (exits right after
  * the rename), {@code wrong-item}, {@code wrong-attempt}, {@code wrong-worker} (the envelope carries a
- * wrong value), {@code fail} (a semantic failure: the fail marker is written), {@code delay} (the item
+ * wrong value), {@code fail} (a semantic failure: the fail marker is written), {@code oom} (an
+ * {@link OutOfMemoryError} at the item's end: a retryable fail marker is written), {@code delay} (the item
  * starts {@link #DELAY_MILLIS} late, to order wall-clock events); and {@code fingerprint:-1:-1} (the
  * replay's fingerprint is altered, a startup failure).
  *
@@ -92,6 +96,10 @@ public final class SplitWorker implements MustStrategy.SplitControl {
     private String specHash;
     /** With a graph store: the current segment's graph part; {@code null} otherwise. */
     private GraphPart graphs;
+    /** While an item runs: its outcomes, streamed to this worker's part file; {@code null} otherwise. */
+    private java.io.BufferedWriter itemOutcomes;
+    /** The outcomes written to {@link #itemOutcomes} so far. */
+    private long itemOutcomeCount;
 
     /**
      * Opens the run.
@@ -126,7 +134,31 @@ public final class SplitWorker implements MustStrategy.SplitControl {
     @Override
     public void outcome(boolean blocked, GraphCanon canon, LongFunction<String> names) {
         String digest = TypedGraphEncoding.sha256(TypedGraphEncoding.outcome(canon, names));
-        outcomes.add(new ItemResult.Outcome(blocked, digest));
+        if (itemOutcomes == null) {
+            // The root's replay: its transcript is needed for the fingerprint, and it is short.
+            outcomes.add(new ItemResult.Outcome(blocked, digest));
+            return;
+        }
+        // An item's: streamed, so the worker holds none of them (an item may run billions of iterations).
+        try {
+            itemOutcomes.write("{\"blocked\":" + blocked + ",\"digest\":\"" + digest + "\"}\n");
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException("cannot write the outcome part " + outcomePart(), e);
+        }
+        itemOutcomeCount++;
+    }
+
+    /** This worker's outcome part file, renamed to {@link SplitCoordinator#itemOutcomes} when an item ends. */
+    private Path outcomePart() {
+        return runDir.resolve("outcomes-w" + workerId + ".part");
+    }
+
+    /** Starts the outcome part of the item just assigned (a dead worker's leftover with this id is replaced). */
+    private void openOutcomes() throws IOException {
+        Files.deleteIfExists(outcomePart());
+        itemOutcomes = Files.newBufferedWriter(outcomePart(), java.nio.charset.StandardCharsets.UTF_8,
+                java.nio.file.StandardOpenOption.CREATE_NEW, java.nio.file.StandardOpenOption.WRITE);
+        itemOutcomeCount = 0;
     }
 
     @Override
@@ -194,6 +226,9 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         if (injected("fail", j, attempt)) {
             throw new IllegalStateException("injected semantic failure in item " + j);
         }
+        if (injected("oom", j, attempt)) {
+            throw new OutOfMemoryError("injected out of memory in item " + j);
+        }
         if (injected("die-before", j, attempt)) {
             Runtime.getRuntime().halt(INJECTED_DEATH_STATUS);
         }
@@ -205,14 +240,7 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         }
         env.addProperty("iterations", s.iterations());
         env.addProperty("blockedIterations", s.blockedIterations());
-        JsonArray outs = new JsonArray();
-        for (ItemResult.Outcome o : done) {
-            JsonObject x = new JsonObject();
-            x.addProperty("blocked", o.blocked());
-            x.addProperty("digest", o.digest());
-            outs.add(x);
-        }
-        env.add("outcomes", outs);
+        env.addProperty("outcomes_count", itemOutcomeCount);
         if (s.summaries() != null) {
             JsonArray lines = new JsonArray();
             for (Map.Entry<Summary, Integer> e : s.summaries().entrySet()) {
@@ -234,8 +262,16 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         if (Files.exists(target)) {
             throw new IllegalStateException("item-" + j + ".json already exists; a result is never overwritten");
         }
+        // Before the result: a committed result's outcomes and graphs are always there.
+        try {
+            itemOutcomes.close();
+            itemOutcomes = null;
+            Files.move(outcomePart(), runDir.resolve(SplitCoordinator.itemOutcomes(j, attempt)),
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException("cannot finish the outcome file of item " + j, e);
+        }
         if (graphs != null) {
-            // Before the result: a committed result's graphs are always there.
             endGraphs(runDir.resolve(SplitCoordinator.itemGraphs(j, attempt)));
         }
         SplitCoordinator.writeAtomically(target, env);
@@ -274,6 +310,7 @@ public final class SplitWorker implements MustStrategy.SplitControl {
                         SplitCoordinator.writeAtomically(marker, a);
                         currentItem = a.get("item").getAsInt();
                         currentAttempt = a.get("attempt").getAsInt();
+                        openOutcomes();
                         if (injected("delay", currentItem, currentAttempt)) {
                             try {
                                 Thread.sleep(DELAY_MILLIS);
@@ -363,6 +400,7 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         worker.strategy = strategy;
         String failure = null;
         MpOutcome outcome = MpOutcome.INCOMPLETE;
+        boolean outOfMemory = false;
         MpThread.setStaleWaitMillis(ItemDriver.SPLIT_STALE_WAIT_MILLIS);
         try {
             JmcCheckerConfiguration config = new JmcCheckerConfiguration.Builder()
@@ -385,9 +423,11 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         } catch (JmcCheckerException e) {
             failure = e.getMessage() != null ? e.getMessage() : e.toString();
             outcome = MpOutcome.ofFailure(strategy.failureKind(), MainWatch.seenBy(program));
+            outOfMemory = outOfMemory(e);
         } catch (RuntimeException | Error e) {
             failure = e.toString();
             outcome = MpOutcome.ofFailure(strategy.failureKind(), MainWatch.seenBy(program));
+            outOfMemory = outOfMemory(e);
         }
         if (failure == null) {
             return 0;
@@ -396,6 +436,10 @@ public final class SplitWorker implements MustStrategy.SplitControl {
             JsonObject fail = worker.envelopeBase();
             fail.addProperty("item", worker.currentItem);
             fail.addProperty("attempt", worker.currentAttempt);
+            if (outOfMemory) {
+                // This JVM ran out of memory in the item: the coordinator retries the item once on a fresh one.
+                fail.addProperty("retryable", true);
+            }
             writeFailMarker(runDir.resolve("fail-" + worker.currentItem + "." + worker.currentAttempt + ".json"),
                     fail, failure, outcome);
         } else if (!Files.exists(runDir.resolve("worker-" + workerId + ".fail.json"))) {
@@ -404,6 +448,17 @@ public final class SplitWorker implements MustStrategy.SplitControl {
         }
         System.err.println("worker " + workerId + ": " + failure);
         return 1;
+    }
+
+    /** Whether a failure is, or was caused by, an {@link OutOfMemoryError}. */
+    static boolean outOfMemory(Throwable e) {
+        Set<Throwable> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Throwable c = e; c != null && seen.add(c); c = c.getCause()) {
+            if (c instanceof OutOfMemoryError) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
