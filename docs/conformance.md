@@ -119,9 +119,10 @@ must be sent as role names). A line the reader refuses is left to the reader's o
 stops the check, so the reader's refusal is printed alone, with no warning before it. A refusal by the pairing check or the reader,
 like a refused replay, prints no usage line.
 
-`--no-pairing-check` skips the pairing check, but the reader still refuses C2, C3, C4, C6 and C10 on its own, in its
-own words (C6 in the same words), with exit 2. Only C13 and C18 are really skipped: an arity the program does not
-declare reaches the comparison, and no C18 warning is printed.
+`--no-pairing-check` skips the pairing check, but the reader still refuses C2, C4, C6 and C10 and, of C3, models
+that differ, on its own, in its own words (C6 in the same words), with exit 2. What is really skipped: C13 (an arity
+the program does not declare reaches the comparison), C18 (no warning is printed) and the C3 rule that a model is
+`p2p` or `asyn` (in the named form the launcher refuses other models anyway).
 
 ### Graph stores and replay
 
