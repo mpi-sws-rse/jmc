@@ -25,7 +25,8 @@ final class NamedCli {
 
     /** The options that take no value. */
     private static final Set<String> FLAGS =
-            Set.of("--stop-at-first", "--allow-source-change", "--allow-tool-change", "--help", "-h");
+            Set.of("--stop-at-first", "--no-pairing-check", "--allow-source-change", "--allow-tool-change", "--help",
+                    "-h");
 
     /** The options that take two values. */
     private static final Set<String> TWO_VALUES = Set.of("--worker");
@@ -39,7 +40,8 @@ final class NamedCli {
             "count", Set.copyOf(RUN_OPTIONS),
             "export", union(RUN_OPTIONS, List.of("--out", "--graphs", "--graphs-limit")),
             "online", union(RUN_OPTIONS,
-                    List.of("--spec", "--out", "--stop-at-first", "--witness", "--graphs", "--graphs-limit")),
+                    List.of("--spec", "--out", "--stop-at-first", "--no-pairing-check", "--witness", "--graphs",
+                            "--graphs-limit")),
             "replay", Set.of("--graph", "--report", "--allow-source-change", "--allow-tool-change", "--program"));
 
     private NamedCli() {}
@@ -202,6 +204,9 @@ final class NamedCli {
         if (opts.containsKey("--stop-at-first")) {
             a.add("--stop-at-first");
         }
+        if (opts.containsKey("--no-pairing-check")) {
+            a.add("--no-pairing-check");
+        }
         return new Run(command, a.toArray(new String[0]), model);
     }
 
@@ -284,8 +289,8 @@ final class NamedCli {
         return switch (command) {
             case "count" -> "count " + run;
             case "export" -> "export " + run + " --out <file> [--graphs <store> [--graphs-limit N]]";
-            case "online" -> "online " + run + " --spec <file> [--stop-at-first] [--witness <file or dir/>]"
-                    + " [--out <file> [--graphs <store> [--graphs-limit N]]]";
+            case "online" -> "online " + run + " --spec <file> [--stop-at-first] [--no-pairing-check]"
+                    + " [--witness <file or dir/>] [--out <file> [--graphs <store> [--graphs-limit N]]]";
             case "replay" -> "replay --graph <graph.json> [--report <file>] [--allow-source-change]"
                     + " [--allow-tool-change] [--program <class[:args]>]";
             default -> throw new IllegalArgumentException(command);
@@ -339,6 +344,7 @@ final class NamedCli {
             Options of online:
               --spec <file>             the specification file (complete; same program, roles and model)
               --stop-at-first           stop at the first execution the specification does not cover
+              --no-pairing-check        skip the pairing check that runs before the comparison
               --witness <file or dir/>  write the first uncovered execution (a file), or one witness per
                                         distinct uncovered summary (a directory ending in /)
             """;

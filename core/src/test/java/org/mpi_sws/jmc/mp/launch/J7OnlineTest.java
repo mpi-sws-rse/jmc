@@ -550,14 +550,14 @@ class J7OnlineTest {
         MpLauncherTest.Out o = MpLauncherTest.launch(LAUNCHER, PKG + "A3Lock:spec,2,1", "mp-random", "20", "1",
                 DIR + "report-sampled", sampled.toString());
         assertEquals(0, o.exit(), o.text());
-        exit2("not complete", PKG + "A3Lock:fifo,2,1", "must", "0", "1", DIR + "r", "-", TIMEOUT, "--spec",
+        exit2("pairing: C4: the specification is `sampled`, not `complete`", PKG + "A3Lock:fifo,2,1", "must", "0", "1", DIR + "r", "-", TIMEOUT, "--spec",
                 sampled.toString());
     }
 
     @Test
     void usage_visibleMismatch() throws Exception {
         Path spec = export("A3Lock:spec,2,1");
-        exit2("visible roles", PKG + "A2Store:pb,1,1", "must", "0", "1", DIR + "r", "-", TIMEOUT, "--spec",
+        exit2("pairing: C2: the two `visible` lists differ", PKG + "A2Store:pb,1,1", "must", "0", "1", DIR + "r", "-", TIMEOUT, "--spec",
                 spec.toString());
     }
 

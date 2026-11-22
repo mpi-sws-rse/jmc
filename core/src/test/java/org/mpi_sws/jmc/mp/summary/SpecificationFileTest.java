@@ -126,7 +126,7 @@ class SpecificationFileTest {
 
     @Test
     void refuse_firstLineIsSummaryNotHeader() throws Exception {
-        refused("format", LINE_A, LINE_P);
+        refused("line 1: unknown header key", LINE_A, LINE_P);
     }
 
     // ------------------------------------------------------------------ line refusals
@@ -330,33 +330,77 @@ class SpecificationFileTest {
     }
 
     @Test
-    void accept_duplicateLinesHeldOnce_evenWithDifferentN() throws Exception {
-        SpecificationFile.Loaded l = accepted(HEADER, LINE_A, LINE_A, LINE_A.replace(",\"n\":1}", ",\"n\":7}"), LINE_P);
-        assertEquals(4, l.lines());
-        assertEquals(2, l.index().size());
-        assertEquals(2, l.duplicates());
+    void refuse_repeatedLine_namingBothLines_evenWithDifferentN() throws Exception {
+        refused("line 3: repeats line 2", HEADER, LINE_A, LINE_A.replace(",\"n\":1}", ",\"n\":7}"), LINE_P);
+        refused("line 4: repeats line 2", HEADER, LINE_A, LINE_P, LINE_A);
     }
 
     @Test
-    void accept_escapedAndPlainStringAreOneSummary() throws Exception {
-        SpecificationFile.Loaded l = accepted(HEADER, valueLine("\"A\""), valueLine("\"\\u0041\""));
-        assertEquals(1, l.index().size());
-        assertEquals(1, l.duplicates());
+    void escapedAndPlainString_oneSummary_escapedLineRefused() throws Exception {
+        oneSummary_encoderSpellingOnly("\"\\u0041\"", "\"A\"");
     }
 
     @Test
-    void accept_blankLinesSkipped() throws Exception {
-        SpecificationFile.Loaded l = accepted(HEADER, "", LINE_A, "   ", LINE_P, "");
-        assertEquals(2, l.lines());
-        assertEquals(2, l.index().size());
+    void refuse_emptyAndBlankLines() throws Exception {
+        refused("line 2: an empty line", HEADER, "", LINE_A);
+        refused("line 3: an empty line", HEADER, LINE_A, "");
+        refused("line 3: ", HEADER, LINE_A, "   ", LINE_P);
+    }
+
+    /** Lines end at LF or CRLF, the last one optionally; a bare CR is not a line end. */
+    @Test
+    void crlfAndMissingFinalNewlineAccepted_bareCrRefused() throws Exception {
+        Path crlf = dir.resolve("crlf.jsonl");
+        Files.writeString(crlf, HEADER + "\r\n" + LINE_A + "\r\n" + LINE_P + "\r\n", StandardCharsets.UTF_8);
+        assertEquals(2, SpecificationFile.load(crlf, EXP).index().size());
+        Path open = dir.resolve("open.jsonl");
+        Files.writeString(open, HEADER + "\n" + LINE_A + "\n" + LINE_P, StandardCharsets.UTF_8);
+        assertEquals(2, SpecificationFile.load(open, EXP).index().size());
+        Path cr = dir.resolve("cr.jsonl");
+        Files.writeString(cr, HEADER + "\r" + LINE_A + "\r" + LINE_P + "\r", StandardCharsets.UTF_8);
+        IllegalArgumentException e =
+                assertThrows(IllegalArgumentException.class, () -> SpecificationFile.load(cr, EXP));
+        assertTrue(e.getMessage().startsWith("line 1: "), e.getMessage());
     }
 
     @Test
-    void accept_seedIterationsAndUnknownHeaderKeysIgnored() throws Exception {
-        SpecificationFile.Loaded l = accepted(header("\"encoding\":1",
-                "\"encoding\":1,\"seed\":5,\"iterations\":9,\"x\":[1]"),
-                LINE_A.replace(",\"n\":1}", ",\"n\":1,\"extra\":true}"));
-        assertEquals(1, l.index().size());
+    void refuse_unknownKeysAndMisplacedHeaderFields() throws Exception {
+        refused("line 1: unknown header key \"x\"", header("\"encoding\":1", "\"encoding\":1,\"x\":[1]"), LINE_A);
+        refused("line 2: unknown key \"extra\"", HEADER, LINE_A.replace(",\"n\":1}", ",\"n\":1,\"extra\":true}"));
+        refused("line 1: the header has seed in a file that is not sampled",
+                header("\"complete\"", "\"complete\",\"seed\":5,\"iterations\":9"), LINE_A);
+        refused("line 1: the header has some of the online fields",
+                header("\"encoding\":1", "\"first_miss_iteration\":0,\"encoding\":1"), LINE_A);
+        refused("line 1: the header's uncovered_total is",
+                header("\"encoding\":1", "\"first_miss_iteration\":0,\"first_miss_wall_ms\":0,"
+                        + "\"uncovered_total\":\"0\",\"encoding\":1"), LINE_A);
+        refused("line 1: the header has roles without minor",
+                header("\"model\"", "\"roles\":[\"c0\",\"c1\"],\"model\""), LINE_A);
+        refused("line 1: the header has \"minor\":0", header("\"format\":1", "\"format\":1,\"minor\":0"), LINE_A);
+        refused("line 1: program is not a json string", header("\"program\":\"p\",", ""), LINE_A);
+        refused("line 1: size is not a json string", header("\"size\":\"s\",", ""), LINE_A);
+        refused("line 1: tool is not a json string", header("\"tool\":\"jmc\",", ""), LINE_A);
+        assertEquals(1, accepted(header("\"encoding\":1", "\"first_miss_iteration\":-1,\"first_miss_wall_ms\":-1,"
+                + "\"uncovered_total\":0,\"encoding\":1"), LINE_A).index().size());
+    }
+
+    /** An unpaired surrogate escape is refused with its line wherever it stands: in n, in a key, in the header. */
+    @Test
+    void refuse_unpairedSurrogateAnywhere_namingTheLine() throws Exception {
+        String u = "line 2: a string is not valid unicode";
+        refused(u, HEADER, LINE_A.replace(",\"n\":1}", ",\"n\":\"" + BS + "ud800\"}"));
+        refused(u, HEADER, LINE_A.replace(",\"n\":1}", ",\"n\":{\"" + BS + "udc00\":1}}"));
+        refused("line 1: a string is not valid unicode", header("\"program\":\"p\"", "\"program\":\"" + BS + "ud800\""),
+                LINE_A);
+    }
+
+    /** The header in another key order, with whitespace, or with an escape where the encoder writes the character. */
+    @Test
+    void refuse_headerNotInTheWritersForm() throws Exception {
+        String form = "line 1: the header is not in the form the writers emit";
+        refused(form, header("{\"format\":1,\"tool\":\"jmc\",", "{\"tool\":\"jmc\",\"format\":1,"), LINE_A);
+        refused(form, header(",\"tool\"", ", \"tool\""), LINE_A);
+        refused(form, header("\"program\":\"p\"", "\"program\":\"\\u0070\""), LINE_A);
     }
 
     /** Program, size and tool are kept for printing and not compared; the model is compared (see the next test). */
@@ -462,11 +506,10 @@ class SpecificationFileTest {
         refused("control character", HEADER, LINE_A.replace(",\"n\":1}", "," + SOH + "\"n\":1}"));
     }
 
-    /** Derived: a tab between tokens is JSON whitespace (RFC 8259 ws), so the line is valid JSON. */
+    /** Derived: a tab between tokens is JSON whitespace (RFC 8259 ws), so the line parses, but it is not compact. */
     @Test
-    void m1_accept_rawTabAsWhitespaceOutsideStrings() throws Exception {
-        SpecificationFile.Loaded l = accepted(HEADER, valueLine(TAB + "1" + TAB));
-        assertEquals(1, l.index().size());
+    void m1_refuse_rawTabOutsideStrings_notTheWritersForm() throws Exception {
+        refused("line 2: the line is not in the form the writers emit", HEADER, valueLine(TAB + "1" + TAB));
     }
 
     @Test
@@ -517,6 +560,17 @@ class SpecificationFileTest {
         System.out.println("J7 accepted: lines " + l.lines() + " held " + l.index().size() + " duplicates "
                 + l.duplicates());
         return l;
+    }
+
+    /**
+     * {@code escaped} and {@code plain} (the encoder's spelling) parse to one summary; a file accepts the line only
+     * in the encoder's spelling.
+     */
+    void oneSummary_encoderSpellingOnly(String escaped, String plain) throws Exception {
+        assertEquals(SpecificationFile.parseLine(valueLine(plain), VIS).normalForm(),
+                SpecificationFile.parseLine(valueLine(escaped), VIS).normalForm());
+        assertEquals(1, accepted(HEADER, valueLine(plain)).index().size());
+        refused("line 2: the line is not in the form the writers emit", HEADER, valueLine(escaped));
     }
 
     static final String BS = "\\";
@@ -591,10 +645,12 @@ class SpecificationFileTest {
         assertEquals(1, acceptedWithBytes("a'b", HEADER, valueLine("\"a'b\"")).index().size());
     }
 
+    /** The seven escapes the encoder writes are accepted; {@code \\/}, which it never writes, is refused. */
     @Test
-    void esc_accept_allEightEscapesInOneString() throws Exception {
-        String s = BS + "\" " + BS + BS + " " + BS + "/ " + BS + "b " + BS + "f " + BS + "n " + BS + "r " + BS + "t";
+    void esc_encodersSevenEscapesAccepted_escapedSlashRefused() throws Exception {
+        String s = BS + "\" " + BS + BS + " " + BS + "b " + BS + "f " + BS + "n " + BS + "r " + BS + "t";
         assertEquals(1, acceptedWithBytes(s, HEADER, valueLine("\"" + s + "\"")).index().size());
+        refused("line 2: the line is not in the form the writers emit", HEADER, valueLine("\"" + BS + "/ " + s + "\""));
     }
 
     @Test
@@ -603,44 +659,29 @@ class SpecificationFileTest {
     }
 
     @Test
-    void esc_accept_rawAndEscapedEacuteAreOneSummary() throws Exception {
-        SpecificationFile.Loaded l = acceptedWithBytes(BS + "u00e9", HEADER, valueLine("\"" + E_ACUTE + "\""),
-                valueLine("\"" + BS + "u00e9\""));
-        assertEquals(1, l.index().size());
-        assertEquals(1, l.duplicates());
+    void esc_rawAndEscapedEacute_oneSummary_escapedLineRefused() throws Exception {
+        oneSummary_encoderSpellingOnly("\"" + BS + "u00e9\"", "\"" + E_ACUTE + "\"");
     }
 
     @Test
-    void esc_accept_rawAndEscapedSurrogatePairAreOneSummary() throws Exception {
-        SpecificationFile.Loaded l = acceptedWithBytes(BS + "ud83d" + BS + "ude00", HEADER,
-                valueLine("\"" + GRIN + "\""), valueLine("\"" + BS + "ud83d" + BS + "ude00\""));
-        assertEquals(1, l.index().size());
-        assertEquals(1, l.duplicates());
+    void esc_rawAndEscapedSurrogatePair_oneSummary_escapedLineRefused() throws Exception {
+        oneSummary_encoderSpellingOnly("\"" + BS + "ud83d" + BS + "ude00\"", "\"" + GRIN + "\"");
     }
 
     @Test
-    void esc_accept_consecutiveUnicodeEscapesEqualPlain() throws Exception {
-        SpecificationFile.Loaded l = acceptedWithBytes(BS + "u0041" + BS + "u0042", HEADER, valueLine("\"AB\""),
-                valueLine("\"" + BS + "u0041" + BS + "u0042\""));
-        assertEquals(1, l.index().size());
-        assertEquals(1, l.duplicates());
+    void esc_consecutiveUnicodeEscapesEqualPlain_escapedLineRefused() throws Exception {
+        oneSummary_encoderSpellingOnly("\"" + BS + "u0041" + BS + "u0042\"", "\"AB\"");
     }
 
     @Test
-    void esc_accept_upperAndLowerHexAreOneSummary_rerenderedLower() throws Exception {
-        SpecificationFile.Loaded l = acceptedWithBytes(BS + "u001F", HEADER, valueLine("\"" + BS + "u001F\""),
-                valueLine("\"" + BS + "u001f\""));
-        assertEquals(1, l.index().size());
-        assertEquals(1, l.duplicates());
+    void esc_upperAndLowerHex_oneSummary_rerenderedLower_upperLineRefused() throws Exception {
+        oneSummary_encoderSpellingOnly("\"" + BS + "u001F\"", "\"" + BS + "u001f\"");
         Summary s = SpecificationFile.parseLine(valueLine("\"" + BS + "u001F\""), VIS);
         assertTrue(s.toJson(1).contains("{\"s\":\"" + BS + "u001f\"}"), s.toJson(1));
     }
 
     @Test
-    void esc_accept_escapedSlashEqualsPlainSlash() throws Exception {
-        SpecificationFile.Loaded l = acceptedWithBytes(BS + "/", HEADER, valueLine("\"a/b\""),
-                valueLine("\"a" + BS + "/b\""));
-        assertEquals(1, l.index().size());
-        assertEquals(1, l.duplicates());
+    void esc_escapedSlashEqualsPlainSlash_escapedLineRefused() throws Exception {
+        oneSummary_encoderSpellingOnly("\"a" + BS + "/b\"", "\"a/b\"");
     }
 }

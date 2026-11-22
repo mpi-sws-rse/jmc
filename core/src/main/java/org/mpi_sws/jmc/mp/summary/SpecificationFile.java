@@ -11,6 +11,7 @@ import com.google.gson.stream.MalformedJsonException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,8 +33,9 @@ import java.util.regex.Pattern;
  * equal to the program's. A header with {@code "minor":1} carries {@code roles}, which must
  * equal the program's roles (its visible roles and the invisible roles a visible payload may name); a header
  * without {@code minor} is minor 0, read as before, its roles not compared ({@link Loaded#rolesCompared}
- * is false, and the caller warns). Any other {@code minor} is refused. The keys {@code program},
- * {@code size} and {@code tool} are kept for printing and not compared. Each further line gives
+ * is false, and the caller warns). Any other {@code minor} is refused, an explicit {@code "minor":0} included. The
+ * keys {@code program}, {@code size} and {@code tool} are required strings, kept for printing and not compared. Each
+ * further line gives
  * {@code statuses} (exactly the visible roles, each {@code done},
  * {@code blocked} or {@code err}), {@code words} (per visible role, a list of {@code {"s":V}},
  * {@code {"r":V}} or {@code {"r":null}}) and {@code counts} (non-negative integers, exactly
@@ -41,7 +43,19 @@ import java.util.regex.Pattern;
  * {@code T} the number of visible roles). The format allows a word of up to 2^32-1 events (TraceForge's
  * 32-bit counts); this reader holds a word in a Java list, so its practical limit is 2^31-1 observations,
  * and it refuses a count above {@code Integer.MAX_VALUE}. Lines may come in any order; a line whose summary is
- * held already is a duplicate and is held once.
+ * held already is refused, naming both lines.
+ *
+ * <p>The reader accepts a file only in the form both writers (JMC's and TraceForge's) emit, so that within the
+ * common domain (integers in signed 64 bits, no duplicate key anywhere, {@code n} included) a file one tool's
+ * reader accepts the other's accepts too. Lines end at {@code \n} or {@code \r\n}; an empty line is refused.
+ * The header holds only the known keys, each once, compact, in the writers' order ({@code format}, {@code minor},
+ * {@code tool}, {@code program}, {@code size}, {@code visible}, {@code roles}, {@code model}, {@code enumeration},
+ * {@code seed}, {@code iterations}, the online fields, {@code encoding}); {@code roles} occurs exactly when
+ * {@code minor} does; {@code seed} and {@code iterations} only in a {@code sampled} file (so never in a
+ * specification); the three online fields together, as integers. A summary line is its normal form
+ * ({@link Summary#normalForm()}), optionally followed by {@code n} as its last member, compact; an unknown key,
+ * whitespace, another member order or another spelling of a value (an escape where the encoder writes the
+ * character) is refused.
  *
  * <p>Values are re-rendered canonically from the parsed JSON so that they compare byte for byte
  * with JMC's own encoding ({@link MpValueEncoder}). Integers are kept as written; a fraction, an
@@ -50,9 +64,8 @@ import java.util.regex.Pattern;
  * tagged records and variants, exactly {@code {"t":"<tag>","f":[...]}} in that key order; anything
  * else is refused, so that a non-canonical rendering of a record fails loudly instead of silently
  * missing or matching a signature. A count for an event of role {@code t} against another role
- * {@code t'} is refused above {@code |w_t'|}, because it counts a prefix of that word. Blank lines
- * are skipped. The keys {@code n}, {@code seed}, {@code iterations} and any unknown key are
- * ignored, though every number in the file must still be an integer literal. A value therefore
+ * {@code t'} is refused above {@code |w_t'|}, because it counts a prefix of that word. The value
+ * of {@code n} is information only, though every number in the file must still be an integer literal. A value therefore
  * compares equal to JMC's iff its bytes are the canonical encoding, which both writers must
  * produce.
  *
@@ -77,7 +90,7 @@ public final class SpecificationFile {
      * @param visible the header's visible roles, sorted
      * @param roles the header's roles (minor 1), sorted; {@code null} for a minor-0 file
      * @param lines summary lines read (the header excluded)
-     * @param duplicates lines whose summary was held already
+     * @param duplicates always 0: a repeated summary is refused (kept for the launcher's report line)
      * @param index the index holding the file's distinct summaries
      */
     public record Loaded(
@@ -141,11 +154,12 @@ public final class SpecificationFile {
      * @throws IOException if the file cannot be read
      */
     public static Loaded load(Path path, Expected expected) throws IOException {
-        List<String> text = Files.readAllLines(path, StandardCharsets.UTF_8);
+        List<String> text = lines(path);
         if (text.isEmpty() || text.get(0).isBlank()) {
             throw new IllegalArgumentException("specification " + path + " has no header line");
         }
         JsonObject header = object(parse(text.get(0), 1), 1, "the header");
+        headerForm(text.get(0), header);
         requireInt(header, "format", 1, 1);
         requireInt(header, "encoding", 1, 1);
         boolean minor1 = header.has("minor");
@@ -189,26 +203,324 @@ public final class SpecificationFile {
             }
             roles = List.copyOf(roles);
         }
-        String program = header.has("program") ? string(header, "program", 1) : "";
-        String size = header.has("size") ? string(header, "size", 1) : "";
-        String tool = header.has("tool") ? string(header, "tool", 1) : "";
+        String program = string(header, "program", 1);
+        String size = string(header, "size", 1);
+        String tool = string(header, "tool", 1);
 
         SetIndex index = new SetIndex();
         int lines = 0;
-        int duplicates = 0;
         for (int i = 1; i < text.size(); i++) {
             String line = text.get(i);
-            if (line.isBlank()) {
-                continue;
-            }
             int no = i + 1;
+            if (line.isEmpty()) {
+                throw refuse(no, "an empty line; every line after the header is a summary line");
+            }
             lines++;
-            Summary s = summary(object(parse(line, no), no, "a summary line"), visible, no);
+            Summary s = writerFormLine(line, visible, no);
             if (index.insert(s) instanceof SetIndex.Inserted.Duplicate) {
-                duplicates++;
+                String key = s.normalForm();
+                int first = 2;
+                while (!writerFormLine(text.get(first - 1), visible, first).normalForm().equals(key)) {
+                    first++;
+                }
+                throw refuse(no, "repeats line " + first + " (the same summary); a file holds each summary once");
             }
         }
-        return new Loaded(path, program, size, tool, model, visible, roles, lines, duplicates, index);
+        return new Loaded(path, program, size, tool, model, visible, roles, lines, 0, index);
+    }
+
+    /** The header keys, in the order both writers emit them; which must be present is checked by name. */
+    private static final List<String> HEADER_KEYS = List.of("format", "minor", "tool", "program", "size", "visible",
+            "roles", "model", "enumeration", "seed", "iterations", "first_miss_iteration", "first_miss_wall_ms",
+            "uncovered_total", "encoding");
+
+    /** The online check's header fields, written together. */
+    private static final List<String> ONLINE_KEYS = List.of("first_miss_iteration", "first_miss_wall_ms",
+            "uncovered_total");
+
+    /** The keys a summary line may have; {@code n}, the execution count, is information only. */
+    private static final List<String> LINE_KEYS = List.of("statuses", "words", "counts", "n");
+
+    /**
+     * Splits a file into lines at {@code \n}, a {@code \r\n} counting as one line end; a final line end ends the
+     * last line. A bare {@code \r} is not a line end, so it stays inside its line (and fails that line's form).
+     * The bytes must be UTF-8.
+     */
+    static List<String> lines(Path path) throws IOException {
+        java.nio.charset.CharsetDecoder utf8 = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
+        List<String> out = new ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        char[] buf = new char[1 << 16];
+        try (java.io.Reader in = new java.io.InputStreamReader(Files.newInputStream(path), utf8)) {
+            for (int n = in.read(buf); n >= 0; n = in.read(buf)) {
+                for (int i = 0; i < n; i++) {
+                    char c = buf[i];
+                    if (c != '\n') {
+                        line.append(c);
+                        continue;
+                    }
+                    int len = line.length();
+                    if (len > 0 && line.charAt(len - 1) == '\r') {
+                        line.setLength(len - 1);
+                    }
+                    out.add(line.toString());
+                    line.setLength(0);
+                }
+            }
+        }
+        if (line.length() > 0) {
+            out.add(line.toString());
+        }
+        return out;
+    }
+
+    /**
+     * Refuses a header that is not in the form both writers emit: only the known keys, each once, in
+     * {@link #HEADER_KEYS} order, compact; {@code minor} absent (minor 0) or 1, with {@code roles} exactly when
+     * {@code minor} is present; {@code seed} and {@code iterations} integers and only in a {@code sampled} file;
+     * the online fields all three or none, integers. The other fields' presence and types are checked by name.
+     */
+    private static void headerForm(String text, JsonObject h) {
+        for (String k : h.keySet()) {
+            if (!HEADER_KEYS.contains(k)) {
+                throw refuse(1, "unknown header key \"" + k + "\" (neither writer emits it)");
+            }
+        }
+        if (h.has("minor") && isInteger(h.get("minor"), 0)) {
+            throw refuse(1, "the header has \"minor\":0; a minor-0 header has no minor key");
+        }
+        if (h.has("roles") != h.has("minor")) {
+            throw refuse(1, "the header has roles without minor or minor without roles");
+        }
+        JsonElement enumeration = h.get("enumeration");
+        boolean sampled = enumeration != null && enumeration.isJsonPrimitive()
+                && enumeration.getAsJsonPrimitive().isString() && enumeration.getAsString().equals("sampled");
+        for (String k : List.of("seed", "iterations")) {
+            if (h.has(k)) {
+                if (!sampled) {
+                    throw refuse(1, "the header has " + k + " in a file that is not sampled");
+                }
+                if (!isInteger(h.get(k), null)) {
+                    throw refuse(1, "the header's " + k + " is " + h.get(k) + ", not an integer");
+                }
+            }
+        }
+        long online = ONLINE_KEYS.stream().filter(h::has).count();
+        if (online != 0 && online != ONLINE_KEYS.size()) {
+            throw refuse(1, "the header has some of the online fields (first_miss_iteration, first_miss_wall_ms,"
+                    + " uncovered_total) but not all three");
+        }
+        for (String k : ONLINE_KEYS) {
+            if (h.has(k) && !isInteger(h.get(k), null)) {
+                throw refuse(1, "the header's " + k + " is " + h.get(k) + ", not an integer");
+            }
+        }
+        StringBuilder expected = new StringBuilder("{");
+        for (String k : HEADER_KEYS) {
+            if (h.has(k)) {
+                if (expected.length() > 1) {
+                    expected.append(',');
+                }
+                MpValueEncoder.quote(expected, k);
+                expected.append(':');
+                plain(expected, h.get(k));
+            }
+        }
+        expected.append('}');
+        int at = differsAt(text, expected.toString());
+        if (at >= 0) {
+            throw refuse(1, "the header is not in the form the writers emit (compact, each key once, in the order"
+                    + " format, minor, tool, program, size, visible, roles, model, enumeration, seed, iterations,"
+                    + " the online fields, encoding): it differs at byte " + at);
+        }
+    }
+
+    /**
+     * Parses a summary line and refuses it unless it is in the form both writers emit: its normal form
+     * ({@link Summary#normalForm()}), optionally followed by {@code n} as the last member, compact. The value of
+     * {@code n} is information only; it is checked only as every value of the file is (strict JSON, integers in
+     * signed 64 bits, no duplicate key, valid Unicode).
+     */
+    static Summary writerFormLine(String line, List<String> visible, int no) {
+        JsonObject o = object(parse(line, no), no, "a summary line");
+        for (String k : o.keySet()) {
+            if (!LINE_KEYS.contains(k)) {
+                throw refuse(no, "unknown key \"" + k + "\" in a summary line (neither writer emits it)");
+            }
+        }
+        Summary s = summary(o, visible, no);
+        String key = s.normalForm();
+        String expected = key;
+        if (o.has("n")) {
+            String head = key.substring(0, key.length() - 1) + ",\"n\":";
+            if (line.startsWith(head) && line.endsWith("}")
+                    && compact(line.substring(head.length(), line.length() - 1))) {
+                return s;
+            }
+            StringBuilder sb = new StringBuilder(head);
+            plain(sb, o.get("n"));
+            expected = sb.append('}').toString();
+        }
+        int at = differsAt(line, expected);
+        if (at >= 0) {
+            throw refuse(no, "the line is not in the form the writers emit (the normal form, then n if any;"
+                    + " compact, each key once, in order): it differs at byte " + at);
+        }
+        return s;
+    }
+
+    /**
+     * The header's lists when the reader would accept the header on its own, without comparing it with a program:
+     * the writers' form, {@code format} and {@code encoding} 1, {@code minor} absent or 1, the string fields
+     * present, {@code enumeration} one of {@code complete}, {@code sampled}, {@code bounded}, {@code aborted},
+     * {@code visible} distinct names, and with {@code minor} a {@code roles} list of valid names
+     * (non-empty ASCII, not {@code main}, not starting with {@code ~}), byte-sorted and distinct, holding every
+     * visible name. {@code null} when the header would be refused.
+     *
+     * @param text the header line
+     * @return the header's {@code visible} list (as written) and {@code roles} list ({@code null} for minor 0),
+     *     or {@code null}
+     */
+    static HeaderLists readableHeader(String text) {
+        try {
+            JsonObject h = object(parse(text, 1), 1, "the header");
+            headerForm(text, h);
+            requireInt(h, "format", 1, 1);
+            requireInt(h, "encoding", 1, 1);
+            if (h.has("minor")) {
+                requireInt(h, "minor", 1, 1);
+            }
+            for (String k : List.of("enumeration", "model", "program", "size", "tool")) {
+                string(h, k, 1);
+            }
+            if (!List.of("complete", "sampled", "bounded", "aborted").contains(string(h, "enumeration", 1))) {
+                return null;
+            }
+            List<String> visible = new ArrayList<>();
+            for (JsonElement e : array(h.get("visible"), 1, "visible")) {
+                visible.add(stringValue(e, 1, "a visible role"));
+            }
+            if (new java.util.HashSet<>(visible).size() != visible.size()) {
+                return null;
+            }
+            List<String> roles = null;
+            if (h.has("minor")) {
+                roles = new ArrayList<>();
+                for (JsonElement e : array(h.get("roles"), 1, "roles")) {
+                    String r = stringValue(e, 1, "a role");
+                    if (r.isEmpty() || r.equals("main") || r.startsWith("~") || !r.chars().allMatch(c -> c < 0x80)) {
+                        return null;
+                    }
+                    roles.add(r);
+                }
+                for (int i = 1; i < roles.size(); i++) {
+                    if (MpValueEncoder.compareBytes(roles.get(i - 1), roles.get(i)) >= 0) {
+                        return null;
+                    }
+                }
+                if (!roles.containsAll(visible)) {
+                    return null;
+                }
+            }
+            return new HeaderLists(visible, roles);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /**
+     * A readable header's lists.
+     *
+     * @param visible the {@code visible} list as written
+     * @param roles the {@code roles} list, or {@code null} for a minor-0 header
+     */
+    record HeaderLists(List<String> visible, List<String> roles) {}
+
+    /** The first UTF-8 byte offset at which {@code text} and {@code expected} differ, or -1 if they are equal. */
+    private static int differsAt(String text, String expected) {
+        byte[] a = text.getBytes(StandardCharsets.UTF_8);
+        byte[] b = expected.getBytes(StandardCharsets.UTF_8);
+        if (java.util.Arrays.equals(a, b)) {
+            return -1;
+        }
+        int i = 0;
+        while (i < a.length && i < b.length && a[i] == b[i]) {
+            i++;
+        }
+        return i;
+    }
+
+    /** Whether {@code raw} has no whitespace outside its JSON strings. */
+    private static boolean compact(String raw) {
+        boolean inString = false;
+        boolean escaped = false;
+        for (int i = 0; i < raw.length(); i++) {
+            char c = raw.charAt(i);
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (c == '\\') {
+                    escaped = true;
+                } else if (c == '"') {
+                    inString = false;
+                }
+            } else if (c == '"') {
+                inString = true;
+            } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Whether {@code e} is an integer, equal to {@code value} when that is not null. */
+    private static boolean isInteger(JsonElement e, Integer value) {
+        if (e == null || !e.isJsonPrimitive() || !e.getAsJsonPrimitive().isNumber()) {
+            return false;
+        }
+        String lit = e.getAsJsonPrimitive().getAsNumber().toString();
+        return INTEGER.matcher(lit).matches() && (value == null || lit.equals(value.toString()));
+    }
+
+    /** A parsed value written compactly, strings with the encoder's escaping, keys in written order. */
+    private static void plain(StringBuilder sb, JsonElement v) {
+        if (v.isJsonNull()) {
+            sb.append("null");
+        } else if (v.isJsonPrimitive()) {
+            JsonPrimitive p = v.getAsJsonPrimitive();
+            if (p.isString()) {
+                MpValueEncoder.quote(sb, p.getAsString());
+            } else if (p.isBoolean()) {
+                sb.append(p.getAsBoolean() ? "true" : "false");
+            } else {
+                sb.append(p.getAsNumber().toString());
+            }
+        } else if (v.isJsonArray()) {
+            sb.append('[');
+            boolean first = true;
+            for (JsonElement e : v.getAsJsonArray()) {
+                if (!first) {
+                    sb.append(',');
+                }
+                first = false;
+                plain(sb, e);
+            }
+            sb.append(']');
+        } else {
+            sb.append('{');
+            boolean first = true;
+            for (Map.Entry<String, JsonElement> e : v.getAsJsonObject().entrySet()) {
+                if (!first) {
+                    sb.append(',');
+                }
+                first = false;
+                MpValueEncoder.quote(sb, e.getKey());
+                sb.append(':');
+                plain(sb, e.getValue());
+            }
+            sb.append('}');
+        }
     }
 
     /**
@@ -486,7 +798,7 @@ public final class SpecificationFile {
             JsonObject o = new JsonObject();
             reader.beginObject();
             while (reader.hasNext()) {
-                String key = reader.nextName();
+                String key = unicode(reader.nextName(), no);
                 if (o.has(key)) {
                     throw refuse(no, "duplicate key \"" + key + "\" in an object");
                 }
@@ -496,7 +808,7 @@ public final class SpecificationFile {
             return o;
         }
         if (t == JsonToken.STRING) {
-            return new JsonPrimitive(reader.nextString());
+            return new JsonPrimitive(unicode(reader.nextString(), no));
         }
         if (t == JsonToken.NUMBER) {
             String lit = reader.nextString();
@@ -521,6 +833,22 @@ public final class SpecificationFile {
             return JsonNull.INSTANCE;
         }
         throw refuse(no, "unexpected token " + t);
+    }
+
+    /**
+     * Refuses a string that is not valid Unicode (an unpaired surrogate, which a JSON escape can spell and no Rust
+     * string can hold), in a value or a key, {@code n} and the header included.
+     */
+    private static String unicode(String s, int no) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (Character.isHighSurrogate(c) && i + 1 < s.length() && Character.isLowSurrogate(s.charAt(i + 1))) {
+                i++;
+            } else if (Character.isSurrogate(c)) {
+                throw refuse(no, "a string is not valid Unicode (an unpaired surrogate at " + i + ")");
+            }
+        }
+        return s;
     }
 
     private static JsonObject object(JsonElement e, int no, String what) {

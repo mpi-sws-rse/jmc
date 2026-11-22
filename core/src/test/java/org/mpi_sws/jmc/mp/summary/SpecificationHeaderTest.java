@@ -88,7 +88,7 @@ class SpecificationHeaderTest {
     void minor1_rolesMissing_refused() throws Exception {
         String h = header(",\"minor\":1", "p2p").replace(",\"roles\":[\"c0\",\"c1\",\"h\"]", "");
         String m = refused(h);
-        assertTrue(m.contains("roles is not a JSON array (missing)"), m);
+        assertTrue(m.contains("the header has roles without minor or minor without roles"), m);
     }
 
     @Test

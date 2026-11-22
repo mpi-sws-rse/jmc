@@ -33,7 +33,8 @@ L="java -ea -cp $CP org.mpi_sws.jmc.mp.cli.MpLauncher"
 ```
 MpLauncher count  --program <class[:args]> [run options]
 MpLauncher export --program <class[:args]> [run options] --out <file> [--graphs <store> [--graphs-limit N]]
-MpLauncher online --program <class[:args]> [run options] --spec <file> [--stop-at-first] [--witness <file or dir/>]
+MpLauncher online --program <class[:args]> [run options] --spec <file> [--stop-at-first] [--no-pairing-check]
+    [--witness <file or dir/>]
                   [--out <file> [--graphs <store> [--graphs-limit N]]]
 MpLauncher replay --graph <graph.json> [--report <r.json>] [--allow-source-change] [--allow-tool-change]
                   [--program <class[:args]>]
@@ -91,6 +92,31 @@ A specification file must be `complete`, have the program's visible roles, roles
 `--stop-at-first` stops at the first uncovered execution (bug-finder mode). `--witness <file>` writes that execution as
 a text witness; `--witness <dir>/` writes `witness-<n>.txt` for each distinct uncovered summary.
 
+The specification is read only in the form both tools' writers emit, as TraceForge's `conf-join` reads it: the header
+holds only the known keys, each once, compact, in the writers' order, and each further line is its normal form,
+optionally followed by `n`. A blank line, an unknown key, other spacing or key order, another spelling of a value
+(`"\u0041"` for `"A"`), a repeated summary or a header without `program`, `size` or `tool` is refused, naming the line
+(exit 2). Lines end at LF or CRLF.
+
+Before the run, the pairing check verifies what a meaningful comparison needs, with the rows and wording of
+`conf-join --check-pairing`. Each failure is printed as `MpLauncher: pairing: <row>: …`, then `MpLauncher: refused:
+the pairing check failed (K checks; --no-pairing-check skips it)` (exit 2); warnings as `MpLauncher: pairing:
+warning: <row>: …`.
+
+| Row | The check fails when |
+|---|---|
+| C2 | the specification's `visible` list is not byte-sorted, or its `visible` or `roles` list differs from the program's |
+| C3 | the models differ, or a model is not `p2p` or `asyn` |
+| C4 | the specification is not `complete` |
+| C6 | the specification repeats a line |
+| C10 | a count exceeds 2^31−1 or a word has more than 2^31−1 events |
+| C13 | the specification uses a tag with a field count the program does not declare for it |
+
+The program's tags are those of the `@Tag` records and the enums in the program class's package that implement
+`MpMessage`, and of the records, enums and sealed interfaces their components reach (through `List`, `Set` and
+`Optional` too). A tag in one side only is a warning (C13), as is a value tagged `ThreadId` or `Tid` (C18: identities
+must be sent as role names). A header or line the reader refuses is left to the reader's own refusal.
+
 ### Graph stores and replay
 
 `--graphs <store>` (with `must` and `--out`) writes, beside the export, the full execution graph of every
@@ -138,7 +164,7 @@ The named form (`MpLauncher count|export|online|replay`, also listed by `--help`
 |---|---|
 | 0 | conforms, or nothing to report: the exploration was exhausted (`count`, `export`), `verdict: conforms`, `replay: reproduced` |
 | 1 | a violation: `verdict: reports` (also after a `--stop-at-first` stop), a failed assertion or an exception in any process or in main, in any iteration including the last, a receive guard that threw; `replay: deviation` |
-| 2 | refused: a usage error, a strategy that is not a message-passing one, a model or value the strategy does not support, a broken rule of the API or of the export format, a refused specification file, store, witness target or replay, an output that cannot be written |
+| 2 | refused: a usage error, a strategy that is not a message-passing one, a model or value the strategy does not support, a broken rule of the API or of the export format, a refused specification file or failed pairing check, store, witness target or replay, an output that cannot be written |
 | 3 | partial or incomplete: a timeout, an iteration bound reached before the exploration was exhausted, `mp-random` (sampled), `verdict: partial`, a split run that did not finish |
 
 The deprecated positional form keeps its statuses: 0 the run completed, whatever the online verdict (read the

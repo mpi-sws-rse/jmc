@@ -11,6 +11,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.mpi_sws.jmc.checker.exceptions.JmcCheckerException;
 import org.mpi_sws.jmc.mp.events.CommunicationModel;
+import org.mpi_sws.jmc.mp.summary.PairingCheck;
 import org.mpi_sws.jmc.mp.summary.RunIdentity;
 import org.mpi_sws.jmc.mp.summary.SetIndex;
 import org.mpi_sws.jmc.mp.summary.SpecificationFile;
@@ -65,7 +66,7 @@ import java.util.Set;
  *
  * <pre>
  * java ... MpLauncher &lt;program class[:args]&gt; [strategy] [iterations] [seed] [reportPath] [exportFile]
- *      [timeoutSeconds] [--spec &lt;file&gt; [--stop-at-first] [--witness &lt;file or dir/&gt;]]
+ *      [timeoutSeconds] [--spec &lt;file&gt; [--stop-at-first] [--no-pairing-check] [--witness &lt;file or dir/&gt;]]
  *      [--graphs &lt;store&gt; [--graphs-limit N]] [--split W [--k K]]
  * java ... MpLauncher --replay &lt;graph.json&gt; [--report &lt;r.json&gt;] [--allow-source-change]
  *      [--allow-tool-change] [&lt;program class[:args]&gt;]
@@ -259,6 +260,7 @@ public final class MpLauncher {
         }
         // The named options are taken out wherever they stand; the rest is positional.
         Path specFile = null;
+        boolean pairingCheck = true;
         String witnessPath = null;
         Path graphsPath = null;
         Long graphsLimit = null;
@@ -303,6 +305,8 @@ public final class MpLauncher {
             } else if (rawArgs[i].equals("--stop-at-first")) {
                 // The online check's bug-finder mode; without it the check runs in full mode.
                 stopAtFirst = true;
+            } else if (rawArgs[i].equals("--no-pairing-check")) {
+                pairingCheck = false;
             } else if (rawArgs[i].equals("--spec")) {
                 if (i + 1 >= rawArgs.length) {
                     return usage("--spec needs a file");
@@ -349,6 +353,9 @@ public final class MpLauncher {
         String[] args = positional.toArray(new String[0]);
         if (stopAtFirst && specFile == null) {
             return usage("--stop-at-first needs --spec");
+        }
+        if (!pairingCheck && specFile == null) {
+            return usage("--no-pairing-check needs --spec");
         }
         if (witnessPath != null && specFile == null) {
             return usage("--witness needs --spec");
@@ -472,7 +479,32 @@ public final class MpLauncher {
                         mp.payloadNameableRoles());
                 st.must = mustStrategy;
             }
+            // The index time covers the pairing check and the load, a refused file's included.
             long indexStartNanos = System.nanoTime();
+            if (pairingCheck) {
+                // The pairing check, before the file is read for the comparison: failures refuse the run,
+                // warnings go to stderr, in the wording TraceForge's conf-join uses.
+                PairingCheck.Report pairing;
+                try {
+                    pairing = PairingCheck.check(specFile, mp.expected(), PairingCheck.programTags(mp.getClass()));
+                } catch (IOException e) {
+                    st.indexNanos = System.nanoTime() - indexStartNanos;
+                    st.failure = "specification " + specFile + " refused: " + e.getMessage();
+                    return usage(st.failure);
+                }
+                if (!pairing.passed()) {
+                    st.indexNanos = System.nanoTime() - indexStartNanos;
+                    for (PairingCheck.Item f : pairing.failures()) {
+                        System.err.println("MpLauncher: pairing: " + f.row() + ": " + f.what());
+                    }
+                    st.failure = "refused: the pairing check failed (" + pairing.failures().size()
+                            + " checks; --no-pairing-check skips it)";
+                    return usage(st.failure);
+                }
+                for (PairingCheck.Item w : pairing.warnings()) {
+                    System.err.println("MpLauncher: pairing: warning: " + w.row() + ": " + w.what());
+                }
+            }
             try {
                 spec = SpecificationFile.load(specFile, mp.expected());
             } catch (IllegalArgumentException | IOException e) {
@@ -1417,10 +1449,10 @@ public final class MpLauncher {
      * execution), a graph file that is not one witness graph line of format 1 or breaks the structural rules checked
      * here, a graph of another tool, a program or arguments that differ from the graph's ({@code side},
      * {@code model} and {@code options} must be JMC's), a {@code tool_commit} that differs from this build's or is
-     * {@code "unknown"} on either side (unless {@code --allow-tool-change}), a source that differs from the
-     * program's {@code SOURCE.md5} manifest or is {@code "unknown"} on either side (unless
-     * {@code --allow-source-change}). The projection rule (the graph's {@code line} is its summary) is checked by the
-     * renderer's {@code --check}, not here. Printed: {@code replay: reproduced (<E> events, <T> threads)} (exit
+     * {@code "unknown"} on either side (unless {@code --allow-tool-change}), a source whose {@code files} map differs
+     * from the program's {@code SOURCE.md5} manifest (its {@code root} is not compared) or that is {@code "unknown"}
+     * on either side (unless {@code --allow-source-change}). The projection rule (the graph's {@code line} is its
+     * summary) is checked by the renderer's {@code --check}, not here. Printed: {@code replay: reproduced (<E> events, <T> threads)} (exit
      * {@code 0}) or {@code replay: deviation at (<t>, <k>) thread "<name>": <kind>: expected <text>, got <text>}
      * (exit {@code 1}); a run that fails otherwise prints {@code FAILED:} (exit {@code 1}). Then the measurement block
      * with {@code wall_ms}, {@code peak_rss_kb} and {@code replay_events}.
@@ -1523,12 +1555,14 @@ public final class MpLauncher {
         List<String> manifestWarnings = new ArrayList<>();
         RunIdentity mine = RunIdentity.of(programClass, argList.isEmpty() ? null : argList.get(0).getAsString(),
                 "export", manifestWarnings);
+        // Only the known file maps are compared: the root is the directory the manifest was written from, which
+        // differs between checkouts of the same source.
         JsonElement graphSource = run.get("source");
-        String mineSource = JsonParser.parseString(mine.toJson(null)).getAsJsonObject().get("source").toString();
         boolean unknown = mine.sourceFiles() == null || graphSource.isJsonPrimitive();
-        if (unknown || !JsonParser.parseString(mineSource).equals(graphSource)) {
+        if (unknown || !JsonParser.parseString(mine.toJson(null)).getAsJsonObject().getAsJsonObject("source")
+                .get("files").equals(graphSource.getAsJsonObject().get("files"))) {
             String why = unknown ? "source unknown" + (manifestWarnings.isEmpty() ? "" : " (" + manifestWarnings.get(0)
-                    + ")") : "source differs from the program's manifest";
+                    + ")") : "source files differ from the program's manifest";
             if (!allowSource) {
                 return usage("--replay refused: " + why + "; --allow-source-change accepts it");
             }
@@ -2167,7 +2201,7 @@ public final class MpLauncher {
         System.err.println(
                 "usage: MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000]"
                         + " [seed] [reportPath] [exportFile] [timeoutSeconds] [--spec <file> [--stop-at-first]"
-                        + " [--witness <file or dir/>]] [--graphs <store> [--graphs-limit N]]"
+                        + " [--no-pairing-check] [--witness <file or dir/>]] [--graphs <store> [--graphs-limit N]]"
                         + " [--split W [--k K]] [--worker <run dir> <id>]");
         return 2;
     }

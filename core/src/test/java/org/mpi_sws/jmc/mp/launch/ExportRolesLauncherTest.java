@@ -118,7 +118,8 @@ class ExportRolesLauncherTest {
                 StandardCharsets.UTF_8);
         MpLauncherTest.Out o = online("payload_h,declared", spec, "roles");
         assertEquals(2, o.exit(), o.text());
-        assertTrue(o.text().contains("has roles [a], the program [a, h]"), o.text());
+        assertTrue(o.text().contains("MpLauncher: pairing: C2: the two `roles` lists differ: [\"a\"] and"
+                + " [\"a\", \"h\"]"), o.text());
     }
 
     /** The counting mode summarises nothing, so the five per-summary counters print empty. */
