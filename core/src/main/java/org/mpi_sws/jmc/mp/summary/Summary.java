@@ -28,6 +28,17 @@ public record Summary(
      * @return one JSON line, no trailing newline
      */
     public String toJson(int n) {
+        String key = normalForm();
+        return key.substring(0, key.length() - 1) + ",\"n\":" + n + '}';
+    }
+
+    /**
+     * The line's normal form: {@code statuses}, {@code words} and {@code counts}, without {@code n}. Two lines hold
+     * the same summary iff their normal forms are equal.
+     *
+     * @return one compact JSON object, no trailing newline
+     */
+    public String normalForm() {
         StringBuilder sb = new StringBuilder();
         sb.append("{\"statuses\":{");
         boolean first = true;
@@ -59,7 +70,7 @@ public record Summary(
             first = false;
             sb.append(c);
         }
-        sb.append("],\"n\":").append(n).append('}');
+        sb.append("]}");
         return sb.toString();
     }
 }
