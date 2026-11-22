@@ -171,17 +171,17 @@ class J2TrackerTest {
         m.put("reset", java.util.Arrays.asList(start(1), start(2), join(1, 2), RESET, start(2), start(7), join(7, 2), finish(2),
                 RESET, start(1)));
         m.put("notify-all", List.of(start(1), start(2), start(3), start(4),
-                ev(JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT, 1, "instance", a),
+                ev(JmcRuntimeEvent.Type.FAIR_BLOCKING_LOCK_ACQUIRE_EVENT, 1, "instance", a),
                 ev(JmcRuntimeEvent.Type.LOCK_ACQUIRED_EVENT, 1, "instance", a),
                 ev(JmcRuntimeEvent.Type.WAIT_EVENT, 1, "object", a),
-                ev(JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT, 2, "instance", a),
+                ev(JmcRuntimeEvent.Type.FAIR_BLOCKING_LOCK_ACQUIRE_EVENT, 2, "instance", a),
                 ev(JmcRuntimeEvent.Type.LOCK_ACQUIRED_EVENT, 2, "instance", a),
                 ev(JmcRuntimeEvent.Type.WAIT_EVENT, 2, "object", a),
-                ev(JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT, 3, "instance", a),
+                ev(JmcRuntimeEvent.Type.FAIR_BLOCKING_LOCK_ACQUIRE_EVENT, 3, "instance", a),
                 ev(JmcRuntimeEvent.Type.LOCK_ACQUIRED_EVENT, 3, "instance", a),
                 ev(JmcRuntimeEvent.Type.NOTIFY_ALL_EVENT, 3, "object", a),
                 ev(JmcRuntimeEvent.Type.LOCK_RELEASE_EVENT, 3, "instance", a),
-                ev(JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT, 4, "instance", a),
+                ev(JmcRuntimeEvent.Type.FAIR_BLOCKING_LOCK_ACQUIRE_EVENT, 4, "instance", a),
                 ev(JmcRuntimeEvent.Type.WAKEUP_EVENT, 1, "object", a),
                 finish(3), finish(4)));
         m.put("notify-one", List.of(start(1), start(2), start(3),
@@ -262,7 +262,7 @@ class J2TrackerTest {
             } else if (k < 72) {
                 out.add(ev(JmcRuntimeEvent.Type.WAKEUP_EVENT, t, "object", o));
             } else if (k < 75) {
-                out.add(ev(JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT, t, "instance", o));
+                out.add(ev(JmcRuntimeEvent.Type.FAIR_BLOCKING_LOCK_ACQUIRE_EVENT, t, "instance", o));
             } else if (k < 78) {
                 out.add(ev(JmcRuntimeEvent.Type.LOCK_ACQUIRED_EVENT, t, "instance", o));
             } else if (k < 81) {

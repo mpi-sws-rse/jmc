@@ -144,6 +144,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
             SchedulingChoice<?> next = recordedTrace.remove(0);
             // Update it's value based on value tracker in the algo
             if (next != null) {
+                super.updateExternalValue(next);
                 algoInstance.updateExternalValue(next);
             }
             LOGGER.debug("Returning recorded task: {}", next);
@@ -178,6 +179,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
                         " in active={}", nextTask, activeTasks);
             }
             // Update it's value based on value tracker in the algo
+            super.updateExternalValue(nextTask);
             algoInstance.updateExternalValue(nextTask);
             return nextTask;
         }
@@ -206,6 +208,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
 
         // Update it's value based on value tracker in the algo
         if (next != null) {
+            super.updateExternalValue(next);
             algoInstance.updateExternalValue(next);
         }
         return next;
@@ -330,7 +333,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
      */
     @Override
     public void recordTrace() throws JmcCheckerException {
-        String filePath = Paths.get(this.reportPath, "replay.json").toString();
+        String filePath = Paths.get(this.reportPath, "replay_trace.json").toString();
         LOGGER.info("Recording trace to {}", filePath);
         algoInstance.recordTaskSchedule(filePath);
     }
@@ -343,7 +346,7 @@ public class TrustStrategy extends TrackActiveTasksStrategy
     @Override
     public void replayRecordedTrace() throws JmcCheckerException {
         recordedTrace =
-                FileUtil.readTaskSchedule(Paths.get(this.reportPath, "replay.json").toString());
+                FileUtil.readTaskSchedule(Paths.get(this.reportPath, "replay_trace.json").toString());
     }
 
     /** The fallback policy for choosing among schedulable active tasks when not guiding. */

@@ -3,6 +3,9 @@ package org.mpi_sws.jmc.strategies.tracker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
+import org.mpi_sws.jmc.runtime.scheduling.PrimitiveValue;
+import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
+import org.mpi_sws.jmc.strategies.ValueTracker;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,22 +28,26 @@ public class TrackLocks implements Tracker {
      * For each lock, Contains a list of tasks that want the lock. Once the task acquires the lock,
      * it is removed from the set.
      */
-    private final Map<Object, Set<Long>> waitingTasks;
+    private final Map<Object, Set<LockRequest>> waitingTasks;
 
     /**
      * For each lock, the set of tasks that have requested it while it was free but have not yet been
      * confirmed as the owner (via a {@code LOCK_ACQUIRED_EVENT}).
      */
-    private final Map<Object, Set<Long>> wantingTasks;
+    private final Map<Object, Set<LockRequest>> wantingTasks;
 
     /** Maps each known task to the lock it currently holds, if any. */
     private final Map<Long, Optional<Object>> activeTasks;
+
+
+    private final ValueTracker externalValueTracker;
 
     /** Constructs a new TrackLocks object. */
     public TrackLocks() {
         this.waitingTasks = new ConcurrentHashMap<>();
         this.wantingTasks = new ConcurrentHashMap<>();
         this.activeTasks = new ConcurrentHashMap<>();
+        this.externalValueTracker = new ValueTracker();
     }
 
     /**
@@ -67,56 +74,155 @@ public class TrackLocks implements Tracker {
         }
         activeTasks.putIfAbsent(taskId, Optional.empty());
 
-        JmcRuntimeEvent.Type type = event.getType();
+        LockRequest lockRequest = isLockAcquire(event);
 
-        if (type == JmcRuntimeEvent.Type.LOCK_ACQUIRE_EVENT) {
+        if (lockRequest != null) {
             Object lock = event.getParam("instance");
-            if (tryLock(taskId, lock)) {
+            boolean result = tryLock(lockRequest, lock);
+            if (result) {
                 return getActiveTasks();
             }
-        } else if (type == JmcRuntimeEvent.Type.LOCK_ACQUIRED_EVENT) {
+        } else if (event.isLockAcquired()) {
             Object lock = event.getParam("instance");
             lockAcquired(taskId, lock);
-        } else if (type == JmcRuntimeEvent.Type.LOCK_RELEASE_EVENT) {
+        } else if (event.isLockRelease()) {
             Object lock = event.getParam("instance");
             unlock(taskId, lock);
+        } else if (event.isLocked()) {
+            Object lock = event.getParam("instance");
+            boolean result = waitingTasks.containsKey(lock);
+            storeExternalValue(taskId, result);
+        } else if (event.isLockOwner()) {
+            Object lock = event.getParam("instance");
+            storeExternalValue(taskId, isLockOwned(lockRequest, lock));
         }
         return getActiveTasks();
     }
 
+    private LockRequest isLockAcquire(JmcRuntimeEvent  event) {
+        if (event.getType() == JmcRuntimeEvent.Type.FAIR_BLOCKING_LOCK_ACQUIRE_EVENT) {
+            return LockRequest.fairBlockingRequest(event.getTaskId());
+        }
+
+        if (event.getType() == JmcRuntimeEvent.Type.FAIR_NONBLOCKING_LOCK_ACQUIRE_EVENT) {
+            return LockRequest.fairNonblockingRequest(event.getTaskId());
+        }
+
+        if (event.getType() == JmcRuntimeEvent.Type.UNFAIR_BLOCKING_LOCK_ACQUIRE_EVENT) {
+            return LockRequest.unfairBlockingRequest(event.getTaskId());
+        }
+
+        if (event.getType() == JmcRuntimeEvent.Type.UNFAIR_NONBLOCKING_LOCK_ACQUIRE_EVENT) {
+            return LockRequest.unfairNonblockingRequest(event.getTaskId());
+        }
+
+        return null;
+    }
+
     /**
-     * Handles a lock-acquire request for a task. Three cases: the task already holds the lock
-     * (reentrant, allowed); the lock is held by another task (the task is blocked and removed from
-     * active); or the lock is free (the task is recorded as wanting it and stays active).
+     * Handles a lock-acquire request for a task. Two cases: the request is blocking (the task may be blocked if the
+     * lock is held by another task) or non-blocking (the task is not blocked and may proceed if the lock is free).
      *
-     * @param taskId the requesting task
+     * @param lockRequest the lock request stats including the requester thread-id and type of the request
      * @param lock the lock instance being requested
      * @return {@code true} if the task may proceed (reentrant case), {@code false} otherwise
      */
-    protected boolean tryLock(Long taskId, Object lock) {
+    protected boolean tryLock(LockRequest lockRequest, Object lock) {
+        if (lockRequest.isBlocking()) {
+            return blockingTryLock(lockRequest, lock);
+        } else {
+            return nonblockingTryLock(lockRequest, lock);
+        }
+    }
+
+    /**
+     * Handles a blocking lock-acquire request for a task. Three cases: the task already holds the lock
+     * (reentrant, allowed); the lock is held by another task (the task is blocked and removed from
+     * active); or the lock is free (the task is recorded as wanting it and stays active).
+     *
+     * @param lockRequest the lock request stats including the requester thread-id and type of the request
+     * @param lock the lock instance being requested
+     * @return {@code true} if the task may proceed (reentrant case), {@code false} otherwise
+     */
+    private boolean blockingTryLock(LockRequest lockRequest, Object lock) {
         // Want the lock. Three cases.
         // 1. Current task already has the lock. Ignore.
-        Optional<Object> owner = activeTasks.get(taskId);
-        if (owner != null && owner.isPresent()) {
-            if (owner.get() == lock) {
-                LOGGER.debug("Reentrant lock already included by task {}", taskId);
-                return true;
-            }
+        if (isLockOwned(lockRequest, lock)) {
+            return true;
         }
         // 2. The lock is already acquired by another task. The current task is added to the
         // waiting list.
         if (waitingTasks.containsKey(lock)) {
-            LOGGER.debug("Task {} waits for lock {}", taskId, lock.hashCode());
-            Set<Long> tasks = waitingTasks.get(lock);
-            tasks.add(taskId);
-            activeTasks.remove(taskId);
+            LOGGER.debug("Task {} waits for lock {}", lockRequest.getTaskId(), lock.hashCode());
+            Set<LockRequest> lockRequests = waitingTasks.get(lock);
+            lockRequests.add(lockRequest);
+            activeTasks.remove(lockRequest.getTaskId());
         } else {
             // 3. The lock is not acquired by any task. The current task is added to the
-            // wanting
-            // list.
-            LOGGER.debug("Task {} wants lock {}", taskId, lock.hashCode());
+            // wanting list.
+            LOGGER.debug("Task {} wants lock {}", lockRequest.getTaskId(), lock.hashCode());
             wantingTasks.putIfAbsent(lock, new HashSet<>());
-            wantingTasks.get(lock).add(taskId);
+            wantingTasks.get(lock).add(lockRequest);
+        }
+        return false;
+    }
+
+    private boolean nonblockingTryLock(LockRequest lockRequest, Object lock) {
+        // Want the lock. Three cases.
+        // 1. Current task already has the lock. Ignore.
+        if (isLockOwned(lockRequest, lock)) {
+            storeExternalValue(lockRequest.getTaskId(), true);
+            return true;
+        }
+
+        // 2. The lock is already acquired by another task. The current task failed to get the lock
+        // and will continue without it.
+        if (waitingTasks.containsKey(lock)) {
+            LOGGER.debug("Task {} failed to acquire lock {}", lockRequest.getTaskId(), lock.hashCode());
+            storeExternalValue(lockRequest.getTaskId(), false);
+        } else {
+            // 3. The lock is not acquired by any task. The current task is added to the
+            // wanting list. We avoid of granting the lock to this task immidiatley to enble
+            // this task to race with any other potential competitor. However, we assume that the task will acquire the
+            // lock successfully, and store this information in the value tracker. If the scheduler decides to
+            // resume this task as a winner of the race, then everything is fine. Otherwise, after the competitor won
+            // the race, upon removing this task from wanting list, the stored information in the value tracker
+            // will be updated to a failed lock acquire.
+            LOGGER.debug("Task {} wants lock {}", lockRequest.getTaskId(), lock.hashCode());
+            wantingTasks.putIfAbsent(lock, new HashSet<>());
+            wantingTasks.get(lock).add(lockRequest);
+            storeExternalValue(lockRequest.getTaskId(), true);
+        }
+        return false;
+    }
+
+    private void storeExternalValue(long id, Object value) {
+        if (externalValueTracker.containsValue(id)) {
+            LOGGER.error("Value for id {} already exists in external tracker. This should not happen.", id);
+            throw new RuntimeException("Value for id " + id + " already exists");
+        }
+
+        LOGGER.debug("Storing value {} for id {}", value, id);
+        externalValueTracker.setValue(id, value);
+    }
+
+    private void updateExternalValue(long id, Object value) {
+        if (!externalValueTracker.containsValue(id)) {
+            LOGGER.error("Value for id {} does not exist in external tracker. This should not happen.", id);
+            throw new RuntimeException("Value for id " + id + " does not exist");
+        }
+
+        LOGGER.debug("Updating value {} for id {}", value, id);
+        externalValueTracker.setValue(id, value);
+    }
+
+    private boolean isLockOwned(LockRequest lockRequest, Object lock) {
+        Optional<Object> owner = activeTasks.get(lockRequest.getTaskId());
+        if (owner.isPresent()) {
+            if (owner.get() == lock) {
+                LOGGER.debug("Lock already included by task {}", lockRequest.getTaskId());
+                return true;
+            }
         }
         return false;
     }
@@ -134,17 +240,25 @@ public class TrackLocks implements Tracker {
         // list.
         activeTasks.put(taskId, Optional.of(lock));
         waitingTasks.putIfAbsent(lock, new HashSet<>());
-        Set<Long> wantingList = wantingTasks.get(lock);
+        Set<LockRequest> wantingList = wantingTasks.get(lock);
         if (wantingList != null) {
-            for (Long wantingTask : wantingList) {
-                // If the task is not already in the waiting list, add it to the waiting
-                // list
-                if (Objects.equals(wantingTask, taskId)) {
+            for (LockRequest wantingRequest : wantingList) {
+
+                if (Objects.equals(wantingRequest.getTaskId(), taskId)) {
                     // Ignore the current task
                     continue;
                 }
-                waitingTasks.get(lock).add(wantingTask);
-                activeTasks.remove(wantingTask);
+
+                // If the waiting task wants the lock upon a blocking acquire event, it must be added to the waiting tasks
+                // and must be removed form the active tasks.
+                if (wantingRequest.isBlocking()) {
+                    waitingTasks.get(lock).add(wantingRequest);
+                    activeTasks.remove(wantingRequest.getTaskId());
+                } else {
+                    // If the waiting task wants the lock upon a non-blocking acquire event, the external value
+                    // tracker must be updated properly.
+                    updateExternalValue(wantingRequest.getTaskId(), false);
+                }
             }
             wantingTasks.remove(lock);
         }
@@ -161,14 +275,27 @@ public class TrackLocks implements Tracker {
         // The lock is released. The waiting tasks are marked as active.
         LOGGER.debug("Task {} released lock {}", taskId, lock.hashCode());
         activeTasks.put(taskId, Optional.empty());
-        Set<Long> blockedTasks = waitingTasks.get(lock);
+        Set<LockRequest> blockedRequests = waitingTasks.get(lock);
         wantingTasks.put(lock, new HashSet<>());
-        if (blockedTasks != null) {
-            for (Long blockedTask : blockedTasks) {
-                activeTasks.put(blockedTask, Optional.empty());
-                wantingTasks.get(lock).add(blockedTask);
+        if (blockedRequests != null) {
+            for (LockRequest blockedRequest : blockedRequests) {
+                activeTasks.put(blockedRequest.getTaskId(), Optional.empty());
+                wantingTasks.get(lock).add(blockedRequest);
             }
             waitingTasks.remove(lock);
+        }
+    }
+
+    @Override
+    public void updateExternalValue(SchedulingChoice<?> task) {
+        long id = task.getTaskId();
+        if (externalValueTracker.containsValue(id)) {
+            Object value = externalValueTracker.getValue(id);
+            LOGGER.debug("Updating external value {} for task: {}", value, id);
+            externalValueTracker.removeValue(id);
+
+            PrimitiveValue val = new  PrimitiveValue(value);
+            task.setValue(val);
         }
     }
 
@@ -187,5 +314,6 @@ public class TrackLocks implements Tracker {
         activeTasks.clear();
         waitingTasks.clear();
         wantingTasks.clear();
+        externalValueTracker.reset();
     }
 }

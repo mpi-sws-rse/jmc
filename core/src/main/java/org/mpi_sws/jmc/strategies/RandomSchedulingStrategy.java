@@ -124,6 +124,7 @@ public class RandomSchedulingStrategy extends TrackActiveTasksStrategy
             LOGGER.debug("Using cached random value {} for task {}", randomValue, taskToSchedule);
             choice = SchedulingChoice.task(taskToSchedule, new PrimitiveValue(randomValue));
         }
+        super.updateExternalValue(choice);
         curTrace.addChoice(choice);
         return choice;
     }

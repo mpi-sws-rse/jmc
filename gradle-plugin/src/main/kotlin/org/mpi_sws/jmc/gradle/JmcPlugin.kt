@@ -153,6 +153,9 @@ class JmcPlugin : Plugin<Project> {
         if (extension.excludedPackages.isNotEmpty()) {
             args.add("excludedPackages=${extension.excludedPackages.joinToString(";")}")
         }
+        if (extension.instrumentationLevel != "full") {
+            args.add("instrumentationLevel=${extension.instrumentationLevel}")
+        }
         return args
     }
 }
@@ -185,7 +188,7 @@ open class JmcExtension {
     var testTask: String = ""
 
     /** Whether to enable debug mode for the JMC agent (dumps instrumented bytecode). */
-    var debug: Boolean = false
+    var debug: Boolean = true
 
     /** The path where debug information will be saved. */
     var debugPath: String = "build/generated/instrumented"
@@ -195,4 +198,13 @@ open class JmcExtension {
 
     /** The list of packages to exclude from instrumentation. */
     var excludedPackages: List<String> = ArrayList()
+
+    /**
+     * The instrumentation level controlling how much bytecode instrumentation is applied.
+     * Valid values: "full" (default), "sync_points_only".
+     * - "full": instruments every field read/write with yield points (maximum bug-finding power)
+     * - "sync_points_only": only instruments synchronization operations (locks, threads, atomics).
+     *   Much faster for large codebases where most fields are accessed under locks.
+     */
+    var instrumentationLevel: String = "full"
 }

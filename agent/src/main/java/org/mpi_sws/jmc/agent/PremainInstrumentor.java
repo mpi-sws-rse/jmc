@@ -111,7 +111,7 @@ public class PremainInstrumentor implements ClassFileTransformer {
             }
 
             LOGGER.info("Instrumenting class: {}", finalClassName);
-            byte[] transformed = JmcVisitor.transform(copiedClassBuffer);
+            byte[] transformed = JmcVisitor.transform(copiedClassBuffer, agentArgs.getInstrumentationLevel());
             if (this.agentArgs.isDebug()) {
                 record(className, transformed);
             }

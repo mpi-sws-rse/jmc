@@ -4,6 +4,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mpi_sws.jmc.checker.JmcModelCheckerReport;
 import org.mpi_sws.jmc.runtime.JmcRuntimeEvent;
+import org.mpi_sws.jmc.runtime.scheduling.PrimitiveValue;
+import org.mpi_sws.jmc.runtime.scheduling.SchedulingChoice;
 import org.mpi_sws.jmc.strategies.SchedulingStrategy;
 
 import java.util.HashSet;
@@ -145,6 +147,14 @@ public abstract class TrackActiveTasksStrategy implements SchedulingStrategy {
     protected Boolean isActive(Long threadId) {
         synchronized (tasksLock) {
             return activeTasks.contains(threadId);
+        }
+    }
+
+    public void updateExternalValue(SchedulingChoice<?> task) {
+        for (Tracker tracker : trackers) {
+            if (tracker instanceof TrackWaitNotify || tracker instanceof TrackLocks) {
+                tracker.updateExternalValue(task);
+            }
         }
     }
 

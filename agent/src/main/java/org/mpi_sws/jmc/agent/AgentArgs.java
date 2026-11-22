@@ -27,6 +27,8 @@ public class AgentArgs {
     private static final String EXCLUDED_PKG_FLAG = "excludedPackages";
     /** Argument key for the path to the JMC runtime jar. */
     private static final String JMC_RUNTIME_JAR_PATH_FLAG = "jmcRuntimeJarPath";
+    /** Argument key for the instrumentation level controlling which visitors are applied. */
+    private static final String INSTRUMENTATION_LEVEL_FLAG = "instrumentationLevel";
 
     /** Whether debug mode is enabled; when {@code true}, instrumented classes are written to disk. */
     private boolean debug = false;
@@ -38,6 +40,8 @@ public class AgentArgs {
     private List<String> excludedPackages = new ArrayList<>();
     /** Path to the JMC runtime jar loaded before instrumentation begins. */
     private String jmcRuntimeJarPath = "build/deps/jmc-0.3.0.jar";
+    /** Instrumentation level; defaults to instrumenting both fields and synchronization points. */
+    private InstrumentationLevel instrumentationLevel = InstrumentationLevel.FULL;
 
     /**
      * Parses the raw agent argument string, populating the option fields.
@@ -45,7 +49,7 @@ public class AgentArgs {
      * <p>When {@code agentArgs} is non-{@code null} it is split on commas into tokens; each token is
      * then split on {@code =}. A two-part token sets the matching option ({@code debug},
      * {@code debugSavePath}, {@code instrumentingPackages}, {@code excludedPackages},
-     * {@code jmcRuntimeJarPath}), with the list options further split on {@code ;}. A single-part
+     * {@code jmcRuntimeJarPath}, {@code instrumentationLevel}), with the list options further split on {@code ;}. A single-part
      * token equal to {@code debug} enables debug mode. Any option not present keeps its default.
      *
      * @param agentArgs the raw agent argument string (may be {@code null}, in which case all defaults
@@ -67,6 +71,8 @@ public class AgentArgs {
                         excludedPackages = List.of(parts[1].split(";"));
                     } else if (parts[0].equals(JMC_RUNTIME_JAR_PATH_FLAG)) {
                         jmcRuntimeJarPath = parts[1];
+                    } else if (parts[0].equals(INSTRUMENTATION_LEVEL_FLAG)) {
+                        instrumentationLevel = InstrumentationLevel.fromString(parts[1]);
                     }
                 } else {
                     if (arg.equals(DEBUG_FLAG)) {
@@ -123,6 +129,15 @@ public class AgentArgs {
     }
 
     /**
+     * Gets the instrumentation level controlling how much bytecode instrumentation is applied.
+     *
+     * @return the instrumentation level
+     */
+    public InstrumentationLevel getInstrumentationLevel() {
+        return instrumentationLevel;
+    }
+
+    /**
      * Returns a human-readable representation of all parsed options, used for debug logging of the
      * agent configuration.
      *
@@ -142,6 +157,8 @@ public class AgentArgs {
                 + ", jmcRuntimeJarPath='"
                 + jmcRuntimeJarPath
                 + '\''
+                + ", instrumentationLevel="
+                + instrumentationLevel
                 + '}';
     }
 }

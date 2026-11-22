@@ -131,6 +131,22 @@ public class JmcRuntimeEvent {
         return (T) params.get(key);
     }
 
+    public boolean isLockAcquired() {
+        return type == Type.LOCK_ACQUIRED_EVENT;
+    }
+
+    public boolean isLockRelease() {
+        return type == Type.LOCK_RELEASE_EVENT;
+    }
+
+    public boolean isLocked() {
+        return type == Type.IS_LOCKED_EVENT;
+    }
+
+    public boolean isLockOwner() {
+        return type == Type.IS_LOCK_OWNER_EVENT;
+    }
+
     /**
      * Renders the parameter map into a human-readable string for {@link #toString()}.
      *
@@ -264,9 +280,14 @@ public class JmcRuntimeEvent {
         EXIT_MONITOR_EVENT,
 
         // Lock events
-        LOCK_ACQUIRE_EVENT,
+        UNFAIR_BLOCKING_LOCK_ACQUIRE_EVENT,
+        UNFAIR_NONBLOCKING_LOCK_ACQUIRE_EVENT,
+        FAIR_BLOCKING_LOCK_ACQUIRE_EVENT,
+        FAIR_NONBLOCKING_LOCK_ACQUIRE_EVENT,
         LOCK_ACQUIRED_EVENT,
         LOCK_RELEASE_EVENT,
+        IS_LOCKED_EVENT,
+        IS_LOCK_OWNER_EVENT,
 
         // Read and write events
         READ_EVENT,

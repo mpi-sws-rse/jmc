@@ -1,5 +1,6 @@
 package org.mpi_sws.jmc.agent.visitors;
 
+import org.mpi_sws.jmc.agent.InstrumentationLevel;
 import org.mpi_sws.jmc.checker.exceptions.JmcUnsupportedFeatureException;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -19,7 +20,18 @@ import org.objectweb.asm.ClassWriter;
 public class JmcVisitor {
 
     /**
-     * Applies the whole JMC instrumentation pipeline to a single class.
+     * Applies the pipeline using {@link InstrumentationLevel#FULL} instrumentation.
+     *
+     * @param classFileBuffer the input class file as a byte array
+     * @return the transformed bytes, or the original bytes for an enum or a class with a finalizer
+     * @see #transform(byte[], InstrumentationLevel)
+     */
+    public static byte[] transform(byte[] classFileBuffer) {
+        return transform(classFileBuffer, InstrumentationLevel.FULL);
+    }
+
+    /**
+     * Applies the JMC instrumentation pipeline to a single class at the requested level.
      *
      * <p>Phases, in order:
      *
@@ -40,14 +52,17 @@ public class JmcVisitor {
      *       org.objectweb.asm.ClassWriter} that emits the result.
      * </ol>
      *
+     * <p>With {@link InstrumentationLevel#SYNC_POINTS_ONLY}, the read/write visitor is omitted;
+     * plain field accesses do not introduce yield points. The other phases are unchanged.
+     *
      * <p>A {@link JmcUnsupportedFeatureException} thrown during the chain is propagated unchanged; any
      * other exception is wrapped in a {@link RuntimeException}.
      *
      * @param classFileBuffer the input class file as a byte array
-     * @return the transformed class file as a byte array, or the original bytes if the class is an
-     *     enum or declares a finalizer
+     * @param level the instrumentation level controlling which visitors are applied
+     * @return the transformed bytes, or the original bytes for an enum or a class with a finalizer
      */
-    public static byte[] transform(byte[] classFileBuffer) {
+    public static byte[] transform(byte[] classFileBuffer, InstrumentationLevel level) {
         // Phase 1: pre-scan for synchronized methods/blocks (consumed by JmcSyncMethodVisitor).
         ClassReader syncCr = new ClassReader(classFileBuffer);
         ClassWriter syncCw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
@@ -84,6 +99,17 @@ public class JmcVisitor {
         // Phase 3: the main transformation chain (outermost visitor listed first).
         ClassReader cr = new ClassReader(classFileBuffer);
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+
+        // Build the visitor chain. When SYNC_POINTS_ONLY, skip ReadWriteVisitor
+        // so that plain field accesses don't get yield points.
+        ClassVisitor innermost;
+        if (level == InstrumentationLevel.SYNC_POINTS_ONLY) {
+            // Skip JmcReadWriteVisitor — no field read/write instrumentation
+            innermost = cw;
+        } else {
+            innermost = new JmcReadWriteVisitor.ReadWriteClassVisitor(cw);
+        }
+
         ClassVisitor cv =
                 new JmcWaitNotifyVisitor(
                         new JmcStaticMethodVisitor(
@@ -98,9 +124,7 @@ public class JmcVisitor {
                                                                                 new JmcThreadVisitor
                                                                                         .ThreadCallReplacerClassVisitor(
                                                                                                     new JmcNativeMethodVisitor(
-                                                                                                        new JmcReadWriteVisitor
-                                                                                                                .ReadWriteClassVisitor(
-                                                                                                                cw))))))))),
+                                                                                                        innermost)))))))),
                                         syncScanData)));
         try{
             cr.accept(cv, 0);
