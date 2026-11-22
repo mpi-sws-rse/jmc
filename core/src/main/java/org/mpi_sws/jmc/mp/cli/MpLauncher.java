@@ -1417,9 +1417,9 @@ public final class MpLauncher {
      * execution), a graph file that is not one witness graph line of format 1 or breaks the structural rules checked
      * here, a graph of another tool, a program or arguments that differ from the graph's ({@code side},
      * {@code model} and {@code options} must be JMC's), a {@code tool_commit} that differs from this build's or is
-     * {@code "unknown"} on either side (unless {@code --allow-tool-change}), a source that differs from the
-     * program's {@code SOURCE.md5} manifest or is {@code "unknown"} on either side (unless
-     * {@code --allow-source-change}). The projection rule (the graph's {@code line} is its summary) is checked by the
+     * {@code "unknown"} on either side (unless {@code --allow-tool-change}), a source whose {@code files} map differs
+     * from the program's {@code SOURCE.md5} manifest (its {@code root} is not compared) or that is {@code "unknown"}
+     * on either side (unless {@code --allow-source-change}). The projection rule (the graph's {@code line} is its summary) is checked by the
      * renderer's {@code --check}, not here. Printed: {@code replay: reproduced (<E> events, <T> threads)} (exit
      * {@code 0}) or {@code replay: deviation at (<t>, <k>) thread "<name>": <kind>: expected <text>, got <text>}
      * (exit {@code 1}); a run that fails otherwise prints {@code FAILED:} (exit {@code 1}). Then the measurement block
@@ -1523,12 +1523,14 @@ public final class MpLauncher {
         List<String> manifestWarnings = new ArrayList<>();
         RunIdentity mine = RunIdentity.of(programClass, argList.isEmpty() ? null : argList.get(0).getAsString(),
                 "export", manifestWarnings);
+        // Only the known file maps are compared: the root is the directory the manifest was written from, which
+        // differs between checkouts of the same source.
         JsonElement graphSource = run.get("source");
-        String mineSource = JsonParser.parseString(mine.toJson(null)).getAsJsonObject().get("source").toString();
         boolean unknown = mine.sourceFiles() == null || graphSource.isJsonPrimitive();
-        if (unknown || !JsonParser.parseString(mineSource).equals(graphSource)) {
+        if (unknown || !JsonParser.parseString(mine.toJson(null)).getAsJsonObject().getAsJsonObject("source")
+                .get("files").equals(graphSource.getAsJsonObject().get("files"))) {
             String why = unknown ? "source unknown" + (manifestWarnings.isEmpty() ? "" : " (" + manifestWarnings.get(0)
-                    + ")") : "source differs from the program's manifest";
+                    + ")") : "source files differ from the program's manifest";
             if (!allowSource) {
                 return usage("--replay refused: " + why + "; --allow-source-change accepts it");
             }

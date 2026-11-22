@@ -10,17 +10,21 @@ import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 import org.mpi_sws.jmc.mp.witness.WitnessSupport.Out;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Tests of the launcher's {@code --replay}: every graph of a store reproduces (choices, blocked executions, daemons,
  * opaque invisible values, the online bank); a graph changed in a choice, a value or its events deviates with the
  * right kind and position; the refusals (another tool, another format, another program, an option such as
- * {@code --split}, an unknown source or another commit without the allowing flag) exit 2; the report file.
+ * {@code --split}, an unknown source or another commit without the allowing flag) exit 2; the report file. The
+ * source comparison covers the {@code files} map only, not the manifest's {@code root}.
  */
 class GraphReplayTest {
 
@@ -207,5 +211,90 @@ class GraphReplayTest {
         Out c = replay(dir, cyc.toString(), "--allow-source-change");
         assertEquals(2, c.exit(), c.text());
         assertTrue(c.text().contains("cycle"), c.text());
+    }
+
+    /**
+     * A graph exported from a classpath entry with a {@code SOURCE.md5} replays against the same entry; a different
+     * {@code root} is not a source change, a different or extra file hash is (exit 2, accepted with a warning under
+     * {@code --allow-source-change}), and so is a graph whose source is {@code "unknown"}.
+     */
+    @Test
+    void sourceFilesCompared_rootIgnored() throws Exception {
+        Path dir = WitnessSupport.fresh("replay-source");
+        Path cls = dir.resolve("cls");
+        Path pkg = cls.resolve("org/mpi_sws/jmc/mp/witness");
+        Files.createDirectories(pkg);
+        Path from = Path.of(GraphReplayTest.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+                .resolve("org/mpi_sws/jmc/mp/witness");
+        try (Stream<Path> s = Files.list(from)) {
+            for (Path p : s.filter(p -> p.getFileName().toString().startsWith("WitnessTiny")).toList()) {
+                Files.copy(p, pkg.resolve(p.getFileName()));
+            }
+        }
+        Path manifest = cls.resolve("SOURCE.md5");
+        Files.writeString(manifest, "# root benchmarks/tiny\n"
+                + "0123456789abcdef0123456789abcdef  java/WitnessTiny.java\n");
+        Files.setLastModifiedTime(pkg.resolve("WitnessTiny.class"), FileTime.fromMillis(1_000_000_000_000L));
+        Files.setLastModifiedTime(manifest, FileTime.fromMillis(1_000_000_100_000L));
+        String cp = cls + File.pathSeparator + System.getProperty("java.class.path");
+        Out export = withClasspath(dir, cp, TINY, "must", "0", "1", "rep", "export.jsonl", "300", "--graphs",
+                "s.jsonl");
+        assertEquals(0, export.exit(), export.text());
+        String g = Files.readAllLines(dir.resolve("s.jsonl"), StandardCharsets.UTF_8).get(1);
+        JsonObject source = JsonParser.parseString(g).getAsJsonObject().getAsJsonObject("run")
+                .getAsJsonObject("source");
+        assertEquals("benchmarks/tiny", source.get("root").getAsString(), g);
+
+        Out same = replayWith(dir, cp, g);
+        assertEquals(0, same.exit(), same.text());
+        assertTrue(!same.text().contains("source-change"), same.text());
+
+        JsonObject moved = JsonParser.parseString(g).getAsJsonObject();
+        moved.getAsJsonObject("run").getAsJsonObject("source").addProperty("root", "elsewhere/tiny");
+        Out m = replayWith(dir, cp, moved.toString());
+        assertEquals(0, m.exit(), m.text());
+        assertTrue(!m.text().contains("source-change"), m.text());
+
+        JsonObject edited = JsonParser.parseString(g).getAsJsonObject();
+        edited.getAsJsonObject("run").getAsJsonObject("source").getAsJsonObject("files")
+                .addProperty("java/WitnessTiny.java", "ffffffffffffffffffffffffffffffff");
+        Out e = replayWith(dir, cp, edited.toString());
+        assertEquals(2, e.exit(), e.text());
+        assertTrue(e.text().contains("--replay refused: source files differ from the program's manifest"), e.text());
+        Out ea = replayWith(dir, cp, edited.toString(), "--allow-source-change");
+        assertEquals(0, ea.exit(), ea.text());
+        assertTrue(ea.text().contains("replay: warning: source-change: source files differ"), ea.text());
+
+        JsonObject extra = JsonParser.parseString(g).getAsJsonObject();
+        extra.getAsJsonObject("run").getAsJsonObject("source").getAsJsonObject("files")
+                .addProperty("java/Other.java", "0123456789abcdef0123456789abcdef");
+        assertEquals(2, replayWith(dir, cp, extra.toString()).exit());
+
+        JsonObject unknown = JsonParser.parseString(g).getAsJsonObject();
+        unknown.getAsJsonObject("run").addProperty("source", "unknown");
+        Out u = replayWith(dir, cp, unknown.toString());
+        assertEquals(2, u.exit(), u.text());
+        assertTrue(u.text().contains("--replay refused: source unknown"), u.text());
+    }
+
+    /** {@code --replay} of {@code graph} with classpath {@code cp}. */
+    private static Out replayWith(Path dir, String cp, String graph, String... extra) throws Exception {
+        Path g = dir.resolve("g-" + Math.abs(graph.hashCode()) + ".json");
+        Files.writeString(g, graph + "\n", StandardCharsets.UTF_8);
+        List<String> a = new ArrayList<>(List.of("--replay", g.getFileName().toString()));
+        a.addAll(List.of(extra));
+        return withClasspath(dir, cp, a.toArray(new String[0]));
+    }
+
+    /** The launcher with {@code args}, run in {@code dir} with classpath {@code cp}; stderr merged into stdout. */
+    private static Out withClasspath(Path dir, String cp, String... args) throws Exception {
+        List<String> cmd = new ArrayList<>(List.of(
+                System.getProperty("java.home") + File.separator + "bin" + File.separator + "java", "-cp", cp,
+                WitnessSupport.LAUNCHER));
+        cmd.addAll(List.of(args));
+        Process p = new ProcessBuilder(cmd).directory(dir.toFile()).redirectErrorStream(true)
+                .redirectInput(ProcessBuilder.Redirect.from(new File("/dev/null"))).start();
+        String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        return new Out(p.waitFor(), out, "");
     }
 }
