@@ -1351,6 +1351,15 @@ public class Algo {
             revisitViews =
                     revisitViews.stream().filter(BackwardRevisitView::isMaximalExtension).toList();
 
+            // If symbolic exploration is enabled, maximality condition must be checked for
+            // symbolic events, as for the revisits of an ordinary write
+            if (solver != null) {
+                revisitViews =
+                        revisitViews.stream()
+                                .filter(BackwardRevisitView::isMaximalSymbolicExtension)
+                                .toList();
+            }
+
             boolean visitedConsistentBWR = false;
 
             for (int i = revisitViews.size() - 1; i >= 0; i--) {
