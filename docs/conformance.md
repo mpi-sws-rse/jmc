@@ -95,8 +95,8 @@ a text witness; `--witness <dir>/` writes `witness-<n>.txt` for each distinct un
 The specification is read only in the form both tools' writers emit, as TraceForge's `conf-join` reads it: the header
 holds only the known keys, each once, compact, in the writers' order, and each further line is its normal form,
 optionally followed by `n`. A blank line, an unknown key, other spacing or key order, another spelling of a value
-(`"\u0041"` for `"A"`), a repeated summary or a header without `program`, `size` or `tool` is refused, naming the line
-(exit 2). Lines end at LF or CRLF.
+(`"\u0041"` for `"A"`), a repeated summary (`line N repeats line M`) or a header without `program`, `size` or `tool`
+is refused, naming the line (exit 2). Lines end at LF or CRLF.
 
 Before the run, the pairing check verifies what a meaningful comparison needs, with the rows and wording of
 `conf-join --check-pairing`. Each failure is printed as `MpLauncher: pairing: <row>: …`, then `MpLauncher: refused:
@@ -115,7 +115,13 @@ warning: <row>: …`.
 The program's tags are those of the `@Tag` records and the enums in the program class's package that implement
 `MpMessage`, and of the records, enums and sealed interfaces their components reach (through `List`, `Set` and
 `Optional` too). A tag in one side only is a warning (C13), as is a value tagged `ThreadId` or `Tid` (C18: identities
-must be sent as role names). A header or line the reader refuses is left to the reader's own refusal.
+must be sent as role names). A line the reader refuses is left to the reader's own refusal; a header it refuses
+stops the check, so the reader's refusal is printed alone, with no warning before it. A refusal by the pairing check or the reader,
+like a refused replay, prints no usage line.
+
+`--no-pairing-check` skips the pairing check, but the reader still refuses C2, C3, C4, C6 and C10 on its own, in its
+own words (C6 in the same words), with exit 2. Only C13 and C18 are really skipped: an arity the program does not
+declare reaches the comparison, and no C18 warning is printed.
 
 ### Graph stores and replay
 
