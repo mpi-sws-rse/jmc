@@ -54,7 +54,13 @@ MpLauncher --help | <command> --help
 Each option is given at most once; an option a command does not take, or a missing required one, is a usage error
 (exit 2). Advanced: `--split W [--k K]` explores with `W` worker JVMs once the search stack holds `K` entries (default
 `8·W`); it needs `must` and iterations `0`, writes the same export as the sequential run, and refuses `--witness` and
-`--stop-at-first`. `--worker` is internal (the coordinator starts workers with it).
+`--stop-at-first`. `--worker` is internal (the coordinator starts workers with it). Sizing: one item runs in one worker
+JVM, and items are uneven (the first ones, the earliest branches, often hold most of the executions). A worker keeps
+an item's distinct summaries in its heap and streams the item's outcomes to the run directory (about 94 bytes per
+execution on disk), so a large item needs heap for its summaries and disk for its outcomes. A larger `K` makes more,
+smaller items; a larger `W` alone does not. A worker that runs out of memory has its item retried once, on the restarted
+worker or another live one (not the JVM that failed); a second failure aborts the run, naming the item and how many
+items were committed.
 
 The positional form, `MpLauncher <program class[:args]> [strategy=mp-random] [iterations=1000] [seed] [reportPath]
 [exportFile] [timeoutSeconds] [options]` and `MpLauncher --replay <graph.json> [...] [<class[:args]>]`, is still

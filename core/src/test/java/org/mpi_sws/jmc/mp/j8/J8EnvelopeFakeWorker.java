@@ -68,7 +68,8 @@ public final class J8EnvelopeFakeWorker {
                         o.addProperty("blocked", false);
                         o.addProperty("digest", "0".repeat(64));
                         outs.add(o);
-                        env.add("outcomes", outs);
+                        env.addProperty("outcomes_count", org.mpi_sws.jmc.mp.j8.OutcomeFiles.write(dir,
+                                a.get("item").getAsInt(), a.get("attempt").getAsInt(), outs));
                         JsonArray names = new JsonArray();
                         names.add("m");
                         env.add("names", names);

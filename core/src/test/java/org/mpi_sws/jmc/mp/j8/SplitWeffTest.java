@@ -263,6 +263,14 @@ class SplitWeffTest {
                 continue;
             }
             com.google.gson.JsonObject o = com.google.gson.JsonParser.parseString(Files.readString(f)).getAsJsonObject();
+            // The outcomes moved from the result to the item's outcome file; rebuilt as the array the result
+            // carried, in its place, so the pinned digests still compare them.
+            com.google.gson.JsonArray outs = new com.google.gson.JsonArray();
+            for (String line : Files.readAllLines(d.resolve(org.mpi_sws.jmc.strategies.must.split.SplitCoordinator
+                    .itemOutcomes(j, o.get("attempt").getAsInt())))) {
+                outs.add(com.google.gson.JsonParser.parseString(line));
+            }
+            o.add("outcomes", outs);
             for (String k : List.of("item", "fingerprint", "iterations", "blockedIterations", "outcomes", "summaries",
                     "names")) {
                 items.append(k).append('=').append(o.get(k)).append(';');

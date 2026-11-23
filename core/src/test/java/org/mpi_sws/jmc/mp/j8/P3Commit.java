@@ -150,7 +150,7 @@ public final class P3Commit {
         env.addProperty("attempt", 0);
         env.addProperty("iterations", iterations);
         env.addProperty("blockedIterations", blockedIterations);
-        env.add("outcomes", outcomes);
+        env.addProperty("outcomes_count", OutcomeFiles.write(dir, item, 0, outcomes));
         if (export) {
             env.add("summaries", new JsonArray());
         }

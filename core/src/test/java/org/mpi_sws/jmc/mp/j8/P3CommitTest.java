@@ -24,7 +24,7 @@ import java.util.UUID;
 /**
  * P3 tester round 01 (plan/jmc-must/P3-PROPOSAL.md rev 3 §2 B-lite.1, §4.2, §4.5): the coordinator's commit
  * boundary. Envelope validation, online validation and the decoding of every outcome precede any change to
- * the digest unions or to {@code committed}; a committed envelope is kept without {@code outcomes}; a result
+ * the digest unions or to {@code committed}; the outcomes are in the item's outcome file; a result
  * with an undecodable outcome is refused whole ("item j: malformed outcome …") and contributes nothing.
  *
  * <p>Derived before the run. The {@code commit_*} tests drive the private commit step through {@link P3Commit}
@@ -34,13 +34,13 @@ import java.util.UUID;
  *   <li>valid result {@code [(false,A), (true,B), (false,A), (true,A)]}: answer {@code null}; complete
  *       {@code {D, A}}, blocked {@code {B, A}} (one digest in both, kept separate as the old merge did);
  *       {@code committed} holds item 3 without {@code outcomes} and with every other member of the published
- *       envelope unchanged; the slot is cleared (-1/-1); the file on disk still holds the four outcomes;</li>
+ *       envelope unchanged; the slot is cleared (-1/-1); the outcome file still holds the four outcomes;</li>
  *   <li>a valid first outcome {@code (false,A)} then a malformed one (Gson cannot convert {@code blocked}:
  *       {@code null}, {@code {}}, missing, {@code []}, {@code [true,false]}): answer
  *       {@code "item 3: malformed outcome " + <element>}; unions unchanged (A not added), {@code committed}
  *       empty, the slot still 3/0. On 4ce59e76 this result was committed and failed the final merge;</li>
- *   <li>an outcome that is not an object, or has no digest: {@code validate} throws, as on 4ce59e76 (the
- *       dispatch loop turns it into "coordinator failure"); nothing folded;</li>
+ *   <li>an outcome that is not an object, or has no digest: refused as a malformed outcome (it threw before
+ *       the outcomes moved to their own file); nothing folded;</li>
  *   <li>an online object in a run without an online check, outcomes valid: refused by the existing message,
  *       nothing folded.</li>
  * </ul>
@@ -76,7 +76,10 @@ class P3CommitTest {
         assertEquals(-1, c.slotItem());
         assertEquals(-1, c.slotAttempt());
         assertTrue(c.lastCommit[0] > 0, "commit time recorded");
-        assertEquals(4, c.published().getAsJsonArray("outcomes").size(), "the file keeps its outcomes");
+        assertEquals(4, c.published().get("outcomes_count").getAsLong(), "the result declares its outcomes");
+        assertEquals(4, java.nio.file.Files.readAllLines(c.dir.resolve(
+                org.mpi_sws.jmc.strategies.must.split.SplitCoordinator.itemOutcomes(ITEM, 0))).size(),
+                "the outcome file keeps them");
         // a second pass finds nothing outstanding and changes nothing
         assertNull(c.commit());
         assertEquals(Set.of(P3Commit.D, P3Commit.A), c.complete);
@@ -114,7 +117,7 @@ class P3CommitTest {
     }
 
     @Test
-    void commit_nonObjectOrNoDigest_throwsAsBefore_nothingFolded() throws Throwable {
+    void commit_nonObjectOrNoDigest_refused_nothingFolded() throws Throwable {
         List<String> bad = new ArrayList<>();
         for (String later : List.of("\"x\"", "7", "{\"blocked\":true}")) {
             P3Commit c = seeded("commit-nonobject");
@@ -127,8 +130,10 @@ class P3CommitTest {
                 thrown = e;
             }
             System.out.println("P3 non-object " + later + " -> " + (thrown != null ? "threw " + thrown : answer));
-            if (thrown == null) {
-                bad.add(later + ": no exception (validate reads the digest of every outcome), answer " + answer);
+            // Read from the outcome file line by line, these are malformed outcomes too (they used to throw).
+            String want = "item " + ITEM + ": malformed outcome " + P3Commit.raw(later);
+            if (thrown != null || !want.equals(answer)) {
+                bad.add(later + ": " + (thrown != null ? "threw " + thrown : "answer " + answer) + ", expected " + want);
             }
             if (!c.complete.equals(Set.of(P3Commit.D)) || !c.blocked.isEmpty() || !c.committed.isEmpty()
                     || c.slotItem() != ITEM) {
@@ -152,6 +157,16 @@ class P3CommitTest {
         assertTrue(c.blocked.isEmpty());
         assertTrue(c.committed.isEmpty());
         assertEquals(ITEM, c.slotItem());
+    }
+
+    /** An item's committed outcomes, from its outcome file (attempt 0). */
+    static JsonArray outcomes(Path d, int item) throws Exception {
+        JsonArray a = new JsonArray();
+        for (String line : java.nio.file.Files.readAllLines(d.resolve(
+                org.mpi_sws.jmc.strategies.must.split.SplitCoordinator.itemOutcomes(item, 0)))) {
+            a.add(JsonParser.parseString(line));
+        }
+        return a;
     }
 
     /** Adds outcomes to the unions with the old final merge's conversion. */
@@ -202,8 +217,8 @@ class P3CommitTest {
         Set<String> b = new HashSet<>();
         JsonArray transcript = run.getAsJsonArray("transcript");
         fold(transcript, c, b);
-        fold(i0.getAsJsonArray("outcomes"), c, b);
-        fold(i1.getAsJsonArray("outcomes"), c, b);
+        fold(outcomes(d, 0), c, b);
+        fold(outcomes(d, 1), c, b);
         String d0 = transcript.get(0).getAsJsonObject().get("digest").getAsString();
         assertTrue(c.contains(d0) && b.contains(d0), "d0 in both");
         assertTrue(c.contains(P3Commit.A) && b.contains(P3Commit.A), "A in both");

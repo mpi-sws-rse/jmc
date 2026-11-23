@@ -55,9 +55,11 @@ import java.util.regex.Pattern;
  * committed once.
  *
  * <p><b>Failures.</b> A fail marker of any kind ({@code worker-<id>.fail.json}, {@code
- * fail-<j>.<a>.json}) aborts the run, never retried. A worker process that exits with an outstanding
- * assignment and neither its result nor a fail marker is a process death: the item is retried exactly
- * once (attempt 1, on a live worker or a restarted one; attempt 0 is first marked consumed, so no worker
+ * fail-<j>.<a>.json}) aborts the run, never retried, except an item's retryable marker of attempt 0 (the worker
+ * ran out of memory), which is set aside and handled as the process death that follows it. An aborting item
+ * marker's reason names the item, attempt and worker and how many items were committed. A worker process that
+ * exits with an outstanding assignment and neither its result nor a fail marker is a process death: the item is
+ * retried exactly once (attempt 1, on a live worker or a restarted one; attempt 0 is first marked consumed, so no worker
  * executes it again); a second death of the same item aborts. A
  * worker that exits after publishing its result is restarted once (a fresh replay of the root); if it
  * exits again the run continues without it, and the result says so. When every item is committed the
@@ -65,7 +67,10 @@ import java.util.regex.Pattern;
  *
  * <p><b>Merge.</b> Distinct complete and blocked graphs are the union of the outcome digests of root and
  * items, each item's digests added when it is committed (after its envelope, online object and every outcome
- * decoded), after which the retained envelope no longer carries them; iterations and blocked iterations are summed; the summary lines are the root's, then the items'
+ * of its outcome file ({@link #itemOutcomes}) decoded); the file stays, as the outcomes stayed in the result before.
+ * No file of the run
+ * is held as one string: results and outcome files are written and read as streams, so an item's size is bounded
+ * by the heap, not by the 2^31-1 elements of one Java array; iterations and blocked iterations are summed; the summary lines are the root's, then the items'
  * in the order {@code N − 1} … {@code 0}, deduplicated on the line without its multiplicity (the first
  * occurrence kept, multiplicities summed) — the sequential run's export order.
  *
@@ -93,6 +98,22 @@ public final class SplitCoordinator {
     public static String itemGraphs(int item, int attempt) {
         return "graphs-" + item + "." + attempt + ".jsonl";
     }
+
+    /**
+     * An item's outcome file in the run directory: one line per counted iteration, in the order they ran, each
+     * {@code {"blocked":<b>,"digest":"<hex>"}}; streamed by the worker while the item runs and renamed into place
+     * before its result, so that neither side holds an item's outcomes in one piece.
+     *
+     * @param item the item index
+     * @param attempt the attempt
+     * @return the file name
+     */
+    public static String itemOutcomes(int item, int attempt) {
+        return "outcomes-" + item + "." + attempt + ".jsonl";
+    }
+
+    /** The prefix a retryable fail marker gets once its item has been requeued. */
+    static final String RETRIED = "retried-";
 
     private SplitCoordinator() {}
 
@@ -927,6 +948,8 @@ public final class SplitCoordinator {
                 queue.add(new int[] {j, 0});
             }
             long deadline = System.currentTimeMillis() + config.timeoutSeconds() * 1000L;
+            // Items whose attempt 0 published a retryable fail marker, with its reason.
+            Map<Integer, String> retried = new TreeMap<>();
             Set<String> tableNames = root.view.names().keySet();
             boolean export = root.summaryLines != null;
             while (committed.size() < root.entries) {
@@ -934,10 +957,10 @@ public final class SplitCoordinator {
                     return abort(slots, "timed out with " + committed.size() + " of " + root.entries
                             + " items committed");
                 }
-                String marker = firstFailMarker(dir);
+                String marker = abortingFailMarker(dir, slots, retried);
                 if (marker != null) {
                     outcome[0] = failMarkerOutcome(dir, marker);
-                    return abort(slots, failMarkerReason(dir, marker));
+                    return abort(slots, failMarkerReason(dir, marker, retried, committed.size(), root.entries));
                 }
                 for (Slot s : slots) {
                     if (s.lost || s.process == null) {
@@ -949,10 +972,11 @@ public final class SplitCoordinator {
                         return abort(slots, bad);
                     }
                     if (!config.liveness().test(s.process)) {
-                        marker = firstFailMarker(dir);
+                        marker = abortingFailMarker(dir, slots, retried);
                         if (marker != null) {
                             outcome[0] = failMarkerOutcome(dir, marker);
-                            return abort(slots, failMarkerReason(dir, marker));
+                            return abort(slots, failMarkerReason(dir, marker, retried, committed.size(),
+                                    root.entries));
                         }
                         // The result may have been renamed into place between the check above and the exit:
                         // look again now that the process is known to be dead.
@@ -962,7 +986,8 @@ public final class SplitCoordinator {
                             return abort(slots, bad);
                         }
                         if (s.item >= 0) {
-                            // A process death with the item outstanding and no result: retried once.
+                            // A process death with the item outstanding and no result (or a retryable fail
+                            // marker, set aside above): retried once.
                             if (s.attempt >= 1) {
                                 return abort(slots, "item " + s.item + " lost its worker twice");
                             }
@@ -1024,7 +1049,7 @@ public final class SplitCoordinator {
             String marker = firstFailMarker(dir);
             if (marker != null) {
                 outcome[0] = failMarkerOutcome(dir, marker);
-                return abort(slots, failMarkerReason(dir, marker));
+                return abort(slots, failMarkerReason(dir, marker, retried, committed.size(), root.entries));
             }
             return null;
         } catch (InterruptedException e) {
@@ -1071,20 +1096,14 @@ public final class SplitCoordinator {
             return "item " + s.item + ": " + bad;
         }
         // Every outcome is decoded before the unions change: a malformed one refuses the whole result, which then
-        // contributes nothing (before, it failed the final merge).
-        List<String> complete = new ArrayList<>();
-        List<String> blocked = new ArrayList<>();
-        for (JsonElement e : env.getAsJsonArray("outcomes")) {
-            try {
-                JsonObject o = e.getAsJsonObject();
-                (o.get("blocked").getAsBoolean() ? blocked : complete).add(o.get("digest").getAsString());
-            } catch (RuntimeException x) {
-                return "item " + s.item + ": malformed outcome " + e;
-            }
+        // contributes nothing. The outcome file is read twice, streamed (checked, then added), never held whole.
+        Path outcomes = dir.resolve(itemOutcomes(s.item, s.attempt));
+        long count = env.get("outcomes_count").getAsLong();
+        bad = foldOutcomes(outcomes, count, null);
+        if (bad != null) {
+            return "item " + s.item + ": " + bad;
         }
-        unions.complete().addAll(complete);
-        unions.blocked().addAll(blocked);
-        env.remove("outcomes");
+        foldOutcomes(outcomes, count, unions);
         committed.put(s.item, env);
         lastCommitOut[0] = System.nanoTime();
         s.item = -1;
@@ -1117,7 +1136,7 @@ public final class SplitCoordinator {
      * @param complete digests of the distinct complete graphs
      * @param blocked digests of the distinct blocked graphs
      */
-    private record Unions(Set<String> complete, Set<String> blocked) {}
+    record Unions(Set<String> complete, Set<String> blocked) {}
 
     /**
      * The outcome of an operational failure of the coordinator: {@link MpOutcome#REFUSED} when a file could not
@@ -1152,9 +1171,60 @@ public final class SplitCoordinator {
         }
     }
 
-    /** The abort reason for a fail marker. */
-    private static String failMarkerReason(Path dir, String marker) {
-        return "fail marker " + marker + ": " + readJson(dir.resolve(marker)).get("reason");
+    /** An item's fail marker name: {@code fail-<item>.<attempt>.json}. */
+    private static final Pattern ITEM_MARKER = Pattern.compile("fail-(\\d+)\\.(\\d+)\\.json");
+
+    /**
+     * The first fail marker that ends the run. A retryable item marker (a worker out of memory) of attempt 0 whose
+     * assignment is outstanding does not: it is renamed {@link #RETRIED}{@code <name>}, its reason kept in
+     * {@code retried}, and the worker's exit is then handled as a process death, which retries the item once, on the
+     * restarted worker or another live one (not the JVM that ran out of memory).
+     */
+    private static String abortingFailMarker(Path dir, List<Slot> slots, Map<Integer, String> retried)
+            throws IOException {
+        while (true) {
+            String marker = firstFailMarker(dir);
+            if (marker == null) {
+                return null;
+            }
+            java.util.regex.Matcher m = ITEM_MARKER.matcher(marker);
+            if (!m.matches()) {
+                return marker;
+            }
+            int item = Integer.parseInt(m.group(1));
+            int attempt = Integer.parseInt(m.group(2));
+            JsonObject f = readJson(dir.resolve(marker));
+            boolean retryable = f.has("retryable") && f.get("retryable").isJsonPrimitive()
+                    && f.get("retryable").getAsJsonPrimitive().isBoolean() && f.get("retryable").getAsBoolean();
+            boolean outstanding = slots.stream().anyMatch(s -> s.item == item && s.attempt == attempt);
+            if (!retryable || attempt != 0 || !outstanding) {
+                return marker;
+            }
+            retried.put(item, f.get("reason").toString());
+            Files.move(dir.resolve(marker), dir.resolve(RETRIED + marker), StandardCopyOption.ATOMIC_MOVE);
+        }
+    }
+
+    /**
+     * The abort reason for a fail marker: the marker and its reason; for an item's marker also the item, attempt and
+     * worker, the reason of a retried attempt 0, and how many items were committed, so that a rerun knows which
+     * item to give more room.
+     */
+    private static String failMarkerReason(Path dir, String marker, Map<Integer, String> retried, int committed,
+                                           int entries) {
+        JsonObject f = readJson(dir.resolve(marker));
+        StringBuilder b = new StringBuilder("fail marker " + marker + ": " + f.get("reason"));
+        java.util.regex.Matcher m = ITEM_MARKER.matcher(marker);
+        if (m.matches()) {
+            int item = Integer.parseInt(m.group(1));
+            b.append("; item ").append(item).append(" (attempt ").append(m.group(2)).append(", worker ")
+                    .append(f.get("worker")).append(") failed");
+            if (retried.containsKey(item)) {
+                b.append(", after attempt 0 failed with ").append(retried.get(item));
+            }
+            b.append("; ").append(committed).append(" of ").append(entries).append(" items committed");
+        }
+        return b.toString();
     }
 
     /** Checks a result envelope against the outstanding assignment. */
@@ -1189,10 +1259,52 @@ public final class SplitCoordinator {
                 return "the result's maximum " + key + " is missing, not an integer, or negative";
             }
         }
-        for (JsonElement e : env.getAsJsonArray("outcomes")) {
-            if (!DIGEST.matcher(e.getAsJsonObject().get("digest").getAsString()).matches()) {
-                return "malformed digest " + e;
+        if (!integral(env.get("outcomes_count"), 0)) {
+            return "the result's outcome count is missing, not an integer, or negative";
+        }
+        return null;
+    }
+
+    /**
+     * Reads an item's outcome file ({@link #itemOutcomes}) line by line: checks each line and, with {@code unions},
+     * adds its digest to them.
+     *
+     * @param file the outcome file
+     * @param count the number of outcomes the result declares
+     * @param unions where the digests go, or {@code null} to check only
+     * @return {@code null} if the file holds exactly {@code count} well-formed outcomes, else what is wrong
+     */
+    static String foldOutcomes(Path file, long count, Unions unions) {
+        if (!Files.exists(file)) {
+            return "the outcome file " + file.getFileName() + " is missing";
+        }
+        long seen = 0;
+        try (java.io.BufferedReader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            for (String line = r.readLine(); line != null; line = r.readLine()) {
+                seen++;
+                boolean blocked;
+                String digest;
+                try {
+                    JsonObject o = JsonParser.parseString(line).getAsJsonObject();
+                    blocked = o.get("blocked").getAsBoolean();
+                    digest = o.get("digest").getAsString();
+                } catch (RuntimeException x) {
+                    // The line is the outcome's JSON, as the envelope's array element used to be.
+                    return "malformed outcome " + line;
+                }
+                if (!DIGEST.matcher(digest).matches()) {
+                    return "malformed digest " + line;
+                }
+                if (unions != null) {
+                    (blocked ? unions.blocked() : unions.complete()).add(digest);
+                }
             }
+        } catch (IOException e) {
+            throw new IllegalStateException("cannot read " + file + ": " + e, e);
+        }
+        if (seen != count) {
+            return "the outcome file " + file.getFileName() + " holds " + seen + " outcomes, the result declares "
+                    + count;
         }
         return null;
     }
@@ -1266,7 +1378,15 @@ public final class SplitCoordinator {
     static void writeAtomically(Path target, JsonElement value) {
         try {
             Path tmp = target.resolveSibling(target.getFileName() + ".tmp-" + UUID.randomUUID());
-            Files.writeString(tmp, GSON.toJson(value), StandardCharsets.UTF_8);
+            // Streamed: the value is never one String (a result of more than 2^31-1 characters is legitimate).
+            try (java.io.Writer w = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
+                GSON.toJson(value, w);
+            } catch (com.google.gson.JsonIOException e) {
+                if (e.getCause() instanceof IOException io) {
+                    throw io;
+                }
+                throw e;
+            }
             Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             throw new IllegalStateException("cannot write " + target + ": " + e, e);
@@ -1282,7 +1402,16 @@ public final class SplitCoordinator {
      */
     public static JsonObject readJson(Path file) {
         try {
-            return JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject();
+            // Streamed, as written: the file is never one String.
+            try (java.io.Reader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+                return JsonParser.parseReader(r).getAsJsonObject();
+            } catch (com.google.gson.JsonIOException e) {
+                // A read failure, not a malformed file: reported as the IOException it wraps.
+                if (e.getCause() instanceof IOException io) {
+                    throw io;
+                }
+                throw e;
+            }
         } catch (IOException | RuntimeException e) {
             throw new IllegalStateException("cannot read " + file + ": " + e, e);
         }
