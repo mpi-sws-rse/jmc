@@ -760,9 +760,22 @@ public final class SpecificationFile {
             }
             if (wordStart >= 0) {
                 String word = line.substring(wordStart, i);
-                if (wordStart > 0 && Character.isDigit(line.charAt(wordStart - 1))) {
-                    // 3e0, 1E3: a float's exponent; report it as a non-integer number.
+                boolean afterDigit = wordStart > 0 && Character.isDigit(line.charAt(wordStart - 1));
+                if (afterDigit && !word.equalsIgnoreCase("e")) {
                     throw refuse(no, "number ending in \"" + word + "\" is not an integer literal (the format"
+                            + " refuses floating-point values)");
+                }
+                if (afterDigit) {
+                    // 3e0, 1E3: a float's exponent; report the whole number as a non-integer number.
+                    int from = wordStart;
+                    while (from > 0 && "0123456789.-".indexOf(line.charAt(from - 1)) >= 0) {
+                        from--;
+                    }
+                    int to = i;
+                    while (to < line.length() && "0123456789.+-eE".indexOf(line.charAt(to)) >= 0) {
+                        to++;
+                    }
+                    throw refuse(no, "number " + line.substring(from, to) + " is not an integer literal (the format"
                             + " refuses floating-point values)");
                 }
                 if (!(word.equals("true") || word.equals("false") || word.equals("null"))) {

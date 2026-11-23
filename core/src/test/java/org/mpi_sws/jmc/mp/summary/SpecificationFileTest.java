@@ -163,7 +163,7 @@ class SpecificationFileTest {
 
     @Test
     void refuse_exponentCount() throws Exception {
-        refused("integer", HEADER, line(DONE, WORDS, "0,0,0,0,3,3e0") + "}");
+        refused("number 3e0 is not an integer literal", HEADER, line(DONE, WORDS, "0,0,0,0,3,3e0") + "}");
     }
 
     @Test
@@ -183,7 +183,10 @@ class SpecificationFileTest {
 
     @Test
     void refuse_exponentValue() throws Exception {
-        refused("integer", HEADER, valueLine("1e3"));
+        refused("number 1e3 is not an integer literal \\(the format refuses floating-point values\\)", HEADER,
+                valueLine("1e3"));
+        refused("number -2\\.5e\\+3 is not an integer literal", HEADER, valueLine("-2.5E+3"));
+        refused("number ending in \"x\" is not an integer literal", HEADER, valueLine("1x"));
     }
 
     @Test
